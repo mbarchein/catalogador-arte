@@ -130,10 +130,12 @@ function BotonRepetible({
   alPaso,
   etiqueta,
   children,
+  compacto = false,
 }: {
   alPaso: () => void
   etiqueta: string
   children: ReactNode
+  compacto?: boolean
 }) {
   const refEspera = useRef<number | null>(null)
   const refRepeticion = useRef<number | null>(null)
@@ -174,8 +176,10 @@ function BotonRepetible({
         if (!refRepitio.current) alPaso()
         refRepitio.current = false
       }}
-      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-stone-300
-                 bg-white text-stone-700 active:bg-stone-200"
+      className={`flex shrink-0 items-center justify-center rounded-lg border border-stone-300
+                  bg-white text-stone-700 active:bg-stone-200 ${
+                    compacto ? 'h-11 w-11' : 'h-14 w-14'
+                  }`}
     >
       {children}
     </button>
@@ -201,6 +205,7 @@ export function PasoAnio({
   etiqueta,
   minimo,
   maximo,
+  compacto = false,
 }: {
   valor: number | null
   alCambiar: (anio: number | null) => void
@@ -208,6 +213,8 @@ export function PasoAnio({
   etiqueta: string
   minimo: number
   maximo: number
+  /** Botones de 44px en vez de 56: para poner dos campos de año en una línea. */
+  compacto?: boolean
 }) {
   // Borrador de lo que se está teclando. Sin él, el campo es controlado y «19»
   // —dos dígitos, todavía no un año— se descartaría a cada pulsación, con lo que
@@ -225,14 +232,20 @@ export function PasoAnio({
       <label className="etiqueta" htmlFor={id}>
         {etiqueta}
       </label>
-      <div className="flex items-center gap-2">
-        <BotonRepetible alPaso={() => paso(-1)} etiqueta={`${etiqueta}: un año menos`}>
-          <IconoMenos />
+      <div className={compacto ? 'flex items-center gap-1' : 'flex items-center gap-2'}>
+        <BotonRepetible
+          alPaso={() => paso(-1)}
+          etiqueta={`${etiqueta}: un año menos`}
+          compacto={compacto}
+        >
+          <IconoMenos clase={compacto ? 'h-5 w-5' : 'h-7 w-7'} />
         </BotonRepetible>
 
         <input
           id={id}
-          className="campo h-14 flex-1 text-center text-2xl font-semibold tabular-nums"
+          className={`campo flex-1 text-center font-semibold tabular-nums ${
+            compacto ? 'h-11 px-1 text-lg' : 'h-14 text-2xl'
+          }`}
           inputMode="numeric"
           value={borrador ?? valor?.toString() ?? ''}
           placeholder="—"
@@ -251,8 +264,12 @@ export function PasoAnio({
           }}
         />
 
-        <BotonRepetible alPaso={() => paso(1)} etiqueta={`${etiqueta}: un año más`}>
-          <IconoMas />
+        <BotonRepetible
+          alPaso={() => paso(1)}
+          etiqueta={`${etiqueta}: un año más`}
+          compacto={compacto}
+        >
+          <IconoMas clase={compacto ? 'h-5 w-5' : 'h-7 w-7'} />
         </BotonRepetible>
       </div>
 
@@ -320,25 +337,35 @@ export function Interruptor({
 
 // ── Fichas de selección ─────────────────────────────────────
 
+/**
+ * Selección entre opciones como rejilla de botones de tamaño fijo, el mismo
+ * lenguaje visual que el Sí/No/Sin revisar. Los globos de ancho variable hacían
+ * imposible barrer las opciones con la vista: cada una empezaba en un sitio
+ * distinto. En rejilla, la posición de cada opción es estable y caben varias
+ * por línea sin que ninguna se esconda al final de un renglón.
+ */
 export function Fichas<T extends string>({
   opciones,
   valor,
   alCambiar,
   etiqueta,
   id,
+  columnas = 2,
 }: {
   opciones: readonly { valor: T; texto: string }[]
   valor: T | null
   alCambiar: (v: T) => void
   etiqueta: string
   id: string
+  /** Opciones por línea. 3 para textos cortos, 2 para los que necesitan sitio. */
+  columnas?: 2 | 3
 }) {
   return (
     <div role="radiogroup" aria-labelledby={`${id}-etiqueta`}>
       <span id={`${id}-etiqueta`} className="etiqueta">
         {etiqueta}
       </span>
-      <div className="flex flex-wrap gap-2">
+      <div className={columnas === 3 ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
         {opciones.map((o) => {
           const activo = valor === o.valor
           return (
@@ -348,11 +375,12 @@ export function Fichas<T extends string>({
               role="radio"
               aria-checked={activo}
               onClick={() => alCambiar(o.valor)}
-              className={`min-h-toque rounded-full border-2 px-4 text-sm font-medium transition ${
-                activo
-                  ? 'border-stone-800 bg-stone-800 text-white'
-                  : 'border-stone-300 bg-white text-stone-700'
-              }`}
+              className={`flex min-h-toque items-center justify-center rounded-lg border-2 px-2 py-2
+                          text-center text-sm font-medium leading-tight transition ${
+                            activo
+                              ? 'border-stone-800 bg-stone-800 text-white'
+                              : 'border-stone-300 bg-white text-stone-700'
+                          }`}
             >
               {o.texto}
             </button>
@@ -360,6 +388,38 @@ export function Fichas<T extends string>({
         })}
       </div>
     </div>
+  )
+}
+
+/**
+ * Interruptor con forma de botón de rejilla, para poner varios en una línea.
+ * El Interruptor grande (con texto de ayuda) no cabe tres veces en un móvil;
+ * este es su versión compacta con la misma semántica (role="switch").
+ */
+export function Conmutador({
+  etiqueta,
+  activo,
+  alCambiar,
+}: {
+  etiqueta: string
+  activo: boolean
+  alCambiar: (v: boolean) => void
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={activo}
+      onClick={() => alCambiar(!activo)}
+      className={`flex min-h-toque items-center justify-center rounded-lg border-2 px-2 py-2
+                  text-center text-sm font-medium leading-tight transition ${
+                    activo
+                      ? 'border-stone-800 bg-stone-800 text-white'
+                      : 'border-stone-300 bg-white text-stone-700'
+                  }`}
+    >
+      {etiqueta}
+    </button>
   )
 }
 
