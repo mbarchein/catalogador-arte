@@ -4,11 +4,16 @@
 # El módulo bootstrap/ genera este contenido ya rellenado en su salida
 # `backend_hcl` — más cómodo que editarlo a mano.
 #
-# Las credenciales del backend NO van aquí. Se exportan como variables de
-# entorno antes de ejecutar terraform, usando un par de claves de acceso de R2
-# (Panel de Cloudflare → R2 → Manage API tokens):
-#   export AWS_ACCESS_KEY_ID=...
-#   export AWS_SECRET_ACCESS_KEY=...
+# Las credenciales del backend son un par de claves de acceso de R2
+# (Panel de Cloudflare → R2 → Manage API tokens). Dos vías:
+#
+#   a) Variables de entorno antes de ejecutar terraform:
+#        export AWS_ACCESS_KEY_ID=...
+#        export AWS_SECRET_ACCESS_KEY=...
+#
+#   b) Descomentar access_key y secret_key aquí abajo. backend.hcl está en
+#      .gitignore precisamente por esto: con las claves dentro es un secreto,
+#      nunca se sube al repositorio.
 
 bucket = "catalogador-arte-tfstate"
 key    = "infra/terraform.tfstate"
@@ -17,6 +22,10 @@ region = "auto"
 endpoints = {
   s3 = "https://<CLOUDFLARE_ACCOUNT_ID>.r2.cloudflarestorage.com"
 }
+
+# Par de claves de acceso de R2 (vía b; ver cabecera)
+#access_key = ""
+#secret_key = ""
 
 skip_credentials_validation = true
 skip_metadata_api_check     = true

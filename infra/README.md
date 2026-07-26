@@ -138,7 +138,10 @@ Dos juegos, y conviene no confundirlos:
 **Para ejecutar Terraform** (shell del operador; nunca en git):
 
 ```bash
-# Credenciales del backend del estado (par de claves R2, protocolo S3):
+# Credenciales del backend del estado (par de claves R2, protocolo S3).
+# Alternativa: access_key/secret_key en backend.hcl, que está en .gitignore
+# (ver backend.hcl.example). No pueden ir en terraform.tfvars: terraform init
+# no lee variables.
 export AWS_ACCESS_KEY_ID='...'
 export AWS_SECRET_ACCESS_KEY='...'
 
@@ -185,8 +188,8 @@ de `bootstrap/` y rellénalo (está ignorado por git, como el del plano principa
 ```bash
 cd infra
 cp terraform.tfvars.example terraform.tfvars    # rellenar con la tabla de arriba
-export AWS_ACCESS_KEY_ID='...'                  # par de claves R2
-export AWS_SECRET_ACCESS_KEY='...'
+export AWS_ACCESS_KEY_ID='...'                  # par de claves R2, o bien
+export AWS_SECRET_ACCESS_KEY='...'              # access_key/secret_key en backend.hcl
 terraform init -backend-config=backend.hcl
 terraform plan                                  # leerlo entero antes de aplicar, siempre
 terraform apply

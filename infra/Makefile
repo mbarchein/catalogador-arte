@@ -34,10 +34,12 @@ init: ## Conecta con el estado remoto (requiere backend.hcl y las claves R2)
 	@test -f backend.hcl || { \
 	  echo "Falta backend.hcl: ejecuta antes 'make bootstrap' (o copia backend.hcl.example)."; \
 	  exit 1; }
-	@test -n "$$AWS_ACCESS_KEY_ID" -a -n "$$AWS_SECRET_ACCESS_KEY" || { \
-	  echo "Faltan las claves de acceso de R2 en el entorno:"; \
+	@test -n "$$AWS_ACCESS_KEY_ID" -a -n "$$AWS_SECRET_ACCESS_KEY" || \
+	 grep -q '^access_key' backend.hcl || { \
+	  echo "Faltan las claves de acceso de R2. O bien en el entorno:"; \
 	  echo "  export AWS_ACCESS_KEY_ID='...'"; \
 	  echo "  export AWS_SECRET_ACCESS_KEY='...'"; \
+	  echo "o bien access_key/secret_key en backend.hcl (ver backend.hcl.example)."; \
 	  exit 1; }
 	terraform init -backend-config=backend.hcl
 
