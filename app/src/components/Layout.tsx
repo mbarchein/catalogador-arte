@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from '../auth/AuthContext'
 
@@ -20,29 +20,40 @@ function IconoAtras() {
 }
 
 /**
- * Cabecera con botón de volver, y nada más.
+ * Cabecera fija con botón de volver, el rótulo de la vista y un hueco para la
+ * acción principal de la página («Editar», «+ Nueva»...). Que la acción viva en
+ * la cabecera fija significa que está disponible sin volver arriba, por larga
+ * que sea la página — patrón heredado de la otra aplicación del equipo.
  *
- * `atras` es un destino explícito y no un `history.back()` a propósito: la ficha
- * se abre también escaneando el código QR de la etiqueta, y en ese caso el
- * historial de la aplicación está vacío — un «atrás» genérico sacaría al
- * catalogador de la aplicación instalada, que en modo pantalla completa no tiene
- * barra del navegador para volver a entrar.
- *
- * Cuando los filtros de búsqueda vivan en la URL, este destino es el sitio donde
- * se cumplirá RF-608, que pide conservarlos al volver al listado.
+ * Volver: si hay historial dentro de la aplicación se vuelve por él (conserva
+ * la página de la que se vino); si no —entrada en frío, p. ej. escaneando el QR
+ * de la etiqueta— se va al destino `atras`. Nunca un history.back() a secas: con
+ * el historial vacío sacaría al catalogador de la aplicación instalada, que en
+ * pantalla completa no tiene barra del navegador para volver a entrar.
  */
 export function Layout({
   children,
   titulo,
   atras,
+  accion,
 }: {
   children: ReactNode
   /** Rótulo corto de la vista, junto al botón de volver. */
   titulo?: string
-  /** Destino del botón de volver. Sin él no se muestra: es la vista raíz. */
+  /** Destino de reserva del botón de volver. Sin él no se muestra: es la raíz. */
   atras?: string
+  /** Acción principal de la vista, en el lado derecho de la cabecera. */
+  accion?: ReactNode
 }) {
   const navegar = useNavigate()
+  const { key } = useLocation()
+
+  function volver() {
+    // location.key vale 'default' solo en la primera entrada (enlace directo,
+    // recarga): cualquier otro valor significa que hay historial propio.
+    if (key !== 'default') navegar(-1)
+    else if (atras) navegar(atras)
+  }
 
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col">
@@ -51,7 +62,7 @@ export function Layout({
           {atras ? (
             <button
               type="button"
-              onClick={() => navegar(atras)}
+              onClick={volver}
               aria-label="Volver"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-stone-700 active:bg-stone-200"
             >
@@ -60,7 +71,8 @@ export function Layout({
           ) : (
             <span className="w-2" />
           )}
-          <span className="truncate font-semibold">{titulo ?? 'Catalogador'}</span>
+          <span className="min-w-0 flex-1 truncate font-semibold">{titulo ?? 'Catalogador'}</span>
+          {accion && <div className="shrink-0 pr-1">{accion}</div>}
         </div>
       </header>
 

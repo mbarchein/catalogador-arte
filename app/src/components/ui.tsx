@@ -362,3 +362,117 @@ export function Fichas<T extends string>({
     </div>
   )
 }
+
+// ── Grupo de campos con nombre ──────────────────────────────
+
+/**
+ * fieldset + legend, el patrón de agrupación de la otra aplicación del equipo.
+ * Un formulario largo sin grupos nombrados obliga a leerlo entero para saber
+ * dónde está cada cosa; con el nombre en el borde, el ojo salta directo.
+ *
+ * `pista` es para lo que el operador necesita saber del grupo entero antes de
+ * rellenarlo — p. ej. «se arrastra a la obra siguiente» — sin repetirlo campo
+ * a campo.
+ */
+export function Grupo({
+  titulo,
+  pista,
+  children,
+}: {
+  titulo: string
+  pista?: string
+  children: ReactNode
+}) {
+  return (
+    <fieldset className="rounded-xl border border-stone-200 bg-white p-4">
+      <legend className="px-1 text-sm font-semibold text-stone-800">
+        {titulo}
+        {pista && <span className="ml-1.5 font-normal text-stone-500">· {pista}</span>}
+      </legend>
+      <div className="space-y-4">{children}</div>
+    </fieldset>
+  )
+}
+
+// ── Barra de acciones fija abajo ────────────────────────────
+
+/**
+ * En un formulario largo, el botón de guardar al final obliga a desplazarse
+ * para encontrarlo. Fijado abajo queda siempre bajo el pulgar, que es donde se
+ * trabaja a una mano. El padding-bottom respeta la barra inferior del móvil.
+ */
+export function BarraAcciones({ children, aviso }: { children: ReactNode; aviso?: ReactNode }) {
+  return (
+    <div
+      className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-stone-200 bg-stone-100/95 px-4 pt-3 backdrop-blur"
+      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+    >
+      {/* El aviso va aquí y no arriba de la página: el resultado de pulsar un
+          botón debe aparecer donde se acaba de pulsar, no donde haya que ir a
+          buscarlo desplazándose. */}
+      {aviso && <div className="mx-auto mb-2 max-w-3xl">{aviso}</div>}
+      <div className="mx-auto flex max-w-3xl gap-2">{children}</div>
+    </div>
+  )
+}
+
+// ── Contraseña con mostrar/ocultar ──────────────────────────
+
+/**
+ * En el móvil, teclear una contraseña a ciegas produce erratas, y el mensaje de
+ * credenciales es genérico a propósito (no dice si fue el correo o la clave).
+ * Poder verla es la forma barata de salir de ese callejón.
+ */
+export function CampoContrasena({
+  id,
+  valor,
+  alCambiar,
+  autoComplete = 'current-password',
+}: {
+  id: string
+  valor: string
+  alCambiar: (v: string) => void
+  autoComplete?: string
+}) {
+  const [visible, setVisible] = useState(false)
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        className="campo pr-12"
+        type={visible ? 'text' : 'password'}
+        autoComplete={autoComplete}
+        required
+        value={valor}
+        onChange={(e) => alCambiar(e.target.value)}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        aria-pressed={visible}
+        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-stone-500"
+      >
+        {visible ? <IconoOjoTachado /> : <IconoOjo />}
+      </button>
+    </div>
+  )
+}
+
+function IconoOjo() {
+  return (
+    <svg {...svg} strokeWidth={2} className="h-5 w-5">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
+function IconoOjoTachado() {
+  return (
+    <svg {...svg} strokeWidth={2} className="h-5 w-5">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <path d="M4 4l16 16" />
+    </svg>
+  )
+}
