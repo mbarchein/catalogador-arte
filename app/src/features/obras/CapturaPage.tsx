@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { derivarFechaOrden } from '../../lib/fechas'
 import { normalizarUbicacion, ubicacionParaGuardar } from '../../lib/ubicacion'
 import {
   ANIO_MINIMO,
@@ -20,10 +19,10 @@ import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import {
   BarraAcciones,
+  Conmutador,
   Fichas,
   Grupo,
   IconoCandado,
-  Interruptor,
   PasoAnio,
   TriEstadoIconos,
 } from '../../components/ui'
@@ -174,6 +173,7 @@ export function CapturaPage() {
               <Fichas
                 id="tipo"
                 etiqueta="Tipo de obra"
+                columnas={3}
                 opciones={TIPOS_OBRA_SUGERIDOS.map((t) => ({ valor: t, texto: t }))}
                 valor={esSugerido ? lote.fijos.tipoObra : null}
                 alCambiar={(v) => setLote((l) => ({ ...l, fijos: { ...l.fijos, tipoObra: v } }))}
@@ -299,11 +299,10 @@ export function CapturaPage() {
       return Number.isFinite(n) ? n : null
     }
 
-    const textoFecha = componerFecha(rango ? fecha : { ...fecha, anioFin: null })
-
     // id_catalogacion se omite: lo asigna la base con un cerrojo por fondo
-    // (ADR-003). Generarlo aquí produciría duplicados en cuanto dos personas
-    // capturasen a la vez.
+    // (ADR-003). Y fecha_ejecucion NO se envía: es una columna generada que la
+    // base compone desde los campos estructurados (ADR-004) — escribirla sería
+    // un error, y así texto y estructura no pueden divergir.
     const { data, error } = await supabase
       .from('obras')
       .insert({
@@ -314,8 +313,10 @@ export function CapturaPage() {
         ancho_cm: aNumero(ancho),
         profundidad_cm: aNumero(profundidad),
         tecnica: lote.arrastrados.tecnica.trim(),
-        fecha_ejecucion: textoFecha,
-        fecha_orden: derivarFechaOrden(textoFecha),
+        anio_inicio: fecha.anio,
+        anio_fin: rango ? fecha.anioFin : null,
+        fecha_aproximada: fecha.anio != null && fecha.aproximada,
+        fecha_sin_confirmar: fecha.anio != null && fecha.sinConfirmar,
         firmada,
         ubicacion_fisica: ubicacionParaGuardar(lote.arrastrados.ubicacion),
       })
@@ -447,25 +448,50 @@ export function CapturaPage() {
         </Grupo>
 
         <Grupo titulo="Fecha de ejecución" pista="se arrastra a la siguiente">
-          <PasoAnio
-            id="anio"
-            etiqueta={rango ? 'Año inicial' : 'Año'}
-            valor={fecha.anio}
-            minimo={ANIO_MINIMO}
-            maximo={anioMaximo()}
-            alCambiar={(anio) => ponerFecha({ anio })}
-          />
+          {rango ? (
+            /* Las dos fechas del rango en la misma línea: son un solo dato. */
+            <div className="grid grid-cols-2 gap-2">
+              <PasoAnio
+                id="anio"
+                etiqueta="Año inicial"
+                compacto
+                valor={fecha.anio}
+                minimo={ANIO_MINIMO}
+                maximo={anioMaximo()}
+                alCambiar={(anio) => ponerFecha({ anio })}
+              />
+              <PasoAnio
+                id="anio-fin"
+                etiqueta="Año final"
+                compacto
+                valor={fecha.anioFin}
+                minimo={ANIO_MINIMO}
+                maximo={anioMaximo()}
+                alCambiar={(anioFin) => ponerFecha({ anioFin })}
+              />
+            </div>
+          ) : (
+            <PasoAnio
+              id="anio"
+              etiqueta="Año"
+              valor={fecha.anio}
+              minimo={ANIO_MINIMO}
+              maximo={anioMaximo()}
+              alCambiar={(anio) => ponerFecha({ anio })}
+            />
+          )}
 
-          <div className="grid grid-cols-2 gap-2">
-            <Interruptor
+          {/* Las tres banderas en una línea, con el mismo lenguaje visual que el
+              Sí/No/Sin revisar. Lo que cada una significa vive en la línea de
+              ayuda de abajo, una sola vez. */}
+          <div className="grid grid-cols-3 gap-2">
+            <Conmutador
               etiqueta="Aproximada"
-              ayuda="c. 1980 — de alrededor de ese año"
               activo={fecha.aproximada}
               alCambiar={(v) => ponerFecha({ aproximada: v })}
             />
-            <Interruptor
+            <Conmutador
               etiqueta="Rango"
-              ayuda="1975-1978"
               activo={rango}
               alCambiar={(v) => {
                 setRango(v)
@@ -476,33 +502,20 @@ export function CapturaPage() {
                 }
               }}
             />
+            <Conmutador
+              etiqueta="Sin confirmar"
+              activo={fecha.sinConfirmar}
+              alCambiar={(v) => ponerFecha({ sinConfirmar: v })}
+            />
           </div>
 
-          {rango && (
-            <PasoAnio
-              id="anio-fin"
-              etiqueta="Año final"
-              valor={fecha.anioFin}
-              minimo={ANIO_MINIMO}
-              maximo={anioMaximo()}
-              alCambiar={(anioFin) => ponerFecha({ anioFin })}
-            />
-          )}
+          <p className="text-xs text-stone-500">
+            «Aproximada»: de alrededor de ese año (c.). «Sin confirmar»: se desconoce; el año es
+            una estimación ([?]).
+          </p>
 
-          {/* A ancho completo y separado de los dos de arriba porque dice algo
-              más grave: «Aproximada» es «la obra es de alrededor de 1980», con el
-              periodo establecido; «Sin confirmar» es «no sabemos de cuándo es, y
-              este año es lo que estimamos». */}
-          <Interruptor
-            etiqueta="Sin confirmar"
-            ayuda="[?] — se desconoce; el año es una estimación"
-            activo={fecha.sinConfirmar}
-            alCambiar={(v) => ponerFecha({ sinConfirmar: v })}
-          />
-
-          {/* Se muestra lo que se va a guardar, no lo que se ha pulsado: el campo
-              del esquema es texto, y conviene ver el texto. aria-live porque el
-              texto cambia sin que el foco se mueva. */}
+          {/* Se muestra lo que se va a guardar. aria-live porque el texto cambia
+              sin que el foco se mueva. */}
           <p
             id="vista-fecha"
             aria-live="polite"

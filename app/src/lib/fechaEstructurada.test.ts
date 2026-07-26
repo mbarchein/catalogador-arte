@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   ANIO_MINIMO,
   ajustarAnio,
+  analizarFechaManual,
   anioMaximo,
   componerFecha,
   descomponerFecha,
 } from './fechaEstructurada'
-import { derivarFechaOrden } from './fechas'
+import { anioParaBuscar } from './fechas'
 
 describe('componerFecha (RF-207)', () => {
   it('compone los cuatro formatos del esquema', () => {
@@ -78,14 +79,13 @@ describe('descomponerFecha', () => {
     }
   })
 
-  it('produce siempre un texto del que fecha_orden sabe extraer el año', () => {
-    // (se completa más abajo con los casos que llevan «[?]»)
+  it('produce siempre un texto del que se sabe extraer el año', () => {
     // La cadena completa importa: los controles alimentan fecha_ejecucion, y de
     // ahí sale fecha_orden, que es por lo que se ordena el catálogo.
-    expect(derivarFechaOrden(componerFecha({ anio: 1975, aproximada: true, anioFin: 1978, sinConfirmar: false }))).toBe(
+    expect(anioParaBuscar(componerFecha({ anio: 1975, aproximada: true, anioFin: 1978, sinConfirmar: false }))).toBe(
       1975,
     )
-    expect(derivarFechaOrden(componerFecha({ anio: 1980, aproximada: true, anioFin: null, sinConfirmar: false }))).toBe(
+    expect(anioParaBuscar(componerFecha({ anio: 1980, aproximada: true, anioFin: null, sinConfirmar: false }))).toBe(
       1980,
     )
   })
@@ -114,10 +114,9 @@ describe('la bandera «[?]» es independiente de la precisión', () => {
     expect(descomponerFecha(texto)).toEqual(estructura)
   })
 
-  it.each(combinaciones)('«%s» sigue dando su año para ordenar', (texto, estructura) => {
-    // El sufijo no lleva dígitos, así que no puede confundir a fecha_orden. Se
-    // afirma porque es exactamente el tipo de cosa que se rompe sin avisar.
-    expect(derivarFechaOrden(texto)).toBe(estructura.anio)
+  it.each(combinaciones)('«%s» sigue dando su año', (texto, estructura) => {
+    // El sufijo no lleva dígitos, así que no puede confundir al rescate del año.
+    expect(anioParaBuscar(texto)).toBe(estructura.anio)
   })
 
   it('no escribe «[?]» sobre una obra sin fechar', () => {
@@ -153,5 +152,46 @@ describe('ajustarAnio', () => {
   it('parte del año en curso si no había fecha', () => {
     expect(ajustarAnio(null, 0)).toBe(anioMaximo())
     expect(ajustarAnio(null, -1)).toBe(anioMaximo() - 1)
+  })
+})
+
+describe('analizarFechaManual (la escritura a mano también estructura)', () => {
+  it('un texto canónico rellena la estructura y no deja nota', () => {
+    // Teclearlo a mano y componerlo con los botones dan la misma ficha.
+    expect(analizarFechaManual('c.1975 - 1978')).toEqual({
+      fecha: { anio: 1975, aproximada: true, anioFin: 1978, sinConfirmar: false },
+      nota: '',
+    })
+    expect(analizarFechaManual('1978 [?]')).toEqual({
+      fecha: { anio: 1978, aproximada: false, anioFin: null, sinConfirmar: true },
+      nota: '',
+    })
+  })
+
+  it('lo imparseable se conserva íntegro como nota, rescatando el año', () => {
+    const r = analizarFechaManual('hacia 1972, quizá')
+    expect(r.nota).toBe('hacia 1972, quizá')
+    expect(r.fecha.anio).toBe(1972)
+    expect(r.fecha.aproximada).toBe(false)
+  })
+
+  it('sin ningún año, la nota queda sin año de búsqueda', () => {
+    const r = analizarFechaManual('finales de los setenta')
+    expect(r.nota).toBe('finales de los setenta')
+    expect(r.fecha.anio).toBeNull()
+  })
+
+  it('un rango invertido no se estructura: va a la nota para que alguien lo arregle', () => {
+    const r = analizarFechaManual('1978-1975')
+    expect(r.nota).toBe('1978-1975')
+    // Y aun así se rescata un año para no perder la obra en las búsquedas.
+    expect(r.fecha.anio).toBe(1978)
+  })
+
+  it('el vacío es «obra sin fechar», no una nota', () => {
+    expect(analizarFechaManual('   ')).toEqual({
+      fecha: { anio: null, aproximada: false, anioFin: null, sinConfirmar: false },
+      nota: '',
+    })
   })
 })

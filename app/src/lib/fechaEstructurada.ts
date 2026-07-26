@@ -1,36 +1,24 @@
 /**
- * `fecha_ejecucion` es y sigue siendo texto libre (RF-207): el esquema lo quiso
- * así porque la fecha de una obra rara vez es un dato limpio. Pero los cuatro
- * formatos acordados se pueden componer con controles táctiles, sin teclear:
+ * La fecha de ejecución vive en campos estructurados (ADR-004): anio_inicio,
+ * anio_fin y dos banderas. El texto publicable lo compone la BASE DE DATOS como
+ * columna generada; `componerFecha` de aquí produce el mismo texto y solo se usa
+ * para previsualizar en la interfaz antes de guardar.
  *
- *   1978            año exacto
- *   1975-1978       rango
- *   c. 1980         aproximado
- *   c. 1975-1978    rango aproximado
+ * Los cuatro formatos, y el sufijo «[?]» sobre cualquiera de ellos:
  *
- * Y sobre cualquiera de los cuatro, el sufijo `[?]` de la convención general del
- * esquema: `1978 [?]`, `c. 1975-1978 [?]`.
+ *   1978 · 1975-1978 · c. 1980 · c. 1975-1978
  *
  * **`c.` y `[?]` no son lo mismo**, y de ahí que sean dos banderas y no una:
  *
- *   - `c.` — **fecha aproximada**: la obra es de alrededor de ese año. El periodo
- *     está establecido; lo que no se conoce con exactitud es el año.
- *   - `[?]` — **fecha sin confirmar**: la fecha se desconoce, y el año que consta
- *     es una estimación.
+ *   - `c.` — fecha aproximada: la obra es de alrededor de ese año.
+ *   - `[?]` — sin confirmar: la fecha se desconoce y el año es una estimación.
  *
- * El sufijo se puede aplicar sobre cualquiera de los cuatro formatos, así que
- * tratar `[?]` como un quinto formato en vez de como una bandera dejaría esas
- * combinaciones sin poder expresarse.
- *
- * Componer en vez de escribir tiene dos ventajas que importan en el almacén: no
- * hay que sacar el teclado, y es imposible producir un formato inválido.
- *
- * El precio es que hay textos legítimos que estos controles no representan
- * («finales de los setenta», «1978 [?]»). Para eso existe `descomponerFecha`: si
- * devuelve null, la interfaz debe ofrecer un campo de texto y NO reescribir lo
- * que ya había. Perder un matiz que alguien escribió a mano sería peor que
- * obligarle a teclear.
+ * `descomponerFecha` es la inversa, y desde ADR-004 su papel es el análisis de
+ * la fecha escrita a mano (`analizarFechaManual`): lo tecleado acaba en la
+ * estructura siempre que sea posible, y solo lo imparseable queda como nota.
  */
+
+import { anioParaBuscar } from './fechas'
 
 export interface FechaEstructurada {
   anio: number | null
@@ -110,4 +98,25 @@ export function ajustarAnio(anio: number | null, delta: number): number {
  */
 export function fechaArrastrada(anterior: FechaEstructurada): FechaEstructurada {
   return { ...anterior }
+}
+
+/**
+ * Análisis de la fecha escrita a mano, para que lo tecleado acabe en los campos
+ * estructurados de la base siempre que sea posible:
+ *
+ *  - Texto canónico (los cuatro formatos, con o sin «[?]») → estructura llena y
+ *    nota vacía: escribir «c.1975 - 1978» a mano y componerlo con los botones
+ *    dejan la ficha EXACTAMENTE igual.
+ *  - Cualquier otro texto → se conserva íntegro como nota (es lo que se
+ *    publica), y se rescata el primer año plausible hacia `anio` para que la
+ *    obra no desaparezca de las búsquedas por época.
+ */
+export function analizarFechaManual(texto: string): { fecha: FechaEstructurada; nota: string } {
+  const limpio = texto.trim()
+  const canonica = descomponerFecha(limpio)
+  if (canonica) return { fecha: canonica, nota: '' }
+  return {
+    fecha: { ...FECHA_VACIA, anio: anioParaBuscar(limpio) },
+    nota: limpio,
+  }
 }

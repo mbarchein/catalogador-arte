@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
-import { derivarFechaOrden, mostrarFecha } from '../../lib/fechas'
+import { mostrarFecha } from '../../lib/fechas'
 import { avisoExistencia, avisoTituloAtribuido, mostrarMedidas, mostrarTitulo } from '../../lib/titulo'
 import {
   ETIQUETA_ARTISTA,
@@ -16,12 +16,19 @@ import {
 import {
   ANIO_MINIMO,
   ajustarAnio,
+  analizarFechaManual,
   anioMaximo,
   componerFecha,
-  descomponerFecha,
-  type FechaEstructurada,
 } from '../../lib/fechaEstructurada'
-import { BarraAcciones, Fichas, Grupo, Interruptor, PasoAnio, TriEstadoIconos } from '../../components/ui'
+import {
+  BarraAcciones,
+  Conmutador,
+  Fichas,
+  Grupo,
+  Interruptor,
+  PasoAnio,
+  TriEstadoIconos,
+} from '../../components/ui'
 import { normalizarUbicacion, ubicacionParaGuardar } from '../../lib/ubicacion'
 import { GaleriaObra } from './GaleriaObra'
 import { useObra } from './useObras'
@@ -250,8 +257,12 @@ function FormularioEdicion({
         titulo: datos.titulo.trim(),
         titulo_atribuido: datos.titulo_atribuido,
         tipo_obra: datos.tipo_obra.trim(),
-        fecha_ejecucion: datos.fecha_ejecucion.trim(),
-        fecha_orden: derivarFechaOrden(datos.fecha_ejecucion),
+        // fecha_ejecucion no se envía: la compone la base (columna generada).
+        anio_inicio: datos.anio_inicio,
+        anio_fin: datos.anio_fin,
+        fecha_aproximada: datos.anio_inicio != null && datos.fecha_aproximada,
+        fecha_sin_confirmar: datos.anio_inicio != null && datos.fecha_sin_confirmar,
+        fecha_nota: datos.fecha_nota.trim(),
         tecnica: datos.tecnica.trim(),
         soporte: datos.soporte.trim(),
         alto_cm: datos.alto_cm,
@@ -330,10 +341,7 @@ function FormularioEdicion({
       </Grupo>
 
       <Grupo titulo="Fecha de ejecución">
-        <CampoFecha
-          texto={datos.fecha_ejecucion}
-          alCambiar={(v) => set('fecha_ejecucion', v)}
-        />
+        <CampoFecha datos={datos} set={set} />
       </Grupo>
 
       <Grupo titulo="Con la obra delante" pista="medidas, materia y firma">
@@ -536,130 +544,186 @@ function FormularioEdicion({
 }
 
 /**
- * Fecha de ejecución con controles táctiles, y con una salida de emergencia.
+ * Fecha de ejecución sobre los campos estructurados (ADR-004), con los mismos
+ * controles que la captura, y una vía de escape que TAMBIÉN estructura:
  *
- * `fecha_ejecucion` es texto libre por decisión del esquema (RF-207), y hay
- * anotaciones legítimas que los botones no saben representar: «finales de los
- * setenta», «1978 [?]», «siglo XX». Cuando el valor guardado es una de esas, este
- * campo **muestra el texto y no lo toca**. Reescribirlo para que encajara en los
- * controles destruiría un matiz que alguien puso a conciencia, y eso es peor que
- * obligar a teclear.
+ * «Escribir a mano» analiza lo tecleado. Si es uno de los formatos canónicos
+ * («c.1975 - 1978», con las variantes de catálogo), rellena los campos
+ * estructurados y no queda nota: teclearlo y componerlo con botones dan la
+ * misma ficha. Solo lo imparseable («finales de los setenta») se conserva como
+ * nota — es lo que se publica — y aun entonces se rescata el primer año
+ * plausible para que la obra no desaparezca de las búsquedas por época.
  */
-function CampoFecha({ texto, alCambiar }: { texto: string; alCambiar: (v: string) => void }) {
-  const estructurada = descomponerFecha(texto)
-  const [aMano, setAMano] = useState(false)
-  const [rango, setRango] = useState(() => estructurada?.anioFin != null)
+function CampoFecha({
+  datos,
+  set,
+}: {
+  datos: Obra
+  set: <K extends keyof Obra>(campo: K, valor: Obra[K]) => void
+}) {
+  const [rango, setRango] = useState(() => datos.anio_fin != null)
+  const [aMano, setAMano] = useState(() => datos.fecha_nota !== '')
+  const [borrador, setBorrador] = useState(() => datos.fecha_nota || datos.fecha_ejecucion)
 
-  if (estructurada === null || aMano) {
+  const estructura = {
+    anio: datos.anio_inicio,
+    anioFin: rango ? datos.anio_fin : null,
+    aproximada: datos.fecha_aproximada,
+    sinConfirmar: datos.fecha_sin_confirmar,
+  }
+
+  function aplicarManual() {
+    const { fecha, nota } = analizarFechaManual(borrador)
+    set('anio_inicio', fecha.anio)
+    set('anio_fin', fecha.anioFin)
+    set('fecha_aproximada', fecha.aproximada)
+    set('fecha_sin_confirmar', fecha.sinConfirmar)
+    set('fecha_nota', nota)
+    setRango(fecha.anioFin != null)
+    // Si el texto era canónico, ya está estructurado: se vuelve a los botones.
+    if (nota === '') setAMano(false)
+  }
+
+  if (aMano) {
+    const { fecha, nota } = analizarFechaManual(borrador)
     return (
       <div>
         <label className="etiqueta" htmlFor="e-fecha">
-          Fecha de ejecución
+          Fecha, escrita a mano
         </label>
-        <input
-          id="e-fecha"
-          className="campo"
-          value={texto}
-          onChange={(e) => alCambiar(e.target.value)}
-          placeholder="1978 · 1975-1978 · c. 1980"
-        />
-        {estructurada === null ? (
-          <p className="mt-1 text-xs text-amber-800">
-            Este texto no se puede representar con los botones, así que se edita a mano y se conserva
-            tal cual.{' '}
-            <button
-              type="button"
-              className="underline"
-              onClick={() => {
-                alCambiar('')
-                setRango(false)
-                setAMano(false)
-              }}
-            >
-              Vaciar y usar los botones
-            </button>
-          </p>
-        ) : (
-          <button
-            type="button"
-            className="mt-1 text-xs underline text-stone-600"
-            onClick={() => setAMano(false)}
-          >
-            Volver a los botones
+        <div className="flex gap-2">
+          <input
+            id="e-fecha"
+            className="campo flex-1"
+            value={borrador}
+            onChange={(e) => setBorrador(e.target.value)}
+            onBlur={aplicarManual}
+            placeholder="1978 · c. 1975-1978 · finales de los setenta"
+          />
+          <button type="button" className="boton-secundario shrink-0" onClick={aplicarManual}>
+            Aplicar
           </button>
-        )}
+        </div>
+        {/* Se anticipa el resultado del análisis ANTES de aplicar: saber si lo
+            tecleado se estructurará o quedará como nota evita sorpresas. */}
+        <p aria-live="polite" className="mt-1 text-xs text-stone-500">
+          {borrador.trim() === '' ? (
+            'Vacío: obra sin fechar.'
+          ) : nota === '' ? (
+            <>Se reconoce como «{componerFecha(fecha)}» y se guardará estructurada.</>
+          ) : fecha.anio != null ? (
+            <>Se guardará tal cual, y se encontrará al buscar por {fecha.anio}.</>
+          ) : (
+            'Se guardará tal cual. Sin ningún año, no aparecerá en las búsquedas por época.'
+          )}
+        </p>
+        <button
+          type="button"
+          className="mt-1 text-xs text-stone-600 underline"
+          onClick={() => {
+            aplicarManual()
+            setAMano(false)
+          }}
+        >
+          Volver a los botones
+        </button>
       </div>
     )
   }
 
-  const f = estructurada
-  function poner(cambio: Partial<FechaEstructurada>, conRango = rango) {
-    const nueva = { ...f, ...cambio }
-    alCambiar(componerFecha(conRango ? nueva : { ...nueva, anioFin: null }))
+  function poner(cambios: {
+    anio?: number | null
+    anioFin?: number | null
+    aproximada?: boolean
+    sinConfirmar?: boolean
+  }) {
+    if ('anio' in cambios) set('anio_inicio', cambios.anio ?? null)
+    if ('anioFin' in cambios) set('anio_fin', cambios.anioFin ?? null)
+    if ('aproximada' in cambios) set('fecha_aproximada', cambios.aproximada ?? false)
+    if ('sinConfirmar' in cambios) set('fecha_sin_confirmar', cambios.sinConfirmar ?? false)
   }
 
   return (
     <div className="space-y-3">
-      <PasoAnio
-        id="e-anio"
-        etiqueta={rango ? 'Año inicial' : 'Año de ejecución'}
-        valor={f.anio}
-        minimo={ANIO_MINIMO}
-        maximo={anioMaximo()}
-        alCambiar={(anio) => poner({ anio })}
-      />
-
-      <div className="grid grid-cols-2 gap-2">
-        <Interruptor
-          etiqueta="Aproximada"
-          ayuda="c. 1980 — de alrededor de ese año"
-          activo={f.aproximada}
-          alCambiar={(v) => poner({ aproximada: v })}
-        />
-        <Interruptor
-          etiqueta="Rango"
-          ayuda="1975-1978"
-          activo={rango}
-          alCambiar={(v) => {
-            setRango(v)
-            poner(v && f.anio != null && f.anioFin == null ? { anioFin: ajustarAnio(f.anio, 1) } : {}, v)
-          }}
-        />
-      </div>
-
-      {/* Ver la nota de CapturaPage sobre la diferencia entre las dos banderas. */}
-      <Interruptor
-        etiqueta="Sin confirmar"
-        ayuda="[?] — se desconoce; el año es una estimación"
-        activo={f.sinConfirmar}
-        alCambiar={(v) => poner({ sinConfirmar: v })}
-      />
-
-      {rango && (
+      {rango ? (
+        /* Las dos fechas del rango en la misma línea: son un solo dato. */
+        <div className="grid grid-cols-2 gap-2">
+          <PasoAnio
+            id="e-anio"
+            etiqueta="Año inicial"
+            compacto
+            valor={estructura.anio}
+            minimo={ANIO_MINIMO}
+            maximo={anioMaximo()}
+            alCambiar={(anio) => poner({ anio })}
+          />
+          <PasoAnio
+            id="e-anio-fin"
+            etiqueta="Año final"
+            compacto
+            valor={estructura.anioFin}
+            minimo={ANIO_MINIMO}
+            maximo={anioMaximo()}
+            alCambiar={(anioFin) => poner({ anioFin })}
+          />
+        </div>
+      ) : (
         <PasoAnio
-          id="e-anio-fin"
-          etiqueta="Año final"
-          valor={f.anioFin}
+          id="e-anio"
+          etiqueta="Año"
+          valor={estructura.anio}
           minimo={ANIO_MINIMO}
           maximo={anioMaximo()}
-          alCambiar={(anioFin) => poner({ anioFin })}
+          alCambiar={(anio) => poner({ anio })}
         />
       )}
 
+      <div className="grid grid-cols-3 gap-2">
+        <Conmutador
+          etiqueta="Aproximada"
+          activo={estructura.aproximada}
+          alCambiar={(v) => poner({ aproximada: v })}
+        />
+        <Conmutador
+          etiqueta="Rango"
+          activo={rango}
+          alCambiar={(v) => {
+            setRango(v)
+            if (v && estructura.anio != null && datos.anio_fin == null) {
+              poner({ anioFin: ajustarAnio(estructura.anio, 1) })
+            }
+            if (!v) poner({ anioFin: null })
+          }}
+        />
+        <Conmutador
+          etiqueta="Sin confirmar"
+          activo={estructura.sinConfirmar}
+          alCambiar={(v) => poner({ sinConfirmar: v })}
+        />
+      </div>
+
+      <p className="text-xs text-stone-500">
+        «Aproximada»: de alrededor de ese año (c.). «Sin confirmar»: se desconoce; el año es una
+        estimación ([?]).
+      </p>
+
       <div className="flex items-center justify-between gap-2 rounded-lg bg-stone-100 px-3 py-2">
         <span id="vista-fecha" aria-live="polite" className="text-sm">
-          {f.anio == null ? (
+          {estructura.anio == null ? (
             <span className="text-stone-500">Sin fechar</span>
           ) : (
             <>
-              Se guardará como <span className="font-medium">{texto}</span>
+              Se guardará como <span className="font-medium">{componerFecha(estructura)}</span>
             </>
           )}
         </span>
         <button
           type="button"
-          className="shrink-0 text-xs underline text-stone-600"
-          onClick={() => setAMano(true)}
+          className="shrink-0 text-xs text-stone-600 underline"
+          onClick={() => {
+            setBorrador(componerFecha(estructura))
+            setAMano(true)
+          }}
         >
           Escribir a mano
         </button>

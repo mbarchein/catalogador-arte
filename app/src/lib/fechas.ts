@@ -1,17 +1,14 @@
 /**
- * RF-207: `fecha_ejecucion` es texto libre porque la fecha de una obra rara vez
- * es un dato limpio — puede ser exacta, un rango, una aproximación o un rango
- * aproximado. `fecha_orden` es el número auxiliar que permite ordenar y filtrar
- * ese texto ambiguo, y no se publica nunca.
+ * Rescata un año buscable de un texto libre de fecha.
  *
- * Criterio del esquema: se toma el año de inicio del rango, o el año aproximado.
- *   "1978"          → 1978
- *   "1975-1978"     → 1975
- *   "c. 1980"       → 1980
- *   "c. 1975-1978"  → 1975
+ * Desde ADR-004 la fecha vive en campos estructurados y esta función solo actúa
+ * sobre `fecha_nota` —la redacción a mano que la estructura no representa—:
+ * «hacia 1972, quizá» sigue apareciendo al buscar los setenta porque de aquí
+ * sale su `anio_inicio`. Criterio heredado del esquema: el primer año plausible
+ * del texto.
  */
-export function derivarFechaOrden(fechaEjecucion: string): number | null {
-  const encontrado = fechaEjecucion.match(/\d{4}/)
+export function anioParaBuscar(texto: string): number | null {
+  const encontrado = texto.match(/\d{4}/)
   if (!encontrado) return null
 
   const anio = Number(encontrado[0])

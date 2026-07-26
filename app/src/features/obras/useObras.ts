@@ -5,7 +5,8 @@ import type { FondoArtista, Obra } from '../../lib/tipos'
 
 const CAMPOS = `
   id_catalogacion, artista, titulo, titulo_atribuido, tipo_obra,
-  fecha_ejecucion, fecha_orden, tecnica, soporte,
+  fecha_ejecucion, anio_inicio, anio_fin, fecha_aproximada, fecha_sin_confirmar, fecha_nota,
+  tecnica, soporte,
   alto_cm, ancho_cm, profundidad_cm,
   firmada, firma_descripcion, fechada_en_obra,
   estado_conservacion, ubicacion_fisica, estado_existencia,
@@ -31,8 +32,8 @@ export function useObras(busqueda: string) {
       // RLS ya las oculta al Lector, pero un catalogador sí las ve, así que el
       // filtro explícito hace falta también aquí.
       .eq('activo', true)
-      // RF-207: se ordena por el campo auxiliar, no por el texto de la fecha.
-      .order('fecha_orden', { ascending: true, nullsFirst: false })
+      // Cronológico por el año estructurado; las obras sin fechar, al final.
+      .order('anio_inicio', { ascending: true, nullsFirst: false })
       .order('id_catalogacion', { ascending: true })
 
     const termino = busqueda.trim()

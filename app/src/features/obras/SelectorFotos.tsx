@@ -160,6 +160,7 @@ export function SelectorFotos({
           <Fichas
             id={`tipo-${abiertaToma.clave}`}
             etiqueta="Tipo de toma"
+            columnas={3}
             opciones={(Object.keys(ETIQUETA_TIPO_TOMA) as ValorTipoToma[]).map((v) => ({
               valor: v,
               texto: ETIQUETA_TIPO_TOMA[v],

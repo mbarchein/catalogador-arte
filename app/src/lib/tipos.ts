@@ -47,8 +47,13 @@ export interface Obra {
   titulo: string
   titulo_atribuido: ValorTituloAtribuido
   tipo_obra: string
+  /** Generada por la base desde los campos estructurados. Solo lectura. */
   fecha_ejecucion: string
-  fecha_orden: number | null
+  anio_inicio: number | null
+  anio_fin: number | null
+  fecha_aproximada: boolean
+  fecha_sin_confirmar: boolean
+  fecha_nota: string
   tecnica: string
   soporte: string
   alto_cm: number | null

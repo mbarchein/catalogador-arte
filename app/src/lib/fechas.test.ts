@@ -1,48 +1,46 @@
 import { describe, expect, it } from 'vitest'
-import { derivarFechaOrden, mostrarFecha } from './fechas'
+import { anioParaBuscar, mostrarFecha } from './fechas'
 
-describe('derivarFechaOrden (RF-207)', () => {
+describe('anioParaBuscar (rescate del año de una fecha_nota, ADR-004)', () => {
   it('toma el año de una fecha exacta', () => {
-    expect(derivarFechaOrden('1978')).toBe(1978)
+    expect(anioParaBuscar('1978')).toBe(1978)
   })
 
   it('toma el año de inicio de un rango', () => {
-    expect(derivarFechaOrden('1975-1978')).toBe(1975)
+    expect(anioParaBuscar('1975-1978')).toBe(1975)
   })
 
   it('toma el año de una fecha aproximada', () => {
-    expect(derivarFechaOrden('c. 1980')).toBe(1980)
+    expect(anioParaBuscar('c. 1980')).toBe(1980)
   })
 
   it('toma el año de inicio de un rango aproximado', () => {
-    expect(derivarFechaOrden('c. 1975-1978')).toBe(1975)
+    expect(anioParaBuscar('c. 1975-1978')).toBe(1975)
   })
 
   it('devuelve null cuando no hay fecha', () => {
-    expect(derivarFechaOrden('')).toBeNull()
-    expect(derivarFechaOrden('sin fechar')).toBeNull()
+    expect(anioParaBuscar('')).toBeNull()
+    expect(anioParaBuscar('sin fechar')).toBeNull()
   })
 
   it('ignora un año implausible en vez de ordenar mal en silencio', () => {
     // Cuatro dígitos que no son un año: una medida, un número de inventario
     // antiguo o un dedazo. Ordenar por 197 o por 9999 sería peor que no ordenar.
-    expect(derivarFechaOrden('0197')).toBeNull()
-    expect(derivarFechaOrden('9999')).toBeNull()
+    expect(anioParaBuscar('0197')).toBeNull()
+    expect(anioParaBuscar('9999')).toBeNull()
   })
 
   it('acepta el año en curso', () => {
     const esteAnio = new Date().getFullYear()
-    expect(derivarFechaOrden(String(esteAnio))).toBe(esteAnio)
+    expect(anioParaBuscar(String(esteAnio))).toBe(esteAnio)
   })
 
-  it('ordena correctamente un conjunto con los cuatro formatos mezclados', () => {
-    const fechas = ['c. 1975-1978', '1968', '1978', 'c. 1980', '']
-    const ordenadas = [...fechas].sort(
-      (a, b) => (derivarFechaOrden(a) ?? Infinity) - (derivarFechaOrden(b) ?? Infinity),
-    )
-    // Las obras sin fecha van al final: no se sabe dónde colocarlas, y ponerlas
-    // primero fingiría una cronología que no existe.
-    expect(ordenadas).toEqual(['1968', 'c. 1975-1978', '1978', 'c. 1980', ''])
+  it('rescata el año de una redacción libre', () => {
+    // El caso real de fecha_nota: la estructura no representa el matiz, pero el
+    // año debe seguir sirviendo para las búsquedas por época.
+    expect(anioParaBuscar('hacia 1972, quizá')).toBe(1972)
+    expect(anioParaBuscar('anterior a 1965 según la familia')).toBe(1965)
+    expect(anioParaBuscar('finales de los setenta')).toBeNull()
   })
 })
 
