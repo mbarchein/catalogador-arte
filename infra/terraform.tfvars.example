@@ -21,12 +21,12 @@ supabase_organization_id = ""
 
 # URL pública de la aplicación. Supabase Auth la usa para construir los enlaces
 # de los correos de invitación y de recuperación de contraseña.
-supabase_site_url = "https://catalogador-arte.pages.dev"
+supabase_site_url = "https://catalogador-arte.vercel.app"
 
-# --- Cloudflare -------------------------------------------------------------
-# Token con permisos: Workers R2 Storage:Edit y Cloudflare Pages:Edit
-cloudflare_api_token  = ""
-cloudflare_account_id = ""
+# --- Vercel -------------------------------------------------------------
+# Token: https://vercel.com/account/tokens · el org id sale de `vercel whoami`
+vercel_token  = ""
+vercel_org_id = ""
 
 # --- GitHub -----------------------------------------------------------------
 github_owner      = ""

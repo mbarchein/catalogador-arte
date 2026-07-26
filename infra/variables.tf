@@ -46,23 +46,20 @@ variable "supabase_site_url" {
   type        = string
 }
 
-# --- Cloudflare -------------------------------------------------------------
+# --- Vercel --------------------------------------------------------------
+# El frontend se aloja en Vercel (ADR-005): los bloqueos de LaLiga a IPs de
+# Cloudflare hacían inviable Pages desde España, y Vercel está probado desde
+# aquí con la otra aplicación del equipo.
 
-variable "cloudflare_api_token" {
-  description = "Token de API de Cloudflare con permiso de edición sobre R2 y Pages"
+variable "vercel_token" {
+  description = "Token de API de Vercel (https://vercel.com/account/tokens)"
   type        = string
   sensitive   = true
 }
 
-variable "cloudflare_account_id" {
-  description = "Identificador de la cuenta de Cloudflare"
+variable "vercel_org_id" {
+  description = "Identificador de la cuenta/equipo de Vercel, para la CLI en CI"
   type        = string
-}
-
-variable "r2_location" {
-  description = "Pista de ubicación de los buckets de R2. EEUR mantiene los datos en la Unión Europea"
-  type        = string
-  default     = "EEUR"
 }
 
 # --- GitHub -----------------------------------------------------------------

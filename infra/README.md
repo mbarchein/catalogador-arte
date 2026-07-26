@@ -1,10 +1,12 @@
 # Infraestructura
 
-Toda la plataforma del proyecto como código: proyecto de Supabase, buckets de Cloudflare R2,
-alojamiento en Cloudflare Pages y configuración del repositorio de GitHub.
+Toda la plataforma del proyecto como código: proyecto de Supabase, alojamiento del frontend en
+Vercel y configuración del repositorio de GitHub. Cloudflare solo queda en `bootstrap/`, para el
+bucket R2 del estado de Terraform — tráfico de operador, no de usuarios.
 
-Decisiones que justifican esto: [ADR-001](../docs/decisiones/ADR-001-stack-y-despliegue.md) (stack) y
-[ADR-002](../docs/decisiones/ADR-002-almacenamiento-de-imagenes.md) (almacenamiento).
+Decisiones que justifican esto: [ADR-001](../docs/decisiones/ADR-001-stack-y-despliegue.md) (stack),
+[ADR-002](../docs/decisiones/ADR-002-almacenamiento-de-imagenes.md) (almacenamiento) y
+[ADR-005](../docs/decisiones/ADR-005-vercel-repo-publico-y-vivo.md) (Vercel, repo público y vivo).
 
 ## Qué gestiona Terraform y qué no
 
@@ -15,9 +17,9 @@ deliberada:
 |---|---|
 | Proyecto de Supabase y sus ajustes de plataforma | Tablas, columnas, restricciones e índices |
 | Ajustes de autenticación y de la API | **Políticas RLS** |
-| Buckets de R2 | *Triggers* (entre ellos el que impone el bloqueo de edición) |
-| Proyecto de Pages y variables de entorno | Funciones y vistas |
-| Repositorio, protección de ramas, secretos y variables de Actions | Datos de referencia |
+| Proyecto de Vercel | *Triggers* (entre ellos el que impone el bloqueo de edición) |
+| Repositorio (público), protección de ramas | Funciones y vistas |
+| Secretos y variables de Actions | Datos de referencia y publicación de Realtime |
 
 El esquema necesita migraciones ordenadas y reversibles sobre datos ya cargados, que es exactamente lo
 que Terraform no sabe hacer: su modelo es converger a un estado deseado, no recorrer una secuencia de
@@ -36,7 +38,7 @@ infra/
 ├── providers.tf             Configuración de los tres proveedores
 ├── variables.tf             Entradas, con validación
 ├── supabase.tf              Proyecto y ajustes de plataforma
-├── cloudflare.tf            Buckets de R2 y proyecto de Pages
+├── vercel.tf                Proyecto del frontend
 ├── github.tf                Repositorio, protección de ramas, secretos y variables
 ├── terraform.tfvars.example Plantilla de valores; copiar a terraform.tfvars
 ├── backend.hcl.example      Plantilla del backend; copiar a backend.hcl
@@ -55,8 +57,9 @@ Necesitas tres tokens. Ninguno se guarda en el repositorio.
 | Token | Dónde se obtiene | Permisos |
 |---|---|---|
 | Supabase | Panel → Account → Access Tokens | Completo sobre la organización |
-| Cloudflare | Panel → My Profile → API Tokens | `Workers R2 Storage:Edit` y `Cloudflare Pages:Edit` |
+| Vercel | vercel.com → Account → Tokens | Completo (el provider crea el proyecto) |
 | GitHub | Settings → Developer settings → Tokens | `repo` y `admin:repo_hook` |
+| Cloudflare | Solo para `bootstrap/` (bucket del estado) | `Workers R2 Storage:Edit` |
 
 Además, un par de claves de acceso de R2 (Panel → R2 → Manage API tokens) para que Terraform pueda
 escribir su propio estado.
@@ -93,7 +96,7 @@ terraform apply
 terraform output
 ```
 
-Deben aparecer la referencia del proyecto de Supabase, los tres buckets y la URL de Pages. Los secretos
+Deben aparecer la referencia del proyecto de Supabase y la URL de Vercel. Los secretos
 y variables del repositorio quedan puestos, de modo que el flujo de integración continua ya tiene lo que
 necesita sin tocar el panel de GitHub.
 
@@ -114,7 +117,7 @@ a cambio de la posibilidad de destruir el proyecto por un *merge* descuidado.
 
 **La aplicación sí se despliega sola** (`.github/workflows/desplegar.yml`): al fusionar en `main`,
 verifica de nuevo —tests de RLS incluidos—, aplica las migraciones con la CLI de Supabase y publica el
-frontend en Pages, en ese orden, porque el frontend nuevo puede depender del esquema nuevo y lo
+frontend en Vercel, en ese orden, porque el frontend nuevo puede depender del esquema nuevo y lo
 contrario nunca. La frontera es la misma de siempre: la *plataforma* se aplica a mano, la *aplicación*
 se despliega en cada merge. Todos los secretos y variables que consume el pipeline los pone este
 Terraform, así que el pipeline queda inerte hasta el primer `apply`.
@@ -129,10 +132,6 @@ alfanuméricos: acaba dentro de URIs de conexión y un carácter especial obliga
 uso). Se recupera con `terraform output -raw db_password`, y llega sola al secreto de Actions que usa
 el despliegue. La API de Supabase no permite leerla de vuelta, así que `supabase_project` la ignora
 tras la creación (`ignore_changes`); si se pierde el estado, se rota desde el panel.
-
-**El versionado de objetos de los buckets de R2** no está expuesto por el provider. ADR-002 lo exige
-para el bucket de másters, donde un borrado accidental sería irreparable: hay que activarlo a mano desde
-el panel de Cloudflare tras el primer `apply`. Conviene revisarlo cuando se actualice el provider.
 
 **El repositorio ya existe en local.** Si lo creas primero a mano en GitHub, pon
 `gestionar_repositorio = false` o impórtalo:

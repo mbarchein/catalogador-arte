@@ -6,9 +6,9 @@ terraform {
       source  = "supabase/supabase"
       version = "~> 1.5"
     }
-    cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "~> 5.0"
+    vercel = {
+      source  = "vercel/vercel"
+      version = "~> 3.0"
     }
     github = {
       source  = "integrations/github"

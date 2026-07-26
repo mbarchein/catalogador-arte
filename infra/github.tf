@@ -10,7 +10,12 @@ resource "github_repository" "app" {
 
   name        = var.github_repository
   description = "Inventario y catálogo razonado — Alberto Rotili / María Ruiz Campins"
-  visibility  = "private"
+  # Público por decisión del equipo (ADR-005). Nada del repositorio es secreto:
+  # la clave anónima lo es por diseño, las claves JWT del stack local son las de
+  # demostración bien conocidas de Supabase, y el perímetro real son las
+  # políticas RLS. Los secretos de verdad viven en Actions y en el estado de
+  # Terraform, nunca en el árbol.
+  visibility = "public"
 
   has_issues   = true
   has_projects = false
@@ -70,10 +75,22 @@ resource "github_actions_secret" "supabase_db_password" {
   plaintext_value = local.db_password
 }
 
-resource "github_actions_secret" "cloudflare_api_token" {
+resource "github_actions_secret" "vercel_token" {
   repository      = local.repo
-  secret_name     = "CLOUDFLARE_API_TOKEN"
-  plaintext_value = var.cloudflare_api_token
+  secret_name     = "VERCEL_TOKEN"
+  plaintext_value = var.vercel_token
+}
+
+resource "github_actions_secret" "vercel_org_id" {
+  repository      = local.repo
+  secret_name     = "VERCEL_ORG_ID"
+  plaintext_value = var.vercel_org_id
+}
+
+resource "github_actions_secret" "vercel_project_id" {
+  repository      = local.repo
+  secret_name     = "VERCEL_PROJECT_ID"
+  plaintext_value = vercel_project.app.id
 }
 
 # --- Variables --------------------------------------------------------------
@@ -104,35 +121,5 @@ resource "github_actions_variable" "supabase_anon_key" {
 resource "github_actions_variable" "app_url" {
   repository    = local.repo
   variable_name = "APP_URL"
-  value         = "https://${cloudflare_pages_project.app.name}.pages.dev"
-}
-
-resource "github_actions_variable" "cloudflare_account_id" {
-  repository    = local.repo
-  variable_name = "CLOUDFLARE_ACCOUNT_ID"
-  value         = var.cloudflare_account_id
-}
-
-resource "github_actions_variable" "cloudflare_pages_project" {
-  repository    = local.repo
-  variable_name = "CLOUDFLARE_PAGES_PROJECT"
-  value         = cloudflare_pages_project.app.name
-}
-
-resource "github_actions_variable" "r2_bucket_derivadas" {
-  repository    = local.repo
-  variable_name = "R2_BUCKET_DERIVADAS"
-  value         = cloudflare_r2_bucket.derivadas.name
-}
-
-resource "github_actions_variable" "r2_bucket_masters" {
-  repository    = local.repo
-  variable_name = "R2_BUCKET_MASTERS"
-  value         = cloudflare_r2_bucket.masters.name
-}
-
-resource "github_actions_variable" "r2_bucket_respaldos" {
-  repository    = local.repo
-  variable_name = "R2_BUCKET_RESPALDOS"
-  value         = cloudflare_r2_bucket.respaldos.name
+  value         = "https://${vercel_project.app.name}.vercel.app"
 }
