@@ -93,6 +93,7 @@ function normalizar(valor: unknown): Lote {
         anio: typeof fecha.anio === 'number' ? fecha.anio : null,
         aproximada: fecha.aproximada === true,
         anioFin: typeof fecha.anioFin === 'number' ? fecha.anioFin : null,
+        sinConfirmar: fecha.sinConfirmar === true,
       },
       tecnica: typeof arrastrados.tecnica === 'string' ? arrastrados.tecnica : '',
       ubicacion: typeof arrastrados.ubicacion === 'string' ? arrastrados.ubicacion : '',

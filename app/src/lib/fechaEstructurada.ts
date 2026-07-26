@@ -8,6 +8,19 @@
  *   c. 1980         aproximado
  *   c. 1975-1978    rango aproximado
  *
+ * Y sobre cualquiera de los cuatro, el sufijo `[?]` de la convención general del
+ * esquema: `1978 [?]`, `c. 1975-1978 [?]`.
+ *
+ * **`c.` y `[?]` no son lo mismo**, y de ahí que sean dos banderas y no una:
+ *
+ *   - `c.` habla de **precisión**: sabemos que es de alrededor de 1980, y es una
+ *     estimación histórico-artística fundada.
+ *   - `[?]` habla de **confianza**: alguien nos dijo 1978 y no lo hemos verificado.
+ *
+ * Se combinan, y el caso combinado existe: `c. 1975-1978 [?]` significa «estimamos
+ * mediados de los setenta, pero ni eso está confirmado». Tratar `[?]` como un
+ * quinto formato en vez de como una bandera dejaría ese caso sin poder expresarse.
+ *
  * Componer en vez de escribir tiene dos ventajas que importan en el almacén: no
  * hay que sacar el teclado, y es imposible producir un formato inválido.
  *
@@ -20,15 +33,19 @@
 
 export interface FechaEstructurada {
   anio: number | null
+  /** Precisión: estimación fundada. Se representa con el prefijo «c.». */
   aproximada: boolean
   /** Año final del rango, o null si es una fecha única. */
   anioFin: number | null
+  /** Confianza: dato no verificado. Se representa con el sufijo «[?]». */
+  sinConfirmar: boolean
 }
 
 export const FECHA_VACIA: FechaEstructurada = {
   anio: null,
   aproximada: false,
   anioFin: null,
+  sinConfirmar: false,
 }
 
 /** Límites plausibles para la obra de los dos fondos. */
@@ -40,14 +57,17 @@ export function anioMaximo(): number {
 export function componerFecha(f: FechaEstructurada): string {
   if (f.anio == null) return ''
   const prefijo = f.aproximada ? 'c. ' : ''
+  // El sufijo solo tiene sentido si hay un dato del que dudar: «[?]» a secas no
+  // dice nada, y una obra sin fechar ya se representa con el campo vacío.
+  const sufijo = f.sinConfirmar ? ' [?]' : ''
   // Un rango que acaba antes de empezar, o en el mismo año, no es un rango.
-  if (f.anioFin == null || f.anioFin <= f.anio) return `${prefijo}${f.anio}`
-  return `${prefijo}${f.anio}-${f.anioFin}`
+  if (f.anioFin == null || f.anioFin <= f.anio) return `${prefijo}${f.anio}${sufijo}`
+  return `${prefijo}${f.anio}-${f.anioFin}${sufijo}`
 }
 
 /**
- * Inversa de `componerFecha`. Devuelve null si el texto no es uno de los cuatro
- * formatos, para que la interfaz no intente representarlo con los controles.
+ * Inversa de `componerFecha`. Devuelve null si el texto no es uno de los formatos
+ * representables, para que la interfaz no intente reescribirlo con los controles.
  */
 export function descomponerFecha(texto: string): FechaEstructurada | null {
   const limpio = texto.trim()
@@ -55,7 +75,7 @@ export function descomponerFecha(texto: string): FechaEstructurada | null {
 
   // Se acepta «c.» y «ca.», con o sin espacio, porque son las dos formas que
   // aparecen en los catálogos. Al componer se emite siempre «c. ».
-  const patron = /^(c\.|ca\.)?\s*(\d{4})(?:\s*[-–]\s*(\d{4}))?$/i
+  const patron = /^(c\.|ca\.)?\s*(\d{4})(?:\s*[-–]\s*(\d{4}))?\s*(\[\?\])?$/i
   const encontrado = limpio.match(patron)
   if (!encontrado) return null
 
@@ -67,7 +87,12 @@ export function descomponerFecha(texto: string): FechaEstructurada | null {
   // arregle a conciencia.
   if (fin != null && fin <= anio) return null
 
-  return { anio, aproximada: Boolean(encontrado[1]), anioFin: fin }
+  return {
+    anio,
+    aproximada: Boolean(encontrado[1]),
+    anioFin: fin,
+    sinConfirmar: Boolean(encontrado[4]),
+  }
 }
 
 /** Ajusta el año dentro de los límites plausibles, para los botones + y −. */

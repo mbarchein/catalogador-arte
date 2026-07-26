@@ -52,7 +52,7 @@ describe('persistencia del lote', () => {
     const lote: Lote = {
       fijos: { artista: 'RUIZ_CAMPINS', tipoObra: 'Dibujo' },
       arrastrados: {
-        fecha: { anio: 1968, aproximada: true, anioFin: null },
+        fecha: { anio: 1968, aproximada: true, anioFin: null, sinConfirmar: true },
         tecnica: 'Carboncillo sobre papel',
         ubicacion: 'edificio b, habitacion 4',
       },
@@ -93,6 +93,7 @@ describe('resistencia a datos ajenos', () => {
       anio: null,
       aproximada: false,
       anioFin: null,
+      sinConfirmar: false,
     })
   })
 

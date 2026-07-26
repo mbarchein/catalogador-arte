@@ -584,13 +584,13 @@ function CampoFecha({ texto, alCambiar }: { texto: string; alCambiar: (v: string
         valor={f.anio}
         minimo={ANIO_MINIMO}
         maximo={anioMaximo()}
-        alCambiar={(delta) => poner({ anio: ajustarAnio(f.anio, delta) })}
+        alCambiar={(anio) => poner({ anio })}
       />
 
       <div className="grid grid-cols-2 gap-2">
         <Interruptor
           etiqueta="Aproximada"
-          ayuda="c. 1980"
+          ayuda="c. 1980 — estimación"
           activo={f.aproximada}
           alCambiar={(v) => poner({ aproximada: v })}
         />
@@ -605,6 +605,15 @@ function CampoFecha({ texto, alCambiar }: { texto: string; alCambiar: (v: string
         />
       </div>
 
+      {/* Ver la nota de CapturaPage: «Aproximada» y «Sin confirmar» responden a
+          preguntas distintas y se combinan. */}
+      <Interruptor
+        etiqueta="Sin confirmar"
+        ayuda="[?] — dato no verificado, distinto de una estimación"
+        activo={f.sinConfirmar}
+        alCambiar={(v) => poner({ sinConfirmar: v })}
+      />
+
       {rango && (
         <PasoAnio
           id="e-anio-fin"
@@ -612,12 +621,12 @@ function CampoFecha({ texto, alCambiar }: { texto: string; alCambiar: (v: string
           valor={f.anioFin}
           minimo={ANIO_MINIMO}
           maximo={anioMaximo()}
-          alCambiar={(delta) => poner({ anioFin: ajustarAnio(f.anioFin, delta) })}
+          alCambiar={(anioFin) => poner({ anioFin })}
         />
       )}
 
       <div className="flex items-center justify-between gap-2 rounded-lg bg-stone-100 px-3 py-2">
-        <span className="text-sm">
+        <span id="vista-fecha" aria-live="polite" className="text-sm">
           {f.anio == null ? (
             <span className="text-stone-500">Sin fechar</span>
           ) : (

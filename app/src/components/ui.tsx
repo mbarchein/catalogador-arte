@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TriEstado } from '../lib/tipos'
 
 // ── Iconos ──────────────────────────────────────────────────
@@ -188,6 +188,11 @@ function BotonRepetible({
  * Mantener pulsado acelera: sin eso, ir de 1968 a 1985 son diecisiete toques y
  * nadie lo hace — abriría el teclado, que es justo lo que se quiere evitar
  * cuando se cataloga de pie.
+ *
+ * `alCambiar` recibe el **año resultante**, no un incremento. La primera versión
+ * comunicaba incrementos, y teclear un año sobre el campo vacío daba un
+ * incremento de cero, que significa «parte del año en curso»: escribir 1978 en un
+ * campo vacío lo dejaba en 2026. Justo el caso de la primera obra de cada lote.
  */
 export function PasoAnio({
   valor,
@@ -198,19 +203,30 @@ export function PasoAnio({
   maximo,
 }: {
   valor: number | null
-  alCambiar: (delta: number) => void
+  alCambiar: (anio: number | null) => void
   id: string
   etiqueta: string
   minimo: number
   maximo: number
 }) {
+  // Borrador de lo que se está teclando. Sin él, el campo es controlado y «19»
+  // —dos dígitos, todavía no un año— se descartaría a cada pulsación, con lo que
+  // sería imposible escribir un año a mano.
+  const [borrador, setBorrador] = useState<string | null>(null)
+  const acotar = (n: number) => Math.min(maximo, Math.max(minimo, n))
+
+  function paso(delta: number) {
+    setBorrador(null)
+    alCambiar(acotar((valor ?? maximo) + delta))
+  }
+
   return (
     <div>
       <label className="etiqueta" htmlFor={id}>
         {etiqueta}
       </label>
       <div className="flex items-center gap-2">
-        <BotonRepetible alPaso={() => alCambiar(-1)} etiqueta={`${etiqueta}: un año menos`}>
+        <BotonRepetible alPaso={() => paso(-1)} etiqueta={`${etiqueta}: un año menos`}>
           <IconoMenos />
         </BotonRepetible>
 
@@ -218,18 +234,24 @@ export function PasoAnio({
           id={id}
           className="campo h-14 flex-1 text-center text-2xl font-semibold tabular-nums"
           inputMode="numeric"
-          value={valor ?? ''}
+          value={borrador ?? valor?.toString() ?? ''}
           placeholder="—"
+          onBlur={() => setBorrador(null)}
           onChange={(e) => {
-            const n = Number(e.target.value.replace(/\D/g, ''))
-            if (!Number.isFinite(n) || n === 0) return
-            // Se comunica como delta para que el ajuste de límites viva en un
-            // solo sitio y no se duplique aquí.
-            if (n >= minimo && n <= maximo) alCambiar(n - (valor ?? n))
+            const digitos = e.target.value.replace(/\D/g, '').slice(0, 4)
+            setBorrador(digitos)
+            if (digitos === '') {
+              // Vaciar el campo es «obra sin fechar», no un error.
+              alCambiar(null)
+              return
+            }
+            // Se propaga solo cuando ya es un año completo: acotar «19» a 1900
+            // mientras se escribe daría saltos absurdos en pantalla.
+            if (digitos.length === 4) alCambiar(acotar(Number(digitos)))
           }}
         />
 
-        <BotonRepetible alPaso={() => alCambiar(1)} etiqueta={`${etiqueta}: un año más`}>
+        <BotonRepetible alPaso={() => paso(1)} etiqueta={`${etiqueta}: un año más`}>
           <IconoMas />
         </BotonRepetible>
       </div>

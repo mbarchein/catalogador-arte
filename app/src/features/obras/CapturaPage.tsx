@@ -360,13 +360,14 @@ export function CapturaPage() {
             valor={fecha.anio}
             minimo={ANIO_MINIMO}
             maximo={anioMaximo()}
-            alCambiar={(delta) => ponerFecha({ anio: ajustarAnio(fecha.anio, delta) })}
+            alCambiar={(anio) => ponerFecha({ anio })}
           />
 
+          {/* Precisión: en qué medida sabemos cuándo se hizo. */}
           <div className="grid grid-cols-2 gap-2">
             <Interruptor
               etiqueta="Aproximada"
-              ayuda="c. 1980"
+              ayuda="c. 1980 — estimación"
               activo={fecha.aproximada}
               alCambiar={(v) => ponerFecha({ aproximada: v })}
             />
@@ -385,6 +386,17 @@ export function CapturaPage() {
             />
           </div>
 
+          {/* Confianza: a ancho completo y separado de los dos de arriba, porque
+              responde a otra pregunta. «Aproximada» dice que estimamos la fecha;
+              «Sin confirmar» dice que ni el dato que tenemos está verificado. Se
+              combinan: «c. 1975-1978 [?]» es una fecha legítima. */}
+          <Interruptor
+            etiqueta="Sin confirmar"
+            ayuda="[?] — dato no verificado, distinto de una estimación"
+            activo={fecha.sinConfirmar}
+            alCambiar={(v) => ponerFecha({ sinConfirmar: v })}
+          />
+
           {rango && (
             <PasoAnio
               id="anio-fin"
@@ -392,13 +404,19 @@ export function CapturaPage() {
               valor={fecha.anioFin}
               minimo={ANIO_MINIMO}
               maximo={anioMaximo()}
-              alCambiar={(delta) => ponerFecha({ anioFin: ajustarAnio(fecha.anioFin, delta) })}
+              alCambiar={(anioFin) => ponerFecha({ anioFin })}
             />
           )}
 
           {/* Se muestra lo que se va a guardar, no lo que se ha pulsado: el campo
               del esquema es texto, y conviene ver el texto. */}
-          <p className="rounded-lg bg-stone-100 px-3 py-2 text-sm">
+          {/* aria-live: al pulsar «Aproximada» o «Rango» el texto cambia sin que el
+              foco se mueva, así que quien use lector de pantalla no se enteraría. */}
+          <p
+            id="vista-fecha"
+            aria-live="polite"
+            className="rounded-lg bg-stone-100 px-3 py-2 text-sm"
+          >
             {fecha.anio == null ? (
               <span className="text-stone-500">Sin fechar</span>
             ) : (
