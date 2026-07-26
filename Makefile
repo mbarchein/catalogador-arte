@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help up down reset logs ps psql seed-users db-test test typecheck \
+.PHONY: help up down reset logs ps psql seed-users db-test test typecheck permisos \
         build preview clean verificar infra-check infra-plan infra-apply movil
 
 help: ## Lista de comandos
@@ -77,6 +77,14 @@ verificar: ## Todo lo que verifica CI: infra, tipos, tests de SQL y de frontend
 	$(MAKE) typecheck
 	$(MAKE) db-test
 	$(MAKE) test
+
+permisos: ## Recupera la propiedad de los ficheros que el contenedor creó como root
+	@# El contenedor de node corre como root, así que package-lock.json y otros
+	@# ficheros que genera dentro del montaje quedan sin permiso de escritura para
+	@# tu usuario. Esto lo devuelve, sin necesitar sudo en el anfitrión.
+	docker run --rm -v "$(PWD):/trabajo" -w /trabajo alpine \
+	  chown -R $(shell id -u):$(shell id -g) app
+	@echo "Propiedad restaurada."
 
 clean: ## Detiene todo y borra los volúmenes, base de datos incluida
 	docker compose --profile preview down -v
