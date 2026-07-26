@@ -1,0 +1,51 @@
+name: verificar
+
+# El nombre del job debe seguir siendo «verificar»: es el contexto que exige la
+# protección de la rama main, definida en infra/github.tf.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    name: verificar
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.15
+          terraform_wrapper: false
+
+      - name: Comprobar formato
+        run: terraform fmt -check -recursive -diff
+        working-directory: infra
+
+      # Sin backend: la validación no necesita credenciales ni acceso al estado.
+      - name: Validar configuración principal
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+        working-directory: infra
+
+      - name: Validar módulo de arranque
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+        working-directory: infra/bootstrap
+
+      # A medida que existan, se añaden aquí los pasos que faltan. El orden es el
+      # del plan de pruebas (docs/plan-de-pruebas.md):
+      #   1. Tests de políticas RLS contra una base efímera — la prioridad
+      #      absoluta: sin backend, RLS es el único perímetro de seguridad.
+      #   2. Tests unitarios del frontend.
+      #   3. Tests de extremo a extremo.
