@@ -55,7 +55,9 @@ resource "supabase_settings" "principal" {
   project_ref = supabase_project.principal.id
 
   auth = jsonencode({
-    site_url = var.supabase_site_url
+    # Los enlaces de los correos de invitación y recuperación apuntan al
+    # dominio propio, no a la URL de vercel.app.
+    site_url = local.url_app
 
     # Solo cuentas creadas por el superusuario: el catálogo no tiene registro
     # abierto ni zona pública (RF-101).

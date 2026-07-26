@@ -41,11 +41,6 @@ variable "supabase_db_password" {
   default     = null
 }
 
-variable "supabase_site_url" {
-  description = "URL pública de la aplicación, usada por Supabase Auth para construir los enlaces de correo"
-  type        = string
-}
-
 # --- Vercel --------------------------------------------------------------
 # El frontend se aloja en Vercel (ADR-005): los bloqueos de LaLiga a IPs de
 # Cloudflare hacían inviable Pages desde España, y Vercel está probado desde
@@ -60,6 +55,32 @@ variable "vercel_token" {
 variable "vercel_org_id" {
   description = "Identificador de la cuenta/equipo de Vercel, para la CLI en CI"
   type        = string
+}
+
+# --- Dominio (zona DNS en Cloudflare) ----------------------------------------
+
+variable "cloudflare_api_token" {
+  description = "Token de Cloudflare con permiso Zone:DNS:Edit sobre la zona del dominio"
+  type        = string
+  sensitive   = true
+}
+
+variable "dominio_zona" {
+  description = "Zona DNS que ya vive en Cloudflare"
+  type        = string
+  default     = "ruizcampins.com"
+}
+
+variable "subdominio_app" {
+  description = "Subdominio de la aplicación dentro de la zona"
+  type        = string
+  default     = "catalogo"
+}
+
+variable "vercel_cname_target" {
+  description = "Destino CNAME del edge de Vercel"
+  type        = string
+  default     = "cname.vercel-dns.com"
 }
 
 # --- Backblaze B2 (masters de archivo, ADR-002 actualizado) -----------------

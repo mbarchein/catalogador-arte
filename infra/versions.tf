@@ -10,6 +10,10 @@ terraform {
       source  = "vercel/vercel"
       version = "~> 3.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.0"
+    }
     github = {
       source  = "integrations/github"
       version = "~> 6.0"

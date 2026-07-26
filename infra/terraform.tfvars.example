@@ -19,14 +19,16 @@ supabase_organization_id = ""
 # Solo merece la pena fijarla si ya existe una, p. ej. al importar un proyecto.
 #supabase_db_password = ""
 
-# URL pública de la aplicación. Supabase Auth la usa para construir los enlaces
-# de los correos de invitación y de recuperación de contraseña.
-supabase_site_url = "https://catalogador-arte.vercel.app"
-
 # --- Vercel -------------------------------------------------------------
 # Token: https://vercel.com/account/tokens · el org id sale de `vercel whoami`
 vercel_token  = ""
 vercel_org_id = ""
+
+# --- Dominio ------------------------------------------------------------------
+# Token de Cloudflare con Zone:DNS:Edit sobre la zona. El dominio y el
+# subdominio tienen valor por defecto (catalogo.ruizcampins.com); solo hay que
+# fijarlos aquí si cambian.
+cloudflare_api_token = ""
 
 # --- Backblaze B2 ------------------------------------------------------------
 # Clave maestra: B2 → Application Keys. Terraform crea con ella el bucket de

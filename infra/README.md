@@ -1,8 +1,9 @@
 # Infraestructura
 
 Toda la plataforma del proyecto como código: proyecto de Supabase, alojamiento del frontend en
-Vercel y configuración del repositorio de GitHub. Cloudflare solo queda en `bootstrap/`, para el
-bucket R2 del estado de Terraform — tráfico de operador, no de usuarios.
+Vercel, dominio `catalogo.ruizcampins.com` (zona DNS en Cloudflare, registro **solo-DNS** — el
+tráfico no pasa por su proxy, ver `dominio.tf`), bucket de másters en Backblaze B2 y configuración
+del repositorio de GitHub. El bucket R2 del estado de Terraform vive en `bootstrap/`.
 
 Decisiones que justifican esto: [ADR-001](../docs/decisiones/ADR-001-stack-y-despliegue.md) (stack),
 [ADR-002](../docs/decisiones/ADR-002-almacenamiento-de-imagenes.md) (almacenamiento) y
@@ -59,7 +60,8 @@ Necesitas tres tokens. Ninguno se guarda en el repositorio.
 | Supabase | Panel → Account → Access Tokens | Completo sobre la organización |
 | Vercel | vercel.com → Account → Tokens | Completo (el provider crea el proyecto) |
 | GitHub | Settings → Developer settings → Tokens | `repo` y `admin:repo_hook` |
-| Cloudflare | Solo para `bootstrap/` (bucket del estado) | `Workers R2 Storage:Edit` |
+| Cloudflare | Panel → My Profile → API Tokens | `Zone:DNS:Edit` sobre la zona del dominio; y `Workers R2 Storage:Edit` para `bootstrap/` |
+| Backblaze B2 | B2 → Application Keys (clave maestra) | Solo la usa Terraform para crear bucket y clave acotada |
 
 Además, un par de claves de acceso de R2 (Panel → R2 → Manage API tokens) para que Terraform pueda
 escribir su propio estado.

@@ -154,5 +154,5 @@ resource "github_actions_variable" "s3_bucket_masters" {
 resource "github_actions_variable" "app_url" {
   repository    = local.repo
   variable_name = "APP_URL"
-  value         = "https://${vercel_project.app.name}.vercel.app"
+  value         = local.url_app
 }
