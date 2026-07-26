@@ -1,0 +1,10 @@
+# Configuración mínima para la CLI de Supabase, que solo se usa en CI para
+# aplicar las migraciones al proyecto de la nube (supabase db push, en
+# .github/workflows/desplegar.yml).
+#
+# El stack local NO usa la CLI: corre en docker compose y aplica las migraciones
+# con docker/migrate.sh. Por eso aquí no se fija nada más — puertos, versión de
+# Postgres o ajustes de auth viven en docker-compose.yml para local y en
+# infra/supabase.tf para la nube, y duplicarlos aquí crearía una tercera copia
+# que nadie mantendría.
+project_id = "catalogador-arte"

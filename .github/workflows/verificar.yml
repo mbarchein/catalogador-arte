@@ -1,11 +1,19 @@
 name: verificar
 
-# El nombre del job «verificar» es el contexto que exige la protección de la rama
-# main, definida en infra/github.tf. Si se renombra, hay que cambiarlo allí.
+# La puerta de las pull requests. El nombre del job «verificar» es el contexto
+# que exige la protección de la rama main (infra/github.tf): si se renombra,
+# hay que cambiarlo allí.
+#
+# Ya no se dispara en push a main: ahí corre desplegar.yml, que verifica de
+# nuevo antes de tocar producción. Así cada evento ejecuta un solo pipeline.
+#
+# Este workflow NO lleva paths-ignore, y no es descuido: es una comprobación
+# REQUERIDA por la protección de rama. Si se saltara en una PR que solo toca
+# documentación, el contexto «verificar» no se reportaría nunca y la PR quedaría
+# bloqueada para siempre esperando a un check que no va a llegar. El paths-ignore
+# vive en desplegar.yml, que no es requerido por nadie.
 
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 

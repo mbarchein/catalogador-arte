@@ -1,0 +1,155 @@
+name: desplegar
+
+# Pipeline de despliegue: verificar → migrar la base → publicar el frontend.
+#
+# El orden importa y no es negociable: primero las migraciones y después el
+# frontend, porque el frontend nuevo puede depender del esquema nuevo y lo
+# contrario nunca. Consecuencia práctica: durante unos segundos el frontend
+# viejo corre contra el esquema nuevo, así que las migraciones deben ser
+# aditivas — renombrar o borrar una columna en uso exige dos despliegues
+# (primero dejar de usarla, después quitarla).
+#
+# Este workflow queda inerte hasta el primer `terraform apply`: los secretos y
+# variables que consume (SUPABASE_*, CLOUDFLARE_*) los crea infra/github.tf a
+# partir de los recursos reales, no se copian a mano al panel.
+
+on:
+  push:
+    branches: [main]
+    # Cambios que no afectan a lo desplegado. La infraestructura se aplica a
+    # mano por política (ver infra/README.md), y docker/ es el stack local.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'infra/**'
+      - 'docker/**'
+      - 'docker-compose.yml'
+      - 'Makefile'
+      - 'scripts/**'
+      - '.gitignore'
+      - '.env.example'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un solo despliegue a la vez, y sin cancelar el que esté en marcha: matarlo a
+# mitad puede dejar migraciones aplicadas con el frontend viejo publicado.
+concurrency:
+  group: despliegue-produccion
+  cancel-in-progress: false
+
+jobs:
+  # Se verifica otra vez aunque la protección de rama ya exigiera «verificar» en
+  # la PR: main admite push directo del administrador (enforce_admins = false), y
+  # desplegar sin verificar por esa puerta sería un agujero. Incluye los tests de
+  # RLS contra una base real: son el perímetro de seguridad y por tanto la puerta
+  # del despliegue, no un extra.
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+        working-directory: app
+
+      - name: Comprobación de tipos
+        run: npm run typecheck
+        working-directory: app
+
+      - name: Tests del frontend
+        run: npm test
+        working-directory: app
+
+      # La compilación se comprueba ANTES de migrar. Si compilara mal y se
+      # descubriera en «publicar», las migraciones ya estarían aplicadas y el
+      # frontend viejo quedaría corriendo contra el esquema nuevo sin relevo.
+      - name: Compilación de producción
+        run: npm run build
+        working-directory: app
+        env:
+          VITE_SUPABASE_URL: http://localhost:8321
+          VITE_SUPABASE_ANON_KEY: clave-de-compilacion-sin-uso
+
+      - name: Levantar el stack local
+        run: |
+          docker compose up -d db auth migrate rest gateway
+          docker compose wait migrate
+
+      - name: Comprobar que las migraciones se aplicaron
+        run: docker compose logs migrate | grep -q "Migraciones OK"
+
+      - name: Tests de políticas RLS y reglas del esquema
+        run: make db-test
+
+      - name: Registros del stack si algo falló
+        if: failure()
+        run: docker compose logs --tail=80
+
+  migrar:
+    needs: verificar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Vincular el proyecto
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      # Aplica supabase/migrations/*.sql en orden, cada una una sola vez: la CLI
+      # lleva su propio registro en supabase_migrations.schema_migrations, igual
+      # que docker/migrate.sh lo lleva en _migraciones para el stack local.
+      # seed.sql NO se ejecuta aquí: es semilla de desarrollo.
+      - name: Aplicar migraciones
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+  publicar:
+    needs: migrar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+        working-directory: app
+
+      # Las VITE_* se incrustan en el JavaScript al compilar. Vienen de las
+      # variables de Actions, que Terraform deriva de los recursos reales: no
+      # pueden quedar desactualizadas respecto a la infraestructura.
+      - name: Compilar para producción
+        run: npm run build
+        working-directory: app
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          VITE_APP_URL: ${{ vars.APP_URL }}
+
+      - name: Publicar en Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy app/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main
