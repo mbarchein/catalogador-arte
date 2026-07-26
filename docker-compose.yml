@@ -269,7 +269,7 @@ services:
     ports:
       - "${PUERTO_APP:-5173}:5173"
     environment:
-      # DEV_HOST: pon la IP de tu máquina en la red local (ej. 192.168.0.11) en
+      # DEV_HOST: pon la IP de tu máquina en la red local (ej. 192.168.1.50) en
       # .env para catalogar desde el móvil. El móvil es el dispositivo del caso
       # de uso principal (RNF-106), así que esto no es un extra: es como se prueba.
       VITE_SUPABASE_URL: http://${DEV_HOST:-localhost}:${PUERTO_API:-8321}
