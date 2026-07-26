@@ -172,9 +172,33 @@ export interface ResultadoSubida {
 }
 
 /**
+ * Pide a la función Edge una URL firmada para el máster. El máster NO va a
+ * Supabase Storage: con 2-8 MB mínimo por toma, el gratuito se agotaría en las
+ * primeras semanas (ADR-002, actualización). Va a un S3 externo —B2 en
+ * producción, MinIO en local— cuyas credenciales solo conoce la función.
+ */
+async function firmarMaster(
+  ruta: string,
+  operacion: 'subir' | 'descargar',
+  tipoContenido?: string,
+): Promise<{ url: string; tipoContenido: string | null }> {
+  const { data, error } = await supabase.functions.invoke('firmar-fichero', {
+    body: { operacion, ruta, tipoContenido },
+  })
+  if (error) throw new Error(`Firmando el máster: ${error.message}`)
+  return data as { url: string; tipoContenido: string | null }
+}
+
+/** URL firmada de descarga del máster de archivo (RF-411). */
+export async function urlDescargaMaster(rutaMaster: string): Promise<string> {
+  const { url } = await firmarMaster(rutaMaster, 'descargar')
+  return url
+}
+
+/**
  * Sube los tres niveles y registra la fila. En este orden a propósito: si algo
- * falla a mitad, quedan ficheros huérfanos en el bucket —que no rompen nada y se
- * pueden limpiar— en vez de una ficha con imágenes que no existen.
+ * falla a mitad, quedan ficheros huérfanos en los buckets —que no rompen nada y
+ * se pueden limpiar— en vez de una ficha con imágenes que no existen.
  */
 export async function subirToma(
   idCatalogacion: string,
@@ -183,18 +207,30 @@ export async function subirToma(
 ): Promise<ResultadoSubida> {
   const destino = rutas(idCatalogacion, toma.master)
 
-  const subidas: [string, Blob | File][] = [
+  // Miniatura y derivada, a Supabase Storage: son lo que la aplicación sirve.
+  const subidas: [string, Blob][] = [
     [destino.miniatura, toma.miniatura],
     [destino.derivada, toma.derivada],
-    [destino.master, toma.master],
   ]
-
   for (const [ruta, cuerpo] of subidas) {
     const { error } = await supabase.storage.from(BUCKET).upload(ruta, cuerpo, {
-      contentType: cuerpo instanceof File ? cuerpo.type : 'image/webp',
+      contentType: 'image/webp',
       upsert: false,
     })
     if (error) throw new Error(`Subiendo ${ruta}: ${error.message}`)
+  }
+
+  // El máster, al S3 externo con URL firmada. El PUT repite exactamente el
+  // Content-Type firmado o la firma no valida.
+  const tipoMaster = toma.master.type || 'application/octet-stream'
+  const firma = await firmarMaster(destino.master, 'subir', tipoMaster)
+  const respuesta = await fetch(firma.url, {
+    method: 'PUT',
+    body: toma.master,
+    headers: { 'Content-Type': tipoMaster },
+  })
+  if (!respuesta.ok) {
+    throw new Error(`Subiendo el máster: HTTP ${respuesta.status}`)
   }
 
   const { data, error } = await supabase

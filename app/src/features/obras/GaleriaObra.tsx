@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { subirToma, urlFirmada, type TomaPreparada } from '../../lib/imagenes'
+import { subirToma, urlDescargaMaster, urlFirmada, type TomaPreparada } from '../../lib/imagenes'
 import { ETIQUETA_TIPO_TOMA, type ValorTipoToma } from '../../lib/tipos'
 import { useAuth } from '../../auth/AuthContext'
 import { useCambiosEnVivo } from '../../lib/enVivo'
@@ -364,12 +364,28 @@ export function GaleriaObra({ idCatalogacion }: { idCatalogacion: string }) {
         </p>
       )}
 
-      <p className="mt-1 text-xs text-stone-500">
-        {imagenes.length} {imagenes.length === 1 ? 'fotografía' : 'fotografías'}
-        {/* El máster no se muestra en ninguna vista (RF-411). Su descarga está
-            pendiente, así que solo se dice que existe. */}
-        {imagenes.some((i) => i.ruta_master) && ' · máster de archivo guardado'}
-      </p>
+      <div className="mt-1 flex items-baseline justify-between gap-2 text-xs text-stone-500">
+        <span>
+          {imagenes.length} {imagenes.length === 1 ? 'fotografía' : 'fotografías'}
+        </span>
+        {/* RF-411: el máster nunca se muestra en una vista; se descarga a
+            propósito, con URL firmada de la función. Disponible también para el
+            Lector: descargar un original para una imprenta o un comisario es
+            exactamente su caso de uso. */}
+        {viendo?.ruta_master && (
+          <button
+            type="button"
+            className="min-h-toque shrink-0 underline"
+            onClick={() => {
+              void urlDescargaMaster(viendo.ruta_master as string)
+                .then((u) => window.open(u, '_blank', 'noopener'))
+                .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+            }}
+          >
+            Descargar máster
+          </button>
+        )}
+      </div>
     </div>
   )
 }
