@@ -14,14 +14,11 @@ resource "b2_bucket" "masters" {
   bucket_name = "${var.proyecto}-masters-${random_id.sufijo_b2.hex}"
   bucket_type = "allPrivate"
 
-  # B2 conserva TODAS las versiones por defecto y aquí se deja explícito: los
+  # B2 conserva TODAS las versiones por defecto, y eso es lo que se quiere: los
   # másters son el documento (ADR-002) y una sobrescritura o un borrado
-  # accidental deben ser recuperables.
-  lifecycle_rules {
-    file_name_prefix              = ""
-    days_from_hiding_to_deleting  = 0
-    days_from_uploading_to_hiding = 0
-  }
+  # accidental deben ser recuperables. No puede dejarse como regla explícita
+  # porque la API rechaza una regla «conservar todo» (prefijo vacío y días a
+  # cero): conservar todo es, precisamente, la ausencia de reglas.
 
   # El navegador hace PUT directo con la URL firmada: sin CORS, la subida desde
   # la aplicación fallaría en el preflight. El comodín es deliberado — la
