@@ -5,12 +5,18 @@ import { CerrarSesion, Layout } from '../../components/Layout'
 import { mostrarFecha } from '../../lib/fechas'
 import { avisoExistencia, mostrarMedidas, mostrarTitulo } from '../../lib/titulo'
 import { ETIQUETA_ARTISTA } from '../../lib/tipos'
+import { useCambiosEnVivo } from '../../lib/enVivo'
 import { useObras } from './useObras'
 
 export function ObrasPage() {
   const [busqueda, setBusqueda] = useState('')
-  const { obras, miniaturas, cargando, error } = useObras(busqueda)
+  const { obras, miniaturas, cargando, error, recargar } = useObras(busqueda)
   const { puedeEditar } = useAuth()
+
+  // El listado se actualiza en caliente: si otro catalogador da de alta o edita
+  // una obra, aparece sin recargar. Es la vista donde dos personas trabajando a
+  // la vez se pisan sin saberlo.
+  useCambiosEnVivo('obras', recargar)
 
   return (
     <Layout

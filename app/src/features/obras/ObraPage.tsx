@@ -30,6 +30,7 @@ import {
   TriEstadoIconos,
 } from '../../components/ui'
 import { normalizarUbicacion, ubicacionParaGuardar } from '../../lib/ubicacion'
+import { useCambiosEnVivo } from '../../lib/enVivo'
 import { GaleriaObra } from './GaleriaObra'
 import { useObra } from './useObras'
 
@@ -48,6 +49,13 @@ export function ObraPage() {
   const { obra, cargando, error, recargar } = useObra(id)
   const { puedeEditar } = useAuth()
   const [editando, setEditando] = useState(false)
+
+  // La ficha en consulta se refresca si otro la cambia. En edición NO: pisar el
+  // formulario a medio rellenar con datos ajenos destruiría trabajo — el
+  // conflicto de edición concurrente es asunto del bloqueo (RF-700), pendiente.
+  useCambiosEnVivo('obras', () => {
+    if (!editando) void recargar()
+  }, id ? `id_catalogacion=eq.${id}` : undefined)
 
   if (cargando) {
     return (

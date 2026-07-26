@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { subirToma, urlFirmada, type TomaPreparada } from '../../lib/imagenes'
 import { ETIQUETA_TIPO_TOMA, type ValorTipoToma } from '../../lib/tipos'
 import { useAuth } from '../../auth/AuthContext'
+import { useCambiosEnVivo } from '../../lib/enVivo'
 import { IconoSi } from '../../components/ui'
 import { EntradaFotos } from './EntradaFotos'
 
@@ -78,6 +79,9 @@ export function GaleriaObra({ idCatalogacion }: { idCatalogacion: string }) {
     setCargando(false)
     return { filas, principal: representativa?.id_imagen ?? null }
   }, [idCatalogacion])
+
+  // Las fotos que añade o retira otro catalogador aparecen sin recargar.
+  useCambiosEnVivo('imagenes', () => void cargar(), `id_catalogacion=eq.${idCatalogacion}`)
 
   useEffect(() => {
     let vigente = true
