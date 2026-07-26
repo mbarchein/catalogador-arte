@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Catalogador">
+  <rect width="64" height="64" rx="12" fill="#1c1917"/>
+  <rect x="14" y="14" width="36" height="36" fill="#78716c"/>
+  <rect x="14" y="14" width="36" height="36" fill="none" stroke="#d6d3d1" stroke-width="4"/>
+</svg>
