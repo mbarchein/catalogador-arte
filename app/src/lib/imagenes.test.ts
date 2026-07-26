@@ -3,8 +3,7 @@ import {
   BYTES_MAXIMOS,
   NIVELES,
   calcularDestino,
-  elegirPrincipal,
-  ordinal,
+  sufijoAleatorio,
   validarArchivo,
 } from './imagenes'
 
@@ -76,79 +75,42 @@ describe('validarArchivo', () => {
   })
 })
 
-describe('elegirPrincipal (RF-403)', () => {
-  const img = (
-    id: string,
-    tipo: string,
-    indice = false,
-    fecha: string | null = null,
-  ) => ({ id_imagen: id, tipo_toma: tipo, imagen_indice: indice, fecha_fotografia: fecha })
-
-  it('devuelve null si la obra no tiene imágenes', () => {
-    expect(elegirPrincipal([])).toBeNull()
+describe('sufijoAleatorio', () => {
+  it('tiene la longitud pedida y solo caracteres seguros para una ruta', () => {
+    const s = sufijoAleatorio()
+    expect(s).toHaveLength(8)
+    expect(s).toMatch(/^[a-z0-9]{8}$/)
+    expect(sufijoAleatorio(16)).toHaveLength(16)
   })
 
-  it('respeta la que está marcada, aunque no sea general ni la más reciente', () => {
-    const elegida = elegirPrincipal([
-      img('AR-0001_v1', 'GENERAL', false, '2026-07-01'),
-      img('AR-0001_v2', 'REVERSO', true, '2026-01-01'),
-      img('AR-0001_v3', 'GENERAL', false, '2026-07-20'),
-    ])
-    expect(elegida?.id_imagen).toBe('AR-0001_v2')
+  it('no repite entre llamadas', () => {
+    const muestras = new Set(Array.from({ length: 200 }, () => sufijoAleatorio()))
+    expect(muestras.size).toBeGreaterThan(195)
   })
 
-  it('sin ninguna marcada, toma la general más reciente', () => {
-    const elegida = elegirPrincipal([
-      img('AR-0001_v1', 'GENERAL', false, '2026-01-01'),
-      img('AR-0001_v2', 'DETALLE_FIRMA', false, '2026-12-01'),
-      img('AR-0001_v3', 'GENERAL', false, '2026-06-01'),
-    ])
-    // La v2 es más reciente pero es un detalle de firma: no representa la obra.
-    expect(elegida?.id_imagen).toBe('AR-0001_v3')
+  it('funciona sin crypto.randomUUID, que es el caso del móvil por http', () => {
+    // `crypto.randomUUID` es undefined fuera de un contexto seguro, y la app se usa
+    // en la red local por http. Este test fija ese caso: antes reventaba la subida
+    // con un error incomprensible, y solo desde el teléfono.
+    const original = globalThis.crypto
+    try {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: { getRandomValues: original.getRandomValues.bind(original) },
+        configurable: true,
+      })
+      expect(sufijoAleatorio()).toMatch(/^[a-z0-9]{8}$/)
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: original, configurable: true })
+    }
   })
 
-  it('a igualdad de fecha, decide el orden de subida', () => {
-    const elegida = elegirPrincipal([
-      img('AR-0001_v1', 'GENERAL', false, '2026-06-01'),
-      img('AR-0001_v2', 'GENERAL', false, '2026-06-01'),
-    ])
-    expect(elegida?.id_imagen).toBe('AR-0001_v2')
-  })
-
-  it('sirve cuando ninguna tiene fecha', () => {
-    const elegida = elegirPrincipal([
-      img('AR-0001_v1', 'GENERAL'),
-      img('AR-0001_v4', 'GENERAL'),
-      img('AR-0001_v2', 'GENERAL'),
-    ])
-    expect(elegida?.id_imagen).toBe('AR-0001_v4')
-  })
-
-  it('si no hay ninguna general, usa la más reciente de cualquier tipo', () => {
-    // El esquema no contempla este caso. Mostrar un hueco porque solo hay
-    // reversos contradiría el criterio de no dejar blancos sin explicación.
-    const elegida = elegirPrincipal([
-      img('AR-0001_v1', 'REVERSO', false, '2026-01-01'),
-      img('AR-0001_v2', 'DETALLE_DANO', false, '2026-05-01'),
-    ])
-    expect(elegida?.id_imagen).toBe('AR-0001_v2')
-  })
-
-  it('no altera el array que recibe', () => {
-    const lista = [img('AR-0001_v1', 'GENERAL'), img('AR-0001_v2', 'GENERAL')]
-    const copia = [...lista]
-    elegirPrincipal(lista)
-    expect(lista).toEqual(copia)
-  })
-})
-
-describe('ordinal', () => {
-  it('extrae el número de versión', () => {
-    expect(ordinal('AR-0001_v3')).toBe(3)
-    expect(ordinal('RC-1234_v12')).toBe(12)
-  })
-
-  it('devuelve cero ante un identificador sin ordinal', () => {
-    expect(ordinal('AR-0001')).toBe(0)
+  it('funciona incluso sin crypto ninguno', () => {
+    const original = globalThis.crypto
+    try {
+      Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true })
+      expect(sufijoAleatorio()).toMatch(/^[a-z0-9]{8}$/)
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: original, configurable: true })
+    }
   })
 })

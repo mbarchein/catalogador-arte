@@ -134,8 +134,31 @@ function extension(nombre: string): string {
  * peticiones más por foto, y en el almacén las peticiones son el recurso escaso.
  * DP-06 sigue abierta y una migración podría alinear los nombres más adelante.
  */
+/**
+ * Sufijo aleatorio para el nombre del fichero.
+ *
+ * No usa `crypto.randomUUID()`, que **no existe fuera de un contexto seguro**: la
+ * aplicación se abre por http en la IP de la red local para catalogar desde el
+ * móvil, y ahí `randomUUID` es `undefined` —solo `localhost` está exento—. Subir
+ * una foto reventaba con un error incomprensible, y solo pasaba desde el teléfono.
+ *
+ * `getRandomValues` sí está disponible en contexto no seguro. La rama con
+ * `Math.random` es la red de seguridad para un entorno sin `crypto` ninguno; no da
+ * garantías criptográficas, pero aquí solo hace falta evitar colisiones de nombre.
+ */
+export function sufijoAleatorio(longitud = 8): string {
+  const alfabeto = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  const bytes = new Uint8Array(longitud)
+  if (typeof globalThis.crypto?.getRandomValues === 'function') {
+    globalThis.crypto.getRandomValues(bytes)
+  } else {
+    for (let i = 0; i < longitud; i += 1) bytes[i] = Math.floor(Math.random() * 256)
+  }
+  return Array.from(bytes, (b) => alfabeto[b % alfabeto.length] ?? 'x').join('')
+}
+
 export function rutas(idCatalogacion: string, master: File) {
-  const sufijo = crypto.randomUUID().slice(0, 8)
+  const sufijo = sufijoAleatorio()
   const base = `${idCatalogacion}/${idCatalogacion}_${sufijo}`
   return {
     miniatura: `${base}_min.webp`,
@@ -204,48 +227,27 @@ export async function urlFirmada(ruta: string, segundos = 3600): Promise<string 
 }
 
 
-// ── Elección de la imagen que representa a la obra ───────────
-
-/** Lo mínimo que hace falta para decidir cuál se muestra. */
-export interface ImagenCandidata {
-  id_imagen: string
-  tipo_toma: string
-  imagen_indice: boolean
-  fecha_fotografia?: string | null
-}
-
-/** Ordinal del identificador (`AR-0001_v3` → 3). Refleja el orden de subida. */
-export function ordinal(idImagen: string): number {
-  const encontrado = idImagen.match(/_v(\d+)$/)
-  return encontrado?.[1] ? Number(encontrado[1]) : 0
-}
-
 /**
- * RF-403, la regla de repliegue que el esquema dejó escrita y no estaba
- * implementada:
- *
- *  1. La marcada como índice, si hay alguna.
- *  2. Si no, la más reciente de tipo «general».
- *  3. Si tampoco hay ninguna «general» —caso que el esquema no contempla— la más
- *     reciente de cualquier tipo. Mostrar un hueco porque solo hay reversos y
- *     detalles contradiría el criterio de no dejar blancos sin explicación, y una
- *     foto del reverso es mejor referencia visual que nada.
- *
- * «Más reciente» es la fecha de la fotografía; a igualdad, el orden de subida.
+ * Firma varias rutas en **una sola petición**. Pedirlas de una en una para un
+ * listado de cientos de obras serían cientos de peticiones desde un móvil: es la
+ * diferencia entre que el listado cargue y que no.
  */
-export function elegirPrincipal<T extends ImagenCandidata>(imagenes: T[]): T | null {
-  if (imagenes.length === 0) return null
-
-  const marcada = imagenes.find((i) => i.imagen_indice)
-  if (marcada) return marcada
-
-  const masReciente = (lista: T[]): T | undefined =>
-    [...lista].sort((a, b) => {
-      const fa = a.fecha_fotografia ?? ''
-      const fb = b.fecha_fotografia ?? ''
-      if (fa !== fb) return fb.localeCompare(fa)
-      return ordinal(b.id_imagen) - ordinal(a.id_imagen)
-    })[0]
-
-  return masReciente(imagenes.filter((i) => i.tipo_toma === 'GENERAL')) ?? masReciente(imagenes) ?? null
+export async function urlsFirmadas(
+  rutas: string[],
+  segundos = 3600,
+): Promise<Record<string, string>> {
+  if (rutas.length === 0) return {}
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrls(rutas, segundos)
+  if (error || !data) return {}
+  return Object.fromEntries(
+    data
+      .filter((d): d is { path: string | null; signedUrl: string; error: null } => !d.error)
+      .flatMap((d) => (d.path ? [[d.path, d.signedUrl] as const] : [])),
+  )
 }
+
+// La regla de «cuál es la imagen principal» vivía aquí y se ha movido a la vista
+// `imagen_representativa` de la base de datos. Motivo: el listado necesita la
+// miniatura de hasta 500 obras y calcularla en el cliente obligaría a traerse
+// todas las imágenes de todas ellas; y el pipeline del catálogo impreso, que será
+// Python, necesita la misma regla. Dos implementaciones de una regla divergen.
