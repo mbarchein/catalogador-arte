@@ -10,16 +10,26 @@ Base de datos unificada para ambos fondos que sirve simultáneamente como:
 
 ## Estado
 
-En desarrollo. El entorno y el esqueleto de Django están resueltos; el siguiente paso es traducir las
-nueve tablas del esquema de campos a modelos de Django. Ver la hoja de ruta en
-[`docs/originales/diseno_interfaz_y_arquitectura_v4.md`](docs/originales/diseno_interfaz_y_arquitectura_v4.md),
-sección 15.
+En desarrollo. La infraestructura está definida como código y verificada; el siguiente paso es el
+esquema de la base de datos en SQL, y detrás las políticas RLS con sus tests. Ver el orden de
+construcción en [`docs/requisitos.md`](docs/requisitos.md), apartado 7.
 
 ## Stack
 
-Django + PostgreSQL, servido por Gunicorn detrás de Apache como proxy inverso. Sin build de frontend:
-plantillas de Django y una librería CSS ligera. Los ficheros subidos (imágenes de obra y documentos
-digitalizados) viven dentro de la propia aplicación y se sirven únicamente a usuarios autenticados.
+PWA estática sobre **Supabase** (PostgreSQL gestionado, PostgREST, Auth y Storage), sin servidor de
+aplicación propio. Frontend en Vite, Svelte y TypeScript, alojado en Cloudflare Pages. Imágenes en
+Cloudflare R2 en tres niveles: miniatura, derivada de consulta y máster de archivo. Toda la plataforma
+se gestiona con Terraform en [`infra/`](infra/).
+
+La aplicación es instalable en el móvil, que es el dispositivo del caso de uso principal: catalogar de
+pie, con la obra delante. No funciona sin conexión, por decisión explícita.
+
+El razonamiento completo, con las alternativas descartadas, está en
+[`docs/decisiones/`](docs/decisiones/). El stack anterior era Django; los documentos originales todavía
+lo describen y se conservan tal cual.
+
+> **Aviso de seguridad para quien vaya a tocar el esquema:** al no haber backend, las políticas RLS son
+> el único perímetro que protege los datos. Una tabla nueva sin sus políticas es una tabla pública.
 
 ## Documentación
 
