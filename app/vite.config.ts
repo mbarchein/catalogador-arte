@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -46,5 +47,15 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+  },
+  test: {
+    // Los tests unitarios no hablan con Supabase, pero importar cualquier
+    // módulo que use el cliente ejecuta createClient() en la carga, y sin URL
+    // revienta — en CI no hay .env. Valores ficticios, como en el paso de
+    // compilación del workflow.
+    env: {
+      VITE_SUPABASE_URL: 'http://localhost:8321',
+      VITE_SUPABASE_ANON_KEY: 'clave-de-tests-sin-uso',
+    },
   },
 })
