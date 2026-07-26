@@ -119,6 +119,59 @@ services:
       # en el cliente se traiga el catálogo entero.
       PGRST_DB_MAX_ROWS: "500"
 
+  # S3 local para los másters: emula a Backblaze B2 (misma API) para poder
+  # probar el flujo completo de firmas sin depender de un servicio externo.
+  # Puerto público porque las URL se firman contra el host del navegador: el
+  # PUT del máster va directo aquí, no a través de la pasarela.
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    ports:
+      - "${PUERTO_S3:-9100}:9000"
+    environment:
+      MINIO_ROOT_USER: minio-local
+      MINIO_ROOT_PASSWORD: minio-local-secreto
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 4s
+      timeout: 3s
+      retries: 30
+
+  # Crea el bucket de másters al arrancar. Idempotente.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minio-local minio-local-secreto &&
+      mc mb --ignore-existing local/masters-local &&
+      echo 'bucket masters-local listo'"
+    restart: "no"
+
+  # Función Edge de firmas, en el mismo runtime que la nube (Deno). Firma contra
+  # el endpoint PÚBLICO de minio: la firma cubre el host, y quien la usa es el
+  # navegador, que no resuelve nombres internos de docker.
+  funciones:
+    image: denoland/deno:alpine
+    working_dir: /functions/firmar-fichero
+    command: ["run", "--allow-net", "--allow-env", "index.ts"]
+    depends_on:
+      - rest
+    volumes:
+      - ./supabase/functions:/functions:ro
+    environment:
+      SUPABASE_URL: http://gateway:8000
+      SUPABASE_ANON_KEY: *anon-key
+      S3_ENDPOINT: http://${DEV_HOST:-localhost}:${PUERTO_S3:-9100}
+      S3_REGION: local
+      S3_BUCKET_MASTERS: masters-local
+      S3_KEY_ID: minio-local
+      S3_KEY_SECRET: minio-local-secreto
+
   # WebSockets para las vistas en vivo (ADR-005): el mismo servicio que en la
   # nube. La entrega respeta RLS — cada cliente solo recibe filas que puede leer.
   realtime:
@@ -198,6 +251,7 @@ services:
       - rest
       - storage
       - realtime
+      - funciones
     ports:
       - "${PUERTO_API:-8321}:8000"
     volumes:
@@ -238,3 +292,4 @@ volumes:
   db_data:
   app_node_modules:
   storage_data:
+  minio_data:

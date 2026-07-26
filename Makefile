@@ -8,7 +8,8 @@ PUERTO_APP    ?= 5173
 PUERTO_API    ?= 8321
 PUERTO_CORREO ?= 8325
 PUERTO_DB     ?= 5433
-export PUERTO_APP PUERTO_API PUERTO_CORREO PUERTO_DB
+PUERTO_S3     ?= 9100
+export PUERTO_APP PUERTO_API PUERTO_CORREO PUERTO_DB PUERTO_S3
 
 # Host con el que la aplicacion esta REALMENTE configurada. Anunciar «localhost»
 # cuando DEV_HOST apunta a la red local hace perder el tiempo: la pagina carga en
