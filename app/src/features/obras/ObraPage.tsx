@@ -13,6 +13,16 @@ import {
   ETIQUETA_TRI_ESTADO,
   type Obra,
 } from '../../lib/tipos'
+import {
+  ANIO_MINIMO,
+  ajustarAnio,
+  anioMaximo,
+  componerFecha,
+  descomponerFecha,
+  type FechaEstructurada,
+} from '../../lib/fechaEstructurada'
+import { Fichas, Interruptor, PasoAnio, TriEstadoIconos } from '../../components/ui'
+import { normalizarUbicacion, ubicacionParaGuardar } from '../../lib/ubicacion'
 import { useObra } from './useObras'
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
@@ -240,7 +250,7 @@ function FormularioEdicion({
         fechada_en_obra: datos.fechada_en_obra,
         estado_conservacion: datos.estado_conservacion,
         estado_existencia: datos.estado_existencia,
-        ubicacion_fisica: datos.ubicacion_fisica.trim().toLowerCase(),
+        ubicacion_fisica: ubicacionParaGuardar(datos.ubicacion_fisica),
         medidas_verificadas: datos.medidas_verificadas,
         fase_inventario_completada: datos.fase_inventario_completada,
         fase_documentacion_completada: datos.fase_documentacion_completada,
@@ -282,23 +292,16 @@ function FormularioEdicion({
           />
         </div>
 
-        <div>
-          <label className="etiqueta" htmlFor="e-atribuido">
-            ¿El título es del artista?
-          </label>
-          <select
-            id="e-atribuido"
-            className="campo"
-            value={datos.titulo_atribuido}
-            onChange={(e) => set('titulo_atribuido', e.target.value as Obra['titulo_atribuido'])}
-          >
-            {Object.entries(ETIQUETA_TITULO_ATRIBUIDO).map(([v, t]) => (
-              <option key={v} value={v}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Fichas
+          id="e-atribuido"
+          etiqueta="¿El título es del artista?"
+          opciones={Object.entries(ETIQUETA_TITULO_ATRIBUIDO).map(([v, t]) => ({
+            valor: v as Obra['titulo_atribuido'],
+            texto: t,
+          }))}
+          valor={datos.titulo_atribuido}
+          alCambiar={(v) => set('titulo_atribuido', v)}
+        />
 
         <div>
           <label className="etiqueta" htmlFor="e-tipo">
@@ -312,17 +315,10 @@ function FormularioEdicion({
           />
         </div>
 
-        <div>
-          <label className="etiqueta" htmlFor="e-fecha">
-            Fecha de ejecución
-          </label>
-          <input
-            id="e-fecha"
-            className="campo"
-            value={datos.fecha_ejecucion}
-            onChange={(e) => set('fecha_ejecucion', e.target.value)}
-          />
-        </div>
+        <CampoFecha
+          texto={datos.fecha_ejecucion}
+          alCambiar={(v) => set('fecha_ejecucion', v)}
+        />
 
         <div className="grid grid-cols-3 gap-2">
           <div>
@@ -387,23 +383,12 @@ function FormularioEdicion({
           />
         </div>
 
-        <div>
-          <label className="etiqueta" htmlFor="e-firmada">
-            Firmada
-          </label>
-          <select
-            id="e-firmada"
-            className="campo"
-            value={datos.firmada}
-            onChange={(e) => set('firmada', e.target.value as Obra['firmada'])}
-          >
-            {Object.entries(ETIQUETA_TRI_ESTADO).map(([v, t]) => (
-              <option key={v} value={v}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TriEstadoIconos
+          id="e-firmada"
+          etiqueta="Firmada"
+          valor={datos.firmada}
+          alCambiar={(v) => set('firmada', v)}
+        />
 
         {/* Solo tiene sentido describir la firma si hay firma. */}
         {datos.firmada === 'SI' && (
@@ -421,63 +406,36 @@ function FormularioEdicion({
           </div>
         )}
 
-        <div>
-          <label className="etiqueta" htmlFor="e-fechada">
-            Lleva fecha inscrita
-          </label>
-          <select
-            id="e-fechada"
-            className="campo"
-            value={datos.fechada_en_obra}
-            onChange={(e) => set('fechada_en_obra', e.target.value as Obra['fechada_en_obra'])}
-          >
-            {Object.entries(ETIQUETA_TRI_ESTADO).map(([v, t]) => (
-              <option key={v} value={v}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TriEstadoIconos
+          id="e-fechada"
+          etiqueta="Lleva fecha inscrita"
+          valor={datos.fechada_en_obra}
+          alCambiar={(v) => set('fechada_en_obra', v)}
+        />
       </div>
 
-      <div className="tarjeta space-y-3">
-        <div>
-          <label className="etiqueta" htmlFor="e-conservacion">
-            Estado de conservación
-          </label>
-          <select
-            id="e-conservacion"
-            className="campo"
-            value={datos.estado_conservacion}
-            onChange={(e) =>
-              set('estado_conservacion', e.target.value as Obra['estado_conservacion'])
-            }
-          >
-            {Object.entries(ETIQUETA_CONSERVACION).map(([v, t]) => (
-              <option key={v} value={v}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="tarjeta space-y-4">
+        <Fichas
+          id="e-conservacion"
+          etiqueta="Estado de conservación"
+          opciones={Object.entries(ETIQUETA_CONSERVACION).map(([v, t]) => ({
+            valor: v as Obra['estado_conservacion'],
+            texto: t,
+          }))}
+          valor={datos.estado_conservacion}
+          alCambiar={(v) => set('estado_conservacion', v)}
+        />
 
-        <div>
-          <label className="etiqueta" htmlFor="e-existencia">
-            Estado de existencia
-          </label>
-          <select
-            id="e-existencia"
-            className="campo"
-            value={datos.estado_existencia}
-            onChange={(e) => set('estado_existencia', e.target.value as Obra['estado_existencia'])}
-          >
-            {Object.entries(ETIQUETA_EXISTENCIA).map(([v, t]) => (
-              <option key={v} value={v}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Fichas
+          id="e-existencia"
+          etiqueta="Estado de existencia"
+          opciones={Object.entries(ETIQUETA_EXISTENCIA).map(([v, t]) => ({
+            valor: v as Obra['estado_existencia'],
+            texto: t,
+          }))}
+          valor={datos.estado_existencia}
+          alCambiar={(v) => set('estado_existencia', v)}
+        />
 
         <div>
           <label className="etiqueta" htmlFor="e-ubicacion">
@@ -488,36 +446,34 @@ function FormularioEdicion({
             className="campo"
             autoCapitalize="none"
             value={datos.ubicacion_fisica}
-            onChange={(e) => set('ubicacion_fisica', e.target.value)}
+            onChange={(e) => set('ubicacion_fisica', normalizarUbicacion(e.target.value))}
           />
         </div>
       </div>
 
       <div className="tarjeta space-y-2">
-        <Casilla
-          id="e-medidas-ver"
+        <Interruptor
           etiqueta="Medidas verificadas físicamente"
-          ayuda="Marcar solo si alguien del equipo las ha medido, no si vienen de un catálogo antiguo."
-          valor={datos.medidas_verificadas}
+          ayuda="Solo si alguien del equipo las ha medido, no si vienen de un catálogo antiguo."
+          activo={datos.medidas_verificadas}
           alCambiar={(v) => set('medidas_verificadas', v)}
         />
-        <Casilla
-          id="e-fase1"
+        <Interruptor
           etiqueta="Fase 1 completada"
-          valor={datos.fase_inventario_completada}
+          ayuda="Toma de datos con la obra delante."
+          activo={datos.fase_inventario_completada}
           alCambiar={(v) => set('fase_inventario_completada', v)}
         />
-        <Casilla
-          id="e-fase2"
+        <Interruptor
           etiqueta="Fase 2 completada"
-          valor={datos.fase_documentacion_completada}
+          ayuda="Documentación e investigación."
+          activo={datos.fase_documentacion_completada}
           alCambiar={(v) => set('fase_documentacion_completada', v)}
         />
-        <Casilla
-          id="e-publicable"
+        <Interruptor
           etiqueta="Ficha lista para publicar"
           ayuda="Revisión editorial final. No se deduce de las dos fases anteriores."
-          valor={datos.ficha_catalografica_completa}
+          activo={datos.ficha_catalografica_completa}
           alCambiar={(v) => set('ficha_catalografica_completa', v)}
         />
 
@@ -557,32 +513,127 @@ function FormularioEdicion({
   )
 }
 
-function Casilla({
-  id,
-  etiqueta,
-  ayuda,
-  valor,
-  alCambiar,
-}: {
-  id: string
-  etiqueta: string
-  ayuda?: string
-  valor: boolean
-  alCambiar: (v: boolean) => void
-}) {
-  return (
-    <div>
-      <label htmlFor={id} className="flex min-h-toque items-center gap-3">
+/**
+ * Fecha de ejecución con controles táctiles, y con una salida de emergencia.
+ *
+ * `fecha_ejecucion` es texto libre por decisión del esquema (RF-207), y hay
+ * anotaciones legítimas que los botones no saben representar: «finales de los
+ * setenta», «1978 [?]», «siglo XX». Cuando el valor guardado es una de esas, este
+ * campo **muestra el texto y no lo toca**. Reescribirlo para que encajara en los
+ * controles destruiría un matiz que alguien puso a conciencia, y eso es peor que
+ * obligar a teclear.
+ */
+function CampoFecha({ texto, alCambiar }: { texto: string; alCambiar: (v: string) => void }) {
+  const estructurada = descomponerFecha(texto)
+  const [aMano, setAMano] = useState(false)
+  const [rango, setRango] = useState(() => estructurada?.anioFin != null)
+
+  if (estructurada === null || aMano) {
+    return (
+      <div>
+        <label className="etiqueta" htmlFor="e-fecha">
+          Fecha de ejecución
+        </label>
         <input
-          id={id}
-          type="checkbox"
-          className="h-5 w-5 rounded border-stone-300"
-          checked={valor}
-          onChange={(e) => alCambiar(e.target.checked)}
+          id="e-fecha"
+          className="campo"
+          value={texto}
+          onChange={(e) => alCambiar(e.target.value)}
+          placeholder="1978 · 1975-1978 · c. 1980"
         />
-        <span className="text-sm">{etiqueta}</span>
-      </label>
-      {ayuda && <p className="ml-8 text-xs text-stone-500">{ayuda}</p>}
+        {estructurada === null ? (
+          <p className="mt-1 text-xs text-amber-800">
+            Este texto no se puede representar con los botones, así que se edita a mano y se conserva
+            tal cual.{' '}
+            <button
+              type="button"
+              className="underline"
+              onClick={() => {
+                alCambiar('')
+                setRango(false)
+                setAMano(false)
+              }}
+            >
+              Vaciar y usar los botones
+            </button>
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="mt-1 text-xs underline text-stone-600"
+            onClick={() => setAMano(false)}
+          >
+            Volver a los botones
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const f = estructurada
+  function poner(cambio: Partial<FechaEstructurada>, conRango = rango) {
+    const nueva = { ...f, ...cambio }
+    alCambiar(componerFecha(conRango ? nueva : { ...nueva, anioFin: null }))
+  }
+
+  return (
+    <div className="space-y-3">
+      <PasoAnio
+        id="e-anio"
+        etiqueta={rango ? 'Año inicial' : 'Año de ejecución'}
+        valor={f.anio}
+        minimo={ANIO_MINIMO}
+        maximo={anioMaximo()}
+        alCambiar={(delta) => poner({ anio: ajustarAnio(f.anio, delta) })}
+      />
+
+      <div className="grid grid-cols-2 gap-2">
+        <Interruptor
+          etiqueta="Aproximada"
+          ayuda="c. 1980"
+          activo={f.aproximada}
+          alCambiar={(v) => poner({ aproximada: v })}
+        />
+        <Interruptor
+          etiqueta="Rango"
+          ayuda="1975-1978"
+          activo={rango}
+          alCambiar={(v) => {
+            setRango(v)
+            poner(v && f.anio != null && f.anioFin == null ? { anioFin: ajustarAnio(f.anio, 1) } : {}, v)
+          }}
+        />
+      </div>
+
+      {rango && (
+        <PasoAnio
+          id="e-anio-fin"
+          etiqueta="Año final"
+          valor={f.anioFin}
+          minimo={ANIO_MINIMO}
+          maximo={anioMaximo()}
+          alCambiar={(delta) => poner({ anioFin: ajustarAnio(f.anioFin, delta) })}
+        />
+      )}
+
+      <div className="flex items-center justify-between gap-2 rounded-lg bg-stone-100 px-3 py-2">
+        <span className="text-sm">
+          {f.anio == null ? (
+            <span className="text-stone-500">Sin fechar</span>
+          ) : (
+            <>
+              Se guardará como <span className="font-medium">{texto}</span>
+            </>
+          )}
+        </span>
+        <button
+          type="button"
+          className="shrink-0 text-xs underline text-stone-600"
+          onClick={() => setAMano(true)}
+        >
+          Escribir a mano
+        </button>
+      </div>
     </div>
   )
 }

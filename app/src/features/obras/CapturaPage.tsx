@@ -2,56 +2,93 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { derivarFechaOrden } from '../../lib/fechas'
+import { normalizarUbicacion, ubicacionParaGuardar } from '../../lib/ubicacion'
+import {
+  ANIO_MINIMO,
+  ajustarAnio,
+  anioMaximo,
+  componerFecha,
+  type FechaEstructurada,
+} from '../../lib/fechaEstructurada'
 import {
   ETIQUETA_ARTISTA,
-  ETIQUETA_TRI_ESTADO,
   TIPOS_OBRA_SUGERIDOS,
   type FondoArtista,
   type TriEstado,
 } from '../../lib/tipos'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
+import {
+  Fichas,
+  IconoCandado,
+  Interruptor,
+  PasoAnio,
+  TriEstadoIconos,
+} from '../../components/ui'
 import { previsualizarId } from './useObras'
+import {
+  LOTE_INICIAL,
+  guardarLote,
+  leerLote,
+  loteConfigurado,
+  olvidarLote,
+  type Lote,
+} from './lote'
+
+const FONDOS = [
+  { valor: 'ROTILI' as FondoArtista, texto: ETIQUETA_ARTISTA.ROTILI },
+  { valor: 'RUIZ_CAMPINS' as FondoArtista, texto: ETIQUETA_ARTISTA.RUIZ_CAMPINS },
+]
 
 /**
- * RF-1204: captura rápida. Solo el mínimo imprescindible para que la ficha
- * exista, pensada para rellenarse de pie, con una mano y con la obra delante.
- * El resto se completa después desde cualquier dispositivo.
+ * RF-1204 y RF-1205: captura en lote, táctil y a una mano.
+ *
+ * La pantalla tiene dos estados. Primero se **abre un lote** eligiendo fondo y
+ * tipo de obra, que quedan fijos. Después se capturan obras una tras otra sin
+ * volver a tocarlos.
+ *
+ * La distinción entre lo fijo y lo arrastrado es deliberada y está a la vista:
+ * los campos fijos aparecen bajo un candado, y cambiarlos exige cerrar el lote.
+ * Si fueran simplemente «valores que se conservan», sería fácil arrastrar sin
+ * darse cuenta un tipo de obra a una pieza que no lo es, y eso es un dato falso
+ * en el catálogo, no una molestia de interfaz.
  */
 export function CapturaPage() {
   const navegar = useNavigate()
   const { puedeEditar } = useAuth()
 
-  const [artista, setArtista] = useState<FondoArtista>('ROTILI')
-  const [tipoObra, setTipoObra] = useState('')
+  const [lote, setLote] = useState<Lote>(() => leerLote())
+  const [abierto, setAbierto] = useState(() => loteConfigurado(leerLote()))
+
+  // Campos de la obra concreta: nunca se arrastran.
   const [titulo, setTitulo] = useState('')
   const [alto, setAlto] = useState('')
   const [ancho, setAncho] = useState('')
   const [profundidad, setProfundidad] = useState('')
-  const [tecnica, setTecnica] = useState('')
-  const [fechaEjecucion, setFechaEjecucion] = useState('')
   const [firmada, setFirmada] = useState<TriEstado>('SIN_REVISAR')
-  const [ubicacion, setUbicacion] = useState('')
 
+  const [rango, setRango] = useState(false)
   const [idPrevisto, setIdPrevisto] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [ultimaGuardada, setUltimaGuardada] = useState<string | null>(null)
+  const [guardadas, setGuardadas] = useState<string[]>([])
 
   useEffect(() => {
+    guardarLote(lote)
+  }, [lote])
+
+  useEffect(() => {
+    if (!abierto) return
     let vigente = true
-    void previsualizarId(artista).then((id) => {
+    void previsualizarId(lote.fijos.artista).then((id) => {
       if (vigente) setIdPrevisto(id)
     })
     return () => {
       vigente = false
     }
-  }, [artista, ultimaGuardada])
+  }, [abierto, lote.fijos.artista, guardadas.length])
 
   if (!puedeEditar) {
-    // RF-106: al Lector no se le ofrece este camino. La política RLS lo
-    // rechazaría igualmente, pero dejarle rellenar un formulario para fallar al
-    // guardar sería una interfaz que promete lo que no cumple.
     return (
       <Layout miga="Captura">
         <div className="tarjeta">
@@ -68,6 +105,101 @@ export function CapturaPage() {
     )
   }
 
+  const fecha = lote.arrastrados.fecha
+  function ponerFecha(cambio: Partial<FechaEstructurada>) {
+    setLote((l) => ({
+      ...l,
+      arrastrados: { ...l.arrastrados, fecha: { ...l.arrastrados.fecha, ...cambio } },
+    }))
+  }
+
+  // ── Apertura del lote ─────────────────────────────────────
+  if (!abierto) {
+    const esSugerido = TIPOS_OBRA_SUGERIDOS.includes(lote.fijos.tipoObra)
+    return (
+      <Layout miga="Abrir lote">
+        <div className="tarjeta space-y-5">
+          <div>
+            <h1 className="text-lg font-semibold">Abrir un lote</h1>
+            <p className="text-sm text-stone-600">
+              Estos dos datos quedan fijos para todas las obras que captures seguidas. Para cambiarlos
+              habrá que cerrar el lote.
+            </p>
+          </div>
+
+          <Fichas
+            id="fondo"
+            etiqueta="Fondo"
+            opciones={FONDOS}
+            valor={lote.fijos.artista}
+            alCambiar={(v) => setLote((l) => ({ ...l, fijos: { ...l.fijos, artista: v } }))}
+          />
+
+          <div>
+            <Fichas
+              id="tipo"
+              etiqueta="Tipo de obra"
+              opciones={TIPOS_OBRA_SUGERIDOS.map((t) => ({ valor: t, texto: t }))}
+              valor={esSugerido ? lote.fijos.tipoObra : null}
+              alCambiar={(v) => setLote((l) => ({ ...l, fijos: { ...l.fijos, tipoObra: v } }))}
+            />
+            {/* Lista abierta (RF-213): las fichas sugieren, no cierran. */}
+            <input
+              className="campo mt-2"
+              placeholder="U otro tipo, escríbelo"
+              value={esSugerido ? '' : lote.fijos.tipoObra}
+              onChange={(e) =>
+                setLote((l) => ({ ...l, fijos: { ...l.fijos, tipoObra: e.target.value } }))
+              }
+            />
+          </div>
+
+          <div>
+            <label className="etiqueta" htmlFor="ubicacion-lote">
+              Ubicación física
+            </label>
+            <input
+              id="ubicacion-lote"
+              className="campo"
+              autoCapitalize="none"
+              placeholder="edificio a, habitacion amarilla, bloque 3"
+              value={lote.arrastrados.ubicacion}
+              onChange={(e) =>
+                setLote((l) => ({
+                  ...l,
+                  arrastrados: { ...l.arrastrados, ubicacion: normalizarUbicacion(e.target.value) },
+                }))
+              }
+            />
+            <p className="mt-1 text-xs text-stone-500">
+              Se arrastra de una obra a la siguiente, pero se puede ajustar en cada una: no queda
+              fija como el fondo y el tipo.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="boton-primario flex-1"
+              disabled={!loteConfigurado(lote)}
+              onClick={() => setAbierto(true)}
+            >
+              Empezar a capturar
+            </button>
+            <button type="button" className="boton-secundario" onClick={() => navegar('/')}>
+              Listado
+            </button>
+          </div>
+          {!loteConfigurado(lote) && (
+            <p className="text-xs text-stone-500">Elige o escribe un tipo de obra para empezar.</p>
+          )}
+        </div>
+      </Layout>
+    )
+  }
+
+  // ── Captura ───────────────────────────────────────────────
+
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
     setGuardando(true)
@@ -80,113 +212,100 @@ export function CapturaPage() {
       return Number.isFinite(n) ? n : null
     }
 
-    // id_catalogacion se omite a propósito: lo asigna el trigger de la base con
-    // un cerrojo por fondo. Generarlo en el cliente produciría duplicados en
-    // cuanto dos personas catalogasen a la vez (DP-01).
+    const textoFecha = componerFecha(rango ? fecha : { ...fecha, anioFin: null })
+
+    // id_catalogacion se omite: lo asigna la base con un cerrojo por fondo
+    // (ADR-003). Generarlo aquí produciría duplicados en cuanto dos personas
+    // capturasen a la vez.
     const { data, error } = await supabase
       .from('obras')
       .insert({
-        artista,
-        tipo_obra: tipoObra.trim(),
+        artista: lote.fijos.artista,
+        tipo_obra: lote.fijos.tipoObra.trim(),
         titulo: titulo.trim(),
         alto_cm: aNumero(alto),
         ancho_cm: aNumero(ancho),
         profundidad_cm: aNumero(profundidad),
-        tecnica: tecnica.trim(),
-        fecha_ejecucion: fechaEjecucion.trim(),
-        fecha_orden: derivarFechaOrden(fechaEjecucion),
+        tecnica: lote.arrastrados.tecnica.trim(),
+        fecha_ejecucion: textoFecha,
+        fecha_orden: derivarFechaOrden(textoFecha),
         firmada,
-        ubicacion_fisica: ubicacion.trim().toLowerCase(),
+        ubicacion_fisica: ubicacionParaGuardar(lote.arrastrados.ubicacion),
       })
       .select('id_catalogacion')
       .single()
 
     if (error) {
-      // No se limpia el formulario: si el guardado falla en el almacén por
-      // cobertura intermitente, volver a teclear todo es inaceptable (RF-1207).
+      // No se limpia nada: en un almacén con cobertura intermitente, volver a
+      // teclear todo es inaceptable (RF-1207).
       setError(error.message)
       setGuardando(false)
       return
     }
 
-    const id = (data as { id_catalogacion: string }).id_catalogacion
-    setUltimaGuardada(id)
+    setGuardadas((g) => [...g, (data as { id_catalogacion: string }).id_catalogacion])
 
-    // Se conservan artista y ubicación: se cataloga una estantería de una vez, y
-    // esos dos campos son los que menos cambian entre obras consecutivas.
-    setTipoObra('')
+    // Solo se limpia lo que pertenece a la pieza. Fondo y tipo siguen fijos; la
+    // fecha, la técnica y la ubicación se arrastran tal como quedaron.
     setTitulo('')
     setAlto('')
     setAncho('')
     setProfundidad('')
-    setTecnica('')
-    setFechaEjecucion('')
     setFirmada('SIN_REVISAR')
     setGuardando(false)
   }
 
+  const ultima = guardadas[guardadas.length - 1]
+
   return (
-    <Layout miga="Captura rápida">
-      {ultimaGuardada && (
+    <Layout miga="Captura en lote">
+      {/* Cabecera del lote: lo fijo, bajo candado y siempre a la vista. Saber qué
+          se está heredando es lo que impide descubrir a las treinta obras que el
+          tipo estaba mal. */}
+      <div className="mb-3 rounded-xl border-2 border-stone-800 bg-stone-800 p-3 text-white">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-xs text-stone-300">
+              <IconoCandado />
+              Fijo en este lote
+            </p>
+            <p className="mt-0.5 truncate font-medium">
+              {ETIQUETA_ARTISTA[lote.fijos.artista]} · {lote.fijos.tipoObra}
+            </p>
+            <p className="mt-0.5 text-xs text-stone-300">
+              {guardadas.length === 0
+                ? 'Ninguna obra guardada todavía'
+                : `${guardadas.length} ${guardadas.length === 1 ? 'obra' : 'obras'} en este lote`}
+              {idPrevisto && ` · siguiente ${idPrevisto}`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAbierto(false)}
+            className="min-h-toque shrink-0 rounded-lg border border-stone-500 px-3 text-sm"
+          >
+            Cambiar
+          </button>
+        </div>
+      </div>
+
+      {ultima && (
         <div
           role="status"
-          className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"
+          className="mb-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"
         >
-          <p className="font-medium text-green-900">Guardada como {ultimaGuardada}</p>
-          <p className="mt-1 text-green-800">
-            Escribe ese código en la etiqueta de la obra.{' '}
-            <Link to={`/obra/${ultimaGuardada}`} className="underline">
+          <p className="font-medium text-green-900">Guardada como {ultima}</p>
+          <p className="mt-0.5 text-green-800">
+            Escribe ese código en la etiqueta.{' '}
+            <Link to={`/obra/${ultima}`} className="underline">
               Ver la ficha
             </Link>
           </p>
         </div>
       )}
 
-      <form onSubmit={guardar} className="space-y-4">
+      <form onSubmit={guardar} className="space-y-3">
         <div className="tarjeta space-y-4">
-          <div>
-            <label className="etiqueta" htmlFor="artista">
-              Fondo
-            </label>
-            <select
-              id="artista"
-              className="campo"
-              value={artista}
-              onChange={(e) => setArtista(e.target.value as FondoArtista)}
-            >
-              {(Object.keys(ETIQUETA_ARTISTA) as FondoArtista[]).map((a) => (
-                <option key={a} value={a}>
-                  {ETIQUETA_ARTISTA[a]}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-stone-500">
-              {idPrevisto
-                ? `Se guardará como ${idPrevisto} (aproximado: el número definitivo lo asigna el servidor)`
-                : 'Calculando el siguiente código…'}
-            </p>
-          </div>
-
-          <div>
-            <label className="etiqueta" htmlFor="tipo_obra">
-              Tipo de obra
-            </label>
-            <input
-              id="tipo_obra"
-              className="campo"
-              list="tipos-obra"
-              value={tipoObra}
-              onChange={(e) => setTipoObra(e.target.value)}
-              placeholder="Pintura, dibujo, escultura…"
-            />
-            {/* Lista abierta (RF-213): sugiere sin cerrar. */}
-            <datalist id="tipos-obra">
-              {TIPOS_OBRA_SUGERIDOS.map((t) => (
-                <option key={t} value={t} />
-              ))}
-            </datalist>
-          </div>
-
           <div>
             <label className="etiqueta" htmlFor="titulo">
               Título <span className="font-normal text-stone-500">(vacío si no tiene)</span>
@@ -197,55 +316,100 @@ export function CapturaPage() {
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
             />
-            <p className="mt-1 text-xs text-stone-500">
-              Déjalo vacío si la obra no tiene título: la ficha mostrará «[Sin título]». Escribe
-              «Sin título» solo si el artista la tituló así.
-            </p>
           </div>
+
+          <div>
+            <p className="etiqueta">Medidas en centímetros</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  ['alto', 'Alto', alto, setAlto],
+                  ['ancho', 'Ancho', ancho, setAncho],
+                  ['prof', 'Prof.', profundidad, setProfundidad],
+                ] as const
+              ).map(([id, etiqueta, valor, poner]) => (
+                <div key={id}>
+                  <label className="mb-1 block text-xs text-stone-500" htmlFor={id}>
+                    {etiqueta}
+                  </label>
+                  <input
+                    id={id}
+                    className="campo h-14 text-center text-xl tabular-nums"
+                    inputMode="decimal"
+                    value={valor}
+                    onChange={(e) => poner(e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <TriEstadoIconos
+            id="firmada"
+            etiqueta="Firmada"
+            valor={firmada}
+            alCambiar={setFirmada}
+          />
         </div>
 
-        <div className="tarjeta space-y-4">
-          <p className="text-sm font-medium text-stone-700">Medidas en centímetros</p>
-          {/* RF-1205: teclado numérico, y los tres campos en una fila para que
-              quepan en pantalla sin desplazarse. */}
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="etiqueta" htmlFor="alto">
-                Alto
-              </label>
-              <input
-                id="alto"
-                className="campo"
-                inputMode="decimal"
-                value={alto}
-                onChange={(e) => setAlto(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="etiqueta" htmlFor="ancho">
-                Ancho
-              </label>
-              <input
-                id="ancho"
-                className="campo"
-                inputMode="decimal"
-                value={ancho}
-                onChange={(e) => setAncho(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="etiqueta" htmlFor="profundidad">
-                Prof.
-              </label>
-              <input
-                id="profundidad"
-                className="campo"
-                inputMode="decimal"
-                value={profundidad}
-                onChange={(e) => setProfundidad(e.target.value)}
-              />
-            </div>
+        {/* ── Fecha: se arrastra y se ajusta con los botones ── */}
+        <div className="tarjeta space-y-3">
+          <PasoAnio
+            id="anio"
+            etiqueta={rango ? 'Año inicial' : 'Año de ejecución'}
+            valor={fecha.anio}
+            minimo={ANIO_MINIMO}
+            maximo={anioMaximo()}
+            alCambiar={(delta) => ponerFecha({ anio: ajustarAnio(fecha.anio, delta) })}
+          />
+
+          <div className="grid grid-cols-2 gap-2">
+            <Interruptor
+              etiqueta="Aproximada"
+              ayuda="c. 1980"
+              activo={fecha.aproximada}
+              alCambiar={(v) => ponerFecha({ aproximada: v })}
+            />
+            <Interruptor
+              etiqueta="Rango"
+              ayuda="1975-1978"
+              activo={rango}
+              alCambiar={(v) => {
+                setRango(v)
+                // Al abrir el rango se propone el año siguiente, para que el
+                // primer toque del + ya sirva de algo.
+                if (v && fecha.anio != null && fecha.anioFin == null) {
+                  ponerFecha({ anioFin: ajustarAnio(fecha.anio, 1) })
+                }
+              }}
+            />
           </div>
+
+          {rango && (
+            <PasoAnio
+              id="anio-fin"
+              etiqueta="Año final"
+              valor={fecha.anioFin}
+              minimo={ANIO_MINIMO}
+              maximo={anioMaximo()}
+              alCambiar={(delta) => ponerFecha({ anioFin: ajustarAnio(fecha.anioFin, delta) })}
+            />
+          )}
+
+          {/* Se muestra lo que se va a guardar, no lo que se ha pulsado: el campo
+              del esquema es texto, y conviene ver el texto. */}
+          <p className="rounded-lg bg-stone-100 px-3 py-2 text-sm">
+            {fecha.anio == null ? (
+              <span className="text-stone-500">Sin fechar</span>
+            ) : (
+              <>
+                Se guardará como{' '}
+                <span className="font-medium">
+                  {componerFecha(rango ? fecha : { ...fecha, anioFin: null })}
+                </span>
+              </>
+            )}
+          </p>
 
           <div>
             <label className="etiqueta" htmlFor="tecnica">
@@ -254,49 +418,12 @@ export function CapturaPage() {
             <input
               id="tecnica"
               className="campo"
-              value={tecnica}
-              onChange={(e) => setTecnica(e.target.value)}
               placeholder="Óleo sobre lienzo"
+              value={lote.arrastrados.tecnica}
+              onChange={(e) =>
+                setLote((l) => ({ ...l, arrastrados: { ...l.arrastrados, tecnica: e.target.value } }))
+              }
             />
-          </div>
-
-          <div>
-            <label className="etiqueta" htmlFor="fecha">
-              Fecha de ejecución
-            </label>
-            <input
-              id="fecha"
-              className="campo"
-              value={fechaEjecucion}
-              onChange={(e) => setFechaEjecucion(e.target.value)}
-              placeholder="1978 · 1975-1978 · c. 1980"
-            />
-            <p className="mt-1 text-xs text-stone-500">
-              Tal como se documente. Admite rango y aproximación.
-              {derivarFechaOrden(fechaEjecucion) !== null &&
-                ` Se ordenará por ${derivarFechaOrden(fechaEjecucion)}.`}
-            </p>
-          </div>
-
-          <div>
-            <label className="etiqueta" htmlFor="firmada">
-              Firmada
-            </label>
-            <select
-              id="firmada"
-              className="campo"
-              value={firmada}
-              onChange={(e) => setFirmada(e.target.value as TriEstado)}
-            >
-              {(Object.keys(ETIQUETA_TRI_ESTADO) as TriEstado[]).map((v) => (
-                <option key={v} value={v}>
-                  {ETIQUETA_TRI_ESTADO[v]}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-stone-500">
-              «Sin revisar» no es «No»: deja constancia de que aún no se ha mirado.
-            </p>
           </div>
 
           <div>
@@ -306,43 +433,73 @@ export function CapturaPage() {
             <input
               id="ubicacion"
               className="campo"
-              value={ubicacion}
-              onChange={(e) => setUbicacion(e.target.value)}
-              placeholder="edificio a, habitacion amarilla, bloque 3"
               autoCapitalize="none"
+              value={lote.arrastrados.ubicacion}
+              onChange={(e) =>
+                setLote((l) => ({
+                  ...l,
+                  arrastrados: { ...l.arrastrados, ubicacion: normalizarUbicacion(e.target.value) },
+                }))
+              }
             />
-            <p className="mt-1 text-xs text-stone-500">
-              De mayor a menor, separado por comas. Se guarda en minúsculas y se conserva para la
-              obra siguiente.
-            </p>
           </div>
+
+          <p className="text-xs text-stone-500">
+            Fecha, técnica y ubicación se arrastran a la obra siguiente tal como los dejes.
+          </p>
         </div>
 
         {error && (
           <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
             No se ha podido guardar: {error}
             <br />
-            Los datos siguen en el formulario, puedes reintentarlo.
+            Los datos siguen aquí, puedes reintentarlo.
           </p>
         )}
 
-        <div className="flex gap-2">
-          <button className="boton-primario flex-1" disabled={guardando}>
-            {guardando ? 'Guardando…' : 'Guardar y seguir'}
+        <button className="boton-primario min-h-[3.5rem] w-full text-lg" disabled={guardando}>
+          {guardando ? 'Guardando…' : 'Guardar y siguiente'}
+        </button>
+
+        {guardadas.length > 0 && (
+          <div className="tarjeta">
+            <p className="text-sm font-medium">Guardadas en este lote</p>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {guardadas.map((id) => (
+                <li key={id}>
+                  <Link
+                    to={`/obra/${id}`}
+                    className="inline-block rounded bg-stone-100 px-2 py-1 font-mono text-xs underline"
+                  >
+                    {id}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-stone-500">
+              Comprueba que las etiquetas físicas coinciden con esta lista antes de cerrar el lote.
+            </p>
+          </div>
+        )}
+
+        <div className="flex gap-2 pb-4">
+          <button type="button" className="boton-secundario flex-1" onClick={() => navegar('/')}>
+            Ir al listado
           </button>
           <button
             type="button"
             className="boton-secundario"
-            onClick={() => navegar('/')}
-            disabled={guardando}
+            onClick={() => {
+              olvidarLote()
+              setLote(LOTE_INICIAL)
+              setGuardadas([])
+              setRango(false)
+              setAbierto(false)
+            }}
           >
-            Listado
+            Cerrar lote
           </button>
         </div>
-
-        <p className="pb-4 text-center text-xs text-stone-500">
-          Faltan campos por rellenar: se completan después desde la ficha.
-        </p>
       </form>
     </Layout>
   )
