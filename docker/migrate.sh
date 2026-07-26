@@ -11,7 +11,10 @@ for i in $(seq 1 60); do
   sleep 1
 done
 
+# RLS activado y ninguna política: la tabla de control no se expone por la API.
+# Se hace aquí y no en una migración porque esta tabla solo existe en local.
 psql -v ON_ERROR_STOP=1 -c "create table if not exists public._migraciones (nombre text primary key, aplicada_en timestamptz default now())"
+psql -v ON_ERROR_STOP=1 -c "alter table public._migraciones enable row level security"
 
 for f in $(ls /migrations/*.sql | sort); do
   nombre=$(basename "$f")

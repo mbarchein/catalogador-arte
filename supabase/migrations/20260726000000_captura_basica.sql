@@ -337,9 +337,10 @@ $$;
 alter table public.perfiles enable row level security;
 alter table public.obras enable row level security;
 
--- La tabla de control de migraciones no se expone por la API: RLS activado y
--- ninguna política, es decir, nadie.
-alter table public._migraciones enable row level security;
+-- La tabla de control de migraciones del stack local (_migraciones) no se
+-- asegura aquí: solo existe en local, la crea docker/migrate.sh y es allí
+-- donde se le activa RLS. En producción el control lo lleva la CLI de
+-- Supabase en su propio esquema y esta tabla no existe.
 
 -- perfiles: cualquier miembro del equipo ve la lista, porque la ficha muestra
 -- «actualizado por» con nombre. Solo el propio usuario edita su perfil, y el
