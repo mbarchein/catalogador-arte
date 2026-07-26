@@ -121,3 +121,32 @@ ninguna ficha que las explique, es decir, deja de haber catálogo.
 al coste en un factor de veinte. JPEG de cámara a máxima calidad es suficiente para publicar en web y
 para el catálogo impreso; TIFF es lo que pide un archivo destinado a durar. Debe decidirse antes de
 empezar a fotografiar en serie, y conviene consultarlo con el asesor externo.
+
+---
+
+## Actualización (27/07/2026): tamaños reales y consecuencia
+
+El equipo fija el tamaño real de las imágenes: **2-8 MB como mínimo cada una** (y ADR-005 ya había
+consolidado que los ficheros de la aplicación viven en Supabase Storage, no en R2). Con ese dato:
+
+| Nivel | Por toma | 5.000 tomas | ¿Cabe en el 1 GB gratuito de Supabase? |
+|---|---|---|---|
+| Miniatura (400 px WebP) | ~2-30 KB | ~0,1 GB | Sí, sobrado |
+| Derivada (2000 px WebP) | ~150-400 KB | ~0,75-2 GB | **Justo o no** — vigilar |
+| Máster (original) | **2-8 MB mínimo** | **10-40 GB** | **No: se agota con 125-500 tomas** |
+
+Consecuencias:
+
+1. **Los másters van a Backblaze B2 desde el inicio de la captura real**, no «cuando toquen». El
+   1 GB de Supabase se agota entre la toma 125 y la 500 — es decir, durante las primeras semanas.
+2. **B2 exige una pieza nueva: una función Edge de Supabase que firme las subidas y descargas.**
+   Las credenciales de B2 no pueden viajar en el cliente (mismo principio que RF-111), y sin
+   backend propio, la función Edge es el único lugar donde pueden vivir. Será la primera función
+   Edge del proyecto; el patrón existe rodado en la otra aplicación del equipo.
+3. Las derivadas se quedan en Supabase Storage, pero al ritmo de ~150-400 KB la colección completa
+   ronda el límite gratuito. Si se supera, la salida barata es bajar la derivada a 1600 px — decisión
+   de calidad que corresponde al equipo, no un ajuste silencioso — o pasar Supabase a Pro.
+4. El coste de los másters en B2 es despreciable: 10 GB gratis y ~0,06-0,24 $/mes a volumen completo.
+
+Esto acota también el sobre de DP-09: el formato del máster que se decida deberá vivir en ese rango
+de 2-8 MB o más, y la decisión sigue pendiente.

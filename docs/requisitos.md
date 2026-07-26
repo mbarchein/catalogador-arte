@@ -251,9 +251,9 @@ los documentos originales.
 | RNF-105 | La aplicación se presenta en español de España, con zona horaria `Europe/Madrid`. |
 | RNF-106 | La interfaz se diseña **partiendo del móvil**, no adaptándose a él: es el dispositivo del caso de uso principal. |
 | RNF-107 | El pipeline del catálogo impreso sigue siendo Python: un script local que se conecta por `psycopg2` directamente a PostgreSQL, ya que Supabase es PostgreSQL. La elección de TypeScript en el frontend no lo afecta. |
-| RNF-108 | El diseño asume un volumen de hasta unas 500 obras por fondo, más la documentación de archivo: del orden de 5000 tomas fotográficas. |
+| RNF-108 | El diseño asume hasta unas 500 obras por fondo: del orden de 5000 tomas, con másters de **2-8 MB como mínimo** cada uno (10-40 GB en total). |
 | RNF-109 | Los datos residen en la Unión Europea: región europea en Supabase, donde vive todo dato personal y de catálogo. Los activos estáticos del frontend (sin datos) se sirven desde la red global de Vercel. |
-| RNF-110 | **Revisado por ADR-005.** Derivadas y miniaturas viven en Supabase Storage (bucket privado). Másters y volcados irán a Backblaze B2 cuando toquen, con el umbral de ADR-002. |
+| RNF-110 | **Revisado por ADR-005 y la actualización de ADR-002.** Derivadas y miniaturas en Supabase Storage (bucket privado). Los másters van a Backblaze B2 **desde el inicio de la captura real** —con 2-8 MB por toma, el gratuito de Supabase se agota entre la toma 125 y la 500— mediante una función Edge que firma subidas y descargas, porque las credenciales de B2 no pueden viajar en el cliente. |
 | RNF-111 | El acceso a ficheros se concede mediante URL firmada de caducidad corta. Ningún bucket es públicamente legible. |
 | RNF-112 | Los másters se conservan según la regla **3-2-1**: tres copias, dos medios distintos, una fuera del lugar de trabajo. Para las obras con `estado_existencia` Destruida o Perdida, la fotografía es la única prueba que quedará de que existieron. |
 | RNF-113 | Existe un volcado periódico de la base de datos en almacenamiento propio. El tramo gratuito de Supabase no incluye copias de seguridad, y sin ficha las imágenes dejan de ser un catálogo. |
@@ -278,7 +278,8 @@ lugar desde el que se lanzará el pipeline del catálogo impreso.
 | 6 | Ficha de obra completa, índices y búsqueda | Pendiente |
 | 7 | Subida de imágenes en tres niveles y ficha imprimible con QR | Pendiente |
 | 8 | Papelera y bloqueo de edición con su *trigger* | Pendiente |
-| 9 | Volcados automáticos y dominio propio | Pendiente |
+| 9 | **Másters a Backblaze B2**: función Edge de firmas, bucket y flujo de subida. Antes de la captura en serie | Pendiente |
+| 10 | Volcados automáticos y dominio propio | Pendiente |
 
 La fase 4 va deliberadamente antes que cualquier pantalla. En el stack anterior los permisos podían
 dejarse para después porque el servidor negaba por omisión; aquí, una tabla sin política es una tabla
@@ -314,4 +315,4 @@ El detalle del razonamiento está en
 | DP-07 | Dónde se almacena el estado del bloqueo de edición: columnas en la propia tabla o tabla aparte. La imposición mediante *trigger* ya está decidida (RF-708); lo que falta es dónde vive el dato | Fase 8 |
 | DP-08 | Si los campos Sí/No de fase 1 (`tiene_marco`, `requiere_restauracion`, `requiere_reenmarcacion`) necesitan un tercer valor «Sin revisar», por coherencia con RF-205 | Fase 3 |
 | DP-10 | **Licencia del repositorio**, ahora público: sin fichero de licencia es «todos los derechos reservados». El código es una cosa; las imágenes y textos del catálogo, otra, y conviene dejarlo escrito | Nada técnico; sí la reutilización |
-| DP-09 | **Formato del máster fotográfico**: JPEG de cámara a máxima calidad, RAW o TIFF. No es una decisión de infraestructura sino de criterio archivístico, y multiplica el coste de almacenamiento por veinte. Debe decidirse **antes de empezar a fotografiar en serie**: reconvertir 5000 archivos después no recupera lo que el JPEG ya descartó | Fase 7, y el trabajo de campo |
+| DP-09 | **Formato del máster fotográfico**: JPEG a máxima calidad, RAW o TIFF, dentro del sobre fijado de 2-8 MB mínimo por toma. Criterio archivístico, no de infraestructura. Debe decidirse **antes de fotografiar en serie**: reconvertir 5000 archivos después no recupera lo que el JPEG ya descartó | El trabajo de campo, y dimensiona B2 |
