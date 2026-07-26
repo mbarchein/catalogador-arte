@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { CampoContrasena } from '../components/ui'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -65,15 +66,10 @@ export function LoginPage() {
           <label className="etiqueta" htmlFor="contrasena">
             Contraseña
           </label>
-          <input
-            id="contrasena"
-            className="campo"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
-          />
+          {/* Con mostrar/ocultar: en el móvil se teclea a ciegas y el mensaje de
+              error es genérico a propósito, así que poder ver lo escrito es la
+              salida barata cuando «no entra». */}
+          <CampoContrasena id="contrasena" valor={contrasena} alCambiar={setContrasena} />
         </div>
 
         {error && (

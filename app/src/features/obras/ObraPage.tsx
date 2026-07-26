@@ -21,7 +21,7 @@ import {
   descomponerFecha,
   type FechaEstructurada,
 } from '../../lib/fechaEstructurada'
-import { Fichas, Interruptor, PasoAnio, TriEstadoIconos } from '../../components/ui'
+import { BarraAcciones, Fichas, Grupo, Interruptor, PasoAnio, TriEstadoIconos } from '../../components/ui'
 import { normalizarUbicacion, ubicacionParaGuardar } from '../../lib/ubicacion'
 import { GaleriaObra } from './GaleriaObra'
 import { useObra } from './useObras'
@@ -65,7 +65,7 @@ export function ObraPage() {
 
   if (editando) {
     return (
-      <Layout titulo={obra.id_catalogacion} atras="/">
+      <Layout titulo={`Editando ${obra.id_catalogacion}`} atras="/">
         <FormularioEdicion
           obra={obra}
           alTerminar={async () => {
@@ -82,7 +82,22 @@ export function ObraPage() {
   const avisoEstado = avisoExistencia(obra)
 
   return (
-    <Layout titulo={obra.id_catalogacion} atras="/">
+    <Layout
+      titulo={obra.id_catalogacion}
+      atras="/"
+      // En la cabecera fija, no dentro de la página: así editar está al alcance
+      // sin volver arriba, por larga que sea la ficha.
+      accion={
+        puedeEditar ? (
+          <button
+            onClick={() => setEditando(true)}
+            className="boton-primario min-h-[2.5rem] px-4 text-sm"
+          >
+            Editar
+          </button>
+        ) : undefined
+      }
+    >
       <header className="mb-4">
         <p className="font-mono text-sm text-stone-500">{obra.id_catalogacion}</p>
         <h1 className="text-xl font-semibold">{mostrarTitulo(obra.titulo)}</h1>
@@ -113,11 +128,6 @@ export function ObraPage() {
           )}
         </div>
 
-        {puedeEditar && (
-          <button onClick={() => setEditando(true)} className="boton-primario mt-3">
-            Editar
-          </button>
-        )}
       </header>
 
       <GaleriaObra idCatalogacion={obra.id_catalogacion} />
@@ -273,7 +283,7 @@ function FormularioEdicion({
     <form onSubmit={guardar} className="space-y-3">
       {/* RF-308: toda la ficha entra en edición a la vez, cabecera incluida.
           La clave primaria se muestra de solo lectura (RF-204). */}
-      <div className="tarjeta space-y-3">
+      <Grupo titulo="Identificación">
         <div>
           <label className="etiqueta">Código de catalogación</label>
           <input className="campo bg-stone-100 text-stone-500" value={obra.id_catalogacion} readOnly />
@@ -317,10 +327,16 @@ function FormularioEdicion({
           />
         </div>
 
+      </Grupo>
+
+      <Grupo titulo="Fecha de ejecución">
         <CampoFecha
           texto={datos.fecha_ejecucion}
           alCambiar={(v) => set('fecha_ejecucion', v)}
         />
+      </Grupo>
+
+      <Grupo titulo="Con la obra delante" pista="medidas, materia y firma">
 
         <div className="grid grid-cols-3 gap-2">
           <div>
@@ -414,9 +430,9 @@ function FormularioEdicion({
           valor={datos.fechada_en_obra}
           alCambiar={(v) => set('fechada_en_obra', v)}
         />
-      </div>
+      </Grupo>
 
-      <div className="tarjeta space-y-4">
+      <Grupo titulo="Conservación y localización">
         <Fichas
           id="e-conservacion"
           etiqueta="Estado de conservación"
@@ -451,9 +467,9 @@ function FormularioEdicion({
             onChange={(e) => set('ubicacion_fisica', normalizarUbicacion(e.target.value))}
           />
         </div>
-      </div>
+      </Grupo>
 
-      <div className="tarjeta space-y-2">
+      <Grupo titulo="Estado del proceso" pista="uso interno, no se publica">
         <Interruptor
           etiqueta="Medidas verificadas físicamente"
           ayuda="Solo si alguien del equipo las ha medido, no si vienen de un catálogo antiguo."
@@ -495,22 +511,26 @@ function FormularioEdicion({
             Uso interno del equipo. No se publica en el catálogo.
           </p>
         </div>
-      </div>
+      </Grupo>
 
-      {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
-          No se ha podido guardar: {error}
-        </p>
-      )}
-
-      <div className="flex gap-2 pb-4">
-        <button className="boton-primario flex-1" disabled={guardando}>
+      {/* Guardar y cancelar siempre bajo el pulgar: el formulario es largo y el
+          error de guardado aparece junto al botón que se acaba de pulsar. */}
+      <BarraAcciones
+        aviso={
+          error ? (
+            <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-800">
+              No se ha podido guardar: {error}
+            </p>
+          ) : null
+        }
+      >
+        <button className="boton-primario min-h-[3.25rem] flex-1 text-base" disabled={guardando}>
           {guardando ? 'Guardando…' : 'Guardar'}
         </button>
         <button type="button" className="boton-secundario" onClick={alCancelar} disabled={guardando}>
           Cancelar
         </button>
-      </div>
+      </BarraAcciones>
     </form>
   )
 }

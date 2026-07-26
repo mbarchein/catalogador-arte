@@ -13,8 +13,20 @@ export function ObrasPage() {
   const { puedeEditar } = useAuth()
 
   return (
-    <Layout titulo="Obras">
-      <div className="mb-4 flex gap-2">
+    <Layout
+      titulo="Obras"
+      // RF-1104: el botón de alta solo para quien puede editar. En la cabecera
+      // fija queda disponible también con el listado desplazado — con cientos de
+      // obras, «capturar la siguiente» no debe exigir volver arriba.
+      accion={
+        puedeEditar ? (
+          <Link to="/captura" className="boton-primario min-h-[2.5rem] px-4 text-sm">
+            + Nueva
+          </Link>
+        ) : undefined
+      }
+    >
+      <div className="mb-4">
         <input
           className="campo"
           type="search"
@@ -23,12 +35,6 @@ export function ObrasPage() {
           placeholder="Buscar por código o título"
           aria-label="Buscar obras"
         />
-        {/* RF-1104: el botón de alta solo para quien puede editar. */}
-        {puedeEditar && (
-          <Link to="/captura" className="boton-primario shrink-0">
-            + Nueva
-          </Link>
-        )}
       </div>
 
       {error && (
