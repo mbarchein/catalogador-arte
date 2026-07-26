@@ -226,6 +226,14 @@ aplicación, no un añadido.
 | RF-1206 | La cámara se invoca directamente desde el formulario, sin obligar a salir a la aplicación de fotos y volver a elegir el archivo. |
 | RF-1207 | La subida informa de su progreso y sobrevive a una conexión intermitente: si falla, se puede reintentar sin volver a rellenar los campos. |
 
+### RF-1300 · Vistas en vivo
+
+| Id | Requisito |
+|---|---|
+| RF-1301 | El listado de obras, la ficha en consulta y la galería se actualizan por WebSocket cuando otro usuario cambia los datos, sin recargar la página. |
+| RF-1302 | La entrega en vivo respeta RLS: nadie recibe por el canal una fila que no podría leer con una consulta. |
+| RF-1303 | Un formulario en edición no se refresca por eventos ajenos: el borrador del operador no se pisa. El conflicto de edición concurrente se resuelve con el bloqueo de edición (RF-700), no con el canal. |
+
 ---
 
 ## 6. Requisitos no funcionales
@@ -238,14 +246,14 @@ los documentos originales.
 |---|---|
 | RNF-101 | La aplicación es una PWA estática que habla directamente con Supabase: PostgreSQL gestionado, PostgREST como API, Supabase Auth y Supabase Storage. No hay servidor de aplicación propio. |
 | RNF-102 | El frontend se construye con Vite, React y **TypeScript**. Los tipos de las nueve tablas se generan desde el esquema con la CLI de Supabase, no se mantienen a mano: es lo que compensa la pérdida de las validaciones que aportaba un ORM. |
-| RNF-103 | El frontend se aloja en Cloudflare Pages, con despliegue desde GitHub Actions al fusionar en `main`. |
+| RNF-103 | **Revisado por [ADR-005](decisiones/ADR-005-vercel-repo-publico-y-vivo.md).** El frontend se aloja en Vercel, con despliegue desde GitHub Actions al fusionar en `main`. Cloudflare quedó descartado para tráfico de usuarios por los bloqueos de LaLiga en España. |
 | RNF-104 | La plataforma se gestiona como código con Terraform en `infra/`. El esquema de la base de datos y las políticas RLS **no** son Terraform: viven en SQL versionado que aplica la CLI de Supabase. |
 | RNF-105 | La aplicación se presenta en español de España, con zona horaria `Europe/Madrid`. |
 | RNF-106 | La interfaz se diseña **partiendo del móvil**, no adaptándose a él: es el dispositivo del caso de uso principal. |
 | RNF-107 | El pipeline del catálogo impreso sigue siendo Python: un script local que se conecta por `psycopg2` directamente a PostgreSQL, ya que Supabase es PostgreSQL. La elección de TypeScript en el frontend no lo afecta. |
 | RNF-108 | El diseño asume un volumen de hasta unas 500 obras por fondo, más la documentación de archivo: del orden de 5000 tomas fotográficas. |
-| RNF-109 | Los datos residen en la Unión Europea: región europea en Supabase y ubicación `EEUR` en los buckets de R2. |
-| RNF-110 | Las imágenes se almacenan en Cloudflare R2, en buckets separados para derivadas y para másters. Umbral de revisión: si los másters superan los 100 GB, ese bucket migra a un proveedor más barato para archivo. |
+| RNF-109 | Los datos residen en la Unión Europea: región europea en Supabase, donde vive todo dato personal y de catálogo. Los activos estáticos del frontend (sin datos) se sirven desde la red global de Vercel. |
+| RNF-110 | **Revisado por ADR-005.** Derivadas y miniaturas viven en Supabase Storage (bucket privado). Másters y volcados irán a Backblaze B2 cuando toquen, con el umbral de ADR-002. |
 | RNF-111 | El acceso a ficheros se concede mediante URL firmada de caducidad corta. Ningún bucket es públicamente legible. |
 | RNF-112 | Los másters se conservan según la regla **3-2-1**: tres copias, dos medios distintos, una fuera del lugar de trabajo. Para las obras con `estado_existencia` Destruida o Perdida, la fotografía es la única prueba que quedará de que existieron. |
 | RNF-113 | Existe un volcado periódico de la base de datos en almacenamiento propio. El tramo gratuito de Supabase no incluye copias de seguridad, y sin ficha las imágenes dejan de ser un catálogo. |
@@ -305,4 +313,5 @@ El detalle del razonamiento está en
 | DP-06 | Convención definitiva de nomenclatura de archivos de imagen, ahora con tres niveles por toma | Fase 7 |
 | DP-07 | Dónde se almacena el estado del bloqueo de edición: columnas en la propia tabla o tabla aparte. La imposición mediante *trigger* ya está decidida (RF-708); lo que falta es dónde vive el dato | Fase 8 |
 | DP-08 | Si los campos Sí/No de fase 1 (`tiene_marco`, `requiere_restauracion`, `requiere_reenmarcacion`) necesitan un tercer valor «Sin revisar», por coherencia con RF-205 | Fase 3 |
+| DP-10 | **Licencia del repositorio**, ahora público: sin fichero de licencia es «todos los derechos reservados». El código es una cosa; las imágenes y textos del catálogo, otra, y conviene dejarlo escrito | Nada técnico; sí la reutilización |
 | DP-09 | **Formato del máster fotográfico**: JPEG de cámara a máxima calidad, RAW o TIFF. No es una decisión de infraestructura sino de criterio archivístico, y multiplica el coste de almacenamiento por veinte. Debe decidirse **antes de empezar a fotografiar en serie**: reconvertir 5000 archivos después no recupera lo que el JPEG ya descartó | Fase 7, y el trabajo de campo |
