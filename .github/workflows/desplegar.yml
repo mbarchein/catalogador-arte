@@ -10,7 +10,7 @@ name: desplegar
 # (primero dejar de usarla, después quitarla).
 #
 # Este workflow queda inerte hasta el primer `terraform apply`: los secretos y
-# variables que consume (SUPABASE_*, CLOUDFLARE_*) los crea infra/github.tf a
+# variables que consume (SUPABASE_*, VERCEL_*) los crea infra/github.tf a
 # partir de los recursos reales, no se copian a mano al panel.
 
 on:
@@ -123,6 +123,10 @@ jobs:
   publicar:
     needs: migrar
     runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -132,24 +136,19 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
 
-      - name: Instalar dependencias
-        run: npm ci
-        working-directory: app
-
-      # Las VITE_* se incrustan en el JavaScript al compilar. Vienen de las
-      # variables de Actions, que Terraform deriva de los recursos reales: no
-      # pueden quedar desactualizadas respecto a la infraestructura.
-      - name: Compilar para producción
-        run: npm run build
-        working-directory: app
+      # Mismo camino que la otra aplicación del equipo, que lleva tiempo en
+      # producción: `vercel build` ejecuta la compilación de Vite (el proyecto
+      # tiene root_directory = app) y las VITE_* se incrustan en ese momento.
+      # Vienen de las variables de Actions, que Terraform deriva de los recursos
+      # reales, así que no pueden quedar desactualizadas: el proyecto de Vercel
+      # no guarda ninguna variable — CI es la única fuente.
+      - name: Publicar en Vercel
+        run: |
+          npm install --global vercel@latest
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"
         env:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
           VITE_APP_URL: ${{ vars.APP_URL }}
-
-      - name: Publicar en Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy app/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main
