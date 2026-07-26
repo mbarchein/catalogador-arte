@@ -96,7 +96,8 @@ interfaz que promete lo que no cumple.
 | RF-203 | No se puede guardar una obra sin `artista`, y `artista` no ofrece «Sin revisar» | Pendiente |
 | RF-204 | Intentar cambiar `id_catalogacion` o el fondo falla contra la base, no solo en el formulario. Faltan las otras cinco claves, cuyas tablas aún no existen | Parcial |
 | RF-205 | Cada campo de selección afectado tiene «Sin revisar» como valor inicial | Pendiente |
-| RF-207 | `fecha_ejecucion` acepta los cuatro formatos, `fecha_orden` ordena un conjunto mezclado, y un año implausible se descarta en vez de ordenar mal en silencio | **Hecho** |
+| RF-207 | La columna generada compone los ocho formatos; no se puede escribir directamente; la nota manda en la ficha conservando el año de búsqueda; rango invertido, año implausible y bandera sin año se rechazan; la consulta de época funciona por solapamiento | **Hecho** |
+| RF-207 | La fecha escrita a mano se estructura si es canónica (con variantes de catálogo) y solo lo imparseable queda como nota, con el año rescatado | **Hecho** |
 | RF-209 | Obra con `titulo` vacío se representa como «[Sin título]» sin guardar el dato; obra titulada literalmente «Sin título» se muestra sin corchetes | **Hecho** |
 | RF-210 | `fotografiada` es No sin imágenes, Sí con una imagen activa, y **No cuando su única imagen está de baja** (INC-14) | Pendiente |
 | RF-211 | `medidas_verificadas` sigue en No aunque `alto_cm` y `ancho_cm` tengan valor | Pendiente |

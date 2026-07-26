@@ -87,7 +87,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-204 | Las claves primarias no son editables una vez creada la ficha, tampoco en modo edición: se presentan de solo lectura en el formulario. Afecta a `id_catalogacion`, `id_exposicion`, `clave_bibtex`, `id_documento`, `id_serie` e `id_imagen`. |
 | RF-205 | Los campos de selección ofrecen «Sin revisar» como valor inicial, distinto de «Desconocido» y de «No», salvo las excepciones justificadas en el esquema. |
 | RF-206 | Los campos de texto libre quedan vacíos mientras el dato esté pendiente. Si tras la investigación no hay dato que aportar, se consigna `N/D`. |
-| RF-207 | `fecha_ejecucion` es texto y admite fecha exacta, rango, aproximación y rango aproximado. `fecha_orden` es el número auxiliar que permite ordenar y filtrar cronológicamente, y no se muestra en la ficha publicada. |
+| RF-207 | **Revisado por [ADR-004](decisiones/ADR-004-fecha-estructurada.md).** La fecha vive en campos estructurados (`anio_inicio`, `anio_fin`, `fecha_aproximada`, `fecha_sin_confirmar`, `fecha_nota`); `fecha_ejecucion` es una **columna generada** que compone el texto publicable y no se escribe nunca. La fecha tecleada a mano se analiza hacia la estructura; solo lo imparseable queda como nota, rescatando el año para búsqueda. `fecha_orden` ya no existe. |
 | RF-208 | Las dimensiones se almacenan como números sin unidades, en campos separados (`alto_cm`, `ancho_cm`, `profundidad_cm`). |
 | RF-209 | `titulo` vacío significa obra sin título. La interfaz muestra «[Sin título]» entre corchetes como referencia visual, sin guardar ese texto como dato. Una obra que el artista tituló literalmente *Sin título* lleva ese valor en el campo, sin corchetes. |
 | RF-210 | `fotografiada` es un campo calculado: vale Sí cuando existe al menos una imagen **activa** asociada a la obra. No admite confirmación manual. |
@@ -146,7 +146,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | Id | Requisito |
 |---|---|
 | RF-601 | Obras dispone de dos índices: índice de identificadores e índice visual en mosaico de imágenes. |
-| RF-602 | La búsqueda de obras ofrece filtros combinables entre sí, no un campo por botón. Filtros principales, siempre visibles: texto libre (sobre `id_catalogacion`, `titulo` y `titulos_alt`), `artista`, rango de fechas (por `fecha_orden`), `serie` y `tipo_obra`. |
+| RF-602 | La búsqueda de obras ofrece filtros combinables entre sí, no un campo por botón. Filtros principales, siempre visibles: texto libre (sobre `id_catalogacion`, `titulo` y `titulos_alt`), `artista`, rango de fechas (solapamiento sobre `anio_inicio`/`anio_fin`), `serie` y `tipo_obra`. |
 | RF-603 | Filtros avanzados, colapsados por defecto: `tecnica`, `estado_existencia`, `fase_inventario_completada`, `fase_documentacion_completada` y rango mínimo-máximo de medidas. |
 | RF-604 | Las columnas de resultados son: `id_catalogacion` (único enlace a la ficha), miniatura, `titulo`, `artista` y `fecha_ejecucion`, con contador «mostrando X–Y de Z resultados» y paginación. |
 | RF-605 | Una búsqueda sin resultados devuelve la misma página de búsqueda con el mensaje «No se han encontrado obras con estos criterios» en lugar de la tabla. Nunca una página en blanco. |
