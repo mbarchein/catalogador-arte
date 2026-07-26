@@ -37,8 +37,11 @@ export function LoginPage() {
     setEnviando(false)
   }
 
+  // Arriba, no centrado verticalmente: en el móvil, al enfocar el correo se
+  // abre el teclado y un formulario centrado queda medio tapado o saltando.
+  // Anclado arriba, los campos siguen a la vista mientras se teclea.
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen items-start justify-center p-4 pt-10">
       <form onSubmit={entrar} className="tarjeta w-full max-w-sm space-y-4">
         <div>
           <h1 className="text-xl font-semibold">Catalogador</h1>
