@@ -1,0 +1,137 @@
+# Infraestructura
+
+Toda la plataforma del proyecto como código: proyecto de Supabase, buckets de Cloudflare R2,
+alojamiento en Cloudflare Pages y configuración del repositorio de GitHub.
+
+Decisiones que justifican esto: [ADR-001](../docs/decisiones/ADR-001-stack-y-despliegue.md) (stack) y
+[ADR-002](../docs/decisiones/ADR-002-almacenamiento-de-imagenes.md) (almacenamiento).
+
+## Qué gestiona Terraform y qué no
+
+Esta es la frontera más importante de entender, y no es una limitación del provider sino una decisión
+deliberada:
+
+| Terraform (`infra/`) | SQL versionado (`supabase/migrations/`) |
+|---|---|
+| Proyecto de Supabase y sus ajustes de plataforma | Tablas, columnas, restricciones e índices |
+| Ajustes de autenticación y de la API | **Políticas RLS** |
+| Buckets de R2 | *Triggers* (entre ellos el que impone el bloqueo de edición) |
+| Proyecto de Pages y variables de entorno | Funciones y vistas |
+| Repositorio, protección de ramas, secretos y variables de Actions | Datos de referencia |
+
+El esquema necesita migraciones ordenadas y reversibles sobre datos ya cargados, que es exactamente lo
+que Terraform no sabe hacer: su modelo es converger a un estado deseado, no recorrer una secuencia de
+transformaciones. Gestionar tablas desde aquí con el provider de PostgreSQL entraría además en
+conflicto con las migraciones de la CLI de Supabase.
+
+**Las políticas RLS son el único perímetro de seguridad de la aplicación** (ADR-001): no hay backend, y
+la clave anónima viaja en el cliente. Viven en SQL, se revisan como código y se verifican con tests
+antes de cada despliegue.
+
+## Estructura
+
+```
+infra/
+├── versions.tf              Versiones de Terraform y de los proveedores; backend remoto
+├── providers.tf             Configuración de los tres proveedores
+├── variables.tf             Entradas, con validación
+├── supabase.tf              Proyecto y ajustes de plataforma
+├── cloudflare.tf            Buckets de R2 y proyecto de Pages
+├── github.tf                Repositorio, protección de ramas, secretos y variables
+├── terraform.tfvars.example Plantilla de valores; copiar a terraform.tfvars
+├── backend.hcl.example      Plantilla del backend; copiar a backend.hcl
+└── bootstrap/               Crea el bucket del estado. Se ejecuta una sola vez
+```
+
+## Arranque
+
+El estado de Terraform vive en un bucket de R2 que la propia configuración no puede crear, porque lo
+necesita para arrancar. De ahí el módulo `bootstrap/`, que se ejecuta una vez con estado local.
+
+### 1. Credenciales
+
+Necesitas tres tokens. Ninguno se guarda en el repositorio.
+
+| Token | Dónde se obtiene | Permisos |
+|---|---|---|
+| Supabase | Panel → Account → Access Tokens | Completo sobre la organización |
+| Cloudflare | Panel → My Profile → API Tokens | `Workers R2 Storage:Edit` y `Cloudflare Pages:Edit` |
+| GitHub | Settings → Developer settings → Tokens | `repo` y `admin:repo_hook` |
+
+Además, un par de claves de acceso de R2 (Panel → R2 → Manage API tokens) para que Terraform pueda
+escribir su propio estado.
+
+### 2. Crear el bucket del estado
+
+```bash
+cd infra/bootstrap
+export TF_VAR_cloudflare_api_token='...'
+export TF_VAR_cloudflare_account_id='...'
+terraform init
+terraform apply
+terraform output -raw backend_hcl > ../backend.hcl
+```
+
+La salida `backend_hcl` genera el fichero de configuración del backend ya rellenado, así que no hay que
+copiar el identificador de cuenta a mano.
+
+### 3. Aplicar la configuración principal
+
+```bash
+cd infra
+cp terraform.tfvars.example terraform.tfvars   # rellenar
+export AWS_ACCESS_KEY_ID='...'                 # clave de acceso de R2
+export AWS_SECRET_ACCESS_KEY='...'
+terraform init -backend-config=backend.hcl
+terraform plan      # leer el plan antes de aplicar, siempre
+terraform apply
+```
+
+### 4. Comprobar
+
+```bash
+terraform output
+```
+
+Deben aparecer la referencia del proyecto de Supabase, los tres buckets y la URL de Pages. Los secretos
+y variables del repositorio quedan puestos, de modo que el flujo de integración continua ya tiene lo que
+necesita sin tocar el panel de GitHub.
+
+## Trabajo habitual
+
+```bash
+terraform fmt -recursive      # formatear
+terraform validate            # comprobar sintaxis y referencias
+terraform plan                # ver qué cambiaría
+```
+
+Los dos primeros se ejecutan también en cada *push* (`.github/workflows/verificar.yml`), y la rama
+`main` está protegida exigiendo que pasen.
+
+`terraform apply` **no se ejecuta desde CI**: es una operación con consecuencias sobre infraestructura
+real y sobre datos, y se lanza a mano después de leer el plan. Automatizarla ahorraría un minuto al mes
+a cambio de la posibilidad de destruir el proyecto por un *merge* descuidado.
+
+## Cosas que hay que saber
+
+**El bloqueo del estado usa escrituras condicionales de R2** (`use_lockfile = true`). Si diera error en
+la primera ejecución, ponlo a `false`: con un solo operador, trabajar sin bloqueo es asumible.
+
+**La contraseña de la base de datos no se puede leer de vuelta** desde la API de Supabase, por lo que
+`supabase_project` la ignora tras la creación (`ignore_changes`). Guárdala en un gestor de contraseñas
+al generarla: si se pierde, hay que rotarla desde el panel.
+
+**El versionado de objetos de los buckets de R2** no está expuesto por el provider. ADR-002 lo exige
+para el bucket de másters, donde un borrado accidental sería irreparable: hay que activarlo a mano desde
+el panel de Cloudflare tras el primer `apply`. Conviene revisarlo cuando se actualice el provider.
+
+**El repositorio ya existe en local.** Si lo creas primero a mano en GitHub, pon
+`gestionar_repositorio = false` o impórtalo:
+
+```bash
+terraform import 'github_repository.app[0]' catalogador-arte
+```
+
+**La clave anónima de Supabase es pública por diseño.** Identifica el proyecto, no autoriza nada. Que
+aparezca en el JavaScript compilado no es una fuga: lo que protege los datos son las políticas RLS. Lo
+que nunca debe salir del gestor de secretos es la clave `service_role`, que las ignora todas.

@@ -1,0 +1,36 @@
+# Copiar a terraform.tfvars y rellenar. terraform.tfvars está en .gitignore:
+# nunca se sube al repositorio, porque contiene tokens y la contraseña de la base
+# de datos.
+#
+# Alternativa sin ficheros en disco, preferible en CI: exportar cada valor como
+# variable de entorno con el prefijo TF_VAR_ (TF_VAR_supabase_access_token=...).
+
+proyecto = "catalogador-arte"
+
+# --- Supabase ---------------------------------------------------------------
+# Token personal: https://supabase.com/dashboard/account/tokens
+supabase_access_token = ""
+
+# Identificador de la organización, visible en la URL del panel
+supabase_organization_id = ""
+
+# Genera la contraseña con un gestor de contraseñas y guárdala allí. No es
+# recuperable desde la API una vez creado el proyecto.
+supabase_db_password = ""
+
+# URL pública de la aplicación. Supabase Auth la usa para construir los enlaces
+# de los correos de invitación y de recuperación de contraseña.
+supabase_site_url = "https://catalogador-arte.pages.dev"
+
+# --- Cloudflare -------------------------------------------------------------
+# Token con permisos: Workers R2 Storage:Edit y Cloudflare Pages:Edit
+cloudflare_api_token  = ""
+cloudflare_account_id = ""
+
+# --- GitHub -----------------------------------------------------------------
+github_owner      = ""
+github_token      = ""
+github_repository = "catalogador-arte"
+
+# Pon a false si el repositorio ya existe en GitHub y prefieres no importarlo.
+gestionar_repositorio = true

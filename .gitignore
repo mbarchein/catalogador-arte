@@ -1,4 +1,22 @@
-# Entornos virtuales de Python
+# Terraform: estado, credenciales y proveedores descargados.
+# .terraform.lock.hcl SÍ se versiona, para fijar las versiones de los proveedores.
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+*.tfvars
+!*.tfvars.example
+backend.hcl
+!backend.hcl.example
+crash.log
+crash.*.log
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Entornos virtuales de Python (pipeline del catálogo impreso)
 venv/
 .venv/
 env/
