@@ -24,8 +24,14 @@ derivados quedan fuera (ver apartado 8).
 |---|---|---|
 | [`originales/esquema_campos_inventario_v11.md`](originales/esquema_campos_inventario_v11.md) | Qué datos se guardan: nueve tablas, campos, tipos y convenciones de captura | **Normativo** para el modelo de datos |
 | [`originales/diseno_interfaz_y_arquitectura_v4.md`](originales/diseno_interfaz_y_arquitectura_v4.md) | Cómo se construye y se usa la aplicación: stack, roles, páginas, comportamiento | **Normativo** para arquitectura y comportamiento |
+| [`decisiones/`](decisiones/) | Decisiones de arquitectura posteriores a los documentos fuente, con su razonamiento y sus consecuencias | **Normativo**, y prevalece sobre los originales |
 | [`disenos/`](disenos/) | Maquetas de interfaz | Indicativo |
 | [`revision/incidencias-detectadas.md`](revision/incidencias-detectadas.md) | Contradicciones y huecos detectados en los anteriores | Registro de trabajo |
+
+Los documentos originales fijaban Django sobre la máquina del equipo.
+[ADR-001](decisiones/ADR-001-stack-y-despliegue.md) sustituye esa decisión por una PWA estática sobre
+Supabase, y [ADR-002](decisiones/ADR-002-almacenamiento-de-imagenes.md) define el almacenamiento de
+imágenes. Donde los originales y los ADR discrepen, mandan los ADR.
 
 Ante discrepancia entre una maqueta y el esquema de campos, manda el esquema.
 
@@ -64,9 +70,11 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-105 | El Lector tiene acceso de solo lectura a las nueve tablas, sin restricción por campo — incluido `contacto` de Propietarios/Instituciones. |
 | RF-106 | Al Lector no se le muestra ningún control de escritura: ni «Editar», ni «+ Nueva…», ni acceso a la papelera. |
 | RF-107 | El Superusuario dispone de todos los permisos de contenido sin necesidad de pertenecer al grupo Catalogador. |
-| RF-108 | La asignación de usuarios a grupos es competencia exclusiva del Superusuario, mediante el panel de administración de Django. |
-| RF-109 | Los roles se implementan como dos grupos de Django («Catalogador», «Lector») con los permisos estándar `add`/`change`/`delete`/`view` que Django genera por modelo. |
-| RF-110 | Los ficheros subidos no se sirven por URL pública directa: toda descarga pasa por una vista que comprueba sesión y rol. |
+| RF-108 | La asignación de rol a un usuario es competencia exclusiva del Superusuario. Un Catalogador no puede cambiar su propio rol ni el de nadie: la política RLS de la tabla de perfiles debe impedirlo explícitamente. |
+| RF-109 | El rol de cada usuario se almacena en una tabla de perfiles vinculada a Supabase Auth, y se aplica mediante **políticas RLS** en PostgreSQL. Cada tabla del esquema tiene política propia para cada operación (`select`, `insert`, `update`, `delete`). |
+| RF-110 | Los ficheros no son accesibles por URL pública: el acceso se concede mediante URL firmada de caducidad corta, emitida solo a una sesión válida con el rol adecuado. |
+| RF-111 | **No existe ningún camino a los datos que no atraviese RLS.** Al no haber servidor propio, las políticas son el único perímetro de seguridad: una tabla sin política de una operación se considera abierta, no cerrada. La clave `service_role`, que ignora las políticas, no aparece nunca en el cliente ni en el repositorio. |
+| RF-112 | No hay registro abierto de usuarios: las cuentas las crea el Superusuario. La aplicación no tiene zona pública ni formulario de alta. |
 
 ### RF-200 · Modelo de datos y convenciones de captura
 
@@ -114,7 +122,11 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-406 | El recuadro «+» es el único punto de subida de una imagen nueva: abre selector de archivo (clic o arrastrar y soltar) junto con los campos obligatorios de esa fotografía, y crea una fila nueva en Imágenes. |
 | RF-407 | Cada miniatura existente ofrece, al pasar el cursor o al tocar, editar sus metadatos y eliminarla. |
 | RF-408 | `archivo_digitalizado` de Archivo/Documentación sigue el mismo patrón de subida, sin elección de índice: una fila es un archivo. Para documentos multipágina se usa un único PDF con todas las páginas, no una fila por página. |
-| RF-409 | Los ficheros se almacenan dentro del almacenamiento gestionado por la aplicación. No se emplea un servicio externo de almacenamiento con nomenclatura espejo. |
+| RF-409 | Cada toma se almacena en **tres niveles**: miniatura (~30 KB) para el índice en mosaico, derivada de consulta (~300 KB) para la ficha, y máster de archivo con el original íntegro. Los tres son derivaciones del mismo `id_imagen`, no tres filas distintas. |
+| RF-410 | Las derivadas y la miniatura **se generan en el navegador antes de subir**, no en el servidor. Una fotografía de móvil ronda los 4-12 MB y subirla íntegra tres veces desde un almacén con mala cobertura no es viable. |
+| RF-411 | La aplicación no muestra nunca un máster en una vista: ofrece descarga bajo demanda mediante URL firmada, para quien necesite el original (imprenta, comisario, publicación). |
+| RF-412 | Todo acceso a imágenes pasa por una única función del frontend que resuelve la URL de cada nivel, de modo que cambiar de proveedor de almacenamiento sea un cambio en un solo lugar. |
+| RF-413 | El campo `archivo_digitalizado` de Archivo/Documentación sigue el mismo esquema de tres niveles, con la miniatura correspondiente a la primera página del documento. |
 
 ### RF-500 · Exposiciones, bibliografía y tablas puente
 
@@ -153,6 +165,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-705 | Cualquier catalogador puede ver quién tiene una ficha bloqueada y desde cuándo. |
 | RF-706 | Cualquier catalogador puede forzar el desbloqueo de una ficha antes de que expire el timeout. |
 | RF-707 | El aviso de bloqueo indica el modo (consulta o edición) y, si aplica, quién tiene la ficha abierta. No se muestra al Lector, para quien carece de utilidad. |
+| RF-708 | El bloqueo **se impone en la base de datos mediante un *trigger*** que rechaza la escritura si otro usuario mantiene un bloqueo sin caducar. Comprobarlo únicamente en el cliente lo convertiría en una advertencia y no en un bloqueo, porque al no haber servidor propio nada impide escribir directamente contra la API. |
 
 ### RF-800 · Trazabilidad de actualización
 
@@ -195,44 +208,72 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-1102 | Migas de pan en cada página, con la jerarquía completa (ej. `Inicio > Obras > AR-0001`). |
 | RF-1103 | La página de inicio ofrece accesos directos a cada sección e indicadores: número de obras catalogadas, pendientes de fase 1 y de fase 2, y últimas fichas modificadas. |
 | RF-1104 | Cada índice presenta en su cabecera un botón «+ Nueva…», visible solo para el Catalogador. |
-| RF-1105 | La gestión de usuarios se cubre con el panel de administración estándar de Django, reservado al Superusuario. |
+| RF-1105 | La gestión de usuarios (invitar, asignar rol, revocar) se realiza desde el panel de Supabase, reservado al Superusuario. La aplicación no incluye pantallas de administración de usuarios. |
+
+### RF-1200 · Aplicación instalable y captura con el móvil
+
+La captura de datos con el teléfono, de pie y con la obra delante, es el caso de uso principal de la
+aplicación, no un añadido.
+
+| Id | Requisito |
+|---|---|
+| RF-1201 | La aplicación es una PWA instalable: manifiesto, iconos y presentación a pantalla completa una vez añadida a la pantalla de inicio. |
+| RF-1202 | El armazón de la aplicación se cachea para que arranque de inmediato en visitas sucesivas. **Los datos no se cachean**: no hay funcionamiento sin conexión. |
+| RF-1203 | No existe alta ni edición sin conexión. Es una decisión deliberada: la edición desconectada es incompatible con el bloqueo de edición (RF-701), que no se puede garantizar contra un cliente que no está hablando con la base de datos. |
+| RF-1204 | Existe un flujo de **captura rápida** distinto del formulario completo: fotografiar, y rellenar solo el mínimo imprescindible para que la ficha exista (`artista`, `id_catalogacion`, `tipo_obra`, medidas). El resto se completa después desde cualquier dispositivo. |
+| RF-1205 | El flujo de captura rápida es operable con una sola mano y sin teclado físico: campos numéricos con teclado numérico, selecciones con objetivos táctiles amplios y ninguna interacción que dependa de pasar el cursor por encima. |
+| RF-1206 | La cámara se invoca directamente desde el formulario, sin obligar a salir a la aplicación de fotos y volver a elegir el archivo. |
+| RF-1207 | La subida informa de su progreso y sobrevive a una conexión intermitente: si falla, se puede reintentar sin volver a rellenar los campos. |
 
 ---
 
 ## 6. Requisitos no funcionales
 
+Revisados por [ADR-001](decisiones/ADR-001-stack-y-despliegue.md) y
+[ADR-002](decisiones/ADR-002-almacenamiento-de-imagenes.md), que sustituyen las decisiones de stack de
+los documentos originales.
+
 | Id | Requisito |
 |---|---|
-| RNF-101 | La aplicación se construye con Django sobre PostgreSQL. |
-| RNF-102 | Se mantiene el ecosistema Python en todo el proyecto, para compartir lenguaje con el futuro pipeline del catálogo impreso. |
-| RNF-103 | Django se ejecuta con Gunicorn en un puerto interno propio. Apache es el único punto de entrada público y reenvía mediante `mod_proxy`, sin alterar la configuración existente de Moodle. |
-| RNF-104 | PostgreSQL se instala como servicio de sistema independiente en su propio puerto, conviviendo con el MySQL/MariaDB ya presente en la máquina. |
+| RNF-101 | La aplicación es una PWA estática que habla directamente con Supabase: PostgreSQL gestionado, PostgREST como API, Supabase Auth y Supabase Storage. No hay servidor de aplicación propio. |
+| RNF-102 | El frontend se construye con Vite, Svelte y **TypeScript**. Los tipos de las nueve tablas se generan desde el esquema con la CLI de Supabase, no se mantienen a mano: es lo que compensa la pérdida de las validaciones que aportaba un ORM. |
+| RNF-103 | El frontend se aloja en Cloudflare Pages, con despliegue desde GitHub Actions al fusionar en `main`. |
+| RNF-104 | La plataforma se gestiona como código con Terraform en `infra/`. El esquema de la base de datos y las políticas RLS **no** son Terraform: viven en SQL versionado que aplica la CLI de Supabase. |
 | RNF-105 | La aplicación se presenta en español de España, con zona horaria `Europe/Madrid`. |
-| RNF-106 | La interfaz es utilizable desde móvil: el acceso por QR con la obra delante es un caso de uso previsto, no accesorio. |
-| RNF-107 | No se emplea Node.js, npm ni build de frontend: plantillas de Django y una librería CSS ligera. |
-| RNF-108 | El diseño asume un volumen de hasta unas 500 obras por fondo, más la documentación de archivo. |
-| RNF-109 | El entorno de ejecución inicial es la máquina Ubuntu ya disponible, considerada suficiente para desarrollo y primer uso real por un equipo pequeño. |
-| RNF-110 | No se emplea Docker en la fase inicial, para no añadir una capa de aprendizaje antes de dominar Django. Queda como posible mejora futura. |
-| RNF-111 | Los ficheros subidos se sirven exclusivamente a usuarios autenticados, según su rol. |
-| RNF-112 | El crecimiento en disco por imágenes en alta resolución es un punto a vigilar, sin ser una restricción actual. |
-| RNF-113 | La exposición segura del servicio fuera de la red local (dominio, HTTPS, cortafuegos) se aborda en una fase posterior y con apoyo del asesor técnico externo. |
-| RNF-114 | Todo el código vive bajo control de versiones con Git desde el primer día, para poder deshacer cambios con seguridad. |
+| RNF-106 | La interfaz se diseña **partiendo del móvil**, no adaptándose a él: es el dispositivo del caso de uso principal. |
+| RNF-107 | El pipeline del catálogo impreso sigue siendo Python: un script local que se conecta por `psycopg2` directamente a PostgreSQL, ya que Supabase es PostgreSQL. La elección de TypeScript en el frontend no lo afecta. |
+| RNF-108 | El diseño asume un volumen de hasta unas 500 obras por fondo, más la documentación de archivo: del orden de 5000 tomas fotográficas. |
+| RNF-109 | Los datos residen en la Unión Europea: región europea en Supabase y ubicación `EEUR` en los buckets de R2. |
+| RNF-110 | Las imágenes se almacenan en Cloudflare R2, en buckets separados para derivadas y para másters. Umbral de revisión: si los másters superan los 100 GB, ese bucket migra a un proveedor más barato para archivo. |
+| RNF-111 | El acceso a ficheros se concede mediante URL firmada de caducidad corta. Ningún bucket es públicamente legible. |
+| RNF-112 | Los másters se conservan según la regla **3-2-1**: tres copias, dos medios distintos, una fuera del lugar de trabajo. Para las obras con `estado_existencia` Destruida o Perdida, la fotografía es la única prueba que quedará de que existieron. |
+| RNF-113 | Existe un volcado periódico de la base de datos en almacenamiento propio. El tramo gratuito de Supabase no incluye copias de seguridad, y sin ficha las imágenes dejan de ser un catálogo. |
+| RNF-114 | Todo el código y toda la infraestructura viven bajo control de versiones con Git desde el primer día. |
+| RNF-115 | La rama `main` está protegida: no se fusiona sin que la verificación automática pase. `terraform apply` no se ejecuta desde integración continua. |
 
 ---
 
 ## 7. Orden de construcción
 
-Heredado de la hoja de ruta del documento de diseño. Las dos primeras fases están completadas.
+La hoja de ruta original queda obsoleta: sus fases 1 y 2 construían un entorno de Django que ya no se
+usa. Ese trabajo no se pierde del todo — la máquina Ubuntu pasa a ser el almacén de los másters y el
+lugar desde el que se lanzará el pipeline del catálogo impreso.
 
 | Fase | Contenido | Estado |
 |---|---|---|
-| 1 | Entorno: Python, entorno virtual, Django y dependencias, base de datos propia | Completada |
-| 2 | Esqueleto de Django: estructura, conexión a base de datos, arranque en local | Completada |
-| 3 | Modelos: las nueve tablas más trazabilidad y papelera | **Siguiente** |
-| 4 | Grupos y permisos, con el panel de administración de Django como primer prototipo funcional para validar el esquema con datos reales | Pendiente |
-| 5 | Vistas a medida: índices, búsqueda y ficha de obra con bloqueo de edición | Pendiente |
-| 6 | Almacenamiento de ficheros, ficha imprimible con QR, papelera | Pendiente |
-| 7 | Acceso desde red local y, después, público | Pendiente |
+| 1 | Infraestructura como código: proyecto de Supabase, buckets, Pages y repositorio | Completada |
+| 2 | Verificación automática en integración continua | Completada |
+| 3 | Esquema en SQL: las nueve tablas, más trazabilidad y papelera, como migraciones versionadas | **Siguiente** |
+| 4 | **Políticas RLS y sus tests.** Antes de cualquier interfaz: es el perímetro de seguridad | Pendiente |
+| 5 | Armazón del frontend, autenticación y flujo de captura rápida en móvil | Pendiente |
+| 6 | Ficha de obra completa, índices y búsqueda | Pendiente |
+| 7 | Subida de imágenes en tres niveles y ficha imprimible con QR | Pendiente |
+| 8 | Papelera y bloqueo de edición con su *trigger* | Pendiente |
+| 9 | Volcados automáticos y dominio propio | Pendiente |
+
+La fase 4 va deliberadamente antes que cualquier pantalla. En el stack anterior los permisos podían
+dejarse para después porque el servidor negaba por omisión; aquí, una tabla sin política es una tabla
+abierta.
 
 ## 8. Fuera de alcance
 
@@ -243,7 +284,9 @@ Heredado de la hoja de ruta del documento de diseño. Las dos primeras fases est
 - **Purga real desde la papelera**, ni siquiera para el Superusuario (RF-907).
 - **Detección automática de duplicados** (RF-909).
 - **Restricción de visibilidad por campo** según rol: el Lector ve todos los campos (RF-105).
-- **Contenedorización con Docker** (RNF-110).
+- **Funcionamiento sin conexión.** La PWA es instalable y cachea su armazón, pero no los datos, y no
+  admite alta ni edición desconectada (RF-1202, RF-1203).
+- **Pantallas de administración de usuarios.** Se usa el panel de Supabase (RF-1105).
 
 ## 9. Decisiones pendientes
 
@@ -253,11 +296,12 @@ El detalle del razonamiento está en
 
 | Id | Decisión | Bloquea |
 |---|---|---|
-| DP-01 | Quién asigna `id_catalogacion` y cómo: generación automática por la aplicación o introducción manual por el catalogador | Fase 3 (modelos) y formulario de alta |
+| DP-01 | Quién asigna `id_catalogacion` y cómo: generación automática o introducción manual. Con captura rápida en móvil (RF-1204) la generación automática gana peso — teclear `AR-0247` de pie y con una mano es la clase de gesto que produce duplicados | Fase 3 |
 | DP-02 | Formato de `id_imagen`, que el esquema no especifica | Fase 3 |
 | DP-03 | Si `clave_bibtex` debe seguir siendo clave primaria inmutable o pasar a campo único editable con clave técnica detrás | Fase 3 |
 | DP-04 | Taxonomía cerrada de `agrupacion` y de `etapa`, cuando haya volumen suficiente de obra catalogada | Nada por ahora: texto libre hasta entonces |
 | DP-05 | Si el catálogo online será una web por autor o conjunta | Nada: producto aparcado |
-| DP-06 | Convención definitiva de nomenclatura de archivos de imagen | Fase 6 |
-| DP-07 | Dónde se almacena el estado del bloqueo de edición: campos en la propia ficha o tabla aparte | Fase 5 |
+| DP-06 | Convención definitiva de nomenclatura de archivos de imagen, ahora con tres niveles por toma | Fase 7 |
+| DP-07 | Dónde se almacena el estado del bloqueo de edición: columnas en la propia tabla o tabla aparte. La imposición mediante *trigger* ya está decidida (RF-708); lo que falta es dónde vive el dato | Fase 8 |
 | DP-08 | Si los campos Sí/No de fase 1 (`tiene_marco`, `requiere_restauracion`, `requiere_reenmarcacion`) necesitan un tercer valor «Sin revisar», por coherencia con RF-205 | Fase 3 |
+| DP-09 | **Formato del máster fotográfico**: JPEG de cámara a máxima calidad, RAW o TIFF. No es una decisión de infraestructura sino de criterio archivístico, y multiplica el coste de almacenamiento por veinte. Debe decidirse **antes de empezar a fotografiar en serie**: reconvertir 5000 archivos después no recupera lo que el JPEG ya descartó | Fase 7, y el trabajo de campo |
