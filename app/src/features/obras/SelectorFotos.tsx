@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
-import { prepararToma, validarArchivo, type TomaPreparada } from '../../lib/imagenes'
+import { useState } from 'react'
+import type { TomaPreparada } from '../../lib/imagenes'
 import { ETIQUETA_TIPO_TOMA, type ValorTipoToma } from '../../lib/tipos'
 import { Fichas, IconoMas, IconoNo, IconoSi } from '../../components/ui'
+import { EntradaFotos } from './EntradaFotos'
 
 export interface TomaEnCola {
   /** Identificador local, solo para React. El de catálogo lo asigna la base. */
@@ -15,18 +16,18 @@ export interface TomaEnCola {
 
 let contador = 0
 
+/** Clave local para una toma recién preparada. */
+export function nuevaClave(): string {
+  contador += 1
+  return `t${contador}`
+}
+
 /**
- * Varias fotos por ficha, con las tres vías de entrada que hacen falta:
+ * Cola de fotos de la captura: se preparan y esperan a que se guarde la obra,
+ * porque las imágenes necesitan una obra a la que colgarse y todavía no existe.
  *
- *  - **Cámara del dispositivo**: `capture="environment"` abre directamente la
- *    cámara trasera, sin pasar por el carrete. Es el gesto del almacén.
- *  - **Elegir archivos**: para fotos ya tomadas o escaneos, y admite varias de una.
- *  - **Arrastrar y soltar**: para cuando se cataloga desde el escritorio con una
- *    carpeta de fotos abierta al lado.
- *
- * Las fotos no se suben aquí: se preparan —se decodifican y se reducen a los tres
- * niveles— y esperan en cola. La subida ocurre al guardar la ficha, porque las
- * imágenes necesitan una obra a la que colgarse y la obra todavía no existe.
+ * La cola se persiste en IndexedDB (ver colaFotos.ts): al abrir la cámara, el móvil
+ * puede descartar la pestaña y al volver la página se recarga.
  */
 export function SelectorFotos({
   tomas,
@@ -37,53 +38,25 @@ export function SelectorFotos({
   alCambiar: (tomas: TomaEnCola[]) => void
   deshabilitado: boolean
 }) {
-  const refCamara = useRef<HTMLInputElement>(null)
-  const refArchivos = useRef<HTMLInputElement>(null)
-  const [arrastrando, setArrastrando] = useState(false)
-  const [errores, setErrores] = useState<string[]>([])
-  const [preparando, setPreparando] = useState(0)
   const [abierta, setAbierta] = useState<string | null>(null)
 
-  async function anadir(lista: FileList | File[] | null) {
-    if (!lista || deshabilitado) return
-    const archivos = Array.from(lista)
-    const nuevosErrores: string[] = []
-    setPreparando(archivos.length)
-
-    const preparadas: TomaEnCola[] = []
-    for (const archivo of archivos) {
-      const problema = validarArchivo(archivo)
-      if (problema) {
-        nuevosErrores.push(problema)
-        setPreparando((n) => n - 1)
-        continue
-      }
-      try {
-        const preparada = await prepararToma(archivo)
-        preparadas.push({
-          clave: `t${++contador}`,
-          preparada,
-          tipoToma: 'GENERAL',
-          esIndice: false,
-          estado: 'pendiente',
-        })
-      } catch (e) {
-        // Un fichero con extensión de imagen pero contenido corrupto llega hasta
-        // aquí: el navegador no lo puede decodificar.
-        nuevosErrores.push(`No se ha podido leer «${archivo.name}».`)
-      }
-      setPreparando((n) => n - 1)
-    }
-
-    const total = [...tomas, ...preparadas]
-    // RF-403: la primera foto de la obra es la del índice, salvo que ya se haya
-    // elegido otra. Así el caso normal no exige ninguna decisión.
+  function anadir(preparadas: TomaPreparada[]) {
+    const total: TomaEnCola[] = [
+      ...tomas,
+      ...preparadas.map((preparada) => ({
+        clave: nuevaClave(),
+        preparada,
+        tipoToma: 'GENERAL' as ValorTipoToma,
+        esIndice: false,
+        estado: 'pendiente' as const,
+      })),
+    ]
+    // RF-403: la primera foto es la del índice, salvo que ya se haya elegido otra.
+    // Así el caso normal no exige ninguna decisión.
     if (total.length > 0 && !total.some((t) => t.esIndice) && total[0]) {
-      total[0].esIndice = true
+      total[0] = { ...total[0], esIndice: true }
     }
     alCambiar(total)
-    setErrores(nuevosErrores)
-    setPreparando(0)
   }
 
   function quitar(clave: string) {
@@ -111,92 +84,11 @@ export function SelectorFotos({
 
   return (
     <div>
-      <p className="etiqueta">
-        Fotografías{' '}
-        {tomas.length > 0 && <span className="font-normal text-stone-500">({tomas.length})</span>}
-      </p>
-
-      {/* Zona de arrastre. En móvil no se usa, pero envuelve también a los
-          botones para que soltar en cualquier parte del bloque funcione. */}
-      <div
-        id="zona-fotos"
-        onDragOver={(e) => {
-          e.preventDefault()
-          setArrastrando(true)
-        }}
-        onDragLeave={() => setArrastrando(false)}
-        onDrop={(e) => {
-          e.preventDefault()
-          setArrastrando(false)
-          void anadir(e.dataTransfer.files)
-        }}
-        className={`rounded-lg border-2 border-dashed p-3 transition ${
-          arrastrando ? 'border-stone-800 bg-stone-100' : 'border-stone-300'
-        }`}
-      >
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            disabled={deshabilitado}
-            onClick={() => refCamara.current?.click()}
-            className="boton-secundario min-h-[3.25rem]"
-          >
-            Hacer foto
-          </button>
-          <button
-            type="button"
-            disabled={deshabilitado}
-            onClick={() => refArchivos.current?.click()}
-            className="boton-secundario min-h-[3.25rem]"
-          >
-            Elegir archivos
-          </button>
-        </div>
-
-        <p className="mt-2 text-center text-xs text-stone-500">
-          {arrastrando ? 'Suelta las fotos aquí' : 'O arrastra y suelta las fotos en este recuadro'}
-        </p>
-
-        {/* Dos entradas separadas: `capture` abre la cámara directamente y, cuando
-            está presente, el navegador ignora `multiple`. Una sola entrada
-            obligaría a elegir entre cámara directa o selección múltiple. */}
-        <input
-          ref={refCamara}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            void anadir(e.target.files)
-            e.target.value = ''
-          }}
-        />
-        <input
-          ref={refArchivos}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            void anadir(e.target.files)
-            e.target.value = ''
-          }}
-        />
-      </div>
-
-      {preparando > 0 && (
-        <p role="status" className="mt-2 text-sm text-stone-600">
-          Preparando {preparando} {preparando === 1 ? 'foto' : 'fotos'}…
-        </p>
-      )}
-
-      {errores.length > 0 && (
-        <ul role="alert" className="mt-2 space-y-1 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
-          {errores.map((e) => (
-            <li key={e}>{e}</li>
-          ))}
-        </ul>
-      )}
+      <EntradaFotos
+        alPreparar={anadir}
+        deshabilitado={deshabilitado}
+        etiqueta={`Fotografías${tomas.length > 0 ? ` (${tomas.length})` : ''}`}
+      />
 
       {tomas.length > 0 && (
         <ul className="mt-3 grid grid-cols-3 gap-2">
@@ -242,14 +134,19 @@ export function SelectorFotos({
               </button>
             </li>
           ))}
-          {/* Recuadro «+»: mismo gesto que en la ficha, un único punto de subida
-              adicional para no obligar a subir al principio del formulario. */}
+          {/* Recuadro «+» al final de la tira: repite el acceso a la selección de
+              archivos junto a las miniaturas, para no obligar a subir de vuelta al
+              principio del formulario cuando ya hay varias fotos. */}
           <li>
             <button
               type="button"
               aria-label="Añadir más fotos"
               disabled={deshabilitado}
-              onClick={() => refArchivos.current?.click()}
+              onClick={() =>
+                document
+                  .querySelector<HTMLInputElement>("#zona-fotos input[type='file'][multiple]")
+                  ?.click()
+              }
               className="flex aspect-square w-full items-center justify-center rounded-lg border-2 border-dashed border-stone-300 text-stone-400"
             >
               <IconoMas />
