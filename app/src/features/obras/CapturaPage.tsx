@@ -27,6 +27,7 @@ import {
 } from '../../components/ui'
 import { subirToma } from '../../lib/imagenes'
 import { SelectorFotos, type TomaEnCola } from './SelectorFotos'
+import { guardarCola, leerCola, rehidratar, vaciarCola } from './colaFotos'
 import { previsualizarId } from './useObras'
 import {
   LOTE_INICIAL,
@@ -79,10 +80,40 @@ export function CapturaPage() {
   // cobertura intermitente, el fallo a mitad es lo normal, y crear una segunda
   // ficha por ello sería justo el duplicado que el esquema teme.
   const [obraPendiente, setObraPendiente] = useState<string | null>(null)
+  const [colaRestaurada, setColaRestaurada] = useState(false)
 
   useEffect(() => {
     guardarLote(lote)
   }, [lote])
+
+  // Restaura las fotos que quedaron pendientes. Es la red de seguridad ante que el
+  // móvil descarte la pestaña mientras la cámara está en primer plano: al volver,
+  // la página se recarga y sin esto las fotos ya tomadas desaparecerían.
+  useEffect(() => {
+    let vigente = true
+    void leerCola().then((filas) => {
+      if (!vigente) return
+      if (filas.length > 0) {
+        setTomas(filas.map((f) => ({ ...rehidratar(f), estado: 'pendiente' as const })))
+      }
+      setColaRestaurada(true)
+    })
+    return () => {
+      vigente = false
+    }
+  }, [])
+
+  // Se persiste en cuanto cambia, no al guardar: el descarte de la pestaña no
+  // avisa, y guardar «cuando toque» sería exactamente tarde.
+  //
+  // El guardia de `colaRestaurada` no es una precaución teórica: sin él, este
+  // efecto se ejecuta al montar con la cola todavía vacía y BORRA lo que acaba de
+  // guardarse, con lo que la red de seguridad destruía justo lo que venía a
+  // salvar. Se vio al reproducir el fallo.
+  useEffect(() => {
+    if (!colaRestaurada) return
+    void guardarCola(tomas)
+  }, [tomas, colaRestaurada])
 
   useEffect(() => {
     if (!abierto) return
@@ -231,6 +262,7 @@ export function CapturaPage() {
   function limpiarPieza(idGuardada: string) {
     tomas.forEach((t) => URL.revokeObjectURL(t.preparada.previsualizacion))
     setTomas([])
+    void vaciarCola()
     setObraPendiente(null)
     setGuardadas((g) => (g.includes(idGuardada) ? g : [...g, idGuardada]))
     setTitulo('')
@@ -594,6 +626,9 @@ export function CapturaPage() {
             className="boton-secundario w-full"
             onClick={() => {
               olvidarLote()
+              void vaciarCola()
+              tomas.forEach((t) => URL.revokeObjectURL(t.preparada.previsualizacion))
+              setTomas([])
               setLote(LOTE_INICIAL)
               setGuardadas([])
               setRango(false)
