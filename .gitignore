@@ -1,0 +1,38 @@
+# Entornos virtuales de Python
+venv/
+.venv/
+env/
+
+# Bytecode y cachés
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Configuración local y secretos
+.env
+*.local.py
+local_settings.py
+
+# Base de datos local (solo si se usara SQLite para pruebas puntuales)
+db.sqlite3
+db.sqlite3-journal
+
+# Ficheros subidos por la aplicación (imágenes de obra, documentos digitalizados)
+media/
+
+# Estáticos recopilados por collectstatic
+staticfiles/
+
+# Cobertura de tests
+.coverage
+coverage.xml
+htmlcov/
+
+# Editores y sistema operativo
+.idea/
+.vscode/
+*.swp
+.DS_Store
