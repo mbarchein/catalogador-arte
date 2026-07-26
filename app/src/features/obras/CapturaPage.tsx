@@ -25,6 +25,8 @@ import {
   PasoAnio,
   TriEstadoIconos,
 } from '../../components/ui'
+import { subirToma } from '../../lib/imagenes'
+import { SelectorFotos, type TomaEnCola } from './SelectorFotos'
 import { previsualizarId } from './useObras'
 import {
   LOTE_INICIAL,
@@ -72,6 +74,12 @@ export function CapturaPage() {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [guardadas, setGuardadas] = useState<string[]>([])
+  const [tomas, setTomas] = useState<TomaEnCola[]>([])
+  // Obra ya creada cuyas fotos no acabaron de subir. Mientras tenga valor, el
+  // botón reintenta la subida en vez de dar de alta otra obra: en un almacén con
+  // cobertura intermitente, el fallo a mitad es lo normal, y crear una segunda
+  // ficha por ello sería justo el duplicado que el esquema teme.
+  const [obraPendiente, setObraPendiente] = useState<string | null>(null)
 
   useEffect(() => {
     guardarLote(lote)
@@ -200,10 +208,64 @@ export function CapturaPage() {
 
   // ── Captura ───────────────────────────────────────────────
 
+  /**
+   * Sube las tomas que aún no están arriba, de una en una. Secuencial y no en
+   * paralelo a propósito: tres ficheros por foto sobre una conexión de almacén se
+   * estorban entre sí, y el progreso foto a foto es lo que permite saber qué falta
+   * si algo se corta.
+   */
+  async function subirPendientes(idObra: string, cola: TomaEnCola[]): Promise<TomaEnCola[]> {
+    let actual = cola
+    for (const t of cola) {
+      if (t.estado === 'subida') continue
+      actual = actual.map((x) =>
+        x.clave === t.clave ? { ...x, estado: 'subiendo' as const, error: undefined } : x,
+      )
+      setTomas(actual)
+      try {
+        await subirToma(idObra, t.preparada, { tipoToma: t.tipoToma, esIndice: t.esIndice })
+        actual = actual.map((x) => (x.clave === t.clave ? { ...x, estado: 'subida' as const } : x))
+      } catch (err) {
+        actual = actual.map((x) =>
+          x.clave === t.clave
+            ? { ...x, estado: 'error' as const, error: err instanceof Error ? err.message : String(err) }
+            : x,
+        )
+      }
+      setTomas(actual)
+    }
+    return actual
+  }
+
+  function limpiarPieza(idGuardada: string) {
+    tomas.forEach((t) => URL.revokeObjectURL(t.preparada.previsualizacion))
+    setTomas([])
+    setObraPendiente(null)
+    setGuardadas((g) => (g.includes(idGuardada) ? g : [...g, idGuardada]))
+    setTitulo('')
+    setAlto('')
+    setAncho('')
+    setProfundidad('')
+    setFirmada('SIN_REVISAR')
+  }
+
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
     setGuardando(true)
     setError(null)
+
+    // Reintento: la obra ya existe y solo faltan fotos.
+    if (obraPendiente) {
+      const resultado = await subirPendientes(obraPendiente, tomas)
+      const fallidas = resultado.filter((t) => t.estado === 'error')
+      if (fallidas.length === 0) {
+        limpiarPieza(obraPendiente)
+      } else {
+        setError(`Siguen fallando ${fallidas.length} de ${resultado.length} fotos.`)
+      }
+      setGuardando(false)
+      return
+    }
 
     const aNumero = (v: string) => {
       const limpio = v.replace(',', '.').trim()
@@ -243,15 +305,26 @@ export function CapturaPage() {
       return
     }
 
-    setGuardadas((g) => [...g, (data as { id_catalogacion: string }).id_catalogacion])
+    const id = (data as { id_catalogacion: string }).id_catalogacion
+
+    // La obra ya existe; ahora las fotos. Si alguna falla, la ficha NO se pierde:
+    // queda anotada como pendiente y el botón pasa a reintentar solo las fotos.
+    if (tomas.length > 0) {
+      const resultado = await subirPendientes(id, tomas)
+      const fallidas = resultado.filter((t) => t.estado === 'error')
+      if (fallidas.length > 0) {
+        setObraPendiente(id)
+        setError(
+          `La ficha ${id} se ha guardado, pero ${fallidas.length} de ${resultado.length} fotos no han subido.`,
+        )
+        setGuardando(false)
+        return
+      }
+    }
 
     // Solo se limpia lo que pertenece a la pieza. Fondo y tipo siguen fijos; la
     // fecha, la técnica y la ubicación se arrastran tal como quedaron.
-    setTitulo('')
-    setAlto('')
-    setAncho('')
-    setProfundidad('')
-    setFirmada('SIN_REVISAR')
+    limpiarPieza(id)
     setGuardando(false)
   }
 
@@ -350,6 +423,10 @@ export function CapturaPage() {
             valor={firmada}
             alCambiar={setFirmada}
           />
+        </div>
+
+        <div className="tarjeta">
+          <SelectorFotos tomas={tomas} alCambiar={setTomas} deshabilitado={guardando} />
         </div>
 
         {/* ── Fecha: se arrastra y se ajusta con los botones ── */}
@@ -475,8 +552,29 @@ export function CapturaPage() {
         )}
 
         <button className="boton-primario min-h-[3.5rem] w-full text-lg" disabled={guardando}>
-          {guardando ? 'Guardando…' : 'Guardar y siguiente'}
+          {guardando
+            ? 'Guardando…'
+            : obraPendiente
+              ? `Reintentar fotos de ${obraPendiente}`
+              : tomas.length > 0
+                ? `Guardar con ${tomas.length} ${tomas.length === 1 ? 'foto' : 'fotos'}`
+                : 'Guardar y siguiente'}
         </button>
+
+        {obraPendiente && (
+          <button
+            type="button"
+            className="boton-secundario w-full"
+            onClick={() => {
+              // Salida honesta: la ficha existe y se puede completar después desde
+              // su propia página. Lo que no se hace es fingir que las fotos subieron.
+              limpiarPieza(obraPendiente)
+              setError(null)
+            }}
+          >
+            Continuar sin esas fotos
+          </button>
+        )}
 
         {guardadas.length > 0 && (
           <div className="tarjeta">
