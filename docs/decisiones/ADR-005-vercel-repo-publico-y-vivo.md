@@ -69,3 +69,19 @@ decisión es independiente de la de Vercel.
 
 En vivo quedan: el listado (altas y cambios de otros catalogadores), la ficha en consulta y la
 galería (fotos añadidas o retiradas).
+
+---
+
+## Adenda (27/07/2026): dominio propio
+
+La aplicación vive en **`catalogo.ruizcampins.com`**, con la zona DNS en Cloudflare y el registro
+como **CNAME solo-DNS (nube gris) hacia el edge de Vercel** — gestionado en `infra/dominio.tf`.
+
+Que la zona esté en Cloudflare no contradice esta ADR: los bloqueos de LaLiga golpean las IPs del
+*proxy*, no la resolución DNS. Solo-DNS significa que Cloudflare únicamente contesta «dónde está»,
+y el tráfico va directo a Vercel. Proxiado, además de recomprar el problema, apilaría dos CDN e
+impediría a Vercel emitir el certificado TLS. Mismo patrón que la otra aplicación del equipo.
+
+Con dominio y HTTPS, la PWA queda **instalable de verdad** en producción (el service worker exige
+contexto seguro, que la IP local por http no daba), y los enlaces de los correos de Supabase Auth
+apuntan al dominio.

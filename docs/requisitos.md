@@ -279,7 +279,8 @@ lugar desde el que se lanzará el pipeline del catálogo impreso.
 | 7 | Subida de imágenes en tres niveles y ficha imprimible con QR | Pendiente |
 | 8 | Papelera y bloqueo de edición con su *trigger* | Pendiente |
 | 9 | **Másters a Backblaze B2**: función Edge de firmas, bucket y flujo de subida | **Completada** — bucket y clave sin borrado en Terraform; MinIO como B2 local |
-| 10 | Volcados automáticos y dominio propio | Pendiente |
+| 10 | Dominio propio (`catalogo.ruizcampins.com`, solo-DNS hacia Vercel) | **Completada** en Terraform; se activa con el `apply` |
+| 11 | Volcados automáticos de la base de datos | Pendiente |
 
 La fase 4 va deliberadamente antes que cualquier pantalla. En el stack anterior los permisos podían
 dejarse para después porque el servidor negaba por omisión; aquí, una tabla sin política es una tabla
