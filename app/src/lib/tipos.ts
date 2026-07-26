@@ -12,6 +12,14 @@ export type RolUsuario = 'SUPERUSUARIO' | 'CATALOGADOR' | 'LECTOR'
 export type TriEstado = 'SI' | 'NO' | 'SIN_REVISAR'
 export type ValorTituloAtribuido = 'NO_APLICA' | 'NO' | 'SI' | 'SIN_REVISAR'
 
+export type ValorTipoToma =
+  | 'GENERAL'
+  | 'DETALLE_FIRMA'
+  | 'REVERSO'
+  | 'DETALLE_DANO'
+  | 'MARCO'
+  | 'OTRO'
+
 export type ValorEstadoConservacion =
   | 'BUENO'
   | 'REGULAR'
@@ -52,6 +60,7 @@ export interface Obra {
   estado_conservacion: ValorEstadoConservacion
   ubicacion_fisica: string
   estado_existencia: ValorEstadoExistencia
+  fotografiada: boolean
   medidas_verificadas: boolean
   fase_inventario_completada: boolean
   fase_documentacion_completada: boolean
@@ -116,3 +125,18 @@ export const TIPOS_OBRA_SUGERIDOS = [
   'Grabado',
   'Técnica mixta',
 ]
+
+
+/**
+ * Tipos de toma fotográfica. Lista corta y a propósito: en la captura hay que
+ * poder elegir de un toque, y el esquema la deja abierta con «Otro» para lo que no
+ * encaje en vez de obligar a decidir la taxonomía completa por adelantado.
+ */
+export const ETIQUETA_TIPO_TOMA: Record<ValorTipoToma, string> = {
+  GENERAL: 'General',
+  DETALLE_FIRMA: 'Firma',
+  REVERSO: 'Reverso',
+  DETALLE_DANO: 'Daño',
+  MARCO: 'Marco',
+  OTRO: 'Otro',
+}
