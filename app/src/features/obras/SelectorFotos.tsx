@@ -84,11 +84,8 @@ export function SelectorFotos({
 
   return (
     <div>
-      <EntradaFotos
-        alPreparar={anadir}
-        deshabilitado={deshabilitado}
-        etiqueta={`Fotografías${tomas.length > 0 ? ` (${tomas.length})` : ''}`}
-      />
+      {/* Sin título propio: lo pone el Grupo que lo envuelve en la captura. */}
+      <EntradaFotos alPreparar={anadir} deshabilitado={deshabilitado} compacto />
 
       {tomas.length > 0 && (
         <ul className="mt-3 grid grid-cols-3 gap-2">

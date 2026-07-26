@@ -19,7 +19,9 @@ import {
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import {
+  BarraAcciones,
   Fichas,
+  Grupo,
   IconoCandado,
   Interruptor,
   PasoAnio,
@@ -153,50 +155,47 @@ export function CapturaPage() {
     const esSugerido = TIPOS_OBRA_SUGERIDOS.includes(lote.fijos.tipoObra)
     return (
       <Layout titulo="Abrir lote" atras="/">
-        <div className="tarjeta space-y-5">
-          <div>
-            <h1 className="text-lg font-semibold">Abrir un lote</h1>
-            <p className="text-sm text-stone-600">
-              Estos dos datos quedan fijos para todas las obras que captures seguidas. Para cambiarlos
-              habrá que cerrar el lote.
-            </p>
-          </div>
+        <div className="space-y-3">
+          <p className="text-sm text-stone-600">
+            Un lote agrupa las obras que vas a capturar seguidas: una estantería, una carpeta, una
+            serie.
+          </p>
 
-          <Fichas
-            id="fondo"
-            etiqueta="Fondo"
-            opciones={FONDOS}
-            valor={lote.fijos.artista}
-            alCambiar={(v) => setLote((l) => ({ ...l, fijos: { ...l.fijos, artista: v } }))}
-          />
-
-          <div>
+          <Grupo titulo="Fijo en todo el lote" pista="cambiarlo exige cerrar el lote">
             <Fichas
-              id="tipo"
-              etiqueta="Tipo de obra"
-              opciones={TIPOS_OBRA_SUGERIDOS.map((t) => ({ valor: t, texto: t }))}
-              valor={esSugerido ? lote.fijos.tipoObra : null}
-              alCambiar={(v) => setLote((l) => ({ ...l, fijos: { ...l.fijos, tipoObra: v } }))}
+              id="fondo"
+              etiqueta="Fondo"
+              opciones={FONDOS}
+              valor={lote.fijos.artista}
+              alCambiar={(v) => setLote((l) => ({ ...l, fijos: { ...l.fijos, artista: v } }))}
             />
-            {/* Lista abierta (RF-213): las fichas sugieren, no cierran. */}
-            <input
-              className="campo mt-2"
-              placeholder="U otro tipo, escríbelo"
-              value={esSugerido ? '' : lote.fijos.tipoObra}
-              onChange={(e) =>
-                setLote((l) => ({ ...l, fijos: { ...l.fijos, tipoObra: e.target.value } }))
-              }
-            />
-          </div>
 
-          <div>
-            <label className="etiqueta" htmlFor="ubicacion-lote">
-              Ubicación física
-            </label>
+            <div>
+              <Fichas
+                id="tipo"
+                etiqueta="Tipo de obra"
+                opciones={TIPOS_OBRA_SUGERIDOS.map((t) => ({ valor: t, texto: t }))}
+                valor={esSugerido ? lote.fijos.tipoObra : null}
+                alCambiar={(v) => setLote((l) => ({ ...l, fijos: { ...l.fijos, tipoObra: v } }))}
+              />
+              {/* Lista abierta (RF-213): las fichas sugieren, no cierran. */}
+              <input
+                className="campo mt-2"
+                placeholder="U otro tipo, escríbelo"
+                value={esSugerido ? '' : lote.fijos.tipoObra}
+                onChange={(e) =>
+                  setLote((l) => ({ ...l, fijos: { ...l.fijos, tipoObra: e.target.value } }))
+                }
+              />
+            </div>
+          </Grupo>
+
+          <Grupo titulo="Ubicación física" pista="se arrastra, ajustable en cada obra">
             <input
               id="ubicacion-lote"
               className="campo"
               autoCapitalize="none"
+              aria-label="Ubicación física"
               placeholder="edificio a, habitacion amarilla, bloque 3"
               value={lote.arrastrados.ubicacion}
               onChange={(e) =>
@@ -206,23 +205,26 @@ export function CapturaPage() {
                 }))
               }
             />
-            <p className="mt-1 text-xs text-stone-500">
-              Se arrastra de una obra a la siguiente, pero se puede ajustar en cada una: no queda
-              fija como el fondo y el tipo.
-            </p>
-          </div>
+          </Grupo>
 
-          <button
-            type="button"
-            className="boton-primario w-full"
-            disabled={!loteConfigurado(lote)}
-            onClick={() => setAbierto(true)}
+          <BarraAcciones
+            aviso={
+              !loteConfigurado(lote) ? (
+                <p className="text-xs text-stone-500">
+                  Elige o escribe un tipo de obra para empezar.
+                </p>
+              ) : null
+            }
           >
-            Empezar a capturar
-          </button>
-          {!loteConfigurado(lote) && (
-            <p className="text-xs text-stone-500">Elige o escribe un tipo de obra para empezar.</p>
-          )}
+            <button
+              type="button"
+              className="boton-primario min-h-[3.25rem] flex-1 text-base"
+              disabled={!loteConfigurado(lote)}
+              onClick={() => setAbierto(true)}
+            >
+              Empezar a capturar
+            </button>
+          </BarraAcciones>
         </div>
       </Layout>
     )
@@ -385,23 +387,19 @@ export function CapturaPage() {
         </div>
       </div>
 
-      {ultima && (
-        <div
-          role="status"
-          className="mb-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"
-        >
-          <p className="font-medium text-green-900">Guardada como {ultima}</p>
-          <p className="mt-0.5 text-green-800">
-            Escribe ese código en la etiqueta.{' '}
-            <Link to={`/obra/${ultima}`} className="underline">
-              Ver la ficha
-            </Link>
-          </p>
-        </div>
-      )}
-
       <form onSubmit={guardar} className="space-y-3">
-        <div className="tarjeta space-y-4">
+        {/* El orden de los grupos sigue el gesto físico: se llega a la obra, se
+            FOTOGRAFÍA, se mide y se examina, y solo al final se ajusta lo que se
+            arrastra de la pieza anterior — que la mayoría de las veces no se toca. */}
+
+        <Grupo
+          titulo="Fotografías"
+          pista={tomas.length > 0 ? `${tomas.length} en cola` : 'la primera será la del índice'}
+        >
+          <SelectorFotos tomas={tomas} alCambiar={setTomas} deshabilitado={guardando} />
+        </Grupo>
+
+        <Grupo titulo="Esta pieza" pista="se vacía al guardar">
           <div>
             <label className="etiqueta" htmlFor="titulo">
               Título <span className="font-normal text-stone-500">(vacío si no tiene)</span>
@@ -446,17 +444,12 @@ export function CapturaPage() {
             valor={firmada}
             alCambiar={setFirmada}
           />
-        </div>
+        </Grupo>
 
-        <div className="tarjeta">
-          <SelectorFotos tomas={tomas} alCambiar={setTomas} deshabilitado={guardando} />
-        </div>
-
-        {/* ── Fecha: se arrastra y se ajusta con los botones ── */}
-        <div className="tarjeta space-y-3">
+        <Grupo titulo="Fecha de ejecución" pista="se arrastra a la siguiente">
           <PasoAnio
             id="anio"
-            etiqueta={rango ? 'Año inicial' : 'Año de ejecución'}
+            etiqueta={rango ? 'Año inicial' : 'Año'}
             valor={fecha.anio}
             minimo={ANIO_MINIMO}
             maximo={anioMaximo()}
@@ -485,17 +478,6 @@ export function CapturaPage() {
             />
           </div>
 
-          {/* A ancho completo y separado de los dos de arriba porque dice algo
-              más grave: «Aproximada» es «la obra es de alrededor de 1980», con el
-              periodo establecido; «Sin confirmar» es «no sabemos de cuándo es, y
-              este año es lo que estimamos». */}
-          <Interruptor
-            etiqueta="Sin confirmar"
-            ayuda="[?] — se desconoce; el año es una estimación"
-            activo={fecha.sinConfirmar}
-            alCambiar={(v) => ponerFecha({ sinConfirmar: v })}
-          />
-
           {rango && (
             <PasoAnio
               id="anio-fin"
@@ -507,10 +489,20 @@ export function CapturaPage() {
             />
           )}
 
+          {/* A ancho completo y separado de los dos de arriba porque dice algo
+              más grave: «Aproximada» es «la obra es de alrededor de 1980», con el
+              periodo establecido; «Sin confirmar» es «no sabemos de cuándo es, y
+              este año es lo que estimamos». */}
+          <Interruptor
+            etiqueta="Sin confirmar"
+            ayuda="[?] — se desconoce; el año es una estimación"
+            activo={fecha.sinConfirmar}
+            alCambiar={(v) => ponerFecha({ sinConfirmar: v })}
+          />
+
           {/* Se muestra lo que se va a guardar, no lo que se ha pulsado: el campo
-              del esquema es texto, y conviene ver el texto. */}
-          {/* aria-live: al pulsar «Aproximada» o «Rango» el texto cambia sin que el
-              foco se mueva, así que quien use lector de pantalla no se enteraría. */}
+              del esquema es texto, y conviene ver el texto. aria-live porque el
+              texto cambia sin que el foco se mueva. */}
           <p
             id="vista-fecha"
             aria-live="polite"
@@ -527,7 +519,9 @@ export function CapturaPage() {
               </>
             )}
           </p>
+        </Grupo>
 
+        <Grupo titulo="Técnica y ubicación" pista="se arrastran a la siguiente">
           <div>
             <label className="etiqueta" htmlFor="tecnica">
               Técnica
@@ -560,44 +554,7 @@ export function CapturaPage() {
               }
             />
           </div>
-
-          <p className="text-xs text-stone-500">
-            Fecha, técnica y ubicación se arrastran a la obra siguiente tal como los dejes.
-          </p>
-        </div>
-
-        {error && (
-          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
-            No se ha podido guardar: {error}
-            <br />
-            Los datos siguen aquí, puedes reintentarlo.
-          </p>
-        )}
-
-        <button className="boton-primario min-h-[3.5rem] w-full text-lg" disabled={guardando}>
-          {guardando
-            ? 'Guardando…'
-            : obraPendiente
-              ? `Reintentar fotos de ${obraPendiente}`
-              : tomas.length > 0
-                ? `Guardar con ${tomas.length} ${tomas.length === 1 ? 'foto' : 'fotos'}`
-                : 'Guardar y siguiente'}
-        </button>
-
-        {obraPendiente && (
-          <button
-            type="button"
-            className="boton-secundario w-full"
-            onClick={() => {
-              // Salida honesta: la ficha existe y se puede completar después desde
-              // su propia página. Lo que no se hace es fingir que las fotos subieron.
-              limpiarPieza(obraPendiente)
-              setError(null)
-            }}
-          >
-            Continuar sin esas fotos
-          </button>
-        )}
+        </Grupo>
 
         {guardadas.length > 0 && (
           <div className="tarjeta">
@@ -620,24 +577,73 @@ export function CapturaPage() {
           </div>
         )}
 
-        <div className="pb-4">
-          <button
-            type="button"
-            className="boton-secundario w-full"
-            onClick={() => {
-              olvidarLote()
-              void vaciarCola()
-              tomas.forEach((t) => URL.revokeObjectURL(t.preparada.previsualizacion))
-              setTomas([])
-              setLote(LOTE_INICIAL)
-              setGuardadas([])
-              setRango(false)
-              setAbierto(false)
-            }}
-          >
-            Cerrar lote
+        <button
+          type="button"
+          className="boton-secundario w-full"
+          onClick={() => {
+            olvidarLote()
+            void vaciarCola()
+            tomas.forEach((t) => URL.revokeObjectURL(t.preparada.previsualizacion))
+            setTomas([])
+            setLote(LOTE_INICIAL)
+            setGuardadas([])
+            setRango(false)
+            setAbierto(false)
+          }}
+        >
+          Cerrar lote
+        </button>
+
+        {/* Barra fija: guardar siempre bajo el pulgar, y el resultado de guardar
+            —el código que hay que escribir en la etiqueta física— siempre a la
+            vista, no arriba de la página donde habría que ir a buscarlo. */}
+        <BarraAcciones
+          aviso={
+            error ? (
+              <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-800">
+                No se ha podido guardar: {error} Los datos siguen aquí.
+              </p>
+            ) : ultima ? (
+              <p
+                role="status"
+                className="flex items-baseline justify-between gap-2 rounded-lg bg-green-50 p-2 text-sm text-green-900"
+              >
+                <span>
+                  Guardada como{' '}
+                  <span className="font-mono text-base font-bold">{ultima}</span> — escríbelo en
+                  la etiqueta
+                </span>
+                <Link to={`/obra/${ultima}`} className="shrink-0 underline">
+                  Ver ficha
+                </Link>
+              </p>
+            ) : null
+          }
+        >
+          {obraPendiente && (
+            <button
+              type="button"
+              className="boton-secundario"
+              onClick={() => {
+                // Salida honesta: la ficha existe y se completa después desde su
+                // página. Lo que no se hace es fingir que las fotos subieron.
+                limpiarPieza(obraPendiente)
+                setError(null)
+              }}
+            >
+              Sin esas fotos
+            </button>
+          )}
+          <button className="boton-primario min-h-[3.25rem] flex-1 text-base" disabled={guardando}>
+            {guardando
+              ? 'Guardando…'
+              : obraPendiente
+                ? `Reintentar fotos de ${obraPendiente}`
+                : tomas.length > 0
+                  ? `Guardar con ${tomas.length} ${tomas.length === 1 ? 'foto' : 'fotos'}`
+                  : 'Guardar y siguiente'}
           </button>
-        </div>
+        </BarraAcciones>
       </form>
     </Layout>
   )
