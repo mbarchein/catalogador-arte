@@ -43,8 +43,8 @@ resource "b2_bucket" "masters" {
 # comprometiera por completo, con estas credenciales no se puede destruir un
 # máster. Es la versión en credenciales del «nada se borra de verdad» (RF-901).
 resource "b2_application_key" "masters" {
-  key_name  = "${var.proyecto}-funcion-firmas"
-  bucket_id = b2_bucket.masters.bucket_id
+  key_name   = "${var.proyecto}-funcion-firmas"
+  bucket_ids = [b2_bucket.masters.bucket_id]
   capabilities = [
     "readFiles",
     "writeFiles",
