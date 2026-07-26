@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { elegirPrincipal, urlFirmada } from '../../lib/imagenes'
+import { urlFirmada } from '../../lib/imagenes'
 import { ETIQUETA_TIPO_TOMA, type ValorTipoToma } from '../../lib/tipos'
 import { useAuth } from '../../auth/AuthContext'
 import { IconoSi } from '../../components/ui'
@@ -35,6 +35,11 @@ export function GaleriaObra({ idCatalogacion }: { idCatalogacion: string }) {
   const [verId, setVerId] = useState<string | null>(null)
   const [urlGrande, setUrlGrande] = useState<string | null>(null)
   const [cargando, setCargando] = useState(true)
+  // Qué imagen representa a la obra lo decide la vista `imagen_representativa`,
+  // que aplica la regla de RF-403. El cliente no la recalcula: si lo hiciera,
+  // el listado, la ficha y el catálogo impreso podrían discrepar.
+  const [principalId, setPrincipalId] = useState<string | null>(null)
+  const [elegidaAMano, setElegidaAMano] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -52,22 +57,29 @@ export function GaleriaObra({ idCatalogacion }: { idCatalogacion: string }) {
     const filas = (data ?? []) as unknown as FilaImagen[]
     setImagenes(filas)
 
+    const { data: rep } = await supabase
+      .from('imagen_representativa')
+      .select('id_imagen, elegida_a_mano')
+      .eq('id_catalogacion', idCatalogacion)
+      .maybeSingle()
+    const representativa = rep as { id_imagen: string; elegida_a_mano: boolean } | null
+    setPrincipalId(representativa?.id_imagen ?? null)
+    setElegidaAMano(representativa?.elegida_a_mano ?? false)
+
     const pares = await Promise.all(
       filas.map(async (f) => [f.id_imagen, await urlFirmada(f.ruta_miniatura)] as const),
     )
     setUrls(Object.fromEntries(pares.filter((p): p is [string, string] => p[1] !== null)))
     setCargando(false)
-    return filas
+    return { filas, principal: representativa?.id_imagen ?? null }
   }, [idCatalogacion])
 
   useEffect(() => {
     let vigente = true
     void (async () => {
-      const filas = await cargar()
+      const { principal } = await cargar()
       if (!vigente) return
-      // RF-403: la marcada, o la general más reciente si ninguna lo está.
-      const principal = elegirPrincipal(filas)
-      setVerId(principal?.id_imagen ?? null)
+      setVerId(principal)
     })()
     return () => {
       vigente = false
@@ -119,9 +131,7 @@ export function GaleriaObra({ idCatalogacion }: { idCatalogacion: string }) {
   }
 
   const viendo = imagenes.find((f) => f.id_imagen === verId)
-  const principal = elegirPrincipal(imagenes)
-  const viendoEsPrincipal = viendo?.id_imagen === principal?.id_imagen
-  const ningunaMarcada = !imagenes.some((f) => f.imagen_indice)
+  const viendoEsPrincipal = viendo?.id_imagen === principalId
 
   return (
     <div className="mb-3">
@@ -136,7 +146,7 @@ export function GaleriaObra({ idCatalogacion }: { idCatalogacion: string }) {
       {imagenes.length > 1 && (
         <ul className="mt-2 flex gap-2 overflow-x-auto pb-1">
           {imagenes.map((f) => {
-            const esPrincipal = f.id_imagen === principal?.id_imagen
+            const esPrincipal = f.id_imagen === principalId
             return (
               <li key={f.id_imagen} className="shrink-0">
                 <button
@@ -180,12 +190,12 @@ export function GaleriaObra({ idCatalogacion }: { idCatalogacion: string }) {
         <div className="mt-2">
           {viendoEsPrincipal ? (
             <p className="text-xs text-stone-500">
-              {ningunaMarcada
+              {!elegidaAMano
                 ? // Distinguir «elegida a mano» de «elegida por la regla de repliegue»
                   // importa: en el segundo caso, subir una foto más puede cambiarla sola.
                   'Se muestra esta por ser la general más reciente. Fíjala para que no cambie al añadir fotos.'
                 : `Esta es la imagen principal · ${ETIQUETA_TIPO_TOMA[viendo.tipo_toma]}`}
-              {ningunaMarcada && (
+              {!elegidaAMano && (
                 <button
                   type="button"
                   disabled={guardando}

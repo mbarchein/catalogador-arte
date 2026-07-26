@@ -9,7 +9,7 @@ import { useObras } from './useObras'
 
 export function ObrasPage() {
   const [busqueda, setBusqueda] = useState('')
-  const { obras, cargando, error } = useObras(busqueda)
+  const { obras, miniaturas, cargando, error } = useObras(busqueda)
   const { puedeEditar } = useAuth()
 
   return (
@@ -71,28 +71,34 @@ export function ObrasPage() {
                       de doce caracteres con el pulgar no es razonable. */}
                   <Link
                     to={`/obra/${obra.id_catalogacion}`}
-                    className="tarjeta block hover:border-stone-400"
+                    className="tarjeta flex gap-3 hover:border-stone-400"
                   >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-mono text-sm font-semibold">
-                        {obra.id_catalogacion}
-                      </span>
-                      <span className="shrink-0 text-xs text-stone-500">
-                        {mostrarFecha(obra.fecha_ejecucion)}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 truncate">{mostrarTitulo(obra.titulo)}</p>
-                    <p className="mt-0.5 text-xs text-stone-600">
-                      {ETIQUETA_ARTISTA[obra.artista]}
-                      {obra.tipo_obra && ` · ${obra.tipo_obra}`}
-                      {' · '}
-                      {mostrarMedidas(obra)}
-                    </p>
-                    {aviso && (
-                      <p className="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900">
-                        {aviso}
+                    {/* RF-604: miniatura de la imagen representativa. Cuál es la
+                        decide la vista de la base de datos, no esta pantalla. */}
+                    <Miniatura url={miniaturas[obra.id_catalogacion]} fotografiada={obra.fotografiada} />
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-mono text-sm font-semibold">
+                          {obra.id_catalogacion}
+                        </span>
+                        <span className="shrink-0 text-xs text-stone-500">
+                          {mostrarFecha(obra.fecha_ejecucion)}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 truncate">{mostrarTitulo(obra.titulo)}</p>
+                      <p className="mt-0.5 text-xs text-stone-600">
+                        {ETIQUETA_ARTISTA[obra.artista]}
+                        {obra.tipo_obra && ` · ${obra.tipo_obra}`}
+                        {' · '}
+                        {mostrarMedidas(obra)}
                       </p>
-                    )}
+                      {aviso && (
+                        <p className="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900">
+                          {aviso}
+                        </p>
+                      )}
+                    </div>
                   </Link>
                 </li>
               )
@@ -103,5 +109,37 @@ export function ObrasPage() {
 
       <CerrarSesion />
     </Layout>
+  )
+}
+
+/**
+ * Miniatura del listado, de tamaño fijo para que las filas no bailen mientras las
+ * imágenes llegan: el listado se pinta antes que las firmas de las URL, y sin una
+ * caja reservada el texto saltaría al aparecer cada foto.
+ *
+ * Tres estados distintos, y distinguirlos importa:
+ *  - hay foto y ya tenemos su URL → se muestra;
+ *  - la obra está fotografiada pero la URL aún no ha llegado → hueco neutro;
+ *  - la obra no tiene ninguna foto → se dice, porque en un inventario «sin
+ *    fotografiar» es trabajo pendiente y conviene que se vea de un vistazo.
+ */
+function Miniatura({ url, fotografiada }: { url?: string; fotografiada: boolean }) {
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt=""
+        loading="lazy"
+        className="h-16 w-16 shrink-0 rounded-lg border border-stone-200 bg-white object-cover"
+      />
+    )
+  }
+  return (
+    <div
+      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-300 bg-stone-50 p-1 text-center text-[10px] leading-tight text-stone-400"
+      aria-hidden={fotografiada}
+    >
+      {fotografiada ? '' : 'Sin foto'}
+    </div>
   )
 }

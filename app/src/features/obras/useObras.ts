@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { urlsFirmadas } from '../../lib/imagenes'
 import type { FondoArtista, Obra } from '../../lib/tipos'
 
 const CAMPOS = `
@@ -15,6 +16,7 @@ const CAMPOS = `
 
 export function useObras(busqueda: string) {
   const [obras, setObras] = useState<Obra[]>([])
+  const [miniaturas, setMiniaturas] = useState<Record<string, string>>({})
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,17 +47,52 @@ export function useObras(busqueda: string) {
     if (error) {
       setError(error.message)
       setObras([])
-    } else {
-      setObras((data ?? []) as unknown as Obra[])
+      setMiniaturas({})
+      setCargando(false)
+      return
     }
+
+    const filas = (data ?? []) as unknown as Obra[]
+    setObras(filas)
+    // El listado ya se puede pintar: las miniaturas llegan después y aparecen
+    // sobre los marcadores. Esperarlas retrasaría ver los datos, que es lo que
+    // se ha venido a buscar.
     setCargando(false)
+
+    // RF-604: miniatura en el listado. Tres peticiones en total,
+    // independientemente de cuántas obras haya:
+    //   1. las obras (ya hecha),
+    //   2. la vista con la imagen representativa de cada una,
+    //   3. la firma de todas las rutas de golpe.
+    // La regla de qué imagen representa a la obra vive en la vista, no aquí.
+    const ids = filas.map((o) => o.id_catalogacion)
+    if (ids.length === 0) {
+      setMiniaturas({})
+      return
+    }
+
+    const { data: representativas } = await supabase
+      .from('imagen_representativa')
+      .select('id_catalogacion, ruta_miniatura')
+      .in('id_catalogacion', ids)
+
+    const filasRep = (representativas ?? []) as { id_catalogacion: string; ruta_miniatura: string }[]
+    const urls = await urlsFirmadas(filasRep.map((r) => r.ruta_miniatura))
+    setMiniaturas(
+      Object.fromEntries(
+        filasRep.flatMap((r) => {
+          const u = urls[r.ruta_miniatura]
+          return u ? [[r.id_catalogacion, u] as const] : []
+        }),
+      ),
+    )
   }, [busqueda])
 
   useEffect(() => {
     void recargar()
   }, [recargar])
 
-  return { obras, cargando, error, recargar }
+  return { obras, miniaturas, cargando, error, recargar }
 }
 
 export function useObra(id: string | undefined) {
