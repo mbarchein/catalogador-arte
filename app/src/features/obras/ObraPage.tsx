@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
@@ -44,7 +44,7 @@ export function ObraPage() {
 
   if (cargando) {
     return (
-      <Layout miga={id}>
+      <Layout titulo={id} atras="/">
         <p className="text-sm text-stone-600">Cargando…</p>
       </Layout>
     )
@@ -52,15 +52,12 @@ export function ObraPage() {
 
   if (error || !obra) {
     return (
-      <Layout miga={id}>
+      <Layout titulo={id} atras="/">
         <div className="tarjeta text-sm">
           <p className="font-medium">No se ha encontrado la ficha {id}.</p>
           <p className="mt-1 text-stone-600">
             Puede que esté dada de baja, o que no tengas permiso para verla.
           </p>
-          <Link to="/" className="boton-secundario mt-4">
-            Volver al listado
-          </Link>
         </div>
       </Layout>
     )
@@ -68,7 +65,7 @@ export function ObraPage() {
 
   if (editando) {
     return (
-      <Layout miga={obra.id_catalogacion}>
+      <Layout titulo={obra.id_catalogacion} atras="/">
         <FormularioEdicion
           obra={obra}
           alTerminar={async () => {
@@ -85,7 +82,7 @@ export function ObraPage() {
   const avisoEstado = avisoExistencia(obra)
 
   return (
-    <Layout miga={obra.id_catalogacion}>
+    <Layout titulo={obra.id_catalogacion} atras="/">
       <header className="mb-4">
         <p className="font-mono text-sm text-stone-500">{obra.id_catalogacion}</p>
         <h1 className="text-xl font-semibold">{mostrarTitulo(obra.titulo)}</h1>

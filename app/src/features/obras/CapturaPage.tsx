@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { derivarFechaOrden } from '../../lib/fechas'
 import { normalizarUbicacion, ubicacionParaGuardar } from '../../lib/ubicacion'
@@ -56,7 +56,6 @@ const FONDOS = [
  * en el catálogo, no una molestia de interfaz.
  */
 export function CapturaPage() {
-  const navegar = useNavigate()
   const { puedeEditar } = useAuth()
 
   const [lote, setLote] = useState<Lote>(() => leerLote())
@@ -98,16 +97,13 @@ export function CapturaPage() {
 
   if (!puedeEditar) {
     return (
-      <Layout miga="Captura">
+      <Layout titulo="Captura" atras="/">
         <div className="tarjeta">
           <p className="font-medium">No tienes permiso para dar de alta obra.</p>
           <p className="mt-1 text-sm text-stone-600">
             Tu cuenta es de solo consulta. Habla con el responsable del catálogo si necesitas
             catalogar.
           </p>
-          <Link to="/" className="boton-secundario mt-4">
-            Volver al listado
-          </Link>
         </div>
       </Layout>
     )
@@ -125,7 +121,7 @@ export function CapturaPage() {
   if (!abierto) {
     const esSugerido = TIPOS_OBRA_SUGERIDOS.includes(lote.fijos.tipoObra)
     return (
-      <Layout miga="Abrir lote">
+      <Layout titulo="Abrir lote" atras="/">
         <div className="tarjeta space-y-5">
           <div>
             <h1 className="text-lg font-semibold">Abrir un lote</h1>
@@ -185,19 +181,14 @@ export function CapturaPage() {
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="boton-primario flex-1"
-              disabled={!loteConfigurado(lote)}
-              onClick={() => setAbierto(true)}
-            >
-              Empezar a capturar
-            </button>
-            <button type="button" className="boton-secundario" onClick={() => navegar('/')}>
-              Listado
-            </button>
-          </div>
+          <button
+            type="button"
+            className="boton-primario w-full"
+            disabled={!loteConfigurado(lote)}
+            onClick={() => setAbierto(true)}
+          >
+            Empezar a capturar
+          </button>
           {!loteConfigurado(lote) && (
             <p className="text-xs text-stone-500">Elige o escribe un tipo de obra para empezar.</p>
           )}
@@ -331,7 +322,7 @@ export function CapturaPage() {
   const ultima = guardadas[guardadas.length - 1]
 
   return (
-    <Layout miga="Captura en lote">
+    <Layout titulo="Captura en lote" atras="/">
       {/* Cabecera del lote: lo fijo, bajo candado y siempre a la vista. Saber qué
           se está heredando es lo que impide descubrir a las treinta obras que el
           tipo estaba mal. */}
@@ -597,13 +588,10 @@ export function CapturaPage() {
           </div>
         )}
 
-        <div className="flex gap-2 pb-4">
-          <button type="button" className="boton-secundario flex-1" onClick={() => navegar('/')}>
-            Ir al listado
-          </button>
+        <div className="pb-4">
           <button
             type="button"
-            className="boton-secundario"
+            className="boton-secundario w-full"
             onClick={() => {
               olvidarLote()
               setLote(LOTE_INICIAL)

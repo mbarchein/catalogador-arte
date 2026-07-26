@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
-import { Layout } from '../../components/Layout'
+import { CerrarSesion, Layout } from '../../components/Layout'
 import { mostrarFecha } from '../../lib/fechas'
 import { avisoExistencia, mostrarMedidas, mostrarTitulo } from '../../lib/titulo'
 import { ETIQUETA_ARTISTA } from '../../lib/tipos'
@@ -13,7 +13,7 @@ export function ObrasPage() {
   const { puedeEditar } = useAuth()
 
   return (
-    <Layout>
+    <Layout titulo="Obras">
       <div className="mb-4 flex gap-2">
         <input
           className="campo"
@@ -100,6 +100,8 @@ export function ObrasPage() {
           </ul>
         </>
       )}
+
+      <CerrarSesion />
     </Layout>
   )
 }
