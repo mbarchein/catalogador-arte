@@ -51,6 +51,13 @@ resource "cloudflare_pages_project" "app" {
           type  = "plain_text"
           value = "https://${supabase_project.principal.id}.supabase.co"
         }
+        # Sin esta variable, la compilación de producción no puede hablar con
+        # Supabase: el fallo se detectó comparando con otra infra ya desplegada,
+        # antes del primer apply. La clave anónima es pública por diseño.
+        VITE_SUPABASE_ANON_KEY = {
+          type  = "plain_text"
+          value = data.supabase_apikeys.principal.anon_key
+        }
         VITE_R2_DERIVADAS_URL = {
           type  = "plain_text"
           value = "https://${cloudflare_r2_bucket.derivadas.name}.${var.cloudflare_account_id}.r2.cloudflarestorage.com"

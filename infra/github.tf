@@ -67,7 +67,7 @@ resource "github_actions_secret" "supabase_access_token" {
 resource "github_actions_secret" "supabase_db_password" {
   repository      = local.repo
   secret_name     = "SUPABASE_DB_PASSWORD"
-  plaintext_value = var.supabase_db_password
+  plaintext_value = local.db_password
 }
 
 resource "github_actions_secret" "cloudflare_api_token" {
@@ -90,6 +90,21 @@ resource "github_actions_variable" "supabase_url" {
   repository    = local.repo
   variable_name = "SUPABASE_URL"
   value         = "https://${supabase_project.principal.id}.supabase.co"
+}
+
+# La clave anónima es una variable y no un secreto a propósito: es pública por
+# diseño y viaja en el JavaScript compilado. Tratarla como secreto solo haría
+# ilegibles los registros de CI sin proteger nada.
+resource "github_actions_variable" "supabase_anon_key" {
+  repository    = local.repo
+  variable_name = "SUPABASE_ANON_KEY"
+  value         = data.supabase_apikeys.principal.anon_key
+}
+
+resource "github_actions_variable" "app_url" {
+  repository    = local.repo
+  variable_name = "APP_URL"
+  value         = "https://${cloudflare_pages_project.app.name}.pages.dev"
 }
 
 resource "github_actions_variable" "cloudflare_account_id" {

@@ -11,10 +11,24 @@
 # exactamente lo que Terraform no sabe hacer. Gestionar tablas con el provider
 # de PostgreSQL desde aquí entraría en conflicto con las migraciones.
 
+resource "random_password" "db" {
+  count  = var.supabase_db_password == null ? 1 : 0
+  length = 32
+  # Solo alfanumérica a propósito: la contraseña acaba incrustada en URIs de
+  # conexión (CLI de Supabase en CI, pooler, psql), y un carácter especial
+  # obligaría a codificarla en cada uso — el clásico fallo que solo aparece en
+  # producción y con una contraseña concreta.
+  special = false
+}
+
+locals {
+  db_password = coalesce(var.supabase_db_password, try(random_password.db[0].result, null))
+}
+
 resource "supabase_project" "principal" {
   organization_id   = var.supabase_organization_id
   name              = var.proyecto
-  database_password = var.supabase_db_password
+  database_password = local.db_password
   region            = var.supabase_region
 
   lifecycle {
@@ -23,6 +37,18 @@ resource "supabase_project" "principal" {
     # se rota desde el panel si hace falta.
     ignore_changes = [database_password]
   }
+}
+
+# Claves de API del proyecto. La anónima es pública por diseño —identifica el
+# proyecto, no autoriza nada; el perímetro son las políticas RLS (RF-111)— y de
+# aquí se propaga a la compilación del frontend y a las variables de Actions.
+#
+# La service_role, que este mismo data source también expone, NO se propaga a
+# ningún sitio: ignora todas las políticas, y RF-111 exige que no aparezca ni en
+# el cliente ni en el repositorio. Si alguna vez hace falta (p. ej. para un
+# volcado), se consume aquí dentro y no sale de Terraform.
+data "supabase_apikeys" "principal" {
+  project_ref = supabase_project.principal.id
 }
 
 resource "supabase_settings" "principal" {
@@ -64,4 +90,10 @@ output "supabase_project_ref" {
 output "supabase_url" {
   description = "URL base de la API del proyecto"
   value       = "https://${supabase_project.principal.id}.supabase.co"
+}
+
+output "db_password" {
+  description = "Contraseña de la base de datos (generada si no se indicó). Leer con: terraform output -raw db_password"
+  value       = local.db_password
+  sensitive   = true
 }

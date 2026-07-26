@@ -29,9 +29,16 @@ variable "supabase_region" {
 }
 
 variable "supabase_db_password" {
-  description = "Contraseña de la base de datos PostgreSQL. Generada aparte y guardada en un gestor de contraseñas"
+  description = <<-EOT
+    Contraseña de la base de datos PostgreSQL. Déjala en null (el valor por
+    omisión) y Terraform genera una aleatoria de 32 caracteres: una menos que
+    inventar, teclear y poder teclear débil. Queda en el estado remoto (cifrado
+    en R2) y en el secreto de Actions; recuperable con
+    `terraform output -raw db_password`.
+  EOT
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "supabase_site_url" {

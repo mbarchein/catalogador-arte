@@ -14,9 +14,10 @@ supabase_access_token = ""
 # Identificador de la organización, visible en la URL del panel
 supabase_organization_id = ""
 
-# Genera la contraseña con un gestor de contraseñas y guárdala allí. No es
-# recuperable desde la API una vez creado el proyecto.
-supabase_db_password = ""
+# Contraseña de la base de datos. Déjala comentada y Terraform genera una
+# aleatoria (recuperable después con `terraform output -raw db_password`).
+# Solo merece la pena fijarla si ya existe una, p. ej. al importar un proyecto.
+#supabase_db_password = ""
 
 # URL pública de la aplicación. Supabase Auth la usa para construir los enlaces
 # de los correos de invitación y de recuperación de contraseña.
