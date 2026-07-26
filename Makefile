@@ -9,6 +9,14 @@ PUERTO_API    ?= 8321
 PUERTO_CORREO ?= 8325
 PUERTO_DB     ?= 5433
 export PUERTO_APP PUERTO_API PUERTO_CORREO PUERTO_DB
+
+# Host con el que la aplicacion esta REALMENTE configurada. Anunciar «localhost»
+# cuando DEV_HOST apunta a la red local hace perder el tiempo: la pagina carga en
+# el movil pero el login falla, porque el JavaScript le dice al telefono que llame
+# a su propio localhost.
+DEV_HOST_ENV := $(shell grep -E '^DEV_HOST=' .env 2>/dev/null | cut -d= -f2)
+HOST := $(if $(DEV_HOST_ENV),$(DEV_HOST_ENV),localhost)
+AVISO_HOST := $(if $(DEV_HOST_ENV),Configurado para la red local: abre http://$(DEV_HOST_ENV):$(PUERTO_APP) en el movil.,Para probar desde el movil: make movil)
 .PHONY: help up down reset logs ps psql seed-users db-test test typecheck permisos \
         build preview clean verificar infra-check infra-plan infra-apply movil
 
@@ -22,10 +30,16 @@ up: ## Levanta el stack local completo y siembra los usuarios
 	@docker compose wait migrate >/dev/null 2>&1 || true
 	@bash docker/seed-users.sh
 	@echo
-	@echo "App:      http://localhost:$(PUERTO_APP)"
-	@echo "API:      http://localhost:$(PUERTO_API)"
+	@# Se anuncia el host con el que la aplicacion esta REALMENTE configurada. Sin
+	@# esto, decir «localhost» cuando DEV_HOST apunta a la red local hace perder el
+	@# tiempo: la pagina carga en el movil pero el login falla, porque el JavaScript
+	@# le dice al telefono que llame a su propio localhost.
+	@echo "App:      http://$(HOST):$(PUERTO_APP)"
+	@echo "API:      http://$(HOST):$(PUERTO_API)"
 	@echo "Correo:   http://localhost:$(PUERTO_CORREO)"
 	@echo "Postgres: localhost:$(PUERTO_DB) (supabase_admin/postgres)"
+	@echo
+	@echo "$(AVISO_HOST)"
 
 down: ## Detiene el stack
 	docker compose down

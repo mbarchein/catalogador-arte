@@ -13,9 +13,25 @@ export function LoginPage() {
     setError(null)
     const { error } = await supabase.auth.signInWithPassword({ email, password: contrasena })
     if (error) {
-      // Mensaje genérico a propósito: distinguir «no existe esa cuenta» de
-      // «contraseña incorrecta» permitiría averiguar quién tiene cuenta.
-      setError('No se ha podido entrar. Revisa el correo y la contraseña.')
+      // Un fallo de red NO se puede confundir con unas credenciales incorrectas.
+      // Antes se mostraba el mismo mensaje para ambos y eso hizo indiagnosticable
+      // un caso real: al abrir la app desde el móvil, el servidor estaba
+      // configurado con «localhost», que en el móvil es el propio móvil. Parecía
+      // una contraseña mal escrita durante un buen rato.
+      //
+      // Distinguirlo no filtra nada: que el servidor no responda no dice nada
+      // sobre qué cuentas existen. Lo que sigue siendo genérico es el mensaje de
+      // credenciales, porque separar «no existe esa cuenta» de «contraseña
+      // incorrecta» sí permitiría averiguar quién tiene acceso.
+      const esDeRed = error.status === undefined || error.status === 0
+      if (esDeRed) {
+        setError(
+          `No se ha podido contactar con el servidor (${import.meta.env.VITE_SUPABASE_URL}). ` +
+            'Comprueba que estás en la misma red y que esa dirección es alcanzable desde este dispositivo.',
+        )
+      } else {
+        setError('No se ha podido entrar. Revisa el correo y la contraseña.')
+      }
     }
     setEnviando(false)
   }
