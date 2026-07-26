@@ -1,7 +1,7 @@
 name: verificar
 
-# El nombre del job debe seguir siendo «verificar»: es el contexto que exige la
-# protección de la rama main, definida en infra/github.tf.
+# El nombre del job «verificar» es el contexto que exige la protección de la rama
+# main, definida en infra/github.tf. Si se renombra, hay que cambiarlo allí.
 
 on:
   push:
@@ -20,32 +20,67 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ── Infraestructura ─────────────────────────────────────
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ~1.15
           terraform_wrapper: false
 
-      - name: Comprobar formato
+      - name: Comprobar formato del Terraform
         run: terraform fmt -check -recursive -diff
         working-directory: infra
 
-      # Sin backend: la validación no necesita credenciales ni acceso al estado.
-      - name: Validar configuración principal
+      # Sin backend: validar no necesita credenciales ni acceso al estado.
+      - name: Validar Terraform
         run: |
+          terraform init -backend=false -input=false
+          terraform validate
+          cd bootstrap
           terraform init -backend=false -input=false
           terraform validate
         working-directory: infra
 
-      - name: Validar módulo de arranque
+      # ── Base de datos ───────────────────────────────────────
+      # Los tests de RLS van primero a propósito: sin backend, las políticas son
+      # el único perímetro de seguridad, y su fallo no corrompe datos, los expone.
+      - name: Levantar el stack
         run: |
-          terraform init -backend=false -input=false
-          terraform validate
-        working-directory: infra/bootstrap
+          docker compose up -d db auth migrate rest gateway
+          docker compose wait migrate
 
-      # A medida que existan, se añaden aquí los pasos que faltan. El orden es el
-      # del plan de pruebas (docs/plan-de-pruebas.md):
-      #   1. Tests de políticas RLS contra una base efímera — la prioridad
-      #      absoluta: sin backend, RLS es el único perímetro de seguridad.
-      #   2. Tests unitarios del frontend.
-      #   3. Tests de extremo a extremo.
+      - name: Comprobar que las migraciones se aplicaron
+        run: docker compose logs migrate | grep -q "Migraciones OK"
+
+      - name: Tests de políticas RLS y reglas del esquema
+        run: make db-test
+
+      # ── Frontend ────────────────────────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+        working-directory: app
+
+      - name: Comprobación de tipos
+        run: npm run typecheck
+        working-directory: app
+
+      - name: Tests del frontend
+        run: npm test
+        working-directory: app
+
+      - name: Compilación de producción
+        run: npm run build
+        working-directory: app
+        env:
+          VITE_SUPABASE_URL: http://localhost:8321
+          VITE_SUPABASE_ANON_KEY: clave-de-compilacion-sin-uso
+
+      - name: Registros del stack si algo falló
+        if: failure()
+        run: docker compose logs --tail=80
