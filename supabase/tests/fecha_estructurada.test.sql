@@ -115,19 +115,27 @@ exception
 end $$;
 
 -- ── La búsqueda por época, que es el porqué de todo esto ────
+-- Con fixtures propios, no con la semilla: los datos de la semilla los mueven
+-- las pruebas de interfaz, y un test que depende de ellos falla por motivos
+-- ajenos a lo que verifica.
 do $$
-declare v_setenta integer;
+declare v_ids text;
 begin
-  -- De la semilla: AR-0001 (1975-1978) cae en los setenta; RC-0001 (1968) y
-  -- AR-0002 (c. 1980) no. Solapamiento de rango, no igualdad.
-  select count(*) into v_setenta
+  insert into public.obras (id_catalogacion, artista, titulo, anio_inicio, anio_fin) values
+    ('AR-9801', 'ROTILI', 'época: dentro por rango', 1968, 1972),
+    ('AR-9802', 'ROTILI', 'época: dentro exacto', 1975, null),
+    ('AR-9803', 'ROTILI', 'época: fuera', 1981, null);
+
+  select string_agg(id_catalogacion, ',' order by id_catalogacion) into v_ids
     from public.obras
    where activo
+     and id_catalogacion in ('AR-9801', 'AR-9802', 'AR-9803')
+     -- solapamiento con la década 1970-1979, no igualdad
      and anio_inicio <= 1979
-     and coalesce(anio_fin, anio_inicio) >= 1970
-     and titulo = 'Paisaje de invierno';
-  if v_setenta <> 1 then
-    raise exception 'FAIL: la consulta de época no encuentra la obra del rango';
+     and coalesce(anio_fin, anio_inicio) >= 1970;
+
+  if v_ids is distinct from 'AR-9801,AR-9802' then
+    raise exception 'FAIL: la consulta de época devolvió «%»', v_ids;
   end if;
   raise notice 'OK: «obra de los setenta» ya es una consulta, no una esperanza';
 end $$;

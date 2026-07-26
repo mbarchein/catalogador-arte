@@ -119,6 +119,31 @@ services:
       # en el cliente se traiga el catálogo entero.
       PGRST_DB_MAX_ROWS: "500"
 
+  # WebSockets para las vistas en vivo (ADR-005): el mismo servicio que en la
+  # nube. La entrega respeta RLS — cada cliente solo recibe filas que puede leer.
+  realtime:
+    image: supabase/realtime:v2.30.23
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "4000"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: supabase_admin
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: *jwt-secret
+      SECRET_KEY_BASE: realtimerealtimerealtimerealtimerealtimerealtimerealtime12
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: "10000"
+      APP_NAME: realtime
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
+
   # Almacenamiento de ficheros. Es el mismo servicio que en la nube, no un
   # simulacro: las rutas, las políticas y las URL firmadas se comportan igual, que
   # es justo lo que hay que poder probar en local (ADR-002).
@@ -172,6 +197,7 @@ services:
       - auth
       - rest
       - storage
+      - realtime
     ports:
       - "${PUERTO_API:-8321}:8000"
     volumes:
