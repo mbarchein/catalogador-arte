@@ -64,48 +64,48 @@ resource "github_branch_protection" "main" {
 # Valores que no deben aparecer nunca en un registro de ejecución.
 
 resource "github_actions_secret" "supabase_access_token" {
-  repository      = local.repo
-  secret_name     = "SUPABASE_ACCESS_TOKEN"
-  plaintext_value = var.supabase_access_token
+  repository  = local.repo
+  secret_name = "SUPABASE_ACCESS_TOKEN"
+  value       = var.supabase_access_token
 }
 
 resource "github_actions_secret" "supabase_db_password" {
-  repository      = local.repo
-  secret_name     = "SUPABASE_DB_PASSWORD"
-  plaintext_value = local.db_password
+  repository  = local.repo
+  secret_name = "SUPABASE_DB_PASSWORD"
+  value       = local.db_password
 }
 
 resource "github_actions_secret" "vercel_token" {
-  repository      = local.repo
-  secret_name     = "VERCEL_TOKEN"
-  plaintext_value = var.vercel_token
+  repository  = local.repo
+  secret_name = "VERCEL_TOKEN"
+  value       = var.vercel_token
 }
 
 resource "github_actions_secret" "vercel_org_id" {
-  repository      = local.repo
-  secret_name     = "VERCEL_ORG_ID"
-  plaintext_value = var.vercel_org_id
+  repository  = local.repo
+  secret_name = "VERCEL_ORG_ID"
+  value       = var.vercel_org_id
 }
 
 resource "github_actions_secret" "vercel_project_id" {
-  repository      = local.repo
-  secret_name     = "VERCEL_PROJECT_ID"
-  plaintext_value = vercel_project.app.id
+  repository  = local.repo
+  secret_name = "VERCEL_PROJECT_ID"
+  value       = vercel_project.app.id
 }
 
 # Credenciales de B2 para la función Edge. Nombres S3_* a propósito: la función
 # firma S3 genérico, y cambiar de proveedor de almacenamiento debe ser cambiar
 # estos valores, no el código (la promesa de ADR-002).
 resource "github_actions_secret" "s3_key_id" {
-  repository      = local.repo
-  secret_name     = "S3_KEY_ID"
-  plaintext_value = b2_application_key.masters.application_key_id
+  repository  = local.repo
+  secret_name = "S3_KEY_ID"
+  value       = b2_application_key.masters.application_key_id
 }
 
 resource "github_actions_secret" "s3_key_secret" {
-  repository      = local.repo
-  secret_name     = "S3_KEY_SECRET"
-  plaintext_value = b2_application_key.masters.application_key
+  repository  = local.repo
+  secret_name = "S3_KEY_SECRET"
+  value       = b2_application_key.masters.application_key
 }
 
 # --- Variables --------------------------------------------------------------
