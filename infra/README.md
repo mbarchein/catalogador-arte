@@ -153,6 +153,10 @@ desde el móvil y `PUERTO_*` si algún puerto choca. No tiene relación con Terr
 
 ## Pasos, en orden
 
+> Todos los pasos tienen atajo en `infra/Makefile` — `make -C infra help` desde la raíz, o `make
+> help` desde aquí. Los comandos crudos se documentan igualmente porque los atajos no sustituyen a
+> entender qué hacen.
+
 ### 0. Comprobar en seco (sin credenciales)
 
 ```bash

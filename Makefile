@@ -114,13 +114,13 @@ permisos: ## Recupera la propiedad de los ficheros que el contenedor creó como 
 clean: ## Detiene todo y borra los volúmenes, base de datos incluida
 	docker compose --profile preview down -v
 
+# Los flujos de infraestructura viven en infra/Makefile (make -C infra help):
+# aquí solo se delega para no tener la lógica dos veces.
 infra-check: ## Formato y validez del Terraform
-	terraform -chdir=infra fmt -check -recursive -diff
-	cd infra && terraform init -backend=false -input=false >/dev/null && terraform validate
-	cd infra/bootstrap && terraform init -backend=false -input=false >/dev/null && terraform validate
+	$(MAKE) -C infra check
 
 infra-plan: ## terraform plan
-	cd infra && terraform plan
+	$(MAKE) -C infra plan
 
-infra-apply: ## terraform apply
-	cd infra && terraform apply
+infra-apply: ## terraform apply (a mano, tras leer el plan)
+	$(MAKE) -C infra apply
