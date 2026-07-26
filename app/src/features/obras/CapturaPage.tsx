@@ -363,11 +363,10 @@ export function CapturaPage() {
             alCambiar={(anio) => ponerFecha({ anio })}
           />
 
-          {/* Precisión: en qué medida sabemos cuándo se hizo. */}
           <div className="grid grid-cols-2 gap-2">
             <Interruptor
               etiqueta="Aproximada"
-              ayuda="c. 1980 — estimación"
+              ayuda="c. 1980 — de alrededor de ese año"
               activo={fecha.aproximada}
               alCambiar={(v) => ponerFecha({ aproximada: v })}
             />
@@ -386,13 +385,13 @@ export function CapturaPage() {
             />
           </div>
 
-          {/* Confianza: a ancho completo y separado de los dos de arriba, porque
-              responde a otra pregunta. «Aproximada» dice que estimamos la fecha;
-              «Sin confirmar» dice que ni el dato que tenemos está verificado. Se
-              combinan: «c. 1975-1978 [?]» es una fecha legítima. */}
+          {/* A ancho completo y separado de los dos de arriba porque dice algo
+              más grave: «Aproximada» es «la obra es de alrededor de 1980», con el
+              periodo establecido; «Sin confirmar» es «no sabemos de cuándo es, y
+              este año es lo que estimamos». */}
           <Interruptor
             etiqueta="Sin confirmar"
-            ayuda="[?] — dato no verificado, distinto de una estimación"
+            ayuda="[?] — se desconoce; el año es una estimación"
             activo={fecha.sinConfirmar}
             alCambiar={(v) => ponerFecha({ sinConfirmar: v })}
           />

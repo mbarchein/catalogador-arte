@@ -590,7 +590,7 @@ function CampoFecha({ texto, alCambiar }: { texto: string; alCambiar: (v: string
       <div className="grid grid-cols-2 gap-2">
         <Interruptor
           etiqueta="Aproximada"
-          ayuda="c. 1980 — estimación"
+          ayuda="c. 1980 — de alrededor de ese año"
           activo={f.aproximada}
           alCambiar={(v) => poner({ aproximada: v })}
         />
@@ -605,11 +605,10 @@ function CampoFecha({ texto, alCambiar }: { texto: string; alCambiar: (v: string
         />
       </div>
 
-      {/* Ver la nota de CapturaPage: «Aproximada» y «Sin confirmar» responden a
-          preguntas distintas y se combinan. */}
+      {/* Ver la nota de CapturaPage sobre la diferencia entre las dos banderas. */}
       <Interruptor
         etiqueta="Sin confirmar"
-        ayuda="[?] — dato no verificado, distinto de una estimación"
+        ayuda="[?] — se desconoce; el año es una estimación"
         activo={f.sinConfirmar}
         alCambiar={(v) => poner({ sinConfirmar: v })}
       />

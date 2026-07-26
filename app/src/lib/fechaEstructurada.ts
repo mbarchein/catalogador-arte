@@ -13,13 +13,14 @@
  *
  * **`c.` y `[?]` no son lo mismo**, y de ahí que sean dos banderas y no una:
  *
- *   - `c.` habla de **precisión**: sabemos que es de alrededor de 1980, y es una
- *     estimación histórico-artística fundada.
- *   - `[?]` habla de **confianza**: alguien nos dijo 1978 y no lo hemos verificado.
+ *   - `c.` — **fecha aproximada**: la obra es de alrededor de ese año. El periodo
+ *     está establecido; lo que no se conoce con exactitud es el año.
+ *   - `[?]` — **fecha sin confirmar**: la fecha se desconoce, y el año que consta
+ *     es una estimación.
  *
- * Se combinan, y el caso combinado existe: `c. 1975-1978 [?]` significa «estimamos
- * mediados de los setenta, pero ni eso está confirmado». Tratar `[?]` como un
- * quinto formato en vez de como una bandera dejaría ese caso sin poder expresarse.
+ * El sufijo se puede aplicar sobre cualquiera de los cuatro formatos, así que
+ * tratar `[?]` como un quinto formato en vez de como una bandera dejaría esas
+ * combinaciones sin poder expresarse.
  *
  * Componer en vez de escribir tiene dos ventajas que importan en el almacén: no
  * hay que sacar el teclado, y es imposible producir un formato inválido.
@@ -33,11 +34,11 @@
 
 export interface FechaEstructurada {
   anio: number | null
-  /** Precisión: estimación fundada. Se representa con el prefijo «c.». */
+  /** La obra es de alrededor de ese año. Se representa con el prefijo «c.». */
   aproximada: boolean
   /** Año final del rango, o null si es una fecha única. */
   anioFin: number | null
-  /** Confianza: dato no verificado. Se representa con el sufijo «[?]». */
+  /** La fecha se desconoce y el año es una estimación. Sufijo «[?]». */
   sinConfirmar: boolean
 }
 
