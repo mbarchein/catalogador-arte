@@ -18,6 +18,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    b2 = {
+      source  = "Backblaze/b2"
+      version = "~> 0.10"
+    }
   }
 
   # Estado remoto en Cloudflare R2, compatible con el backend s3.

@@ -93,6 +93,21 @@ resource "github_actions_secret" "vercel_project_id" {
   plaintext_value = vercel_project.app.id
 }
 
+# Credenciales de B2 para la función Edge. Nombres S3_* a propósito: la función
+# firma S3 genérico, y cambiar de proveedor de almacenamiento debe ser cambiar
+# estos valores, no el código (la promesa de ADR-002).
+resource "github_actions_secret" "s3_key_id" {
+  repository      = local.repo
+  secret_name     = "S3_KEY_ID"
+  plaintext_value = b2_application_key.masters.application_key_id
+}
+
+resource "github_actions_secret" "s3_key_secret" {
+  repository      = local.repo
+  secret_name     = "S3_KEY_SECRET"
+  plaintext_value = b2_application_key.masters.application_key
+}
+
 # --- Variables --------------------------------------------------------------
 # Valores no sensibles que el flujo necesita conocer. Se derivan de los recursos
 # reales, así que no pueden quedar desactualizados respecto a la infraestructura.
@@ -116,6 +131,24 @@ resource "github_actions_variable" "supabase_anon_key" {
   repository    = local.repo
   variable_name = "SUPABASE_ANON_KEY"
   value         = data.supabase_apikeys.principal.anon_key
+}
+
+resource "github_actions_variable" "s3_endpoint" {
+  repository    = local.repo
+  variable_name = "S3_ENDPOINT"
+  value         = local.s3_endpoint_b2
+}
+
+resource "github_actions_variable" "s3_region" {
+  repository    = local.repo
+  variable_name = "S3_REGION"
+  value         = var.b2_region
+}
+
+resource "github_actions_variable" "s3_bucket_masters" {
+  repository    = local.repo
+  variable_name = "S3_BUCKET_MASTERS"
+  value         = b2_bucket.masters.bucket_name
 }
 
 resource "github_actions_variable" "app_url" {

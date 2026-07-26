@@ -62,6 +62,26 @@ variable "vercel_org_id" {
   type        = string
 }
 
+# --- Backblaze B2 (masters de archivo, ADR-002 actualizado) -----------------
+
+variable "b2_application_key_id" {
+  description = "Clave maestra de B2 (solo para que Terraform cree el bucket y su clave acotada)"
+  type        = string
+  sensitive   = true
+}
+
+variable "b2_application_key" {
+  description = "Secreto de la clave maestra de B2"
+  type        = string
+  sensitive   = true
+}
+
+variable "b2_region" {
+  description = "Región de la cuenta B2. eu-central-003 (Ámsterdam) mantiene los datos en la UE"
+  type        = string
+  default     = "eu-central-003"
+}
+
 # --- GitHub -----------------------------------------------------------------
 
 variable "github_owner" {
