@@ -31,6 +31,38 @@ lo describen y se conservan tal cual.
 > **Aviso de seguridad para quien vaya a tocar el esquema:** al no haber backend, las políticas RLS son
 > el único perímetro que protege los datos. Una tabla nueva sin sus políticas es una tabla pública.
 
+## Arranque local
+
+Requiere Docker y `make`. No hace falta instalar Node, Python ni la CLI de Supabase: el stack completo
+—Postgres, autenticación, API y frontend— corre en contenedores.
+
+```bash
+make up          # levanta todo y crea los usuarios de prueba
+make verificar   # infraestructura, tipos, tests de SQL y de frontend
+make help        # el resto de comandos
+```
+
+Después, http://localhost:5173 con cualquiera de estas cuentas (contraseña `password123`):
+
+| Cuenta | Rol | Qué puede hacer |
+|---|---|---|
+| `admin@local.test` | Superusuario | Todo |
+| `catalogador@local.test` | Catalogador | Crear y editar obra |
+| `lector@local.test` | Lector | Solo consultar |
+
+Para probar en el móvil, que es el dispositivo del caso de uso principal, `make movil` explica los dos
+pasos. Merece la pena hacerlo pronto: catalogar de pie con una mano se juzga mal desde un escritorio.
+
+## Qué hay construido
+
+Primera entrega: **captura básica de obra**. La tabla Obras con los campos de fase 1 —los que se
+rellenan con la pieza delante—, autenticación con tres roles, listado con búsqueda, captura rápida
+pensada para el móvil y ficha editable.
+
+Faltan las ocho tablas restantes del esquema (Imágenes, Series, Exposiciones, Bibliografía, las dos
+tablas puente, Propietarios/Instituciones y Archivo/Documentación) y, con ellas, la subida de imágenes,
+la papelera, el bloqueo de edición y la ficha imprimible con QR.
+
 ## Documentación
 
 Toda la documentación del proyecto está en [`docs/`](docs/). Empezar por

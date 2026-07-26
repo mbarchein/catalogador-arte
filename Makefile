@@ -1,4 +1,14 @@
 .DEFAULT_GOAL := help
+
+# Puertos publicados. Están por debajo de 32768 a propósito: ahí empieza el rango
+# de puertos efímeros de Linux, y publicar dentro de él (54321, 54322…) hace que
+# cualquier conexión saliente pueda quedarse con el puerto y que el stack falle al
+# arrancar de forma intermitente. Sobrescribibles desde .env.
+PUERTO_APP    ?= 5173
+PUERTO_API    ?= 8321
+PUERTO_CORREO ?= 8325
+PUERTO_DB     ?= 5433
+export PUERTO_APP PUERTO_API PUERTO_CORREO PUERTO_DB
 .PHONY: help up down reset logs ps psql seed-users db-test test typecheck permisos \
         build preview clean verificar infra-check infra-plan infra-apply movil
 
@@ -12,10 +22,10 @@ up: ## Levanta el stack local completo y siembra los usuarios
 	@docker compose wait migrate >/dev/null 2>&1 || true
 	@bash docker/seed-users.sh
 	@echo
-	@echo "App:      http://localhost:5173"
-	@echo "API:      http://localhost:54321"
-	@echo "Correo:   http://localhost:54324"
-	@echo "Postgres: localhost:54322 (supabase_admin/postgres)"
+	@echo "App:      http://localhost:$(PUERTO_APP)"
+	@echo "API:      http://localhost:$(PUERTO_API)"
+	@echo "Correo:   http://localhost:$(PUERTO_CORREO)"
+	@echo "Postgres: localhost:$(PUERTO_DB) (supabase_admin/postgres)"
 
 down: ## Detiene el stack
 	docker compose down

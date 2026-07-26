@@ -2,19 +2,26 @@
 
 Correspondencia entre los requisitos de [`requisitos.md`](requisitos.md) y los tests que los verifican.
 
-**Estado actual: solo existe la infraestructura, y su verificación está en marcha.** La fase 3 (esquema
-en SQL) es el siguiente paso. Este documento define de antemano qué debe quedar cubierto para que ningún
-requisito se dé por implementado sin verificación. La columna «Estado» se actualiza a medida que los
-tests existen.
+**Estado actual: 44 asertos en verde** — 21 de SQL y 23 del frontend — sobre la primera entrega
+(captura básica de obra). El resto del documento define lo que falta, para que ningún requisito se dé
+por implementado sin verificación. La columna «Estado» se actualiza a medida que los tests existen.
+
+Todo se ejecuta con `make verificar`, y en cada *push* con el mismo orden de prioridades.
 
 ## Herramientas
 
-| Capa | Herramienta | Se ejecuta |
+| Capa | Herramienta | Estado |
 |---|---|---|
-| Políticas RLS y *triggers* | pgTAP sobre una base efímera de Supabase local | En cada *push* |
-| Lógica del frontend | Vitest | En cada *push* |
-| Recorridos completos | Playwright, incluido un perfil de móvil | En cada *push* |
-| Infraestructura | `terraform fmt -check` y `terraform validate` | En cada *push* |
+| Políticas RLS, *triggers* y restricciones | SQL contra el stack local, en transacciones que se deshacen | En uso · `make db-test` |
+| Lógica del frontend | Vitest | En uso · `make test` |
+| Tipos | `tsc --noEmit` | En uso · `make typecheck` |
+| Infraestructura | `terraform fmt -check` y `terraform validate` | En uso · `make infra-check` |
+| Recorridos completos, con perfil de móvil | Playwright | **Sin montar** |
+
+Los tests de SQL son SQL corriente, sin pgTAP: cada fichero abre una transacción,
+crea sus propios datos, comprueba con bloques `do` que lanzan excepción al fallar, y termina en
+`rollback`. No dejan rastro en la base y no hace falta instalar nada. La razón de no usar pgTAP es que
+la parte difícil de estos tests es autenticarse como cada rol, y eso no lo simplifica ninguna librería.
 
 ## Convenciones
 
@@ -58,10 +65,10 @@ reales contra la base, no comprobando que el fichero de política existe.
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
 | RF-109 | Matriz completa: para cada una de las nueve tablas y cada operación (`select`, `insert`, `update`, `delete`), qué puede hacer cada rol. Son 9 × 4 × 3 casos y se generan, no se escriben a mano | Pendiente |
-| RF-111 | Test de cierre por omisión: **toda** tabla del esquema tiene RLS activado y al menos una política por operación. Debe fallar automáticamente cuando alguien añada una tabla nueva sin políticas — es la red que impide el olvido | Pendiente |
-| RF-111 | Un cliente con la clave anónima y **sin sesión** no lee ni una fila de ninguna tabla | Pendiente |
-| RF-105 | Un Lector lee `contacto` de Propietarios/Instituciones, que es lo acordado, y no puede modificarlo | Pendiente |
-| RF-108 | Un Catalogador no puede modificar su propio rol en la tabla de perfiles, ni el de otro usuario | Pendiente |
+| RF-111 | Test de cierre por omisión: **toda** tabla del esquema tiene RLS activado, y ninguna política permite DELETE. Falla automáticamente cuando alguien añade una tabla sin RLS — es la red que impide el olvido | **Hecho** |
+| RF-111, RF-113 | Un cliente con la clave anónima y **sin sesión** no lee ni una fila de ninguna tabla. Este aserto destapó que la plataforma concede las tablas nuevas al rol anónimo por privilegios por omisión | **Hecho** |
+| RF-105 | Un Lector lee las obras activas y no puede modificarlas. `contacto` cuando exista la tabla | Parcial |
+| RF-108 | Un Catalogador no puede modificar su propio rol en la tabla de perfiles, ni el de otro usuario. Y el acceso administrativo directo sí puede: sin eso no habría forma de promover al primer superusuario | **Hecho** |
 | RF-112 | El registro está deshabilitado: un intento de alta de cuenta desde el cliente es rechazado | Pendiente |
 | RF-609 | Las políticas o las vistas excluyen las fichas de baja para el Lector, de modo que la exclusión no dependa solo de que el frontend recuerde filtrar | Pendiente |
 | RF-110 | Una URL firmada caducada deja de dar acceso al fichero; una ruta de bucket sin firmar no responde | Pendiente |
@@ -78,19 +85,19 @@ interfaz que promete lo que no cumple.
 | RF-103 | Un Catalogador puede crear, editar y dar de baja en las nueve tablas | Pendiente |
 | RF-103 | Un Catalogador puede editar una ficha creada por otro Catalogador | Pendiente |
 | RF-106 | La interfaz de un Lector no contiene ningún control de escritura ni el enlace a la papelera | Pendiente |
-| RF-106 | Un Lector que fuerza la ruta de edición por URL no obtiene formulario editable | Pendiente |
+| RF-106 | Un Lector que ataca la API directamente, saltándose la interfaz, recibe 403 al intentar dar de alta | **Hecho** |
 | RF-107 | Un Superusuario conserva acceso completo al contenido sin necesidad de tener el rol de Catalogador | Pendiente |
 
 ### Modelo de datos (RF-200)
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-202 | Se rechaza un `id_catalogacion` con formato inválido; se aceptan `AR-0001` y `RC-0001` | Pendiente |
+| RF-202 | Formato validado, numeración secuencial e independiente por fondo, prefijo coherente con el fondo, y ningún identificador retirado se recicla | **Hecho** |
 | RF-203 | No se puede guardar una obra sin `artista`, y `artista` no ofrece «Sin revisar» | Pendiente |
-| RF-204 | Intentar cambiar una clave primaria existente no altera el registro, y el formulario la presenta de solo lectura. Un test por cada una de las seis claves | Pendiente |
+| RF-204 | Intentar cambiar `id_catalogacion` o el fondo falla contra la base, no solo en el formulario. Faltan las otras cinco claves, cuyas tablas aún no existen | Parcial |
 | RF-205 | Cada campo de selección afectado tiene «Sin revisar» como valor inicial | Pendiente |
-| RF-207 | `fecha_ejecucion` acepta los cuatro formatos; `fecha_orden` ordena correctamente un conjunto que los mezcle | Pendiente |
-| RF-209 | Obra con `titulo` vacío se representa como «[Sin título]» sin que el dato se guarde; obra titulada literalmente «Sin título» se muestra sin corchetes | Pendiente |
+| RF-207 | `fecha_ejecucion` acepta los cuatro formatos, `fecha_orden` ordena un conjunto mezclado, y un año implausible se descarta en vez de ordenar mal en silencio | **Hecho** |
+| RF-209 | Obra con `titulo` vacío se representa como «[Sin título]» sin guardar el dato; obra titulada literalmente «Sin título» se muestra sin corchetes | **Hecho** |
 | RF-210 | `fotografiada` es No sin imágenes, Sí con una imagen activa, y **No cuando su única imagen está de baja** (INC-14) | Pendiente |
 | RF-211 | `medidas_verificadas` sigue en No aunque `alto_cm` y `ancho_cm` tengan valor | Pendiente |
 | RF-212 | `obras_relacionadas` acepta varias obras y no admite texto | Pendiente |
@@ -102,8 +109,8 @@ interfaz que promete lo que no cumple.
 | RF-303 | La ficha renderiza los ocho bloques. Test de completitud: todo campo del esquema aparece en exactamente un bloque (cubre INC-06 e INC-16) | Pendiente |
 | RF-304 | Un bloque sin datos muestra su texto explícito y no queda vacío | Pendiente |
 | RF-305 | Los datos de relación se renderizan como enlace a la ficha correspondiente | Pendiente |
-| RF-306 | Una obra con `estado_existencia` distinto de «Conservada» muestra el aviso en cabecera (INC-18) | Pendiente |
-| RF-307 | Un título atribuido se distingue visualmente de un título auténtico (INC-17) | Pendiente |
+| RF-306 | Una obra con `estado_existencia` distinto de «Conservada» muestra el aviso en cabecera (INC-18) | **Hecho** |
+| RF-307 | Un título atribuido se distingue visualmente de un título auténtico (INC-17) | **Hecho** |
 | RF-308 | En modo edición, los campos de cabecera son editables salvo la clave primaria | Pendiente |
 
 ### Imágenes y adjuntos (RF-400)
@@ -162,7 +169,7 @@ interfaz que promete lo que no cumple.
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
 | RF-801 | Cualquier cambio actualiza `fecha_actualizacion` | Pendiente |
-| RF-802 | Un cambio en un campo de fase 1 actualiza `fecha_actualizacion_basica`; un cambio en un campo de fase 2 **no** la actualiza | Pendiente |
+| RF-802 | Un cambio en un campo de fase 1 actualiza `fecha_actualizacion_basica`; un cambio de fase 2 **no** la actualiza | **Hecho** |
 | RF-803 | `actualizado_por` recoge el usuario de la sesión que guardó | Pendiente |
 | RF-804 | Las seis tablas con clave primaria propia disponen de los tres campos (INC-09) | Pendiente |
 
@@ -170,8 +177,8 @@ interfaz que promete lo que no cumple.
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-901 | Dar de baja no borra la fila: sigue recuperable de la base de datos | Pendiente |
-| RF-902 | La baja rellena fecha y usuario; la restauración rellena los suyos y no borra los de la baja | Pendiente |
+| RF-901 | Dar de baja no borra la fila, y el borrado real está negado a todos los roles por ausencia de política y de privilegio | **Hecho** |
+| RF-902 | La baja rellena fecha y usuario; la restauración rellena los suyos y no borra la traza de la baja | **Hecho** |
 | RF-903 | Eliminar una fila puente la borra realmente, y volver a crearla no deja rastro | Pendiente |
 | RF-904 | Dar de baja una imagen no afecta a su obra; dar de baja una participación no afecta a obra ni exposición | Pendiente |
 | RF-905 | Un test por cada fila de la tabla de cascada: obra, exposición, referencia, serie y propietario | Pendiente |

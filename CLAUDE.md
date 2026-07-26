@@ -70,6 +70,10 @@ Reglas que ya están decididas y no conviene reabrir sin motivo:
 - **Nunca un borrado real.** Toda eliminación es baja lógica con traza de quién y cuándo.
 - **Una tabla sin política RLS está abierta, no cerrada.** Crear una tabla sin sus políticas y sus
   tests es publicar sus datos. No hay servidor que niegue por omisión.
+- **Al crear una tabla: activar RLS, revocar privilegios y luego concederlos uno a uno.** La plataforma
+  concede por omisión *todos* los privilegios de cada tabla nueva a los roles anónimo y autenticado —
+  incluido `delete`. La migración inicial ya revoca los privilegios por omisión para el futuro, pero
+  conviene comprobarlo: el test de cierre por omisión avisa de la parte de RLS, no de los `grant`.
 - **El móvil es el dispositivo principal**, no un caso adaptado: la interfaz se diseña partiendo de una
   mano y una pantalla pequeña, con la obra delante y en un almacén.
 - **Las claves primarias no se editan** una vez creada la ficha: son el eje de las tablas relacionadas
