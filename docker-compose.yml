@@ -91,6 +91,8 @@ services:
     depends_on:
       auth:
         condition: service_healthy
+      storage:
+        condition: service_healthy
     volumes:
       - ./supabase/migrations:/migrations:ro
       - ./supabase/seed.sql:/seed.sql:ro
@@ -122,9 +124,15 @@ services:
   # es justo lo que hay que poder probar en local (ADR-002).
   storage:
     image: supabase/storage-api:v1.11.13
+    # Antes de migrate, no después: al arrancar, storage ejecuta SUS PROPIAS
+    # migraciones internas, que ponen al día el esquema `storage` que trae la
+    # imagen de Postgres (le añaden columnas como buckets.public). Nuestras
+    # migraciones escriben en ese esquema, así que necesitan que storage haya
+    # arrancado ya. Con el orden contrario todo funciona… hasta el primer
+    # volumen limpio, que es exactamente cuando nadie entiende qué pasa.
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
     environment:
       ANON_KEY: *anon-key
       SERVICE_KEY: *service-key
