@@ -125,7 +125,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-408 | `archivo_digitalizado` de Archivo/Documentación sigue el mismo patrón de subida, sin elección de índice: una fila es un archivo. Para documentos multipágina se usa un único PDF con todas las páginas, no una fila por página. |
 | RF-409 | Cada toma se almacena en **tres niveles**: miniatura (~30 KB) para el índice en mosaico, derivada de consulta (~300 KB) para la ficha, y máster de archivo con el original íntegro. Los tres son derivaciones del mismo `id_imagen`, no tres filas distintas. |
 | RF-410 | Las derivadas y la miniatura **se generan en el navegador antes de subir**, no en el servidor. Una fotografía de móvil ronda los 4-12 MB y subirla íntegra tres veces desde un almacén con mala cobertura no es viable. |
-| RF-411 | La aplicación no muestra nunca un máster en una vista: ofrece descarga bajo demanda mediante URL firmada, para quien necesite el original (imprenta, comisario, publicación). |
+| RF-411 | La aplicación no muestra nunca un máster en una vista: la ficha ofrece «Descargar máster» con URL firmada por la función Edge, también para el Lector — enviar el original a una imprenta o un comisario es exactamente su caso de uso. La subida exige poder editar. |
 | RF-412 | Todo acceso a imágenes pasa por una única función del frontend que resuelve la URL de cada nivel, de modo que cambiar de proveedor de almacenamiento sea un cambio en un solo lugar. |
 | RF-413 | El campo `archivo_digitalizado` de Archivo/Documentación sigue el mismo esquema de tres niveles, con la miniatura correspondiente a la primera página del documento. |
 
@@ -278,7 +278,7 @@ lugar desde el que se lanzará el pipeline del catálogo impreso.
 | 6 | Ficha de obra completa, índices y búsqueda | Pendiente |
 | 7 | Subida de imágenes en tres niveles y ficha imprimible con QR | Pendiente |
 | 8 | Papelera y bloqueo de edición con su *trigger* | Pendiente |
-| 9 | **Másters a Backblaze B2**: función Edge de firmas, bucket y flujo de subida. Antes de la captura en serie | Pendiente |
+| 9 | **Másters a Backblaze B2**: función Edge de firmas, bucket y flujo de subida | **Completada** — bucket y clave sin borrado en Terraform; MinIO como B2 local |
 | 10 | Volcados automáticos y dominio propio | Pendiente |
 
 La fase 4 va deliberadamente antes que cualquier pantalla. En el stack anterior los permisos podían

@@ -141,8 +141,12 @@ Consecuencias:
    1 GB de Supabase se agota entre la toma 125 y la 500 — es decir, durante las primeras semanas.
 2. **B2 exige una pieza nueva: una función Edge de Supabase que firme las subidas y descargas.**
    Las credenciales de B2 no pueden viajar en el cliente (mismo principio que RF-111), y sin
-   backend propio, la función Edge es el único lugar donde pueden vivir. Será la primera función
-   Edge del proyecto; el patrón existe rodado en la otra aplicación del equipo.
+   backend propio, la función Edge es el único lugar donde pueden vivir. **Implementada**
+   (`supabase/functions/firmar-fichero`): firma S3 genérico —cambiar de proveedor es cambiar
+   endpoint y credenciales, no código—, comprueba el rol con el token del usuario (sin
+   `service_role`), y la clave de B2 que crea Terraform **no tiene capacidad de borrado**: ni
+   comprometiendo la función entera se puede destruir un máster. En local, MinIO hace de B2 con la
+   misma API, así que el flujo completo se prueba sin depender de un servicio externo.
 3. Las derivadas se quedan en Supabase Storage, pero al ritmo de ~150-400 KB la colección completa
    ronda el límite gratuito. Si se supera, la salida barata es bajar la derivada a 1600 px — decisión
    de calidad que corresponde al equipo, no un ajuste silencioso — o pasar Supabase a Pro.
