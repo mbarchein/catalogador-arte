@@ -75,6 +75,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-110 | Los ficheros no son accesibles por URL pública: el acceso se concede mediante URL firmada de caducidad corta, emitida solo a una sesión válida con el rol adecuado. |
 | RF-111 | **No existe ningún camino a los datos que no atraviese RLS.** Al no haber servidor propio, las políticas son el único perímetro de seguridad: una tabla sin política de una operación se considera abierta, no cerrada. La clave `service_role`, que ignora las políticas, no aparece nunca en el cliente ni en el repositorio. |
 | RF-112 | No hay registro abierto de usuarios: las cuentas las crea el Superusuario. La aplicación no tiene zona pública ni formulario de alta. |
+| RF-113 | Los privilegios de tabla se **revocan primero y se conceden después**, uno a uno. La plataforma concede por omisión todos los privilegios de cada tabla nueva a los roles anónimo y autenticado, de modo que sin revocar explícitamente las políticas RLS quedan como única barrera. Con la revocación, exponer o destruir datos exige dos errores en vez de uno. |
 
 ### RF-200 · Modelo de datos y convenciones de captura
 
@@ -236,7 +237,7 @@ los documentos originales.
 | Id | Requisito |
 |---|---|
 | RNF-101 | La aplicación es una PWA estática que habla directamente con Supabase: PostgreSQL gestionado, PostgREST como API, Supabase Auth y Supabase Storage. No hay servidor de aplicación propio. |
-| RNF-102 | El frontend se construye con Vite, Svelte y **TypeScript**. Los tipos de las nueve tablas se generan desde el esquema con la CLI de Supabase, no se mantienen a mano: es lo que compensa la pérdida de las validaciones que aportaba un ORM. |
+| RNF-102 | El frontend se construye con Vite, React y **TypeScript**. Los tipos de las nueve tablas se generan desde el esquema con la CLI de Supabase, no se mantienen a mano: es lo que compensa la pérdida de las validaciones que aportaba un ORM. |
 | RNF-103 | El frontend se aloja en Cloudflare Pages, con despliegue desde GitHub Actions al fusionar en `main`. |
 | RNF-104 | La plataforma se gestiona como código con Terraform en `infra/`. El esquema de la base de datos y las políticas RLS **no** son Terraform: viven en SQL versionado que aplica la CLI de Supabase. |
 | RNF-105 | La aplicación se presenta en español de España, con zona horaria `Europe/Madrid`. |
@@ -296,7 +297,7 @@ El detalle del razonamiento está en
 
 | Id | Decisión | Bloquea |
 |---|---|---|
-| DP-01 | Quién asigna `id_catalogacion` y cómo: generación automática o introducción manual. Con captura rápida en móvil (RF-1204) la generación automática gana peso — teclear `AR-0247` de pie y con una mano es la clase de gesto que produce duplicados | Fase 3 |
+| ~~DP-01~~ | **Resuelta** en [ADR-003](decisiones/ADR-003-asignacion-del-identificador.md): lo asigna la base de datos con un *trigger* y un cerrojo por fondo | — |
 | DP-02 | Formato de `id_imagen`, que el esquema no especifica | Fase 3 |
 | DP-03 | Si `clave_bibtex` debe seguir siendo clave primaria inmutable o pasar a campo único editable con clave técnica detrás | Fase 3 |
 | DP-04 | Taxonomía cerrada de `agrupacion` y de `etapa`, cuando haya volumen suficiente de obra catalogada | Nada por ahora: texto libre hasta entonces |

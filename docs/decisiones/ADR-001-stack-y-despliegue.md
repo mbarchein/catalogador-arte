@@ -42,7 +42,7 @@ Se abandona Django. La aplicación pasa a ser una **PWA estática que habla dire
 | Autenticación | Supabase Auth |
 | Autorización | Row Level Security en PostgreSQL, con el rol en el perfil del usuario |
 | Almacenamiento de ficheros | Supabase Storage, con políticas de acceso |
-| Frontend | Vite + Svelte + TypeScript, compilado a estático |
+| Frontend | Vite + React + TypeScript, compilado a estático |
 | PWA | `vite-plugin-pwa`: manifest, iconos e instalación. Cachea el armazón de la aplicación, no los datos |
 | Alojamiento del frontend | Cloudflare Pages |
 | Integración y despliegue | GitHub Actions |
@@ -83,6 +83,9 @@ escribirlo dos veces. Es lo que compensa la pérdida de las validaciones que dab
 - **El ecosistema deja de ser solo Python.** El frontend es TypeScript y hace falta Node para compilar.
   El pipeline del catálogo impreso sigue siendo Python y sigue funcionando: Supabase es PostgreSQL, y un
   script local se conecta por `psycopg2` igual que se habría conectado a la base de datos local.
+- **Se elige React, y no otra librería**, por consistencia con la otra aplicación del equipo: comparten
+  patrón de carpetas, stack local en Docker e interfaz de comandos por `make`, de modo que lo aprendido
+  en una sirve en la otra. Pesa más que cualquier preferencia técnica entre librerías equivalentes.
 
 ### Riesgos, y qué se hace con ellos
 
