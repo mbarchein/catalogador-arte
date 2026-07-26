@@ -15,6 +15,7 @@ crash.*.log
 node_modules/
 dist/
 .vite/
+*.tsbuildinfo
 
 # Entornos virtuales de Python (pipeline del catálogo impreso)
 venv/
