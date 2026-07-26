@@ -120,6 +120,27 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
+      - name: Desplegar funciones Edge
+        run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+
+      # Las credenciales de B2 llegan a la función por aquí, desde los secretos
+      # que Terraform derivó del bucket real. Nombres S3_* a propósito: cambiar
+      # de proveedor de almacenamiento es cambiar estos valores, no el código.
+      - name: Configurar secretos de las funciones
+        run: |
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+            S3_ENDPOINT="${{ vars.S3_ENDPOINT }}" \
+            S3_REGION="${{ vars.S3_REGION }}" \
+            S3_BUCKET_MASTERS="${{ vars.S3_BUCKET_MASTERS }}" \
+            S3_KEY_ID="${{ secrets.S3_KEY_ID }}" \
+            S3_KEY_SECRET="${{ secrets.S3_KEY_SECRET }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+
   publicar:
     needs: migrar
     runs-on: ubuntu-latest
