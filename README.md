@@ -71,3 +71,12 @@ Toda la documentación del proyecto está en [`docs/`](docs/). Empezar por
 ## Convenciones de trabajo
 
 Ver [`CLAUDE.md`](CLAUDE.md): idioma, estilo de commits, política de tests y estructura del repositorio.
+
+## Licencia
+
+El **código** de este repositorio es libre, bajo la [licencia MIT](LICENSE).
+
+La licencia **no cubre las obras del catálogo**: las imágenes y los textos sobre la obra de Alberto
+Rotili y María Ruiz Campins son propiedad de sus titulares de derechos y no forman parte del
+software. Este repositorio público contiene el código de la herramienta; el contenido del catálogo
+vive en la base de datos y el almacenamiento de la aplicación, que exigen autenticación.

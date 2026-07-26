@@ -315,5 +315,5 @@ El detalle del razonamiento está en
 | DP-06 | Convención definitiva de nomenclatura de archivos de imagen, ahora con tres niveles por toma | Fase 7 |
 | DP-07 | Dónde se almacena el estado del bloqueo de edición: columnas en la propia tabla o tabla aparte. La imposición mediante *trigger* ya está decidida (RF-708); lo que falta es dónde vive el dato | Fase 8 |
 | DP-08 | Si los campos Sí/No de fase 1 (`tiene_marco`, `requiere_restauracion`, `requiere_reenmarcacion`) necesitan un tercer valor «Sin revisar», por coherencia con RF-205 | Fase 3 |
-| DP-10 | **Licencia del repositorio**, ahora público: sin fichero de licencia es «todos los derechos reservados». El código es una cosa; las imágenes y textos del catálogo, otra, y conviene dejarlo escrito | Nada técnico; sí la reutilización |
+| ~~DP-10~~ | **Resuelta**: código bajo licencia MIT (`LICENSE`), la misma que la otra aplicación del equipo. Las obras del catálogo quedan explícitamente fuera de la licencia — la distinción está escrita en el README | — |
 | DP-09 | **Formato del máster fotográfico**: JPEG a máxima calidad, RAW o TIFF, dentro del sobre fijado de 2-8 MB mínimo por toma. Criterio archivístico, no de infraestructura. Debe decidirse **antes de fotografiar en serie**: reconvertir 5000 archivos después no recupera lo que el JPEG ya descartó | El trabajo de campo, y dimensiona B2 |
