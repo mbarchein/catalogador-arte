@@ -202,3 +202,50 @@ export async function urlFirmada(ruta: string, segundos = 3600): Promise<string 
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(ruta, segundos)
   return error ? null : data.signedUrl
 }
+
+
+// ── Elección de la imagen que representa a la obra ───────────
+
+/** Lo mínimo que hace falta para decidir cuál se muestra. */
+export interface ImagenCandidata {
+  id_imagen: string
+  tipo_toma: string
+  imagen_indice: boolean
+  fecha_fotografia?: string | null
+}
+
+/** Ordinal del identificador (`AR-0001_v3` → 3). Refleja el orden de subida. */
+export function ordinal(idImagen: string): number {
+  const encontrado = idImagen.match(/_v(\d+)$/)
+  return encontrado?.[1] ? Number(encontrado[1]) : 0
+}
+
+/**
+ * RF-403, la regla de repliegue que el esquema dejó escrita y no estaba
+ * implementada:
+ *
+ *  1. La marcada como índice, si hay alguna.
+ *  2. Si no, la más reciente de tipo «general».
+ *  3. Si tampoco hay ninguna «general» —caso que el esquema no contempla— la más
+ *     reciente de cualquier tipo. Mostrar un hueco porque solo hay reversos y
+ *     detalles contradiría el criterio de no dejar blancos sin explicación, y una
+ *     foto del reverso es mejor referencia visual que nada.
+ *
+ * «Más reciente» es la fecha de la fotografía; a igualdad, el orden de subida.
+ */
+export function elegirPrincipal<T extends ImagenCandidata>(imagenes: T[]): T | null {
+  if (imagenes.length === 0) return null
+
+  const marcada = imagenes.find((i) => i.imagen_indice)
+  if (marcada) return marcada
+
+  const masReciente = (lista: T[]): T | undefined =>
+    [...lista].sort((a, b) => {
+      const fa = a.fecha_fotografia ?? ''
+      const fb = b.fecha_fotografia ?? ''
+      if (fa !== fb) return fb.localeCompare(fa)
+      return ordinal(b.id_imagen) - ordinal(a.id_imagen)
+    })[0]
+
+  return masReciente(imagenes.filter((i) => i.tipo_toma === 'GENERAL')) ?? masReciente(imagenes) ?? null
+}

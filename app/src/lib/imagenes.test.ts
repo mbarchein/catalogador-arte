@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { BYTES_MAXIMOS, NIVELES, calcularDestino, validarArchivo } from './imagenes'
+import {
+  BYTES_MAXIMOS,
+  NIVELES,
+  calcularDestino,
+  elegirPrincipal,
+  ordinal,
+  validarArchivo,
+} from './imagenes'
 
 describe('calcularDestino', () => {
   it('reduce el borde largo al objetivo conservando la proporción', () => {
@@ -66,5 +73,82 @@ describe('validarArchivo', () => {
 
   it('acepta justo el tamaño límite', () => {
     expect(validarArchivo(archivo('justo.jpg', 'image/jpeg', BYTES_MAXIMOS))).toBeNull()
+  })
+})
+
+describe('elegirPrincipal (RF-403)', () => {
+  const img = (
+    id: string,
+    tipo: string,
+    indice = false,
+    fecha: string | null = null,
+  ) => ({ id_imagen: id, tipo_toma: tipo, imagen_indice: indice, fecha_fotografia: fecha })
+
+  it('devuelve null si la obra no tiene imágenes', () => {
+    expect(elegirPrincipal([])).toBeNull()
+  })
+
+  it('respeta la que está marcada, aunque no sea general ni la más reciente', () => {
+    const elegida = elegirPrincipal([
+      img('AR-0001_v1', 'GENERAL', false, '2026-07-01'),
+      img('AR-0001_v2', 'REVERSO', true, '2026-01-01'),
+      img('AR-0001_v3', 'GENERAL', false, '2026-07-20'),
+    ])
+    expect(elegida?.id_imagen).toBe('AR-0001_v2')
+  })
+
+  it('sin ninguna marcada, toma la general más reciente', () => {
+    const elegida = elegirPrincipal([
+      img('AR-0001_v1', 'GENERAL', false, '2026-01-01'),
+      img('AR-0001_v2', 'DETALLE_FIRMA', false, '2026-12-01'),
+      img('AR-0001_v3', 'GENERAL', false, '2026-06-01'),
+    ])
+    // La v2 es más reciente pero es un detalle de firma: no representa la obra.
+    expect(elegida?.id_imagen).toBe('AR-0001_v3')
+  })
+
+  it('a igualdad de fecha, decide el orden de subida', () => {
+    const elegida = elegirPrincipal([
+      img('AR-0001_v1', 'GENERAL', false, '2026-06-01'),
+      img('AR-0001_v2', 'GENERAL', false, '2026-06-01'),
+    ])
+    expect(elegida?.id_imagen).toBe('AR-0001_v2')
+  })
+
+  it('sirve cuando ninguna tiene fecha', () => {
+    const elegida = elegirPrincipal([
+      img('AR-0001_v1', 'GENERAL'),
+      img('AR-0001_v4', 'GENERAL'),
+      img('AR-0001_v2', 'GENERAL'),
+    ])
+    expect(elegida?.id_imagen).toBe('AR-0001_v4')
+  })
+
+  it('si no hay ninguna general, usa la más reciente de cualquier tipo', () => {
+    // El esquema no contempla este caso. Mostrar un hueco porque solo hay
+    // reversos contradiría el criterio de no dejar blancos sin explicación.
+    const elegida = elegirPrincipal([
+      img('AR-0001_v1', 'REVERSO', false, '2026-01-01'),
+      img('AR-0001_v2', 'DETALLE_DANO', false, '2026-05-01'),
+    ])
+    expect(elegida?.id_imagen).toBe('AR-0001_v2')
+  })
+
+  it('no altera el array que recibe', () => {
+    const lista = [img('AR-0001_v1', 'GENERAL'), img('AR-0001_v2', 'GENERAL')]
+    const copia = [...lista]
+    elegirPrincipal(lista)
+    expect(lista).toEqual(copia)
+  })
+})
+
+describe('ordinal', () => {
+  it('extrae el número de versión', () => {
+    expect(ordinal('AR-0001_v3')).toBe(3)
+    expect(ordinal('RC-1234_v12')).toBe(12)
+  })
+
+  it('devuelve cero ante un identificador sin ordinal', () => {
+    expect(ordinal('AR-0001')).toBe(0)
   })
 })
