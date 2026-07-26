@@ -117,11 +117,53 @@ services:
       # en el cliente se traiga el catálogo entero.
       PGRST_DB_MAX_ROWS: "500"
 
+  # Almacenamiento de ficheros. Es el mismo servicio que en la nube, no un
+  # simulacro: las rutas, las políticas y las URL firmadas se comportan igual, que
+  # es justo lo que hay que poder probar en local (ADR-002).
+  storage:
+    image: supabase/storage-api:v1.11.13
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      ANON_KEY: *anon-key
+      SERVICE_KEY: *service-key
+      AUTH_JWT_SECRET: *jwt-secret
+      PGRST_JWT_SECRET: *jwt-secret
+      POSTGREST_URL: http://rest:3000
+      DATABASE_URL: postgres://supabase_storage_admin:postgres@db:5432/postgres
+      # 60 MB: un máster de cámara ronda los 8-15 MB y un escaneo grande puede
+      # pasar de 30. El tope existe para que un fichero disparatado no llene el
+      # disco de un tirón, no para limitar el trabajo normal.
+      FILE_SIZE_LIMIT: "62914560"
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: local
+      GLOBAL_S3_BUCKET: stub
+      # Las derivadas se generan en el navegador antes de subir (ADR-002), así que
+      # no hace falta el servicio de transformación de imágenes.
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+      DB_INSTALL_ROLES: "false"
+    volumes:
+      - storage_data:/var/lib/storage
+    healthcheck:
+      # La imagen de storage no trae wget ni curl, pero sí node con fetch global.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:5000/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 4s
+      timeout: 4s
+      retries: 30
+
   gateway:
     image: nginx:alpine
     depends_on:
       - auth
       - rest
+      - storage
     ports:
       - "${PUERTO_API:-8321}:8000"
     volumes:
@@ -161,3 +203,4 @@ services:
 volumes:
   db_data:
   app_node_modules:
+  storage_data:
