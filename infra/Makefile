@@ -19,10 +19,12 @@ fmt: ## Formatear todo
 # ── Primera vez ──────────────────────────────────────────────
 
 bootstrap: ## Crea el bucket del estado y genera backend.hcl (una sola vez)
-	@test -n "$$TF_VAR_cloudflare_api_token" -a -n "$$TF_VAR_cloudflare_account_id" || { \
-	  echo "Faltan credenciales en el entorno:"; \
+	@test -f bootstrap/terraform.tfvars || \
+	 test -n "$$TF_VAR_cloudflare_api_token" -a -n "$$TF_VAR_cloudflare_account_id" || { \
+	  echo "Faltan credenciales. O bien en el entorno:"; \
 	  echo "  export TF_VAR_cloudflare_api_token='...'   # Workers R2 Storage:Edit"; \
 	  echo "  export TF_VAR_cloudflare_account_id='...'"; \
+	  echo "o bien: cp bootstrap/terraform.tfvars.example bootstrap/terraform.tfvars (y rellenar)"; \
 	  exit 1; }
 	cd bootstrap && terraform init -input=false && terraform apply
 	cd bootstrap && terraform output -raw backend_hcl > ../backend.hcl

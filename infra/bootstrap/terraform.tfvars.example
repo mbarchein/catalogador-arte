@@ -1,0 +1,24 @@
+# Copiar a terraform.tfvars y rellenar. terraform.tfvars está en .gitignore:
+# nunca se sube al repositorio.
+#
+# Alternativa sin fichero en disco (la que documenta el README):
+#   export TF_VAR_cloudflare_api_token='...'
+#   export TF_VAR_cloudflare_account_id='...'
+#
+# Este módulo se ejecuta UNA sola vez: crea el bucket R2 donde vivirá el estado
+# de Terraform del plano principal, y su salida `backend_hcl` genera el fichero
+# backend.hcl ya rellenado (make bootstrap hace la secuencia completa).
+
+# Token de Cloudflare con permiso Workers R2 Storage:Edit
+# (My Profile → API Tokens). Puede ser el mismo token que el del plano
+# principal si se le añade también Zone:DNS:Edit.
+cloudflare_api_token = ""
+
+# Identificador de la cuenta, visible en la URL del panel de Cloudflare
+cloudflare_account_id = ""
+
+# Prefijo del bucket del estado. Solo cambiarlo si cambia el nombre del proyecto.
+#proyecto = "catalogador-arte"
+
+# Ubicación del bucket. EEUR mantiene el estado en la Unión Europea.
+#r2_location = "EEUR"

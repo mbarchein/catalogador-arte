@@ -177,6 +177,9 @@ terraform apply
 terraform output -raw backend_hcl > ../backend.hcl   # backend ya rellenado
 ```
 
+Si prefieres fichero a variables de entorno: `cp terraform.tfvars.example terraform.tfvars` dentro
+de `bootstrap/` y rellénalo (está ignorado por git, como el del plano principal).
+
 ### 2. Rellenar y aplicar el plano principal
 
 ```bash
