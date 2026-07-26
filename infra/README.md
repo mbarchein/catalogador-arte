@@ -105,21 +105,30 @@ terraform validate            # comprobar sintaxis y referencias
 terraform plan                # ver qué cambiaría
 ```
 
-Los dos primeros se ejecutan también en cada *push* (`.github/workflows/verificar.yml`), y la rama
-`main` está protegida exigiendo que pasen.
+Los dos primeros se ejecutan también en cada *pull request* (`.github/workflows/verificar.yml`), y la
+rama `main` está protegida exigiendo que pasen antes de fusionar.
 
 `terraform apply` **no se ejecuta desde CI**: es una operación con consecuencias sobre infraestructura
 real y sobre datos, y se lanza a mano después de leer el plan. Automatizarla ahorraría un minuto al mes
 a cambio de la posibilidad de destruir el proyecto por un *merge* descuidado.
+
+**La aplicación sí se despliega sola** (`.github/workflows/desplegar.yml`): al fusionar en `main`,
+verifica de nuevo —tests de RLS incluidos—, aplica las migraciones con la CLI de Supabase y publica el
+frontend en Pages, en ese orden, porque el frontend nuevo puede depender del esquema nuevo y lo
+contrario nunca. La frontera es la misma de siempre: la *plataforma* se aplica a mano, la *aplicación*
+se despliega en cada merge. Todos los secretos y variables que consume el pipeline los pone este
+Terraform, así que el pipeline queda inerte hasta el primer `apply`.
 
 ## Cosas que hay que saber
 
 **El bloqueo del estado usa escrituras condicionales de R2** (`use_lockfile = true`). Si diera error en
 la primera ejecución, ponlo a `false`: con un solo operador, trabajar sin bloqueo es asumible.
 
-**La contraseña de la base de datos no se puede leer de vuelta** desde la API de Supabase, por lo que
-`supabase_project` la ignora tras la creación (`ignore_changes`). Guárdala en un gestor de contraseñas
-al generarla: si se pierde, hay que rotarla desde el panel.
+**La contraseña de la base de datos la genera Terraform** si no se indica una (32 caracteres
+alfanuméricos: acaba dentro de URIs de conexión y un carácter especial obligaría a codificarla en cada
+uso). Se recupera con `terraform output -raw db_password`, y llega sola al secreto de Actions que usa
+el despliegue. La API de Supabase no permite leerla de vuelta, así que `supabase_project` la ignora
+tras la creación (`ignore_changes`); si se pierde el estado, se rota desde el panel.
 
 **El versionado de objetos de los buckets de R2** no está expuesto por el provider. ADR-002 lo exige
 para el bucket de másters, donde un borrado accidental sería irreparable: hay que activarlo a mano desde
