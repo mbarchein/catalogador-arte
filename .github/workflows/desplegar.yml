@@ -78,10 +78,12 @@ jobs:
           VITE_SUPABASE_URL: http://localhost:8321
           VITE_SUPABASE_ANON_KEY: clave-de-compilacion-sin-uso
 
+      # El up ya espera a las migraciones: rest depende de migrate con
+      # service_completed_successfully. No añadir `docker compose wait migrate`:
+      # solo sabe esperar a contenedores corriendo, y si migrate ya terminó
+      # falla con «no containers for project» (carrera vista en CI).
       - name: Levantar el stack local
-        run: |
-          docker compose up -d db auth migrate rest gateway
-          docker compose wait migrate
+        run: docker compose up -d db auth migrate rest gateway
 
       - name: Comprobar que las migraciones se aplicaron
         run: docker compose logs migrate | grep -q "Migraciones OK"

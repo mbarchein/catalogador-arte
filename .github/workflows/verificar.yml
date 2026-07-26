@@ -52,10 +52,12 @@ jobs:
       # ── Base de datos ───────────────────────────────────────
       # Los tests de RLS van primero a propósito: sin backend, las políticas son
       # el único perímetro de seguridad, y su fallo no corrompe datos, los expone.
+      # El up ya espera a las migraciones: rest depende de migrate con
+      # service_completed_successfully. No añadir `docker compose wait migrate`:
+      # solo sabe esperar a contenedores corriendo, y si migrate ya terminó
+      # falla con «no containers for project» (carrera vista en CI).
       - name: Levantar el stack
-        run: |
-          docker compose up -d db auth migrate rest gateway
-          docker compose wait migrate
+        run: docker compose up -d db auth migrate rest gateway
 
       - name: Comprobar que las migraciones se aplicaron
         run: docker compose logs migrate | grep -q "Migraciones OK"
