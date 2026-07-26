@@ -8,7 +8,7 @@ const CAMPOS = `
   alto_cm, ancho_cm, profundidad_cm,
   firmada, firma_descripcion, fechada_en_obra,
   estado_conservacion, ubicacion_fisica, estado_existencia,
-  medidas_verificadas, fase_inventario_completada, fase_documentacion_completada,
+  fotografiada, medidas_verificadas, fase_inventario_completada, fase_documentacion_completada,
   ficha_catalografica_completa, notas_proceso_inventario,
   fecha_actualizacion, fecha_actualizacion_basica, actualizado_por, activo
 `

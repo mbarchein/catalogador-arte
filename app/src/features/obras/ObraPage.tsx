@@ -23,6 +23,7 @@ import {
 } from '../../lib/fechaEstructurada'
 import { Fichas, Interruptor, PasoAnio, TriEstadoIconos } from '../../components/ui'
 import { normalizarUbicacion, ubicacionParaGuardar } from '../../lib/ubicacion'
+import { GaleriaObra } from './GaleriaObra'
 import { useObra } from './useObras'
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
@@ -122,6 +123,8 @@ export function ObraPage() {
         )}
       </header>
 
+      <GaleriaObra idCatalogacion={obra.id_catalogacion} />
+
       <section className="tarjeta mb-3">
         <h2 className="mb-2 font-medium">Identificación</h2>
         <dl className="divide-y divide-stone-100">
@@ -154,6 +157,7 @@ export function ObraPage() {
       <section className="tarjeta mb-3">
         <h2 className="mb-2 font-medium">Estado del proceso</h2>
         <dl className="divide-y divide-stone-100">
+          <Dato etiqueta="Fotografiada" valor={obra.fotografiada ? 'Sí' : 'No'} />
           <Dato etiqueta="Medidas verificadas" valor={obra.medidas_verificadas ? 'Sí' : 'No'} />
           <Dato
             etiqueta="Ficha publicable"
@@ -181,8 +185,9 @@ export function ObraPage() {
       <section className="tarjeta text-sm text-stone-500">
         <p className="font-medium text-stone-700">Pendiente en esta entrega</p>
         <p className="mt-1">
-          Imágenes, procedencia, historial expositivo, bibliografía, documentación relacionada,
-          series y obras relacionadas. Ver el orden de construcción en la documentación.
+          Procedencia, historial expositivo, bibliografía, documentación relacionada, series y obras
+          relacionadas. También la descarga del máster de archivo. Ver el orden de construcción en la
+          documentación.
         </p>
       </section>
     </Layout>
