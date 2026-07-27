@@ -580,7 +580,7 @@ export function CapturePage() {
               {saved.map((id) => (
                 <li key={id}>
                   <Link
-                    to={`/obra/${id}`}
+                    to={`/artwork/${id}`}
                     className="inline-block rounded bg-stone-100 px-2 py-1 font-mono text-xs underline"
                   >
                     {id}
@@ -630,7 +630,7 @@ export function CapturePage() {
                   <span className="font-mono text-base font-bold">{last}</span> — escríbelo en
                   la etiqueta
                 </span>
-                <Link to={`/obra/${last}`} className="shrink-0 underline">
+                <Link to={`/artwork/${last}`} className="shrink-0 underline">
                   Ver ficha
                 </Link>
               </p>

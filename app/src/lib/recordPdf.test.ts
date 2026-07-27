@@ -42,13 +42,13 @@ const ARTWORK: Artwork = {
 describe('recordUrl', () => {
   it('composes the record URL from the given origin', () => {
     expect(recordUrl('TS-0001', 'https://catalogo.example')).toBe(
-      'https://catalogo.example/obra/TS-0001',
+      'https://catalogo.example/artwork/TS-0001',
     )
   })
 
   it('tolerates the trailing slash of the origin without duplicating it', () => {
     expect(recordUrl('AR-0002', 'https://catalogo.example/')).toBe(
-      'https://catalogo.example/obra/AR-0002',
+      'https://catalogo.example/artwork/AR-0002',
     )
   })
 })

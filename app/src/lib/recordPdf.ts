@@ -23,12 +23,13 @@ export interface RecordLine {
   value: string
 }
 
-/** URL the QR encodes: the artwork's living record. The /obra/ route stays —
- * QR codes already printed on physical labels point at it. */
+/** URL the QR encodes: the artwork's living record. New QR codes emit the
+ * English route; the printed ones point at /obra/:id, which App.tsx keeps as
+ * a legacy redirect. */
 export function recordUrl(catalogId: string, origin?: string): string {
   const base =
     origin ?? (import.meta.env.VITE_APP_URL as string | undefined) ?? window.location.origin
-  return `${base.replace(/\/+$/, '')}/obra/${catalogId}`
+  return `${base.replace(/\/+$/, '')}/artwork/${catalogId}`
 }
 
 /**

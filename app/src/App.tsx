@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import { LoginPage } from './auth/LoginPage'
 import { ResetPasswordPage } from './auth/ResetPasswordPage'
@@ -20,18 +20,30 @@ export function App() {
     return <LoginPage />
   }
 
-  // Route paths stay in Spanish: they are user-facing URLs, and /obra/:id is
-  // encoded in QR codes already printed on physical labels.
   return (
     <Routes>
       <Route path="/" element={<ArtworksPage />} />
-      <Route path="/captura" element={<CapturePage />} />
-      <Route path="/obra/:id" element={<ArtworkPage />} />
-      <Route path="/perfil" element={<ProfilePage />} />
+      <Route path="/capture" element={<CapturePage />} />
+      <Route path="/artwork/:id" element={<ArtworkPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
       {/* The recovery email link opens a temporary session and lands here; it
           also serves as the password change from Mi perfil. */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* LEGACY REDIRECTS. /obra/:id is encoded in QR codes already printed
+          on physical A5 records: that URL must keep working forever. The
+          other two only cover old bookmarks. */}
+      <Route path="/obra/:id" element={<LegacyArtworkRedirect />} />
+      <Route path="/captura" element={<Navigate to="/capture" replace />} />
+      <Route path="/perfil" element={<Navigate to="/profile" replace />} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
+}
+
+/** Legacy: printed QR codes point at /obra/:id (see recordUrl in recordPdf). */
+function LegacyArtworkRedirect() {
+  const { id } = useParams<{ id: string }>()
+  return <Navigate to={`/artwork/${id}`} replace />
 }

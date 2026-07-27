@@ -54,8 +54,8 @@ export function FooterMenu() {
   const tabs = [
     { to: '/', end: true, text: 'Obras', Icon: ArtworksIcon },
     // RF-1104: capture only exists for whoever can edit.
-    ...(canEdit ? [{ to: '/captura', end: false, text: 'Captura', Icon: CaptureIcon }] : []),
-    { to: '/perfil', end: false, text: 'Mi perfil', Icon: ProfileIcon },
+    ...(canEdit ? [{ to: '/capture', end: false, text: 'Captura', Icon: CaptureIcon }] : []),
+    { to: '/profile', end: false, text: 'Mi perfil', Icon: ProfileIcon },
   ]
 
   return (

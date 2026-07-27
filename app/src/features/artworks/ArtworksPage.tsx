@@ -26,7 +26,7 @@ export function ArtworksPage() {
       // artworks, "capture the next one" must not require scrolling back up.
       action={
         canEdit ? (
-          <Link to="/captura" className="btn-primary min-h-[2.5rem] px-4 text-sm">
+          <Link to="/capture" className="btn-primary min-h-[2.5rem] px-4 text-sm">
             + Nueva
           </Link>
         ) : undefined
@@ -60,7 +60,7 @@ export function ArtworksPage() {
               <p className="font-medium">Todavía no hay obra catalogada.</p>
               {canEdit && (
                 <p className="mt-1 text-stone-600">
-                  Empieza por la <Link to="/captura" className="underline">captura rápida</Link>.
+                  Empieza por la <Link to="/capture" className="underline">captura rápida</Link>.
                 </p>
               )}
             </>
@@ -82,7 +82,7 @@ export function ArtworksPage() {
                       a phone the whole card must be tappable: aiming at a
                       twelve-character text with a thumb is not reasonable. */}
                   <Link
-                    to={`/obra/${artwork.catalog_id}`}
+                    to={`/artwork/${artwork.catalog_id}`}
                     className="card flex gap-3 hover:border-stone-400"
                   >
                     {/* RF-604: thumbnail of the representative image. Which
