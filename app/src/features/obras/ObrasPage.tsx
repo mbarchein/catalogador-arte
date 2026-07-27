@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
-import { CerrarSesion, Layout } from '../../components/Layout'
+import { Layout } from '../../components/Layout'
 import { mostrarFecha } from '../../lib/fechas'
 import { avisoExistencia, mostrarMedidas, mostrarTitulo } from '../../lib/titulo'
 import { ETIQUETA_ARTISTA } from '../../lib/tipos'
@@ -118,8 +118,6 @@ export function ObrasPage() {
           </ul>
         </>
       )}
-
-      <CerrarSesion />
     </Layout>
   )
 }

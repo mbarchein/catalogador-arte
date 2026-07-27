@@ -94,6 +94,12 @@ export const ETIQUETA_ARTISTA: Record<FondoArtista, string> = {
   TEST: 'Pruebas',
 }
 
+export const ETIQUETA_ROL: Record<RolUsuario, string> = {
+  SUPERUSUARIO: 'Superusuario',
+  CATALOGADOR: 'Catalogador',
+  LECTOR: 'Lector · solo consulta',
+}
+
 export const ETIQUETA_TRI_ESTADO: Record<TriEstado, string> = {
   SI: 'Sí',
   NO: 'No',

@@ -4,6 +4,7 @@ import { LoginPage } from './auth/LoginPage'
 import { CapturaPage } from './features/obras/CapturaPage'
 import { ObraPage } from './features/obras/ObraPage'
 import { ObrasPage } from './features/obras/ObrasPage'
+import { PerfilPage } from './features/perfil/PerfilPage'
 
 export function App() {
   const { sesion, cargando } = useAuth()
@@ -23,6 +24,7 @@ export function App() {
       <Route path="/" element={<ObrasPage />} />
       <Route path="/captura" element={<CapturaPage />} />
       <Route path="/obra/:id" element={<ObraPage />} />
+      <Route path="/perfil" element={<PerfilPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

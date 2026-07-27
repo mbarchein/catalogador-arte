@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from '../auth/AuthContext'
+import { MenuPie } from './MenuPie'
 
 function IconoAtras() {
   return (
@@ -77,6 +78,8 @@ export function Layout({
       </header>
 
       <main className="flex-1 p-4">{children}</main>
+
+      <MenuPie />
     </div>
   )
 }
