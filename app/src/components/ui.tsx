@@ -69,9 +69,9 @@ export function LockIcon({ className = 'h-4 w-4' }: { className?: string }) {
 // ── Three-state selector with icons ──────────────────────────
 
 const STATES: { value: TriState; label: string; Icon: typeof YesIcon }[] = [
-  { value: 'SI', label: 'Sí', Icon: YesIcon },
+  { value: 'YES', label: 'Sí', Icon: YesIcon },
   { value: 'NO', label: 'No', Icon: NoIcon },
-  { value: 'SIN_REVISAR', label: 'Sin revisar', Icon: UnreviewedIcon },
+  { value: 'UNREVIEWED', label: 'Sin revisar', Icon: UnreviewedIcon },
 ]
 
 /**

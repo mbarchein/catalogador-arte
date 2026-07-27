@@ -29,12 +29,12 @@ export function isPlaceholderTitle(title: string): boolean {
  */
 export function attributedTitleNotice(value: AttributedTitleValue): string | null {
   switch (value) {
-    case 'SI':
+    case 'YES':
       return 'Nombre atribuido, no del artista'
-    case 'SIN_REVISAR':
+    case 'UNREVIEWED':
       return 'Autoría del título sin confirmar'
     case 'NO':
-    case 'NO_APLICA':
+    case 'NOT_APPLICABLE':
       return null
   }
 }
@@ -46,14 +46,14 @@ export function attributedTitleNotice(value: AttributedTitleValue): string | nul
  */
 export function existenceNotice(artwork: Pick<Artwork, 'existence_status'>): string | null {
   switch (artwork.existence_status) {
-    case 'DESTRUIDA':
+    case 'DESTROYED':
       return 'Obra destruida'
-    case 'PERDIDA':
+    case 'LOST':
       return 'Paradero desconocido'
-    case 'DESCONOCIDO':
+    case 'UNKNOWN':
       return 'Estado desconocido'
-    case 'CONSERVADA':
-    case 'SIN_REVISAR':
+    case 'PRESERVED':
+    case 'UNREVIEWED':
       return null
   }
 }

@@ -31,7 +31,8 @@ const VERSION = 1
 /** Persisted row shape (legacy field names — data at rest, not code). */
 interface StoredShotRow {
   clave: string
-  tipoToma: ShotTypeValue
+  /** May hold a pre-rename legacy value: normalized on read. */
+  tipoToma: string
   esIndice: boolean
   master: Blob
   nombreMaster: string
@@ -40,6 +41,29 @@ interface StoredShotRow {
   derivada: Blob
   anchoOriginal: number
   altoOriginal: number
+}
+
+/**
+ * A queue written before the enum rename may carry the old Spanish shot-type
+ * values. Losing the pending photos over a label would be absurd: they are
+ * mapped to the current values, and anything unknown falls back to 'GENERAL',
+ * which is the capture default.
+ */
+const LEGACY_SHOT_TYPES: Record<string, ShotTypeValue> = {
+  DETALLE_FIRMA: 'SIGNATURE_DETAIL',
+  REVERSO: 'BACK',
+  DETALLE_DANO: 'DAMAGE_DETAIL',
+  MARCO: 'FRAME',
+  OTRO: 'OTHER',
+}
+
+const SHOT_TYPES: readonly ShotTypeValue[] = [
+  'GENERAL', 'SIGNATURE_DETAIL', 'BACK', 'DAMAGE_DETAIL', 'FRAME', 'OTHER',
+]
+
+function normalizeShotType(value: string): ShotTypeValue {
+  if ((SHOT_TYPES as readonly string[]).includes(value)) return value as ShotTypeValue
+  return LEGACY_SHOT_TYPES[value] ?? 'GENERAL'
 }
 
 export interface StoredShot {
@@ -133,7 +157,7 @@ export async function readQueue(): Promise<StoredShot[]> {
       )
       .map((r) => ({
         key: r.clave,
-        shotType: r.tipoToma,
+        shotType: normalizeShotType(r.tipoToma),
         isIndex: r.esIndice,
         master: r.master,
         masterName: r.nombreMaster,

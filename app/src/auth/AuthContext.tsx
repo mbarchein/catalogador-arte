@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // The role is read from the profile, but the database is what truly decides.
   // This only avoids showing controls that would fail (RF-106): the real
   // protection is the RLS policies, not this boolean.
-  const canEdit = profile?.role === 'CATALOGADOR' || profile?.role === 'SUPERUSUARIO'
+  const canEdit = profile?.role === 'CATALOGER' || profile?.role === 'SUPERUSER'
 
   return (
     <Context.Provider

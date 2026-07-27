@@ -182,7 +182,7 @@ export function ArtworkPage() {
           <DataRow
             label="Firmada"
             value={
-              artwork.signed === 'SI' && artwork.signature_description
+              artwork.signed === 'YES' && artwork.signature_description
                 ? `Sí, ${artwork.signature_description}`
                 : TRI_STATE_LABEL[artwork.signed]
             }
@@ -472,7 +472,7 @@ function EditForm({
         />
 
         {/* Describing the signature only makes sense when there is one. */}
-        {data.signed === 'SI' && (
+        {data.signed === 'YES' && (
           <div>
             <label className="label" htmlFor="e-signature-desc">
               Descripción de la firma

@@ -69,7 +69,7 @@ export function CapturePage() {
   const [height, setHeight] = useState('')
   const [width, setWidth] = useState('')
   const [depth, setDepth] = useState('')
-  const [signed, setSigned] = useState<TriState>('SIN_REVISAR')
+  const [signed, setSigned] = useState<TriState>('UNREVIEWED')
 
   const [range, setRange] = useState(false)
   const [previewedId, setPreviewedId] = useState<string | null>(null)
@@ -273,7 +273,7 @@ export function CapturePage() {
     setHeight('')
     setWidth('')
     setDepth('')
-    setSigned('SIN_REVISAR')
+    setSigned('UNREVIEWED')
   }
 
   async function save(e: React.FormEvent) {

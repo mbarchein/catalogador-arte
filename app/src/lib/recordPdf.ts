@@ -47,7 +47,7 @@ export function recordLines(artwork: Artwork): RecordLine[] {
     {
       label: 'Firmada',
       value:
-        artwork.signed === 'SI' && artwork.signature_description
+        artwork.signed === 'YES' && artwork.signature_description
           ? `Sí, ${artwork.signature_description}`
           : TRI_STATE_LABEL[artwork.signed],
     },

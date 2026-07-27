@@ -7,39 +7,39 @@
 // change here: it is the point where schema and frontend can drift apart with
 // no warning.
 //
-// Enum VALUES stay as persisted in the database ('ROTILI', 'SIN_REVISAR'...):
-// they are data, not code. What the user reads on screen is decided by the
-// label maps below.
+// Enum VALUES are code (the database renamed them to English via ALTER TYPE
+// ... RENAME VALUE); only artist_fund keeps its values, which are surnames.
+// What the user reads on screen is decided by the Spanish label maps below.
 
 export type ArtistFund = 'ROTILI' | 'RUIZ_CAMPINS' | 'TEST'
 
 /** Every fund, to validate values arriving from outside the code. */
 export const ARTIST_FUNDS: readonly ArtistFund[] = ['ROTILI', 'RUIZ_CAMPINS', 'TEST']
-export type UserRole = 'SUPERUSUARIO' | 'CATALOGADOR' | 'LECTOR'
-export type TriState = 'SI' | 'NO' | 'SIN_REVISAR'
-export type AttributedTitleValue = 'NO_APLICA' | 'NO' | 'SI' | 'SIN_REVISAR'
+export type UserRole = 'SUPERUSER' | 'CATALOGER' | 'READER'
+export type TriState = 'YES' | 'NO' | 'UNREVIEWED'
+export type AttributedTitleValue = 'NOT_APPLICABLE' | 'NO' | 'YES' | 'UNREVIEWED'
 
 export type ShotTypeValue =
   | 'GENERAL'
-  | 'DETALLE_FIRMA'
-  | 'REVERSO'
-  | 'DETALLE_DANO'
-  | 'MARCO'
-  | 'OTRO'
+  | 'SIGNATURE_DETAIL'
+  | 'BACK'
+  | 'DAMAGE_DETAIL'
+  | 'FRAME'
+  | 'OTHER'
 
 export type ConservationStatusValue =
-  | 'BUENO'
-  | 'REGULAR'
-  | 'REQUIERE_RESTAURACION'
-  | 'REQUIERE_RESTAURACION_URGENTE'
-  | 'SIN_REVISAR'
+  | 'GOOD'
+  | 'FAIR'
+  | 'NEEDS_RESTORATION'
+  | 'NEEDS_URGENT_RESTORATION'
+  | 'UNREVIEWED'
 
 export type ExistenceStatusValue =
-  | 'CONSERVADA'
-  | 'DESTRUIDA'
-  | 'PERDIDA'
-  | 'DESCONOCIDO'
-  | 'SIN_REVISAR'
+  | 'PRESERVED'
+  | 'DESTROYED'
+  | 'LOST'
+  | 'UNKNOWN'
+  | 'UNREVIEWED'
 
 export interface Profile {
   id: string
@@ -100,38 +100,38 @@ export const ARTIST_LABEL: Record<ArtistFund, string> = {
 }
 
 export const ROLE_LABEL: Record<UserRole, string> = {
-  SUPERUSUARIO: 'Superusuario',
-  CATALOGADOR: 'Catalogador',
-  LECTOR: 'Lector · solo consulta',
+  SUPERUSER: 'Superusuario',
+  CATALOGER: 'Catalogador',
+  READER: 'Lector · solo consulta',
 }
 
 export const TRI_STATE_LABEL: Record<TriState, string> = {
-  SI: 'Sí',
+  YES: 'Sí',
   NO: 'No',
-  SIN_REVISAR: 'Sin revisar',
+  UNREVIEWED: 'Sin revisar',
 }
 
 export const ATTRIBUTED_TITLE_LABEL: Record<AttributedTitleValue, string> = {
-  NO_APLICA: 'No aplica (sin título)',
+  NOT_APPLICABLE: 'No aplica (sin título)',
   NO: 'No, es título del artista',
-  SI: 'Sí, nombre de conveniencia',
-  SIN_REVISAR: 'Sin revisar',
+  YES: 'Sí, nombre de conveniencia',
+  UNREVIEWED: 'Sin revisar',
 }
 
 export const CONSERVATION_LABEL: Record<ConservationStatusValue, string> = {
-  BUENO: 'Bueno',
-  REGULAR: 'Regular',
-  REQUIERE_RESTAURACION: 'Requiere restauración',
-  REQUIERE_RESTAURACION_URGENTE: 'Requiere restauración urgente',
-  SIN_REVISAR: 'Sin revisar',
+  GOOD: 'Bueno',
+  FAIR: 'Regular',
+  NEEDS_RESTORATION: 'Requiere restauración',
+  NEEDS_URGENT_RESTORATION: 'Requiere restauración urgente',
+  UNREVIEWED: 'Sin revisar',
 }
 
 export const EXISTENCE_LABEL: Record<ExistenceStatusValue, string> = {
-  CONSERVADA: 'Conservada',
-  DESTRUIDA: 'Destruida',
-  PERDIDA: 'Perdida (paradero desconocido)',
-  DESCONOCIDO: 'Estado desconocido',
-  SIN_REVISAR: 'Sin revisar',
+  PRESERVED: 'Conservada',
+  DESTROYED: 'Destruida',
+  LOST: 'Perdida (paradero desconocido)',
+  UNKNOWN: 'Estado desconocido',
+  UNREVIEWED: 'Sin revisar',
 }
 
 /**
@@ -155,9 +155,9 @@ export const SUGGESTED_ARTWORK_TYPES = [
  */
 export const SHOT_TYPE_LABEL: Record<ShotTypeValue, string> = {
   GENERAL: 'General',
-  DETALLE_FIRMA: 'Firma',
-  REVERSO: 'Reverso',
-  DETALLE_DANO: 'Daño',
-  MARCO: 'Marco',
-  OTRO: 'Otro',
+  SIGNATURE_DETAIL: 'Firma',
+  BACK: 'Reverso',
+  DAMAGE_DETAIL: 'Daño',
+  FRAME: 'Marco',
+  OTHER: 'Otro',
 }

@@ -27,28 +27,28 @@ describe('displayTitle (RF-209)', () => {
 
 describe('attributedTitleNotice (RF-307)', () => {
   it('warns about a convenience name', () => {
-    expect(attributedTitleNotice('SI')).toBe('Nombre atribuido, no del artista')
+    expect(attributedTitleNotice('YES')).toBe('Nombre atribuido, no del artista')
   })
 
   it('warns that the title authorship is unconfirmed', () => {
-    expect(attributedTitleNotice('SIN_REVISAR')).toBe('Autoría del título sin confirmar')
+    expect(attributedTitleNotice('UNREVIEWED')).toBe('Autoría del título sin confirmar')
   })
 
   it('does not warn when the title is the artist\'s or does not apply', () => {
     expect(attributedTitleNotice('NO')).toBeNull()
-    expect(attributedTitleNotice('NO_APLICA')).toBeNull()
+    expect(attributedTitleNotice('NOT_APPLICABLE')).toBeNull()
   })
 })
 
 describe('existenceNotice (RF-306)', () => {
   it('highlights the destroyed and the missing artwork', () => {
-    expect(existenceNotice({ existence_status: 'DESTRUIDA' })).toBe('Obra destruida')
-    expect(existenceNotice({ existence_status: 'PERDIDA' })).toBe('Paradero desconocido')
+    expect(existenceNotice({ existence_status: 'DESTROYED' })).toBe('Obra destruida')
+    expect(existenceNotice({ existence_status: 'LOST' })).toBe('Paradero desconocido')
   })
 
   it('highlights nothing when the artwork is preserved or unreviewed', () => {
-    expect(existenceNotice({ existence_status: 'CONSERVADA' })).toBeNull()
-    expect(existenceNotice({ existence_status: 'SIN_REVISAR' })).toBeNull()
+    expect(existenceNotice({ existence_status: 'PRESERVED' })).toBeNull()
+    expect(existenceNotice({ existence_status: 'UNREVIEWED' })).toBeNull()
   })
 })
 
