@@ -155,9 +155,9 @@ services:
   # Función Edge de firmas, en el mismo runtime que la nube (Deno). Firma contra
   # el endpoint PÚBLICO de minio: la firma cubre el host, y quien la usa es el
   # navegador, que no resuelve nombres internos de docker.
-  funciones:
+  functions:
     image: denoland/deno:alpine
-    working_dir: /functions/firmar-fichero
+    working_dir: /functions/sign-file
     command: ["run", "--allow-net", "--allow-env", "index.ts"]
     depends_on:
       - rest
@@ -251,7 +251,7 @@ services:
       - rest
       - storage
       - realtime
-      - funciones
+      - functions
     ports:
       - "${PUERTO_API:-8321}:8000"
     volumes:
