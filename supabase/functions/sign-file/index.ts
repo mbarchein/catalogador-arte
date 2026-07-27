@@ -90,7 +90,7 @@ Deno.serve(async (request) => {
 
   // Uploading requires edit rights; downloading only team membership — a
   // reader legitimately downloads a master for a print shop or a curator.
-  if (operation === 'upload' && role !== 'CATALOGADOR' && role !== 'SUPERUSUARIO') {
+  if (operation === 'upload' && role !== 'CATALOGER' && role !== 'SUPERUSER') {
     return reply(403, { error: 'Tu cuenta es de solo consulta' })
   }
 
