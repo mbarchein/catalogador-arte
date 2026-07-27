@@ -36,6 +36,17 @@ cloudflare_api_token = ""
 b2_application_key_id = ""
 b2_application_key    = ""
 
+# --- Resend (correo transaccional) -------------------------------------------
+# Opcional. Sin la clave, Supabase usa su SMTP integrado (solo entrega a los
+# miembros del proyecto y con cuentagotas). La clave sale del panel de Resend;
+# los registros DNS los genera Resend al añadir el dominio y se copian aquí.
+#resend_api_key = ""
+#resend_dkim_records = [
+#  { name = "send", type = "MX", content = "feedback-smtp.eu-west-1.amazonses.com", priority = 10 },
+#  { name = "send", type = "TXT", content = "v=spf1 include:amazonses.com ~all" },
+#  { name = "resend._domainkey", type = "TXT", content = "p=..." },
+#]
+
 # --- GitHub -----------------------------------------------------------------
 github_owner      = ""
 github_token      = ""

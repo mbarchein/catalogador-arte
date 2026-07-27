@@ -116,6 +116,8 @@ secretos (organización de Supabase y cuenta de Cloudflare).
 | `vercel_cname_target` | no | `cname.vercel-dns.com` | Destino del CNAME; no tocar salvo que Vercel lo cambie |
 | `b2_application_key_id` | **sí** | — | Clave maestra de B2 (solo para Terraform) |
 | `b2_application_key` | **sí** | — | Su secreto |
+| `resend_api_key` | no | `""` | Correo transaccional propio; vacía = SMTP integrado de Supabase |
+| `resend_dkim_records` | no | `[]` | DNS de verificación que genera el panel de Resend |
 | `b2_region` | no | `eu-central-003` (Ámsterdam) | Datos en la UE |
 | `github_owner` | **sí** | — | Usuario u organización de GitHub |
 | `github_token` | **sí** | — | Token con `repo` |

@@ -131,3 +131,28 @@ variable "gestionar_repositorio" {
   type        = bool
   default     = true
 }
+
+# ── Resend: correo transaccional de producción ───────────────
+# La clave se crea a mano en el panel de Resend. Vacía, el proyecto se queda
+# con el SMTP integrado de Supabase, que solo entrega a los miembros del
+# proyecto y con cuentagotas: suficiente para arrancar, no para el equipo.
+variable "resend_api_key" {
+  description = "Clave de API de Resend. Vacía = SMTP integrado de Supabase"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "resend_dkim_records" {
+  description = <<-EOT
+    Registros DNS (SPF/DKIM/MX) que Resend pide al verificar el dominio.
+    Se copian del panel de Resend tras añadir el dominio allí.
+  EOT
+  type = list(object({
+    name     = string
+    type     = string # TXT | MX | CNAME
+    content  = string
+    priority = optional(number)
+  }))
+  default = []
+}

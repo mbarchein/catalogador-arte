@@ -54,23 +54,42 @@ data "supabase_apikeys" "principal" {
 resource "supabase_settings" "principal" {
   project_ref = supabase_project.principal.id
 
-  auth = jsonencode({
-    # Los enlaces de los correos de invitación y recuperación apuntan al
-    # dominio propio, no a la URL de vercel.app.
-    site_url = local.url_app
+  auth = jsonencode(merge(
+    {
+      # Los enlaces de los correos de invitación y recuperación apuntan al
+      # dominio propio, no a la URL de vercel.app.
+      site_url = local.url_app
 
-    # Solo cuentas creadas por el superusuario: el catálogo no tiene registro
-    # abierto ni zona pública (RF-101).
-    disable_signup = true
+      # El correo de recuperación redirige a la página de contraseña nueva.
+      # Fuera de esta lista, GoTrue degrada el redirect a site_url y el enlace
+      # aterrizaría en el listado en vez de en el formulario.
+      uri_allow_list = "${local.url_app}/reset-password"
 
-    # Sesión de 12 horas: cubre una jornada de catalogación en el almacén sin
-    # obligar a volver a entrar, y caduca al día siguiente.
-    jwt_exp = 43200
+      # Solo cuentas creadas por el superusuario: el catálogo no tiene registro
+      # abierto ni zona pública (RF-101).
+      disable_signup = true
 
-    mailer_autoconfirm                                = false
-    enable_confirmations                              = true
-    security_update_password_require_reauthentication = true
-  })
+      # Sesión de 12 horas: cubre una jornada de catalogación en el almacén sin
+      # obligar a volver a entrar, y caduca al día siguiente.
+      jwt_exp = 43200
+
+      mailer_autoconfirm                                = false
+      enable_confirmations                              = true
+      security_update_password_require_reauthentication = true
+    },
+    # SMTP propio vía Resend, como en la otra aplicación del equipo. Sin la
+    # clave, Supabase usa su SMTP integrado: entrega solo a los miembros del
+    # proyecto y con cuentagotas — vale para arrancar, no para el equipo.
+    var.resend_api_key == "" ? {} : {
+      external_email_enabled = true
+      smtp_admin_email       = "noreply@${var.dominio_zona}"
+      smtp_host              = "smtp.resend.com"
+      smtp_port              = "465"
+      smtp_user              = "resend"
+      smtp_pass              = var.resend_api_key
+      smtp_sender_name       = "Catalogador"
+    }
+  ))
 
   api = jsonencode({
     # Solo se expone el esquema público a PostgREST. El esquema interno de

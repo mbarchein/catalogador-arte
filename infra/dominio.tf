@@ -48,3 +48,21 @@ output "url_aplicacion" {
   description = "URL pública de la aplicación"
   value       = local.url_app
 }
+
+# ── DNS de verificación de Resend (SPF/DKIM/MX) ──────────────
+# Los pide el panel de Resend al añadir el dominio; sin ellos, el correo
+# transaccional no sale o sale marcado como sospechoso. La lista llega por
+# variable porque los valores los genera Resend para cada cuenta.
+resource "cloudflare_dns_record" "resend" {
+  for_each = { for r in var.resend_dkim_records : "${r.type}-${r.name}" => r }
+
+  zone_id = data.cloudflare_zone.principal.zone_id
+  name    = each.value.name
+  type    = each.value.type
+  # El proveedor v5 de Cloudflare exige el contenido TXT entrecomillado
+  # (si no, avisa y lo entrecomilla él); MX y CNAME van sin comillas.
+  content  = each.value.type == "TXT" ? "\"${each.value.content}\"" : each.value.content
+  priority = try(each.value.priority, null)
+  proxied  = false
+  ttl      = 1
+}
