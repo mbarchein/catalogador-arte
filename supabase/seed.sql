@@ -1,29 +1,29 @@
--- Semilla de desarrollo local. No se ejecuta en producción.
--- En producción, la promoción del superusuario se hace una vez a mano:
---   update perfiles set rol = 'SUPERUSUARIO' where email = 'tu@correo.es';
+-- Local development seed. Never runs in production.
+-- In production, promoting the superuser is done once by hand:
+--   update profiles set role = 'SUPERUSUARIO' where email = 'tu@correo.es';
 
--- Promueve al administrador local (idempotente; el perfil lo crea el trigger
--- al darse de alta la cuenta con make seed-users).
-update public.perfiles
-set rol = 'SUPERUSUARIO'
+-- Promote the local admin (idempotent; the profile is created by the trigger
+-- when the account signs up via make seed-users).
+update public.profiles
+set role = 'SUPERUSUARIO'
 where email = 'admin@local.test';
 
-update public.perfiles set rol = 'CATALOGADOR' where email = 'catalogador@local.test';
-update public.perfiles set rol = 'LECTOR' where email = 'lector@local.test';
+update public.profiles set role = 'CATALOGADOR' where email = 'catalogador@local.test';
+update public.profiles set role = 'LECTOR' where email = 'lector@local.test';
 
--- Un par de obras de ejemplo, para que el listado no arranque vacío y se pueda
--- comprobar la ordenación cronológica con fechas de formato distinto.
--- Los identificadores se indican explícitamente para que la semilla sea
--- idempotente; en la aplicación los asigna el trigger.
--- La fecha va en campos estructurados (ADR-004): fecha_ejecucion es una columna
--- generada y no se puede escribir. Los tres casos cubren año exacto, aproximado
--- y rango, para poder comprobar la ordenación cronológica.
-insert into public.obras (
-  id_catalogacion, artista, titulo, titulo_atribuido, tipo_obra,
-  anio_inicio, anio_fin, fecha_aproximada, tecnica, soporte,
-  alto_cm, ancho_cm, firmada, firma_descripcion,
-  estado_conservacion, ubicacion_fisica, estado_existencia,
-  medidas_verificadas, fase_inventario_completada
+-- A few sample artworks so the list does not start empty and the chronological
+-- ordering can be checked with dates of different shapes.
+-- Identifiers are provided explicitly so the seed is idempotent; in the
+-- application the trigger assigns them.
+-- The date lives in structured fields (ADR-004): execution_date is a generated
+-- column and cannot be written. The three cases cover exact year, approximate
+-- year and range, to verify chronological ordering.
+insert into public.artworks (
+  catalog_id, artist, title, attributed_title, artwork_type,
+  start_year, end_year, approximate_date, technique, support,
+  height_cm, width_cm, signed, signature_description,
+  conservation_status, physical_location, existence_status,
+  measurements_verified, inventory_phase_completed
 ) values
   (
     'AR-0001', 'ROTILI', 'Paisaje de invierno', 'NO', 'Pintura',
@@ -46,4 +46,4 @@ insert into public.obras (
     'SIN_REVISAR', '', 'SIN_REVISAR',
     false, false
   )
-on conflict (id_catalogacion) do nothing;
+on conflict (catalog_id) do nothing;

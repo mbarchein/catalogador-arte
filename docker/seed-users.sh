@@ -19,7 +19,7 @@ crear_usuario() {
     -H "Authorization: Bearer $SERVICE_KEY" \
     -H "apikey: $SERVICE_KEY" \
     -H "Content-Type: application/json" \
-    -d "{\"email\":\"$email\",\"password\":\"password123\",\"email_confirm\":true,\"user_metadata\":{\"nombre\":\"$nombre\"}}" \
+    -d "{\"email\":\"$email\",\"password\":\"password123\",\"email_confirm\":true,\"user_metadata\":{\"name\":\"$nombre\"}}" \
     > /dev/null && echo "✓ $email" || echo "↷ $email (ya existe o error)"
 }
 
@@ -30,9 +30,9 @@ crear_usuario "lector@local.test"      "Luisa Lectora"
 # El rol se asigna aquí y no en el alta: el valor por omisión de la tabla es
 # LECTOR, el de menor privilegio, y promover es un acto explícito.
 $PSQL <<'SQL' > /dev/null
-update public.perfiles set rol = 'SUPERUSUARIO' where email = 'admin@local.test';
-update public.perfiles set rol = 'CATALOGADOR'  where email = 'catalogador@local.test';
-update public.perfiles set rol = 'LECTOR'       where email = 'lector@local.test';
+update public.profiles set role = 'SUPERUSUARIO' where email = 'admin@local.test';
+update public.profiles set role = 'CATALOGADOR'  where email = 'catalogador@local.test';
+update public.profiles set role = 'LECTOR'       where email = 'lector@local.test';
 SQL
 
 echo
