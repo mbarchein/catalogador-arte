@@ -11,13 +11,14 @@
 - **Los datos no se traducen, y lo que ya está en el mundo se conserva como legado.** No se tocan:
   los valores de `artist_fund` (`ROTILI` y `RUIZ_CAMPINS` son apellidos; `TEST` ya es inglés), los
   identificadores de catalogación (`AR-0001`) y sus prefijos, el id del bucket de storage (`obras`,
-  fila en `storage.buckets` con objetos dentro), las rutas de ficheros ya subidos y la base IndexedDB
-  `catalogador` con su almacén `cola-fotos` (renombrarlos exigiría migrar blobs con riesgo de perder
-  la cola de fotos pendiente; ver `photoQueue.ts`). La ruta `/obra/:id` está impresa en QR físicos y
-  se mantiene para siempre como redirección de legado en `App.tsx`. Renombrar algo persistido exige
-  compatibilidad: los valores de enum se renombraron con `ALTER TYPE ... RENAME VALUE` (la base
-  actualiza las filas sola) y la clave de `localStorage` con una migración *one-shot* en `batch.ts`.
-  Cuando el código nombra un valor de legado, se comenta que lo es.
+  fila en `storage.buckets` con objetos dentro) y las rutas de ficheros ya subidos. La ruta
+  `/obra/:id` está impresa en QR físicos y se mantiene para siempre como redirección de legado en
+  `App.tsx`. Renombrar algo persistido exige decidir la compatibilidad de forma explícita: los
+  valores de enum se renombraron con `ALTER TYPE ... RENAME VALUE` (la base actualiza las filas
+  sola), la clave de `localStorage` con una migración *one-shot* en `batch.ts`, y la base IndexedDB
+  (`cataloger`/`photo-queue`) sin migrar contenido — se aceptó perder la cola de fotos pendiente una
+  vez, y la base antigua se borra al abrir la nueva (`photoQueue.ts`). Cuando el código nombra un
+  valor de legado, se comenta que lo es.
 - **Textos de interfaz: español de España** (`es-ES`, `Europe/Madrid`). Incluye los mensajes de
   error que ve la usuaria, también los `raise exception` de la base y los de las funciones Edge que
   la aplicación muestra tal cual.

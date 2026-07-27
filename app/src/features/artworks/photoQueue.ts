@@ -16,55 +16,17 @@ import type { ShotTypeValue } from '../../lib/types'
  *
  * Only the queue pending upload is stored. As soon as the photos are up, it is
  * emptied: the source of truth becomes the database.
- *
- * DATABASE, STORE AND RECORD FIELD NAMES ARE LEGACY, ON PURPOSE. They are the
- * on-disk format already written on users' phones: renaming them would require
- * an IndexedDB version migration whose only reward is prettier names in a blob
- * nobody reads. The English view of a row is `StoredShot`; the persisted shape
- * is `StoredShotRow`.
  */
 
-const DB_NAME = 'catalogador'
-const STORE = 'cola-fotos'
+const DB_NAME = 'cataloger'
+const STORE = 'photo-queue'
 const VERSION = 1
 
-/** Persisted row shape (legacy field names — data at rest, not code). */
-interface StoredShotRow {
-  clave: string
-  /** May hold a pre-rename legacy value: normalized on read. */
-  tipoToma: string
-  esIndice: boolean
-  master: Blob
-  nombreMaster: string
-  tipoMaster: string
-  miniatura: Blob
-  derivada: Blob
-  anchoOriginal: number
-  altoOriginal: number
-}
-
-/**
- * A queue written before the enum rename may carry the old Spanish shot-type
- * values. Losing the pending photos over a label would be absurd: they are
- * mapped to the current values, and anything unknown falls back to 'GENERAL',
- * which is the capture default.
- */
-const LEGACY_SHOT_TYPES: Record<string, ShotTypeValue> = {
-  DETALLE_FIRMA: 'SIGNATURE_DETAIL',
-  REVERSO: 'BACK',
-  DETALLE_DANO: 'DAMAGE_DETAIL',
-  MARCO: 'FRAME',
-  OTRO: 'OTHER',
-}
-
-const SHOT_TYPES: readonly ShotTypeValue[] = [
-  'GENERAL', 'SIGNATURE_DETAIL', 'BACK', 'DAMAGE_DETAIL', 'FRAME', 'OTHER',
-]
-
-function normalizeShotType(value: string): ShotTypeValue {
-  if ((SHOT_TYPES as readonly string[]).includes(value)) return value as ShotTypeValue
-  return LEGACY_SHOT_TYPES[value] ?? 'GENERAL'
-}
+// The pre-rename database. Deleted on first open of the new one so megabytes
+// of orphaned blobs do not linger on the phones. Deliberately WITHOUT
+// migrating its content: losing a pending queue over the rename was accepted
+// as a one-off cost.
+const LEGACY_DB_NAME = 'catalogador'
 
 export interface StoredShot {
   key: string
@@ -88,7 +50,15 @@ function open(): Promise<IDBDatabase> {
     request.onupgradeneeded = () => {
       const db = request.result
       if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE, { keyPath: 'clave' })
+        db.createObjectStore(STORE, { keyPath: 'key' })
+      }
+      // First open of the new database: polite cleanup of the legacy one.
+      // Fire-and-forget — if it fails (another tab holding it open), the only
+      // consequence is some orphaned blobs until the next attempt.
+      try {
+        indexedDB.deleteDatabase(LEGACY_DB_NAME)
+      } catch {
+        /* nothing to do */
       }
     }
     request.onsuccess = () => resolve(request.result)
@@ -117,17 +87,17 @@ export async function saveQueue(
     const store = tx.objectStore(STORE)
     store.clear()
     for (const s of shots) {
-      const row: StoredShotRow = {
-        clave: s.key,
-        tipoToma: s.shotType,
-        esIndice: s.isIndex,
+      const row: StoredShot = {
+        key: s.key,
+        shotType: s.shotType,
+        isIndex: s.isIndex,
         master: s.prepared.master,
-        nombreMaster: s.prepared.master.name,
-        tipoMaster: s.prepared.master.type,
-        miniatura: s.prepared.thumbnail,
-        derivada: s.prepared.derivative,
-        anchoOriginal: s.prepared.originalWidth,
-        altoOriginal: s.prepared.originalHeight,
+        masterName: s.prepared.master.name,
+        masterType: s.prepared.master.type,
+        thumbnail: s.prepared.thumbnail,
+        derivative: s.prepared.derivative,
+        originalWidth: s.prepared.originalWidth,
+        originalHeight: s.prepared.originalHeight,
       }
       store.put(row)
     }
@@ -146,27 +116,14 @@ export async function readQueue(): Promise<StoredShot[]> {
   try {
     const db = await open()
     const tx = db.transaction(STORE, 'readonly')
-    const rows = await await_(tx.objectStore(STORE).getAll() as IDBRequest<StoredShotRow[]>)
+    const rows = await await_(tx.objectStore(STORE).getAll() as IDBRequest<StoredShot[]>)
     db.close()
-    // The shape of what comes back is checked: a queue written by a previous
-    // version cannot prevent cataloging today.
-    return rows
-      .filter(
-        (r): r is StoredShotRow =>
-          typeof r?.clave === 'string' && r.master instanceof Blob && r.miniatura instanceof Blob,
-      )
-      .map((r) => ({
-        key: r.clave,
-        shotType: normalizeShotType(r.tipoToma),
-        isIndex: r.esIndice,
-        master: r.master,
-        masterName: r.nombreMaster,
-        masterType: r.tipoMaster,
-        thumbnail: r.miniatura,
-        derivative: r.derivada,
-        originalWidth: r.anchoOriginal,
-        originalHeight: r.altoOriginal,
-      }))
+    // The shape of what comes back is checked: a broken row cannot prevent
+    // cataloging today.
+    return rows.filter(
+      (r): r is StoredShot =>
+        typeof r?.key === 'string' && r.master instanceof Blob && r.thumbnail instanceof Blob,
+    )
   } catch {
     return []
   }
