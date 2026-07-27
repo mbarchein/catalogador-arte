@@ -1,72 +1,72 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { Perfil } from '../lib/tipos'
+import type { Profile } from '../lib/types'
 
-interface ContextoAuth {
-  sesion: Session | null
-  perfil: Perfil | null
-  cargando: boolean
-  /** RF-103: solo Catalogador y Superusuario escriben. */
-  puedeEditar: boolean
-  salir: () => Promise<void>
+interface AuthContextValue {
+  session: Session | null
+  profile: Profile | null
+  loading: boolean
+  /** RF-103: only Cataloger and Superuser write. */
+  canEdit: boolean
+  signOut: () => Promise<void>
 }
 
-const Contexto = createContext<ContextoAuth | null>(null)
+const Context = createContext<AuthContextValue | null>(null)
 
-export function ProveedorAuth({ children }: { children: ReactNode }) {
-  const [sesion, setSesion] = useState<Session | null>(null)
-  const [perfil, setPerfil] = useState<Perfil | null>(null)
-  const [cargando, setCargando] = useState(true)
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSesion(data.session)
-      setCargando(false)
+      setSession(data.session)
+      setLoading(false)
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_evento, nuevaSesion) => {
-      setSesion(nuevaSesion)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession)
     })
     return () => sub.subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
-    if (!sesion) {
-      setPerfil(null)
+    if (!session) {
+      setProfile(null)
       return
     }
     supabase
-      .from('perfiles')
-      .select('id, email, nombre, rol')
-      .eq('id', sesion.user.id)
+      .from('profiles')
+      .select('id, email, name, role')
+      .eq('id', session.user.id)
       .single()
-      .then(({ data }) => setPerfil(data as Perfil | null))
-  }, [sesion])
+      .then(({ data }) => setProfile(data as Profile | null))
+  }, [session])
 
-  // El rol se lee del perfil, pero es la base de datos la que decide de verdad.
-  // Esto solo sirve para no mostrar controles que van a fallar (RF-106): la
-  // protección real son las políticas RLS, no este booleano.
-  const puedeEditar = perfil?.rol === 'CATALOGADOR' || perfil?.rol === 'SUPERUSUARIO'
+  // The role is read from the profile, but the database is what truly decides.
+  // This only avoids showing controls that would fail (RF-106): the real
+  // protection is the RLS policies, not this boolean.
+  const canEdit = profile?.role === 'CATALOGADOR' || profile?.role === 'SUPERUSUARIO'
 
   return (
-    <Contexto.Provider
+    <Context.Provider
       value={{
-        sesion,
-        perfil,
-        cargando,
-        puedeEditar,
-        salir: async () => {
+        session,
+        profile,
+        loading,
+        canEdit,
+        signOut: async () => {
           await supabase.auth.signOut()
         },
       }}
     >
       {children}
-    </Contexto.Provider>
+    </Context.Provider>
   )
 }
 
-export function useAuth(): ContextoAuth {
-  const ctx = useContext(Contexto)
-  if (!ctx) throw new Error('useAuth debe usarse dentro de ProveedorAuth')
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(Context)
+  if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider')
   return ctx
 }

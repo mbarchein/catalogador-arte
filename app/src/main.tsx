@@ -4,26 +4,27 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import { App } from './App'
-import { ProveedorAuth } from './auth/AuthContext'
-import { programarComprobaciones } from './lib/actualizaciones'
+import { AuthProvider } from './auth/AuthContext'
+import { scheduleChecks } from './lib/updates'
 import './index.css'
 
-// En modo autoUpdate este registro recarga la página cuando la versión nueva
-// toma el control; programarComprobaciones decide cuándo preguntar si existe.
-// El catch: sin red no hay versión que buscar, y no es un error.
+// In autoUpdate mode this registration reloads the page when the new version
+// takes control; scheduleChecks decides when to ask whether one exists.
+// The catch: without network there is no version to look for, and that is not
+// an error.
 registerSW({
   immediate: true,
-  onRegisteredSW(_url, registro) {
-    if (registro) programarComprobaciones(() => void registro.update().catch(() => {}))
+  onRegisteredSW(_url, registration) {
+    if (registration) scheduleChecks(() => void registration.update().catch(() => {}))
   },
 })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <ProveedorAuth>
+      <AuthProvider>
         <App />
-      </ProveedorAuth>
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 )

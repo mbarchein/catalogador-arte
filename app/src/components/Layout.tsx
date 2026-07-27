@@ -1,9 +1,9 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from '../auth/AuthContext'
-import { MenuPie } from './MenuPie'
+import { FooterMenu } from './FooterMenu'
 
-function IconoAtras() {
+function BackIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -21,87 +21,87 @@ function IconoAtras() {
 }
 
 /**
- * Cabecera fija con botón de volver, el rótulo de la vista y un hueco para la
- * acción principal de la página («Editar», «+ Nueva»...). Que la acción viva en
- * la cabecera fija significa que está disponible sin volver arriba, por larga
- * que sea la página — patrón heredado de la otra aplicación del equipo.
+ * Fixed header with a back button, the view's title and a slot for the page's
+ * main action ("Editar", "+ Nueva"...). Having the action live in the fixed
+ * header means it is available without scrolling back up, however long the
+ * page — a pattern inherited from the team's other application.
  *
- * Volver: si hay historial dentro de la aplicación se vuelve por él (conserva
- * la página de la que se vino); si no —entrada en frío, p. ej. escaneando el QR
- * de la etiqueta— se va al destino `atras`. Nunca un history.back() a secas: con
- * el historial vacío sacaría al catalogador de la aplicación instalada, que en
- * pantalla completa no tiene barra del navegador para volver a entrar.
+ * Going back: if there is in-app history, it is used (keeps the page one came
+ * from); if not — a cold entry, e.g. scanning the label's QR — the `back`
+ * destination is used. Never a bare history.back(): with empty history it
+ * would kick the cataloger out of the installed app, which in full screen has
+ * no browser bar to come back in through.
  */
 export function Layout({
   children,
-  titulo,
-  atras,
-  accion,
+  title,
+  back,
+  action,
 }: {
   children: ReactNode
-  /** Rótulo corto de la vista, junto al botón de volver. */
-  titulo?: string
-  /** Destino de reserva del botón de volver. Sin él no se muestra: es la raíz. */
-  atras?: string
-  /** Acción principal de la vista, en el lado derecho de la cabecera. */
-  accion?: ReactNode
+  /** Short title of the view, next to the back button. */
+  title?: string
+  /** Fallback destination for the back button. Without it, none is shown: it is the root. */
+  back?: string
+  /** Main action of the view, on the right side of the header. */
+  action?: ReactNode
 }) {
-  const navegar = useNavigate()
+  const navigate = useNavigate()
   const { key } = useLocation()
 
-  function volver() {
-    // location.key vale 'default' solo en la primera entrada (enlace directo,
-    // recarga): cualquier otro valor significa que hay historial propio.
-    if (key !== 'default') navegar(-1)
-    else if (atras) navegar(atras)
+  function goBack() {
+    // location.key is 'default' only on the first entry (direct link, reload):
+    // any other value means there is in-app history.
+    if (key !== 'default') navigate(-1)
+    else if (back) navigate(back)
   }
 
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col">
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-stone-100/95 px-2 py-2 backdrop-blur">
         <div className="flex items-center gap-1">
-          {atras ? (
+          {back ? (
             <button
               type="button"
-              onClick={volver}
+              onClick={goBack}
               aria-label="Volver"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-stone-700 active:bg-stone-200"
             >
-              <IconoAtras />
+              <BackIcon />
             </button>
           ) : (
             <span className="w-2" />
           )}
-          <span className="min-w-0 flex-1 truncate font-semibold">{titulo ?? 'Catalogador'}</span>
-          {accion && <div className="shrink-0 pr-1">{accion}</div>}
+          <span className="min-w-0 flex-1 truncate font-semibold">{title ?? 'Catalogador'}</span>
+          {action && <div className="shrink-0 pr-1">{action}</div>}
         </div>
       </header>
 
       <main className="flex-1 p-4">{children}</main>
 
-      <MenuPie />
+      <FooterMenu />
     </div>
   )
 }
 
 /**
- * Cierre de sesión. Fuera de la cabecera, donde competía por el sitio con el
- * botón de volver y se podía pulsar sin querer en mitad de un lote. Aquí abajo
- * sigue estando siempre a mano, que hace falta: la sesión dura doce horas y el
- * dispositivo puede ser compartido.
+ * Sign out. Outside the header, where it competed for room with the back
+ * button and could be pressed by accident mid-batch. Down here it is still
+ * always at hand, which is needed: the session lasts twelve hours and the
+ * device may be shared.
  */
-export function CerrarSesion() {
-  const { perfil, puedeEditar, salir } = useAuth()
+export function SignOut() {
+  const { profile, canEdit, signOut } = useAuth()
 
   return (
     <div className="mt-8 border-t border-stone-200 pt-4 text-center text-xs text-stone-500">
-      {perfil && (
+      {profile && (
         <p className="mb-1">
-          {perfil.nombre || perfil.email}
-          {!puedeEditar && ' · solo consulta'}
+          {profile.name || profile.email}
+          {!canEdit && ' · solo consulta'}
         </p>
       )}
-      <button onClick={salir} className="min-h-toque px-4 underline hover:text-stone-800">
+      <button onClick={signOut} className="min-h-touch px-4 underline hover:text-stone-800">
         Cerrar sesión
       </button>
     </div>

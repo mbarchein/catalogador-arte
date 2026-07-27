@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import type { TriEstado } from '../lib/tipos'
+import type { TriState } from '../lib/types'
 
-// ── Iconos ──────────────────────────────────────────────────
-// SVG en línea, sin librería: son cinco iconos y añadir una dependencia entera
-// para eso engorda el paquete que se descarga en el almacén con mala cobertura.
-// `currentColor` para que hereden el color del botón y funcionen en cualquier estado.
+// ── Icons ────────────────────────────────────────────────────
+// Inline SVG, no library: these are five icons and pulling a whole dependency
+// for that bloats the bundle downloaded in a storage room with poor coverage.
+// `currentColor` so they inherit the button color and work in any state.
 
 const svg = {
   viewBox: '0 0 24 24',
@@ -16,106 +16,106 @@ const svg = {
   'aria-hidden': true,
 }
 
-export function IconoSi({ clase = 'h-6 w-6' }: { clase?: string }) {
+export function YesIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
-    <svg {...svg} className={clase}>
+    <svg {...svg} className={className}>
       <path d="M20 6 9 17l-5-5" />
     </svg>
   )
 }
 
-export function IconoNo({ clase = 'h-6 w-6' }: { clase?: string }) {
+export function NoIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
-    <svg {...svg} className={clase}>
+    <svg {...svg} className={className}>
       <path d="M18 6 6 18M6 6l12 12" />
     </svg>
   )
 }
 
-export function IconoSinRevisar({ clase = 'h-6 w-6' }: { clase?: string }) {
+export function UnreviewedIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
-    <svg {...svg} className={clase}>
+    <svg {...svg} className={className}>
       <path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 2.5-3 4" />
       <path d="M12 18h.01" />
     </svg>
   )
 }
 
-export function IconoMenos({ clase = 'h-7 w-7' }: { clase?: string }) {
+export function MinusIcon({ className = 'h-7 w-7' }: { className?: string }) {
   return (
-    <svg {...svg} className={clase}>
+    <svg {...svg} className={className}>
       <path d="M5 12h14" />
     </svg>
   )
 }
 
-export function IconoMas({ clase = 'h-7 w-7' }: { clase?: string }) {
+export function PlusIcon({ className = 'h-7 w-7' }: { className?: string }) {
   return (
-    <svg {...svg} className={clase}>
+    <svg {...svg} className={className}>
       <path d="M12 5v14M5 12h14" />
     </svg>
   )
 }
 
-export function IconoCandado({ clase = 'h-4 w-4' }: { clase?: string }) {
+export function LockIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg {...svg} strokeWidth={2} className={clase}>
+    <svg {...svg} strokeWidth={2} className={className}>
       <rect x="4" y="10" width="16" height="10" rx="2" />
       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </svg>
   )
 }
 
-// ── Selector de tres estados con iconos ─────────────────────
+// ── Three-state selector with icons ──────────────────────────
 
-const ESTADOS: { valor: TriEstado; etiqueta: string; Icono: typeof IconoSi }[] = [
-  { valor: 'SI', etiqueta: 'Sí', Icono: IconoSi },
-  { valor: 'NO', etiqueta: 'No', Icono: IconoNo },
-  { valor: 'SIN_REVISAR', etiqueta: 'Sin revisar', Icono: IconoSinRevisar },
+const STATES: { value: TriState; label: string; Icon: typeof YesIcon }[] = [
+  { value: 'SI', label: 'Sí', Icon: YesIcon },
+  { value: 'NO', label: 'No', Icon: NoIcon },
+  { value: 'SIN_REVISAR', label: 'Sin revisar', Icon: UnreviewedIcon },
 ]
 
 /**
- * Los tres valores a la vista y a un toque, en vez de un desplegable que exige
- * abrir, buscar y elegir.
+ * The three values in sight and one tap away, instead of a dropdown that
+ * demands opening, searching and choosing.
  *
- * El icono de «Sin revisar» es una interrogación y no un hueco a propósito: es un
- * estado con significado —«todavía no lo hemos mirado»—, distinto de «No», y la
- * interfaz no debe insinuar que sea una ausencia de respuesta.
+ * The "Sin revisar" icon is a question mark and not a gap on purpose: it is a
+ * state with meaning — "we have not looked at it yet" —, distinct from "No",
+ * and the interface must not hint that it is an absence of answer.
  */
-export function TriEstadoIconos({
-  valor,
-  alCambiar,
-  etiqueta,
+export function TriStateIcons({
+  value,
+  onChange,
+  label,
   id,
 }: {
-  valor: TriEstado
-  alCambiar: (v: TriEstado) => void
-  etiqueta: string
+  value: TriState
+  onChange: (v: TriState) => void
+  label: string
   id: string
 }) {
   return (
-    <div role="radiogroup" aria-labelledby={`${id}-etiqueta`}>
-      <span id={`${id}-etiqueta`} className="etiqueta">
-        {etiqueta}
+    <div role="radiogroup" aria-labelledby={`${id}-label`}>
+      <span id={`${id}-label`} className="label">
+        {label}
       </span>
       <div className="grid grid-cols-3 gap-2">
-        {ESTADOS.map(({ valor: v, etiqueta: texto, Icono }) => {
-          const activo = valor === v
+        {STATES.map(({ value: v, label: text, Icon }) => {
+          const active = value === v
           return (
             <button
               key={v}
               type="button"
               role="radio"
-              aria-checked={activo}
-              onClick={() => alCambiar(v)}
+              aria-checked={active}
+              onClick={() => onChange(v)}
               className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-0.5 rounded-lg border-2 transition ${
-                activo
+                active
                   ? 'border-stone-800 bg-stone-800 text-white'
                   : 'border-stone-300 bg-white text-stone-500'
               }`}
             >
-              <Icono />
-              <span className="text-xs font-medium">{texto}</span>
+              <Icon />
+              <span className="text-xs font-medium">{text}</span>
             </button>
           )
         })}
@@ -124,61 +124,62 @@ export function TriEstadoIconos({
   )
 }
 
-// ── Botón con repetición al mantener pulsado ────────────────
+// ── Button that repeats while held ───────────────────────────
 
-function BotonRepetible({
-  alPaso,
-  etiqueta,
+function RepeatButton({
+  onStep,
+  label,
   children,
-  compacto = false,
+  compact = false,
 }: {
-  alPaso: () => void
-  etiqueta: string
+  onStep: () => void
+  label: string
   children: ReactNode
-  compacto?: boolean
+  compact?: boolean
 }) {
-  const refEspera = useRef<number | null>(null)
-  const refRepeticion = useRef<number | null>(null)
-  const refRepitio = useRef(false)
+  const delayRef = useRef<number | null>(null)
+  const repeatRef = useRef<number | null>(null)
+  const didRepeatRef = useRef(false)
 
-  const detener = useCallback(() => {
-    if (refEspera.current !== null) window.clearTimeout(refEspera.current)
-    if (refRepeticion.current !== null) window.clearInterval(refRepeticion.current)
-    refEspera.current = null
-    refRepeticion.current = null
+  const stop = useCallback(() => {
+    if (delayRef.current !== null) window.clearTimeout(delayRef.current)
+    if (repeatRef.current !== null) window.clearInterval(repeatRef.current)
+    delayRef.current = null
+    repeatRef.current = null
   }, [])
 
-  // Sin esto, desmontar el componente con el dedo apoyado deja el intervalo vivo.
-  useEffect(() => detener, [detener])
+  // Without this, unmounting the component with a finger down leaves the
+  // interval alive.
+  useEffect(() => stop, [stop])
 
-  function iniciar() {
-    refRepitio.current = false
-    // 400 ms antes de empezar a repetir: por debajo de eso, un toque normal
-    // acabaría avanzando dos años.
-    refEspera.current = window.setTimeout(() => {
-      refRepitio.current = true
-      refRepeticion.current = window.setInterval(alPaso, 90)
+  function start() {
+    didRepeatRef.current = false
+    // 400 ms before repeating starts: below that, a normal tap would end up
+    // advancing two years.
+    delayRef.current = window.setTimeout(() => {
+      didRepeatRef.current = true
+      repeatRef.current = window.setInterval(onStep, 90)
     }, 400)
   }
 
   return (
     <button
       type="button"
-      aria-label={etiqueta}
-      onPointerDown={iniciar}
-      onPointerUp={detener}
-      onPointerLeave={detener}
-      onPointerCancel={detener}
-      // El paso simple va en onClick y no en onPointerDown para que el teclado
-      // también funcione. El indicador refRepitio evita que, al soltar tras una
-      // pulsación sostenida, el click añada un año de más.
+      aria-label={label}
+      onPointerDown={start}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      // The single step goes in onClick and not in onPointerDown so the
+      // keyboard also works. The didRepeat flag prevents the click after a
+      // sustained press from adding one extra year.
       onClick={() => {
-        if (!refRepitio.current) alPaso()
-        refRepitio.current = false
+        if (!didRepeatRef.current) onStep()
+        didRepeatRef.current = false
       }}
       className={`flex shrink-0 items-center justify-center rounded-lg border border-stone-300
                   bg-white text-stone-700 active:bg-stone-200 ${
-                    compacto ? 'h-11 w-11' : 'h-14 w-14'
+                    compact ? 'h-11 w-11' : 'h-14 w-14'
                   }`}
     >
       {children}
@@ -187,97 +188,99 @@ function BotonRepetible({
 }
 
 /**
- * Año con − y +, y el número tocable para teclearlo directamente.
+ * Year with − and +, and the number tappable to type it directly.
  *
- * Mantener pulsado acelera: sin eso, ir de 1968 a 1985 son diecisiete toques y
- * nadie lo hace — abriría el teclado, que es justo lo que se quiere evitar
- * cuando se cataloga de pie.
+ * Holding accelerates: without that, going from 1968 to 1985 is seventeen taps
+ * and nobody does it — they would open the keyboard, which is exactly what has
+ * to be avoided when cataloging standing up.
  *
- * `alCambiar` recibe el **año resultante**, no un incremento. La primera versión
- * comunicaba incrementos, y teclear un año sobre el campo vacío daba un
- * incremento de cero, que significa «parte del año en curso»: escribir 1978 en un
- * campo vacío lo dejaba en 2026. Justo el caso de la primera obra de cada lote.
+ * `onChange` receives the **resulting year**, not an increment. The first
+ * version communicated increments, and typing a year over the empty field
+ * yielded an increment of zero, which means "start from the current year":
+ * writing 1978 into an empty field left it at 2026. Precisely the case of the
+ * first artwork of every batch.
  */
-export function PasoAnio({
-  valor,
-  alCambiar,
+export function YearStepper({
+  value,
+  onChange,
   id,
-  etiqueta,
-  minimo,
-  maximo,
-  compacto = false,
+  label,
+  min,
+  max,
+  compact = false,
 }: {
-  valor: number | null
-  alCambiar: (anio: number | null) => void
+  value: number | null
+  onChange: (year: number | null) => void
   id: string
-  etiqueta: string
-  minimo: number
-  maximo: number
-  /** Botones de 44px en vez de 56: para poner dos campos de año en una línea. */
-  compacto?: boolean
+  label: string
+  min: number
+  max: number
+  /** 44px buttons instead of 56: to fit two year fields on one line. */
+  compact?: boolean
 }) {
-  // Borrador de lo que se está teclando. Sin él, el campo es controlado y «19»
-  // —dos dígitos, todavía no un año— se descartaría a cada pulsación, con lo que
-  // sería imposible escribir un año a mano.
-  const [borrador, setBorrador] = useState<string | null>(null)
-  const acotar = (n: number) => Math.min(maximo, Math.max(minimo, n))
+  // Draft of what is being typed. Without it the field is controlled and "19"
+  // — two digits, not yet a year — would be discarded on every keystroke,
+  // making it impossible to type a year by hand.
+  const [draft, setDraft] = useState<string | null>(null)
+  const clamp = (n: number) => Math.min(max, Math.max(min, n))
 
-  function paso(delta: number) {
-    setBorrador(null)
-    alCambiar(acotar((valor ?? maximo) + delta))
+  function step(delta: number) {
+    setDraft(null)
+    onChange(clamp((value ?? max) + delta))
   }
 
   return (
     <div>
-      <label className="etiqueta" htmlFor={id}>
-        {etiqueta}
+      <label className="label" htmlFor={id}>
+        {label}
       </label>
-      <div className={compacto ? 'flex items-center gap-1' : 'flex items-center gap-2'}>
-        <BotonRepetible
-          alPaso={() => paso(-1)}
-          etiqueta={`${etiqueta}: un año menos`}
-          compacto={compacto}
+      <div className={compact ? 'flex items-center gap-1' : 'flex items-center gap-2'}>
+        <RepeatButton
+          onStep={() => step(-1)}
+          label={`${label}: un año menos`}
+          compact={compact}
         >
-          <IconoMenos clase={compacto ? 'h-5 w-5' : 'h-7 w-7'} />
-        </BotonRepetible>
+          <MinusIcon className={compact ? 'h-5 w-5' : 'h-7 w-7'} />
+        </RepeatButton>
 
         <input
           id={id}
-          className={`campo flex-1 text-center font-semibold tabular-nums ${
-            compacto ? 'h-11 px-1 text-lg' : 'h-14 text-2xl'
+          className={`field flex-1 text-center font-semibold tabular-nums ${
+            compact ? 'h-11 px-1 text-lg' : 'h-14 text-2xl'
           }`}
           inputMode="numeric"
-          value={borrador ?? valor?.toString() ?? ''}
+          value={draft ?? value?.toString() ?? ''}
           placeholder="—"
-          onBlur={() => setBorrador(null)}
+          onBlur={() => setDraft(null)}
           onChange={(e) => {
-            const digitos = e.target.value.replace(/\D/g, '').slice(0, 4)
-            setBorrador(digitos)
-            if (digitos === '') {
-              // Vaciar el campo es «obra sin fechar», no un error.
-              alCambiar(null)
+            const digits = e.target.value.replace(/\D/g, '').slice(0, 4)
+            setDraft(digits)
+            if (digits === '') {
+              // Emptying the field means "undated artwork", not an error.
+              onChange(null)
               return
             }
-            // Se propaga solo cuando ya es un año completo: acotar «19» a 1900
-            // mientras se escribe daría saltos absurdos en pantalla.
-            if (digitos.length === 4) alCambiar(acotar(Number(digitos)))
+            // Propagated only once it is a full year: clamping "19" to 1900
+            // while typing would produce absurd jumps on screen.
+            if (digits.length === 4) onChange(clamp(Number(digits)))
           }}
         />
 
-        <BotonRepetible
-          alPaso={() => paso(1)}
-          etiqueta={`${etiqueta}: un año más`}
-          compacto={compacto}
+        <RepeatButton
+          onStep={() => step(1)}
+          label={`${label}: un año más`}
+          compact={compact}
         >
-          <IconoMas clase={compacto ? 'h-5 w-5' : 'h-7 w-7'} />
-        </BotonRepetible>
+          <PlusIcon className={compact ? 'h-5 w-5' : 'h-7 w-7'} />
+        </RepeatButton>
       </div>
 
-      {/* Desde vacío, los botones parten del año en curso, y bajar hasta los años
-          sesenta serían decenas de toques. Se dice que el número se puede teclear:
-          una vez por lote, y a partir de ahí ya se ajusta con los botones, porque
-          la fecha se arrastra de una obra a la siguiente. */}
-      {valor == null && (
+      {/* From empty, the buttons start at the current year, and going down to
+          the sixties would take dozens of taps. It is stated that the number
+          can be typed: once per batch, and from then on it is adjusted with
+          the buttons, because the date carries over from one artwork to the
+          next. */}
+      {value == null && (
         <p className="mt-1 text-xs text-stone-500">
           Toca el número para escribir el año. Después se ajusta con − y +, y se mantiene pulsado para
           avanzar rápido.
@@ -287,102 +290,102 @@ export function PasoAnio({
   )
 }
 
-// ── Interruptor táctil ──────────────────────────────────────
+// ── Touch toggle ─────────────────────────────────────────────
 
-export function Interruptor({
-  activo,
-  alCambiar,
-  etiqueta,
-  ayuda,
+export function Toggle({
+  active,
+  onChange,
+  label,
+  help,
 }: {
-  activo: boolean
-  alCambiar: (v: boolean) => void
-  etiqueta: string
-  ayuda?: string
+  active: boolean
+  onChange: (v: boolean) => void
+  label: string
+  help?: string
 }) {
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={activo}
-      onClick={() => alCambiar(!activo)}
-      className={`flex w-full min-h-toque items-center justify-between gap-3 rounded-lg border-2 px-3 py-2
+      aria-checked={active}
+      onClick={() => onChange(!active)}
+      className={`flex w-full min-h-touch items-center justify-between gap-3 rounded-lg border-2 px-3 py-2
                   text-left transition ${
-                    activo
+                    active
                       ? 'border-stone-800 bg-stone-800 text-white'
                       : 'border-stone-300 bg-white text-stone-700'
                   }`}
     >
       <span>
-        <span className="block text-sm font-medium">{etiqueta}</span>
-        {ayuda && (
-          <span className={`block text-xs ${activo ? 'text-stone-300' : 'text-stone-500'}`}>
-            {ayuda}
+        <span className="block text-sm font-medium">{label}</span>
+        {help && (
+          <span className={`block text-xs ${active ? 'text-stone-300' : 'text-stone-500'}`}>
+            {help}
           </span>
         )}
       </span>
       <span
         aria-hidden
         className={`flex h-6 w-11 shrink-0 items-center rounded-full px-0.5 transition ${
-          activo ? 'bg-white/30' : 'bg-stone-200'
+          active ? 'bg-white/30' : 'bg-stone-200'
         }`}
       >
         <span
-          className={`h-5 w-5 rounded-full bg-white shadow transition ${activo ? 'translate-x-5' : ''}`}
+          className={`h-5 w-5 rounded-full bg-white shadow transition ${active ? 'translate-x-5' : ''}`}
         />
       </span>
     </button>
   )
 }
 
-// ── Fichas de selección ─────────────────────────────────────
+// ── Selection chips ──────────────────────────────────────────
 
 /**
- * Selección entre opciones como rejilla de botones de tamaño fijo, el mismo
- * lenguaje visual que el Sí/No/Sin revisar. Los globos de ancho variable hacían
- * imposible barrer las opciones con la vista: cada una empezaba en un sitio
- * distinto. En rejilla, la posición de cada opción es estable y caben varias
- * por línea sin que ninguna se esconda al final de un renglón.
+ * Selection among options as a grid of fixed-size buttons, the same visual
+ * language as the Yes/No/Unreviewed selector. Variable-width pills made it
+ * impossible to sweep the options with the eyes: each one started at a
+ * different place. In a grid, each option's position is stable and several fit
+ * per line without any hiding at the end of a row.
  */
-export function Fichas<T extends string>({
-  opciones,
-  valor,
-  alCambiar,
-  etiqueta,
+export function Chips<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
   id,
-  columnas = 2,
+  columns = 2,
 }: {
-  opciones: readonly { valor: T; texto: string }[]
-  valor: T | null
-  alCambiar: (v: T) => void
-  etiqueta: string
+  options: readonly { value: T; text: string }[]
+  value: T | null
+  onChange: (v: T) => void
+  label: string
   id: string
-  /** Opciones por línea. 3 para textos cortos, 2 para los que necesitan sitio. */
-  columnas?: 2 | 3
+  /** Options per line. 3 for short texts, 2 for those that need room. */
+  columns?: 2 | 3
 }) {
   return (
-    <div role="radiogroup" aria-labelledby={`${id}-etiqueta`}>
-      <span id={`${id}-etiqueta`} className="etiqueta">
-        {etiqueta}
+    <div role="radiogroup" aria-labelledby={`${id}-label`}>
+      <span id={`${id}-label`} className="label">
+        {label}
       </span>
-      <div className={columnas === 3 ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
-        {opciones.map((o) => {
-          const activo = valor === o.valor
+      <div className={columns === 3 ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
+        {options.map((o) => {
+          const active = value === o.value
           return (
             <button
-              key={o.valor}
+              key={o.value}
               type="button"
               role="radio"
-              aria-checked={activo}
-              onClick={() => alCambiar(o.valor)}
-              className={`flex min-h-toque items-center justify-center rounded-lg border-2 px-2 py-2
+              aria-checked={active}
+              onClick={() => onChange(o.value)}
+              className={`flex min-h-touch items-center justify-center rounded-lg border-2 px-2 py-2
                           text-center text-sm font-medium leading-tight transition ${
-                            activo
+                            active
                               ? 'border-stone-800 bg-stone-800 text-white'
                               : 'border-stone-300 bg-white text-stone-700'
                           }`}
             >
-              {o.texto}
+              {o.text}
             </button>
           )
         })}
@@ -392,106 +395,106 @@ export function Fichas<T extends string>({
 }
 
 /**
- * Interruptor con forma de botón de rejilla, para poner varios en una línea.
- * El Interruptor grande (con texto de ayuda) no cabe tres veces en un móvil;
- * este es su versión compacta con la misma semántica (role="switch").
+ * A switch shaped like a grid button, to place several on one line. The big
+ * Toggle (with help text) does not fit three times on a phone; this is its
+ * compact version with the same semantics (role="switch").
  */
-export function Conmutador({
-  etiqueta,
-  activo,
-  alCambiar,
+export function ToggleChip({
+  label,
+  active,
+  onChange,
 }: {
-  etiqueta: string
-  activo: boolean
-  alCambiar: (v: boolean) => void
+  label: string
+  active: boolean
+  onChange: (v: boolean) => void
 }) {
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={activo}
-      onClick={() => alCambiar(!activo)}
-      className={`flex min-h-toque items-center justify-center rounded-lg border-2 px-2 py-2
+      aria-checked={active}
+      onClick={() => onChange(!active)}
+      className={`flex min-h-touch items-center justify-center rounded-lg border-2 px-2 py-2
                   text-center text-sm font-medium leading-tight transition ${
-                    activo
+                    active
                       ? 'border-stone-800 bg-stone-800 text-white'
                       : 'border-stone-300 bg-white text-stone-700'
                   }`}
     >
-      {etiqueta}
+      {label}
     </button>
   )
 }
 
-// ── Grupo de campos con nombre ──────────────────────────────
+// ── Named field group ────────────────────────────────────────
 
 /**
- * fieldset + legend, el patrón de agrupación de la otra aplicación del equipo.
- * Un formulario largo sin grupos nombrados obliga a leerlo entero para saber
- * dónde está cada cosa; con el nombre en el borde, el ojo salta directo.
+ * fieldset + legend, the grouping pattern of the team's other application. A
+ * long form without named groups forces reading it whole to know where things
+ * are; with the name on the border, the eye jumps straight there.
  *
- * `pista` es para lo que el operador necesita saber del grupo entero antes de
- * rellenarlo — p. ej. «se arrastra a la obra siguiente» — sin repetirlo campo
- * a campo.
+ * `hint` is for what the operator needs to know about the whole group before
+ * filling it — e.g. "carries over to the next artwork" — without repeating it
+ * field by field.
  */
-export function Grupo({
-  titulo,
-  pista,
+export function FieldGroup({
+  title,
+  hint,
   children,
 }: {
-  titulo: string
-  pista?: string
+  title: string
+  hint?: string
   children: ReactNode
 }) {
   return (
     <fieldset className="rounded-xl border border-stone-200 bg-white p-4">
       <legend className="px-1 text-sm font-semibold text-stone-800">
-        {titulo}
-        {pista && <span className="ml-1.5 font-normal text-stone-500">· {pista}</span>}
+        {title}
+        {hint && <span className="ml-1.5 font-normal text-stone-500">· {hint}</span>}
       </legend>
       <div className="space-y-4">{children}</div>
     </fieldset>
   )
 }
 
-// ── Barra de acciones fija abajo ────────────────────────────
+// ── Action bar fixed at the bottom ───────────────────────────
 
 /**
- * En un formulario largo, el botón de guardar al final obliga a desplazarse
- * para encontrarlo. Fijado abajo queda siempre bajo el pulgar, que es donde se
- * trabaja a una mano. El padding-bottom respeta la barra inferior del móvil.
+ * In a long form, a save button at the end forces scrolling to find it. Fixed
+ * at the bottom it stays under the thumb, which is where one-handed work
+ * happens. The padding-bottom respects the phone's bottom bar.
  */
-export function BarraAcciones({ children, aviso }: { children: ReactNode; aviso?: ReactNode }) {
+export function ActionBar({ children, notice }: { children: ReactNode; notice?: ReactNode }) {
   return (
     <div
       className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-stone-200 bg-stone-100/95 px-4 pt-3 backdrop-blur"
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
-      {/* El aviso va aquí y no arriba de la página: el resultado de pulsar un
-          botón debe aparecer donde se acaba de pulsar, no donde haya que ir a
-          buscarlo desplazándose. */}
-      {aviso && <div className="mx-auto mb-2 max-w-3xl">{aviso}</div>}
+      {/* The notice goes here and not at the top of the page: the result of
+          pressing a button must appear where it was just pressed, not where
+          one has to scroll to find it. */}
+      {notice && <div className="mx-auto mb-2 max-w-3xl">{notice}</div>}
       <div className="mx-auto flex max-w-3xl gap-2">{children}</div>
     </div>
   )
 }
 
-// ── Contraseña con mostrar/ocultar ──────────────────────────
+// ── Password field with show/hide ────────────────────────────
 
 /**
- * En el móvil, teclear una contraseña a ciegas produce erratas, y el mensaje de
- * credenciales es genérico a propósito (no dice si fue el correo o la clave).
- * Poder verla es la forma barata de salir de ese callejón.
+ * On a phone, typing a password blind produces typos, and the credentials
+ * message is generic on purpose (it does not say whether it was the email or
+ * the password). Being able to see it is the cheap way out of that dead end.
  */
-export function CampoContrasena({
+export function PasswordField({
   id,
-  valor,
-  alCambiar,
+  value,
+  onChange,
   autoComplete = 'current-password',
 }: {
   id: string
-  valor: string
-  alCambiar: (v: string) => void
+  value: string
+  onChange: (v: string) => void
   autoComplete?: string
 }) {
   const [visible, setVisible] = useState(false)
@@ -499,12 +502,12 @@ export function CampoContrasena({
     <div className="relative">
       <input
         id={id}
-        className="campo pr-12"
+        className="field pr-12"
         type={visible ? 'text' : 'password'}
         autoComplete={autoComplete}
         required
-        value={valor}
-        onChange={(e) => alCambiar(e.target.value)}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
       />
       <button
         type="button"
@@ -513,13 +516,13 @@ export function CampoContrasena({
         aria-pressed={visible}
         className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-stone-500"
       >
-        {visible ? <IconoOjoTachado /> : <IconoOjo />}
+        {visible ? <EyeOffIcon /> : <EyeIcon />}
       </button>
     </div>
   )
 }
 
-function IconoOjo() {
+function EyeIcon() {
   return (
     <svg {...svg} strokeWidth={2} className="h-5 w-5">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
@@ -528,7 +531,7 @@ function IconoOjo() {
   )
 }
 
-function IconoOjoTachado() {
+function EyeOffIcon() {
   return (
     <svg {...svg} strokeWidth={2} className="h-5 w-5">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />

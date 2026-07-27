@@ -1,0 +1,123 @@
+import { EMPTY_DATE, type StructuredDate } from '../../lib/structuredDate'
+import { ARTIST_FUNDS, type ArtistFund } from '../../lib/types'
+
+/**
+ * State of a capture batch. The distinction between the two halves is what
+ * prevents a batch from ending up with inherited data nobody wanted:
+ *
+ *  - **Fixed**: chosen when opening the batch and unchanged while it stays
+ *    open. Changing them requires closing the batch, which is a deliberate
+ *    gesture. They are the two fields that define "what am I cataloging now":
+ *    fund and artwork type.
+ *
+ *  - **Carried**: they start from the previous artwork's value and get
+ *    adjusted on each one. They are fields that tend to repeat within a batch
+ *    but belong to the piece, not to the batch.
+ *
+ * What is NEVER carried: title and measurements. Inheriting them would be
+ * inventing data of one artwork from another, which is the worst thing an
+ * inventory can do.
+ */
+export interface Batch {
+  fixed: {
+    artist: ArtistFund
+    artworkType: string
+  }
+  carried: {
+    date: StructuredDate
+    technique: string
+    location: string
+  }
+}
+
+export const INITIAL_BATCH: Batch = {
+  fixed: { artist: 'ROTILI', artworkType: '' },
+  carried: { date: EMPTY_DATE, technique: '', location: '' },
+}
+
+// Legacy storage key: batches saved by previous versions live under it. The
+// value shape changed to English keys; an old value simply normalizes to the
+// initial batch, which is the documented behavior for foreign shapes.
+const KEY = 'catalogador.lote'
+
+/**
+ * The batch survives reloads and the phone discarding the tab. In a storage
+ * room that happens: the screen locks, a call is taken, one comes back.
+ * Losing the batch settings on the third artwork is what makes people abandon
+ * a tool.
+ *
+ * No data of the artwork in progress is stored, only the batch configuration.
+ */
+export function readBatch(storage: Storage | undefined = getStorage()): Batch {
+  if (!storage) return INITIAL_BATCH
+  try {
+    const raw = storage.getItem(KEY)
+    if (!raw) return INITIAL_BATCH
+    return normalize(JSON.parse(raw))
+  } catch {
+    // A corrupt value, or one from a previous version, cannot prevent
+    // cataloging.
+    return INITIAL_BATCH
+  }
+}
+
+export function saveBatch(batch: Batch, storage: Storage | undefined = getStorage()): void {
+  try {
+    storage?.setItem(KEY, JSON.stringify(batch))
+  } catch {
+    // Private browsing or exhausted quota: work continues without persistence.
+  }
+}
+
+export function forgetBatch(storage: Storage | undefined = getStorage()): void {
+  try {
+    storage?.removeItem(KEY)
+  } catch {
+    /* nothing to do */
+  }
+}
+
+/**
+ * Checks field by field what comes from outside. Trusting the shape of a
+ * foreign JSON is how a value stored months ago takes the whole application
+ * down.
+ */
+function normalize(value: unknown): Batch {
+  if (typeof value !== 'object' || value === null) return INITIAL_BATCH
+  const v = value as Record<string, unknown>
+  const fixed = (v.fixed ?? {}) as Record<string, unknown>
+  const carried = (v.carried ?? {}) as Record<string, unknown>
+  const date = (carried.date ?? {}) as Record<string, unknown>
+
+  return {
+    fixed: {
+      artist: ARTIST_FUNDS.includes(fixed.artist as ArtistFund)
+        ? (fixed.artist as ArtistFund)
+        : 'ROTILI',
+      artworkType: typeof fixed.artworkType === 'string' ? fixed.artworkType : '',
+    },
+    carried: {
+      date: {
+        year: typeof date.year === 'number' ? date.year : null,
+        approximate: date.approximate === true,
+        endYear: typeof date.endYear === 'number' ? date.endYear : null,
+        unconfirmed: date.unconfirmed === true,
+      },
+      technique: typeof carried.technique === 'string' ? carried.technique : '',
+      location: typeof carried.location === 'string' ? carried.location : '',
+    },
+  }
+}
+
+function getStorage(): Storage | undefined {
+  try {
+    return window.localStorage
+  } catch {
+    return undefined
+  }
+}
+
+/** A batch is ready to capture when its two fixed fields have a value. */
+export function batchConfigured(batch: Batch): boolean {
+  return batch.fixed.artworkType.trim() !== ''
+}

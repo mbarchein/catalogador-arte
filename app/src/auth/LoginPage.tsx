@@ -1,33 +1,33 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { CampoContrasena } from '../components/ui'
+import { PasswordField } from '../components/ui'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
-  const [contrasena, setContrasena] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [enviando, setEnviando] = useState(false)
-  const [recuperando, setRecuperando] = useState(false)
-  const [aviso, setAviso] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
+  const [recovering, setRecovering] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
-  async function entrar(e: React.FormEvent) {
+  async function signIn(e: React.FormEvent) {
     e.preventDefault()
-    setEnviando(true)
+    setSending(true)
     setError(null)
-    const { error } = await supabase.auth.signInWithPassword({ email, password: contrasena })
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      // Un fallo de red NO se puede confundir con unas credenciales incorrectas.
-      // Antes se mostraba el mismo mensaje para ambos y eso hizo indiagnosticable
-      // un caso real: al abrir la app desde el móvil, el servidor estaba
-      // configurado con «localhost», que en el móvil es el propio móvil. Parecía
-      // una contraseña mal escrita durante un buen rato.
+      // A network failure must NOT be confused with wrong credentials. The
+      // same message used to be shown for both and that made a real case
+      // undiagnosable: opening the app from the phone, the server was
+      // configured with "localhost", which on the phone is the phone itself.
+      // It looked like a mistyped password for a good while.
       //
-      // Distinguirlo no filtra nada: que el servidor no responda no dice nada
-      // sobre qué cuentas existen. Lo que sigue siendo genérico es el mensaje de
-      // credenciales, porque separar «no existe esa cuenta» de «contraseña
-      // incorrecta» sí permitiría averiguar quién tiene acceso.
-      const esDeRed = error.status === undefined || error.status === 0
-      if (esDeRed) {
+      // Distinguishing leaks nothing: the server not answering says nothing
+      // about which accounts exist. What stays generic is the credentials
+      // message, because separating "no such account" from "wrong password"
+      // would reveal who has access.
+      const isNetwork = error.status === undefined || error.status === 0
+      if (isNetwork) {
         setError(
           `No se ha podido contactar con el servidor (${import.meta.env.VITE_SUPABASE_URL}). ` +
             'Comprueba que estás en la misma red y que esa dirección es alcanzable desde este dispositivo.',
@@ -36,55 +36,56 @@ export function LoginPage() {
         setError('No se ha podido entrar. Revisa el correo y la contraseña.')
       }
     }
-    setEnviando(false)
+    setSending(false)
   }
 
-  async function enviarRecuperacion(e: React.FormEvent) {
+  async function sendRecovery(e: React.FormEvent) {
     e.preventDefault()
-    setEnviando(true)
+    setSending(true)
     setError(null)
-    setAviso(null)
+    setNotice(null)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     })
-    setEnviando(false)
+    setSending(false)
     if (error) {
       setError('No se ha podido enviar el correo. Espera un momento y vuelve a intentarlo.')
       return
     }
-    // Neutro a propósito: confirmar o negar el envío diría qué cuentas existen.
-    setAviso(
+    // Neutral on purpose: confirming or denying the delivery would say which
+    // accounts exist.
+    setNotice(
       'Si la cuenta existe, en unos minutos llegará un correo con el enlace para elegir una contraseña nueva. Mira también la carpeta de spam.',
     )
   }
 
-  // Arriba, no centrado verticalmente: en el móvil, al enfocar el correo se
-  // abre el teclado y un formulario centrado queda medio tapado o saltando.
-  // Anclado arriba, los campos siguen a la vista mientras se teclea.
+  // At the top, not vertically centered: on the phone, focusing the email
+  // opens the keyboard and a centered form ends up half covered or jumping.
+  // Anchored at the top, the fields stay in view while typing.
   return (
     <div className="flex min-h-screen items-start justify-center p-4 pt-10">
       <form
-        onSubmit={recuperando ? enviarRecuperacion : entrar}
-        className="tarjeta w-full max-w-sm space-y-4"
+        onSubmit={recovering ? sendRecovery : signIn}
+        className="card w-full max-w-sm space-y-4"
       >
         <div>
           <h1 className="text-xl font-semibold">Catalogador</h1>
           <p className="text-sm text-stone-600">Rotili · Ruiz Campins</p>
         </div>
 
-        {recuperando && (
+        {recovering && (
           <p className="text-sm text-stone-600">
             Escribe tu correo y te enviaremos un enlace para elegir una contraseña nueva.
           </p>
         )}
 
         <div>
-          <label className="etiqueta" htmlFor="email">
+          <label className="label" htmlFor="email">
             Correo
           </label>
           <input
             id="email"
-            className="campo"
+            className="field"
             type="email"
             inputMode="email"
             autoComplete="username"
@@ -95,15 +96,15 @@ export function LoginPage() {
           />
         </div>
 
-        {!recuperando && (
+        {!recovering && (
           <div>
-            <label className="etiqueta" htmlFor="contrasena">
+            <label className="label" htmlFor="password">
               Contraseña
             </label>
-            {/* Con mostrar/ocultar: en el móvil se teclea a ciegas y el mensaje de
-                error es genérico a propósito, así que poder ver lo escrito es la
-                salida barata cuando «no entra». */}
-            <CampoContrasena id="contrasena" valor={contrasena} alCambiar={setContrasena} />
+            {/* With show/hide: on the phone one types blind and the error
+                message is generic on purpose, so seeing what was typed is the
+                cheap way out when "it won't let me in". */}
+            <PasswordField id="password" value={password} onChange={setPassword} />
           </div>
         )}
 
@@ -113,18 +114,18 @@ export function LoginPage() {
           </p>
         )}
 
-        {aviso && (
+        {notice && (
           <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-900">
-            {aviso}
+            {notice}
           </p>
         )}
 
-        <button className="boton-primario w-full" disabled={enviando}>
-          {enviando
-            ? recuperando
+        <button className="btn-primary w-full" disabled={sending}>
+          {sending
+            ? recovering
               ? 'Enviando…'
               : 'Entrando…'
-            : recuperando
+            : recovering
               ? 'Enviarme el enlace'
               : 'Entrar'}
         </button>
@@ -132,17 +133,17 @@ export function LoginPage() {
         <button
           type="button"
           onClick={() => {
-            setRecuperando(!recuperando)
+            setRecovering(!recovering)
             setError(null)
-            setAviso(null)
+            setNotice(null)
           }}
-          className="min-h-toque w-full text-center text-sm text-stone-600 underline hover:text-stone-800"
+          className="min-h-touch w-full text-center text-sm text-stone-600 underline hover:text-stone-800"
         >
-          {recuperando ? 'Volver a la pantalla de entrada' : '¿Has olvidado la contraseña?'}
+          {recovering ? 'Volver a la pantalla de entrada' : '¿Has olvidado la contraseña?'}
         </button>
 
-        {/* RF-112: no hay registro abierto. Las cuentas las crea el superusuario,
-            así que no se ofrece enlace de alta. */}
+        {/* RF-112: there is no open signup. Accounts are created by the
+            superuser, so no registration link is offered. */}
         <p className="text-center text-xs text-stone-500">
           El acceso lo da el responsable del catálogo.
         </p>

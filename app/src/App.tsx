@@ -1,34 +1,36 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import { LoginPage } from './auth/LoginPage'
-import { RestablecerPage } from './auth/RestablecerPage'
-import { CapturaPage } from './features/obras/CapturaPage'
-import { ObraPage } from './features/obras/ObraPage'
-import { ObrasPage } from './features/obras/ObrasPage'
-import { PerfilPage } from './features/perfil/PerfilPage'
+import { ResetPasswordPage } from './auth/ResetPasswordPage'
+import { CapturePage } from './features/artworks/CapturePage'
+import { ArtworkPage } from './features/artworks/ArtworkPage'
+import { ArtworksPage } from './features/artworks/ArtworksPage'
+import { ProfilePage } from './features/profile/ProfilePage'
 
 export function App() {
-  const { sesion, cargando } = useAuth()
+  const { session, loading } = useAuth()
 
-  if (cargando) {
+  if (loading) {
     return <div className="p-8 text-center text-sm text-stone-600">Cargando…</div>
   }
 
-  // RF-101: ninguna vista es accesible sin sesión. No hay zona pública, así que
-  // la comprobación es una sola y cubre todas las rutas.
-  if (!sesion) {
+  // RF-101: no view is reachable without a session. There is no public area,
+  // so the check is a single one and covers every route.
+  if (!session) {
     return <LoginPage />
   }
 
+  // Route paths stay in Spanish: they are user-facing URLs, and /obra/:id is
+  // encoded in QR codes already printed on physical labels.
   return (
     <Routes>
-      <Route path="/" element={<ObrasPage />} />
-      <Route path="/captura" element={<CapturaPage />} />
-      <Route path="/obra/:id" element={<ObraPage />} />
-      <Route path="/perfil" element={<PerfilPage />} />
-      {/* El enlace del correo de recuperación abre sesión temporal y aterriza
-          aquí; también sirve como cambio de contraseña desde Mi perfil. */}
-      <Route path="/reset-password" element={<RestablecerPage />} />
+      <Route path="/" element={<ArtworksPage />} />
+      <Route path="/captura" element={<CapturePage />} />
+      <Route path="/obra/:id" element={<ArtworkPage />} />
+      <Route path="/perfil" element={<ProfilePage />} />
+      {/* The recovery email link opens a temporary session and lands here; it
+          also serves as the password change from Mi perfil. */}
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
