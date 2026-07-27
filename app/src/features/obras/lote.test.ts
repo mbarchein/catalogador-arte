@@ -85,6 +85,11 @@ describe('resistencia a datos ajenos', () => {
     expect(leerLote(almacenFalso({ 'catalogador.lote': raro })).fijos.artista).toBe('ROTILI')
   })
 
+  it('conserva el fondo de pruebas TEST, que sí existe (RF-202)', () => {
+    const guardado = JSON.stringify({ fijos: { artista: 'TEST', tipoObra: 'Pintura' } })
+    expect(leerLote(almacenFalso({ 'catalogador.lote': guardado })).fijos.artista).toBe('TEST')
+  })
+
   it('descarta tipos equivocados dentro de la fecha', () => {
     const raro = JSON.stringify({
       arrastrados: { fecha: { anio: '1978', aproximada: 'sí', anioFin: [] } },

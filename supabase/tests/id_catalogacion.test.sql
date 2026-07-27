@@ -107,4 +107,33 @@ begin
   raise notice 'OK: la previsualización de la interfaz coincide con lo asignado (%)', v_real;
 end $$;
 
+-- ── El fondo TEST usa su propia serie TS- (RF-202) ──────────
+-- La semilla no trae obras de prueba, así que la serie empieza en TS-0001, y
+-- ensayar en él no debe mover los contadores de los fondos reales.
+do $$
+declare
+  v_test text;
+begin
+  insert into public.obras (artista, titulo) values ('TEST', 'Ficha de ensayo')
+    returning id_catalogacion into v_test;
+  if v_test <> 'TS-0001' then
+    raise exception 'FAIL: la serie de pruebas debía empezar en TS-0001: %', v_test;
+  end if;
+  if public.siguiente_id_catalogacion('ROTILI') !~ '^AR-' then
+    raise exception 'FAIL: la serie AR se contaminó con la de pruebas';
+  end if;
+  raise notice 'OK: el fondo TEST numera aparte (%)', v_test;
+end $$;
+
+-- ── El prefijo TS y el fondo TEST tampoco pueden contradecirse ──
+do $$
+begin
+  insert into public.obras (id_catalogacion, artista, titulo)
+  values ('AR-9998', 'TEST', 'Etiqueta mentirosa');
+  raise exception 'FAIL: se admitió una obra TEST con prefijo AR';
+exception
+  when check_violation then
+    raise notice 'OK: una obra TEST no puede llevar etiqueta AR';
+end $$;
+
 rollback;

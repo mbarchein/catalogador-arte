@@ -42,6 +42,7 @@ import {
 const FONDOS = [
   { valor: 'ROTILI' as FondoArtista, texto: ETIQUETA_ARTISTA.ROTILI },
   { valor: 'RUIZ_CAMPINS' as FondoArtista, texto: ETIQUETA_ARTISTA.RUIZ_CAMPINS },
+  { valor: 'TEST' as FondoArtista, texto: ETIQUETA_ARTISTA.TEST },
 ]
 
 /**

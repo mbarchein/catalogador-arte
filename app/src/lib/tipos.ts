@@ -7,7 +7,10 @@
 // tocar este fichero: es el punto donde el esquema y el frontend pueden
 // desincronizarse sin que nadie avise.
 
-export type FondoArtista = 'ROTILI' | 'RUIZ_CAMPINS'
+export type FondoArtista = 'ROTILI' | 'RUIZ_CAMPINS' | 'TEST'
+
+/** Todos los fondos, para validar valores que llegan de fuera del código. */
+export const FONDOS_ARTISTA: readonly FondoArtista[] = ['ROTILI', 'RUIZ_CAMPINS', 'TEST']
 export type RolUsuario = 'SUPERUSUARIO' | 'CATALOGADOR' | 'LECTOR'
 export type TriEstado = 'SI' | 'NO' | 'SIN_REVISAR'
 export type ValorTituloAtribuido = 'NO_APLICA' | 'NO' | 'SI' | 'SIN_REVISAR'
@@ -87,6 +90,8 @@ export type ObraNueva = Pick<Obra, 'artista'> & Partial<Omit<Obra, 'artista'>>
 export const ETIQUETA_ARTISTA: Record<FondoArtista, string> = {
   ROTILI: 'Alberto Rotili',
   RUIZ_CAMPINS: 'María Ruiz Campins',
+  // Fondo de ensayo (serie TS-): fichas de prueba, nunca obra real.
+  TEST: 'Pruebas',
 }
 
 export const ETIQUETA_TRI_ESTADO: Record<TriEstado, string> = {

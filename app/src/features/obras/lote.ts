@@ -1,5 +1,5 @@
 import { FECHA_VACIA, type FechaEstructurada } from '../../lib/fechaEstructurada'
-import type { FondoArtista } from '../../lib/tipos'
+import { FONDOS_ARTISTA, type FondoArtista } from '../../lib/tipos'
 
 /**
  * Estado de un lote de captura. La distinción entre las dos mitades es la que
@@ -85,7 +85,9 @@ function normalizar(valor: unknown): Lote {
 
   return {
     fijos: {
-      artista: fijos.artista === 'RUIZ_CAMPINS' ? 'RUIZ_CAMPINS' : 'ROTILI',
+      artista: FONDOS_ARTISTA.includes(fijos.artista as FondoArtista)
+        ? (fijos.artista as FondoArtista)
+        : 'ROTILI',
       tipoObra: typeof fijos.tipoObra === 'string' ? fijos.tipoObra : '',
     },
     arrastrados: {
