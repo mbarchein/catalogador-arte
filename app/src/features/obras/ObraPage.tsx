@@ -49,6 +49,29 @@ export function ObraPage() {
   const { obra, cargando, error, recargar } = useObra(id)
   const { puedeEditar } = useAuth()
   const [editando, setEditando] = useState(false)
+  const [generandoPdf, setGenerandoPdf] = useState(false)
+  const [errorPdf, setErrorPdf] = useState('')
+
+  // pdf-lib se carga solo al pedir la ficha: no debe engordar el paquete inicial.
+  async function imprimirFicha(laObra: Obra) {
+    setGenerandoPdf(true)
+    setErrorPdf('')
+    try {
+      const { generarFichaPdf } = await import('../../lib/fichaPdf')
+      const blob = await generarFichaPdf(laObra)
+      const url = URL.createObjectURL(blob)
+      const enlace = document.createElement('a')
+      enlace.href = url
+      enlace.download = `${laObra.id_catalogacion}-ficha.pdf`
+      enlace.click()
+      // Margen holgado: algunos navegadores descargan en diferido.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch {
+      setErrorPdf('No se ha podido generar el PDF. Vuelve a intentarlo.')
+    } finally {
+      setGenerandoPdf(false)
+    }
+  }
 
   // La ficha en consulta se refresca si otro la cambia. En edición NO: pisar el
   // formulario a medio rellenar con datos ajenos destruiría trabajo — el
@@ -199,6 +222,27 @@ export function ObraPage() {
             }
           />
         </dl>
+      </section>
+
+      <section className="tarjeta mb-3">
+        <h2 className="mb-2 font-medium">Etiqueta e impresión</h2>
+        <p className="mb-3 text-sm text-stone-600">
+          Ficha en A5 con los datos principales y un código QR que abre esta misma página — para
+          acompañar a la etiqueta física {obra.id_catalogacion}.
+        </p>
+        {errorPdf && (
+          <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">
+            {errorPdf}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => void imprimirFicha(obra)}
+          disabled={generandoPdf}
+          className="boton-secundario w-full"
+        >
+          {generandoPdf ? 'Generando…' : 'Descargar ficha en PDF (A5)'}
+        </button>
       </section>
 
       {/* Los bloques que el esquema define pero esta entrega no cubre se declaran
