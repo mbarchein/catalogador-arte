@@ -60,7 +60,9 @@ async function rolDelUsuario(cabeceraAuth: string | null): Promise<string | null
 
 // Solo se firman rutas con la forma de un máster de este catálogo. Firmar
 // cualquier clave convertiría la función en un firmador universal del bucket.
-const RUTA_VALIDA = /^(AR|RC)-\d{4}\/[A-Za-z0-9._-]+_master\.[A-Za-z0-9]+$/
+// Los prefijos son los de obras_id_formato: al dar de alta un fondo nuevo hay
+// que añadirlo también aquí, o sus fotos no se subirán (pasó con TS-).
+const RUTA_VALIDA = /^(AR|RC|TS)-\d{4}\/[A-Za-z0-9._-]+_master\.[A-Za-z0-9]+$/
 
 Deno.serve(async (peticion) => {
   if (peticion.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS })

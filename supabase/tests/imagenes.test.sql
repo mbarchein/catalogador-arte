@@ -190,4 +190,21 @@ begin
   raise notice 'OK: el bucket es privado';
 end $$;
 
+-- ── Las fichas del fondo TEST también llevan fotos (RF-202, RF-401) ─────────
+-- Incidencia real (28/07/2026): la migración del fondo TS- actualizó el formato
+-- de obras pero no el de id_imagen, y en producción ninguna foto de una ficha
+-- TS- podía registrarse. Este bloque la reproduce.
+do $$
+declare v_ts text;
+begin
+  insert into public.obras (artista, titulo) values ('TEST', 'Ensayo con fotos');
+  insert into public.imagenes (id_catalogacion, ruta_miniatura, ruta_derivada)
+  select id_catalogacion, 'm/ts', 'd/ts' from public.obras where artista = 'TEST'
+  returning id_imagen into v_ts;
+  if v_ts !~ '^TS-[0-9]{4}_v1$' then
+    raise exception 'FAIL: identificador inesperado para la imagen del fondo TEST: %', v_ts;
+  end if;
+  raise notice 'OK: una ficha TS- admite imágenes (%)', v_ts;
+end $$;
+
 rollback;
