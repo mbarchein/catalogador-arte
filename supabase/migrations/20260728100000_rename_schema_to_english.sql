@@ -11,8 +11,8 @@
 -- (add new names, migrate readers, drop old names).
 --
 -- What this migration does NOT touch — data is data, not code:
---   * enum VALUES already persisted ('ROTILI', 'RUIZ_CAMPINS', 'TEST',
---     'CATALOGADOR', 'SUPERUSUARIO', 'GENERAL', 'SIN_REVISAR', ...),
+--   * enum VALUES: renamed separately in 20260728110000 (except artist_fund,
+--     whose values are surnames, and the AR/RC/TS label prefixes),
 --   * catalog identifiers ('AR-0001'...) — they are physical labels,
 --   * the storage bucket id 'obras' (a row in storage.buckets with objects
 --     inside) and every already-uploaded file path.

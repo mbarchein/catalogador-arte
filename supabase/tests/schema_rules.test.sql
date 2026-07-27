@@ -118,7 +118,7 @@ begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated"}';
   set local role authenticated;
 
-  update public.profiles set role = 'SUPERUSUARIO' where id = auth.uid();
+  update public.profiles set role = 'SUPERUSER' where id = auth.uid();
   raise exception 'FAIL: a user promoted themselves to superuser';
 exception
   when raise_exception or insufficient_privilege then
@@ -134,10 +134,10 @@ reset role;
 do $$
 begin
   update public.profiles
-     set role = 'CATALOGADOR'
+     set role = 'CATALOGER'
    where id = '00000000-0000-0000-0000-0000000000e1';
   if (select role from public.profiles where id = '00000000-0000-0000-0000-0000000000e1')
-     is distinct from 'CATALOGADOR' then
+     is distinct from 'CATALOGER' then
     raise exception 'FAIL: administrative access could not assign the role';
   end if;
   raise notice 'OK: direct administrative access can assign roles';

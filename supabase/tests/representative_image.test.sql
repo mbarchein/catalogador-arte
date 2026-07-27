@@ -14,7 +14,7 @@ insert into public.images
   (catalog_id, thumbnail_path, derivative_path, shot_type, index_image, photo_date)
 values
   ('AR-9700', 'm/a1', 'd/a1', 'GENERAL', false, '2026-07-01'),
-  ('AR-9700', 'm/a2', 'd/a2', 'REVERSO', true, '2020-01-01'),
+  ('AR-9700', 'm/a2', 'd/a2', 'BACK', true, '2020-01-01'),
   ('AR-9700', 'm/a3', 'd/a3', 'GENERAL', false, '2026-07-20');
 
 do $$
@@ -38,7 +38,7 @@ insert into public.images
   (catalog_id, thumbnail_path, derivative_path, shot_type, photo_date)
 values
   ('AR-9701', 'm/b1', 'd/b1', 'GENERAL', '2026-01-01'),
-  ('AR-9701', 'm/b2', 'd/b2', 'DETALLE_FIRMA', '2026-12-01'),
+  ('AR-9701', 'm/b2', 'd/b2', 'SIGNATURE_DETAIL', '2026-12-01'),
   ('AR-9701', 'm/b3', 'd/b3', 'GENERAL', '2026-06-01');
 
 do $$
@@ -63,8 +63,8 @@ end $$;
 insert into public.images
   (catalog_id, thumbnail_path, derivative_path, shot_type, photo_date)
 values
-  ('AR-9702', 'm/c1', 'd/c1', 'REVERSO', '2026-01-01'),
-  ('AR-9702', 'm/c2', 'd/c2', 'DETALLE_DANO', '2026-05-01');
+  ('AR-9702', 'm/c1', 'd/c1', 'BACK', '2026-01-01'),
+  ('AR-9702', 'm/c2', 'd/c2', 'DAMAGE_DETAIL', '2026-05-01');
 
 do $$
 declare v_chosen text;
@@ -145,7 +145,7 @@ reset role;
 -- And it does answer a legitimate reader.
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-00000000b002', 'lector-vista@test.local');
-update public.profiles set role = 'LECTOR' where id = '00000000-0000-0000-0000-00000000b002';
+update public.profiles set role = 'READER' where id = '00000000-0000-0000-0000-00000000b002';
 
 do $$
 declare v_n integer;

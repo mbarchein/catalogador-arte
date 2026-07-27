@@ -1,15 +1,15 @@
 -- Local development seed. Never runs in production.
 -- In production, promoting the superuser is done once by hand:
---   update profiles set role = 'SUPERUSUARIO' where email = 'tu@correo.es';
+--   update profiles set role = 'SUPERUSER' where email = 'tu@correo.es';
 
 -- Promote the local admin (idempotent; the profile is created by the trigger
 -- when the account signs up via make seed-users).
 update public.profiles
-set role = 'SUPERUSUARIO'
+set role = 'SUPERUSER'
 where email = 'admin@local.test';
 
-update public.profiles set role = 'CATALOGADOR' where email = 'catalogador@local.test';
-update public.profiles set role = 'LECTOR' where email = 'lector@local.test';
+update public.profiles set role = 'CATALOGER' where email = 'catalogador@local.test';
+update public.profiles set role = 'READER' where email = 'lector@local.test';
 
 -- A few sample artworks so the list does not start empty and the chronological
 -- ordering can be checked with dates of different shapes.
@@ -28,22 +28,22 @@ insert into public.artworks (
   (
     'AR-0001', 'ROTILI', 'Paisaje de invierno', 'NO', 'Pintura',
     1975, 1978, false, 'Óleo sobre lienzo', 'Lienzo',
-    73, 60, 'SI', 'ángulo inferior derecho',
-    'BUENO', 'edificio a, habitacion amarilla, bloque 3', 'CONSERVADA',
+    73, 60, 'YES', 'ángulo inferior derecho',
+    'GOOD', 'edificio a, habitacion amarilla, bloque 3', 'PRESERVED',
     true, true
   ),
   (
-    'AR-0002', 'ROTILI', '', 'NO_APLICA', 'Dibujo',
+    'AR-0002', 'ROTILI', '', 'NOT_APPLICABLE', 'Dibujo',
     1980, null, true, 'Carboncillo sobre papel', 'Papel',
     42, 29.7, 'NO', '',
-    'REGULAR', 'edificio b, habitacion 4, estanteria 3, balda 2, carpeta 1', 'CONSERVADA',
+    'FAIR', 'edificio b, habitacion 4, estanteria 3, balda 2, carpeta 1', 'PRESERVED',
     false, false
   ),
   (
-    'RC-0001', 'RUIZ_CAMPINS', 'El jarrón azul', 'SI', 'Pintura',
+    'RC-0001', 'RUIZ_CAMPINS', 'El jarrón azul', 'YES', 'Pintura',
     1968, null, false, 'Acrílico sobre tabla', 'Tabla',
-    50, 40, 'SIN_REVISAR', '',
-    'SIN_REVISAR', '', 'SIN_REVISAR',
+    50, 40, 'UNREVIEWED', '',
+    'UNREVIEWED', '', 'UNREVIEWED',
     false, false
   )
 on conflict (catalog_id) do nothing;

@@ -137,8 +137,8 @@ end $$;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'cat-img@test.local'),
   ('00000000-0000-0000-0000-0000000000f2', 'lec-img@test.local');
-update public.profiles set role = 'CATALOGADOR' where id = '00000000-0000-0000-0000-0000000000f1';
-update public.profiles set role = 'LECTOR'      where id = '00000000-0000-0000-0000-0000000000f2';
+update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000f1';
+update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000f2';
 
 do $$
 begin

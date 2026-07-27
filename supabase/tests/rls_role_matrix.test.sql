@@ -11,8 +11,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000c1', 'cat@test.local'),
   ('00000000-0000-0000-0000-0000000000d1', 'lec@test.local');
 
-update public.profiles set role = 'CATALOGADOR' where id = '00000000-0000-0000-0000-0000000000c1';
-update public.profiles set role = 'LECTOR'      where id = '00000000-0000-0000-0000-0000000000d1';
+update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000c1';
+update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000d1';
 
 insert into public.artworks (catalog_id, artist, title)
 values ('AR-9001', 'ROTILI', 'Obra activa de prueba');

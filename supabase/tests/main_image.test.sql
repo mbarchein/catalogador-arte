@@ -13,14 +13,14 @@ values ('AR-9600', 'ROTILI', 'Obra con varias tomas');
 insert into public.images (catalog_id, thumbnail_path, derivative_path, shot_type, index_image)
 values
   ('AR-9600', 'm/1', 'd/1', 'GENERAL', true),
-  ('AR-9600', 'm/2', 'd/2', 'REVERSO', false),
-  ('AR-9600', 'm/3', 'd/3', 'DETALLE_FIRMA', false);
+  ('AR-9600', 'm/2', 'd/2', 'BACK', false),
+  ('AR-9600', 'm/3', 'd/3', 'SIGNATURE_DETAIL', false);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000a001', 'cat-ppal@test.local'),
   ('00000000-0000-0000-0000-00000000a002', 'lec-ppal@test.local');
-update public.profiles set role = 'CATALOGADOR' where id = '00000000-0000-0000-0000-00000000a001';
-update public.profiles set role = 'LECTOR'      where id = '00000000-0000-0000-0000-00000000a002';
+update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-00000000a001';
+update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-00000000a002';
 
 -- ── The change leaves exactly one marked ─────────────────────
 do $$
