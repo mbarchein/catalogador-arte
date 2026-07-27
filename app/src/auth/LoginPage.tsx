@@ -7,6 +7,8 @@ export function LoginPage() {
   const [contrasena, setContrasena] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
+  const [recuperando, setRecuperando] = useState(false)
+  const [aviso, setAviso] = useState<string | null>(null)
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault()
@@ -37,16 +39,44 @@ export function LoginPage() {
     setEnviando(false)
   }
 
+  async function enviarRecuperacion(e: React.FormEvent) {
+    e.preventDefault()
+    setEnviando(true)
+    setError(null)
+    setAviso(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setEnviando(false)
+    if (error) {
+      setError('No se ha podido enviar el correo. Espera un momento y vuelve a intentarlo.')
+      return
+    }
+    // Neutro a propósito: confirmar o negar el envío diría qué cuentas existen.
+    setAviso(
+      'Si la cuenta existe, en unos minutos llegará un correo con el enlace para elegir una contraseña nueva. Mira también la carpeta de spam.',
+    )
+  }
+
   // Arriba, no centrado verticalmente: en el móvil, al enfocar el correo se
   // abre el teclado y un formulario centrado queda medio tapado o saltando.
   // Anclado arriba, los campos siguen a la vista mientras se teclea.
   return (
     <div className="flex min-h-screen items-start justify-center p-4 pt-10">
-      <form onSubmit={entrar} className="tarjeta w-full max-w-sm space-y-4">
+      <form
+        onSubmit={recuperando ? enviarRecuperacion : entrar}
+        className="tarjeta w-full max-w-sm space-y-4"
+      >
         <div>
           <h1 className="text-xl font-semibold">Catalogador</h1>
           <p className="text-sm text-stone-600">Rotili · Ruiz Campins</p>
         </div>
+
+        {recuperando && (
+          <p className="text-sm text-stone-600">
+            Escribe tu correo y te enviaremos un enlace para elegir una contraseña nueva.
+          </p>
+        )}
 
         <div>
           <label className="etiqueta" htmlFor="email">
@@ -65,15 +95,17 @@ export function LoginPage() {
           />
         </div>
 
-        <div>
-          <label className="etiqueta" htmlFor="contrasena">
-            Contraseña
-          </label>
-          {/* Con mostrar/ocultar: en el móvil se teclea a ciegas y el mensaje de
-              error es genérico a propósito, así que poder ver lo escrito es la
-              salida barata cuando «no entra». */}
-          <CampoContrasena id="contrasena" valor={contrasena} alCambiar={setContrasena} />
-        </div>
+        {!recuperando && (
+          <div>
+            <label className="etiqueta" htmlFor="contrasena">
+              Contraseña
+            </label>
+            {/* Con mostrar/ocultar: en el móvil se teclea a ciegas y el mensaje de
+                error es genérico a propósito, así que poder ver lo escrito es la
+                salida barata cuando «no entra». */}
+            <CampoContrasena id="contrasena" valor={contrasena} alCambiar={setContrasena} />
+          </div>
+        )}
 
         {error && (
           <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
@@ -81,8 +113,32 @@ export function LoginPage() {
           </p>
         )}
 
+        {aviso && (
+          <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-900">
+            {aviso}
+          </p>
+        )}
+
         <button className="boton-primario w-full" disabled={enviando}>
-          {enviando ? 'Entrando…' : 'Entrar'}
+          {enviando
+            ? recuperando
+              ? 'Enviando…'
+              : 'Entrando…'
+            : recuperando
+              ? 'Enviarme el enlace'
+              : 'Entrar'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setRecuperando(!recuperando)
+            setError(null)
+            setAviso(null)
+          }}
+          className="min-h-toque w-full text-center text-sm text-stone-600 underline hover:text-stone-800"
+        >
+          {recuperando ? 'Volver a la pantalla de entrada' : '¿Has olvidado la contraseña?'}
         </button>
 
         {/* RF-112: no hay registro abierto. Las cuentas las crea el superusuario,

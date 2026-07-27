@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import { LoginPage } from './auth/LoginPage'
+import { RestablecerPage } from './auth/RestablecerPage'
 import { CapturaPage } from './features/obras/CapturaPage'
 import { ObraPage } from './features/obras/ObraPage'
 import { ObrasPage } from './features/obras/ObrasPage'
@@ -25,6 +26,9 @@ export function App() {
       <Route path="/captura" element={<CapturaPage />} />
       <Route path="/obra/:id" element={<ObraPage />} />
       <Route path="/perfil" element={<PerfilPage />} />
+      {/* El enlace del correo de recuperación abre sesión temporal y aterriza
+          aquí; también sirve como cambio de contraseña desde Mi perfil. */}
+      <Route path="/reset-password" element={<RestablecerPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

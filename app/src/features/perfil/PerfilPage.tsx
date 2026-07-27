@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { CerrarSesion, Layout } from '../../components/Layout'
 import {
@@ -72,6 +73,12 @@ export function PerfilPage() {
           <Dato etiqueta="Correo" valor={perfil?.email ?? sesion?.user.email ?? ''} />
           <Dato etiqueta="Rol" valor={perfil ? ETIQUETA_ROL[perfil.rol] : 'Sin perfil'} />
         </dl>
+        <Link
+          to="/reset-password"
+          className="mt-2 inline-block min-h-toque text-sm text-stone-600 underline hover:text-stone-800"
+        >
+          Cambiar la contraseña
+        </Link>
       </section>
 
       <section className="tarjeta mb-3">
