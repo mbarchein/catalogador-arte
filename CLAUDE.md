@@ -3,14 +3,21 @@
 ## Idioma
 
 - **Código fuente: inglés.** Identificadores (variables, funciones, tipos, componentes), nombres de
-  ficheros fuente, comentarios y el esquema SQL completo — tablas, columnas, funciones, *triggers*,
-  vistas, políticas RLS, índices y *constraints* (`catalog_id`, `attributed_title`, `artworks`,
-  `can_edit()`...). Los tipos de TypeScript se alinean con ese esquema, que es de donde se generarán.
-- **Los datos no se traducen.** Los valores ya persistidos son datos, no código: los valores de enum
-  (`ROTILI`, `CATALOGADOR`, `SIN_REVISAR`...), los identificadores de catalogación (`AR-0001`), el
-  id del bucket de storage (`obras`), las rutas de ficheros ya subidos, la base IndexedDB
-  `catalogador` y su almacén `cola-fotos`, y las rutas de URL ya impresas en QR (`/obra/:id`).
-  Cuando el código los nombra, se comenta que son legado.
+  ficheros fuente, comentarios, rutas de la aplicación (`/artwork/:id`, `/capture`), valores de enum
+  (`CATALOGER`, `UNREVIEWED`, `SIGNATURE_DETAIL`...) y el esquema SQL completo — tablas, columnas,
+  funciones, *triggers*, vistas, políticas RLS, índices y *constraints* (`catalog_id`,
+  `attributed_title`, `artworks`, `can_edit()`...). Los tipos de TypeScript se alinean con ese
+  esquema, que es de donde se generarán.
+- **Los datos no se traducen, y lo que ya está en el mundo se conserva como legado.** No se tocan:
+  los valores de `artist_fund` (`ROTILI` y `RUIZ_CAMPINS` son apellidos; `TEST` ya es inglés), los
+  identificadores de catalogación (`AR-0001`) y sus prefijos, el id del bucket de storage (`obras`,
+  fila en `storage.buckets` con objetos dentro), las rutas de ficheros ya subidos y la base IndexedDB
+  `catalogador` con su almacén `cola-fotos` (renombrarlos exigiría migrar blobs con riesgo de perder
+  la cola de fotos pendiente; ver `photoQueue.ts`). La ruta `/obra/:id` está impresa en QR físicos y
+  se mantiene para siempre como redirección de legado en `App.tsx`. Renombrar algo persistido exige
+  compatibilidad: los valores de enum se renombraron con `ALTER TYPE ... RENAME VALUE` (la base
+  actualiza las filas sola) y la clave de `localStorage` con una migración *one-shot* en `batch.ts`.
+  Cuando el código nombra un valor de legado, se comenta que lo es.
 - **Textos de interfaz: español de España** (`es-ES`, `Europe/Madrid`). Incluye los mensajes de
   error que ve la usuaria, también los `raise exception` de la base y los de las funciones Edge que
   la aplicación muestra tal cual.
