@@ -2,12 +2,19 @@
 
 ## Idioma
 
-- **Documentación, comentarios y mensajes de commit:** español.
-- **Identificadores de código:** español, siguiendo los nombres del esquema de campos
-  (`id_catalogacion`, `titulo_atribuido`, `estado_conservacion`...). El esquema es el vocabulario
-  del dominio y no se traduce: una tabla se llama `obras`, no `works`. Aplica igual al SQL de las
-  migraciones y a los tipos de TypeScript, que se generan desde ese mismo SQL.
-- **Textos de interfaz:** español de España (`LANGUAGE_CODE = 'es-es'`, `TIME_ZONE = 'Europe/Madrid'`).
+- **Código fuente: inglés.** Identificadores (variables, funciones, tipos, componentes), nombres de
+  ficheros fuente, comentarios y el esquema SQL completo — tablas, columnas, funciones, *triggers*,
+  vistas, políticas RLS, índices y *constraints* (`catalog_id`, `attributed_title`, `artworks`,
+  `can_edit()`...). Los tipos de TypeScript se alinean con ese esquema, que es de donde se generarán.
+- **Los datos no se traducen.** Los valores ya persistidos son datos, no código: los valores de enum
+  (`ROTILI`, `CATALOGADOR`, `SIN_REVISAR`...), los identificadores de catalogación (`AR-0001`), el
+  id del bucket de storage (`obras`), las rutas de ficheros ya subidos, la base IndexedDB
+  `catalogador` y su almacén `cola-fotos`, y las rutas de URL ya impresas en QR (`/obra/:id`).
+  Cuando el código los nombra, se comenta que son legado.
+- **Textos de interfaz: español de España** (`es-ES`, `Europe/Madrid`). Incluye los mensajes de
+  error que ve la usuaria, también los `raise exception` de la base y los de las funciones Edge que
+  la aplicación muestra tal cual.
+- **Documentación (`docs/`) y mensajes de commit: español.**
 
 ## Commits
 
@@ -30,7 +37,7 @@
   sin cobertura. Un commit `feat:` va acompañado de sus tests, en el mismo commit o en un `test:`
   inmediatamente posterior.
 - Los tests **citan el requisito que verifican** por su identificador (`RF-402`, `RNF-111`), en el
-  nombre o en la descripción. El plan de pruebas
+  nombre o en la descripción. Esos identificadores no se traducen. El plan de pruebas
   ([`docs/plan-de-pruebas.md`](docs/plan-de-pruebas.md)) mantiene la correspondencia entre requisitos
   y tests, y sirve para detectar requisitos sin verificar.
 - **Las políticas RLS son la primera prioridad, por delante de todo lo demás.** No hay backend: son el
@@ -49,16 +56,23 @@ docs/               Documentación del proyecto (ver docs/README.md)
   decisiones/       Decisiones de arquitectura (ADR)
   disenos/          Maquetas de interfaz
   revision/         Incidencias detectadas sobre los documentos fuente
+app/                La PWA (React + TypeScript + Vite)
+supabase/           Esquema, triggers y políticas RLS en SQL versionado
+  migrations/       Migraciones (las aplicadas NO se reescriben: cambio nuevo, migración nueva)
+  functions/        Funciones Edge (Deno)
+  tests/            Tests de SQL: RLS y reglas del esquema (make db-test)
+docker/             Stack local completo sin la CLI de Supabase
 infra/              Plataforma como código con Terraform (ver infra/README.md)
   bootstrap/        Crea el bucket del estado. Se ejecuta una sola vez
-.github/workflows/  Verificación automática
+.github/workflows/  Verificación automática y despliegue
 ```
-
-Pendientes de crear: `supabase/migrations/` (esquema, *triggers* y políticas RLS en SQL versionado) y
-`src/` (la PWA).
 
 **Frontera que no se cruza:** Terraform gestiona la plataforma; el esquema y las políticas RLS van en
 SQL versionado que aplica la CLI de Supabase. El motivo está en [`infra/README.md`](infra/README.md).
+
+**Las migraciones aplicadas no se reescriben.** Renombrar o borrar una columna en uso exige
+despliegue en dos fases: el frontend viejo corre unos segundos contra el esquema nuevo (ver el
+comentario de `.github/workflows/desplegar.yml`).
 
 ## Criterios de diseño heredados de los documentos fuente
 
@@ -77,6 +91,6 @@ Reglas que ya están decididas y no conviene reabrir sin motivo:
 - **El móvil es el dispositivo principal**, no un caso adaptado: la interfaz se diseña partiendo de una
   mano y una pantalla pequeña, con la obra delante y en un almacén.
 - **Las claves primarias no se editan** una vez creada la ficha: son el eje de las tablas relacionadas
-  y, en el caso de `id_catalogacion`, la etiqueta física pegada en la obra real.
+  y, en el caso de `catalog_id`, la etiqueta física pegada en la obra real.
 - **«Sin revisar» no es «no».** Distinguir siempre el dato pendiente de investigar del dato investigado
   sin resultado (`N/D`) y del dato dudoso (`[?]`).
