@@ -69,33 +69,63 @@ describe('batch persistence', () => {
   })
 })
 
+describe('one-shot migration from the legacy key', () => {
+  it('reads a batch left under catalogador.lote, moves it and deletes the old key', () => {
+    const batch: Batch = {
+      fixed: { artist: 'TEST', artworkType: 'Pintura' },
+      carried: {
+        date: { year: 1975, approximate: false, endYear: null, unconfirmed: false },
+        technique: 'Óleo',
+        location: 'edificio a',
+      },
+    }
+    const s = fakeStorage({ 'catalogador.lote': JSON.stringify(batch) })
+
+    // The open batch survives the update...
+    expect(readBatch(s)).toEqual(batch)
+    // ...now lives under the new key...
+    expect(JSON.parse(s.getItem('catalogador.batch') ?? '')).toEqual(batch)
+    // ...and the legacy key is gone.
+    expect(s.getItem('catalogador.lote')).toBeNull()
+  })
+
+  it('prefers the new key when both exist', () => {
+    const s = fakeStorage({
+      'catalogador.batch': JSON.stringify({ fixed: { artist: 'TEST', artworkType: 'Dibujo' } }),
+      'catalogador.lote': JSON.stringify({ fixed: { artist: 'ROTILI', artworkType: 'Pintura' } }),
+    })
+    expect(readBatch(s).fixed.artworkType).toBe('Dibujo')
+  })
+})
+
 describe('resilience to foreign data', () => {
   it('does not break with a corrupt value', () => {
-    expect(readBatch(fakeStorage({ 'catalogador.lote': 'no es json{' }))).toEqual(INITIAL_BATCH)
+    expect(readBatch(fakeStorage({ 'catalogador.batch': 'no es json{' }))).toEqual(INITIAL_BATCH)
   })
 
   it('does not break with a shape from another version', () => {
-    // A batch stored by a previous version of the application (including the
-    // Spanish-keyed shape) cannot prevent cataloging today.
+    // A batch stored by a previous version of the application (the
+    // Spanish-keyed shape, under the legacy key) cannot prevent cataloging
+    // today.
     const old = JSON.stringify({ fijos: { artista: 'ROTILI', tipoObra: 'Pintura' } })
     expect(readBatch(fakeStorage({ 'catalogador.lote': old }))).toEqual(INITIAL_BATCH)
   })
 
   it('discards a fund that does not exist instead of trusting it', () => {
     const odd = JSON.stringify({ fixed: { artist: 'PICASSO', artworkType: 'Pintura' } })
-    expect(readBatch(fakeStorage({ 'catalogador.lote': odd })).fixed.artist).toBe('ROTILI')
+    expect(readBatch(fakeStorage({ 'catalogador.batch': odd })).fixed.artist).toBe('ROTILI')
   })
 
   it('keeps the TEST rehearsal fund, which does exist (RF-202)', () => {
     const stored = JSON.stringify({ fixed: { artist: 'TEST', artworkType: 'Pintura' } })
-    expect(readBatch(fakeStorage({ 'catalogador.lote': stored })).fixed.artist).toBe('TEST')
+    expect(readBatch(fakeStorage({ 'catalogador.batch': stored })).fixed.artist).toBe('TEST')
   })
 
   it('discards wrong types inside the date', () => {
     const odd = JSON.stringify({
       carried: { date: { year: '1978', approximate: 'sí', endYear: [] } },
     })
-    expect(readBatch(fakeStorage({ 'catalogador.lote': odd })).carried.date).toEqual({
+    expect(readBatch(fakeStorage({ 'catalogador.batch': odd })).carried.date).toEqual({
       year: null,
       approximate: false,
       endYear: null,

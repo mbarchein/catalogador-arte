@@ -35,10 +35,13 @@ export const INITIAL_BATCH: Batch = {
   carried: { date: EMPTY_DATE, technique: '', location: '' },
 }
 
-// Legacy storage key: batches saved by previous versions live under it. The
-// value shape changed to English keys; an old value simply normalizes to the
-// initial batch, which is the documented behavior for foreign shapes.
-const KEY = 'catalogador.lote'
+// 'catalogador' is the product name and acts as the storage namespace.
+const KEY = 'catalogador.batch'
+// One-shot migration: batches saved by previous versions live under this key.
+// On first read it is moved to KEY and removed; a pre-rename value shape
+// simply normalizes to the initial batch, the documented behavior for foreign
+// shapes.
+const LEGACY_KEY = 'catalogador.lote'
 
 /**
  * The batch survives reloads and the phone discarding the tab. In a storage
@@ -52,8 +55,20 @@ export function readBatch(storage: Storage | undefined = getStorage()): Batch {
   if (!storage) return INITIAL_BATCH
   try {
     const raw = storage.getItem(KEY)
-    if (!raw) return INITIAL_BATCH
-    return normalize(JSON.parse(raw))
+    if (raw) return normalize(JSON.parse(raw))
+
+    // One-shot migration from the legacy key: read, rewrite under the new
+    // key, delete the old one. Losing the open batch on an app update would
+    // be exactly the annoyance this persistence exists to prevent.
+    const legacy = storage.getItem(LEGACY_KEY)
+    if (legacy) {
+      const batch = normalize(JSON.parse(legacy))
+      storage.setItem(KEY, JSON.stringify(batch))
+      storage.removeItem(LEGACY_KEY)
+      return batch
+    }
+
+    return INITIAL_BATCH
   } catch {
     // A corrupt value, or one from a previous version, cannot prevent
     // cataloging.
@@ -72,6 +87,7 @@ export function saveBatch(batch: Batch, storage: Storage | undefined = getStorag
 export function forgetBatch(storage: Storage | undefined = getStorage()): void {
   try {
     storage?.removeItem(KEY)
+    storage?.removeItem(LEGACY_KEY)
   } catch {
     /* nothing to do */
   }
