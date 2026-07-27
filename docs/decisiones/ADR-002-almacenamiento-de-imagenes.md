@@ -142,7 +142,7 @@ Consecuencias:
 2. **B2 exige una pieza nueva: una función Edge de Supabase que firme las subidas y descargas.**
    Las credenciales de B2 no pueden viajar en el cliente (mismo principio que RF-111), y sin
    backend propio, la función Edge es el único lugar donde pueden vivir. **Implementada**
-   (`supabase/functions/firmar-fichero`): firma S3 genérico —cambiar de proveedor es cambiar
+   (`supabase/functions/sign-file`): firma S3 genérico —cambiar de proveedor es cambiar
    endpoint y credenciales, no código—, comprueba el rol con el token del usuario (sin
    `service_role`), y la clave de B2 que crea Terraform **no tiene capacidad de borrado**: ni
    comprometiendo la función entera se puede destruir un máster. En local, MinIO hace de B2 con la

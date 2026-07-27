@@ -23,7 +23,7 @@ dominio).
       │
       ├─ /auth /rest /realtime /storage ──► SUPABASE  (Postgres+RLS, Auth,
       │                                     derivadas y miniaturas, WebSockets)
-      ├─ /functions/firmar-fichero ───────► función Edge (firma S3; único lugar,
+      ├─ /functions/sign-file ────────────► función Edge (firma S3; único lugar,
       │                                     junto al estado de TF, con las
       │                                     credenciales del almacén)
       └─ PUT/GET con URL firmada ─────────► BACKBLAZE B2  (másters 2-8 MB+,

@@ -2,7 +2,7 @@
 #
 # Los másters (2-8 MB mínimo por toma) no caben en el gratuito de Supabase, y
 # Cloudflare quedó descartado para tráfico de usuarios (ADR-005). El navegador
-# sube y descarga con URL firmadas que emite la función Edge `firmar-fichero`:
+# sube y descarga con URL firmadas que emite la función Edge `sign-file`:
 # las credenciales solo viven allí y aquí, nunca en el cliente.
 
 resource "random_id" "sufijo_b2" {
