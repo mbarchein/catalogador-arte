@@ -2,6 +2,9 @@ import { useRef, useState } from 'react'
 import { prepareShot, validateFile, type PreparedShot } from '../../lib/images'
 import { PlusIcon } from '../../components/ui'
 
+/** Which entry path produced the photos: the camera or the file selector. */
+export type PhotoSource = 'camera' | 'files'
+
 /**
  * The three photo entry paths, without deciding what happens to them.
  *
@@ -17,7 +20,7 @@ export function PhotoInput({
   label = 'Fotografías',
   compact = false,
 }: {
-  onPrepare: (prepared: PreparedShot[]) => void
+  onPrepare: (prepared: PreparedShot[], source: PhotoSource) => void
   disabled: boolean
   label?: string
   compact?: boolean
@@ -28,7 +31,7 @@ export function PhotoInput({
   const [errors, setErrors] = useState<string[]>([])
   const [preparing, setPreparing] = useState(0)
 
-  async function process(list: FileList | File[] | null) {
+  async function process(list: FileList | File[] | null, source: PhotoSource) {
     if (!list || disabled) return
     const files = Array.from(list)
     const newErrors: string[] = []
@@ -54,7 +57,7 @@ export function PhotoInput({
 
     setErrors(newErrors)
     setPreparing(0)
-    if (prepared.length > 0) onPrepare(prepared)
+    if (prepared.length > 0) onPrepare(prepared, source)
   }
 
   return (
@@ -73,7 +76,7 @@ export function PhotoInput({
         onDrop={(e) => {
           e.preventDefault()
           setDragging(false)
-          void process(e.dataTransfer.files)
+          void process(e.dataTransfer.files, 'files')
         }}
         className={`rounded-lg border-2 border-dashed p-3 transition ${
           dragging ? 'border-stone-800 bg-stone-100' : 'border-stone-300'
@@ -113,7 +116,7 @@ export function PhotoInput({
           capture="environment"
           className="hidden"
           onChange={(e) => {
-            void process(e.target.files)
+            void process(e.target.files, 'camera')
             e.target.value = ''
           }}
         />
@@ -124,7 +127,7 @@ export function PhotoInput({
           multiple
           className="hidden"
           onChange={(e) => {
-            void process(e.target.files)
+            void process(e.target.files, 'files')
             e.target.value = ''
           }}
         />

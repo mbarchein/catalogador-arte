@@ -2,7 +2,23 @@ import { useState } from 'react'
 import type { PreparedShot } from '../../lib/images'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 import { Chips, NoIcon, PlusIcon, YesIcon } from '../../components/ui'
-import { PhotoInput } from './PhotoInput'
+import { PhotoInput, type PhotoSource } from './PhotoInput'
+
+/**
+ * The "+" tile reopens whatever entry path the last photos came from: while
+ * photographing an artwork with the phone, landing on the file selector after
+ * every shot breaks the rhythm. Persisted because opening the camera is
+ * exactly the moment the phone may discard the tab and reload the page.
+ */
+const SOURCE_KEY = 'catalogador.photo-source'
+
+function rememberedSource(): PhotoSource {
+  try {
+    return localStorage.getItem(SOURCE_KEY) === 'camera' ? 'camera' : 'files'
+  } catch {
+    return 'files'
+  }
+}
 
 export interface QueuedShot {
   /** Local identifier, only for React. The catalog one is assigned by the database. */
@@ -47,8 +63,15 @@ export function PhotoPicker({
   withIndex?: boolean
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null)
+  const [lastSource, setLastSource] = useState<PhotoSource>(rememberedSource)
 
-  function add(prepared: PreparedShot[]) {
+  function add(prepared: PreparedShot[], source: PhotoSource) {
+    setLastSource(source)
+    try {
+      localStorage.setItem(SOURCE_KEY, source)
+    } catch {
+      /* without storage, the in-memory value still covers this session */
+    }
     const total: QueuedShot[] = [
       ...shots,
       ...prepared.map((p) => ({
@@ -141,17 +164,22 @@ export function PhotoPicker({
               </button>
             </li>
           ))}
-          {/* "+" square at the end of the strip: repeats the file-selection
-              entry next to the thumbnails, so one is not forced back to the
-              top of the form once several photos exist. */}
+          {/* "+" square at the end of the strip: repeats the LAST entry path
+              next to the thumbnails — the camera after shooting, the file
+              selector after picking — so one is not forced back to the top of
+              the form once several photos exist. */}
           <li>
             <button
               type="button"
-              aria-label="Añadir más fotos"
+              aria-label={lastSource === 'camera' ? 'Hacer otra foto' : 'Añadir más fotos'}
               disabled={disabled}
               onClick={() =>
                 document
-                  .querySelector<HTMLInputElement>("#photo-zone input[type='file'][multiple]")
+                  .querySelector<HTMLInputElement>(
+                    lastSource === 'camera'
+                      ? "#photo-zone input[type='file'][capture]"
+                      : "#photo-zone input[type='file'][multiple]",
+                  )
                   ?.click()
               }
               className="flex aspect-square w-full items-center justify-center rounded-lg border-2 border-dashed border-stone-300 text-stone-400"
