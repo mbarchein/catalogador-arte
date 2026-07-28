@@ -325,6 +325,14 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
                       <YesIcon className="h-3 w-3" />
                     </span>
                   )}
+                  {/* Same badge as the staging strip: the non-general shots
+                      (back, signature detail…) are recognizable without
+                      opening each one. */}
+                  {r.shot_type !== 'GENERAL' && (
+                    <span className="absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white">
+                      {SHOT_TYPE_LABEL[r.shot_type]}
+                    </span>
+                  )}
                 </button>
               </li>
             )
