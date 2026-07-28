@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { BottomSheet, RadioList } from '../../components/ui'
+import { BottomSheet, PlusIcon, RadioList } from '../../components/ui'
 import { displayDate } from '../../lib/dates'
 import { existenceNotice, displayMeasurements, displayTitle } from '../../lib/title'
 import { ARTIST_LABEL, ARTIST_FUNDS } from '../../lib/types'
@@ -137,8 +137,9 @@ export function ArtworksPage() {
       // artworks, "capture the next one" must not require scrolling back up.
       action={
         canEdit ? (
-          <Link to="/capture" className="btn-primary min-h-[2.5rem] px-4 text-sm">
-            + Nueva
+          <Link to="/capture" className="btn-primary min-h-[2.5rem] px-3 text-sm">
+            <PlusIcon className="h-4 w-4" />
+            Nueva
           </Link>
         ) : undefined
       }
