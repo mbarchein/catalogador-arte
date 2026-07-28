@@ -344,6 +344,17 @@ function EditForm({
     return Number.isFinite(n) ? n : null
   }
 
+  // Measures are edited as text and parsed on save. Parsing on every
+  // keystroke made decimals untypeable — the trailing comma of "29," was
+  // normalized away before the next digit arrived. Shown and typed the
+  // Spanish way, with a comma.
+  const toMeasureText = (v: number | null) => (v == null ? '' : String(v).replace('.', ','))
+  const [measures, setMeasures] = useState({
+    height: toMeasureText(artwork.height_cm),
+    width: toMeasureText(artwork.width_cm),
+    depth: toMeasureText(artwork.depth_cm),
+  })
+
   async function save(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
@@ -366,9 +377,9 @@ function EditForm({
         date_note: data.date_note.trim(),
         technique: data.technique.trim(),
         support: data.support.trim(),
-        height_cm: data.height_cm,
-        width_cm: data.width_cm,
-        depth_cm: data.depth_cm,
+        height_cm: toNumber(measures.height),
+        width_cm: toNumber(measures.width),
+        depth_cm: toNumber(measures.depth),
         signed: data.signed,
         signature_description: data.signature_description.trim(),
         dated_on_artwork: data.dated_on_artwork,
@@ -470,42 +481,34 @@ function EditForm({
       <FieldGroup title="Con la obra delante" hint="medidas, materia y firma">
 
         <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className="label" htmlFor="e-height">
-              Alto
-            </label>
-            <input
-              id="e-height"
-              className="field"
-              inputMode="decimal"
-              value={data.height_cm ?? ''}
-              onChange={(e) => set('height_cm', toNumber(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="e-width">
-              Ancho
-            </label>
-            <input
-              id="e-width"
-              className="field"
-              inputMode="decimal"
-              value={data.width_cm ?? ''}
-              onChange={(e) => set('width_cm', toNumber(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="e-depth">
-              Prof.
-            </label>
-            <input
-              id="e-depth"
-              className="field"
-              inputMode="decimal"
-              value={data.depth_cm ?? ''}
-              onChange={(e) => set('depth_cm', toNumber(e.target.value))}
-            />
-          </div>
+          {(
+            [
+              ['e-height', 'Alto', 'height'],
+              ['e-width', 'Ancho', 'width'],
+              ['e-depth', 'Prof.', 'depth'],
+            ] as const
+          ).map(([id, label, key]) => (
+            <div key={id}>
+              <label className="label" htmlFor={id}>
+                {label}
+              </label>
+              <div className="relative">
+                <input
+                  id={id}
+                  className="field pr-9"
+                  inputMode="decimal"
+                  value={measures[key]}
+                  onChange={(e) => setMeasures((m) => ({ ...m, [key]: e.target.value }))}
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-sm text-stone-400"
+                >
+                  cm
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div>

@@ -62,14 +62,18 @@ export function existenceNotice(artwork: Pick<Artwork, 'existence_status'>): str
   }
 }
 
-/** Readable dimensions: "73 × 60 cm", with depth only when it applies. */
+/**
+ * Readable dimensions: "73 × 60 cm", with depth only when it applies.
+ * Decimals with a comma: the catalog is written in Spanish.
+ */
 export function displayMeasurements(
   artwork: Pick<Artwork, 'height_cm' | 'width_cm' | 'depth_cm'>,
 ): string {
   const { height_cm, width_cm, depth_cm } = artwork
   if (height_cm == null && width_cm == null) return 'Sin medir'
 
-  const num = (v: number | null) => (v == null ? '?' : String(v).replace(/\.00?$/, ''))
+  const num = (v: number | null) =>
+    v == null ? '?' : String(v).replace(/\.00?$/, '').replace('.', ',')
   const base = `${num(height_cm)} × ${num(width_cm)}`
   return depth_cm == null ? `${base} cm` : `${base} × ${num(depth_cm)} cm`
 }

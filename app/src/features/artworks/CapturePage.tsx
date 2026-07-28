@@ -435,13 +435,21 @@ export function CapturePage() {
                   <label className="mb-1 block text-xs text-stone-500" htmlFor={id}>
                     {label}
                   </label>
-                  <input
-                    id={id}
-                    className="field h-14 text-center text-xl tabular-nums"
-                    inputMode="decimal"
-                    value={value}
-                    onChange={(e) => set(e.target.value)}
-                  />
+                  <div className="relative">
+                    <input
+                      id={id}
+                      className="field h-14 pr-8 text-center text-xl tabular-nums"
+                      inputMode="decimal"
+                      value={value}
+                      onChange={(e) => set(e.target.value)}
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-sm text-stone-400"
+                    >
+                      cm
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

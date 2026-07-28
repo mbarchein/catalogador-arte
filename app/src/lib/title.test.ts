@@ -74,7 +74,7 @@ describe('displayMeasurements', () => {
     expect(displayMeasurements({ height_cm: null, width_cm: null, depth_cm: null })).toBe('Sin medir')
   })
 
-  it('does not drag empty decimals', () => {
-    expect(displayMeasurements({ height_cm: 29.7, width_cm: 21, depth_cm: null })).toBe('29.7 × 21 cm')
+  it('does not drag empty decimals, and writes them the Spanish way', () => {
+    expect(displayMeasurements({ height_cm: 29.7, width_cm: 21, depth_cm: null })).toBe('29,7 × 21 cm')
   })
 })
