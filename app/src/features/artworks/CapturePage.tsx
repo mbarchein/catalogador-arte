@@ -9,17 +9,13 @@ import {
   composeDate,
   type StructuredDate,
 } from '../../lib/structuredDate'
-import {
-  ARTIST_LABEL,
-  SUGGESTED_ARTWORK_TYPES,
-  type ArtistFund,
-  type TriState,
-} from '../../lib/types'
+import { ARTIST_LABEL, type ArtistFund, type TriState } from '../../lib/types'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import {
   ActionBar,
   Chips,
+  ComboBox,
   FieldGroup,
   LockIcon,
   ToggleChip,
@@ -30,6 +26,7 @@ import { uploadShot } from '../../lib/images'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { saveQueue, readQueue, rehydrate, clearQueue } from './photoQueue'
 import { previewId } from './useArtworks'
+import { useArtworkTypes } from './useArtworkTypes'
 import {
   INITIAL_BATCH,
   saveBatch,
@@ -60,6 +57,10 @@ const FUNDS = [
  */
 export function CapturePage() {
   const { canEdit } = useAuth()
+
+  // Controlled vocabulary for the batch's fixed type (RF-213). Loaded here
+  // and not inside the opening screen so it is ready before the batch opens.
+  const { types: artworkTypes, addType } = useArtworkTypes()
 
   const [batch, setBatch] = useState<Batch>(() => readBatch())
   const [open, setOpen] = useState(() => batchConfigured(readBatch()))
@@ -153,7 +154,6 @@ export function CapturePage() {
 
   // ── Opening the batch ─────────────────────────────────────
   if (!open) {
-    const isSuggested = SUGGESTED_ARTWORK_TYPES.includes(batch.fixed.artworkType)
     return (
       <Layout title="Abrir lote" back="/">
         <div className="space-y-3">
@@ -171,25 +171,20 @@ export function CapturePage() {
               onChange={(v) => setBatch((b) => ({ ...b, fixed: { ...b.fixed, artist: v } }))}
             />
 
-            <div>
-              <Chips
-                id="type"
-                label="Tipo de obra"
-                columns={3}
-                options={SUGGESTED_ARTWORK_TYPES.map((t) => ({ value: t, text: t }))}
-                value={isSuggested ? batch.fixed.artworkType : null}
-                onChange={(v) => setBatch((b) => ({ ...b, fixed: { ...b.fixed, artworkType: v } }))}
-              />
-              {/* Open list (RF-213): the chips suggest, they do not close. */}
-              <input
-                className="field mt-2"
-                placeholder="U otro tipo, escríbelo"
-                value={isSuggested ? '' : batch.fixed.artworkType}
-                onChange={(e) =>
-                  setBatch((b) => ({ ...b, fixed: { ...b.fixed, artworkType: e.target.value } }))
-                }
-              />
-            </div>
+            {/* Open list (RF-213): the vocabulary suggests without closing —
+                an unknown type can be added to the shared catalog right here.
+                Only editors reach this page (guarded above), so offering the
+                add row is always legitimate. */}
+            <ComboBox
+              id="type"
+              label="Tipo de obra"
+              value={batch.fixed.artworkType}
+              onChange={(v) => setBatch((b) => ({ ...b, fixed: { ...b.fixed, artworkType: v } }))}
+              options={artworkTypes}
+              placeholder="Busca en el catálogo de tipos"
+              addLabel={(t) => `Añadir «${t}» al catálogo de tipos`}
+              onAdd={addType}
+            />
           </FieldGroup>
 
           <FieldGroup title="Ubicación física" hint="se arrastra, ajustable en cada obra">

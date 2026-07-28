@@ -27,6 +27,7 @@ import {
   BanIcon,
   CameraIcon,
   Chips,
+  ComboBox,
   EllipsisIcon,
   FieldGroup,
   OptionCards,
@@ -42,6 +43,7 @@ import { normalizeLocation, locationForSaving } from '../../lib/location'
 import { useLiveChanges } from '../../lib/live'
 import { ArtworkGallery } from './ArtworkGallery'
 import { useArtwork } from './useArtworks'
+import { useArtworkTypes } from './useArtworkTypes'
 
 const AUTHORSHIP_ICON: Record<AttributedTitleValue, typeof PenIcon> = {
   NO: PenIcon,
@@ -323,6 +325,9 @@ function EditForm({
   const [data, setData] = useState(artwork)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Controlled vocabulary for "Tipo de obra" (RF-213). Only editors reach
+  // this form, so offering the add-to-catalog row is always legitimate here.
+  const { types: artworkTypes, addType } = useArtworkTypes()
 
   function set<K extends keyof Artwork>(field: K, value: Artwork[K]) {
     setData((d) => ({ ...d, [field]: value }))
@@ -436,18 +441,17 @@ function EditForm({
           </p>
         </div>
 
-        <div>
-          <label className="label" htmlFor="e-type">
-            Tipo de obra
-          </label>
-          <input
-            id="e-type"
-            className="field"
-            value={data.artwork_type}
-            onChange={(e) => set('artwork_type', e.target.value)}
-          />
-        </div>
-
+        <ComboBox
+          id="e-type"
+          label="Tipo de obra"
+          value={data.artwork_type}
+          onChange={(v) => set('artwork_type', v)}
+          options={artworkTypes}
+          placeholder="Busca en el catálogo de tipos"
+          emptyLabel="Sin tipo (pendiente de revisar)"
+          addLabel={(t) => `Añadir «${t}» al catálogo de tipos`}
+          onAdd={addType}
+        />
       </FieldGroup>
 
       <FieldGroup title="Título">

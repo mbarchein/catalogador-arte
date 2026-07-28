@@ -148,19 +148,9 @@ export const EXISTENCE_LABEL: Record<ExistenceStatusValue, string> = {
   UNREVIEWED: 'Sin revisar',
 }
 
-/**
- * Open list of artwork types (RF-213 and field schema v11): suggestions, not a
- * closed set. The field is free text and accepts any new value with no
- * migration.
- */
-export const SUGGESTED_ARTWORK_TYPES = [
-  'Pintura',
-  'Dibujo',
-  'Escultura',
-  'Collage',
-  'Grabado',
-  'Técnica mixta',
-]
+// The artwork types (RF-213) are no longer a hardcoded list here: they live
+// in the `artwork_types` table — an open vocabulary catalogers extend from
+// the forms (see useArtworkTypes).
 
 /**
  * Photographic shot types. A short list on purpose: during capture one must be
