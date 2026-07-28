@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { masterDownloadUrl } from '../../lib/images'
 import { SHOT_TYPE_LABEL } from '../../lib/types'
-import { YesIcon } from '../../components/ui'
+import { ExpandIcon, YesIcon } from '../../components/ui'
 import { useArtworkImages } from './artworkImages'
 import { PhotoCarousel } from './PhotoCarousel'
+import { PhotoViewer } from './PhotoViewer'
 
 /**
  * Gallery of the record page — a view, nothing else. Everything that changes
@@ -14,6 +15,7 @@ import { PhotoCarousel } from './PhotoCarousel'
 export function ArtworkGallery({ catalogId }: { catalogId: string }) {
   const { images, thumbUrls, mainId, loading } = useArtworkImages(catalogId)
   const [viewId, setViewId] = useState<string | null>(null)
+  const [viewerOpen, setViewerOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Start on the main image; if the viewed one disappears (someone retired it
@@ -102,13 +104,35 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
         </ul>
       )}
 
-      <PhotoCarousel
-        images={images}
-        thumbUrls={thumbUrls}
-        viewId={viewId}
-        onView={setViewId}
-        catalogId={catalogId}
-      />
+      <div className="relative">
+        <PhotoCarousel
+          images={images}
+          thumbUrls={thumbUrls}
+          viewId={viewId}
+          onView={setViewId}
+          catalogId={catalogId}
+          onImageTap={() => setViewerOpen(true)}
+        />
+        <button
+          type="button"
+          aria-label="Ver a pantalla completa"
+          onClick={() => setViewerOpen(true)}
+          className="absolute bottom-2 right-2 rounded-full bg-stone-900/70 p-2.5 text-white"
+        >
+          <ExpandIcon className="h-4 w-4" />
+        </button>
+      </div>
+
+      {viewerOpen && (
+        <PhotoViewer
+          images={images}
+          thumbUrls={thumbUrls}
+          viewId={viewId}
+          onView={setViewId}
+          catalogId={catalogId}
+          onClose={() => setViewerOpen(false)}
+        />
+      )}
 
       {error && (
         <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">

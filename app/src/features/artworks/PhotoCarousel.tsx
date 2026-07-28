@@ -21,12 +21,18 @@ export function PhotoCarousel({
   viewId,
   onView,
   catalogId,
+  fullscreen = false,
+  onImageTap,
 }: {
   images: ImageRow[]
   thumbUrls: Record<string, string>
   viewId: string | null
   onView: (imageId: string) => void
   catalogId: string
+  /** Viewer variant: black slides filling the container instead of cards. */
+  fullscreen?: boolean
+  /** Tap on a slide (a swipe never fires it: the browser eats the click). */
+  onImageTap?: () => void
 }) {
   const [slideUrls, setSlideUrls] = useState<Record<string, string>>({})
   const trackRef = useRef<HTMLDivElement>(null)
@@ -86,11 +92,22 @@ export function PhotoCarousel({
     <div
       ref={trackRef}
       onScroll={onTrackScroll}
-      className="flex snap-x snap-mandatory overflow-x-auto rounded-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className={`flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+        fullscreen ? 'h-full' : 'rounded-xl'
+      }`}
     >
       {images.map((r) => (
         <div key={r.image_id} className="w-full shrink-0 snap-center">
-          <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-stone-200 bg-white">
+          <div
+            onClick={onImageTap}
+            className={
+              fullscreen
+                ? 'flex h-full items-center justify-center bg-black'
+                : `flex aspect-[4/3] items-center justify-center rounded-xl border border-stone-200 bg-white ${
+                    onImageTap ? 'cursor-zoom-in' : ''
+                  }`
+            }
+          >
             {slideUrls[r.image_id] ? (
               <img
                 src={slideUrls[r.image_id]}
