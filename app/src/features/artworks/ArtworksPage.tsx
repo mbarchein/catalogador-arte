@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { BottomSheet, PlusIcon, RadioList } from '../../components/ui'
+import { BottomSheet, FunnelIcon, RadioList } from '../../components/ui'
 import { displayDate } from '../../lib/dates'
 import { existenceNotice, displayMeasurements, displayTitle } from '../../lib/title'
 import { ARTIST_LABEL, ARTIST_FUNDS } from '../../lib/types'
@@ -24,9 +24,6 @@ import {
 } from './listView'
 import { useArtworks } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
-
-/** Which chip's options are open in the bottom sheet. */
-type SheetKind = 'fund' | 'type' | 'status' | 'order'
 
 const FUND_OPTIONS: { value: FundFilter; text: string }[] = (
   ['ALL', ...ARTIST_FUNDS] as FundFilter[]
@@ -54,7 +51,7 @@ export function ArtworksPage() {
   // the back button, and a filtered list can be shared as a link.
   const [searchParams, setSearchParams] = useSearchParams()
   const view = useMemo(() => parseView(searchParams), [searchParams])
-  const [sheet, setSheet] = useState<SheetKind | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const { types } = useArtworkTypes()
 
   // Entering with a clean URL applies the last combination chosen on this
@@ -68,9 +65,10 @@ export function ArtworksPage() {
     if (!isDefaultView(stored)) setSearchParams(serializeView(stored), { replace: true })
   }, [searchParams, setSearchParams])
 
-  // `replace` on purpose: each chip change must not pile a history entry, or
-  // the phone's back button would walk every filter ever touched before
-  // leaving the list.
+  // `replace` on purpose: each change must not pile a history entry, or the
+  // phone's back button would walk every filter ever touched before leaving
+  // the list. The sheet stays open: adjusting several filters in one visit is
+  // the normal case, and it closes with its own button or the backdrop.
   function updateView(change: Partial<ListView>) {
     const next = { ...view, ...change }
     setSearchParams(serializeView(next), { replace: true })
@@ -78,7 +76,6 @@ export function ArtworksPage() {
     // happened to open: a link someone shared must not overwrite the
     // preference of this device.
     saveStoredView(next)
-    setSheet(null)
   }
 
   const { artworks, thumbnails, loading, error, reload } = useArtworks(search, view)
@@ -96,84 +93,51 @@ export function ArtworksPage() {
     return [{ value: '', text: 'Todos' }, ...names.map((t) => ({ value: t, text: t }))]
   }, [types, view.type])
 
-  // Summary chips: the whole view readable at a glance, one tap from its
-  // options. A non-default chip is highlighted so an active filter cannot go
-  // unnoticed — a filtered list that looks complete is how records get
-  // "lost".
-  const chips: { kind: SheetKind; label: string; value: string; active: boolean }[] = [
-    {
-      kind: 'fund',
-      label: 'Fondo',
-      value: view.fund === 'ALL' ? 'todos' : FUND_FILTER_LABEL[view.fund],
-      active: view.fund !== 'ALL',
-    },
-    {
-      kind: 'type',
-      label: 'Tipo',
-      value: view.type === '' ? 'todos' : view.type,
-      active: view.type !== '',
-    },
-    {
-      kind: 'status',
-      label: 'Estado',
-      value: view.status === 'ALL' ? 'todos' : STATUS_FILTER_LABEL[view.status],
-      active: view.status !== 'ALL',
-    },
-    {
-      kind: 'order',
-      label: 'Orden',
-      value: view.order === 'RECENT' ? 'recientes' : ORDER_LABEL[view.order],
-      active: view.order !== 'RECENT',
-    },
-  ]
+  // How many parts of the view differ from the default: the funnel button
+  // must say that something is filtering even with the sheet closed — a
+  // filtered list that looks complete is how records get "lost".
+  const activeCount = [
+    view.fund !== 'ALL',
+    view.type !== '',
+    view.status !== 'ALL',
+    view.order !== 'RECENT',
+  ].filter(Boolean).length
 
   const noCriteria = search.trim() === '' && hasNoFilters(view)
 
   return (
     <Layout
-      title="Obras"
-      // RF-1104: the create button only for whoever can edit. In the fixed
-      // header it stays available with the list scrolled — with hundreds of
-      // artworks, "capture the next one" must not require scrolling back up.
-      action={
-        canEdit ? (
-          <Link to="/capture" className="btn-primary min-h-[2.5rem] px-3 text-sm">
-            <PlusIcon className="h-4 w-4" />
-            Nueva
-          </Link>
-        ) : undefined
-      }
-    >
-      <div className="mb-3">
+      // Search and filters live in the fixed header: they are the tools of
+      // the whole view and this way they never scroll away. Creating is not
+      // here anymore — the footer's "Añadir" tab already covers it (RF-1104:
+      // that tab only exists for whoever can edit).
+      headerContent={
         <input
-          className="field"
+          className="field min-h-[2.5rem] py-1"
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por código o título"
           aria-label="Buscar obras"
         />
-      </div>
-
-      <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
-        {chips.map((c) => (
-          <button
-            key={c.kind}
-            type="button"
-            aria-haspopup="dialog"
-            onClick={() => setSheet(c.kind)}
-            className={`min-h-touch shrink-0 whitespace-nowrap rounded-full border px-3 text-sm transition ${
-              c.active
-                ? 'border-stone-800 bg-stone-800 text-white'
-                : 'border-stone-300 bg-white text-stone-700'
-            }`}
-          >
-            <span className={c.active ? 'text-stone-300' : 'text-stone-500'}>{c.label}:</span>{' '}
-            {c.value}
-          </button>
-        ))}
-      </div>
-
+      }
+      action={
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-label={`Filtros y orden${activeCount > 0 ? `, ${activeCount} activos` : ''}`}
+          onClick={() => setSheetOpen(true)}
+          className={`flex min-h-[2.5rem] items-center gap-1 rounded-lg border px-2.5 text-sm transition ${
+            activeCount > 0
+              ? 'border-stone-800 bg-stone-800 text-white'
+              : 'border-stone-300 bg-white text-stone-700'
+          }`}
+        >
+          <FunnelIcon className="h-4 w-4" />
+          {activeCount > 0 ? activeCount : ''}
+        </button>
+      }
+    >
       {error && (
         <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">
           No se ha podido cargar el listado: {error}
@@ -262,41 +226,76 @@ export function ArtworksPage() {
         </>
       )}
 
-      <BottomSheet open={sheet === 'fund'} onClose={() => setSheet(null)} title="Fondo">
-        <RadioList
-          options={FUND_OPTIONS}
-          value={view.fund}
-          onChange={(fund) => updateView({ fund })}
-        />
-      </BottomSheet>
+      {/* One sheet with every section: with a single entry button there is
+          nothing to choose before opening, and adjusting several filters in
+          one visit needs no round trips. */}
+      <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Filtros y orden">
+        <div className="space-y-4">
+          <section>
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
+              Ordenar por
+            </h3>
+            <RadioList
+              options={ORDER_OPTIONS}
+              value={view.order}
+              onChange={(order) => updateView({ order })}
+            />
+          </section>
 
-      <BottomSheet open={sheet === 'type'} onClose={() => setSheet(null)} title="Tipo de obra">
-        {/* The vocabulary itself (RF-213): the same list the forms offer. */}
-        <RadioList
-          options={typeOptions}
-          value={view.type}
-          onChange={(type) => updateView({ type })}
-        />
-      </BottomSheet>
+          <section>
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
+              Fondo
+            </h3>
+            <RadioList
+              options={FUND_OPTIONS}
+              value={view.fund}
+              onChange={(fund) => updateView({ fund })}
+            />
+          </section>
 
-      <BottomSheet
-        open={sheet === 'status'}
-        onClose={() => setSheet(null)}
-        title="Estado del proceso"
-      >
-        <RadioList
-          options={STATUS_OPTIONS}
-          value={view.status}
-          onChange={(status) => updateView({ status })}
-        />
-      </BottomSheet>
+          <section>
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
+              Tipo de obra
+            </h3>
+            {/* The vocabulary itself (RF-213): the same list the forms offer. */}
+            <RadioList
+              options={typeOptions}
+              value={view.type}
+              onChange={(type) => updateView({ type })}
+            />
+          </section>
 
-      <BottomSheet open={sheet === 'order'} onClose={() => setSheet(null)} title="Ordenar por">
-        <RadioList
-          options={ORDER_OPTIONS}
-          value={view.order}
-          onChange={(order) => updateView({ order })}
-        />
+          <section>
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
+              Estado del proceso
+            </h3>
+            <RadioList
+              options={STATUS_OPTIONS}
+              value={view.status}
+              onChange={(status) => updateView({ status })}
+            />
+          </section>
+
+          <div className="grid grid-cols-2 gap-2 pb-1">
+            <button
+              type="button"
+              disabled={activeCount === 0}
+              onClick={() =>
+                updateView({ fund: 'ALL', type: '', status: 'ALL', order: 'RECENT' })
+              }
+              className="btn-secondary disabled:opacity-40"
+            >
+              Quitar todo
+            </button>
+            <button
+              type="button"
+              onClick={() => setSheetOpen(false)}
+              className="btn min-h-touch bg-stone-900 text-white"
+            >
+              Hecho
+            </button>
+          </div>
+        </div>
       </BottomSheet>
     </Layout>
   )

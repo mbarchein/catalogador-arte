@@ -37,6 +37,7 @@ export function Layout({
   title,
   back,
   action,
+  headerContent,
 }: {
   children: ReactNode
   /** Short title of the view, next to the back button. */
@@ -45,6 +46,12 @@ export function Layout({
   back?: string
   /** Main action of the view, on the right side of the header. */
   action?: ReactNode
+  /**
+   * Replaces the title with full-width content (the list's search box): the
+   * fixed header is the only place always on screen, and on that view the
+   * title added nothing the tab bar does not already say.
+   */
+  headerContent?: ReactNode
 }) {
   const navigate = useNavigate()
   const { key } = useLocation()
@@ -72,7 +79,11 @@ export function Layout({
           ) : (
             <span className="w-2" />
           )}
-          <span className="min-w-0 flex-1 truncate font-semibold">{title ?? 'Catalogador'}</span>
+          {headerContent ? (
+            <div className="min-w-0 flex-1">{headerContent}</div>
+          ) : (
+            <span className="min-w-0 flex-1 truncate font-semibold">{title ?? 'Catalogador'}</span>
+          )}
           {action && <div className="shrink-0 pr-1">{action}</div>}
         </div>
       </header>

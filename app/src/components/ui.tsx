@@ -94,6 +94,14 @@ export function BanIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+export function FunnelIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M3 5h18l-7 8v4.5l-4 2.5v-7L3 5Z" />
+    </svg>
+  )
+}
+
 export function ImageIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>
