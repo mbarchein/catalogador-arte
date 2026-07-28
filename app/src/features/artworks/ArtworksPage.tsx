@@ -1,22 +1,133 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
+import { BottomSheet, RadioList } from '../../components/ui'
 import { displayDate } from '../../lib/dates'
 import { existenceNotice, displayMeasurements, displayTitle } from '../../lib/title'
-import { ARTIST_LABEL } from '../../lib/types'
+import { ARTIST_LABEL, ARTIST_FUNDS } from '../../lib/types'
 import { useLiveChanges } from '../../lib/live'
+import {
+  FUND_FILTER_LABEL,
+  ORDER_LABEL,
+  STATUS_FILTER_LABEL,
+  hasNoFilters,
+  isDefaultView,
+  parseView,
+  readStoredView,
+  saveStoredView,
+  serializeView,
+  type FundFilter,
+  type ListOrder,
+  type ListView,
+  type StatusFilter,
+} from './listView'
 import { useArtworks } from './useArtworks'
+import { useArtworkTypes } from './useArtworkTypes'
+
+/** Which chip's options are open in the bottom sheet. */
+type SheetKind = 'fund' | 'type' | 'status' | 'order'
+
+const FUND_OPTIONS: { value: FundFilter; text: string }[] = (
+  ['ALL', ...ARTIST_FUNDS] as FundFilter[]
+).map((v) => ({ value: v, text: FUND_FILTER_LABEL[v] }))
+
+const STATUS_OPTIONS = (Object.keys(STATUS_FILTER_LABEL) as StatusFilter[]).map((v) => ({
+  value: v,
+  text: STATUS_FILTER_LABEL[v],
+}))
+
+const ORDER_OPTIONS: { value: ListOrder; text: string; hint?: string }[] = [
+  { value: 'RECENT', text: ORDER_LABEL.RECENT, hint: 'Últimas creadas o modificadas' },
+  { value: 'CATALOG_ID', text: ORDER_LABEL.CATALOG_ID, hint: 'AR-0001, AR-0002…' },
+  {
+    value: 'CHRONOLOGICAL',
+    text: ORDER_LABEL.CHRONOLOGICAL,
+    hint: 'Por año de ejecución; las obras sin fecha, al final',
+  },
+  { value: 'TITLE', text: ORDER_LABEL.TITLE, hint: 'Alfabético; [Sin título] al final' },
+]
 
 export function ArtworksPage() {
   const [search, setSearch] = useState('')
-  const { artworks, thumbnails, loading, error, reload } = useArtworks(search)
+  // The view lives in the URL (RF-608): it survives a reload, comes back with
+  // the back button, and a filtered list can be shared as a link.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const view = useMemo(() => parseView(searchParams), [searchParams])
+  const [sheet, setSheet] = useState<SheetKind | null>(null)
+  const { types } = useArtworkTypes()
+
+  // Entering with a clean URL applies the last combination chosen on this
+  // device. Only once: after that, the URL is the single truth of the view.
+  const restored = useRef(false)
+  useEffect(() => {
+    if (restored.current) return
+    restored.current = true
+    if (searchParams.toString() !== '') return
+    const stored = readStoredView()
+    if (!isDefaultView(stored)) setSearchParams(serializeView(stored), { replace: true })
+  }, [searchParams, setSearchParams])
+
+  // `replace` on purpose: each chip change must not pile a history entry, or
+  // the phone's back button would walk every filter ever touched before
+  // leaving the list.
+  function updateView(change: Partial<ListView>) {
+    const next = { ...view, ...change }
+    setSearchParams(serializeView(next), { replace: true })
+    // What gets remembered is what the user chose here, not any URL they
+    // happened to open: a link someone shared must not overwrite the
+    // preference of this device.
+    saveStoredView(next)
+    setSheet(null)
+  }
+
+  const { artworks, thumbnails, loading, error, reload } = useArtworks(search, view)
   const { canEdit } = useAuth()
 
   // The list updates live: if another cataloger creates or edits an artwork,
   // it appears without reloading. It is the view where two people working at
   // once step on each other unknowingly.
   useLiveChanges('artworks', reload)
+
+  // A type arriving in the URL that the vocabulary does not know is still
+  // shown as the active option: the radio must reflect what is filtering.
+  const typeOptions = useMemo(() => {
+    const names = view.type !== '' && !types.includes(view.type) ? [...types, view.type] : types
+    return [{ value: '', text: 'Todos' }, ...names.map((t) => ({ value: t, text: t }))]
+  }, [types, view.type])
+
+  // Summary chips: the whole view readable at a glance, one tap from its
+  // options. A non-default chip is highlighted so an active filter cannot go
+  // unnoticed — a filtered list that looks complete is how records get
+  // "lost".
+  const chips: { kind: SheetKind; label: string; value: string; active: boolean }[] = [
+    {
+      kind: 'fund',
+      label: 'Fondo',
+      value: view.fund === 'ALL' ? 'todos' : FUND_FILTER_LABEL[view.fund],
+      active: view.fund !== 'ALL',
+    },
+    {
+      kind: 'type',
+      label: 'Tipo',
+      value: view.type === '' ? 'todos' : view.type,
+      active: view.type !== '',
+    },
+    {
+      kind: 'status',
+      label: 'Estado',
+      value: view.status === 'ALL' ? 'todos' : STATUS_FILTER_LABEL[view.status],
+      active: view.status !== 'ALL',
+    },
+    {
+      kind: 'order',
+      label: 'Orden',
+      value: view.order === 'RECENT' ? 'recientes' : ORDER_LABEL[view.order],
+      active: view.order !== 'RECENT',
+    },
+  ]
+
+  const noCriteria = search.trim() === '' && hasNoFilters(view)
 
   return (
     <Layout
@@ -32,7 +143,7 @@ export function ArtworksPage() {
         ) : undefined
       }
     >
-      <div className="mb-4">
+      <div className="mb-3">
         <input
           className="field"
           type="search"
@@ -41,6 +152,25 @@ export function ArtworksPage() {
           placeholder="Buscar por código o título"
           aria-label="Buscar obras"
         />
+      </div>
+
+      <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
+        {chips.map((c) => (
+          <button
+            key={c.kind}
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setSheet(c.kind)}
+            className={`min-h-touch shrink-0 whitespace-nowrap rounded-full border px-3 text-sm transition ${
+              c.active
+                ? 'border-stone-800 bg-stone-800 text-white'
+                : 'border-stone-300 bg-white text-stone-700'
+            }`}
+          >
+            <span className={c.active ? 'text-stone-300' : 'text-stone-500'}>{c.label}:</span>{' '}
+            {c.value}
+          </button>
+        ))}
       </div>
 
       {error && (
@@ -52,10 +182,10 @@ export function ArtworksPage() {
       {loading ? (
         <p className="text-sm text-stone-600">Cargando…</p>
       ) : artworks.length === 0 ? (
-        /* RF-605: never a blank page. The search is kept and what happened is
-           explained where the list would go. */
+        /* RF-605: never a blank page. Search and filters are kept and what
+           happened is explained where the list would go. */
         <div className="card text-sm">
-          {search.trim() === '' ? (
+          {noCriteria ? (
             <>
               <p className="font-medium">Todavía no hay obra catalogada.</p>
               {canEdit && (
@@ -65,7 +195,18 @@ export function ArtworksPage() {
               )}
             </>
           ) : (
-            <p>No se han encontrado obras con estos criterios.</p>
+            <>
+              <p>No se han encontrado obras con estos criterios.</p>
+              {!hasNoFilters(view) && (
+                <button
+                  type="button"
+                  className="btn-secondary mt-3 w-full"
+                  onClick={() => updateView({ fund: 'ALL', type: '', status: 'ALL' })}
+                >
+                  Quitar los filtros
+                </button>
+              )}
+            </>
           )}
         </div>
       ) : (
@@ -119,6 +260,43 @@ export function ArtworksPage() {
           </ul>
         </>
       )}
+
+      <BottomSheet open={sheet === 'fund'} onClose={() => setSheet(null)} title="Fondo">
+        <RadioList
+          options={FUND_OPTIONS}
+          value={view.fund}
+          onChange={(fund) => updateView({ fund })}
+        />
+      </BottomSheet>
+
+      <BottomSheet open={sheet === 'type'} onClose={() => setSheet(null)} title="Tipo de obra">
+        {/* The vocabulary itself (RF-213): the same list the forms offer. */}
+        <RadioList
+          options={typeOptions}
+          value={view.type}
+          onChange={(type) => updateView({ type })}
+        />
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheet === 'status'}
+        onClose={() => setSheet(null)}
+        title="Estado del proceso"
+      >
+        <RadioList
+          options={STATUS_OPTIONS}
+          value={view.status}
+          onChange={(status) => updateView({ status })}
+        />
+      </BottomSheet>
+
+      <BottomSheet open={sheet === 'order'} onClose={() => setSheet(null)} title="Ordenar por">
+        <RadioList
+          options={ORDER_OPTIONS}
+          value={view.order}
+          onChange={(order) => updateView({ order })}
+        />
+      </BottomSheet>
     </Layout>
   )
 }

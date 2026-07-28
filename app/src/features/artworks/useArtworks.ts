@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { signedUrls } from '../../lib/images'
 import type { ArtistFund, Artwork } from '../../lib/types'
+import { DEFAULT_VIEW, compareByTitle, queryPlan, type ListView } from './listView'
 
 const FIELDS = `
   catalog_id, artist, title, attributed_title, artwork_type,
@@ -15,7 +16,7 @@ const FIELDS = `
   updated_at, basic_updated_at, updated_by, active
 `
 
-export function useArtworks(search: string) {
+export function useArtworks(search: string, view: ListView = DEFAULT_VIEW) {
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -25,6 +26,10 @@ export function useArtworks(search: string) {
     setLoading(true)
     setError(null)
 
+    // The view→query mapping lives in listView.ts, where it has tests. This
+    // hook only walks the plan.
+    const plan = queryPlan(view)
+
     let query = supabase
       .from('artworks')
       .select(FIELDS)
@@ -32,9 +37,19 @@ export function useArtworks(search: string) {
       // already hides them from the Reader, but a cataloger does see them, so
       // the explicit filter is needed here too.
       .eq('active', true)
-      // Chronological by the structured year; undated artworks go last.
-      .order('start_year', { ascending: true, nullsFirst: false })
-      .order('catalog_id', { ascending: true })
+
+    // RF-602: the filters travel in the query, they do not prune in the
+    // client — the API caps the response (500 rows), and a client-side filter
+    // over a capped page would silently drop matches.
+    for (const f of plan.filters) {
+      query = query.eq(f.column, f.value)
+    }
+    for (const o of plan.orders) {
+      query = query.order(o.column, {
+        ascending: o.ascending,
+        ...(o.nullsFirst === undefined ? {} : { nullsFirst: o.nullsFirst }),
+      })
+    }
 
     const term = search.trim()
     if (term !== '') {
@@ -53,7 +68,10 @@ export function useArtworks(search: string) {
       return
     }
 
-    const rows = (data ?? []) as unknown as Artwork[]
+    let rows = (data ?? []) as unknown as Artwork[]
+    // Title order finishes in the client: es-ES collation with the untitled
+    // last, which the API's order clause cannot express (see listView.ts).
+    if (plan.sortInClient) rows = [...rows].sort(compareByTitle)
     setArtworks(rows)
     // The list can already be painted: thumbnails arrive later and appear over
     // the placeholders. Waiting for them would delay seeing the data, which is
@@ -88,7 +106,9 @@ export function useArtworks(search: string) {
         }),
       ),
     )
-  }, [search])
+    // The view travels field by field: its object identity changes on every
+    // parse of the URL, and depending on it would refetch on each render.
+  }, [search, view.fund, view.type, view.status, view.order])
 
   useEffect(() => {
     void reload()
