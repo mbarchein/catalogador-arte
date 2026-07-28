@@ -214,13 +214,13 @@ function RepeatButton({
 
   const stop = useCallback(() => {
     if (delayRef.current !== null) window.clearTimeout(delayRef.current)
-    if (repeatRef.current !== null) window.clearInterval(repeatRef.current)
+    if (repeatRef.current !== null) window.clearTimeout(repeatRef.current)
     delayRef.current = null
     repeatRef.current = null
   }, [])
 
   // Without this, unmounting the component with a finger down leaves the
-  // interval alive.
+  // repetition alive.
   useEffect(() => stop, [stop])
 
   function start() {
@@ -229,7 +229,15 @@ function RepeatButton({
     // advancing two years.
     delayRef.current = window.setTimeout(() => {
       didRepeatRef.current = true
-      repeatRef.current = window.setInterval(onStep, 90)
+      let count = 0
+      const tick = () => {
+        onStep()
+        count += 1
+        // Cruise first, fast after ~1.5 s held: crossing a decade should not
+        // demand patience, and the slow start keeps single years reachable.
+        repeatRef.current = window.setTimeout(tick, count > 15 ? 35 : 90)
+      }
+      tick()
     }, 400)
   }
 
@@ -248,8 +256,14 @@ function RepeatButton({
         if (!didRepeatRef.current) onStep()
         didRepeatRef.current = false
       }}
-      className={`flex shrink-0 items-center justify-center rounded-lg border border-stone-300
-                  bg-white text-stone-700 active:bg-stone-200 ${
+      // A sustained touch must stay OURS: without touch-action the browser
+      // reads the long press as a scroll or long-press gesture and fires
+      // pointercancel before the repeat delay elapses — which is why holding
+      // did nothing on the phone. The context menu and text selection of a
+      // long press are suppressed for the same reason.
+      onContextMenu={(e) => e.preventDefault()}
+      className={`flex shrink-0 touch-none select-none items-center justify-center rounded-lg
+                  border border-stone-300 bg-white text-stone-700 active:bg-stone-200 ${
                     compact ? 'h-11 w-11' : 'h-14 w-14'
                   }`}
     >
