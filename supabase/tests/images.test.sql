@@ -198,11 +198,16 @@ end $$;
 -- format but not the image id one, and in production no photo of a TS- record
 -- could be registered. This block reproduces it.
 do $$
-declare v_ts text;
+declare
+  v_artwork text;
+  v_ts text;
 begin
-  insert into public.artworks (artist, title, attributed_title) values ('TEST', 'Ensayo con fotos', 'UNCONFIRMED');
+  -- Pinned to the row created here: the development database may already
+  -- hold other TEST-fund artworks with photos of their own.
+  insert into public.artworks (artist, title, attributed_title) values ('TEST', 'Ensayo con fotos', 'UNCONFIRMED')
+    returning catalog_id into v_artwork;
   insert into public.images (catalog_id, thumbnail_path, derivative_path)
-  select catalog_id, 'm/ts', 'd/ts' from public.artworks where artist = 'TEST'
+  values (v_artwork, 'm/ts', 'd/ts')
   returning image_id into v_ts;
   if v_ts !~ '^TS-[0-9]{4}_v1$' then
     raise exception 'FAIL: unexpected identifier for the TEST-fund image: %', v_ts;

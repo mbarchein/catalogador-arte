@@ -108,16 +108,23 @@ begin
 end $$;
 
 -- ── The TEST fund uses its own TS- series (RF-202) ───────────
--- The seed brings no test artworks, so the series starts at TS-0001, and
--- rehearsing on it must not move the counters of the real funds.
+-- Computed against whatever the database holds, not assuming TS-0001: this
+-- suite also runs against the development database, where the TEST fund is
+-- precisely the one with real rehearsal rows. Rehearsing on it must not move
+-- the counters of the real funds.
 do $$
 declare
+  v_next integer;
   v_test text;
 begin
+  select coalesce(max(substring(catalog_id from 4)::integer), 0) + 1
+    into v_next
+    from public.artworks
+   where catalog_id like 'TS-%';
   insert into public.artworks (artist, title, attributed_title) values ('TEST', 'Ficha de ensayo', 'UNCONFIRMED')
     returning catalog_id into v_test;
-  if v_test <> 'TS-0001' then
-    raise exception 'FAIL: the test series had to start at TS-0001: %', v_test;
+  if v_test <> format('TS-%s', lpad(v_next::text, 4, '0')) then
+    raise exception 'FAIL: the test series did not continue on its own: %', v_test;
   end if;
   if public.next_catalog_id('ROTILI') !~ '^AR-' then
     raise exception 'FAIL: the AR series got contaminated by the test one';
