@@ -24,11 +24,12 @@ function ArtworksIcon() {
   )
 }
 
-function CaptureIcon() {
+// A plus, not a camera: the tab adds artworks to the catalog; the camera is
+// only one step of that, and its icon now lives on the photo buttons.
+function AddIcon() {
   return (
     <svg {...svg}>
-      <path d="M4 7h3l2-2.5h6L17 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z" />
-      <circle cx="12" cy="13" r="3.5" />
+      <path d="M12 5v14M5 12h14" />
     </svg>
   )
 }
@@ -54,7 +55,7 @@ export function FooterMenu() {
   const tabs = [
     { to: '/', end: true, text: 'Obras', Icon: ArtworksIcon },
     // RF-1104: capture only exists for whoever can edit.
-    ...(canEdit ? [{ to: '/capture', end: false, text: 'Captura', Icon: CaptureIcon }] : []),
+    ...(canEdit ? [{ to: '/capture', end: false, text: 'Añadir', Icon: AddIcon }] : []),
     { to: '/profile', end: false, text: 'Mi perfil', Icon: ProfileIcon },
   ]
 
