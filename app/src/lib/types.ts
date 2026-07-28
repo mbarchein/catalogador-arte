@@ -17,7 +17,7 @@ export type ArtistFund = 'ROTILI' | 'RUIZ_CAMPINS' | 'TEST'
 export const ARTIST_FUNDS: readonly ArtistFund[] = ['ROTILI', 'RUIZ_CAMPINS', 'TEST']
 export type UserRole = 'SUPERUSER' | 'CATALOGER' | 'READER'
 export type TriState = 'YES' | 'NO' | 'UNREVIEWED'
-export type AttributedTitleValue = 'NOT_APPLICABLE' | 'NO' | 'YES' | 'UNREVIEWED'
+export type AttributedTitleValue = 'NOT_APPLICABLE' | 'NO' | 'YES' | 'UNCONFIRMED' | 'UNREVIEWED'
 
 export type ShotTypeValue =
   | 'GENERAL'
@@ -112,10 +112,24 @@ export const TRI_STATE_LABEL: Record<TriState, string> = {
 }
 
 export const ATTRIBUTED_TITLE_LABEL: Record<AttributedTitleValue, string> = {
-  NOT_APPLICABLE: 'No aplica (sin título)',
-  NO: 'No, es título del artista',
-  YES: 'Sí, nombre de conveniencia',
+  NOT_APPLICABLE: 'No consta título',
+  NO: 'Del artista',
+  YES: 'Atribuido',
+  UNCONFIRMED: 'Sin confirmar',
   UNREVIEWED: 'Sin revisar',
+}
+
+/**
+ * The five states split by whether a title is written (RF-209): with a blank
+ * field only UNREVIEWED and NOT_APPLICABLE apply; with a written title, the
+ * other three. The database enforces it (artworks_attributed_title_matches_title).
+ */
+export const ATTRIBUTED_TITLE_DESCRIPTION: Record<AttributedTitleValue, string> = {
+  NO: 'Título auténtico, puesto por el artista',
+  YES: 'Nombre de conveniencia de terceros (familia, comisario…)',
+  UNCONFIRMED: 'Hay título, pero no está verificado si es del artista o atribuido',
+  NOT_APPLICABLE: 'La investigación ha verificado que la obra no tiene título',
+  UNREVIEWED: 'Pendiente de investigar; la ficha muestra [Sin título]',
 }
 
 export const CONSERVATION_LABEL: Record<ConservationStatusValue, string> = {

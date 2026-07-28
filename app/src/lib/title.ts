@@ -31,10 +31,14 @@ export function attributedTitleNotice(value: AttributedTitleValue): string | nul
   switch (value) {
     case 'YES':
       return 'Nombre atribuido, no del artista'
-    case 'UNREVIEWED':
+    case 'UNCONFIRMED':
       return 'Autoría del título sin confirmar'
     case 'NO':
     case 'NOT_APPLICABLE':
+    // UNREVIEWED means the title is blank and pending investigation: the
+    // header already shows the [Sin título] placeholder, a notice on top
+    // would say the same thing twice.
+    case 'UNREVIEWED':
       return null
   }
 }

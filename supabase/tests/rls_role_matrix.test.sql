@@ -14,11 +14,11 @@ insert into auth.users (id, email) values
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000c1';
 update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000d1';
 
-insert into public.artworks (catalog_id, artist, title)
-values ('AR-9001', 'ROTILI', 'Obra activa de prueba');
+insert into public.artworks (catalog_id, artist, title, attributed_title)
+values ('AR-9001', 'ROTILI', 'Obra activa de prueba', 'UNCONFIRMED');
 
-insert into public.artworks (catalog_id, artist, title, active)
-values ('AR-9002', 'ROTILI', 'Obra de baja de prueba', false);
+insert into public.artworks (catalog_id, artist, title, attributed_title, active)
+values ('AR-9002', 'ROTILI', 'Obra de baja de prueba', 'UNCONFIRMED', false);
 
 -- ── Cataloger ────────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ begin
   end if;
 
   -- RF-103: can create.
-  insert into public.artworks (artist, title) values ('ROTILI', 'Alta del catalogador');
+  insert into public.artworks (artist, title, attributed_title) values ('ROTILI', 'Alta del catalogador', 'UNCONFIRMED');
 
   -- RF-103: can edit what someone else created.
   update public.artworks set title = 'Editada por el catalogador' where catalog_id = 'AR-9001';
@@ -77,7 +77,7 @@ do $$
 begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
   set local role authenticated;
-  insert into public.artworks (artist, title) values ('ROTILI', 'Alta indebida del lector');
+  insert into public.artworks (artist, title, attributed_title) values ('ROTILI', 'Alta indebida del lector', 'UNCONFIRMED');
   raise exception 'FAIL: the reader could create an artwork';
 exception
   when insufficient_privilege then

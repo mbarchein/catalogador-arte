@@ -31,12 +31,17 @@ describe('attributedTitleNotice (RF-307)', () => {
   })
 
   it('warns that the title authorship is unconfirmed', () => {
-    expect(attributedTitleNotice('UNREVIEWED')).toBe('Autoría del título sin confirmar')
+    expect(attributedTitleNotice('UNCONFIRMED')).toBe('Autoría del título sin confirmar')
   })
 
   it('does not warn when the title is the artist\'s or does not apply', () => {
     expect(attributedTitleNotice('NO')).toBeNull()
     expect(attributedTitleNotice('NOT_APPLICABLE')).toBeNull()
+  })
+
+  it('does not warn while the blank title is pending investigation', () => {
+    // The header already shows [Sin título]: a notice would repeat it.
+    expect(attributedTitleNotice('UNREVIEWED')).toBeNull()
   })
 })
 

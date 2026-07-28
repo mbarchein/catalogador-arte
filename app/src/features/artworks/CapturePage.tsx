@@ -311,6 +311,10 @@ export function CapturePage() {
         artist: batch.fixed.artist,
         artwork_type: batch.fixed.artworkType.trim(),
         title: title.trim(),
+        // RF-209: a written title at capture time has unverified authorship;
+        // a blank one stays pending. The constraint
+        // artworks_attributed_title_matches_title rejects any other pairing.
+        attributed_title: title.trim() === '' ? 'UNREVIEWED' : 'UNCONFIRMED',
         height_cm: toNumber(height),
         width_cm: toNumber(width),
         depth_cm: toNumber(depth),

@@ -78,8 +78,8 @@ do $$
 declare
   v_deactivated_at timestamptz;
 begin
-  insert into public.artworks (catalog_id, artist, title)
-  values ('AR-8700', 'ROTILI', 'Para dar de baja');
+  insert into public.artworks (catalog_id, artist, title, attributed_title)
+  values ('AR-8700', 'ROTILI', 'Para dar de baja', 'UNCONFIRMED');
 
   update public.artworks set active = false where catalog_id = 'AR-8700';
 
@@ -146,8 +146,8 @@ end $$;
 -- ── RF-208: a negative measurement is a typing error ─────────
 do $$
 begin
-  insert into public.artworks (catalog_id, artist, title, height_cm)
-  values ('AR-8800', 'ROTILI', 'Medida imposible', -10);
+  insert into public.artworks (catalog_id, artist, title, attributed_title, height_cm)
+  values ('AR-8800', 'ROTILI', 'Medida imposible', 'UNCONFIRMED', -10);
   raise exception 'FAIL: a negative height was accepted';
 exception
   when check_violation then

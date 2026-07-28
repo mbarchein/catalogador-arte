@@ -13,11 +13,11 @@ declare
   v_two text;
   v_rc  text;
 begin
-  insert into public.artworks (artist, title) values ('ROTILI', 'Primera')
+  insert into public.artworks (artist, title, attributed_title) values ('ROTILI', 'Primera', 'UNCONFIRMED')
     returning catalog_id into v_one;
-  insert into public.artworks (artist, title) values ('ROTILI', 'Segunda')
+  insert into public.artworks (artist, title, attributed_title) values ('ROTILI', 'Segunda', 'UNCONFIRMED')
     returning catalog_id into v_two;
-  insert into public.artworks (artist, title) values ('RUIZ_CAMPINS', 'De Ruiz Campins')
+  insert into public.artworks (artist, title, attributed_title) values ('RUIZ_CAMPINS', 'De Ruiz Campins', 'UNCONFIRMED')
     returning catalog_id into v_rc;
 
   -- The seed leaves AR-0001, AR-0002 and RC-0001, so these continue the series.
@@ -43,12 +43,12 @@ declare
   v_deactivated text;
   v_next        text;
 begin
-  insert into public.artworks (artist, title) values ('ROTILI', 'Se dará de baja')
+  insert into public.artworks (artist, title, attributed_title) values ('ROTILI', 'Se dará de baja', 'UNCONFIRMED')
     returning catalog_id into v_deactivated;
 
   update public.artworks set active = false where catalog_id = v_deactivated;
 
-  insert into public.artworks (artist, title) values ('ROTILI', 'Alta posterior')
+  insert into public.artworks (artist, title, attributed_title) values ('ROTILI', 'Alta posterior', 'UNCONFIRMED')
     returning catalog_id into v_next;
 
   if v_next = v_deactivated then
@@ -61,8 +61,8 @@ end $$;
 do $$
 declare v_id text;
 begin
-  insert into public.artworks (catalog_id, artist, title)
-  values ('AR-8500', 'ROTILI', 'Numeración heredada de un inventario anterior')
+  insert into public.artworks (catalog_id, artist, title, attributed_title)
+  values ('AR-8500', 'ROTILI', 'Numeración heredada de un inventario anterior', 'UNCONFIRMED')
     returning catalog_id into v_id;
   if v_id <> 'AR-8500' then
     raise exception 'FAIL: the explicit identifier was ignored, % was stored', v_id;
@@ -73,8 +73,8 @@ end $$;
 -- ── The prefix cannot contradict the fund ────────────────────
 do $$
 begin
-  insert into public.artworks (catalog_id, artist, title)
-  values ('AR-8600', 'RUIZ_CAMPINS', 'Prefijo incoherente');
+  insert into public.artworks (catalog_id, artist, title, attributed_title)
+  values ('AR-8600', 'RUIZ_CAMPINS', 'Prefijo incoherente', 'UNCONFIRMED');
   raise exception 'FAIL: an AR prefix was accepted for the Ruiz Campins fund';
 exception
   when check_violation then
@@ -84,8 +84,8 @@ end $$;
 -- ── Invalid format rejected (RF-202) ─────────────────────────
 do $$
 begin
-  insert into public.artworks (catalog_id, artist, title)
-  values ('AR-1', 'ROTILI', 'Formato corto');
+  insert into public.artworks (catalog_id, artist, title, attributed_title)
+  values ('AR-1', 'ROTILI', 'Formato corto', 'UNCONFIRMED');
   raise exception 'FAIL: AR-1 was accepted, which does not meet the four-digit format';
 exception
   when check_violation then
@@ -99,7 +99,7 @@ declare
   v_actual    text;
 begin
   v_previewed := public.next_catalog_id('RUIZ_CAMPINS');
-  insert into public.artworks (artist, title) values ('RUIZ_CAMPINS', 'Comprobación')
+  insert into public.artworks (artist, title, attributed_title) values ('RUIZ_CAMPINS', 'Comprobación', 'UNCONFIRMED')
     returning catalog_id into v_actual;
   if v_previewed <> v_actual then
     raise exception 'FAIL: the preview said % and % was assigned', v_previewed, v_actual;
@@ -114,7 +114,7 @@ do $$
 declare
   v_test text;
 begin
-  insert into public.artworks (artist, title) values ('TEST', 'Ficha de ensayo')
+  insert into public.artworks (artist, title, attributed_title) values ('TEST', 'Ficha de ensayo', 'UNCONFIRMED')
     returning catalog_id into v_test;
   if v_test <> 'TS-0001' then
     raise exception 'FAIL: the test series had to start at TS-0001: %', v_test;
@@ -128,8 +128,8 @@ end $$;
 -- ── The TS prefix and the TEST fund cannot contradict either ──
 do $$
 begin
-  insert into public.artworks (catalog_id, artist, title)
-  values ('AR-9998', 'TEST', 'Etiqueta mentirosa');
+  insert into public.artworks (catalog_id, artist, title, attributed_title)
+  values ('AR-9998', 'TEST', 'Etiqueta mentirosa', 'UNCONFIRMED');
   raise exception 'FAIL: a TEST artwork with an AR prefix was accepted';
 exception
   when check_violation then

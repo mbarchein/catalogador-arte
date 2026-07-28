@@ -3,11 +3,11 @@
 \set ON_ERROR_STOP on
 begin;
 
-insert into public.artworks (catalog_id, artist, title) values
-  ('AR-9700', 'ROTILI', 'Con una marcada a mano'),
-  ('AR-9701', 'ROTILI', 'Sin marcar, con generales'),
-  ('AR-9702', 'ROTILI', 'Sin marcar y sin ninguna general'),
-  ('AR-9703', 'ROTILI', 'Sin fotos');
+insert into public.artworks (catalog_id, artist, title, attributed_title) values
+  ('AR-9700', 'ROTILI', 'Con una marcada a mano', 'UNCONFIRMED'),
+  ('AR-9701', 'ROTILI', 'Sin marcar, con generales', 'UNCONFIRMED'),
+  ('AR-9702', 'ROTILI', 'Sin marcar y sin ninguna general', 'UNCONFIRMED'),
+  ('AR-9703', 'ROTILI', 'Sin fotos', 'UNCONFIRMED');
 
 -- ── 1. The manually marked one always wins ───────────────────
 insert into public.images

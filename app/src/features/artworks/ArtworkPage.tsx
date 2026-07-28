@@ -10,8 +10,10 @@ import {
   CONSERVATION_LABEL,
   EXISTENCE_LABEL,
   ATTRIBUTED_TITLE_LABEL,
+  ATTRIBUTED_TITLE_DESCRIPTION,
   TRI_STATE_LABEL,
   type Artwork,
+  type AttributedTitleValue,
 } from '../../lib/types'
 import {
   MIN_YEAR,
@@ -22,17 +24,31 @@ import {
 } from '../../lib/structuredDate'
 import {
   ActionBar,
+  BanIcon,
   Chips,
+  EllipsisIcon,
   FieldGroup,
+  OptionCards,
+  PenIcon,
+  TagIcon,
   Toggle,
   ToggleChip,
   TriStateIcons,
+  UnreviewedIcon,
   YearStepper,
 } from '../../components/ui'
 import { normalizeLocation, locationForSaving } from '../../lib/location'
 import { useLiveChanges } from '../../lib/live'
 import { ArtworkGallery } from './ArtworkGallery'
 import { useArtwork } from './useArtworks'
+
+const AUTHORSHIP_ICON: Record<AttributedTitleValue, typeof PenIcon> = {
+  NO: PenIcon,
+  YES: TagIcon,
+  UNCONFIRMED: UnreviewedIcon,
+  NOT_APPLICABLE: BanIcon,
+  UNREVIEWED: EllipsisIcon,
+}
 
 function DataRow({ label, value }: { label: string; value: string }) {
   return (
@@ -291,6 +307,36 @@ function EditForm({
     setData((d) => ({ ...d, [field]: value }))
   }
 
+  /**
+   * RF-209: the authorship states split by whether a title is written, and
+   * the database enforces it (artworks_attributed_title_matches_title).
+   * Crossing the line moves the authorship to the pending state of the other
+   * side and says so: a silent change would look like the form lost the datum.
+   */
+  const [authorshipHint, setAuthorshipHint] = useState<string | null>(null)
+
+  function setTitle(value: string) {
+    const blank = value.trim() === ''
+    const current = data.attributed_title
+    let attributed = current
+    if (blank && (current === 'NO' || current === 'YES' || current === 'UNCONFIRMED')) {
+      attributed = 'UNREVIEWED'
+    }
+    if (!blank && (current === 'UNREVIEWED' || current === 'NOT_APPLICABLE')) {
+      attributed = 'UNCONFIRMED'
+    }
+    if (attributed !== current) {
+      setAuthorshipHint(
+        current === 'NOT_APPLICABLE'
+          ? 'Constaba «No consta título» y ahora hay un título escrito: la autoría pasa a «Sin confirmar».'
+          : blank
+            ? 'El título ha quedado vacío: la autoría vuelve a «Sin revisar».'
+            : 'Con título escrito, la autoría pasa a «Sin confirmar».',
+      )
+    }
+    setData((d) => ({ ...d, title: value, attributed_title: attributed }))
+  }
+
   const toNumber = (v: string) => {
     const clean = v.replace(',', '.').trim()
     if (clean === '') return null
@@ -359,29 +405,6 @@ function EditForm({
         </div>
 
         <div>
-          <label className="label" htmlFor="e-title">
-            Título
-          </label>
-          <input
-            id="e-title"
-            className="field"
-            value={data.title}
-            onChange={(e) => set('title', e.target.value)}
-          />
-        </div>
-
-        <Chips
-          id="e-attributed"
-          label="¿El título es del artista?"
-          options={Object.entries(ATTRIBUTED_TITLE_LABEL).map(([v, t]) => ({
-            value: v as Artwork['attributed_title'],
-            text: t,
-          }))}
-          value={data.attributed_title}
-          onChange={(v) => set('attributed_title', v)}
-        />
-
-        <div>
           <label className="label" htmlFor="e-type">
             Tipo de obra
           </label>
@@ -393,6 +416,51 @@ function EditForm({
           />
         </div>
 
+      </FieldGroup>
+
+      <FieldGroup title="Título">
+        <div>
+          <input
+            id="e-title"
+            aria-label="Título"
+            className="field"
+            value={data.title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-stone-500">
+            Déjalo vacío si no consta título: la ficha mostrará [Sin título].
+          </p>
+        </div>
+
+        <div>
+          {/* Only the states that apply to the current field are offered:
+              with a blank title, pending or verified-untitled; with a written
+              one, the three authorship answers about it. */}
+          <OptionCards
+            id="e-attributed"
+            label="Autoría"
+            options={(
+              (data.title.trim() === ''
+                ? ['UNREVIEWED', 'NOT_APPLICABLE']
+                : ['NO', 'YES', 'UNCONFIRMED']) as AttributedTitleValue[]
+            ).map((v) => ({
+              value: v,
+              text: ATTRIBUTED_TITLE_LABEL[v],
+              description: ATTRIBUTED_TITLE_DESCRIPTION[v],
+              Icon: AUTHORSHIP_ICON[v],
+            }))}
+            value={data.attributed_title}
+            onChange={(v) => {
+              setAuthorshipHint(null)
+              set('attributed_title', v)
+            }}
+          />
+          {authorshipHint && (
+            <p role="status" className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
+              {authorshipHint}
+            </p>
+          )}
+        </div>
       </FieldGroup>
 
       <FieldGroup title="Fecha de ejecución">

@@ -7,8 +7,8 @@
 \set ON_ERROR_STOP on
 begin;
 
-insert into public.artworks (catalog_id, artist, title)
-values ('AR-9600', 'ROTILI', 'Obra con varias tomas');
+insert into public.artworks (catalog_id, artist, title, attributed_title)
+values ('AR-9600', 'ROTILI', 'Obra con varias tomas', 'UNCONFIRMED');
 
 insert into public.images (catalog_id, thumbnail_path, derivative_path, shot_type, index_image)
 values

@@ -21,8 +21,8 @@ begin
       (1975, 1978, true,  true,  'c. 1975-1978 [?]')
     ) as t(start_y, end_y, approx, doubtful, expected)
   loop
-    insert into public.artworks (artist, title, start_year, end_year, approximate_date, unconfirmed_date)
-    values ('ROTILI', 'combo', t_case.start_y, t_case.end_y, t_case.approx, t_case.doubtful)
+    insert into public.artworks (artist, title, attributed_title, start_year, end_year, approximate_date, unconfirmed_date)
+    values ('ROTILI', 'combo', 'UNCONFIRMED', t_case.start_y, t_case.end_y, t_case.approx, t_case.doubtful)
     returning execution_date into v_text;
     if v_text <> t_case.expected then
       raise exception 'FAIL: expected «%», composed «%»', t_case.expected, v_text;
@@ -35,7 +35,7 @@ end $$;
 do $$
 declare v_text text;
 begin
-  insert into public.artworks (artist, title) values ('ROTILI', 'sin fechar')
+  insert into public.artworks (artist, title, attributed_title) values ('ROTILI', 'sin fechar', 'UNCONFIRMED')
   returning execution_date into v_text;
   if v_text <> '' then
     raise exception 'FAIL: without a year it had to compose empty, composed «%»', v_text;
@@ -49,8 +49,8 @@ end $$;
 do $$
 declare v_text text; v_year smallint;
 begin
-  insert into public.artworks (artist, title, start_year, date_note)
-  values ('ROTILI', 'con nota', 1975, 'finales de los setenta')
+  insert into public.artworks (artist, title, attributed_title, start_year, date_note)
+  values ('ROTILI', 'con nota', 'UNCONFIRMED', 1975, 'finales de los setenta')
   returning execution_date, start_year into v_text, v_year;
   if v_text <> 'finales de los setenta' then
     raise exception 'FAIL: the note had to win, composed «%»', v_text;
@@ -65,8 +65,8 @@ end $$;
 -- It is the guarantee that text and structure never diverge: there is no path.
 do $$
 begin
-  insert into public.artworks (artist, title, execution_date)
-  values ('ROTILI', 'escritura directa', '1999');
+  insert into public.artworks (artist, title, attributed_title, execution_date)
+  values ('ROTILI', 'escritura directa', 'UNCONFIRMED', '1999');
   raise exception 'FAIL: the generated column could be written';
 exception
   when generated_always then
@@ -76,8 +76,8 @@ end $$;
 -- ── Constraints ──────────────────────────────────────────────
 do $$
 begin
-  insert into public.artworks (artist, title, start_year, end_year)
-  values ('ROTILI', 'rango invertido', 1978, 1975);
+  insert into public.artworks (artist, title, attributed_title, start_year, end_year)
+  values ('ROTILI', 'rango invertido', 'UNCONFIRMED', 1978, 1975);
   raise exception 'FAIL: an inverted range was accepted';
 exception
   when check_violation then
@@ -86,8 +86,8 @@ end $$;
 
 do $$
 begin
-  insert into public.artworks (artist, title, start_year, end_year)
-  values ('ROTILI', 'rango degenerado', 1978, 1978);
+  insert into public.artworks (artist, title, attributed_title, start_year, end_year)
+  values ('ROTILI', 'rango degenerado', 'UNCONFIRMED', 1978, 1978);
   raise exception 'FAIL: a single-year range was accepted';
 exception
   when check_violation then
@@ -96,8 +96,8 @@ end $$;
 
 do $$
 begin
-  insert into public.artworks (artist, title, approximate_date)
-  values ('ROTILI', 'bandera sin año', true);
+  insert into public.artworks (artist, title, attributed_title, approximate_date)
+  values ('ROTILI', 'bandera sin año', 'UNCONFIRMED', true);
   raise exception 'FAIL: «approximate» was accepted without any year';
 exception
   when check_violation then
@@ -106,8 +106,8 @@ end $$;
 
 do $$
 begin
-  insert into public.artworks (artist, title, start_year)
-  values ('ROTILI', 'errata de milenio', 197);
+  insert into public.artworks (artist, title, attributed_title, start_year)
+  values ('ROTILI', 'errata de milenio', 'UNCONFIRMED', 197);
   raise exception 'FAIL: the year 197 was accepted';
 exception
   when check_violation then
@@ -121,10 +121,10 @@ end $$;
 do $$
 declare v_ids text;
 begin
-  insert into public.artworks (catalog_id, artist, title, start_year, end_year) values
-    ('AR-9801', 'ROTILI', 'época: dentro por rango', 1968, 1972),
-    ('AR-9802', 'ROTILI', 'época: dentro exacto', 1975, null),
-    ('AR-9803', 'ROTILI', 'época: fuera', 1981, null);
+  insert into public.artworks (catalog_id, artist, title, attributed_title, start_year, end_year) values
+    ('AR-9801', 'ROTILI', 'época: dentro por rango', 'UNCONFIRMED', 1968, 1972),
+    ('AR-9802', 'ROTILI', 'época: dentro exacto', 'UNCONFIRMED', 1975, null),
+    ('AR-9803', 'ROTILI', 'época: fuera', 'UNCONFIRMED', 1981, null);
 
   select string_agg(catalog_id, ',' order by catalog_id) into v_ids
     from public.artworks

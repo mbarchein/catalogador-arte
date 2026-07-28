@@ -4,8 +4,8 @@
 \set ON_ERROR_STOP on
 begin;
 
-insert into public.artworks (catalog_id, artist, title)
-values ('AR-9500', 'ROTILI', 'Obra con fotos');
+insert into public.artworks (catalog_id, artist, title, attributed_title)
+values ('AR-9500', 'ROTILI', 'Obra con fotos', 'UNCONFIRMED');
 
 -- ── Correlative identifier per artwork (DP-02) ───────────────
 do $$
@@ -22,8 +22,8 @@ begin
 
   -- Numbering is per artwork, not global: the first photo of another artwork
   -- is _v1.
-  insert into public.artworks (catalog_id, artist, title)
-  values ('AR-9501', 'ROTILI', 'Otra obra');
+  insert into public.artworks (catalog_id, artist, title, attributed_title)
+  values ('AR-9501', 'ROTILI', 'Otra obra', 'UNCONFIRMED');
   insert into public.images (catalog_id, thumbnail_path, derivative_path)
   values ('AR-9501', 'm/x', 'd/x') returning image_id into v_other;
   if v_other <> 'AR-9501_v1' then
@@ -81,8 +81,8 @@ end $$;
 do $$
 declare v_photo boolean;
 begin
-  insert into public.artworks (catalog_id, artist, title)
-  values ('AR-9502', 'ROTILI', 'Para comprobar fotografiada');
+  insert into public.artworks (catalog_id, artist, title, attributed_title)
+  values ('AR-9502', 'ROTILI', 'Para comprobar fotografiada', 'UNCONFIRMED');
 
   select photographed into v_photo from public.artworks where catalog_id = 'AR-9502';
   if v_photo then
@@ -200,7 +200,7 @@ end $$;
 do $$
 declare v_ts text;
 begin
-  insert into public.artworks (artist, title) values ('TEST', 'Ensayo con fotos');
+  insert into public.artworks (artist, title, attributed_title) values ('TEST', 'Ensayo con fotos', 'UNCONFIRMED');
   insert into public.images (catalog_id, thumbnail_path, derivative_path)
   select catalog_id, 'm/ts', 'd/ts' from public.artworks where artist = 'TEST'
   returning image_id into v_ts;

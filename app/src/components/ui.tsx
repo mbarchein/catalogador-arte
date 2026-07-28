@@ -66,6 +66,41 @@ export function LockIcon({ className = 'h-4 w-4' }: { className?: string }) {
   )
 }
 
+export function PenIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  )
+}
+
+export function TagIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" />
+      <path d="M7.5 7.5h.01" />
+    </svg>
+  )
+}
+
+export function BanIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m5.7 5.7 12.6 12.6" />
+    </svg>
+  )
+}
+
+export function EllipsisIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M5 12h.01M12 12h.01M19 12h.01" />
+    </svg>
+  )
+}
+
 // ── Three-state selector with icons ──────────────────────────
 
 const STATES: { value: TriState; label: string; Icon: typeof YesIcon }[] = [
@@ -437,6 +472,65 @@ export function ToggleChip({
  * filling it — e.g. "carries over to the next artwork" — without repeating it
  * field by field.
  */
+/**
+ * Radio group as stacked cards: icon, short name and an always-visible
+ * description. For choices whose values need explaining — chips with a
+ * two-word label assume the cataloger remembers what each one implies, and
+ * these decisions (title authorship) are made a few times a month, not daily.
+ */
+export function OptionCards<T extends string>({
+  id,
+  label,
+  options,
+  value,
+  onChange,
+  disabled = false,
+}: {
+  id: string
+  label: string
+  options: {
+    value: T
+    text: string
+    description: string
+    Icon: (props: { className?: string }) => ReactNode
+  }[]
+  value: T
+  onChange: (v: T) => void
+  disabled?: boolean
+}) {
+  return (
+    <div role="radiogroup" aria-labelledby={`${id}-label`}>
+      <span id={`${id}-label`} className="label">
+        {label}
+      </span>
+      <div className="space-y-2">
+        {options.map(({ value: v, text, description, Icon }) => {
+          const active = value === v
+          return (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={disabled}
+              onClick={() => onChange(v)}
+              className={`flex w-full items-start gap-3 rounded-lg border-2 p-3 text-left transition ${
+                active ? 'border-stone-800 bg-stone-100' : 'border-stone-200 bg-white'
+              }`}
+            >
+              <Icon className="mt-0.5 h-5 w-5 shrink-0" />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">{text}</span>
+                <span className="block text-xs text-stone-500">{description}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function FieldGroup({
   title,
   hint,
