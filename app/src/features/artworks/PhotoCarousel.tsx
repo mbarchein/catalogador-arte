@@ -37,6 +37,11 @@ export function PhotoCarousel({
   const [slideUrls, setSlideUrls] = useState<Record<string, string>>({})
   const trackRef = useRef<HTMLDivElement>(null)
   const positioned = useRef(false)
+  // Index a programmatic scroll is traveling to, or null when the user owns
+  // the scroll. Our own smooth scroll fires the same events as a finger, and
+  // reporting its halfway positions through onView made two mounted carousels
+  // (gallery + fullscreen viewer) undo each other in an endless pendulum.
+  const pendingTarget = useRef<number | null>(null)
 
   const viewIndex = Math.max(
     0,
@@ -71,11 +76,15 @@ export function PhotoCarousel({
     const el = trackRef.current
     if (!el || el.clientWidth === 0) return
     if (!positioned.current) {
-      if (viewIndex > 0) el.scrollTo({ left: viewIndex * el.clientWidth })
+      if (viewIndex > 0) {
+        pendingTarget.current = viewIndex
+        el.scrollTo({ left: viewIndex * el.clientWidth })
+      }
       positioned.current = true
       return
     }
     if (Math.round(el.scrollLeft / el.clientWidth) !== viewIndex) {
+      pendingTarget.current = viewIndex
       el.scrollTo({ left: viewIndex * el.clientWidth, behavior: 'smooth' })
     }
   }, [viewIndex])
@@ -84,7 +93,18 @@ export function PhotoCarousel({
   function onTrackScroll() {
     const el = trackRef.current
     if (!el || el.clientWidth === 0) return
-    const row = images[Math.round(el.scrollLeft / el.clientWidth)]
+    const rounded = Math.round(el.scrollLeft / el.clientWidth)
+    if (pendingTarget.current !== null) {
+      // Echo of our own scroll: swallow it, and release once it lands.
+      if (
+        rounded === pendingTarget.current &&
+        Math.abs(el.scrollLeft - rounded * el.clientWidth) < 2
+      ) {
+        pendingTarget.current = null
+      }
+      return
+    }
+    const row = images[rounded]
     if (row && row.image_id !== viewId) onView(row.image_id)
   }
 
@@ -92,6 +112,11 @@ export function PhotoCarousel({
     <div
       ref={trackRef}
       onScroll={onTrackScroll}
+      // A finger interrupting our smooth scroll takes over: from that moment
+      // the positions are the user's and must be reported again.
+      onTouchStart={() => {
+        pendingTarget.current = null
+      }}
       className={`flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
         fullscreen ? 'h-full' : 'rounded-xl'
       }`}
