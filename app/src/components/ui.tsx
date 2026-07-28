@@ -793,6 +793,114 @@ export function FieldGroup({
   )
 }
 
+// ── Bottom sheet ─────────────────────────────────────────────
+
+/**
+ * Panel fixed to the bottom of the screen over a darkened backdrop, closed by
+ * tapping outside or with its button. The mobile pattern for choosing among a
+ * handful of options: the choices appear under the thumb, where a dropdown
+ * near the top of the page would not.
+ */
+export function BottomSheet({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  title: string
+  children: ReactNode
+}) {
+  // Escape closes, like any dialog. Registered only while open.
+  useEffect(() => {
+    if (!open) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-30" role="dialog" aria-modal="true" aria-label={title}>
+      {/* The backdrop is the "tap outside to close" surface. */}
+      <button
+        type="button"
+        aria-label="Cerrar"
+        onClick={onClose}
+        className="absolute inset-0 h-full w-full cursor-default bg-black/40"
+      />
+      <div
+        className="absolute inset-x-0 bottom-0 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl"
+        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="font-semibold">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-stone-600 active:bg-stone-100"
+            >
+              <NoIcon className="h-5 w-5" />
+            </button>
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Vertical radio list for a bottom sheet: full-width rows, the active one
+ * checked. One tap chooses and the caller closes the sheet — choosing and
+ * confirming would be two gestures for one decision.
+ */
+export function RadioList<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: readonly { value: T; text: string; hint?: string }[]
+  value: T
+  onChange: (v: T) => void
+}) {
+  return (
+    <div role="radiogroup" className="space-y-1">
+      {options.map((o) => {
+        const active = o.value === value
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(o.value)}
+            className={`flex min-h-touch w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left ${
+              active ? 'bg-stone-800 text-white' : 'text-stone-800 active:bg-stone-100'
+            }`}
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">{o.text}</span>
+              {o.hint && (
+                <span className={`block text-xs ${active ? 'text-stone-300' : 'text-stone-500'}`}>
+                  {o.hint}
+                </span>
+              )}
+            </span>
+            {active && <YesIcon className="h-5 w-5 shrink-0" />}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Action bar fixed at the bottom ───────────────────────────
 
 /**
