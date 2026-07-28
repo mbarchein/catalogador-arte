@@ -34,10 +34,17 @@ export function PhotoPicker({
   shots,
   onChange,
   disabled,
+  withIndex = true,
 }: {
   shots: QueuedShot[]
   onChange: (shots: QueuedShot[]) => void
   disabled: boolean
+  /**
+   * The record gallery stages photos for an artwork that already has a main
+   * image chosen elsewhere (RF-405), and adding photos must not change the
+   * cover on its own: `withIndex={false}` hides the index marking entirely.
+   */
+  withIndex?: boolean
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null)
 
@@ -54,7 +61,7 @@ export function PhotoPicker({
     ]
     // RF-403: the first photo is the index one, unless another was already
     // chosen. This way the normal case demands no decision.
-    if (total.length > 0 && !total.some((s) => s.isIndex) && total[0]) {
+    if (withIndex && total.length > 0 && !total.some((s) => s.isIndex) && total[0]) {
       total[0] = { ...total[0], isIndex: true }
     }
     onChange(total)
@@ -67,7 +74,7 @@ export function PhotoPicker({
     // If the index one was removed, the first remaining inherits it: the
     // artwork cannot be left without a representative image while it has
     // photos.
-    if (removed?.isIndex && remaining.length > 0 && remaining[0]) {
+    if (withIndex && removed?.isIndex && remaining.length > 0 && remaining[0]) {
       remaining[0].isIndex = true
     }
     onChange(remaining)
@@ -172,15 +179,17 @@ export function PhotoPicker({
             onChange={(v) => setType(openShot.key, v)}
           />
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={openShot.isIndex}
-              onClick={() => markIndex(openShot.key)}
-              className="btn-secondary"
-            >
-              {openShot.isIndex ? 'Es la del índice' : 'Usar como índice'}
-            </button>
+          <div className={`grid gap-2 ${withIndex ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {withIndex && (
+              <button
+                type="button"
+                disabled={openShot.isIndex}
+                onClick={() => markIndex(openShot.key)}
+                className="btn-secondary"
+              >
+                {openShot.isIndex ? 'Es la del índice' : 'Usar como índice'}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => remove(openShot.key)}

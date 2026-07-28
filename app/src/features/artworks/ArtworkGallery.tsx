@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { uploadShot, masterDownloadUrl, signedUrl, type PreparedShot } from '../../lib/images'
+import { uploadShot, masterDownloadUrl, signedUrl } from '../../lib/images'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 import { useAuth } from '../../auth/AuthContext'
 import { useLiveChanges } from '../../lib/live'
-import { YesIcon } from '../../components/ui'
-import { PhotoInput } from './PhotoInput'
+import { Chips, YesIcon } from '../../components/ui'
+import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 
 interface ImageRow {
   image_id: string
@@ -129,38 +129,75 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
   }
 
   /**
-   * On the record page photos upload **right away**: the artwork already
-   * exists, so there is nothing to queue. That is the difference with the
-   * capture flow, where the artwork has no identifier yet for the images to
-   * hang from.
+   * New photos are staged with the same picker as the capture flow, so the
+   * shot type can be set before uploading — an added photo is often exactly
+   * the non-general one: the back side, a signature detail (RF-401). Unlike
+   * capture there is no queue to persist: the artwork exists and the photos
+   * upload on demand.
    */
-  async function addPhotos(prepared: PreparedShot[]) {
+  const [staged, setStaged] = useState<QueuedShot[]>([])
+
+  function discardStaged() {
+    staged.forEach((s) => URL.revokeObjectURL(s.prepared.preview))
+    setStaged([])
+  }
+
+  async function uploadStaged() {
     setError(null)
     setNotice(null)
-    const failures: string[] = []
-    for (let i = 0; i < prepared.length; i += 1) {
-      const shot = prepared[i]
+    const queue = staged
+    const failed: QueuedShot[] = []
+    let done = 0
+    for (let i = 0; i < queue.length; i += 1) {
+      const shot = queue[i]
       if (!shot) continue
-      setUploading(`Subiendo ${i + 1} de ${prepared.length}…`)
+      setUploading(`Subiendo ${i + 1} de ${queue.length}…`)
       try {
-        // Not marked as index: which one represents the artwork is decided
+        // Never marked as index: which one represents the artwork is decided
         // separately, and adding a photo should not change the cover without
         // anyone asking.
-        await uploadShot(catalogId, shot, { shotType: 'GENERAL', isIndex: false })
+        await uploadShot(catalogId, shot.prepared, { shotType: shot.shotType, isIndex: false })
+        URL.revokeObjectURL(shot.prepared.preview)
+        done += 1
       } catch (e) {
-        failures.push(e instanceof Error ? e.message : String(e))
+        failed.push({
+          ...shot,
+          status: 'error',
+          error: e instanceof Error ? e.message : String(e),
+        })
       }
-      URL.revokeObjectURL(shot.preview)
     }
+    // Failed shots stay staged with their type chosen, ready to retry.
+    setStaged(failed)
     setUploading(null)
     await load()
-    if (failures.length > 0) {
-      setError(`No se han podido subir ${failures.length} de ${prepared.length}: ${failures[0]}`)
+    if (failed.length > 0) {
+      setError(`No se han podido subir ${failed.length} de ${queue.length}: ${failed[0]?.error}`)
     } else {
-      setNotice(
-        prepared.length === 1 ? 'Fotografía añadida.' : `${prepared.length} fotografías añadidas.`,
-      )
+      setNotice(done === 1 ? 'Fotografía añadida.' : `${done} fotografías añadidas.`)
     }
+  }
+
+  /**
+   * The shot type of an uploaded photo is editable in place, immediately,
+   * like the main-image choice and for the same reason: it touches only the
+   * images table and needs no save-and-cancel ceremony.
+   */
+  async function changeShotType(imageId: string, type: ShotTypeValue) {
+    setSaving(true)
+    setError(null)
+    setNotice(null)
+    const { error } = await supabase
+      .from('images')
+      .update({ shot_type: type })
+      .eq('image_id', imageId)
+    if (error) {
+      setError(error.message)
+    } else {
+      await load()
+      setNotice('Tipo de toma actualizado.')
+    }
+    setSaving(false)
   }
 
   /**
@@ -194,6 +231,32 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
     return <div className="mb-3 aspect-[4/3] animate-pulse rounded-xl bg-stone-200" />
   }
 
+  // Staging + upload block, shared by the empty and the populated gallery.
+  const addBlock = uploading ? (
+    <p role="status" className="text-sm text-stone-600">
+      {uploading}
+    </p>
+  ) : (
+    <div className="space-y-2">
+      <PhotoPicker shots={staged} onChange={setStaged} disabled={saving} withIndex={false} />
+      {staged.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void uploadStaged()}
+            className="btn min-h-touch bg-stone-900 text-white"
+          >
+            {staged.length === 1 ? 'Subir la foto' : `Subir ${staged.length} fotos`}
+          </button>
+          <button type="button" onClick={discardStaged} className="btn-secondary">
+            Descartar
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   // RF-404: explicit placeholder, not an unexplained gap.
   if (images.length === 0) {
     return (
@@ -203,13 +266,7 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
         </div>
         {canEdit && (
           <div className="mt-2">
-            {uploading ? (
-              <p role="status" className="text-sm text-stone-600">
-                {uploading}
-              </p>
-            ) : (
-              <PhotoInput onPrepare={addPhotos} disabled={false} compact />
-            )}
+            {addBlock}
             {error && (
               <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">
                 {error}
@@ -281,12 +338,20 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
           — and that happens long after the initial entry. */}
       {canEdit && (
         <div className="mt-3 space-y-2">
-          {uploading ? (
-            <p role="status" className="text-sm text-stone-600">
-              {uploading}
-            </p>
-          ) : (
-            <PhotoInput onPrepare={addPhotos} disabled={saving} compact />
+          {addBlock}
+
+          {viewing && (
+            <Chips
+              id="g-shot-type"
+              label="Tipo de toma de esta fotografía"
+              columns={3}
+              options={(Object.keys(SHOT_TYPE_LABEL) as ShotTypeValue[]).map((v) => ({
+                value: v,
+                text: SHOT_TYPE_LABEL[v],
+              }))}
+              value={viewing.shot_type}
+              onChange={(v) => void changeShotType(viewing.image_id, v)}
+            />
           )}
 
           {viewing &&
