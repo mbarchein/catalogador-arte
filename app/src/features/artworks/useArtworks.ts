@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { signedUrls } from '../../lib/images'
 import type { ArtistFund, Artwork } from '../../lib/types'
-import { DEFAULT_VIEW, compareByTitle, queryPlan, type ListView } from './listView'
+import { DEFAULT_VIEW, matchesSearch, matchesView, sortArtworks, type ListView } from './listView'
+import { readArtworksSnapshot, saveArtworksSnapshot } from './artworksCache'
 
 const FIELDS = `
   catalog_id, artist, title, attributed_title, artwork_type,
@@ -16,105 +17,108 @@ const FIELDS = `
   updated_at, basic_updated_at, updated_by, active
 `
 
+/** Page size of the mirror fetch: the API caps a single response. */
+const PAGE = 500
+
+/**
+ * The whole active catalog, paged so no row is silently dropped by the API
+ * cap (RF-602). RF-609: deactivated records do not appear in the list. The
+ * RLS policy already hides them from the Reader, but a cataloger does see
+ * them, so the explicit filter is needed here too.
+ */
+async function fetchAllArtworks(): Promise<Artwork[]> {
+  const all: Artwork[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('artworks')
+      .select(FIELDS)
+      .eq('active', true)
+      .order('catalog_id', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (error) throw new Error(error.message)
+    const rows = (data ?? []) as unknown as Artwork[]
+    all.push(...rows)
+    if (rows.length < PAGE) return all
+  }
+}
+
+/**
+ * The list works over a LOCAL MIRROR of the catalog: filtering, ordering and
+ * searching are instant because they never leave the device. The mirror
+ * paints from the persisted snapshot, refreshes in the background on mount,
+ * and again on every Realtime push (the page subscribes with useLiveChanges
+ * and calls `reload`). A few hundred records make this cheap; the paged
+ * fetch keeps it correct if the catalog outgrows a single response.
+ */
 export function useArtworks(search: string, view: ListView = DEFAULT_VIEW) {
-  const [artworks, setArtworks] = useState<Artwork[]>([])
+  const [all, setAll] = useState<Artwork[] | null>(() => readArtworksSnapshot())
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    // The view→query mapping lives in listView.ts, where it has tests. This
-    // hook only walks the plan.
-    const plan = queryPlan(view)
-
-    let query = supabase
-      .from('artworks')
-      .select(FIELDS)
-      // RF-609: deactivated records do not appear in the list. The RLS policy
-      // already hides them from the Reader, but a cataloger does see them, so
-      // the explicit filter is needed here too.
-      .eq('active', true)
-
-    // RF-602: the filters travel in the query, they do not prune in the
-    // client — the API caps the response (500 rows), and a client-side filter
-    // over a capped page would silently drop matches.
-    for (const f of plan.filters) {
-      query = query.eq(f.column, f.value)
+    try {
+      const rows = await fetchAllArtworks()
+      setAll(rows)
+      saveArtworksSnapshot(rows)
+      setError(null)
+    } catch (e) {
+      // The stale mirror stays on screen: outdated data plus a notice beats
+      // an empty list in a storage room with intermittent coverage.
+      setError(e instanceof Error ? e.message : String(e))
+      setAll((current) => current ?? [])
     }
-    for (const o of plan.orders) {
-      query = query.order(o.column, {
-        ascending: o.ascending,
-        ...(o.nullsFirst === undefined ? {} : { nullsFirst: o.nullsFirst }),
-      })
-    }
-
-    const term = search.trim()
-    if (term !== '') {
-      // RF-602: free-text search looks at identifier and title.
-      // `titulos_alt` will be added when the field exists.
-      const pattern = `%${term}%`
-      query = query.or(`catalog_id.ilike.${pattern},title.ilike.${pattern}`)
-    }
-
-    const { data, error } = await query
-    if (error) {
-      setError(error.message)
-      setArtworks([])
-      setThumbnails({})
-      setLoading(false)
-      return
-    }
-
-    let rows = (data ?? []) as unknown as Artwork[]
-    // Title order finishes in the client: es-ES collation with the untitled
-    // last, which the API's order clause cannot express (see listView.ts).
-    if (plan.sortInClient) rows = [...rows].sort(compareByTitle)
-    setArtworks(rows)
-    // The list can already be painted: thumbnails arrive later and appear over
-    // the placeholders. Waiting for them would delay seeing the data, which is
-    // what one came for.
-    setLoading(false)
-
-    // RF-604: thumbnail in the list. Three requests in total, regardless of
-    // how many artworks there are:
-    //   1. the artworks (already done),
-    //   2. the view with each one's representative image,
-    //   3. the signature of every path at once.
-    // The rule of which image represents the artwork lives in the view, not
-    // here.
-    const ids = rows.map((a) => a.catalog_id)
-    if (ids.length === 0) {
-      setThumbnails({})
-      return
-    }
-
-    const { data: representatives } = await supabase
-      .from('representative_image')
-      .select('catalog_id, thumbnail_path')
-      .in('catalog_id', ids)
-
-    const repRows = (representatives ?? []) as { catalog_id: string; thumbnail_path: string }[]
-    const urls = await signedUrls(repRows.map((r) => r.thumbnail_path))
-    setThumbnails(
-      Object.fromEntries(
-        repRows.flatMap((r) => {
-          const u = urls[r.thumbnail_path]
-          return u ? [[r.catalog_id, u] as const] : []
-        }),
-      ),
-    )
-    // The view travels field by field: its object identity changes on every
-    // parse of the URL, and depending on it would refetch on each render.
-  }, [search, view.fund, view.type, view.status, view.order])
+  }, [])
 
   useEffect(() => {
     void reload()
   }, [reload])
 
-  return { artworks, thumbnails, loading, error, reload }
+  // The view travels field by field: its object identity changes on every
+  // parse of the URL, and depending on it would refilter on each render.
+  const artworks = useMemo(() => {
+    if (!all) return []
+    const term = search.trim()
+    const rows = all.filter((a) => matchesView(a, view) && matchesSearch(a, term))
+    return sortArtworks(rows, view.order)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all, search, view.fund, view.type, view.status, view.order])
+
+  // RF-604: thumbnails for the WHOLE mirror, once per refresh — filtering
+  // never refetches signatures. Two requests regardless of size: the view
+  // with each artwork's representative image, and the signature of every
+  // path at once.
+  useEffect(() => {
+    if (!all || all.length === 0) {
+      setThumbnails({})
+      return
+    }
+    let current = true
+    void (async () => {
+      const { data: representatives } = await supabase
+        .from('representative_image')
+        .select('catalog_id, thumbnail_path')
+        .in('catalog_id', all.map((a) => a.catalog_id))
+
+      const repRows = (representatives ?? []) as { catalog_id: string; thumbnail_path: string }[]
+      const urls = await signedUrls(repRows.map((r) => r.thumbnail_path))
+      if (!current) return
+      setThumbnails(
+        Object.fromEntries(
+          repRows.flatMap((r) => {
+            const u = urls[r.thumbnail_path]
+            return u ? [[r.catalog_id, u] as const] : []
+          }),
+        ),
+      )
+    })()
+    return () => {
+      current = false
+    }
+  }, [all])
+
+  // Loading only when there is no snapshot at all: with one, the list paints
+  // instantly and the refresh happens behind it.
+  return { artworks, thumbnails, loading: all === null, error, reload }
 }
 
 export function useArtwork(id: string | undefined) {

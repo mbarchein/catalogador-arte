@@ -1,4 +1,5 @@
 import { ARTIST_FUNDS, type ArtistFund, type Artwork } from '../../lib/types'
+import { normalizeForSearch } from '../../lib/vocabulary'
 
 /**
  * Filters and ordering of the artworks list (RF-602, RF-608).
@@ -130,74 +131,96 @@ export function isDefaultView(view: ListView): boolean {
 
 // ── From view to query ───────────────────────────────────────
 
-export interface QueryPlan {
-  /** Equality filters, applied in the Supabase query — not in the client. */
-  filters: { column: string; value: string | boolean }[]
-  /** Order clauses for the query, in priority order. */
-  orders: { column: string; ascending: boolean; nullsFirst?: boolean }[]
-  /** TITLE sorts in the client afterwards; see compareByTitle for why. */
-  sortInClient: boolean
+// ── Filtering and ordering, over the local mirror ────────────
+// The list works over a local copy of the catalog (see useArtworks): these
+// predicates ARE the filter semantics, and their tests hold them.
+//
+// "Fase 2 en curso" means phase 1 done and phase 2 not yet: a record still in
+// phase 1 has not entered phase 2. The header badges show both phases at
+// once, so no combination is hidden — that filter answers "what is being
+// documented right now".
+
+type ListedArtwork = Pick<
+  Artwork,
+  | 'catalog_id'
+  | 'title'
+  | 'artist'
+  | 'artwork_type'
+  | 'inventory_phase_completed'
+  | 'documentation_phase_completed'
+  | 'catalog_record_complete'
+  | 'photographed'
+  | 'start_year'
+  | 'updated_at'
+>
+
+export function matchesView(a: ListedArtwork, view: ListView): boolean {
+  if (view.fund !== 'ALL' && a.artist !== view.fund) return false
+  if (view.type !== '' && a.artwork_type !== view.type) return false
+  switch (view.status) {
+    case 'ALL':
+      return true
+    case 'PHASE1_IN_PROGRESS':
+      return !a.inventory_phase_completed
+    case 'PHASE1_DONE':
+      return a.inventory_phase_completed
+    case 'PHASE2_IN_PROGRESS':
+      return a.inventory_phase_completed && !a.documentation_phase_completed
+    case 'RECORD_COMPLETE':
+      return a.catalog_record_complete
+    case 'UNPHOTOGRAPHED':
+      return !a.photographed
+  }
 }
 
 /**
- * "Fase 2 en curso" means phase 1 done and phase 2 not yet: a record still in
- * phase 1 has not entered phase 2. The header badges show both phases at
- * once, so no combination is hidden — this filter answers "what is being
- * documented right now".
+ * Free-text search over identifier and title (RF-602). Accent- and
+ * case-insensitive — an improvement over the ilike the server ran, which
+ * ignored case but not accents: "oleo" must find "Óleo".
  */
-export function queryPlan(view: ListView): QueryPlan {
-  const filters: QueryPlan['filters'] = []
+export function matchesSearch(a: Pick<Artwork, 'catalog_id' | 'title'>, term: string): boolean {
+  const q = normalizeForSearch(term)
+  if (q === '') return true
+  return (
+    normalizeForSearch(a.catalog_id).includes(q) || normalizeForSearch(a.title).includes(q)
+  )
+}
 
-  if (view.fund !== 'ALL') filters.push({ column: 'artist', value: view.fund })
-  if (view.type !== '') filters.push({ column: 'artwork_type', value: view.type })
-
-  switch (view.status) {
-    case 'ALL':
-      break
-    case 'PHASE1_IN_PROGRESS':
-      filters.push({ column: 'inventory_phase_completed', value: false })
-      break
-    case 'PHASE1_DONE':
-      filters.push({ column: 'inventory_phase_completed', value: true })
-      break
-    case 'PHASE2_IN_PROGRESS':
-      filters.push({ column: 'inventory_phase_completed', value: true })
-      filters.push({ column: 'documentation_phase_completed', value: false })
-      break
-    case 'RECORD_COMPLETE':
-      filters.push({ column: 'catalog_record_complete', value: true })
-      break
-    case 'UNPHOTOGRAPHED':
-      filters.push({ column: 'photographed', value: false })
-      break
-  }
-
-  switch (view.order) {
+/** The list's orders, over the local mirror. */
+export function sortArtworks<T extends ListedArtwork>(rows: readonly T[], order: ListOrder): T[] {
+  const sorted = [...rows]
+  switch (order) {
     case 'RECENT':
       // updated_at moves on creation and on every edit: one criterion covers
-      // "what did we touch last", which is what one comes back to.
-      return { filters, orders: [{ column: 'updated_at', ascending: false }], sortInClient: false }
+      // "what did we touch last", which is what one comes back to. ISO
+      // timestamps compare correctly as strings.
+      sorted.sort((a, b) =>
+        a.updated_at === b.updated_at
+          ? a.catalog_id.localeCompare(b.catalog_id)
+          : a.updated_at < b.updated_at
+            ? 1
+            : -1,
+      )
+      break
     case 'CATALOG_ID':
-      return { filters, orders: [{ column: 'catalog_id', ascending: true }], sortInClient: false }
+      sorted.sort((a, b) => a.catalog_id.localeCompare(b.catalog_id))
+      break
     case 'CHRONOLOGICAL':
-      // By the structured year; undated artworks go last (they are pending
-      // research, not "older than everything").
-      return {
-        filters,
-        orders: [
-          { column: 'start_year', ascending: true, nullsFirst: false },
-          { column: 'catalog_id', ascending: true },
-        ],
-        sortInClient: false,
-      }
+      // Undated artworks go last: they are pending research, not "older than
+      // everything".
+      sorted.sort((a, b) => {
+        if (a.start_year == null !== (b.start_year == null)) return a.start_year == null ? 1 : -1
+        if (a.start_year != null && b.start_year != null && a.start_year !== b.start_year) {
+          return a.start_year - b.start_year
+        }
+        return a.catalog_id.localeCompare(b.catalog_id)
+      })
+      break
     case 'TITLE':
-      // The query only provides a stable base order; the alphabetical sort
-      // happens in the client (the list is already fetched whole), with
-      // es-ES collation — the database's would misplace accented titles —
-      // and with the untitled at the end: RF-209 shows them as [Sin título],
-      // which is a placeholder, not a title to alphabetize under "S".
-      return { filters, orders: [{ column: 'catalog_id', ascending: true }], sortInClient: true }
+      sorted.sort(compareByTitle)
+      break
   }
+  return sorted
 }
 
 /** es-ES alphabetical order with the untitled last; ties break by code. */

@@ -4,10 +4,12 @@ import {
   compareByTitle,
   hasNoFilters,
   isDefaultView,
+  matchesSearch,
+  matchesView,
   normalizeStoredView,
   parseView,
-  queryPlan,
   serializeView,
+  sortArtworks,
   type ListView,
 } from './listView'
 
@@ -56,58 +58,121 @@ describe('remembered view (applied when entering with no parameters)', () => {
   })
 })
 
-describe('queryPlan (RF-602: the filters run in the query, not in the client)', () => {
-  it('the default view filters nothing and orders by recency', () => {
-    expect(queryPlan(DEFAULT_VIEW)).toEqual({
-      filters: [],
-      orders: [{ column: 'updated_at', ascending: false }],
-      sortInClient: false,
-    })
+/** Minimal listed artwork; each test overrides only what it exercises. */
+const stub = (over: Partial<Parameters<typeof matchesView>[0]> = {}) => ({
+  catalog_id: 'AR-0001',
+  title: '',
+  artist: 'ROTILI' as const,
+  artwork_type: '',
+  inventory_phase_completed: false,
+  documentation_phase_completed: false,
+  catalog_record_complete: false,
+  photographed: false,
+  start_year: null,
+  updated_at: '2026-07-28T10:00:00+00:00',
+  ...over,
+})
+
+describe('matchesView (RF-602: the filters run over the local mirror)', () => {
+  it('the default view matches everything', () => {
+    expect(matchesView(stub(), DEFAULT_VIEW)).toBe(true)
   })
 
-  it('fund and type become equality filters', () => {
-    const plan = queryPlan({ ...DEFAULT_VIEW, fund: 'TEST', type: 'Pintura' })
-    expect(plan.filters).toEqual([
-      { column: 'artist', value: 'TEST' },
-      { column: 'artwork_type', value: 'Pintura' },
-    ])
+  it('fund and type filter by equality', () => {
+    const view = { ...DEFAULT_VIEW, fund: 'TEST' as const, type: 'Pintura' }
+    expect(matchesView(stub({ artist: 'TEST', artwork_type: 'Pintura' }), view)).toBe(true)
+    expect(matchesView(stub({ artist: 'ROTILI', artwork_type: 'Pintura' }), view)).toBe(false)
+    expect(matchesView(stub({ artist: 'TEST', artwork_type: 'Dibujo' }), view)).toBe(false)
   })
 
-  it('each process status maps to its flags', () => {
-    expect(queryPlan({ ...DEFAULT_VIEW, status: 'PHASE1_IN_PROGRESS' }).filters).toEqual([
-      { column: 'inventory_phase_completed', value: false },
-    ])
-    expect(queryPlan({ ...DEFAULT_VIEW, status: 'PHASE1_DONE' }).filters).toEqual([
-      { column: 'inventory_phase_completed', value: true },
-    ])
+  it('each process status answers by its flags', () => {
+    expect(matchesView(stub(), { ...DEFAULT_VIEW, status: 'PHASE1_IN_PROGRESS' })).toBe(true)
+    expect(
+      matchesView(stub({ inventory_phase_completed: true }), {
+        ...DEFAULT_VIEW,
+        status: 'PHASE1_DONE',
+      }),
+    ).toBe(true)
     // Phase 2 in progress: phase 1 done AND phase 2 pending — a record still
     // in phase 1 has not entered phase 2.
-    expect(queryPlan({ ...DEFAULT_VIEW, status: 'PHASE2_IN_PROGRESS' }).filters).toEqual([
-      { column: 'inventory_phase_completed', value: true },
-      { column: 'documentation_phase_completed', value: false },
-    ])
-    expect(queryPlan({ ...DEFAULT_VIEW, status: 'RECORD_COMPLETE' }).filters).toEqual([
-      { column: 'catalog_record_complete', value: true },
-    ])
-    expect(queryPlan({ ...DEFAULT_VIEW, status: 'UNPHOTOGRAPHED' }).filters).toEqual([
-      { column: 'photographed', value: false },
+    expect(matchesView(stub(), { ...DEFAULT_VIEW, status: 'PHASE2_IN_PROGRESS' })).toBe(false)
+    expect(
+      matchesView(stub({ inventory_phase_completed: true }), {
+        ...DEFAULT_VIEW,
+        status: 'PHASE2_IN_PROGRESS',
+      }),
+    ).toBe(true)
+    expect(
+      matchesView(stub({ catalog_record_complete: true }), {
+        ...DEFAULT_VIEW,
+        status: 'RECORD_COMPLETE',
+      }),
+    ).toBe(true)
+    expect(matchesView(stub(), { ...DEFAULT_VIEW, status: 'UNPHOTOGRAPHED' })).toBe(true)
+    expect(
+      matchesView(stub({ photographed: true }), { ...DEFAULT_VIEW, status: 'UNPHOTOGRAPHED' }),
+    ).toBe(false)
+  })
+
+  it('two filters combine: both conditions must hold (RF-602)', () => {
+    const view = { ...DEFAULT_VIEW, fund: 'ROTILI' as const, status: 'UNPHOTOGRAPHED' as const }
+    expect(matchesView(stub(), view)).toBe(true)
+    expect(matchesView(stub({ photographed: true }), view)).toBe(false)
+  })
+})
+
+describe('matchesSearch (RF-602: identifier and title, accent-insensitive)', () => {
+  it('finds by code and by title, ignoring case and accents', () => {
+    const a = stub({ catalog_id: 'AR-0042', title: 'Árbol seco' })
+    expect(matchesSearch(a, 'ar-004')).toBe(true)
+    expect(matchesSearch(a, 'arbol')).toBe(true)
+    expect(matchesSearch(a, 'humedo')).toBe(false)
+  })
+
+  it('the empty search matches everything', () => {
+    expect(matchesSearch(stub(), '  ')).toBe(true)
+  })
+})
+
+describe('sortArtworks (the orders of the list, over the local mirror)', () => {
+  it('recent first by updated_at', () => {
+    const rows = [
+      stub({ catalog_id: 'AR-0001', updated_at: '2026-07-27T10:00:00+00:00' }),
+      stub({ catalog_id: 'AR-0002', updated_at: '2026-07-28T10:00:00+00:00' }),
+    ]
+    expect(sortArtworks(rows, 'RECENT').map((r) => r.catalog_id)).toEqual(['AR-0002', 'AR-0001'])
+  })
+
+  it('chronological puts the undated last, like the record view', () => {
+    const rows = [
+      stub({ catalog_id: 'AR-0001', start_year: null }),
+      stub({ catalog_id: 'AR-0002', start_year: 1980 }),
+      stub({ catalog_id: 'AR-0003', start_year: 1975 }),
+    ]
+    expect(sortArtworks(rows, 'CHRONOLOGICAL').map((r) => r.catalog_id)).toEqual([
+      'AR-0003',
+      'AR-0002',
+      'AR-0001',
     ])
   })
 
-  it('two filters combine: both conditions travel in the same query (RF-602)', () => {
-    const plan = queryPlan({ ...DEFAULT_VIEW, fund: 'ROTILI', status: 'UNPHOTOGRAPHED' })
-    expect(plan.filters).toHaveLength(2)
-  })
-
-  it('chronological order puts the undated last, like the record view', () => {
-    expect(queryPlan({ ...DEFAULT_VIEW, order: 'CHRONOLOGICAL' }).orders).toEqual([
-      { column: 'start_year', ascending: true, nullsFirst: false },
-      { column: 'catalog_id', ascending: true },
+  it('title order uses the es-ES comparison with the untitled last', () => {
+    const rows = [
+      stub({ catalog_id: 'AR-0001', title: '' }),
+      stub({ catalog_id: 'AR-0002', title: 'Zambra' }),
+      stub({ catalog_id: 'AR-0003', title: 'Ánfora' }),
+    ]
+    expect(sortArtworks(rows, 'TITLE').map((r) => r.catalog_id)).toEqual([
+      'AR-0003',
+      'AR-0002',
+      'AR-0001',
     ])
   })
 
-  it('title order defers to the client', () => {
-    expect(queryPlan({ ...DEFAULT_VIEW, order: 'TITLE' }).sortInClient).toBe(true)
+  it('does not mutate what it receives', () => {
+    const rows = [stub({ catalog_id: 'AR-0002' }), stub({ catalog_id: 'AR-0001' })]
+    sortArtworks(rows, 'CATALOG_ID')
+    expect(rows[0]?.catalog_id).toBe('AR-0002')
   })
 })
 
