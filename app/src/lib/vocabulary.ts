@@ -26,23 +26,60 @@ export function filterVocabulary(options: readonly string[], query: string): str
   return options.filter((o) => normalizeForSearch(o).includes(q))
 }
 
+/** One character, comparable: lowercase and with its diacritics dropped. */
+function normalizeChar(ch: string): string {
+  return ch
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+}
+
+export interface FuzzyMatch {
+  option: string
+  /** Positions in `option` of the letters the query matched, for highlighting. */
+  indices: number[]
+}
+
 /**
- * Loose matching for suggestions over free text: every whitespace- or
- * comma-separated token of the query must appear somewhere in the option,
- * in any order — "amarilla edif" finds "edificio a, habitacion amarilla,
- * bloque 3". Token containment instead of edit-distance fuzziness on
- * purpose: it is predictable, and the queries are fragments the cataloger
- * remembers, not typos to repair.
+ * Subsequence matching for suggestions over free text: the letters of the
+ * query must appear in the option in the same order, but NOT necessarily
+ * together — "edam" finds "EDificio a, habitacion AMarilla". Case- and
+ * accent-insensitive; spaces and commas in the query are ignored (they
+ * separate nothing when any gap is allowed). Returns where each letter
+ * landed, so the list can show WHY an option matched, or null when it does
+ * not.
  */
-export function fuzzyFilter(options: readonly string[], query: string): string[] {
-  const tokens = normalizeForSearch(query)
-    .split(/[\s,]+/)
-    .filter(Boolean)
-  if (tokens.length === 0) return [...options]
-  return options.filter((o) => {
-    const normalized = normalizeForSearch(o)
-    return tokens.every((t) => normalized.includes(t))
-  })
+export function fuzzyMatch(option: string, query: string): number[] | null {
+  const letters = [...normalizeForSearch(query)].filter((c) => c !== ' ' && c !== ',')
+  const indices: number[] = []
+  let qi = 0
+  for (let i = 0; i < option.length && qi < letters.length; i += 1) {
+    if (normalizeChar(option[i] as string) === letters[qi]) {
+      indices.push(i)
+      qi += 1
+    }
+  }
+  return qi === letters.length ? indices : null
+}
+
+/**
+ * Matching options, best first: the tightest match (least spread between the
+ * first and last matched letter), then the earliest, then alphabetical. The
+ * empty query ranks everything, in the caller's order.
+ */
+export function fuzzyRank(options: readonly string[], query: string): FuzzyMatch[] {
+  const matches: FuzzyMatch[] = []
+  for (const option of options) {
+    const indices = fuzzyMatch(option, query)
+    if (indices !== null) matches.push({ option, indices })
+  }
+  const spread = (m: FuzzyMatch) =>
+    m.indices.length === 0 ? 0 : (m.indices[m.indices.length - 1] as number) - (m.indices[0] as number)
+  // Ties keep the caller's order: sort is stable, and no alphabetical
+  // tiebreak — the caller already chose how to present equals.
+  return matches.sort(
+    (a, b) => spread(a) - spread(b) || (a.indices[0] ?? 0) - (b.indices[0] ?? 0),
+  )
 }
 
 /**

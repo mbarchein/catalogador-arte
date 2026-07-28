@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { filterVocabulary, findEquivalent, fuzzyFilter, normalizeForSearch } from './vocabulary'
+import {
+  filterVocabulary,
+  findEquivalent,
+  fuzzyMatch,
+  fuzzyRank,
+  normalizeForSearch,
+} from './vocabulary'
 
 const TYPES = ['Dibujo', 'Escultura', 'Óleo sobre tabla', 'Pintura', 'Técnica mixta']
 
@@ -28,30 +34,53 @@ describe('filterVocabulary (RF-213: quick search over the type catalog)', () => 
   })
 })
 
-describe('fuzzyFilter (suggestions over free text, e.g. physical locations)', () => {
+describe('fuzzyMatch (subsequence: the letters count even apart)', () => {
+  it('matches letters in order with any gaps, and says where they landed', () => {
+    // "edam": ED from EDificio, then the greedy leftmost A (the standalone
+    // "a") and the M of aMarilla — letters apart still count.
+    const indices = fuzzyMatch('edificio a, habitacion amarilla', 'edam')
+    expect(indices).toEqual([0, 1, 9, 24])
+  })
+
+  it('is case- and accent-insensitive', () => {
+    expect(fuzzyMatch('Habitación 4', 'HACIO')).not.toBeNull()
+  })
+
+  it('ignores spaces and commas in the query', () => {
+    expect(fuzzyMatch('almacen exterior, jaula 2', 'alm, jau')).not.toBeNull()
+  })
+
+  it('rejects letters out of order or absent', () => {
+    expect(fuzzyMatch('edificio a', 'eo')).not.toBeNull()
+    expect(fuzzyMatch('edificio a', 'oe')).toBeNull()
+    expect(fuzzyMatch('edificio a', 'zx')).toBeNull()
+  })
+
+  it('the empty query matches with nothing highlighted', () => {
+    expect(fuzzyMatch('edificio a', ' ')).toEqual([])
+  })
+})
+
+describe('fuzzyRank (best match first)', () => {
   const LOCATIONS = [
-    'edificio a, habitacion amarilla, bloque 3',
     'edificio b, habitacion 4, estanteria 3, balda 2',
+    'edificio a, habitacion amarilla, bloque 3',
     'almacen exterior, jaula 2',
   ]
 
-  it('matches every token in any order, case- and accent-insensitive', () => {
-    expect(fuzzyFilter(LOCATIONS, 'amarilla edif')).toEqual([
-      'edificio a, habitacion amarilla, bloque 3',
-    ])
-    expect(fuzzyFilter(LOCATIONS, 'Edificio HABITACIÓN')).toHaveLength(2)
+  it('keeps only what matches, tightest match first', () => {
+    const ranked = fuzzyRank(LOCATIONS, 'amarilla')
+    expect(ranked.map((m) => m.option)).toEqual(['edificio a, habitacion amarilla, bloque 3'])
   })
 
-  it('treats commas as token separators', () => {
-    expect(fuzzyFilter(LOCATIONS, 'jaula, exterior')).toEqual(['almacen exterior, jaula 2'])
+  it('prefers the option where the letters sit closest together', () => {
+    const ranked = fuzzyRank(['a-x-b-y-c', 'z abc'], 'abc')
+    expect(ranked[0]?.option).toBe('z abc')
   })
 
-  it('returns everything for the empty query', () => {
-    expect(fuzzyFilter(LOCATIONS, '  ')).toHaveLength(3)
-  })
-
-  it('returns nothing when a token matches nowhere', () => {
-    expect(fuzzyFilter(LOCATIONS, 'edificio z')).toEqual([])
+  it('ranks everything for the empty query, in the given order', () => {
+    expect(fuzzyRank(LOCATIONS, '')).toHaveLength(3)
+    expect(fuzzyRank(LOCATIONS, '')[0]?.option).toBe(LOCATIONS[0])
   })
 })
 

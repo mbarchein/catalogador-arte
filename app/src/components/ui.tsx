@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TriState } from '../lib/types'
-import { filterVocabulary, findEquivalent, fuzzyFilter } from '../lib/vocabulary'
+import { filterVocabulary, findEquivalent, fuzzyRank } from '../lib/vocabulary'
 
 // ── Icons ────────────────────────────────────────────────────
 // Inline SVG, no library: these are five icons and pulling a whole dependency
@@ -535,7 +535,8 @@ export function ToggleChip({
  * ComboBox there is no vocabulary and nothing to confirm: whatever is typed
  * IS the value, and the dropdown only saves retyping something the catalog
  * already contains (physical locations, mainly). Matching is token-based and
- * accent-insensitive (see fuzzyFilter).
+ * accent-insensitive subsequence — the letters count even apart — with the
+ * matched letters emphasized in the list (see fuzzyMatch/fuzzyRank).
  */
 export function SuggestInput({
   id,
@@ -569,8 +570,8 @@ export function SuggestInput({
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [open])
 
-  const matches = fuzzyFilter(suggestions, value)
-    .filter((s) => s !== value)
+  const matches = fuzzyRank(suggestions, value)
+    .filter((m) => m.option !== value)
     .slice(0, 6)
 
   return (
@@ -606,17 +607,17 @@ export function SuggestInput({
       {open && matches.length > 0 && (
         <div className="absolute inset-x-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-stone-300 bg-white shadow-lg">
           <ul>
-            {matches.map((s) => (
-              <li key={s}>
+            {matches.map((m) => (
+              <li key={m.option}>
                 <button
                   type="button"
                   onClick={() => {
-                    onChange(s)
+                    onChange(m.option)
                     setOpen(false)
                   }}
                   className="min-h-touch w-full px-3 py-2 text-left text-sm hover:bg-stone-100"
                 >
-                  {s}
+                  <HighlightedMatch text={m.option} indices={m.indices} />
                 </button>
               </li>
             ))}
@@ -624,6 +625,30 @@ export function SuggestInput({
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * The option with the matched letters emphasized: with subsequence matching
+ * the letters need not sit together, and without seeing WHICH ones matched,
+ * an option can look arbitrary.
+ */
+function HighlightedMatch({ text, indices }: { text: string; indices: readonly number[] }) {
+  const marked = new Set(indices)
+  return (
+    <>
+      {[...text].map((ch, i) =>
+        marked.has(i) ? (
+          <strong key={i} className="font-semibold text-stone-900 underline decoration-stone-400">
+            {ch}
+          </strong>
+        ) : (
+          <span key={i} className="text-stone-600">
+            {ch}
+          </span>
+        ),
+      )}
+    </>
   )
 }
 
