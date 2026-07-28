@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { FooterMenu } from './FooterMenu'
 
@@ -103,18 +103,46 @@ export function Layout({
  */
 export function SignOut() {
   const { profile, canEdit, signOut } = useAuth()
+  // Two-tap confirmation, like retiring a photo: signing out by accident
+  // costs a login from a storage room with poor coverage, and the button is
+  // no longer a timid link that could be mistaken for text.
+  const [confirming, setConfirming] = useState(false)
 
   return (
-    <div className="mt-8 border-t border-stone-200 pt-4 text-center text-xs text-stone-500">
+    <div className="mt-8 border-t border-stone-200 pt-4">
       {profile && (
-        <p className="mb-1">
+        <p className="mb-2 text-center text-xs text-stone-500">
           {profile.name || profile.email}
           {!canEdit && ' · solo consulta'}
         </p>
       )}
-      <button onClick={signOut} className="min-h-touch px-4 underline hover:text-stone-800">
-        Cerrar sesión
-      </button>
+      {confirming ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-2">
+          <p className="text-xs text-red-900">
+            ¿Cerrar la sesión en este dispositivo? Tendrás que volver a entrar con tu contraseña.
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="btn min-h-touch bg-red-700 text-white"
+            >
+              Sí, cerrar sesión
+            </button>
+            <button type="button" onClick={() => setConfirming(false)} className="btn-secondary">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="btn min-h-touch w-full border border-red-300 bg-white text-sm text-red-800"
+        >
+          Cerrar sesión
+        </button>
+      )}
     </div>
   )
 }
