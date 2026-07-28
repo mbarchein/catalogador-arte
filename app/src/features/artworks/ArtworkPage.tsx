@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Navigate, useMatch, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
@@ -64,7 +64,10 @@ export function ArtworkPage() {
   const { id } = useParams<{ id: string }>()
   const { artwork, loading, error, reload } = useArtwork(id)
   const { canEdit } = useAuth()
-  const [editing, setEditing] = useState(false)
+  const navigate = useNavigate()
+  // Editing lives in the URL (/artwork/:id/edit), not in local state (see the
+  // route comment in App.tsx).
+  const editing = useMatch('/artwork/:id/edit') !== null
   const [generatingPdf, setGeneratingPdf] = useState(false)
   const [pdfError, setPdfError] = useState('')
 
@@ -119,16 +122,22 @@ export function ArtworkPage() {
     )
   }
 
+  // Reaching /edit by URL without permission falls back to the view: the
+  // Reader must never see an editable form, even a doomed one (RF-109).
+  if (editing && !canEdit) {
+    return <Navigate to={`/artwork/${id}`} replace />
+  }
+
   if (editing) {
     return (
-      <Layout title={`Editando ${artwork.catalog_id}`} back="/">
+      <Layout title={`Editando ${artwork.catalog_id}`} back={`/artwork/${id}`}>
         <EditForm
           artwork={artwork}
           onDone={async () => {
             await reload()
-            setEditing(false)
+            navigate(`/artwork/${id}`, { replace: true })
           }}
-          onCancel={() => setEditing(false)}
+          onCancel={() => navigate(`/artwork/${id}`, { replace: true })}
         />
       </Layout>
     )
@@ -146,7 +155,7 @@ export function ArtworkPage() {
       action={
         canEdit ? (
           <button
-            onClick={() => setEditing(true)}
+            onClick={() => navigate(`/artwork/${id}/edit`)}
             className="btn-primary min-h-[2.5rem] px-4 text-sm"
           >
             Editar

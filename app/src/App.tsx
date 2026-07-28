@@ -25,6 +25,10 @@ export function App() {
       <Route path="/" element={<ArtworksPage />} />
       <Route path="/capture" element={<CapturePage />} />
       <Route path="/artwork/:id" element={<ArtworkPage />} />
+      {/* Editing is a route, not local state: it survives a reload, can be
+          bookmarked and the phone's back button leaves the form instead of
+          leaving the record. */}
+      <Route path="/artwork/:id/edit" element={<ArtworkPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       {/* The recovery email link opens a temporary session and lands here; it
           also serves as the password change from Mi perfil. */}
