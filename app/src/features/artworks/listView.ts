@@ -14,8 +14,6 @@ import { normalizeForSearch } from '../../lib/vocabulary'
  * parameters.
  */
 
-export type FundFilter = 'ALL' | ArtistFund
-
 export type StatusFilter =
   | 'ALL'
   | 'PHASE1_IN_PROGRESS'
@@ -27,15 +25,16 @@ export type StatusFilter =
 export type ListOrder = 'RECENT' | 'CATALOG_ID' | 'CHRONOLOGICAL' | 'TITLE'
 
 export interface ListView {
-  fund: FundFilter
-  /** '' filters nothing; otherwise an `artwork_types` entry, matched exactly. */
-  type: string
+  /** Empty selects every fund; otherwise the artwork must be of one of them. */
+  funds: ArtistFund[]
+  /** Empty selects every type; entries are `artwork_types` names, matched exactly. */
+  types: string[]
   status: StatusFilter
   order: ListOrder
 }
 
 /** Recent first by default: covers both creation and modification. */
-export const DEFAULT_VIEW: ListView = { fund: 'ALL', type: '', status: 'ALL', order: 'RECENT' }
+export const DEFAULT_VIEW: ListView = { funds: [], types: [], status: 'ALL', order: 'RECENT' }
 
 const STATUS_FILTERS: readonly StatusFilter[] = [
   'ALL',
@@ -50,8 +49,7 @@ const LIST_ORDERS: readonly ListOrder[] = ['RECENT', 'CATALOG_ID', 'CHRONOLOGICA
 
 // ── Interface labels ─────────────────────────────────────────
 
-export const FUND_FILTER_LABEL: Record<FundFilter, string> = {
-  ALL: 'Todos',
+export const FUND_LABEL: Record<ArtistFund, string> = {
   ROTILI: 'Rotili',
   RUIZ_CAMPINS: 'Ruiz Campins',
   TEST: 'Fondo de pruebas',
@@ -98,13 +96,17 @@ function keyOf<K extends string>(map: Record<K, string>, param: string | null): 
 }
 
 export function parseView(params: URLSearchParams): ListView {
-  const fund = params.get('fund')
   return {
-    fund: ARTIST_FUNDS.includes(fund as ArtistFund) ? (fund as ArtistFund) : 'ALL',
+    // Fund and type are multiselect and travel as REPEATED parameters
+    // (?fund=A&fund=B): nothing to escape inside a value, and a legacy
+    // single-value URL parses identically.
+    funds: [...new Set(params.getAll('fund'))].filter((f): f is ArtistFund =>
+      ARTIST_FUNDS.includes(f as ArtistFund),
+    ),
     // Any string is a plausible vocabulary entry; whether it exists is the
-    // query's business (an unknown one simply finds nothing, with the
+    // filter's business (an unknown one simply finds nothing, with the
     // explicit no-results message).
-    type: params.get('type') ?? '',
+    types: [...new Set(params.getAll('type'))].filter((t) => t !== ''),
     status: keyOf(STATUS_PARAM, params.get('status')) ?? 'ALL',
     order: keyOf(ORDER_PARAM, params.get('order')) ?? 'RECENT',
   }
@@ -113,8 +115,8 @@ export function parseView(params: URLSearchParams): ListView {
 /** Only the non-default fields travel: no parameters means the default view. */
 export function serializeView(view: ListView): URLSearchParams {
   const params = new URLSearchParams()
-  if (view.fund !== 'ALL') params.set('fund', view.fund)
-  if (view.type !== '') params.set('type', view.type)
+  for (const f of view.funds) params.append('fund', f)
+  for (const t of view.types) params.append('type', t)
   if (view.status !== 'ALL') params.set('status', STATUS_PARAM[view.status])
   if (view.order !== 'RECENT') params.set('order', ORDER_PARAM[view.order])
   return params
@@ -122,7 +124,7 @@ export function serializeView(view: ListView): URLSearchParams {
 
 /** True when no filter is active (the order is presentation, not a filter). */
 export function hasNoFilters(view: ListView): boolean {
-  return view.fund === 'ALL' && view.type === '' && view.status === 'ALL'
+  return view.funds.length === 0 && view.types.length === 0 && view.status === 'ALL'
 }
 
 export function isDefaultView(view: ListView): boolean {
@@ -155,8 +157,8 @@ type ListedArtwork = Pick<
 >
 
 export function matchesView(a: ListedArtwork, view: ListView): boolean {
-  if (view.fund !== 'ALL' && a.artist !== view.fund) return false
-  if (view.type !== '' && a.artwork_type !== view.type) return false
+  if (view.funds.length > 0 && !view.funds.includes(a.artist)) return false
+  if (view.types.length > 0 && !view.types.includes(a.artwork_type)) return false
   switch (view.status) {
     case 'ALL':
       return true
@@ -249,9 +251,17 @@ const KEY = 'catalogador.artworks-view'
 export function normalizeStoredView(value: unknown): ListView {
   if (typeof value !== 'object' || value === null) return DEFAULT_VIEW
   const v = value as Record<string, unknown>
+
+  const isFund = (x: unknown): x is ArtistFund => ARTIST_FUNDS.includes(x as ArtistFund)
+  // A view stored before fund and type became multiselect carried a single
+  // value ('fund'/'type'): it still counts, as a one-element selection.
+  const funds = Array.isArray(v.funds) ? v.funds.filter(isFund) : isFund(v.fund) ? [v.fund] : []
+  const isType = (x: unknown): x is string => typeof x === 'string' && x !== ''
+  const types = Array.isArray(v.types) ? v.types.filter(isType) : isType(v.type) ? [v.type] : []
+
   return {
-    fund: ARTIST_FUNDS.includes(v.fund as ArtistFund) ? (v.fund as ArtistFund) : 'ALL',
-    type: typeof v.type === 'string' ? v.type : '',
+    funds,
+    types,
     status: STATUS_FILTERS.includes(v.status as StatusFilter) ? (v.status as StatusFilter) : 'ALL',
     order: LIST_ORDERS.includes(v.order as ListOrder) ? (v.order as ListOrder) : 'RECENT',
   }

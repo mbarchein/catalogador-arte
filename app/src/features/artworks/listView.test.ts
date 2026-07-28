@@ -18,10 +18,10 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
     expect(parseView(new URLSearchParams())).toEqual(DEFAULT_VIEW)
   })
 
-  it('round-trips every non-default field', () => {
+  it('round-trips every non-default field, multiselects included', () => {
     const view: ListView = {
-      fund: 'RUIZ_CAMPINS',
-      type: 'Dibujo',
+      funds: ['RUIZ_CAMPINS', 'TEST'],
+      types: ['Dibujo', 'Técnica mixta'],
       status: 'PHASE2_IN_PROGRESS',
       order: 'TITLE',
     }
@@ -34,14 +34,19 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
 
   it('ignores unknown values field by field, like a stale bookmark', () => {
     const params = new URLSearchParams(
-      'fund=PICASSO&type=Dibujo&status=whatever&order=title',
+      'fund=PICASSO&fund=ROTILI&type=Dibujo&status=whatever&order=title',
     )
     expect(parseView(params)).toEqual({
-      fund: 'ALL',
-      type: 'Dibujo',
+      funds: ['ROTILI'],
+      types: ['Dibujo'],
       status: 'ALL',
       order: 'TITLE',
     })
+  })
+
+  it('deduplicates repeated parameters', () => {
+    const params = new URLSearchParams('type=Dibujo&type=Dibujo')
+    expect(parseView(params).types).toEqual(['Dibujo'])
   })
 })
 
@@ -49,11 +54,20 @@ describe('remembered view (applied when entering with no parameters)', () => {
   it('normalizes a foreign shape to the default, field by field', () => {
     expect(normalizeStoredView(null)).toEqual(DEFAULT_VIEW)
     expect(normalizeStoredView('garbage')).toEqual(DEFAULT_VIEW)
-    expect(normalizeStoredView({ fund: 'ROTILI', status: 12, order: 'CATALOG_ID' })).toEqual({
-      fund: 'ROTILI',
-      type: '',
+    expect(normalizeStoredView({ funds: ['ROTILI', 'GOYA'], status: 12, order: 'CATALOG_ID' })).toEqual({
+      funds: ['ROTILI'],
+      types: [],
       status: 'ALL',
       order: 'CATALOG_ID',
+    })
+  })
+
+  it('accepts the single-value shape stored before the multiselect', () => {
+    expect(normalizeStoredView({ fund: 'ROTILI', type: 'Pintura' })).toEqual({
+      funds: ['ROTILI'],
+      types: ['Pintura'],
+      status: 'ALL',
+      order: 'RECENT',
     })
   })
 })
@@ -78,9 +92,14 @@ describe('matchesView (RF-602: the filters run over the local mirror)', () => {
     expect(matchesView(stub(), DEFAULT_VIEW)).toBe(true)
   })
 
-  it('fund and type filter by equality', () => {
-    const view = { ...DEFAULT_VIEW, fund: 'TEST' as const, type: 'Pintura' }
+  it('fund and type filter by membership: any marked value matches', () => {
+    const view: ListView = {
+      ...DEFAULT_VIEW,
+      funds: ['TEST', 'RUIZ_CAMPINS'],
+      types: ['Pintura'],
+    }
     expect(matchesView(stub({ artist: 'TEST', artwork_type: 'Pintura' }), view)).toBe(true)
+    expect(matchesView(stub({ artist: 'RUIZ_CAMPINS', artwork_type: 'Pintura' }), view)).toBe(true)
     expect(matchesView(stub({ artist: 'ROTILI', artwork_type: 'Pintura' }), view)).toBe(false)
     expect(matchesView(stub({ artist: 'TEST', artwork_type: 'Dibujo' }), view)).toBe(false)
   })
@@ -115,7 +134,7 @@ describe('matchesView (RF-602: the filters run over the local mirror)', () => {
   })
 
   it('two filters combine: both conditions must hold (RF-602)', () => {
-    const view = { ...DEFAULT_VIEW, fund: 'ROTILI' as const, status: 'UNPHOTOGRAPHED' as const }
+    const view: ListView = { ...DEFAULT_VIEW, funds: ['ROTILI'], status: 'UNPHOTOGRAPHED' }
     expect(matchesView(stub(), view)).toBe(true)
     expect(matchesView(stub({ photographed: true }), view)).toBe(false)
   })
@@ -203,6 +222,6 @@ describe('view predicates', () => {
   it('an order is presentation, not a filter', () => {
     expect(hasNoFilters({ ...DEFAULT_VIEW, order: 'TITLE' })).toBe(true)
     expect(isDefaultView({ ...DEFAULT_VIEW, order: 'TITLE' })).toBe(false)
-    expect(hasNoFilters({ ...DEFAULT_VIEW, type: 'Pintura' })).toBe(false)
+    expect(hasNoFilters({ ...DEFAULT_VIEW, types: ['Pintura'] })).toBe(false)
   })
 })

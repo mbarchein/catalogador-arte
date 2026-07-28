@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { BottomSheet, FunnelIcon, RadioList } from '../../components/ui'
+import { BottomSheet, CheckList, FunnelIcon, RadioList } from '../../components/ui'
 import { displayDate } from '../../lib/dates'
 import { existenceNotice, displayMeasurements, displayTitle } from '../../lib/title'
 import { ARTIST_LABEL, ARTIST_FUNDS } from '../../lib/types'
 import { useLiveChanges } from '../../lib/live'
 import {
-  FUND_FILTER_LABEL,
+  FUND_LABEL,
   ORDER_LABEL,
   STATUS_FILTER_LABEL,
   hasNoFilters,
@@ -17,7 +17,6 @@ import {
   readStoredView,
   saveStoredView,
   serializeView,
-  type FundFilter,
   type ListOrder,
   type ListView,
   type StatusFilter,
@@ -25,9 +24,7 @@ import {
 import { useArtworks } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
 
-const FUND_OPTIONS: { value: FundFilter; text: string }[] = (
-  ['ALL', ...ARTIST_FUNDS] as FundFilter[]
-).map((v) => ({ value: v, text: FUND_FILTER_LABEL[v] }))
+const FUND_OPTIONS = ARTIST_FUNDS.map((v) => ({ value: v, text: FUND_LABEL[v] }))
 
 const STATUS_OPTIONS = (Object.keys(STATUS_FILTER_LABEL) as StatusFilter[]).map((v) => ({
   value: v,
@@ -87,18 +84,18 @@ export function ArtworksPage() {
   useLiveChanges('artworks', reload)
 
   // A type arriving in the URL that the vocabulary does not know is still
-  // shown as the active option: the radio must reflect what is filtering.
+  // shown as a marked option: the checkboxes must reflect what is filtering.
   const typeOptions = useMemo(() => {
-    const names = view.type !== '' && !types.includes(view.type) ? [...types, view.type] : types
-    return [{ value: '', text: 'Todos' }, ...names.map((t) => ({ value: t, text: t }))]
-  }, [types, view.type])
+    const unknown = view.types.filter((t) => !types.includes(t))
+    return [...types, ...unknown].map((t) => ({ value: t, text: t }))
+  }, [types, view.types])
 
   // How many parts of the view differ from the default: the funnel button
   // must say that something is filtering even with the sheet closed — a
   // filtered list that looks complete is how records get "lost".
   const activeCount = [
-    view.fund !== 'ALL',
-    view.type !== '',
+    view.funds.length > 0,
+    view.types.length > 0,
     view.status !== 'ALL',
     view.order !== 'RECENT',
   ].filter(Boolean).length
@@ -166,7 +163,7 @@ export function ArtworksPage() {
                 <button
                   type="button"
                   className="btn-secondary mt-3 w-full"
-                  onClick={() => updateView({ fund: 'ALL', type: '', status: 'ALL' })}
+                  onClick={() => updateView({ funds: [], types: [], status: 'ALL' })}
                 >
                   Quitar los filtros
                 </button>
@@ -244,24 +241,24 @@ export function ArtworksPage() {
 
           <section>
             <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
-              Fondo
+              Fondo <span className="normal-case text-stone-400">· sin marcar, todos</span>
             </h3>
-            <RadioList
+            <CheckList
               options={FUND_OPTIONS}
-              value={view.fund}
-              onChange={(fund) => updateView({ fund })}
+              values={view.funds}
+              onChange={(funds) => updateView({ funds })}
             />
           </section>
 
           <section>
             <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
-              Tipo de obra
+              Tipo de obra <span className="normal-case text-stone-400">· sin marcar, todos</span>
             </h3>
             {/* The vocabulary itself (RF-213): the same list the forms offer. */}
-            <RadioList
+            <CheckList
               options={typeOptions}
-              value={view.type}
-              onChange={(type) => updateView({ type })}
+              values={view.types}
+              onChange={(types) => updateView({ types })}
             />
           </section>
 
@@ -281,7 +278,7 @@ export function ArtworksPage() {
               type="button"
               disabled={activeCount === 0}
               onClick={() =>
-                updateView({ fund: 'ALL', type: '', status: 'ALL', order: 'RECENT' })
+                updateView({ funds: [], types: [], status: 'ALL', order: 'RECENT' })
               }
               className="btn-secondary disabled:opacity-40"
             >

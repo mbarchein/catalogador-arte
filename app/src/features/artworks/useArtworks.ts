@@ -81,7 +81,7 @@ export function useArtworks(search: string, view: ListView = DEFAULT_VIEW) {
     const rows = all.filter((a) => matchesView(a, view) && matchesSearch(a, term))
     return sortArtworks(rows, view.order)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [all, search, view.fund, view.type, view.status, view.order])
+  }, [all, search, view.funds.join(','), view.types.join(','), view.status, view.order])
 
   // RF-604: thumbnails for the WHOLE mirror, once per refresh — filtering
   // never refetches signatures. Two requests regardless of size: the view

@@ -1006,6 +1006,54 @@ export function RadioList<T extends string>({
   )
 }
 
+/**
+ * Multiselect sibling of RadioList: same look, checkbox semantics. An empty
+ * selection means "everything" — the caller says so next to its label; a
+ * dedicated "all" row would need clearing logic the empty state already is.
+ */
+export function CheckList<T extends string>({
+  options,
+  values,
+  onChange,
+}: {
+  options: readonly { value: T; text: string; hint?: string }[]
+  values: readonly T[]
+  onChange: (values: T[]) => void
+}) {
+  function toggle(v: T) {
+    onChange(values.includes(v) ? values.filter((x) => x !== v) : [...values, v])
+  }
+  return (
+    <div role="group" className="space-y-1">
+      {options.map((o) => {
+        const active = values.includes(o.value)
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="checkbox"
+            aria-checked={active}
+            onClick={() => toggle(o.value)}
+            className={`flex min-h-touch w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left ${
+              active ? 'bg-stone-800 text-white' : 'text-stone-800 active:bg-stone-100'
+            }`}
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">{o.text}</span>
+              {o.hint && (
+                <span className={`block text-xs ${active ? 'text-stone-300' : 'text-stone-500'}`}>
+                  {o.hint}
+                </span>
+              )}
+            </span>
+            {active && <YesIcon className="h-5 w-5 shrink-0" />}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Action bar fixed at the bottom ───────────────────────────
 
 /**
