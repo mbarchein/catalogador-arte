@@ -18,6 +18,7 @@ import {
   ComboBox,
   FieldGroup,
   LockIcon,
+  SuggestInput,
   ToggleChip,
   TriStateIcons,
   YearStepper,
@@ -27,6 +28,7 @@ import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { saveQueue, readQueue, rehydrate, clearQueue } from './photoQueue'
 import { previewId } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
+import { usePhysicalLocations } from './usePhysicalLocations'
 import {
   INITIAL_BATCH,
   saveBatch,
@@ -61,6 +63,9 @@ export function CapturePage() {
   // Controlled vocabulary for the batch's fixed type (RF-213). Loaded here
   // and not inside the opening screen so it is ready before the batch opens.
   const { types: artworkTypes, addType } = useArtworkTypes()
+
+  // Locations already used, as loose suggestions while typing (free text).
+  const knownLocations = usePhysicalLocations()
 
   const [batch, setBatch] = useState<Batch>(() => readBatch())
   const [open, setOpen] = useState(() => batchConfigured(readBatch()))
@@ -188,17 +193,16 @@ export function CapturePage() {
           </FieldGroup>
 
           <FieldGroup title="Ubicación física" hint="se arrastra, ajustable en cada obra">
-            <input
+            <SuggestInput
               id="batch-location"
-              className="field"
-              autoCapitalize="none"
-              aria-label="Ubicación física"
+              ariaLabel="Ubicación física"
               placeholder="edificio a, habitacion amarilla, bloque 3"
               value={batch.carried.location}
-              onChange={(e) =>
+              suggestions={knownLocations}
+              onChange={(v) =>
                 setBatch((b) => ({
                   ...b,
-                  carried: { ...b.carried, location: normalizeLocation(e.target.value) },
+                  carried: { ...b.carried, location: normalizeLocation(v) },
                 }))
               }
             />
@@ -561,23 +565,18 @@ export function CapturePage() {
             />
           </div>
 
-          <div>
-            <label className="label" htmlFor="location">
-              Ubicación física
-            </label>
-            <input
-              id="location"
-              className="field"
-              autoCapitalize="none"
-              value={batch.carried.location}
-              onChange={(e) =>
-                setBatch((b) => ({
-                  ...b,
-                  carried: { ...b.carried, location: normalizeLocation(e.target.value) },
-                }))
-              }
-            />
-          </div>
+          <SuggestInput
+            id="location"
+            label="Ubicación física"
+            value={batch.carried.location}
+            suggestions={knownLocations}
+            onChange={(v) =>
+              setBatch((b) => ({
+                ...b,
+                carried: { ...b.carried, location: normalizeLocation(v) },
+              }))
+            }
+          />
         </FieldGroup>
 
         {saved.length > 0 && (

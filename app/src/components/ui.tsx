@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TriState } from '../lib/types'
-import { filterVocabulary, findEquivalent } from '../lib/vocabulary'
+import { filterVocabulary, findEquivalent, fuzzyFilter } from '../lib/vocabulary'
 
 // ── Icons ────────────────────────────────────────────────────
 // Inline SVG, no library: these are five icons and pulling a whole dependency
@@ -508,6 +508,103 @@ export function ToggleChip({
  * touch screen must not happen by accident. Whoever cannot edit simply does
  * not pass `onAdd` and never sees the offer.
  */
+/**
+ * Free-text input with loose suggestions from previous values. Unlike the
+ * ComboBox there is no vocabulary and nothing to confirm: whatever is typed
+ * IS the value, and the dropdown only saves retyping something the catalog
+ * already contains (physical locations, mainly). Matching is token-based and
+ * accent-insensitive (see fuzzyFilter).
+ */
+export function SuggestInput({
+  id,
+  label,
+  value,
+  onChange,
+  suggestions,
+  placeholder,
+  ariaLabel,
+}: {
+  id: string
+  /** Visible label; omit it and provide ariaLabel when the context names the field. */
+  label?: string
+  value: string
+  onChange: (v: string) => void
+  suggestions: readonly string[]
+  placeholder?: string
+  ariaLabel?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Closing on a tap outside, instead of on blur: blur fires before the tap
+  // on a suggestion lands, which would close the list under the finger.
+  useEffect(() => {
+    if (!open) return
+    function onPointerDown(e: PointerEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [open])
+
+  const matches = fuzzyFilter(suggestions, value)
+    .filter((s) => s !== value)
+    .slice(0, 6)
+
+  return (
+    <div ref={containerRef} className="relative">
+      {label && (
+        <label className="label" htmlFor={id}>
+          {label}
+        </label>
+      )}
+      <input
+        id={id}
+        className="field"
+        role="combobox"
+        aria-expanded={open && matches.length > 0}
+        aria-autocomplete="list"
+        aria-label={ariaLabel}
+        autoComplete="off"
+        autoCapitalize="none"
+        placeholder={placeholder}
+        value={value}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          onChange(e.target.value)
+          setOpen(true)
+        }}
+        onKeyDown={(e) => {
+          // Never submit the surrounding form from here.
+          if (e.key === 'Enter') e.preventDefault()
+          if (e.key === 'Escape') setOpen(false)
+        }}
+      />
+
+      {open && matches.length > 0 && (
+        <div className="absolute inset-x-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-stone-300 bg-white shadow-lg">
+          <ul>
+            {matches.map((s) => (
+              <li key={s}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(s)
+                    setOpen(false)
+                  }}
+                  className="min-h-touch w-full px-3 py-2 text-left text-sm hover:bg-stone-100"
+                >
+                  {s}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ComboBox({
   id,
   label,

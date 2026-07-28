@@ -32,6 +32,7 @@ import {
   FieldGroup,
   OptionCards,
   PenIcon,
+  SuggestInput,
   TagIcon,
   Toggle,
   ToggleChip,
@@ -44,6 +45,7 @@ import { useLiveChanges } from '../../lib/live'
 import { ArtworkGallery } from './ArtworkGallery'
 import { useArtwork } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
+import { usePhysicalLocations } from './usePhysicalLocations'
 
 const AUTHORSHIP_ICON: Record<AttributedTitleValue, typeof PenIcon> = {
   NO: PenIcon,
@@ -328,6 +330,8 @@ function EditForm({
   // Controlled vocabulary for "Tipo de obra" (RF-213). Only editors reach
   // this form, so offering the add-to-catalog row is always legitimate here.
   const { types: artworkTypes, addType } = useArtworkTypes()
+  // Locations already used, as loose suggestions while typing (free text).
+  const knownLocations = usePhysicalLocations()
 
   function set<K extends keyof Artwork>(field: K, value: Artwork[K]) {
     setData((d) => ({ ...d, [field]: value }))
@@ -614,18 +618,13 @@ function EditForm({
           onChange={(v) => set('existence_status', v)}
         />
 
-        <div>
-          <label className="label" htmlFor="e-location">
-            Ubicación física
-          </label>
-          <input
-            id="e-location"
-            className="field"
-            autoCapitalize="none"
-            value={data.physical_location}
-            onChange={(e) => set('physical_location', normalizeLocation(e.target.value))}
-          />
-        </div>
+        <SuggestInput
+          id="e-location"
+          label="Ubicación física"
+          value={data.physical_location}
+          suggestions={knownLocations}
+          onChange={(v) => set('physical_location', normalizeLocation(v))}
+        />
       </FieldGroup>
 
       <FieldGroup title="Estado del proceso" hint="uso interno, no se publica">

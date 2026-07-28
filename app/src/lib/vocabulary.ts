@@ -27,6 +27,25 @@ export function filterVocabulary(options: readonly string[], query: string): str
 }
 
 /**
+ * Loose matching for suggestions over free text: every whitespace- or
+ * comma-separated token of the query must appear somewhere in the option,
+ * in any order — "amarilla edif" finds "edificio a, habitacion amarilla,
+ * bloque 3". Token containment instead of edit-distance fuzziness on
+ * purpose: it is predictable, and the queries are fragments the cataloger
+ * remembers, not typos to repair.
+ */
+export function fuzzyFilter(options: readonly string[], query: string): string[] {
+  const tokens = normalizeForSearch(query)
+    .split(/[\s,]+/)
+    .filter(Boolean)
+  if (tokens.length === 0) return [...options]
+  return options.filter((o) => {
+    const normalized = normalizeForSearch(o)
+    return tokens.every((t) => normalized.includes(t))
+  })
+}
+
+/**
  * The canonical entry the typed text is equivalent to, if any. Selecting it
  * instead of inserting keeps the vocabulary free of duplicates that differ
  * only in case or accents ("pintura" vs "Pintura").
