@@ -93,6 +93,16 @@ export function BanIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+export function ImageIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <circle cx="9" cy="10" r="1.5" />
+      <path d="m21 15-4.5-4.5L8 19" />
+    </svg>
+  )
+}
+
 export function ExpandIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>

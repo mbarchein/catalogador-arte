@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { prepareShot, validateFile, type PreparedShot } from '../../lib/images'
-import { PlusIcon } from '../../components/ui'
+import { CameraIcon, ImageIcon } from '../../components/ui'
 
 /** Which entry path produced the photos: the camera or the file selector. */
 export type PhotoSource = 'camera' | 'files'
@@ -65,7 +65,9 @@ export function PhotoInput({
       {!compact && <p className="label">{label}</p>}
 
       {/* The drop zone also wraps the buttons, so dropping anywhere on the
-          block works. On the phone it is unused: the buttons are there. */}
+          block works. The dashed box and its hint only exist where there is a
+          fine pointer to drag with: on a touch screen they were furniture
+          promising a gesture the device does not make. */}
       <div
         id="photo-zone"
         onDragOver={(e) => {
@@ -78,7 +80,7 @@ export function PhotoInput({
           setDragging(false)
           void process(e.dataTransfer.files, 'files')
         }}
-        className={`rounded-lg border-2 border-dashed p-3 transition ${
+        className={`rounded-lg transition [@media(pointer:fine)]:border-2 [@media(pointer:fine)]:border-dashed [@media(pointer:fine)]:p-3 ${
           dragging ? 'border-stone-800 bg-stone-100' : 'border-stone-300'
         }`}
       >
@@ -89,7 +91,7 @@ export function PhotoInput({
             onClick={() => cameraRef.current?.click()}
             className="btn-secondary min-h-[3.25rem]"
           >
-            <PlusIcon className="h-5 w-5" />
+            <CameraIcon className="h-5 w-5" />
             Hacer foto
           </button>
           <button
@@ -98,11 +100,12 @@ export function PhotoInput({
             onClick={() => filesRef.current?.click()}
             className="btn-secondary min-h-[3.25rem]"
           >
+            <ImageIcon className="h-5 w-5" />
             Elegir archivos
           </button>
         </div>
 
-        <p className="mt-2 text-center text-xs text-stone-500">
+        <p className="mt-2 hidden text-center text-xs text-stone-500 [@media(pointer:fine)]:block">
           {dragging ? 'Suelta las fotos aquí' : 'O arrastra y suelta las fotos en este recuadro'}
         </p>
 
