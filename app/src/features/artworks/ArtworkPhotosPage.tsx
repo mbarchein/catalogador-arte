@@ -8,7 +8,8 @@ import { displayDate } from '../../lib/dates'
 import { useAuth } from '../../auth/AuthContext'
 import { Chips, YesIcon } from '../../components/ui'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
-import { useArtworkImages, useDerivativeUrl } from './artworkImages'
+import { useArtworkImages } from './artworkImages'
+import { PhotoCarousel } from './PhotoCarousel'
 
 /**
  * Photo management of a record, on its own route (/artwork/:id/photos): the
@@ -46,7 +47,6 @@ export function ArtworkPhotosPage() {
   }, [loading, images, mainId])
 
   const selected = images.find((r) => r.image_id === selectedId)
-  const selectedUrl = useDerivativeUrl(selected)
 
   function discardStaged() {
     staged.forEach((s) => URL.revokeObjectURL(s.prepared.preview))
@@ -239,15 +239,23 @@ export function ArtworkPhotosPage() {
               })}
             </ul>
 
+            {/* Same swipe carousel as the record view: flicking through the
+                shots while retyping them is exactly the reviewing gesture. */}
+            <div className="mt-3">
+              <PhotoCarousel
+                images={images}
+                thumbUrls={thumbUrls}
+                viewId={selectedId}
+                onView={(imageId) => {
+                  setSelectedId(imageId)
+                  setConfirmRemoval(null)
+                }}
+                catalogId={catalogId}
+              />
+            </div>
+
             {selected && (
               <div className="mt-3 space-y-3 rounded-lg border border-stone-300 bg-stone-50 p-3">
-                {selectedUrl && (
-                  <img
-                    src={selectedUrl}
-                    alt={`${SHOT_TYPE_LABEL[selected.shot_type]} de ${catalogId}`}
-                    className="max-h-64 w-full rounded-lg border border-stone-200 bg-white object-contain"
-                  />
-                )}
                 <p className="text-xs text-stone-500">
                   {selected.image_id}
                   {selected.photo_date ? ` · ${displayDate(selected.photo_date)}` : ''}

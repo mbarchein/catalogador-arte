@@ -70,26 +70,5 @@ export function useArtworkImages(catalogId: string) {
   return { images, thumbUrls, mainId, manuallyChosen, loading, reload }
 }
 
-/**
- * Signed URL of the derivative of one image, requested only when it is being
- * viewed: fetching all of them would spend data on what nobody opened.
- */
-export function useDerivativeUrl(image: ImageRow | undefined) {
-  const [url, setUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    let current = true
-    if (!image) {
-      setUrl(null)
-      return
-    }
-    void signedUrl(image.derivative_path).then((u) => {
-      if (current) setUrl(u)
-    })
-    return () => {
-      current = false
-    }
-  }, [image])
-
-  return url
-}
+// The per-image derivative loading lives in PhotoCarousel, which fetches the
+// viewed slide and its neighbors.
