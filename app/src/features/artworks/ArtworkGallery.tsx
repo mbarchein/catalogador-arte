@@ -1,31 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
-import { uploadShot, masterDownloadUrl, signedUrl } from '../../lib/images'
-import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { masterDownloadUrl } from '../../lib/images'
+import { SHOT_TYPE_LABEL } from '../../lib/types'
 import { useAuth } from '../../auth/AuthContext'
-import { useLiveChanges } from '../../lib/live'
-import { Chips, YesIcon } from '../../components/ui'
-import { PhotoPicker, type QueuedShot } from './PhotoPicker'
-
-interface ImageRow {
-  image_id: string
-  thumbnail_path: string
-  derivative_path: string
-  master_path: string | null
-  shot_type: ShotTypeValue
-  index_image: boolean
-  photo_date: string | null
-}
+import { YesIcon } from '../../components/ui'
+import { useArtworkImages, useDerivativeUrl } from './artworkImages'
 
 /**
- * Gallery of the record page, with main-image selection (RF-405).
- *
- * The main-image change applies **immediately**, with its own button, and not
- * as part of the artwork form. They are two different things: one touches the
- * images table and the other the artworks one, and mixing them would force
- * deciding what happens to the image if someone cancels the record edit. It is
- * also a single-datum change, reversible with another tap, so it needs none of
- * the ceremony of a form with save and cancel.
+ * Gallery of the record page — a view, nothing else. Everything that changes
+ * the photos (adding with a shot type, retyping, main image, retiring) lives
+ * on its own route, /artwork/:id/photos: those actions apply immediately and
+ * mixing them into the reading view filled it with controls.
  *
  * All URLs are requested signed (RF-110): the bucket is private. They expire
  * in an hour, plenty for a session and limiting the damage if someone shares
@@ -33,228 +18,37 @@ interface ImageRow {
  */
 export function ArtworkGallery({ catalogId }: { catalogId: string }) {
   const { canEdit } = useAuth()
-  const [images, setImages] = useState<ImageRow[]>([])
-  const [urls, setUrls] = useState<Record<string, string>>({})
+  const navigate = useNavigate()
+  const { images, thumbUrls, mainId, loading } = useArtworkImages(catalogId)
   const [viewId, setViewId] = useState<string | null>(null)
-  const [largeUrl, setLargeUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  // Which image represents the artwork is decided by the
-  // `representative_image` view, which applies the RF-403 rule. The client
-  // does not recompute it: if it did, the list, the record and the printed
-  // catalog could disagree.
-  const [mainId, setMainId] = useState<string | null>(null)
-  const [manuallyChosen, setManuallyChosen] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [uploading, setUploading] = useState<string | null>(null)
-  // Two-tap confirmation to remove a photo. On a touch screen, a single-tap
-  // remove button next to the thumbnails gets pressed by accident.
-  const [confirmRemoval, setConfirmRemoval] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('images')
-      .select(
-        'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, photo_date',
-      )
-      .eq('catalog_id', catalogId)
-      .eq('active', true)
-      .order('image_id', { ascending: true })
-
-    const rows = (data ?? []) as unknown as ImageRow[]
-    setImages(rows)
-
-    const { data: rep } = await supabase
-      .from('representative_image')
-      .select('image_id, manually_chosen')
-      .eq('catalog_id', catalogId)
-      .maybeSingle()
-    const representative = rep as { image_id: string; manually_chosen: boolean } | null
-    setMainId(representative?.image_id ?? null)
-    setManuallyChosen(representative?.manually_chosen ?? false)
-
-    const pairs = await Promise.all(
-      rows.map(async (r) => [r.image_id, await signedUrl(r.thumbnail_path)] as const),
+  // Start on the main image; if the viewed one disappears (someone retired it
+  // from the management page), fall back to the current main.
+  useEffect(() => {
+    if (loading) return
+    setViewId((current) =>
+      current && images.some((r) => r.image_id === current)
+        ? current
+        : (mainId ?? images[0]?.image_id ?? null),
     )
-    setUrls(Object.fromEntries(pairs.filter((p): p is [string, string] => p[1] !== null)))
-    setLoading(false)
-    return { rows, main: representative?.image_id ?? null }
-  }, [catalogId])
+  }, [loading, images, mainId])
 
-  // Photos another cataloger adds or retires appear without reloading.
-  useLiveChanges('images', () => void load(), `catalog_id=eq.${catalogId}`)
-
-  useEffect(() => {
-    let current = true
-    void (async () => {
-      const { main } = await load()
-      if (!current) return
-      setViewId(main)
-    })()
-    return () => {
-      current = false
-    }
-  }, [load])
-
-  // The derivative is requested only for the one being viewed: fetching all of
-  // them would spend data on viewing what nobody opened.
-  useEffect(() => {
-    let current = true
-    const row = images.find((r) => r.image_id === viewId)
-    if (!row) {
-      setLargeUrl(null)
-      return
-    }
-    void signedUrl(row.derivative_path).then((u) => {
-      if (current) setLargeUrl(u)
-    })
-    return () => {
-      current = false
-    }
-  }, [viewId, images])
-
-  async function useAsMain(imageId: string) {
-    setSaving(true)
-    setError(null)
-    setNotice(null)
-    const { error } = await supabase.rpc('set_main_image', { p_image_id: imageId })
-    if (error) {
-      setError(error.message)
-    } else {
-      await load()
-      setNotice('Imagen principal actualizada.')
-    }
-    setSaving(false)
-  }
-
-  /**
-   * New photos are staged with the same picker as the capture flow, so the
-   * shot type can be set before uploading — an added photo is often exactly
-   * the non-general one: the back side, a signature detail (RF-401). Unlike
-   * capture there is no queue to persist: the artwork exists and the photos
-   * upload on demand.
-   */
-  const [staged, setStaged] = useState<QueuedShot[]>([])
-
-  function discardStaged() {
-    staged.forEach((s) => URL.revokeObjectURL(s.prepared.preview))
-    setStaged([])
-  }
-
-  async function uploadStaged() {
-    setError(null)
-    setNotice(null)
-    const queue = staged
-    const failed: QueuedShot[] = []
-    let done = 0
-    for (let i = 0; i < queue.length; i += 1) {
-      const shot = queue[i]
-      if (!shot) continue
-      setUploading(`Subiendo ${i + 1} de ${queue.length}…`)
-      try {
-        // Never marked as index: which one represents the artwork is decided
-        // separately, and adding a photo should not change the cover without
-        // anyone asking.
-        await uploadShot(catalogId, shot.prepared, { shotType: shot.shotType, isIndex: false })
-        URL.revokeObjectURL(shot.prepared.preview)
-        done += 1
-      } catch (e) {
-        failed.push({
-          ...shot,
-          status: 'error',
-          error: e instanceof Error ? e.message : String(e),
-        })
-      }
-    }
-    // Failed shots stay staged with their type chosen, ready to retry.
-    setStaged(failed)
-    setUploading(null)
-    await load()
-    if (failed.length > 0) {
-      setError(`No se han podido subir ${failed.length} de ${queue.length}: ${failed[0]?.error}`)
-    } else {
-      setNotice(done === 1 ? 'Fotografía añadida.' : `${done} fotografías añadidas.`)
-    }
-  }
-
-  /**
-   * The shot type of an uploaded photo is editable in place, immediately,
-   * like the main-image choice and for the same reason: it touches only the
-   * images table and needs no save-and-cancel ceremony.
-   */
-  async function changeShotType(imageId: string, type: ShotTypeValue) {
-    setSaving(true)
-    setError(null)
-    setNotice(null)
-    const { error } = await supabase
-      .from('images')
-      .update({ shot_type: type })
-      .eq('image_id', imageId)
-    if (error) {
-      setError(error.message)
-    } else {
-      await load()
-      setNotice('Tipo de toma actualizado.')
-    }
-    setSaving(false)
-  }
-
-  /**
-   * Removing a photo is a logical deletion: the row is kept and the bucket
-   * file is not deleted. A deleted master is unrecoverable, and for a
-   * destroyed or missing artwork the photograph may be the only proof it
-   * existed.
-   */
-  async function removePhoto(imageId: string) {
-    setSaving(true)
-    setError(null)
-    setNotice(null)
-    const { error } = await supabase
-      .from('images')
-      .update({ active: false })
-      .eq('image_id', imageId)
-    if (error) {
-      setError(error.message)
-    } else {
-      const { main } = await load()
-      // The one being viewed is gone: switch to the one now representing the
-      // artwork.
-      setViewId(main)
-      setNotice('Fotografía retirada. El archivo se conserva.')
-    }
-    setConfirmRemoval(null)
-    setSaving(false)
-  }
+  const viewing = images.find((r) => r.image_id === viewId)
+  const largeUrl = useDerivativeUrl(viewing)
 
   if (loading) {
     return <div className="mb-3 aspect-[4/3] animate-pulse rounded-xl bg-stone-200" />
   }
 
-  // Staging + upload block, shared by the empty and the populated gallery.
-  const addBlock = uploading ? (
-    <p role="status" className="text-sm text-stone-600">
-      {uploading}
-    </p>
-  ) : (
-    <div className="space-y-2">
-      <PhotoPicker shots={staged} onChange={setStaged} disabled={saving} withIndex={false} />
-      {staged.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => void uploadStaged()}
-            className="btn min-h-touch bg-stone-900 text-white"
-          >
-            {staged.length === 1 ? 'Subir la foto' : `Subir ${staged.length} fotos`}
-          </button>
-          <button type="button" onClick={discardStaged} className="btn-secondary">
-            Descartar
-          </button>
-        </div>
-      )}
-    </div>
+  const manageButton = canEdit && (
+    <button
+      type="button"
+      onClick={() => navigate(`/artwork/${catalogId}/photos`)}
+      className="btn-secondary mt-2 w-full"
+    >
+      Gestionar fotografías
+    </button>
   )
 
   // RF-404: explicit placeholder, not an unexplained gap.
@@ -264,22 +58,10 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
         <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-stone-200 bg-stone-100">
           <p className="text-sm text-stone-500">Imagen no disponible</p>
         </div>
-        {canEdit && (
-          <div className="mt-2">
-            {addBlock}
-            {error && (
-              <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">
-                {error}
-              </p>
-            )}
-          </div>
-        )}
+        {manageButton}
       </div>
     )
   }
-
-  const viewing = images.find((r) => r.image_id === viewId)
-  const viewingIsMain = viewing?.image_id === mainId
 
   return (
     <div className="mb-3">
@@ -306,9 +88,9 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
                     r.image_id === viewId ? 'border-stone-800' : 'border-stone-200'
                   }`}
                 >
-                  {urls[r.image_id] ? (
+                  {thumbUrls[r.image_id] ? (
                     <img
-                      src={urls[r.image_id]}
+                      src={thumbUrls[r.image_id]}
                       alt=""
                       className="h-20 w-20 object-cover"
                     />
@@ -340,114 +122,18 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
         </ul>
       )}
 
-      {/* Adding and removing photos from the record: capture solves the
-          initial entry, but an artwork gets re-photographed — after a
-          restoration, with better light, or because the back side was missing
-          — and that happens long after the initial entry. */}
-      {canEdit && (
-        <div className="mt-3 space-y-2">
-          {addBlock}
+      {manageButton}
 
-          {viewing && (
-            <Chips
-              id="g-shot-type"
-              label="Tipo de toma de esta fotografía"
-              columns={3}
-              options={(Object.keys(SHOT_TYPE_LABEL) as ShotTypeValue[]).map((v) => ({
-                value: v,
-                text: SHOT_TYPE_LABEL[v],
-              }))}
-              value={viewing.shot_type}
-              onChange={(v) => void changeShotType(viewing.image_id, v)}
-            />
-          )}
-
-          {viewing &&
-            (confirmRemoval === viewing.image_id ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-2">
-                <p className="text-xs text-red-900">
-                  ¿Quitar esta fotografía de la ficha? El archivo se conserva, pero deja de
-                  mostrarse.
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => void removePhoto(viewing.image_id)}
-                    className="btn min-h-touch bg-red-700 text-white"
-                  >
-                    {saving ? 'Quitando…' : 'Sí, quitar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmRemoval(null)}
-                    className="btn-secondary"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmRemoval(viewing.image_id)}
-                className="btn min-h-touch w-full border border-red-300 bg-white text-sm text-red-800"
-              >
-                Quitar esta fotografía
-              </button>
-            ))}
-        </div>
-      )}
-
-      {/* RF-405: choosing the main one among those already uploaded. */}
-      {canEdit && viewing && (
-        <div className="mt-2">
-          {viewingIsMain ? (
-            <p className="text-xs text-stone-500">
-              {!manuallyChosen
-                ? // Distinguishing "chosen by hand" from "chosen by the
-                  // fallback rule" matters: in the second case, uploading one
-                  // more photo can change it on its own.
-                  'Se muestra esta por ser la general más reciente. Fíjala para que no cambie al añadir fotos.'
-                : `Esta es la imagen principal · ${SHOT_TYPE_LABEL[viewing.shot_type]}`}
-              {!manuallyChosen && (
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => void useAsMain(viewing.image_id)}
-                  className="ml-1 underline"
-                >
-                  Fijar esta
-                </button>
-              )}
-            </p>
-          ) : (
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => void useAsMain(viewing.image_id)}
-              className="btn-secondary w-full"
-            >
-              {saving ? 'Guardando…' : 'Usar esta como imagen principal'}
-            </button>
-          )}
-        </div>
-      )}
-
-      {notice && (
-        <p role="status" className="mt-2 rounded-lg bg-green-50 p-2 text-xs text-green-900">
-          {notice}
-        </p>
-      )}
       {error && (
         <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">
-          No se ha podido cambiar: {error}
+          {error}
         </p>
       )}
 
       <div className="mt-1 flex items-baseline justify-between gap-2 text-xs text-stone-500">
         <span>
           {images.length} {images.length === 1 ? 'fotografía' : 'fotografías'}
+          {viewing ? ` · ${SHOT_TYPE_LABEL[viewing.shot_type]}` : ''}
         </span>
         {/* RF-411: the master is never shown in a view; it gets downloaded
             deliberately, with the function's signed URL. Also available to the

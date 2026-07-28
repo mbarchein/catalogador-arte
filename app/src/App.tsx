@@ -4,6 +4,7 @@ import { LoginPage } from './auth/LoginPage'
 import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { CapturePage } from './features/artworks/CapturePage'
 import { ArtworkPage } from './features/artworks/ArtworkPage'
+import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
 import { ProfilePage } from './features/profile/ProfilePage'
 
@@ -29,6 +30,7 @@ export function App() {
           bookmarked and the phone's back button leaves the form instead of
           leaving the record. */}
       <Route path="/artwork/:id/edit" element={<ArtworkPage />} />
+      <Route path="/artwork/:id/photos" element={<ArtworkPhotosPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       {/* The recovery email link opens a temporary session and lands here; it
           also serves as the password change from Mi perfil. */}
