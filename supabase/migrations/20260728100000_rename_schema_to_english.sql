@@ -471,7 +471,12 @@ drop function public.marcar_imagen_principal(text);
 
 -- ── Triggers ─────────────────────────────────────────────────
 
-alter trigger nuevo_usuario on auth.users rename to new_user;
+-- The `nuevo_usuario` trigger on auth.users keeps its Spanish name as legacy:
+-- renaming a trigger requires OWNING the table, and in Supabase cloud
+-- auth.users belongs to supabase_auth_admin while migrations run as postgres
+-- (locally they run as a superuser, which is why this passed in dev). The
+-- function it fires, public.tg_new_user(), IS renamed above — the trigger
+-- follows it by oid.
 alter trigger asignar_id_catalogacion on public.artworks rename to assign_catalog_id;
 alter trigger id_catalogacion_inmutable on public.artworks rename to catalog_id_immutable;
 alter trigger trazabilidad_obra on public.artworks rename to artwork_audit_trail;
@@ -495,11 +500,12 @@ alter policy imagenes_select on public.images rename to images_select;
 alter policy imagenes_insert on public.images rename to images_insert;
 alter policy imagenes_update on public.images rename to images_update;
 
--- Storage policies. The bucket id stays 'obras': it is a row in
--- storage.buckets with objects inside — data, not code.
-alter policy imagenes_leer_ficheros on storage.objects rename to images_read_files;
-alter policy imagenes_subir_ficheros on storage.objects rename to images_upload_files;
-alter policy imagenes_actualizar_ficheros on storage.objects rename to images_update_files;
+-- Storage policies keep their Spanish names as legacy, same reason as the
+-- auth.users trigger: ALTER POLICY requires owning the table and in Supabase
+-- cloud storage.objects belongs to supabase_storage_admin. Their USING/WITH
+-- CHECK expressions reference can_edit()/can_read() by oid, so they keep
+-- working with the renamed functions. The bucket id also stays 'obras': it is
+-- a row in storage.buckets with objects inside — data, not code.
 
 -- ── View: which image represents each artwork ────────────────
 -- Recreated (not renamed) so its output columns are English too. Same rationale
