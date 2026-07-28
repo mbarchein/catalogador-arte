@@ -11,6 +11,14 @@ where email = 'admin@local.test';
 update public.profiles set role = 'CATALOGER' where email = 'catalogador@local.test';
 update public.profiles set role = 'READER' where email = 'lector@local.test';
 
+-- Starting vocabulary of artwork types. BEFORE the artworks: the integrity
+-- trigger rejects any artwork whose type is not in the vocabulary, so on a
+-- fresh database these rows must exist first. Idempotent, like the rest.
+insert into public.artwork_types (name) values
+  ('Pintura'),
+  ('Dibujo')
+on conflict (name) do nothing;
+
 -- A few sample artworks so the list does not start empty and the chronological
 -- ordering can be checked with dates of different shapes.
 -- Identifiers are provided explicitly so the seed is idempotent; in the

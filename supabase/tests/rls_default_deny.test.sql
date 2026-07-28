@@ -77,4 +77,16 @@ exception
 end $$;
 
 reset role;
+
+do $$
+begin
+  set local role anon;
+  perform 1 from public.artwork_types limit 1;
+  raise exception 'FAIL: the anonymous role could query artwork_types';
+exception
+  when insufficient_privilege then
+    raise notice 'OK: the anonymous role has no access to artwork_types';
+end $$;
+
+reset role;
 rollback;
