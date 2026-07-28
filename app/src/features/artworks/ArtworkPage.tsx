@@ -25,6 +25,7 @@ import {
 import {
   ActionBar,
   BanIcon,
+  CameraIcon,
   Chips,
   EllipsisIcon,
   FieldGroup,
@@ -150,16 +151,27 @@ export function ArtworkPage() {
     <Layout
       title={artwork.catalog_id}
       back="/"
-      // In the fixed header, not inside the page: this way editing is within
-      // reach without scrolling back up, however long the record.
+      // In the fixed header, not inside the page: this way editing and photo
+      // management are within reach without scrolling back up, however long
+      // the record.
       action={
         canEdit ? (
-          <button
-            onClick={() => navigate(`/artwork/${id}/edit`)}
-            className="btn-primary min-h-[2.5rem] px-4 text-sm"
-          >
-            Editar
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate(`/artwork/${id}/photos`)}
+              className="btn-secondary min-h-[2.5rem] px-3 text-sm"
+            >
+              <CameraIcon className="h-4 w-4" />
+              Fotos
+            </button>
+            <button
+              onClick={() => navigate(`/artwork/${id}/edit`)}
+              className="btn-primary min-h-[2.5rem] px-3 text-sm"
+            >
+              <PenIcon className="h-4 w-4" />
+              Editar
+            </button>
+          </div>
         ) : undefined
       }
     >

@@ -93,6 +93,15 @@ export function BanIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+export function CameraIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M3 8a2 2 0 0 1 2-2h2l2-3h6l2 3h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  )
+}
+
 export function EllipsisIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>
