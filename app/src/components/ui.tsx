@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TriState } from '../lib/types'
+import { filterVocabulary, findEquivalent } from '../lib/vocabulary'
 
 // ── Icons ────────────────────────────────────────────────────
 // Inline SVG, no library: these are five icons and pulling a whole dependency
@@ -485,6 +486,220 @@ export function ToggleChip({
     >
       {label}
     </button>
+  )
+}
+
+// ── Searchable combo over a controlled vocabulary ────────────
+
+/**
+ * Text input with a dropdown filtered while typing (case- and
+ * accent-insensitive) and selection by tap. For fields whose values live in a
+ * database vocabulary — today the artwork types (RF-213) — where a plain
+ * dropdown stops scaling past a dozen entries and free text breeds
+ * "Pintura"/"pintura" duplicates.
+ *
+ * The value only changes by choosing an option (or confirming a new entry):
+ * closing the list discards what was being typed. That is deliberate — the
+ * field holds vocabulary entries, not prose.
+ *
+ * When `onAdd` is present and the typed text matches no entry, the last row
+ * offers adding it, behind an inline two-tap confirmation (same pattern as
+ * removing a photo in the gallery): extending a shared vocabulary from a
+ * touch screen must not happen by accident. Whoever cannot edit simply does
+ * not pass `onAdd` and never sees the offer.
+ */
+export function ComboBox({
+  id,
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  emptyLabel,
+  addLabel,
+  onAdd,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: readonly string[]
+  placeholder?: string
+  /** When set, an extra first row selects '' ("no value") with this text. */
+  emptyLabel?: string
+  /** Text of the add-to-vocabulary row, given the typed text. */
+  addLabel?: (text: string) => string
+  /**
+   * Inserts the new entry in the vocabulary. Resolves to an error message in
+   * Spanish, or null when it worked. Omit it for read-only users: without it,
+   * unknown text offers nothing.
+   */
+  onAdd?: (name: string) => Promise<string | null>
+}) {
+  // What is being typed, apart from the committed value: like YearStepper's
+  // draft, the field must be editable without the value changing under it.
+  const [draft, setDraft] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
+  const [confirmingAdd, setConfirmingAdd] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const close = useCallback(() => {
+    setOpen(false)
+    setDraft(null)
+    setConfirmingAdd(false)
+    setError(null)
+  }, [])
+
+  // Closing on a tap outside, instead of on blur: blur fires before the tap
+  // on an option lands, which would close the list under the finger.
+  useEffect(() => {
+    if (!open) return
+    function onPointerDown(e: PointerEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) close()
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [open, close])
+
+  function choose(option: string) {
+    onChange(option)
+    close()
+  }
+
+  const typed = (draft ?? '').trim()
+  const matches = filterVocabulary(options, draft ?? '')
+  // Typing "pintura" with "Pintura" in the vocabulary must select the
+  // existing entry, never offer a duplicate that differs only in case.
+  const equivalent = findEquivalent(options, typed)
+  const offerAdd = onAdd !== undefined && typed !== '' && equivalent === undefined
+
+  async function confirmAdd() {
+    if (!onAdd) return
+    setAdding(true)
+    setError(null)
+    const err = await onAdd(typed)
+    setAdding(false)
+    if (err) {
+      setError(err)
+      setConfirmingAdd(false)
+    } else {
+      choose(typed)
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label className="label" htmlFor={id}>
+        {label}
+      </label>
+      <input
+        id={id}
+        className="field"
+        role="combobox"
+        aria-expanded={open}
+        aria-autocomplete="list"
+        autoComplete="off"
+        placeholder={placeholder}
+        value={draft ?? value}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          setDraft(e.target.value)
+          setOpen(true)
+          setConfirmingAdd(false)
+          setError(null)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            // Never submit the surrounding form from here; with an exact
+            // (case/accent-insensitive) match, Enter selects it.
+            e.preventDefault()
+            if (equivalent) choose(equivalent)
+          }
+          if (e.key === 'Escape') close()
+        }}
+      />
+
+      {open && (
+        <div className="absolute inset-x-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-stone-300 bg-white shadow-lg">
+          <ul>
+            {emptyLabel && typed === '' && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => choose('')}
+                  className="flex min-h-touch w-full items-center px-3 text-left text-sm italic text-stone-500 active:bg-stone-100"
+                >
+                  {emptyLabel}
+                </button>
+              </li>
+            )}
+            {matches.map((option) => (
+              <li key={option}>
+                <button
+                  type="button"
+                  onClick={() => choose(option)}
+                  className={`flex min-h-touch w-full items-center px-3 text-left text-sm active:bg-stone-100 ${
+                    option === value ? 'font-semibold' : ''
+                  }`}
+                >
+                  {option}
+                </button>
+              </li>
+            ))}
+            {/* Never an unexplained blank dropdown. */}
+            {matches.length === 0 && !offerAdd && !(emptyLabel && typed === '') && (
+              <li className="px-3 py-3 text-sm text-stone-500">
+                No hay ningún tipo que coincida.
+              </li>
+            )}
+          </ul>
+
+          {offerAdd &&
+            (confirmingAdd ? (
+              <div className="border-t border-stone-200 p-2">
+                <p className="text-xs text-stone-700">
+                  Se añadirá «{typed}» al catálogo compartido, a la vista de todo el equipo.
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={adding}
+                    onClick={() => void confirmAdd()}
+                    className="btn min-h-touch bg-stone-900 text-white"
+                  >
+                    {adding ? 'Añadiendo…' : 'Sí, añadir'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={adding}
+                    onClick={() => setConfirmingAdd(false)}
+                    className="btn-secondary"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingAdd(true)}
+                className="flex min-h-touch w-full items-center gap-2 border-t border-stone-200 px-3 text-left text-sm font-medium text-stone-800 active:bg-stone-100"
+              >
+                <PlusIcon className="h-4 w-4 shrink-0" />
+                <span>{addLabel ? addLabel(typed) : `Añadir «${typed}»`}</span>
+              </button>
+            ))}
+
+          {error && (
+            <p role="alert" className="border-t border-stone-200 bg-red-50 p-2 text-xs text-red-800">
+              {error}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
