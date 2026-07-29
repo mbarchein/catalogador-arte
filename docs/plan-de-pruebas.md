@@ -241,6 +241,7 @@ aquí para que su ausencia del listado anterior no se lea como un hueco de cober
 | RF-405, RF-407 | Interacción de ratón y táctil sobre las miniaturas: revisión manual en navegador |
 | RF-1004 | Resultado real de impresión: revisión manual del PDF y del papel |
 | RF-409, RF-410 | Los píxeles del giro y del recorte: el entorno de test no tiene `canvas` ni `createImageBitmap`, así que la geometría se prueba sola y el dibujo se comprueba en el navegador. Con ella, que reeditar una foto escriba rutas nuevas y no reutilice ninguna |
+| RF-410 | La sugerencia de recorte sobre fotografías reales de cuadros: el detector se prueba con imágenes sintéticas, pero lo que acierta o falla con un marco dorado, un reflejo o una pared con rodapié se comprueba en el navegador. Por el mismo motivo, la extracción de luminancia (`imageEdges.ts`) no tiene test: necesita `canvas` |
 | RF-1206 | Que la cámara se abra de verdad: los navegadores sin dispositivo real la simulan, así que se comprueba en un teléfono |
 | RNF-105 | Idioma y zona horaria: visible en cualquier test de interfaz, sin test propio |
 | RNF-106 | Usabilidad en móvil de pie y con una mano, con la obra delante y en el almacén. Ningún test automático cubre esto, y es el criterio de éxito del proyecto |

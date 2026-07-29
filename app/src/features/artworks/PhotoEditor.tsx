@@ -16,10 +16,23 @@ import {
   type PhotoEdit,
   type Rotation,
 } from '../../lib/imageEdits'
+import { rotateSuggestion, type EdgeSuggestion } from '../../lib/edgeDetection'
+import { suggestArtworkCrop } from '../../lib/imageEdges'
 import { CropIcon, NoIcon, RotateLeftIcon, RotateRightIcon } from '../../components/ui'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
 const KEY_STEP = 0.02
+
+/**
+ * State of the border detection (edgeDetection.ts). It only ever preloads the
+ * crop rectangle: `found` means there is a suggestion on screen to adjust, never
+ * an applied edit.
+ */
+type Analysis =
+  | { status: 'idle' }
+  | { status: 'working' }
+  | { status: 'none' }
+  | { status: 'found'; suggestion: EdgeSuggestion; choice: 'outer' | 'inner' }
 
 const CORNERS: { corner: Corner; label: string }[] = [
   { corner: 'nw', label: 'esquina superior izquierda' },
@@ -53,6 +66,17 @@ const CORNERS: { corner: Corner; label: string }[] = [
  *  5. Closing pushes a history entry, like PhotoViewer: on a phone the back
  *     button must close the editor, not leave the record. Applying consumes the
  *     same entry, so back never lands on a stale editor.
+ *  6. «Sugerir recorte» detects the borders of the painting on demand, never on
+ *     opening: it costs a decode of the master plus a pass over the pixels, and
+ *     spending that on every editor that opens — most of which only rotate —
+ *     would slow the common case for the rare one. And a suggestion the
+ *     cataloger did not ask for arrives as an opinion about her framing.
+ *     What it does is PRELOAD the rectangle. It never applies: what leaves the
+ *     editor is always what she confirmed with «Aplicar».
+ *
+ * The suggestion is stored, and not only drawn, because with a framed painting
+ * there are two candidates — the frame and the canvas — and switching between
+ * them has to keep working afterwards, including after a rotation.
  *
  * The master is never modified: what is edited are the copies the application
  * serves (ADR-002). The screen says so.
@@ -95,6 +119,7 @@ export function PhotoEditor({
   const [box, setBox] = useState({ width: 0, height: 0 })
   const [dragging, setDragging] = useState<Corner | 'move' | null>(null)
   const [failed, setFailed] = useState(false)
+  const [analysis, setAnalysis] = useState<Analysis>({ status: 'idle' })
 
   const frameRef = useRef<HTMLDivElement | null>(null)
   const areaRef = useRef<HTMLDivElement | null>(null)
@@ -108,6 +133,10 @@ export function PhotoEditor({
   // on every render could miss the closing pop.
   const editRef = useRef<PhotoEdit>(initialEdit)
   editRef.current = { rotation, crop }
+  // Number of the border detection in flight. Asking again, or closing the
+  // editor, invalidates the previous answer instead of letting it arrive late
+  // and move a rectangle the cataloger is already dragging.
+  const analysisTicket = useRef(0)
   const appliedRef = useRef(false)
   const onApplyRef = useRef(onApply)
   onApplyRef.current = onApply
@@ -141,6 +170,7 @@ export function PhotoEditor({
       window.removeEventListener('popstate', onPop)
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = previousOverflow
+      analysisTicket.current += 1
     }
   }, [])
 
@@ -207,6 +237,46 @@ export function PhotoEditor({
   function rotate(delta: number) {
     setRotation((r) => addRotation(r, delta))
     setCrop((c) => (c ? rotateCrop(c, delta) : null))
+    // The stored candidates travel too, or choosing between frame and canvas
+    // after turning the photo would load a rectangle from the previous frame.
+    setAnalysis((a) =>
+      a.status === 'found' ? { ...a, suggestion: rotateSuggestion(a.suggestion, delta) } : a,
+    )
+  }
+
+  /**
+   * Looks for the borders of the painting and preloads the outer rectangle.
+   *
+   * The outer one — the frame, when there is a frame — because it is the
+   * conservative candidate: suggesting the tightest rectangle straight away
+   * risks cutting off a strip of the artwork if the detection is off by a
+   * little, and nobody notices what is missing from a photograph they did not
+   * take. Leaving a sliver of wall is visible and takes one drag to fix.
+   */
+  async function suggest() {
+    const ticket = analysisTicket.current + 1
+    analysisTicket.current = ticket
+    setAnalysis({ status: 'working' })
+    // The rotation at the moment of asking: the detector reads the photograph as
+    // it was decoded and the crop lives over the rotated one.
+    const suggestion = await suggestArtworkCrop(source, rotation)
+    // A second request, or a closed editor, makes this answer stale.
+    if (analysisTicket.current !== ticket) return
+    if (!suggestion) {
+      setAnalysis({ status: 'none' })
+      return
+    }
+    setAnalysis({ status: 'found', suggestion, choice: 'outer' })
+    setCrop(suggestion.outer)
+  }
+
+  /** Loads one of the two candidates into the crop rectangle. */
+  function choose(which: 'outer' | 'inner') {
+    if (analysis.status !== 'found') return
+    const candidate = which === 'inner' ? analysis.suggestion.inner : analysis.suggestion.outer
+    if (!candidate) return
+    setAnalysis({ ...analysis, choice: which })
+    setCrop(candidate)
   }
 
   function startDrag(e: React.PointerEvent, what: Corner | 'move') {
@@ -439,6 +509,68 @@ export function PhotoEditor({
             <CropIcon className="h-6 w-6" />
             {crop ? 'Quitar recorte' : 'Recortar'}
           </button>
+        </div>
+
+        {/* Border detection: on demand, and it only preloads the rectangle. */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={!ready || analysis.status === 'working'}
+            aria-describedby="editor-suggestion-help"
+            onClick={() => void suggest()}
+            className="btn min-h-touch w-full bg-white/10 text-sm text-white disabled:opacity-40"
+          >
+            {analysis.status === 'working' ? 'Analizando la fotografía…' : 'Sugerir recorte'}
+          </button>
+
+          {/* With two candidates the cataloger picks: in a catalogue raisonné the
+              work is usually the canvas, but the frame can be part of the piece
+              and only she can tell. */}
+          {analysis.status === 'found' && analysis.suggestion.inner && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                aria-pressed={analysis.choice === 'outer'}
+                onClick={() => choose('outer')}
+                className={`btn min-h-touch text-sm ${
+                  analysis.choice === 'outer'
+                    ? 'bg-white text-stone-900'
+                    : 'border border-stone-600 text-white'
+                }`}
+              >
+                Hasta el marco
+              </button>
+              <button
+                type="button"
+                aria-pressed={analysis.choice === 'inner'}
+                onClick={() => choose('inner')}
+                className={`btn min-h-touch text-sm ${
+                  analysis.choice === 'inner'
+                    ? 'bg-white text-stone-900'
+                    : 'border border-stone-600 text-white'
+                }`}
+              >
+                Solo la obra
+              </button>
+            </div>
+          )}
+
+          <p
+            id="editor-suggestion-help"
+            role="status"
+            aria-live="polite"
+            className="text-center text-xs text-stone-400"
+          >
+            {analysis.status === 'working'
+              ? 'Analizando la fotografía para reconocer el borde del cuadro…'
+              : analysis.status === 'none'
+                ? 'No se ha podido reconocer el borde del cuadro: ajusta el recorte a mano'
+                : analysis.status === 'found'
+                  ? analysis.suggestion.inner
+                    ? 'Recorte sugerido: se han reconocido dos bordes. Elige uno, ajusta las esquinas y pulsa «Aplicar»'
+                    : 'Recorte sugerido: ajusta las esquinas si hace falta y pulsa «Aplicar»'
+                  : 'Reconoce el borde del cuadro y precarga el recorte. Nunca se aplica solo: siempre lo confirmas tú'}
+          </p>
         </div>
 
         {/* Back to square one, always available while the master is the source:
