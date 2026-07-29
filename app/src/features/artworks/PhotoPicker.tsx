@@ -97,6 +97,14 @@ export function PhotoPicker({
       total[0] = { ...total[0], isIndex: true }
     }
     onChange(total)
+
+    // The panel of the photo just taken opens by itself: right after shooting,
+    // what follows is always saying what the shot is (RF-401) or straightening
+    // it, and having to hunt for the thumbnail to tap added a step to every
+    // single photo. With several from the gallery it opens on the first of them,
+    // which is where reviewing them starts.
+    const firstAdded = total[shots.length]
+    if (firstAdded) setOpenKey(firstAdded.key)
   }
 
   function remove(key: string) {
