@@ -137,6 +137,35 @@ export function CameraIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+/** Counter-clockwise quarter turn: the arrow closes to the left. */
+export function RotateLeftIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M4 5v5h5" />
+      <path d="M4.5 10a8 8 0 1 1 1.6 6.9" />
+    </svg>
+  )
+}
+
+/** Clockwise quarter turn. */
+export function RotateRightIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M20 5v5h-5" />
+      <path d="M19.5 10a8 8 0 1 0-1.6 6.9" />
+    </svg>
+  )
+}
+
+export function CropIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M6 3v13a2 2 0 0 0 2 2h13" />
+      <path d="M3 6h13a2 2 0 0 1 2 2v13" />
+    </svg>
+  )
+}
+
 export function EllipsisIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>
