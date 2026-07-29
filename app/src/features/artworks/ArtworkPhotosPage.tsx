@@ -3,14 +3,24 @@ import { Navigate, useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
 import { uploadShot } from '../../lib/images'
+import {
+  composeEdits,
+  editFromColumns,
+  editSummary,
+  sameEdit,
+  NO_EDIT,
+  type PhotoEdit,
+} from '../../lib/imageEdits'
+import { editSource, savePhotoEdit } from '../../lib/imageRender'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
 import { useAuth } from '../../auth/AuthContext'
-import { Chips } from '../../components/ui'
+import { Chips, CropIcon } from '../../components/ui'
 import { moveItem } from '../../lib/reorder'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
-import { useArtworkImages } from './artworkImages'
+import { useArtworkImages, type ImageRow } from './artworkImages'
 import { PhotoCarousel } from './PhotoCarousel'
+import { PhotoEditor } from './PhotoEditor'
 import { ReorderableThumbnails } from './ReorderableThumbnails'
 
 /**
@@ -36,10 +46,25 @@ export function ArtworkPhotosPage() {
   const [draggedOrder, setDraggedOrder] = useState<string[] | null>(null)
   const [staged, setStaged] = useState<QueuedShot[]>([])
   const [uploading, setUploading] = useState<string | null>(null)
+  /** What the reframing is doing right now, so the screen is never half done. */
+  const [working, setWorking] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmRemoval, setConfirmRemoval] = useState<string | null>(null)
+  /**
+   * Photo being reframed. `source` is the image the editor works on and `baked`
+   * is the framing that image ALREADY shows: no framing when it is the master,
+   * the stored one when the master could not be downloaded and the consultation
+   * copy is used instead — the copy carries it in its pixels.
+   */
+  const [editing, setEditing] = useState<{
+    row: ImageRow
+    source: Blob
+    baked: PhotoEdit
+    initial: PhotoEdit
+    note: string | null
+  } | null>(null)
 
   // The selection starts on the main image and follows removals; it never
   // jumps on its own while the cataloger is working.
@@ -203,6 +228,91 @@ export function ArtworkPhotosPage() {
     setSaving(false)
   }
 
+  /**
+   * Opens the editor on a photo already uploaded.
+   *
+   * The source is the master, because cropping the consultation copy and
+   * re-encoding it at the same size throws away resolution the archive already
+   * has. It is a 2-8 MB download and it is announced; if it fails, the copy is
+   * used and the editor says so instead of leaving the screen doing nothing.
+   */
+  async function openEditor(row: ImageRow) {
+    setError(null)
+    setNotice(null)
+    setWorking(row.master_path ? 'Descargando el máster…' : 'Abriendo la copia de consulta…')
+    try {
+      const stored = editFromColumns(row)
+      const source = await editSource(row)
+      setEditing({
+        row,
+        source: source.blob,
+        baked: source.fromMaster ? NO_EDIT : stored,
+        initial: source.fromMaster ? stored : NO_EDIT,
+        note: source.fromMaster
+          ? null
+          : 'No se ha podido descargar el máster: el recorte parte de la copia de consulta, que tiene menos resolución. El máster de archivo no se toca.',
+      })
+    } catch (e) {
+      setError(
+        `No se ha podido abrir la fotografía para editarla: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      )
+    } finally {
+      setWorking(null)
+    }
+  }
+
+  /**
+   * Publishes the framing. The new copies go to NEW paths and the row is
+   * pointed at them: the paths of the bucket are immutable because the service
+   * worker caches images by path, and overwriting one would keep showing the old
+   * framing from the phone's cache. The superseded files stay in the bucket —
+   * here nothing is ever really deleted — and the master is not touched.
+   *
+   * `edit` comes measured over the image the editor worked on; what is stored is
+   * the whole transformation from the master.
+   */
+  async function applyEdit(edit: PhotoEdit) {
+    const current = editing
+    setEditing(null)
+    if (!current) return
+    const stored = editFromColumns(current.row)
+    const absolute = composeEdits(current.baked, edit)
+    if (sameEdit(absolute, stored)) {
+      // Not rewriting for nothing: every rewrite leaves the previous copies
+      // orphaned in the bucket.
+      setNotice('El encuadre no ha cambiado: no se ha reescrito ninguna copia.')
+      return
+    }
+    setWorking('Aplicando el encuadre y subiendo las copias…')
+    setError(null)
+    setNotice(null)
+    try {
+      await savePhotoEdit({
+        catalogId,
+        imageId: current.row.image_id,
+        source: current.source,
+        render: edit,
+        store: absolute,
+      })
+      // The reload brings the new paths; Realtime tells the record and the
+      // listing, which also listen to the images table.
+      await reload()
+      setNotice(
+        `${editSummary(absolute) ?? 'Encuadre original restablecido'}. El máster de archivo se conserva intacto.`,
+      )
+    } catch (e) {
+      setError(
+        `No se ha podido guardar el encuadre: ${
+          e instanceof Error ? e.message : String(e)
+        }. La fotografía sigue como estaba.`,
+      )
+    } finally {
+      setWorking(null)
+    }
+  }
+
   // A reader reaching this URL falls back to the record view (RF-109).
   if (!canEdit) {
     return <Navigate to={`/artwork/${catalogId}`} replace />
@@ -311,6 +421,26 @@ export function ArtworkPhotosPage() {
                   value={selected.shot_type}
                   onChange={(v) => void changeShotType(selected.image_id, v)}
                 />
+
+                {/* Straightening and trimming. It only redoes the copies that
+                    are served: the archive master stays as it left the camera
+                    (ADR-002). */}
+                <div>
+                  <button
+                    type="button"
+                    disabled={saving || working !== null}
+                    onClick={() => void openEditor(selected)}
+                    className="btn-secondary w-full"
+                  >
+                    <CropIcon className="h-5 w-5" />
+                    {working ?? 'Girar y recortar'}
+                  </button>
+                  <p className="mt-1 text-xs text-stone-500">
+                    {editSummary(editFromColumns(selected))
+                      ? `${editSummary(editFromColumns(selected))}. El máster de archivo se conserva sin tocar.`
+                      : 'Sin giro ni recorte. Se editan las copias, nunca el máster de archivo.'}
+                  </p>
+                </div>
 
                 {/* Same move, one place at a time: dragging is faster but it
                     is a gesture, and a gesture cannot be the only way to
@@ -423,6 +553,17 @@ export function ArtworkPhotosPage() {
           </p>
         )}
       </section>
+
+      {editing && (
+        <PhotoEditor
+          source={editing.source}
+          initialEdit={editing.initial}
+          title={editing.row.image_id}
+          note={editing.note}
+          onApply={(edit) => void applyEdit(edit)}
+          onCancel={() => setEditing(null)}
+        />
+      )}
     </Layout>
   )
 }

@@ -13,6 +13,14 @@ export interface ImageRow {
   index_image: boolean
   photo_date: string | null
   sort_order: number
+  // Framing applied to the copies that are served, kept as data so it can be
+  // reapplied to the master (see imageEdits.ts). The four crop columns are all
+  // null or all present; the database guarantees it.
+  rotation: number
+  crop_x: number | null
+  crop_y: number | null
+  crop_width: number | null
+  crop_height: number | null
 }
 
 /**
@@ -35,7 +43,7 @@ export function useArtworkImages(catalogId: string) {
     const { data } = await supabase
       .from('images')
       .select(
-        'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, photo_date, sort_order',
+        'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, photo_date, sort_order, rotation, crop_x, crop_y, crop_width, crop_height',
       )
       .eq('catalog_id', catalogId)
       .eq('active', true)
