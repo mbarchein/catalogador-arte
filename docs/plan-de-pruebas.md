@@ -131,6 +131,8 @@ interfaz que promete lo que no cumple.
 | RF-409, RF-410 | El encuadre guardado como dato solo admite giros de 0, 90, 180 y 270, y un recorte normalizado que es todo o nada y cae dentro de la imagen; una fotografía nueva nace sin giro ni recorte | **Hecho** |
 | RF-409, RF-410 | El encuadre lo cambia quien puede editar; un Lector no, sin política nueva: las de «Imágenes» ya lo cubren | **Hecho** |
 | RF-410 | Geometría de la edición: rotación acumulada, recorte de recorte, giro de 90° con recorte, rectángulo degenerado y arrastre de esquina que no invierte el rectángulo ni se sale de la imagen | **Hecho** |
+| RF-410 | Sugerencia de recorte por perfiles de proyección, con fotografías sintéticas: cuadro centrado y descentrado detectado con precisión de pocos píxeles, cuadro más oscuro que la pared, marco y tela como dos candidatos anidados, y un solo candidato cuando el segundo rectángulo no está claramente dentro | **Hecho** |
+| RF-410 | La sugerencia se niega antes que inventarse: pared sin cuadro, pared con ruido, cuadro oscuro sobre pared oscura sin contraste, proporción absurda, rectángulo demasiado pequeño, rectángulo que es casi todo el fotograma, bordes en una sola dirección e imagen demasiado pequeña | **Hecho** |
 
 ### Exposiciones y bibliografía (RF-500)
 
