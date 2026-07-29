@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { NO_EDIT, editToColumns, type PhotoEdit } from './imageEdits'
 
 /**
  * Three levels per shot (ADR-002). Derivatives are generated **in the browser
@@ -29,6 +30,13 @@ export interface PreparedShot {
   originalHeight: number
   /** Local URL for the preview. Must be revoked when the shot is discarded. */
   preview: string
+  /**
+   * Rotation and crop already applied to `thumbnail` and `derivative`, and
+   * stored with the row so the printed-catalog pipeline can rebuild the same
+   * framing from the master (see imageEdits.ts). The master itself is never
+   * touched: it is the archive document (ADR-002).
+   */
+  edit: PhotoEdit
 }
 
 /**
@@ -114,6 +122,9 @@ export async function prepareShot(file: File): Promise<PreparedShot> {
       originalWidth: bitmap.width,
       originalHeight: bitmap.height,
       preview: URL.createObjectURL(thumbnail),
+      // A shot arrives unedited. Rotating or cropping it is a later, explicit
+      // decision of the cataloger (see PhotoEditor).
+      edit: NO_EDIT,
     }
   } finally {
     bitmap.close()
@@ -164,12 +175,32 @@ export function randomSuffix(length = 8): string {
  * The `_min` / `_der` / `_master` pieces match files already uploaded: they
  * are data, and they stay.
  */
-export function paths(catalogId: string, master: File) {
-  const suffix = randomSuffix()
-  const base = `${catalogId}/${catalogId}_${suffix}`
+function basePath(catalogId: string): string {
+  return `${catalogId}/${catalogId}_${randomSuffix()}`
+}
+
+/**
+ * Paths for the two derivative levels alone, with a fresh random base.
+ *
+ * Used when re-editing a photo that is already uploaded: rotating or cropping it
+ * writes NEW files and never overwrites the existing ones. The paths of the
+ * bucket are immutable, and that is not a preference — the service worker caches
+ * images with `CacheFirst` keyed by path (see the `imagenes-obras` rule in
+ * vite.config.ts), so overwriting a path would keep serving the old bytes from
+ * the phone's cache forever. The superseded files stay in the bucket: nothing is
+ * ever really deleted here.
+ */
+export function derivativePaths(catalogId: string, base = basePath(catalogId)) {
   return {
     thumbnail: `${base}_min.webp`,
     derivative: `${base}_der.webp`,
+  }
+}
+
+export function paths(catalogId: string, master: File) {
+  const base = basePath(catalogId)
+  return {
+    ...derivativePaths(catalogId, base),
     master: `${base}_master.${extension(master.name)}`,
   }
 }
@@ -253,6 +284,10 @@ export async function uploadShot(
       index_image: options.isIndex,
       master_bytes: shot.master.size,
       photo_date: new Date().toISOString().slice(0, 10),
+      // The framing travels as data, not only baked into the derivatives: the
+      // printed-catalog pipeline rebuilds them from the master and must be able
+      // to reproduce it.
+      ...editToColumns(shot.edit),
     })
     .select('image_id')
     .single()
