@@ -131,6 +131,7 @@ interfaz que promete lo que no cumple.
 | RF-409, RF-410 | El encuadre guardado como dato solo admite giros de 0, 90, 180 y 270, y un recorte normalizado que es todo o nada y cae dentro de la imagen; una fotografía nueva nace sin giro ni recorte | **Hecho** |
 | RF-409, RF-410 | El encuadre lo cambia quien puede editar; un Lector no, sin política nueva: las de «Imágenes» ya lo cubren | **Hecho** |
 | RF-410 | Geometría de la edición: rotación acumulada, recorte de recorte, giro de 90° con recorte, rectángulo degenerado y arrastre de esquina que no invierte el rectángulo ni se sale de la imagen | **Hecho** |
+| RF-410 | La región que amplía la lupa al ajustar una esquina: centrada en la esquina, cuadrada en píxeles con cualquier giro, siguiendo la esquina a través de la rotación y sin desplazarse hacia dentro cuando la esquina cae en el borde de la fotografía | **Hecho** |
 | RF-410 | Sugerencia de recorte por perfiles de proyección, con fotografías sintéticas: cuadro centrado y descentrado detectado con precisión de pocos píxeles, cuadro más oscuro que la pared, marco y tela como dos candidatos anidados, y un solo candidato cuando el segundo rectángulo no está claramente dentro | **Hecho** |
 | RF-410 | La sugerencia se niega antes que inventarse: pared sin cuadro, pared con ruido, cuadro oscuro sobre pared oscura sin contraste, proporción absurda, rectángulo demasiado pequeño, rectángulo que es casi todo el fotograma, bordes en una sola dirección e imagen demasiado pequeña | **Hecho** |
 
@@ -241,6 +242,7 @@ aquí para que su ausencia del listado anterior no se lea como un hueco de cober
 | RF-405, RF-407 | Interacción de ratón y táctil sobre las miniaturas: revisión manual en navegador |
 | RF-1004 | Resultado real de impresión: revisión manual del PDF y del papel |
 | RF-409, RF-410 | Los píxeles del giro y del recorte: el entorno de test no tiene `canvas` ni `createImageBitmap`, así que la geometría se prueba sola y el dibujo se comprueba en el navegador. Con ella, que reeditar una foto escriba rutas nuevas y no reutilice ninguna |
+| RF-410 | El dibujo de la lupa (`imageLoupe.ts`): necesita `canvas`. Que amplía la esquina que se está ajustando, que con giro activo se ve como en pantalla y que no rompe el arrastre cuando no hay contexto de dibujo, se comprueba en el navegador |
 | RF-410 | La sugerencia de recorte sobre fotografías reales de cuadros: el detector se prueba con imágenes sintéticas, pero lo que acierta o falla con un marco dorado, un reflejo o una pared con rodapié se comprueba en el navegador. Por el mismo motivo, la extracción de luminancia (`imageEdges.ts`) no tiene test: necesita `canvas` |
 | RF-1206 | Que la cámara se abra de verdad: los navegadores sin dispositivo real la simulan, así que se comprueba en un teléfono |
 | RNF-105 | Idioma y zona horaria: visible en cualquier test de interfaz, sin test propio |

@@ -17,6 +17,7 @@ import {
   fullCrop,
   isFullCrop,
   isNoEdit,
+  loupeRegion,
   moveCrop,
   normalizeEdit,
   normalizeRotation,
@@ -392,6 +393,53 @@ describe('cornerPoint', () => {
     for (const corner of ['nw', 'ne', 'sw', 'se'] as const) {
       expectCrop(resizeCrop(crop, corner, cornerPoint(crop, corner)), crop)
     }
+  })
+})
+
+describe('RF-410: loupeRegion (magnifying the corner under the finger)', () => {
+  const size = { width: 1000, height: 800 }
+  const crop = { x: 0.2, y: 0.3, width: 0.5, height: 0.4 }
+
+  it('centers the square on the corner, in pixels of the original', () => {
+    // The «se» corner sits at (0.7, 0.7) of the image, which is (700, 560) px.
+    const region = loupeRegion(size, 0, crop, 'se', 40)
+    expect(region.x).toBeCloseTo(680, 6)
+    expect(region.y).toBeCloseTo(540, 6)
+    expect(region.width).toBeCloseTo(40, 6)
+    expect(region.height).toBeCloseTo(40, 6)
+  })
+
+  it('follows the corner through the rotation, because the crop is over the rotated image', () => {
+    // Turned 90° clockwise the image is 800x1000, and the «nw» corner of the
+    // crop — (0.2, 0.3) there, that is (160, 300) px — comes from (300, 640) of
+    // the original: turning clockwise sends (x, y) to (height - y, x).
+    const region = loupeRegion(size, 90, crop, 'nw', 40)
+    expect(region.x + region.width / 2).toBeCloseTo(300, 6)
+    expect(region.y + region.height / 2).toBeCloseTo(640, 6)
+  })
+
+  it('shows a square of the same pixels whatever the rotation', () => {
+    for (const rotation of [0, 90, 180, 270] as const) {
+      const region = loupeRegion(size, rotation, crop, 'ne', 60)
+      expect(region.width).toBeCloseTo(60, 6)
+      expect(region.height).toBeCloseTo(60, 6)
+    }
+  })
+
+  it('lets the square poke outside the image instead of sliding it inwards', () => {
+    // With the corner on the edge of the photograph, half the loupe has nothing
+    // to show. Moving the region to fill it would take the corner off the centre
+    // of the loupe, and the crosshair drawn there would point somewhere else.
+    const region = loupeRegion(size, 0, { x: 0, y: 0, width: 0.5, height: 0.5 }, 'nw', 40)
+    expect(region.x).toBe(-20)
+    expect(region.y).toBe(-20)
+  })
+
+  it('survives a degenerate crop without producing nonsense', () => {
+    const region = loupeRegion(size, 0, { x: 0.5, y: 0.5, width: 0, height: 0 }, 'se', 40)
+    expect(Number.isFinite(region.x)).toBe(true)
+    expect(Number.isFinite(region.y)).toBe(true)
+    expect(region.width).toBe(40)
   })
 })
 

@@ -16,12 +16,16 @@ import {
   type PhotoEdit,
   type Rotation,
 } from '../../lib/imageEdits'
+import { LOUPE_SIDE, LOUPE_ZOOM, loupePixels, paintLoupe } from '../../lib/imageLoupe'
 import { rotateSuggestion, type EdgeSuggestion } from '../../lib/edgeDetection'
 import { suggestArtworkCrop } from '../../lib/imageEdges'
 import { CropIcon, NoIcon, RotateLeftIcon, RotateRightIcon } from '../../components/ui'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
 const KEY_STEP = 0.02
+
+/** Distance from the loupe to the edges of the working surface. */
+const LOUPE_INSET = '0.75rem'
 
 /**
  * State of the border detection (edgeDetection.ts). It only ever preloads the
@@ -63,10 +67,15 @@ const CORNERS: { corner: Corner; label: string }[] = [
  *     being heard.
  *  4. Corners can also be nudged with the arrow keys. A gesture cannot be the
  *     only way to reach a function.
- *  5. Closing pushes a history entry, like PhotoViewer: on a phone the back
+ *  5. While a corner is being adjusted, that corner is magnified in a loupe
+ *     placed at the OPPOSITE side of the surface: the finger covers exactly the
+ *     pixel being aimed at, and without magnification adjusting the border of a
+ *     painting to the millimetre on a phone is not possible. It disappears when
+ *     the finger lifts, and it never intercepts anything.
+ *  6. Closing pushes a history entry, like PhotoViewer: on a phone the back
  *     button must close the editor, not leave the record. Applying consumes the
  *     same entry, so back never lands on a stale editor.
- *  6. «Sugerir recorte» detects the borders of the painting on demand, never on
+ *  7. «Sugerir recorte» detects the borders of the painting on demand, never on
  *     opening: it costs a decode of the master plus a pass over the pixels, and
  *     spending that on every editor that opens — most of which only rotate —
  *     would slow the common case for the rare one. And a suggestion the
@@ -120,9 +129,14 @@ export function PhotoEditor({
   const [dragging, setDragging] = useState<Corner | 'move' | null>(null)
   const [failed, setFailed] = useState(false)
   const [analysis, setAnalysis] = useState<Analysis>({ status: 'idle' })
+  // Corner being nudged with the keyboard, so the loupe also serves whoever is
+  // not using a finger. It stays while the handle keeps the focus.
+  const [nudged, setNudged] = useState<Corner | null>(null)
 
   const frameRef = useRef<HTMLDivElement | null>(null)
   const areaRef = useRef<HTMLDivElement | null>(null)
+  const imageRef = useRef<HTMLImageElement | null>(null)
+  const loupeRef = useRef<HTMLCanvasElement | null>(null)
   const cropRef = useRef<Crop | null>(crop)
   cropRef.current = crop
   // Origin of the drag, so a rectangle stopped at the edge does not drift away
@@ -314,12 +328,54 @@ export function PhotoEditor({
     if (!step) return
     e.preventDefault()
     nudge(corner, step[0] ?? 0, step[1] ?? 0)
+    // The loupe is as useful with the keyboard as with a finger: a nudge of two
+    // percent is invisible on a photo shrunk to fit the screen.
+    setNudged(corner)
   }
 
   const rotated = rotatedSize(natural, rotation)
   const fit = fitInside(rotated, box)
   const ready = fit.width > 0 && fit.height > 0
   const summary = editSummary({ rotation, crop })
+
+  // Which corner the loupe is showing: the one being dragged, or the one being
+  // nudged with the keyboard. Nothing while the whole rectangle is moved — there
+  // no single pixel is being aimed at — and nothing once the finger lifts.
+  const magnified = dragging && dragging !== 'move' ? dragging : nudged
+  const aimed = magnified && crop ? cornerPoint(crop, magnified) : null
+  // Placement: the corner of the working surface OPPOSITE to where the finger
+  // is, recomputed as it moves. Anchoring it to which handle it is would not be
+  // enough — the crop can sit in any quadrant, and then the «nw» handle is at
+  // the bottom right of the screen with the thumb over the loupe.
+  const loupePlacement: React.CSSProperties = aimed
+    ? {
+        ...(aimed.x < 0.5 ? { right: LOUPE_INSET } : { left: LOUPE_INSET }),
+        ...(aimed.y < 0.5 ? { bottom: LOUPE_INSET } : { top: LOUPE_INSET }),
+      }
+    : {}
+
+  useEffect(() => {
+    const canvas = loupeRef.current
+    const image = imageRef.current
+    if (!magnified || !crop || !canvas || !image) return
+    if (natural.width === 0 || fit.width === 0) return
+    // One paint per frame at most: a pointer fires far more often than the screen
+    // refreshes, and every move already re-renders the rectangle.
+    const handle = requestAnimationFrame(() => {
+      paintLoupe(canvas, image, {
+        natural,
+        rotation,
+        crop,
+        corner: magnified,
+        // From screen pixels to pixels of the rotated image: the photograph is
+        // displayed at `fit`, so this is what makes the loupe magnify LOUPE_ZOOM
+        // times what the cataloger is seeing, which is the reference that
+        // matters — not the pixels of the master, which she never sees.
+        sourceSide: (LOUPE_SIDE / LOUPE_ZOOM) * (rotated.width / fit.width),
+      })
+    })
+    return () => cancelAnimationFrame(handle)
+  }, [magnified, crop, rotation, natural, rotated.width, fit.width])
 
   return createPortal(
     <div
@@ -358,6 +414,7 @@ export function PhotoEditor({
             }}
           >
             <img
+              ref={imageRef}
               src={url}
               alt={`Fotografía ${title}`}
               draggable={false}
@@ -438,6 +495,7 @@ export function PhotoEditor({
                       aria-label={`Arrastrar la ${label} del recorte`}
                       onPointerDown={(e) => startDrag(e, corner)}
                       onKeyDown={(e) => onHandleKeyDown(e, corner)}
+                      onBlur={() => setNudged((c) => (c === corner ? null : c))}
                       onContextMenu={(e) => e.preventDefault()}
                       // 44 px of touch area, with a smaller visible mark: on a
                       // phone the finger needs the room even if the drawing
@@ -457,6 +515,21 @@ export function PhotoEditor({
               </>
             )}
           </div>
+        )}
+
+        {/* The loupe. `pointer-events-none` so it cannot steal the gesture, and
+            `aria-hidden` because it says nothing new: it is the same corner,
+            bigger. It lives outside the image area, anchored to the working
+            surface, so its placement does not depend on where the photo fits. */}
+        {magnified && crop && ready && (
+          <canvas
+            ref={loupeRef}
+            aria-hidden
+            width={loupePixels()}
+            height={loupePixels()}
+            className="pointer-events-none absolute rounded-lg border-2 border-white/80 shadow-lg"
+            style={{ width: `${LOUPE_SIDE}px`, height: `${LOUPE_SIDE}px`, ...loupePlacement }}
+          />
         )}
 
         {failed ? (

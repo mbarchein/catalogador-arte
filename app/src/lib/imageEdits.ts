@@ -343,6 +343,50 @@ export function resizeCrop(
   )
 }
 
+/**
+ * Region of the image AS IT WAS DECODED, in its own pixels, that the loupe shows
+ * while a corner of the crop is being adjusted.
+ *
+ * On a phone the finger covers exactly the pixel being aimed at, so the editor
+ * magnifies that corner somewhere else on the screen. Which region to magnify is
+ * this arithmetic: `side` is the side of the square to show, measured in pixels
+ * of the ROTATED image, because that is the image the cataloger is looking at and
+ * where the crop lives; what comes out is measured over the original, because
+ * that is what `drawImage` reads.
+ *
+ * **It is not clamped to the image.** Near an edge the square pokes outside, and
+ * that is on purpose: `drawImage` simply does not paint what is not there, and
+ * the corner stays exactly at the centre of the loupe. Sliding the region inwards
+ * to keep it full would move the corner off the centre, and then the crosshair
+ * drawn there would be pointing at the wrong pixel — a magnifier that lies is
+ * worse than no magnifier.
+ */
+export function loupeRegion(
+  size: Size,
+  rotation: number,
+  crop: Crop,
+  corner: Corner,
+  side: number,
+): { x: number; y: number; width: number; height: number } {
+  const rotated = rotatedSize(size, rotation)
+  const span = Math.max(1, finite(side, 1))
+  const point = cornerPoint(clampCrop(crop), corner)
+  const width = span / Math.max(1, rotated.width)
+  const height = span / Math.max(1, rotated.height)
+  // Square centred on the corner, in fractions of the rotated image, and then
+  // back through the rotation: the same arithmetic as any other crop of crop.
+  const region = rotateCrop(
+    { x: point.x - width / 2, y: point.y - height / 2, width, height },
+    -rotation,
+  )
+  return {
+    x: region.x * size.width,
+    y: region.y * size.height,
+    width: region.width * size.width,
+    height: region.height * size.height,
+  }
+}
+
 /** The crop moved by a normalized delta, kept whole and inside the image. */
 export function moveCrop(crop: Crop, deltaX: number, deltaY: number): Crop {
   const base = clampCrop(crop)
