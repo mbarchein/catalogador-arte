@@ -41,6 +41,15 @@ export type ExistenceStatusValue =
   | 'UNKNOWN'
   | 'UNREVIEWED'
 
+/**
+ * One entry of the series vocabulary. The series belongs to a fund and the
+ * pair is its key in `series`: each artist works in their own series.
+ */
+export interface SeriesEntry {
+  artist: ArtistFund
+  name: string
+}
+
 export interface Profile {
   id: string
   email: string

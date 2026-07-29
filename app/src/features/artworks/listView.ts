@@ -1,4 +1,5 @@
-import { ARTIST_FUNDS, type ArtistFund, type Artwork } from '../../lib/types'
+import { canonicalPlaces, locationLevels, locationWithin } from '../../lib/location'
+import { ARTIST_FUNDS, type ArtistFund, type Artwork, type SeriesEntry } from '../../lib/types'
 import { normalizeForSearch } from '../../lib/vocabulary'
 
 /**
@@ -29,12 +30,35 @@ export interface ListView {
   funds: ArtistFund[]
   /** Empty selects every type; entries are `artwork_types` names, matched exactly. */
   types: string[]
+  /**
+   * Empty selects every series. Entries are series NAMES, matched exactly.
+   *
+   * The vocabulary is per fund — the same name may exist in two funds as two
+   * different series — but the FILTER is by name, so selecting «Retratos del
+   * taller» brings the artworks of every fund that has a series so called. It
+   * is the honest reading of a filter whose entries are names, and the fund
+   * filter sits right next to it to disambiguate. The chooser labels each
+   * option with its fund, so what will be mixed is visible before choosing.
+   */
+  series: string[]
+  /**
+   * Empty selects every location. Entries are places, matched HIERARCHICALLY:
+   * «edificio a» also brings everything inside it (see locationWithin).
+   */
+  locations: string[]
   status: StatusFilter
   order: ListOrder
 }
 
 /** Recent first by default: covers both creation and modification. */
-export const DEFAULT_VIEW: ListView = { funds: [], types: [], status: 'ALL', order: 'RECENT' }
+export const DEFAULT_VIEW: ListView = {
+  funds: [],
+  types: [],
+  series: [],
+  locations: [],
+  status: 'ALL',
+  order: 'RECENT',
+}
 
 const STATUS_FILTERS: readonly StatusFilter[] = [
   'ALL',
@@ -105,8 +129,13 @@ export function parseView(params: URLSearchParams): ListView {
     ),
     // Any string is a plausible vocabulary entry; whether it exists is the
     // filter's business (an unknown one simply finds nothing, with the
-    // explicit no-results message).
+    // explicit no-results message). Same for series and locations.
     types: [...new Set(params.getAll('type'))].filter((t) => t !== ''),
+    series: [...new Set(params.getAll('series'))].filter((s) => s !== ''),
+    // Locations are canonicalized on the way in, so a place typed by hand in
+    // the URL is the same string as the option offered in the chooser — or the
+    // checkbox of what is filtering could not be unmarked.
+    locations: canonicalPlaces(params.getAll('location')),
     status: keyOf(STATUS_PARAM, params.get('status')) ?? 'ALL',
     order: keyOf(ORDER_PARAM, params.get('order')) ?? 'RECENT',
   }
@@ -117,18 +146,129 @@ export function serializeView(view: ListView): URLSearchParams {
   const params = new URLSearchParams()
   for (const f of view.funds) params.append('fund', f)
   for (const t of view.types) params.append('type', t)
+  for (const s of view.series) params.append('series', s)
+  for (const l of view.locations) params.append('location', l)
   if (view.status !== 'ALL') params.set('status', STATUS_PARAM[view.status])
   if (view.order !== 'RECENT') params.set('order', ORDER_PARAM[view.order])
   return params
 }
 
+/** The filters cleared, keeping the order: what "Quitar todo" resets to. */
+export const NO_FILTERS: Pick<ListView, 'funds' | 'types' | 'series' | 'locations' | 'status'> = {
+  funds: [],
+  types: [],
+  series: [],
+  locations: [],
+  status: 'ALL',
+}
+
 /** True when no filter is active (the order is presentation, not a filter). */
 export function hasNoFilters(view: ListView): boolean {
-  return view.funds.length === 0 && view.types.length === 0 && view.status === 'ALL'
+  return (
+    view.funds.length === 0 &&
+    view.types.length === 0 &&
+    view.series.length === 0 &&
+    view.locations.length === 0 &&
+    view.status === 'ALL'
+  )
+}
+
+/**
+ * How many parts of the view differ from the default. The funnel button shows
+ * it with the sheet closed: a filtered list that looks complete is how records
+ * get "lost".
+ */
+export function activeFilterCount(view: ListView): number {
+  return [
+    view.funds.length > 0,
+    view.types.length > 0,
+    view.series.length > 0,
+    view.locations.length > 0,
+    view.status !== 'ALL',
+    view.order !== 'RECENT',
+  ].filter(Boolean).length
 }
 
 export function isDefaultView(view: ListView): boolean {
   return hasNoFilters(view) && view.order === 'RECENT'
+}
+
+// ── Options of the two vocabulary filters ────────────────────
+
+export interface FilterOption {
+  value: string
+  text: string
+}
+
+/**
+ * The options of the series filter, from the vocabulary.
+ *
+ * Every option carries its fund («Rotili · Paisajes de la sierra»): the
+ * vocabulary is per fund, and an unlabeled name would hide which artist it
+ * belongs to. When the fund filter has a selection, only the series of those
+ * funds are offered — asking for Rotili and then being offered Ruiz Campins
+ * series would be offering options that cannot match.
+ *
+ * Two funds with the same series name collapse into ONE option, labeled with
+ * both, because the filter matches by name and would select them together
+ * anyway. Saying so in the label beats a duplicated row that behaves as one.
+ *
+ * `selected` values the vocabulary does not know are kept as options: the
+ * checkboxes must reflect what is filtering, even when it comes from a stale
+ * link.
+ */
+export function seriesFilterOptions(
+  entries: readonly SeriesEntry[],
+  funds: readonly ArtistFund[],
+  selected: readonly string[] = [],
+): FilterOption[] {
+  const offered = funds.length === 0 ? entries : entries.filter((e) => funds.includes(e.artist))
+  const byName = new Map<string, ArtistFund[]>()
+  for (const entry of offered) {
+    const already = byName.get(entry.name)
+    if (already) {
+      if (!already.includes(entry.artist)) already.push(entry.artist)
+    } else {
+      byName.set(entry.name, [entry.artist])
+    }
+  }
+  const options = [...byName.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], 'es', { sensitivity: 'base' }))
+    .map(([name, artists]) => ({
+      value: name,
+      text: `${artists.map((a) => FUND_LABEL[a]).join(', ')} · ${name}`,
+    }))
+  const unknown = selected.filter((s) => !byName.has(s)).map((s) => ({ value: s, text: s }))
+  return [...options, ...unknown]
+}
+
+/**
+ * The options of the location filter: every place worth asking for, which is
+ * each location in use PLUS all of its ancestors. Without the ancestors,
+ * «edificio a» would never be offered when no artwork sits at the building
+ * level, and the hierarchical match would have nothing to match with.
+ *
+ * Sorted as text, which groups each branch under its parent because a parent
+ * is a prefix of its children.
+ */
+export function locationFilterOptions(
+  locations: readonly string[],
+  selected: readonly string[] = [],
+): FilterOption[] {
+  const places = new Set<string>()
+  for (const location of locations) {
+    const levels = locationLevels(location)
+    for (let depth = 1; depth <= levels.length; depth += 1) {
+      places.add(levels.slice(0, depth).join(', '))
+    }
+  }
+  for (const place of selected) {
+    const levels = locationLevels(place)
+    if (levels.length > 0) places.add(levels.join(', '))
+  }
+  return [...places]
+    .sort((a, b) => a.localeCompare(b, 'es'))
+    .map((place) => ({ value: place, text: place }))
 }
 
 // ── From view to query ───────────────────────────────────────
@@ -148,6 +288,8 @@ type ListedArtwork = Pick<
   | 'title'
   | 'artist'
   | 'artwork_type'
+  | 'series'
+  | 'physical_location'
   | 'inventory_phase_completed'
   | 'documentation_phase_completed'
   | 'catalog_record_complete'
@@ -159,6 +301,15 @@ type ListedArtwork = Pick<
 export function matchesView(a: ListedArtwork, view: ListView): boolean {
   if (view.funds.length > 0 && !view.funds.includes(a.artist)) return false
   if (view.types.length > 0 && !view.types.includes(a.artwork_type)) return false
+  // By name, across funds: see the note on ListView.series.
+  if (view.series.length > 0 && !view.series.includes(a.series)) return false
+  // Hierarchical: a selected place also answers for everything inside it.
+  if (
+    view.locations.length > 0 &&
+    !view.locations.some((place) => locationWithin(a.physical_location, place))
+  ) {
+    return false
+  }
   switch (view.status) {
     case 'ALL':
       return true
@@ -256,12 +407,18 @@ export function normalizeStoredView(value: unknown): ListView {
   // A view stored before fund and type became multiselect carried a single
   // value ('fund'/'type'): it still counts, as a one-element selection.
   const funds = Array.isArray(v.funds) ? v.funds.filter(isFund) : isFund(v.fund) ? [v.fund] : []
-  const isType = (x: unknown): x is string => typeof x === 'string' && x !== ''
-  const types = Array.isArray(v.types) ? v.types.filter(isType) : isType(v.type) ? [v.type] : []
+  const isName = (x: unknown): x is string => typeof x === 'string' && x !== ''
+  const types = Array.isArray(v.types) ? v.types.filter(isName) : isName(v.type) ? [v.type] : []
+  // A view stored before these two filters existed simply has neither: the
+  // absent field falls back to "no selection", like any unknown one.
+  const series = Array.isArray(v.series) ? v.series.filter(isName) : []
+  const locations = Array.isArray(v.locations) ? v.locations.filter(isName) : []
 
   return {
     funds,
     types,
+    series,
+    locations,
     status: STATUS_FILTERS.includes(v.status as StatusFilter) ? (v.status as StatusFilter) : 'ALL',
     order: LIST_ORDERS.includes(v.order as ListOrder) ? (v.order as ListOrder) : 'RECENT',
   }

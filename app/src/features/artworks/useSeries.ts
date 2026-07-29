@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import type { ArtistFund } from '../../lib/types'
-
-/** One vocabulary entry: a series belongs to a fund, and the pair is its key. */
-export interface SeriesEntry {
-  artist: ArtistFund
-  name: string
-}
+import type { ArtistFund, SeriesEntry } from '../../lib/types'
 
 /**
  * The series vocabulary, loaded from `series`.

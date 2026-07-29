@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeLocation, locationForSaving } from './location'
+import { locationForSaving, locationLevels, locationWithin, normalizeLocation } from './location'
 
 describe('normalizeLocation (field schema v11 convention)', () => {
   it('lowercases', () => {
@@ -51,5 +51,61 @@ describe('locationForSaving', () => {
 
   it('leaves empty what only had separators', () => {
     expect(locationForSaving('  ,  ')).toBe('')
+  })
+})
+
+describe('locationLevels (the hierarchy of the convention)', () => {
+  it('splits by comma, largest to smallest', () => {
+    expect(locationLevels('edificio a, habitacion amarilla, bloque 3')).toEqual([
+      'edificio a',
+      'habitacion amarilla',
+      'bloque 3',
+    ])
+  })
+
+  it('normalizes first, so a hand-typed value compares with a stored one', () => {
+    expect(locationLevels('Edificio A,  Habitación Amarilla ')).toEqual([
+      'edificio a',
+      'habitacion amarilla',
+    ])
+  })
+
+  it('an empty location has no levels', () => {
+    expect(locationLevels('')).toEqual([])
+    expect(locationLevels(' , ')).toEqual([])
+  })
+})
+
+describe('locationWithin (a place reaches everything inside it)', () => {
+  const YELLOW = 'edificio a, habitacion amarilla, bloque 3'
+
+  it('a place reaches itself', () => {
+    expect(locationWithin(YELLOW, YELLOW)).toBe(true)
+  })
+
+  it('an outer level reaches everything under it', () => {
+    // What makes the filter usable in a storage room: "everything in the
+    // yellow room" must bring every shelf, folder and box under it.
+    expect(locationWithin(YELLOW, 'edificio a')).toBe(true)
+    expect(locationWithin(YELLOW, 'edificio a, habitacion amarilla')).toBe(true)
+  })
+
+  it('does not reach upwards: the building is not inside the room', () => {
+    expect(locationWithin('edificio a', 'edificio a, habitacion amarilla')).toBe(false)
+  })
+
+  it('compares whole levels: «edificio a» is not «edificio ab»', () => {
+    // A raw prefix comparison would mix two different buildings.
+    expect(locationWithin('edificio ab, habitacion 1', 'edificio a')).toBe(false)
+    expect(locationWithin('edificio a, habitacion 1', 'edificio ab')).toBe(false)
+  })
+
+  it('a sibling branch does not match', () => {
+    expect(locationWithin(YELLOW, 'edificio a, habitacion azul')).toBe(false)
+  })
+
+  it('nothing is inside an empty place, and an unplaced artwork is nowhere', () => {
+    expect(locationWithin(YELLOW, '')).toBe(false)
+    expect(locationWithin('', 'edificio a')).toBe(false)
   })
 })

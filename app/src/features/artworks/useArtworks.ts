@@ -160,7 +160,16 @@ export function useArtworks(search: string, view: ListView = DEFAULT_VIEW) {
     const rows = all.filter((a) => matchesView(a, view) && matchesSearch(a, term))
     return sortArtworks(rows, view.order)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [all, search, view.funds.join(','), view.types.join(','), view.status, view.order])
+  }, [
+    all,
+    search,
+    view.funds.join(','),
+    view.types.join(','),
+    view.series.join(','),
+    view.locations.join(','),
+    view.status,
+    view.order,
+  ])
 
   // Loading only when there is no snapshot at all: with one, the list paints
   // instantly and the refresh happens behind it.

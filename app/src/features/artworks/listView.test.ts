@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_VIEW,
+  NO_FILTERS,
+  activeFilterCount,
   compareByTitle,
   hasNoFilters,
   isDefaultView,
+  locationFilterOptions,
   matchesSearch,
   matchesView,
   normalizeStoredView,
   parseView,
   serializeView,
+  seriesFilterOptions,
   sortArtworks,
   type ListView,
 } from './listView'
@@ -22,6 +26,8 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
     const view: ListView = {
       funds: ['RUIZ_CAMPINS', 'TEST'],
       types: ['Dibujo', 'Técnica mixta'],
+      series: ['Retratos del taller', 'Serie de ensayo A'],
+      locations: ['edificio a', 'edificio b, habitacion 4'],
       status: 'PHASE2_IN_PROGRESS',
       order: 'TITLE',
     }
@@ -34,19 +40,29 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
 
   it('ignores unknown values field by field, like a stale bookmark', () => {
     const params = new URLSearchParams(
-      'fund=PICASSO&fund=ROTILI&type=Dibujo&status=whatever&order=title',
+      'fund=PICASSO&fund=ROTILI&type=Dibujo&series=&location=edificio a&status=whatever&order=title',
     )
     expect(parseView(params)).toEqual({
       funds: ['ROTILI'],
       types: ['Dibujo'],
+      // A series name the vocabulary does not know is NOT ignored: it is a
+      // plausible entry, and an unknown one simply finds nothing. The empty
+      // value is what gets dropped.
+      series: [],
+      locations: ['edificio a'],
       status: 'ALL',
       order: 'TITLE',
     })
   })
 
-  it('deduplicates repeated parameters', () => {
-    const params = new URLSearchParams('type=Dibujo&type=Dibujo')
-    expect(parseView(params).types).toEqual(['Dibujo'])
+  it('deduplicates repeated parameters, the new filters included', () => {
+    const params = new URLSearchParams(
+      'type=Dibujo&type=Dibujo&series=Paisajes&series=Paisajes&location=edificio a&location=edificio a',
+    )
+    const view = parseView(params)
+    expect(view.types).toEqual(['Dibujo'])
+    expect(view.series).toEqual(['Paisajes'])
+    expect(view.locations).toEqual(['edificio a'])
   })
 })
 
@@ -57,6 +73,8 @@ describe('remembered view (applied when entering with no parameters)', () => {
     expect(normalizeStoredView({ funds: ['ROTILI', 'GOYA'], status: 12, order: 'CATALOG_ID' })).toEqual({
       funds: ['ROTILI'],
       types: [],
+      series: [],
+      locations: [],
       status: 'ALL',
       order: 'CATALOG_ID',
     })
@@ -66,6 +84,34 @@ describe('remembered view (applied when entering with no parameters)', () => {
     expect(normalizeStoredView({ fund: 'ROTILI', type: 'Pintura' })).toEqual({
       funds: ['ROTILI'],
       types: ['Pintura'],
+      series: [],
+      locations: [],
+      status: 'ALL',
+      order: 'RECENT',
+    })
+  })
+
+  it('a view stored before the series and location filters existed still works', () => {
+    // The shape saved by yesterday's version has neither field: each one falls
+    // back to "no selection" instead of taking the list down.
+    expect(
+      normalizeStoredView({ funds: ['TEST'], types: [], status: 'PHASE1_DONE', order: 'TITLE' }),
+    ).toEqual({
+      funds: ['TEST'],
+      types: [],
+      series: [],
+      locations: [],
+      status: 'PHASE1_DONE',
+      order: 'TITLE',
+    })
+  })
+
+  it('discards garbage inside the new arrays, entry by entry', () => {
+    expect(normalizeStoredView({ series: ['Paisajes', '', 7], locations: 'edificio a' })).toEqual({
+      funds: [],
+      types: [],
+      series: ['Paisajes'],
+      locations: [],
       status: 'ALL',
       order: 'RECENT',
     })
@@ -78,6 +124,8 @@ const stub = (over: Partial<Parameters<typeof matchesView>[0]> = {}) => ({
   title: '',
   artist: 'ROTILI' as const,
   artwork_type: '',
+  series: '',
+  physical_location: '',
   inventory_phase_completed: false,
   documentation_phase_completed: false,
   catalog_record_complete: false,
@@ -137,6 +185,131 @@ describe('matchesView (RF-602: the filters run over the local mirror)', () => {
     const view: ListView = { ...DEFAULT_VIEW, funds: ['ROTILI'], status: 'UNPHOTOGRAPHED' }
     expect(matchesView(stub(), view)).toBe(true)
     expect(matchesView(stub({ photographed: true }), view)).toBe(false)
+  })
+
+  it('the series filter matches by name, and an artwork without series is out', () => {
+    const view: ListView = { ...DEFAULT_VIEW, series: ['Paisajes de la sierra'] }
+    expect(matchesView(stub({ series: 'Paisajes de la sierra' }), view)).toBe(true)
+    expect(matchesView(stub({ series: 'Retratos del taller' }), view)).toBe(false)
+    expect(matchesView(stub({ series: '' }), view)).toBe(false)
+  })
+
+  it('a series name shared by two funds mixes them: the fund filter separates', () => {
+    // Documented on ListView.series: the vocabulary is per fund but the filter
+    // is by name, and the fund filter sits next to it to disambiguate.
+    const view: ListView = { ...DEFAULT_VIEW, series: ['Homónima'] }
+    expect(matchesView(stub({ artist: 'ROTILI', series: 'Homónima' }), view)).toBe(true)
+    expect(matchesView(stub({ artist: 'RUIZ_CAMPINS', series: 'Homónima' }), view)).toBe(true)
+    const onlyRotili: ListView = { ...view, funds: ['ROTILI'] }
+    expect(matchesView(stub({ artist: 'RUIZ_CAMPINS', series: 'Homónima' }), onlyRotili)).toBe(false)
+  })
+})
+
+describe('matchesView (RF-602: the location filter is hierarchical)', () => {
+  const inside = (location: string, place: string) =>
+    matchesView(stub({ physical_location: location }), { ...DEFAULT_VIEW, locations: [place] })
+
+  it('a marked place brings everything inside it', () => {
+    // The question one asks in a storage room: "everything in building a".
+    expect(inside('edificio a, habitacion amarilla, bloque 3', 'edificio a')).toBe(true)
+    expect(
+      inside('edificio a, habitacion amarilla, bloque 3', 'edificio a, habitacion amarilla'),
+    ).toBe(true)
+    expect(inside('edificio a', 'edificio a')).toBe(true)
+  })
+
+  it('what is outside stays outside, and a partial level does NOT count', () => {
+    expect(inside('edificio b, habitacion 4', 'edificio a')).toBe(false)
+    // «edificio a» must not reach «edificio ab»: another building, not a child.
+    expect(inside('edificio ab, habitacion 1', 'edificio a')).toBe(false)
+    // And it does not reach upwards either: the building is not in the room.
+    expect(inside('edificio a', 'edificio a, habitacion amarilla')).toBe(false)
+  })
+
+  it('an artwork with no location answers no place', () => {
+    expect(inside('', 'edificio a')).toBe(false)
+  })
+
+  it('several marked places are an "or": any of them is enough', () => {
+    const view: ListView = { ...DEFAULT_VIEW, locations: ['edificio a', 'almacen exterior'] }
+    expect(matchesView(stub({ physical_location: 'almacen exterior, jaula 2' }), view)).toBe(true)
+    expect(matchesView(stub({ physical_location: 'edificio c' }), view)).toBe(false)
+  })
+})
+
+describe('seriesFilterOptions (RF-602, RF-213: the chooser of the series filter)', () => {
+  const ENTRIES = [
+    { artist: 'ROTILI' as const, name: 'Paisajes de la sierra' },
+    { artist: 'RUIZ_CAMPINS' as const, name: 'Retratos del taller' },
+    { artist: 'TEST' as const, name: 'Serie de ensayo A' },
+  ]
+
+  it('labels every option with its fund', () => {
+    expect(seriesFilterOptions(ENTRIES, [])).toEqual([
+      { value: 'Paisajes de la sierra', text: 'Rotili · Paisajes de la sierra' },
+      { value: 'Retratos del taller', text: 'Ruiz Campins · Retratos del taller' },
+      { value: 'Serie de ensayo A', text: 'Fondo de pruebas · Serie de ensayo A' },
+    ])
+  })
+
+  it('offers only the series of the marked funds', () => {
+    // Offering Ruiz Campins series while filtering by Rotili would be offering
+    // options that cannot match.
+    expect(seriesFilterOptions(ENTRIES, ['ROTILI']).map((o) => o.value)).toEqual([
+      'Paisajes de la sierra',
+    ])
+  })
+
+  it('a name shared by two funds is one option labeled with both', () => {
+    const shared = [
+      { artist: 'ROTILI' as const, name: 'Homónima' },
+      { artist: 'RUIZ_CAMPINS' as const, name: 'Homónima' },
+    ]
+    expect(seriesFilterOptions(shared, [])).toEqual([
+      { value: 'Homónima', text: 'Rotili, Ruiz Campins · Homónima' },
+    ])
+  })
+
+  it('a marked series the vocabulary does not know stays visible', () => {
+    const options = seriesFilterOptions(ENTRIES, ['ROTILI'], ['Retirada'])
+    expect(options.map((o) => o.value)).toEqual(['Paisajes de la sierra', 'Retirada'])
+  })
+})
+
+describe('locationFilterOptions (RF-602: every place worth asking for)', () => {
+  it('offers each used location and all of its ancestors', () => {
+    // Without the ancestors, «edificio a» would never be offered and the
+    // hierarchical match would be unreachable.
+    expect(
+      locationFilterOptions(['edificio a, habitacion amarilla, bloque 3']).map((o) => o.value),
+    ).toEqual([
+      'edificio a',
+      'edificio a, habitacion amarilla',
+      'edificio a, habitacion amarilla, bloque 3',
+    ])
+  })
+
+  it('deduplicates shared ancestors and sorts so each branch sits under its parent', () => {
+    expect(
+      locationFilterOptions([
+        'edificio a, habitacion 2',
+        'edificio a, habitacion 1',
+        'edificio a, habitacion 1, balda 5',
+      ]).map((o) => o.value),
+    ).toEqual([
+      'edificio a',
+      'edificio a, habitacion 1',
+      'edificio a, habitacion 1, balda 5',
+      'edificio a, habitacion 2',
+    ])
+  })
+
+  it('ignores the artworks with no location', () => {
+    expect(locationFilterOptions(['', ' , '])).toEqual([])
+  })
+
+  it('a marked place nobody uses anymore stays visible, normalized', () => {
+    expect(locationFilterOptions([], ['Edificio C']).map((o) => o.value)).toEqual(['edificio c'])
   })
 })
 
@@ -223,5 +396,43 @@ describe('view predicates', () => {
     expect(hasNoFilters({ ...DEFAULT_VIEW, order: 'TITLE' })).toBe(true)
     expect(isDefaultView({ ...DEFAULT_VIEW, order: 'TITLE' })).toBe(false)
     expect(hasNoFilters({ ...DEFAULT_VIEW, types: ['Pintura'] })).toBe(false)
+  })
+
+  it('the two new filters also count as filtering', () => {
+    // Otherwise the no-results message would offer no way out and the funnel
+    // would look clean while the list is filtered.
+    expect(hasNoFilters({ ...DEFAULT_VIEW, series: ['Paisajes'] })).toBe(false)
+    expect(hasNoFilters({ ...DEFAULT_VIEW, locations: ['edificio a'] })).toBe(false)
+    expect(isDefaultView({ ...DEFAULT_VIEW, locations: ['edificio a'] })).toBe(false)
+  })
+
+  it('NO_FILTERS clears every filter and nothing else', () => {
+    const filtered: ListView = {
+      funds: ['TEST'],
+      types: ['Pintura'],
+      series: ['Paisajes'],
+      locations: ['edificio a'],
+      status: 'PHASE1_DONE',
+      order: 'TITLE',
+    }
+    const cleared = { ...filtered, ...NO_FILTERS }
+    expect(hasNoFilters(cleared)).toBe(true)
+    expect(cleared.order).toBe('TITLE')
+  })
+
+  it('the funnel counts each filter and the order, one by one', () => {
+    expect(activeFilterCount(DEFAULT_VIEW)).toBe(0)
+    expect(activeFilterCount({ ...DEFAULT_VIEW, order: 'TITLE' })).toBe(1)
+    expect(
+      activeFilterCount({
+        ...DEFAULT_VIEW,
+        funds: ['TEST'],
+        types: ['Pintura'],
+        series: ['Paisajes'],
+        locations: ['edificio a'],
+        status: 'PHASE1_DONE',
+        order: 'TITLE',
+      }),
+    ).toBe(6)
   })
 })

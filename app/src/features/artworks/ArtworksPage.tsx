@@ -2,27 +2,39 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { BottomSheet, CheckList, FunnelIcon, RadioList } from '../../components/ui'
+import {
+  BottomSheet,
+  CheckList,
+  FunnelIcon,
+  RadioList,
+  SearchableCheckList,
+} from '../../components/ui'
 import { displayDate } from '../../lib/dates'
 import { existenceNotice, displayMeasurements, displayTitle } from '../../lib/title'
 import { ARTIST_LABEL, ARTIST_FUNDS } from '../../lib/types'
 import { useLiveChanges } from '../../lib/live'
 import {
   FUND_LABEL,
+  NO_FILTERS,
   ORDER_LABEL,
   STATUS_FILTER_LABEL,
+  activeFilterCount,
   hasNoFilters,
   isDefaultView,
+  locationFilterOptions,
   parseView,
   readStoredView,
   saveStoredView,
   serializeView,
+  seriesFilterOptions,
   type ListOrder,
   type ListView,
   type StatusFilter,
 } from './listView'
 import { useArtworks } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
+import { usePhysicalLocations } from './usePhysicalLocations'
+import { useSeries } from './useSeries'
 
 const FUND_OPTIONS = ARTIST_FUNDS.map((v) => ({ value: v, text: FUND_LABEL[v] }))
 
@@ -50,6 +62,10 @@ export function ArtworksPage() {
   const view = useMemo(() => parseView(searchParams), [searchParams])
   const [sheetOpen, setSheetOpen] = useState(false)
   const { types } = useArtworkTypes()
+  // No fund is passed: this filter offers the series of several funds at once,
+  // each option labeled with the fund it belongs to.
+  const { entries: seriesEntries } = useSeries()
+  const usedLocations = usePhysicalLocations()
 
   // Entering with a clean URL applies the last combination chosen on this
   // device. Only once: after that, the URL is the single truth of the view.
@@ -97,15 +113,21 @@ export function ArtworksPage() {
     return [...types, ...unknown].map((t) => ({ value: t, text: t }))
   }, [types, view.types])
 
-  // How many parts of the view differ from the default: the funnel button
-  // must say that something is filtering even with the sheet closed — a
-  // filtered list that looks complete is how records get "lost".
-  const activeCount = [
-    view.funds.length > 0,
-    view.types.length > 0,
-    view.status !== 'ALL',
-    view.order !== 'RECENT',
-  ].filter(Boolean).length
+  // Series of the selected funds only, each labeled with its fund. Same rule
+  // for what the vocabulary does not know: it stays visible as marked.
+  const seriesOptions = useMemo(
+    () => seriesFilterOptions(seriesEntries, view.funds, view.series),
+    [seriesEntries, view.funds, view.series],
+  )
+
+  // Places, each used location plus its ancestors: without them «edificio a»
+  // would never be offered, and the hierarchical match would be unreachable.
+  const locationOptions = useMemo(
+    () => locationFilterOptions(usedLocations, view.locations),
+    [usedLocations, view.locations],
+  )
+
+  const activeCount = activeFilterCount(view)
 
   const noCriteria = search.trim() === '' && hasNoFilters(view)
 
@@ -170,7 +192,7 @@ export function ArtworksPage() {
                 <button
                   type="button"
                   className="btn-secondary mt-3 w-full"
-                  onClick={() => updateView({ funds: [], types: [], status: 'ALL' })}
+                  onClick={() => updateView(NO_FILTERS)}
                 >
                   Quitar los filtros
                 </button>
@@ -271,6 +293,45 @@ export function ArtworksPage() {
 
           <section>
             <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
+              Serie <span className="normal-case text-stone-400">· sin marcar, todas</span>
+            </h3>
+            {/* Each option says its fund: the vocabulary is per fund, and the
+                filter matches by name, so a name shared by two funds is one
+                option labeled with both (see seriesFilterOptions). */}
+            <SearchableCheckList
+              options={seriesOptions}
+              values={view.series}
+              onChange={(series) => updateView({ series })}
+              searchLabel="Buscar serie"
+              placeholder="Buscar serie"
+              emptyText={
+                view.funds.length > 0
+                  ? 'Los fondos marcados no tienen series en el catálogo.'
+                  : 'Todavía no hay series en el catálogo.'
+              }
+            />
+          </section>
+
+          <section>
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
+              Ubicación física{' '}
+              <span className="normal-case text-stone-400">· incluye lo que hay dentro</span>
+            </h3>
+            {/* Hierarchical: marking «edificio a» also brings every room,
+                shelf and folder under it. That is the question one actually
+                asks in a storage room. */}
+            <SearchableCheckList
+              options={locationOptions}
+              values={view.locations}
+              onChange={(locations) => updateView({ locations })}
+              searchLabel="Buscar ubicación"
+              placeholder="Buscar ubicación"
+              emptyText="Todavía no hay ubicaciones registradas."
+            />
+          </section>
+
+          <section>
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
               Estado del proceso
             </h3>
             <RadioList
@@ -284,9 +345,7 @@ export function ArtworksPage() {
             <button
               type="button"
               disabled={activeCount === 0}
-              onClick={() =>
-                updateView({ funds: [], types: [], status: 'ALL', order: 'RECENT' })
-              }
+              onClick={() => updateView({ ...NO_FILTERS, order: 'RECENT' })}
               className="btn-secondary disabled:opacity-40"
             >
               Quitar todo
