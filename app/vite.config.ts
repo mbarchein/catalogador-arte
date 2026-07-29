@@ -1,9 +1,34 @@
 /// <reference types="vitest/config" />
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+  version: string
+  dependencies: Record<string, string>
+  devDependencies: Record<string, string>
+}
+
+// Lo que la aplicación no puede saber de sí misma en ejecución se incrusta al
+// compilar. El commit lo aporta el entorno de despliegue (Vercel o Actions);
+// en local no hay ninguno y se dice, en vez de inventar uno.
+const BUILD = {
+  version: pkg.version,
+  date: new Date().toISOString(),
+  commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? '').slice(0, 7),
+  deps: {
+    react: pkg.dependencies.react,
+    'react-router-dom': pkg.dependencies['react-router-dom'],
+    '@supabase/supabase-js': pkg.dependencies['@supabase/supabase-js'],
+    vite: pkg.devDependencies.vite,
+  },
+}
+
 export default defineConfig({
+  define: {
+    __BUILD__: JSON.stringify(BUILD),
+  },
   plugins: [
     react(),
     VitePWA({
