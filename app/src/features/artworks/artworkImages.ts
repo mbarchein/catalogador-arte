@@ -12,6 +12,7 @@ export interface ImageRow {
   shot_type: ShotTypeValue
   index_image: boolean
   photo_date: string | null
+  sort_order: number
 }
 
 /**
@@ -34,10 +35,13 @@ export function useArtworkImages(catalogId: string) {
     const { data } = await supabase
       .from('images')
       .select(
-        'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, photo_date',
+        'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, photo_date, sort_order',
       )
       .eq('catalog_id', catalogId)
       .eq('active', true)
+      // RF-401: the order the cataloger arranged; the identifier only breaks
+      // ties, so two photos never swap places on their own between loads.
+      .order('sort_order', { ascending: true })
       .order('image_id', { ascending: true })
 
     const rows = (data ?? []) as unknown as ImageRow[]

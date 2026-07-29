@@ -6,10 +6,12 @@ import { uploadShot } from '../../lib/images'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
 import { useAuth } from '../../auth/AuthContext'
-import { Chips, YesIcon } from '../../components/ui'
+import { Chips } from '../../components/ui'
+import { moveItem } from '../../lib/reorder'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { useArtworkImages } from './artworkImages'
 import { PhotoCarousel } from './PhotoCarousel'
+import { ReorderableThumbnails } from './ReorderableThumbnails'
 
 /**
  * Photo management of a record, on its own route (/artwork/:id/photos): the
@@ -106,6 +108,38 @@ export function ArtworkPhotosPage() {
     setSaving(false)
   }
 
+  /**
+   * Persists the arranged order (RF-401). The database validates that the list
+   * is exactly the artwork's active photos, so a stale client — someone else
+   * added or retired one meanwhile — gets a readable error instead of half an
+   * order; reloading then shows the real one.
+   */
+  async function saveOrder(imageIds: string[]) {
+    setSaving(true)
+    setError(null)
+    setNotice(null)
+    const { error } = await supabase.rpc('reorder_images', {
+      p_catalog_id: catalogId,
+      p_image_ids: imageIds,
+    })
+    if (error) {
+      setError(error.message)
+    } else {
+      setNotice('Orden de las fotografías actualizado.')
+    }
+    await reload()
+    setSaving(false)
+  }
+
+  /** Moves the selected photo one place, for whoever does not drag. */
+  async function moveSelected(delta: number) {
+    if (!selectedId) return
+    const current = images.map((i) => i.image_id)
+    const from = current.indexOf(selectedId)
+    if (from < 0) return
+    await saveOrder(moveItem(current, from, from + delta))
+  }
+
   async function useAsMain(imageId: string) {
     setSaving(true)
     setError(null)
@@ -196,48 +230,18 @@ export function ArtworkPhotosPage() {
           <p className="text-sm text-stone-500">Sin fotografías registradas.</p>
         ) : (
           <>
-            <ul className="flex gap-2 overflow-x-auto pb-1">
-              {images.map((r) => {
-                const isMain = r.image_id === mainId
-                return (
-                  <li key={r.image_id} className="shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedId(r.image_id)
-                        setConfirmRemoval(null)
-                      }}
-                      aria-label={`Gestionar ${SHOT_TYPE_LABEL[r.shot_type]}${isMain ? ', imagen principal' : ''}`}
-                      aria-pressed={r.image_id === selectedId}
-                      className={`relative block overflow-hidden rounded-lg border-2 ${
-                        r.image_id === selectedId ? 'border-stone-800' : 'border-stone-200'
-                      }`}
-                    >
-                      {thumbUrls[r.image_id] ? (
-                        <img src={thumbUrls[r.image_id]} alt="" className="h-20 w-20 object-cover" />
-                      ) : (
-                        <span className="flex h-20 w-20 items-center justify-center bg-stone-100 text-[10px] text-stone-500">
-                          sin vista
-                        </span>
-                      )}
-                      {isMain && (
-                        <span
-                          className="absolute left-1 top-1 rounded-full bg-stone-900/85 p-0.5 text-white"
-                          title="Imagen principal"
-                        >
-                          <YesIcon className="h-3 w-3" />
-                        </span>
-                      )}
-                      {r.shot_type !== 'GENERAL' && (
-                        <span className="absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white">
-                          {SHOT_TYPE_LABEL[r.shot_type]}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <ReorderableThumbnails
+              images={images}
+              thumbUrls={thumbUrls}
+              mainId={mainId}
+              selectedId={selectedId}
+              onSelect={(imageId) => {
+                setSelectedId(imageId)
+                setConfirmRemoval(null)
+              }}
+              onReorder={(imageIds) => void saveOrder(imageIds)}
+              disabled={saving}
+            />
 
             {/* Same swipe carousel as the record view: flicking through the
                 shots while retyping them is exactly the reviewing gesture. */}
@@ -272,6 +276,38 @@ export function ArtworkPhotosPage() {
                   value={selected.shot_type}
                   onChange={(v) => void changeShotType(selected.image_id, v)}
                 />
+
+                {/* Same move, one place at a time: dragging is faster but it
+                    is a gesture, and a gesture cannot be the only way to
+                    reach a function. */}
+                {images.length > 1 && (
+                  <div>
+                    <p className="label">
+                      Orden · {images.findIndex((i) => i.image_id === selected.image_id) + 1} de{' '}
+                      {images.length}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        disabled={saving || images[0]?.image_id === selected.image_id}
+                        onClick={() => void moveSelected(-1)}
+                        className="btn-secondary disabled:opacity-40"
+                      >
+                        ← Antes
+                      </button>
+                      <button
+                        type="button"
+                        disabled={
+                          saving || images[images.length - 1]?.image_id === selected.image_id
+                        }
+                        onClick={() => void moveSelected(1)}
+                        className="btn-secondary disabled:opacity-40"
+                      >
+                        Después →
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {selected.image_id === mainId ? (
                   <p className="text-xs text-stone-500">
