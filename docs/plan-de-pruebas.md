@@ -128,6 +128,9 @@ interfaz que promete lo que no cumple.
 | RF-410 | La orientación EXIF se aplica al redimensionar: una foto tomada en vertical no acaba girada | Pendiente |
 | RF-411 | Ninguna vista incluye la URL de un máster; la descarga se obtiene solo por URL firmada | Pendiente |
 | RF-412 | Todo acceso a imágenes pasa por la función única de resolución de URL: un test estático que falla si algún componente construye una URL de bucket por su cuenta | Pendiente |
+| RF-409, RF-410 | El encuadre guardado como dato solo admite giros de 0, 90, 180 y 270, y un recorte normalizado que es todo o nada y cae dentro de la imagen; una fotografía nueva nace sin giro ni recorte | **Hecho** |
+| RF-409, RF-410 | El encuadre lo cambia quien puede editar; un Lector no, sin política nueva: las de «Imágenes» ya lo cubren | **Hecho** |
+| RF-410 | Geometría de la edición: rotación acumulada, recorte de recorte, giro de 90° con recorte, rectángulo degenerado y arrastre de esquina que no invierte el rectángulo ni se sale de la imagen | **Hecho** |
 
 ### Exposiciones y bibliografía (RF-500)
 
@@ -235,6 +238,7 @@ aquí para que su ausencia del listado anterior no se lea como un hueco de cober
 |---|---|
 | RF-405, RF-407 | Interacción de ratón y táctil sobre las miniaturas: revisión manual en navegador |
 | RF-1004 | Resultado real de impresión: revisión manual del PDF y del papel |
+| RF-409, RF-410 | Los píxeles del giro y del recorte: el entorno de test no tiene `canvas` ni `createImageBitmap`, así que la geometría se prueba sola y el dibujo se comprueba en el navegador. Con ella, que reeditar una foto escriba rutas nuevas y no reutilice ninguna |
 | RF-1206 | Que la cámara se abra de verdad: los navegadores sin dispositivo real la simulan, así que se comprueba en un teléfono |
 | RNF-105 | Idioma y zona horaria: visible en cualquier test de interfaz, sin test propio |
 | RNF-106 | Usabilidad en móvil de pie y con una mano, con la obra delante y en el almacén. Ningún test automático cubre esto, y es el criterio de éxito del proyecto |
