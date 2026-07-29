@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
@@ -30,6 +30,10 @@ export function ArtworkPhotosPage() {
     useArtworkImages(catalogId)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Order being dragged, before the database confirms it. null means "what the
+  // database says": there is one order and one owner, so a dropped thumbnail
+  // never fights the order arriving from a reload or from Realtime.
+  const [draggedOrder, setDraggedOrder] = useState<string[] | null>(null)
   const [staged, setStaged] = useState<QueuedShot[]>([])
   const [uploading, setUploading] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -48,7 +52,23 @@ export function ArtworkPhotosPage() {
     )
   }, [loading, images, mainId])
 
-  const selected = images.find((r) => r.image_id === selectedId)
+  /**
+   * The photos in the order on screen. While a thumbnail is being dragged that
+   * is the provisional order; a photo the drag knows nothing about (someone
+   * else just added one) goes last instead of disappearing.
+   */
+  const ordered = useMemo(() => {
+    if (!draggedOrder) return images
+    const byId = new Map(images.map((i) => [i.image_id, i]))
+    const known = draggedOrder.flatMap((id) => {
+      const row = byId.get(id)
+      return row ? [row] : []
+    })
+    const rest = images.filter((i) => !draggedOrder.includes(i.image_id))
+    return [...known, ...rest]
+  }, [images, draggedOrder])
+
+  const selected = ordered.find((r) => r.image_id === selectedId)
 
   function discardStaged() {
     staged.forEach((s) => URL.revokeObjectURL(s.prepared.preview))
@@ -127,14 +147,18 @@ export function ArtworkPhotosPage() {
     } else {
       setNotice('Orden de las fotografías actualizado.')
     }
+    // Whatever happened, the database has the last word: the reload brings the
+    // real order and the provisional one is dropped — after a failure that
+    // means snapping back to the truth instead of showing a lie.
     await reload()
+    setDraggedOrder(null)
     setSaving(false)
   }
 
   /** Moves the selected photo one place, for whoever does not drag. */
   async function moveSelected(delta: number) {
     if (!selectedId) return
-    const current = images.map((i) => i.image_id)
+    const current = ordered.map((i) => i.image_id)
     const from = current.indexOf(selectedId)
     if (from < 0) return
     await saveOrder(moveItem(current, from, from + delta))
@@ -231,7 +255,7 @@ export function ArtworkPhotosPage() {
         ) : (
           <>
             <ReorderableThumbnails
-              images={images}
+              images={ordered}
               thumbUrls={thumbUrls}
               mainId={mainId}
               selectedId={selectedId}
@@ -239,7 +263,18 @@ export function ArtworkPhotosPage() {
                 setSelectedId(imageId)
                 setConfirmRemoval(null)
               }}
-              onReorder={(imageIds) => void saveOrder(imageIds)}
+              onReorder={(from, to) => {
+                // Shown at once and persisted right after: the provisional
+                // order avoids the thumbnails jumping back while the database
+                // answers.
+                const next = moveItem(
+                  ordered.map((i) => i.image_id),
+                  from,
+                  to,
+                )
+                setDraggedOrder(next)
+                void saveOrder(next)
+              }}
               disabled={saving}
             />
 
@@ -247,7 +282,7 @@ export function ArtworkPhotosPage() {
                 shots while retyping them is exactly the reviewing gesture. */}
             <div className="mt-3">
               <PhotoCarousel
-                images={images}
+                images={ordered}
                 thumbUrls={thumbUrls}
                 viewId={selectedId}
                 onView={(imageId) => {
@@ -280,16 +315,16 @@ export function ArtworkPhotosPage() {
                 {/* Same move, one place at a time: dragging is faster but it
                     is a gesture, and a gesture cannot be the only way to
                     reach a function. */}
-                {images.length > 1 && (
+                {ordered.length > 1 && (
                   <div>
                     <p className="label">
-                      Orden · {images.findIndex((i) => i.image_id === selected.image_id) + 1} de{' '}
-                      {images.length}
+                      Orden · {ordered.findIndex((i) => i.image_id === selected.image_id) + 1} de{' '}
+                      {ordered.length}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        disabled={saving || images[0]?.image_id === selected.image_id}
+                        disabled={saving || ordered[0]?.image_id === selected.image_id}
                         onClick={() => void moveSelected(-1)}
                         className="btn-secondary disabled:opacity-40"
                       >
@@ -298,7 +333,7 @@ export function ArtworkPhotosPage() {
                       <button
                         type="button"
                         disabled={
-                          saving || images[images.length - 1]?.image_id === selected.image_id
+                          saving || ordered[ordered.length - 1]?.image_id === selected.image_id
                         }
                         onClick={() => void moveSelected(1)}
                         className="btn-secondary disabled:opacity-40"

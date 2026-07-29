@@ -1,26 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
 import { SHOT_TYPE_LABEL } from '../../lib/types'
-import { YesIcon } from '../../components/ui'
-import { moveItem } from '../../lib/reorder'
+import { GripIcon, YesIcon } from '../../components/ui'
 import type { ImageRow } from './artworkImages'
 
-/** Hold before a thumbnail is picked up. Below this, a tap is just a tap. */
-const HOLD_MS = 300
-/** Movement that cancels the hold: the finger is scrolling the page, not dragging. */
-const SLOP = 10
-
 /**
- * Grid of thumbnails that can be rearranged by dragging (RF-401).
+ * Grid of thumbnails rearranged by dragging (RF-401).
  *
- * Pointer events instead of the HTML5 drag-and-drop API, which does not exist
- * on a touch screen — and the phone is the primary device. A thumbnail is
- * picked up by HOLDING it: the page scrolls vertically, so a drag that started
- * on contact would make the grid unscrollable. Any movement before the hold
- * elapses cancels the pickup and the scroll proceeds untouched.
+ * Three decisions, each from a dead end that did not work on a phone — the
+ * primary device:
  *
- * While dragging, the order rearranges live under the finger and is reported
- * only on release: `onReorder` is a write to the database and must not fire
- * once per pixel.
+ *  1. The drag starts from a HANDLE with `touch-action: none`, not from the
+ *     thumbnail. The HTML drag-and-drop API does not exist on touch, and
+ *     picking the thumbnail up by holding it cannot work: `touch-action` is
+ *     evaluated when the touch STARTS, so setting it once the hold elapses
+ *     arrives too late — the browser already claimed the gesture as a scroll
+ *     and sends pointercancel. Setting it beforehand on every thumbnail would
+ *     make the grid impossible to scroll past.
+ *  2. The listeners live on `window`, not on the handle: a drag that leaves
+ *     the element must keep being heard.
+ *  3. The grid does NOT rearrange while dragging; the target tile is marked
+ *     instead. Reordering mid-drag moves the DOM node that holds the pointer
+ *     capture, and moving it can release the capture and cancel the gesture.
+ *     The order is applied on release, in one go.
+ *
+ * The component owns no order: it reports the movement and the page applies it
+ * (see ArtworkPhotosPage). One order, one owner.
  */
 export function ReorderableThumbnails({
   images,
@@ -31,142 +35,99 @@ export function ReorderableThumbnails({
   onReorder,
   disabled = false,
 }: {
+  /** In display order: position i is what the cataloger sees at i. */
   images: ImageRow[]
   thumbUrls: Record<string, string>
   mainId: string | null
   selectedId: string | null
   onSelect: (imageId: string) => void
-  /** The final order, on release. Receives image ids, first to last. */
-  onReorder: (imageIds: string[]) => void
+  /** On release: move the photo at `from` to position `to`. */
+  onReorder: (from: number, to: number) => void
   disabled?: boolean
 }) {
-  const [order, setOrder] = useState<string[]>(() => images.map((i) => i.image_id))
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
+  const canDrag = !disabled && images.length > 1
 
-  const holdRef = useRef<number | null>(null)
-  const startRef = useRef<{ x: number; y: number } | null>(null)
-  const draggedRef = useRef(false)
-  // The order as of the last render, for the release handler: reading it from
-  // a closure would risk reporting a position behind the finger.
-  const orderRef = useRef(order)
-  orderRef.current = order
+  // The drag state the window listeners read: they are registered once per
+  // drag and must not close over a stale render.
+  const stateRef = useRef({ draggingId: null as string | null, overId: null as string | null })
+  stateRef.current = { draggingId, overId }
+  const imagesRef = useRef(images)
+  imagesRef.current = images
+  const onReorderRef = useRef(onReorder)
+  onReorderRef.current = onReorder
 
-  // A photo added or retired elsewhere (Realtime) resyncs the order — except
-  // while a finger holds it, because yanking the grid mid-drag would drop the
-  // thumbnail somewhere nobody chose.
-  const serverOrder = images.map((i) => i.image_id).join(',')
   useEffect(() => {
-    if (draggingId) return
-    setOrder(serverOrder === '' ? [] : serverOrder.split(','))
-  }, [serverOrder, draggingId])
+    if (!draggingId) return
 
-  function cancelHold() {
-    if (holdRef.current !== null) window.clearTimeout(holdRef.current)
-    holdRef.current = null
-  }
-
-  useEffect(() => cancelHold, [])
-
-  function onPointerDown(e: React.PointerEvent<HTMLElement>, imageId: string) {
-    if (disabled || images.length < 2) return
-    // currentTarget and pointerId are only valid during dispatch: taken now,
-    // used inside the timeout.
-    const tile = e.currentTarget
-    const pointerId = e.pointerId
-    startRef.current = { x: e.clientX, y: e.clientY }
-    draggedRef.current = false
-    holdRef.current = window.setTimeout(() => {
-      // Capture so the moves keep arriving even when the finger leaves the
-      // tile — which is the whole point of dragging it elsewhere.
-      try {
-        tile.setPointerCapture(pointerId)
-      } catch {
-        /* the pointer is gone: the release handler cleans up */
-      }
-      setDraggingId(imageId)
-    }, HOLD_MS)
-  }
-
-  function onPointerMove(e: React.PointerEvent<HTMLElement>) {
-    const start = startRef.current
-    if (!draggingId) {
-      if (
-        start &&
-        (Math.abs(e.clientX - start.x) > SLOP || Math.abs(e.clientY - start.y) > SLOP)
-      ) {
-        cancelHold()
-      }
-      return
+    function tileUnder(x: number, y: number): string | null {
+      return (
+        document.elementFromPoint(x, y)?.closest('[data-image-id]')?.getAttribute('data-image-id') ??
+        null
+      )
     }
-    const over = document
-      .elementFromPoint(e.clientX, e.clientY)
-      ?.closest('[data-image-id]')
-      ?.getAttribute('data-image-id')
-    if (!over || over === draggingId) return
-    draggedRef.current = true
-    setOrder((current) => moveItem(current, current.indexOf(draggingId), current.indexOf(over)))
-  }
 
-  function onPointerUp() {
-    cancelHold()
-    startRef.current = null
-    if (!draggingId) return
-    setDraggingId(null)
-    if (draggedRef.current) onReorder([...orderRef.current])
-  }
+    function onPointerMove(e: PointerEvent) {
+      const over = tileUnder(e.clientX, e.clientY)
+      setOverId(over === stateRef.current.draggingId ? null : over)
+    }
 
-  function onPointerCancel() {
-    cancelHold()
-    startRef.current = null
-    if (!draggingId) return
-    setDraggingId(null)
-    // The gesture was interrupted (a system notification, another finger):
-    // back to the server order rather than half a rearrangement.
-    setOrder(images.map((i) => i.image_id))
-  }
+    function finish(commit: boolean) {
+      const { draggingId: dragged, overId: over } = stateRef.current
+      setDraggingId(null)
+      setOverId(null)
+      if (!commit || !dragged || !over || dragged === over) return
+      const rows = imagesRef.current
+      const from = rows.findIndex((i) => i.image_id === dragged)
+      const to = rows.findIndex((i) => i.image_id === over)
+      if (from >= 0 && to >= 0) onReorderRef.current(from, to)
+    }
 
-  const byId = new Map(images.map((i) => [i.image_id, i]))
+    const onUp = () => finish(true)
+    const onCancel = () => finish(false)
+
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onCancel)
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onCancel)
+    }
+  }, [draggingId])
 
   return (
     <div>
-      <ul
-        // touch-action only while dragging: the rest of the time the grid must
-        // scroll with the page like any other content.
-        className={`grid grid-cols-3 gap-2 ${draggingId ? 'touch-none select-none' : ''}`}
-      >
-        {order.flatMap((imageId, position) => {
-          const image = byId.get(imageId)
-          if (!image) return []
-          const isMain = imageId === mainId
-          const isDragging = imageId === draggingId
-          return [
-            <li key={imageId}>
-              <button
-                type="button"
-                data-image-id={imageId}
-                aria-label={`${SHOT_TYPE_LABEL[image.shot_type]}, posición ${position + 1} de ${order.length}${isMain ? ', imagen principal' : ''}`}
-                aria-pressed={imageId === selectedId}
-                onPointerDown={(e) => onPointerDown(e, imageId)}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerCancel}
-                // A long press must not raise the system menu on top of the drag.
-                onContextMenu={(e) => e.preventDefault()}
-                onClick={() => {
-                  if (!draggedRef.current) onSelect(imageId)
-                  draggedRef.current = false
-                }}
-                className={`relative block w-full overflow-hidden rounded-lg border-2 transition ${
-                  isDragging
-                    ? 'z-10 scale-105 border-stone-800 opacity-90 shadow-lg'
-                    : imageId === selectedId
+      <ul className={`grid grid-cols-3 gap-2 ${draggingId ? 'select-none' : ''}`}>
+        {images.map((image, position) => {
+          const isMain = image.image_id === mainId
+          const isDragging = image.image_id === draggingId
+          const isTarget = image.image_id === overId
+          return (
+            <li
+              key={image.image_id}
+              data-image-id={image.image_id}
+              className={`relative rounded-lg border-2 transition ${
+                isDragging
+                  ? 'border-stone-800 opacity-50'
+                  : isTarget
+                    ? 'border-dashed border-stone-800 ring-2 ring-stone-300'
+                    : image.image_id === selectedId
                       ? 'border-stone-800'
                       : 'border-stone-200'
-                }`}
+              }`}
+            >
+              <button
+                type="button"
+                aria-label={`${SHOT_TYPE_LABEL[image.shot_type]}, posición ${position + 1} de ${images.length}${isMain ? ', imagen principal' : ''}`}
+                aria-pressed={image.image_id === selectedId}
+                onClick={() => onSelect(image.image_id)}
+                className="block w-full overflow-hidden rounded-md"
               >
-                {thumbUrls[imageId] ? (
+                {thumbUrls[image.image_id] ? (
                   <img
-                    src={thumbUrls[imageId]}
+                    src={thumbUrls[image.image_id]}
                     alt=""
                     className="aspect-square w-full object-cover"
                   />
@@ -175,36 +136,60 @@ export function ReorderableThumbnails({
                     sin vista
                   </span>
                 )}
-
-                {/* The position is written on the thumbnail: after a drag, the
-                    order must be readable without counting tiles. */}
-                <span className="absolute bottom-1 right-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">
-                  {position + 1}
-                </span>
-                {isMain && (
-                  <span
-                    className="absolute left-1 top-1 rounded-full bg-stone-900/85 p-0.5 text-white"
-                    title="Imagen principal"
-                  >
-                    <YesIcon className="h-3 w-3" />
-                  </span>
-                )}
-                {image.shot_type !== 'GENERAL' && (
-                  <span className="absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white">
-                    {SHOT_TYPE_LABEL[image.shot_type]}
-                  </span>
-                )}
               </button>
-            </li>,
-          ]
+
+              {canDrag && (
+                <span
+                  role="button"
+                  tabIndex={-1}
+                  aria-label={`Arrastrar ${SHOT_TYPE_LABEL[image.shot_type]} para reordenar`}
+                  onPointerDown={(e) => {
+                    // The handle owns the gesture from the first pixel: no
+                    // hold, and touch-action none so nothing scrolls.
+                    e.preventDefault()
+                    setDraggingId(image.image_id)
+                    setOverId(null)
+                  }}
+                  // A long press must not raise the system menu over the drag.
+                  onContextMenu={(e) => e.preventDefault()}
+                  className={`absolute right-0 top-0 flex h-7 w-7 cursor-grab touch-none select-none items-center justify-center rounded-bl-md text-white ${
+                    isDragging ? 'bg-stone-900' : 'bg-stone-900/70'
+                  }`}
+                >
+                  <GripIcon className="h-3.5 w-3.5" />
+                </span>
+              )}
+
+              {/* The position is written on the thumbnail: after a drag, the
+                  order must be readable without counting tiles. */}
+              <span className="pointer-events-none absolute bottom-1 right-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">
+                {position + 1}
+              </span>
+              {isMain && (
+                <span
+                  className="pointer-events-none absolute left-1 top-1 rounded-full bg-stone-900/85 p-0.5 text-white"
+                  title="Imagen principal"
+                >
+                  <YesIcon className="h-3 w-3" />
+                </span>
+              )}
+              {image.shot_type !== 'GENERAL' && (
+                <span className="pointer-events-none absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white">
+                  {SHOT_TYPE_LABEL[image.shot_type]}
+                </span>
+              )}
+            </li>
+          )
         })}
       </ul>
 
       {images.length > 1 && (
         <p className="mt-2 text-xs text-stone-500">
           {draggingId
-            ? 'Arrastra la fotografía a su sitio y suelta.'
-            : 'Mantén pulsada una fotografía para cambiarla de orden.'}
+            ? overId
+              ? 'Suelta para colocarla en el hueco marcado.'
+              : 'Arrastra sobre la fotografía que quieres que ocupe su sitio.'
+            : 'Arrastra por la esquina para cambiar el orden.'}
         </p>
       )}
     </div>
