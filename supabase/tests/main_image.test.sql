@@ -45,6 +45,46 @@ end $$;
 
 reset role;
 
+-- ── Cualquiera puede ser la principal, en los dos sentidos ───
+-- Incidencia real: marcar y desmarcar en una sola sentencia dependía del orden
+-- FÍSICO de las filas, porque el índice único parcial se comprueba fila a fila
+-- y no al final de la sentencia (solo las restricciones diferibles lo hacen).
+-- Elegir una foto guardada antes que la principal de entonces fallaba con
+-- «duplicate key». Este bucle recorre todas en ambos sentidos: con el fallo
+-- presente, revienta en la primera vuelta.
+do $$
+declare v_id text; v_marked integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000a001","role":"authenticated"}';
+  set local role authenticated;
+
+  for v_id in
+    select image_id from public.images where catalog_id = 'AR-9600' and active order by image_id asc
+  loop
+    perform public.set_main_image(v_id);
+    select count(*) into v_marked
+      from public.images where catalog_id = 'AR-9600' and active and index_image;
+    if v_marked <> 1 then
+      raise exception 'FAIL: quedaron % marcadas al elegir %', v_marked, v_id;
+    end if;
+  end loop;
+
+  for v_id in
+    select image_id from public.images where catalog_id = 'AR-9600' and active order by image_id desc
+  loop
+    perform public.set_main_image(v_id);
+    select count(*) into v_marked
+      from public.images where catalog_id = 'AR-9600' and active and index_image;
+    if v_marked <> 1 then
+      raise exception 'FAIL: quedaron % marcadas al elegir % (orden inverso)', v_marked, v_id;
+    end if;
+  end loop;
+
+  raise notice 'OK: cualquier foto puede ser la principal, en los dos sentidos';
+end $$;
+
+reset role;
+
 -- Repeating the same choice breaks nothing and does not leave the artwork
 -- without a main image: the button can be pressed twice, and on a phone it
 -- gets pressed twice.
