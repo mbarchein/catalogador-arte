@@ -20,11 +20,18 @@ insert into public.artwork_types (name) values
 on conflict (name) do nothing;
 
 -- Starting vocabulary of series, for the same reason and with the same rule:
--- before the artworks, because the integrity trigger checks membership.
-insert into public.series (name) values
-  ('Paisajes de la sierra'),
-  ('Retratos del taller')
-on conflict (name) do nothing;
+-- before the artworks, because the integrity trigger checks membership. Each
+-- series belongs to a fund, and the fund here matches the artworks below.
+--
+-- The TEST fund gets its own two entries even though no seeded artwork uses
+-- them: TEST is where one rehearses, and without series of its own neither the
+-- combo nor the list filter can be tried out from that fund.
+insert into public.series (artist, name) values
+  ('ROTILI', 'Paisajes de la sierra'),
+  ('RUIZ_CAMPINS', 'Retratos del taller'),
+  ('TEST', 'Serie de ensayo A'),
+  ('TEST', 'Serie de ensayo B')
+on conflict (artist, name) do nothing;
 
 -- A few sample artworks so the list does not start empty and the chronological
 -- ordering can be checked with dates of different shapes.
