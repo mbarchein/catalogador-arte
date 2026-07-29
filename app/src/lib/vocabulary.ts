@@ -62,24 +62,77 @@ export function fuzzyMatch(option: string, query: string): number[] | null {
   return qi === letters.length ? indices : null
 }
 
+export interface RankedItem<T> {
+  item: T
+  /** Positions in the item's text of the letters the query matched. */
+  indices: number[]
+}
+
 /**
- * Matching options, best first: the tightest match (least spread between the
- * first and last matched letter), then the earliest, then alphabetical. The
- * empty query ranks everything, in the caller's order.
+ * Matching items, best first: the tightest match (least spread between the
+ * first and last matched letter), then the earliest. The empty query ranks
+ * everything, in the caller's order.
+ *
+ * Generic over the item because the same ranking serves a list of plain
+ * vocabulary strings and a list of checkbox options, where the searchable text
+ * is one field of a bigger object.
  */
-export function fuzzyRank(options: readonly string[], query: string): FuzzyMatch[] {
-  const matches: FuzzyMatch[] = []
-  for (const option of options) {
-    const indices = fuzzyMatch(option, query)
-    if (indices !== null) matches.push({ option, indices })
+export function fuzzyRankBy<T>(
+  items: readonly T[],
+  textOf: (item: T) => string,
+  query: string,
+): RankedItem<T>[] {
+  const matches: RankedItem<T>[] = []
+  for (const item of items) {
+    const indices = fuzzyMatch(textOf(item), query)
+    if (indices !== null) matches.push({ item, indices })
   }
-  const spread = (m: FuzzyMatch) =>
-    m.indices.length === 0 ? 0 : (m.indices[m.indices.length - 1] as number) - (m.indices[0] as number)
+  const spread = (m: RankedItem<T>) =>
+    m.indices.length === 0
+      ? 0
+      : (m.indices[m.indices.length - 1] as number) - (m.indices[0] as number)
   // Ties keep the caller's order: sort is stable, and no alphabetical
   // tiebreak — the caller already chose how to present equals.
   return matches.sort(
     (a, b) => spread(a) - spread(b) || (a.indices[0] ?? 0) - (b.indices[0] ?? 0),
   )
+}
+
+/** Matching options of a plain string vocabulary, best first. */
+export function fuzzyRank(options: readonly string[], query: string): FuzzyMatch[] {
+  return fuzzyRankBy(options, (o) => o, query).map(({ item, indices }) => ({
+    option: item,
+    indices,
+  }))
+}
+
+export interface SearchableList<T> {
+  /** Options the query reaches, best first, with the letters it matched. */
+  matches: RankedItem<T>[]
+  /**
+   * MARKED options the query does not reach. They are listed apart instead of
+   * hidden: a filter that disappears from its own chooser is how a filtered
+   * list ends up looking complete, which is how records get "lost".
+   */
+  selectedApart: T[]
+}
+
+/**
+ * What a multiselect with a search field on top must show. Pure, because the
+ * rule that matters — never hide a marked option — is not a rendering detail.
+ */
+export function searchableOptions<T>(
+  options: readonly T[],
+  query: string,
+  textOf: (item: T) => string,
+  isSelected: (item: T) => boolean,
+): SearchableList<T> {
+  const matches = fuzzyRankBy(options, textOf, query)
+  const shown = new Set(matches.map((m) => m.item))
+  return {
+    matches,
+    selectedApart: options.filter((o) => !shown.has(o) && isSelected(o)),
+  }
 }
 
 /**

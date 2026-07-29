@@ -4,7 +4,9 @@ import {
   findEquivalent,
   fuzzyMatch,
   fuzzyRank,
+  fuzzyRankBy,
   normalizeForSearch,
+  searchableOptions,
 } from './vocabulary'
 
 const TYPES = ['Dibujo', 'Escultura', 'Óleo sobre tabla', 'Pintura', 'Técnica mixta']
@@ -96,5 +98,79 @@ describe('findEquivalent (avoids case/accent duplicates in the vocabulary)', () 
 
   it('never matches the empty text', () => {
     expect(findEquivalent(TYPES, '')).toBeUndefined()
+  })
+})
+
+describe('fuzzyRankBy (the same ranking over items that are not strings)', () => {
+  const OPTIONS = [
+    { value: 'a', text: 'Rotili · Paisajes de la sierra' },
+    { value: 'b', text: 'Ruiz Campins · Retratos del taller' },
+  ]
+
+  it('matches against the chosen field and hands the item back', () => {
+    const ranked = fuzzyRankBy(OPTIONS, (o) => o.text, 'retratos')
+    expect(ranked.map((m) => m.item.value)).toEqual(['b'])
+  })
+
+  it('two items with the same text both survive: the identity is the item', () => {
+    // Ranking plain strings would collapse them into one; a chooser needs both,
+    // because they are different options that happen to read alike.
+    const twins = [
+      { value: 'x', text: 'Serie repetida' },
+      { value: 'y', text: 'Serie repetida' },
+    ]
+    expect(fuzzyRankBy(twins, (o) => o.text, 'serie').map((m) => m.item.value)).toEqual(['x', 'y'])
+  })
+})
+
+describe('searchableOptions (RF-602: a marked filter is never hidden)', () => {
+  const OPTIONS = [
+    { value: 'sierra', text: 'Rotili · Paisajes de la sierra' },
+    { value: 'taller', text: 'Ruiz Campins · Retratos del taller' },
+    { value: 'ensayo', text: 'Pruebas · Serie de ensayo A' },
+  ]
+
+  it('the empty query shows everything, in the given order, with nothing apart', () => {
+    const { matches, selectedApart } = searchableOptions(
+      OPTIONS,
+      '',
+      (o) => o.text,
+      () => false,
+    )
+    expect(matches.map((m) => m.item.value)).toEqual(['sierra', 'taller', 'ensayo'])
+    expect(selectedApart).toEqual([])
+  })
+
+  it('keeps only what the query reaches, with the letters it matched', () => {
+    const { matches } = searchableOptions(
+      OPTIONS,
+      'taller',
+      (o) => o.text,
+      () => false,
+    )
+    expect(matches.map((m) => m.item.value)).toEqual(['taller'])
+    expect(matches[0]?.indices).toHaveLength('taller'.length)
+  })
+
+  it('a marked option the query does not reach is listed apart, not hidden', () => {
+    // Hiding what is filtering is how a filtered list ends up looking complete.
+    const { matches, selectedApart } = searchableOptions(
+      OPTIONS,
+      'taller',
+      (o) => o.text,
+      (o) => o.value === 'sierra',
+    )
+    expect(matches.map((m) => m.item.value)).toEqual(['taller'])
+    expect(selectedApart.map((o) => o.value)).toEqual(['sierra'])
+  })
+
+  it('a marked option the query does reach is not repeated apart', () => {
+    const { selectedApart } = searchableOptions(
+      OPTIONS,
+      'taller',
+      (o) => o.text,
+      (o) => o.value === 'taller',
+    )
+    expect(selectedApart).toEqual([])
   })
 })

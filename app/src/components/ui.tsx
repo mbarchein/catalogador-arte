@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TriState } from '../lib/types'
-import { filterVocabulary, findEquivalent, fuzzyRank } from '../lib/vocabulary'
+import { filterVocabulary, findEquivalent, fuzzyRank, searchableOptions } from '../lib/vocabulary'
 
 // ── Icons ────────────────────────────────────────────────────
 // Inline SVG, no library: these are five icons and pulling a whole dependency
@@ -1082,6 +1082,15 @@ export function RadioList<T extends string>({
   )
 }
 
+export interface CheckOption<T extends string> {
+  value: T
+  /** Plain text of the row. Also what the searchable variant matches against. */
+  text: string
+  hint?: string
+  /** Rendered instead of `text` when present, for the matched-letter emphasis. */
+  label?: ReactNode
+}
+
 /**
  * Multiselect sibling of RadioList: same look, checkbox semantics. An empty
  * selection means "everything" — the caller says so next to its label; a
@@ -1092,7 +1101,7 @@ export function CheckList<T extends string>({
   values,
   onChange,
 }: {
-  options: readonly { value: T; text: string; hint?: string }[]
+  options: readonly CheckOption<T>[]
   values: readonly T[]
   onChange: (values: T[]) => void
 }) {
@@ -1115,7 +1124,7 @@ export function CheckList<T extends string>({
             }`}
           >
             <span className="min-w-0">
-              <span className="block text-sm font-medium">{o.text}</span>
+              <span className="block text-sm font-medium">{o.label ?? o.text}</span>
               {o.hint && (
                 <span className={`block text-xs ${active ? 'text-stone-300' : 'text-stone-500'}`}>
                   {o.hint}
@@ -1126,6 +1135,95 @@ export function CheckList<T extends string>({
           </button>
         )
       })}
+    </div>
+  )
+}
+
+/**
+ * A CheckList with a search field on top, for the lists that grow without
+ * limit: series and physical locations are open vocabularies fed by the
+ * catalog, and with sixty of them a column of checkboxes is not a chooser
+ * anymore, it is a wall to scroll on a phone.
+ *
+ * Matching is the same accent-insensitive subsequence used by SuggestInput
+ * (fuzzyRank over the option's `text`), with the matched letters emphasized so
+ * an option never looks arbitrary. The search field only appears past
+ * `searchFrom` options: below that it would be clutter competing for thumb
+ * space.
+ *
+ * A MARKED option is always listed, even when the search does not reach it:
+ * hiding what is filtering is how a filtered list ends up looking complete.
+ * Those go last, under a note, because they are not answers to the search.
+ */
+export function SearchableCheckList<T extends string>({
+  options,
+  values,
+  onChange,
+  searchLabel,
+  placeholder,
+  emptyText = 'Todavía no hay opciones.',
+  searchFrom = 8,
+}: {
+  options: readonly CheckOption<T>[]
+  values: readonly T[]
+  onChange: (values: T[]) => void
+  /** Accessible name of the search field; it carries no visible label. */
+  searchLabel: string
+  placeholder?: string
+  /** Shown instead of the rows when there is nothing to offer at all. */
+  emptyText?: string
+  searchFrom?: number
+}) {
+  const [query, setQuery] = useState('')
+  const searchable = options.length >= searchFrom
+  const searching = searchable && query.trim() !== ''
+
+  // The option's text is its searchable identity: what the user reads is what
+  // they type against.
+  const { matches, selectedApart } = searchableOptions(
+    options,
+    searching ? query : '',
+    (o) => o.text,
+    (o) => values.includes(o.value),
+  )
+  // The emphasis is only applied while searching: with no query there is no
+  // matched letter to point at, and the neutral row reads better.
+  const rows = matches.map(({ item, indices }) =>
+    searching ? { ...item, label: <HighlightedMatch text={item.text} indices={indices} /> } : item,
+  )
+
+  return (
+    <div>
+      {searchable && (
+        <input
+          className="field mb-1 min-h-[2.5rem] py-1"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={placeholder}
+          aria-label={searchLabel}
+          autoComplete="off"
+          autoCapitalize="none"
+        />
+      )}
+
+      {rows.length === 0 ? (
+        /* Never a blank block: what happened is said where the rows would go. */
+        <p className="px-3 py-2 text-sm text-stone-600">
+          {searching ? 'Ninguna opción coincide con la búsqueda.' : emptyText}
+        </p>
+      ) : (
+        <CheckList options={rows} values={values} onChange={onChange} />
+      )}
+
+      {selectedApart.length > 0 && (
+        <>
+          <p className="mt-2 px-3 text-xs text-stone-500">
+            Marcadas, fuera de la búsqueda:
+          </p>
+          <CheckList options={selectedApart} values={values} onChange={onChange} />
+        </>
+      )}
     </div>
   )
 }
