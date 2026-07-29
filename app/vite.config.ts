@@ -18,7 +18,40 @@ export default defineConfig({
         // Las peticiones a la API nunca se sirven de caché: un dato de catálogo
         // obsoleto mostrado como actual es peor que no mostrar nada.
         navigateFallbackDenylist: [/^\/rest\//, /^\/auth\//],
-        runtimeCaching: [],
+        runtimeCaching: [
+          {
+            // Los ficheros de imagen SÍ se cachean, y es seguro porque sus
+            // rutas son inmutables: cada subida crea una ruta nueva con sufijo
+            // aleatorio y nada se sobrescribe, así que una ruta identifica un
+            // contenido para siempre. Cambiar la imagen principal de una obra
+            // cambia la ruta, y por tanto la entrada del caché: la
+            // invalidación es automática.
+            urlPattern: ({ url }) => url.pathname.includes('/storage/v1/object/sign/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'imagenes-obras',
+              // La firma viaja en la cadena de consulta y cambia en cada
+              // firma: sin quitarla, el mismo fichero ocuparía una entrada
+              // nueva cada semana y nunca se acertaría en el caché.
+              plugins: [
+                {
+                  cacheKeyWillBeUsed: async ({ request }: { request: Request }) => {
+                    const u = new URL(request.url)
+                    return u.origin + u.pathname
+                  },
+                },
+              ],
+              expiration: {
+                maxEntries: 1200,
+                maxAgeSeconds: 60 * 60 * 24 * 60,
+                purgeOnQuotaError: true,
+              },
+              // 0 admite respuestas opacas: la imagen se pide desde una
+              // etiqueta img y puede no traer cabeceras CORS.
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'Catalogador — Rotili / Ruiz Campins',

@@ -75,13 +75,20 @@ export function ArtworksPage() {
     saveStoredView(next)
   }
 
-  const { artworks, thumbnails, loading, error, reload } = useArtworks(search, view)
+  const { artworks, thumbnails, loading, error, reload, refreshThumbnails } = useArtworks(
+    search,
+    view,
+  )
   const { canEdit } = useAuth()
 
   // The list updates live: if another cataloger creates or edits an artwork,
   // it appears without reloading. It is the view where two people working at
   // once step on each other unknowingly.
   useLiveChanges('artworks', reload)
+  // Photos are their own table: changing the main image, adding a photo or
+  // retiring one does not touch the artwork row, so without this the list kept
+  // showing the old thumbnail until something else forced a reload.
+  useLiveChanges('images', () => void refreshThumbnails())
 
   // A type arriving in the URL that the vocabulary does not know is still
   // shown as a marked option: the checkboxes must reflect what is filtering.

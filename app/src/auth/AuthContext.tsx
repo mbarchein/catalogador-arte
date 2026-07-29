@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
-import { clearArtworksSnapshot } from '../features/artworks/artworksCache'
+import { clearArtworksCache } from '../features/artworks/artworksCache'
 
 interface AuthContextValue {
   session: Session | null
@@ -57,9 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         canEdit,
         signOut: async () => {
-          // The local mirror holds catalog data, not preferences: it must not
-          // stay readable on a shared device after the session ends.
-          clearArtworksSnapshot()
+          // The local mirror and the cached images hold catalog data, not
+          // preferences: they must not stay readable on a shared device after
+          // the session ends.
+          clearArtworksCache()
           await supabase.auth.signOut()
         },
       }}

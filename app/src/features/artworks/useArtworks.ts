@@ -1,9 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { signedUrls } from '../../lib/images'
 import type { ArtistFund, Artwork } from '../../lib/types'
 import { DEFAULT_VIEW, matchesSearch, matchesView, sortArtworks, type ListView } from './listView'
-import { readArtworksSnapshot, saveArtworksSnapshot } from './artworksCache'
+import {
+  readArtworksSnapshot,
+  saveArtworksSnapshot,
+  thumbnailsToSign,
+  type CachedThumbnail,
+} from './artworksCache'
 
 const FIELDS = `
   catalog_id, artist, title, attributed_title, artwork_type,
@@ -19,6 +24,15 @@ const FIELDS = `
 
 /** Page size of the mirror fetch: the API caps a single response. */
 const PAGE = 500
+
+/**
+ * How long a thumbnail's signed URL lasts. A week, unlike the hour used for
+ * the derivative and the master (RF-110): the URL is the cache key of the
+ * image the browser already downloaded, so re-signing on every visit would
+ * throw away every cached thumbnail. The trade is bounded — a thumbnail is
+ * 400 px, the level with the least to leak, and the bucket stays private.
+ */
+const THUMBNAIL_URL_TTL_SECONDS = 7 * 24 * 60 * 60
 
 /**
  * The whole active catalog, paged so no row is silently dropped by the API
@@ -51,23 +65,88 @@ async function fetchAllArtworks(): Promise<Artwork[]> {
  * fetch keeps it correct if the catalog outgrows a single response.
  */
 export function useArtworks(search: string, view: ListView = DEFAULT_VIEW) {
-  const [all, setAll] = useState<Artwork[] | null>(() => readArtworksSnapshot())
-  const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
+  const snapshot = useRef(readArtworksSnapshot()).current
+  const [all, setAll] = useState<Artwork[] | null>(snapshot?.rows ?? null)
+  // Thumbnails paint from the snapshot: their URLs are the ones handed out
+  // before, so the browser reuses the images it already has instead of
+  // downloading the whole index again.
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      Object.entries(snapshot?.thumbnails ?? {}).map(([id, t]) => [id, t.url]),
+    ),
+  )
   const [error, setError] = useState<string | null>(null)
+
+  const rowsRef = useRef<Artwork[] | null>(all)
+  rowsRef.current = all
+  const cachedRef = useRef<Record<string, CachedThumbnail>>(snapshot?.thumbnails ?? {})
+
+  /**
+   * Refreshes which image represents each artwork (RF-403, decided by the
+   * `representative_image` view) and signs only what changed: a new main
+   * image, a photo added or retired, or a signature about to expire. An
+   * unchanged thumbnail keeps its URL, which is what makes the revisit free.
+   */
+  const refreshThumbnails = useCallback(async () => {
+    const rows = rowsRef.current
+    if (!rows || rows.length === 0) {
+      cachedRef.current = {}
+      setThumbnails({})
+      return
+    }
+
+    // The whole view, not filtered by identifier: RLS already limits it to
+    // what this session may read, and a list of hundreds of identifiers in
+    // the query string would eventually outgrow the URL.
+    const paths: Record<string, string> = {}
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from('representative_image')
+        .select('catalog_id, thumbnail_path')
+        .order('catalog_id', { ascending: true })
+        .range(from, from + PAGE - 1)
+      if (error) return
+      const page = (data ?? []) as { catalog_id: string; thumbnail_path: string }[]
+      for (const r of page) paths[r.catalog_id] = r.thumbnail_path
+      if (page.length < PAGE) break
+    }
+
+    const stalePaths = thumbnailsToSign(paths, cachedRef.current)
+    const fresh = stalePaths.length > 0 ? await signedUrls(stalePaths, THUMBNAIL_URL_TTL_SECONDS) : {}
+    const expiresAt = Date.now() + THUMBNAIL_URL_TTL_SECONDS * 1000
+
+    const next: Record<string, CachedThumbnail> = {}
+    for (const [catalogId, path] of Object.entries(paths)) {
+      const cached = cachedRef.current[catalogId]
+      const url = fresh[path]
+      if (url) {
+        next[catalogId] = { path, url, expiresAt }
+      } else if (cached && cached.path === path) {
+        // Nothing to sign, or the signing failed: what works stays.
+        next[catalogId] = cached
+      }
+    }
+
+    cachedRef.current = next
+    setThumbnails(Object.fromEntries(Object.entries(next).map(([id, t]) => [id, t.url])))
+    saveArtworksSnapshot({ rows, thumbnails: next })
+  }, [])
 
   const reload = useCallback(async () => {
     try {
       const rows = await fetchAllArtworks()
       setAll(rows)
-      saveArtworksSnapshot(rows)
+      rowsRef.current = rows
+      saveArtworksSnapshot({ rows, thumbnails: cachedRef.current })
       setError(null)
+      await refreshThumbnails()
     } catch (e) {
       // The stale mirror stays on screen: outdated data plus a notice beats
       // an empty list in a storage room with intermittent coverage.
       setError(e instanceof Error ? e.message : String(e))
       setAll((current) => current ?? [])
     }
-  }, [])
+  }, [refreshThumbnails])
 
   useEffect(() => {
     void reload()
@@ -83,42 +162,14 @@ export function useArtworks(search: string, view: ListView = DEFAULT_VIEW) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [all, search, view.funds.join(','), view.types.join(','), view.status, view.order])
 
-  // RF-604: thumbnails for the WHOLE mirror, once per refresh — filtering
-  // never refetches signatures. Two requests regardless of size: the view
-  // with each artwork's representative image, and the signature of every
-  // path at once.
-  useEffect(() => {
-    if (!all || all.length === 0) {
-      setThumbnails({})
-      return
-    }
-    let current = true
-    void (async () => {
-      const { data: representatives } = await supabase
-        .from('representative_image')
-        .select('catalog_id, thumbnail_path')
-        .in('catalog_id', all.map((a) => a.catalog_id))
-
-      const repRows = (representatives ?? []) as { catalog_id: string; thumbnail_path: string }[]
-      const urls = await signedUrls(repRows.map((r) => r.thumbnail_path))
-      if (!current) return
-      setThumbnails(
-        Object.fromEntries(
-          repRows.flatMap((r) => {
-            const u = urls[r.thumbnail_path]
-            return u ? [[r.catalog_id, u] as const] : []
-          }),
-        ),
-      )
-    })()
-    return () => {
-      current = false
-    }
-  }, [all])
-
   // Loading only when there is no snapshot at all: with one, the list paints
   // instantly and the refresh happens behind it.
-  return { artworks, thumbnails, loading: all === null, error, reload }
+  //
+  // `refreshThumbnails` is exposed so the page can react to photo changes
+  // (Realtime on `images`) without refetching the whole mirror: adding,
+  // retiring or re-marking a photo changes which image represents the artwork,
+  // not the artwork's own data.
+  return { artworks, thumbnails, loading: all === null, error, reload, refreshThumbnails }
 }
 
 export function useArtwork(id: string | undefined) {
