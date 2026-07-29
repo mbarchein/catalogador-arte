@@ -270,8 +270,8 @@ export function ArtworkPage() {
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Etiqueta e impresión</h2>
         <p className="mb-3 text-sm text-stone-600">
-          Ficha en A5 con los datos principales y un código QR que abre esta misma página — para
-          acompañar a la etiqueta física {artwork.catalog_id}.
+          Ficha en A5 con los datos principales, la fotografía de la obra y un código QR que abre
+          esta misma página — para acompañar a la etiqueta física {artwork.catalog_id}.
         </p>
         {pdfError && (
           <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">
