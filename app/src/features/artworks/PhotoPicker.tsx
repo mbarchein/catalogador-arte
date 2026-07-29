@@ -311,6 +311,9 @@ export function PhotoPicker({
           source={editingShot.prepared.master}
           initialEdit={editingShot.prepared.edit}
           title={`Toma ${SHOT_TYPE_LABEL[editingShot.shotType]} sin subir`}
+          // The source is the master File still in memory: the original frame
+          // is always one tap away.
+          canRestoreOriginal
           onApply={(edit) => void applyEdit(editingShot, edit)}
           onCancel={() => setEditingKey(null)}
         />

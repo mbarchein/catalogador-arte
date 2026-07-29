@@ -62,6 +62,7 @@ export function PhotoEditor({
   initialEdit,
   title,
   note,
+  canRestoreOriginal = false,
   onApply,
   onCancel,
 }: {
@@ -77,6 +78,13 @@ export function PhotoEditor({
   title: string
   /** Warning to keep in sight, e.g. that the crop starts from the small copy. */
   note?: string | null
+  /**
+   * Whether going back to the untouched original is truly possible, which is
+   * only the case when the source IS the master: from the consultation copy the
+   * pixels outside the crop are simply not there, and offering it would store
+   * «no framing» over an already-framed image — a lie in the data.
+   */
+  canRestoreOriginal?: boolean
   onApply: (edit: PhotoEdit) => void
   onCancel: () => void
 }) {
@@ -433,10 +441,29 @@ export function PhotoEditor({
           </button>
         </div>
 
+        {/* Back to square one, always available while the master is the source:
+            the framing is data, not a cut, so the original frame can be
+            recovered whenever — today or in a year — and the crop redone from
+            scratch. That is what makes cropping a safe decision. */}
+        {canRestoreOriginal && (rotation !== 0 || crop !== null) && (
+          <button
+            type="button"
+            onClick={() => {
+              setRotation(0)
+              setCrop(null)
+            }}
+            className="btn min-h-touch w-full border border-stone-600 text-sm text-white"
+          >
+            Volver al original completo
+          </button>
+        )}
+
         <p className="text-center text-xs text-stone-400">
           {crop
             ? 'Arrastra las esquinas para ajustar el recorte, o el centro para moverlo.'
-            : 'El máster de archivo no se modifica: se rehacen las copias que se muestran.'}
+            : canRestoreOriginal
+              ? 'El máster de archivo no se modifica: se rehacen las copias que se muestran, y siempre puedes volver al original.'
+              : 'El máster de archivo no se modifica: se rehacen las copias que se muestran.'}
         </p>
 
         <div className="grid grid-cols-2 gap-2">
