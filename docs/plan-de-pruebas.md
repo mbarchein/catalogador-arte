@@ -191,7 +191,7 @@ interfaz que promete lo que no cumple.
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-1002 | La vista incluye los campos especificados, y el marcador cuando no hay imagen | Pendiente |
+| RF-1002 | La vista incluye los campos especificados, y el marcador cuando no hay imagen. Cubiertos en `recordPdf.test.ts` los campos, la imagen representativa incrustada y el marcador «Imagen no disponible», también cuando falla la descarga. Falta la serie, cuya tabla aún no existe | Parcial |
 | RF-1003 | El QR se genera y su contenido es la URL absoluta de la ficha completa | Pendiente |
 
 ### Navegación (RF-1100)
