@@ -64,14 +64,20 @@ export function CapturePage() {
   // Controlled vocabulary for the batch's fixed type (RF-213). Loaded here
   // and not inside the opening screen so it is ready before the batch opens.
   const { types: artworkTypes, addType } = useArtworkTypes()
-  // Series vocabulary for the batch's fixed series (empty is legitimate).
-  const { series: seriesNames, addSeries } = useSeries()
 
   // Locations already used, as loose suggestions while typing (free text).
   const knownLocations = usePhysicalLocations()
 
   const [batch, setBatch] = useState<Batch>(() => readBatch())
   const [open, setOpen] = useState(() => batchConfigured(readBatch()))
+  // Series dropped because the fund changed, to say so instead of letting it
+  // vanish silently. Null when there is nothing to explain.
+  const [seriesCleared, setSeriesCleared] = useState<string | null>(null)
+
+  // Series vocabulary for the batch's fixed series (empty is legitimate). It
+  // is the vocabulary OF THE BATCH'S FUND: a series belongs to one artist, so
+  // this list follows the fund chosen above (see changeFund).
+  const { names: seriesNames, addSeries } = useSeries(batch.fixed.artist)
 
   // Fields of the concrete artwork: never carried over.
   const [title, setTitle] = useState('')
@@ -160,6 +166,22 @@ export function CapturePage() {
     }))
   }
 
+  /**
+   * Changing the fund EMPTIES the chosen series, and says so.
+   *
+   * A series belongs to one artist: the database only accepts a series from
+   * the vocabulary of the artwork's own fund, so keeping it would leave the
+   * batch holding a combination that cannot be saved — the failure would show
+   * up later, on the first artwork, with the batch already open. And even when
+   * both funds happen to have a series with the same name, they are two
+   * different series, so carrying it over would be inventing a datum.
+   */
+  function changeFund(artist: ArtistFund) {
+    if (batch.fixed.artist === artist) return
+    setSeriesCleared(batch.fixed.series !== '' ? batch.fixed.series : null)
+    setBatch((b) => ({ ...b, fixed: { ...b.fixed, artist, series: '' } }))
+  }
+
   // ── Opening the batch ─────────────────────────────────────
   if (!open) {
     return (
@@ -176,7 +198,7 @@ export function CapturePage() {
               label="Fondo"
               options={FUNDS}
               value={batch.fixed.artist}
-              onChange={(v) => setBatch((b) => ({ ...b, fixed: { ...b.fixed, artist: v } }))}
+              onChange={changeFund}
             />
 
             {/* Open list (RF-213): the vocabulary suggests without closing —
@@ -197,18 +219,28 @@ export function CapturePage() {
             {/* The series is fixed too: a batch is usually one series, and
                 retyping its name on every piece is how two spellings of the
                 same series appear. It may stay empty — not every batch belongs
-                to one — so it does not gate opening the batch. */}
+                to one — so it does not gate opening the batch. The offered set
+                is the one of the fund chosen above (see changeFund). */}
             <ComboBox
               id="series"
               label="Serie"
               value={batch.fixed.series}
-              onChange={(v) => setBatch((b) => ({ ...b, fixed: { ...b.fixed, series: v } }))}
+              onChange={(v) => {
+                setSeriesCleared(null)
+                setBatch((b) => ({ ...b, fixed: { ...b.fixed, series: v } }))
+              }}
               options={seriesNames}
               placeholder="Busca en el catálogo de series"
               emptyLabel="Sin serie"
-              addLabel={(t) => `Añadir «${t}» al catálogo de series`}
-              onAdd={addSeries}
+              addLabel={(t) => `Añadir «${t}» a las series de ${ARTIST_LABEL[batch.fixed.artist]}`}
+              onAdd={(name) => addSeries(name, batch.fixed.artist)}
             />
+            {seriesCleared && (
+              <p role="status" className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
+                Se ha quitado la serie «{seriesCleared}»: cada fondo tiene sus propias series.
+                Elige una de {ARTIST_LABEL[batch.fixed.artist]} si el lote pertenece a alguna.
+              </p>
+            )}
           </FieldGroup>
 
           <FieldGroup title="Ubicación física" hint="se arrastra, ajustable en cada obra">

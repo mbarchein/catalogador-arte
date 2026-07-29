@@ -332,7 +332,9 @@ function EditForm({
   // Controlled vocabulary for "Tipo de obra" (RF-213). Only editors reach
   // this form, so offering the add-to-catalog row is always legitimate here.
   const { types: artworkTypes, addType } = useArtworkTypes()
-  const { series: seriesNames, addSeries } = useSeries()
+  // Series of THIS artwork's fund: each fund has its own vocabulary, and the
+  // fund is immutable (RF-204), so the offered set never changes under the form.
+  const { names: seriesNames, addSeries } = useSeries(artwork.artist)
   // Locations already used, as loose suggestions while typing (free text).
   const knownLocations = usePhysicalLocations()
 
@@ -461,9 +463,10 @@ function EditForm({
           onAdd={addType}
         />
 
-        {/* Same open vocabulary as the type: the series name must be written
-            identically every time or the catalog cannot group by it. Empty is
-            legitimate — not every piece belongs to a series. */}
+        {/* Same open vocabulary as the type, but one set PER FUND: the series
+            name must be written identically every time or the catalog cannot
+            group by it, and a series of another artist is not an option here.
+            Empty is legitimate — not every piece belongs to a series. */}
         <ComboBox
           id="e-series"
           label="Serie"
@@ -472,8 +475,8 @@ function EditForm({
           options={seriesNames}
           placeholder="Busca en el catálogo de series"
           emptyLabel="Sin serie"
-          addLabel={(t) => `Añadir «${t}» al catálogo de series`}
-          onAdd={addSeries}
+          addLabel={(t) => `Añadir «${t}» a las series de ${ARTIST_LABEL[artwork.artist]}`}
+          onAdd={(name) => addSeries(name, artwork.artist)}
         />
       </FieldGroup>
 
