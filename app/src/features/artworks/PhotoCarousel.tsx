@@ -50,14 +50,19 @@ export function PhotoCarousel({
 
   // Derivatives for the viewed slide and its neighbors, so the one sliding in
   // from offscreen is already there.
+  //
+  // Cached by PATH, not by image identifier: reframing a photo keeps its
+  // identifier and writes new files, so keying by identifier kept showing the
+  // previous crop until the page was reloaded. The path is the identity of the
+  // content — that is what the whole image cache relies on.
   useEffect(() => {
     const wanted = [viewIndex - 1, viewIndex, viewIndex + 1]
       .map((i) => images[i])
-      .filter((r): r is ImageRow => r !== undefined && !(r.image_id in slideUrls))
+      .filter((r): r is ImageRow => r !== undefined && !(r.derivative_path in slideUrls))
     if (wanted.length === 0) return
     let current = true
     void Promise.all(
-      wanted.map(async (r) => [r.image_id, await signedUrl(r.derivative_path)] as const),
+      wanted.map(async (r) => [r.derivative_path, await signedUrl(r.derivative_path)] as const),
     ).then((pairs) => {
       if (!current) return
       setSlideUrls((u) => ({
@@ -133,9 +138,9 @@ export function PhotoCarousel({
                   }`
             }
           >
-            {slideUrls[r.image_id] ? (
+            {slideUrls[r.derivative_path] ? (
               <img
-                src={slideUrls[r.image_id]}
+                src={slideUrls[r.derivative_path]}
                 alt={`${SHOT_TYPE_LABEL[r.shot_type]} de ${catalogId}`}
                 className="max-h-full max-w-full object-contain"
               />
