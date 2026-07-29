@@ -445,25 +445,30 @@ export function PhotoEditor({
             the framing is data, not a cut, so the original frame can be
             recovered whenever — today or in a year — and the crop redone from
             scratch. That is what makes cropping a safe decision. */}
-        {canRestoreOriginal && (rotation !== 0 || crop !== null) && (
+        {/* Shown even when it cannot be used, and disabled with the reason: an
+            action that simply is not there leaves the cataloger wondering
+            whether the crop is final. */}
+        {(rotation !== 0 || crop !== null || !canRestoreOriginal) && (
           <button
             type="button"
+            disabled={!canRestoreOriginal}
+            aria-describedby="editor-original-help"
             onClick={() => {
               setRotation(0)
               setCrop(null)
             }}
-            className="btn min-h-touch w-full border border-stone-600 text-sm text-white"
+            className="btn min-h-touch w-full border border-stone-600 text-sm text-white disabled:opacity-40"
           >
-            Volver al original completo
+            Volver al original, sin giro ni recorte
           </button>
         )}
 
-        <p className="text-center text-xs text-stone-400">
-          {crop
-            ? 'Arrastra las esquinas para ajustar el recorte, o el centro para moverlo.'
-            : canRestoreOriginal
-              ? 'El máster de archivo no se modifica: se rehacen las copias que se muestran, y siempre puedes volver al original.'
-              : 'El máster de archivo no se modifica: se rehacen las copias que se muestran.'}
+        <p id="editor-original-help" className="text-center text-xs text-stone-400">
+          {!canRestoreOriginal
+            ? 'Sobre la copia de consulta puedes girar y recortar más, pero no ensanchar el recorte ni volver al original: lo que quedó fuera no está en esta copia.'
+            : crop
+              ? 'Arrastra las esquinas para ajustar el recorte, o el centro para moverlo. El original de archivo no se modifica nunca: puedes ensanchar el recorte o volver al original cuando quieras.'
+              : 'El máster de archivo no se modifica: se rehacen las copias que se muestran, y siempre puedes volver al original.'}
         </p>
 
         <div className="grid grid-cols-2 gap-2">

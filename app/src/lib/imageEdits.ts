@@ -18,6 +18,16 @@
  * different sizes — 400 px thumbnail, 2000 px derivative, full master — and a
  * rectangle measured in pixels would mean something else on each one.
  *
+ * **The invariant that makes an edit reversible**: what is stored is always
+ * absolute over the master, so re-editing REPLACES those numbers, it never
+ * composes onto them. That is why the crop can be widened later — or dropped
+ * entirely to recover the whole original frame — today or in a year. The editor
+ * therefore opens on the full master with the stored rectangle drawn on top,
+ * and `composeEdits` has exactly one caller: the degraded case where the master
+ * could not be downloaded and the source already carries the crop baked in. In
+ * that case the crop can only shrink, and the row keeps telling the truth about
+ * the master.
+ *
  * There is no DOM here on purpose. This module is the arithmetic, which is the
  * part that can be tested for real: the test environment has neither canvas nor
  * `createImageBitmap`, so what draws pixels lives in imageRender.ts.

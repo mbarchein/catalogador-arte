@@ -250,7 +250,7 @@ export function ArtworkPhotosPage() {
         initial: source.fromMaster ? stored : NO_EDIT,
         note: source.fromMaster
           ? null
-          : 'No se ha podido descargar el máster: el recorte parte de la copia de consulta, que tiene menos resolución. El máster de archivo no se toca.',
+          : 'No se ha podido descargar el máster: se parte de la copia de consulta, que ya viene recortada y tiene menos resolución. Puedes recortar más, pero no ensanchar el recorte ni volver al original. El máster de archivo no se toca: inténtalo de nuevo con mejor cobertura para reencuadrar desde él.',
       })
     } catch (e) {
       setError(

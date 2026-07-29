@@ -26,6 +26,7 @@ import {
   sameEdit,
   swapsSides,
   type Crop,
+  type PhotoEdit,
   type Rotation,
 } from './imageEdits'
 
@@ -467,5 +468,59 @@ describe('normalizeEdit / editSummary', () => {
     expect(summary).toContain('Recortada')
     expect(summary).toContain('25')
     expect(editSummary({ rotation: 180, crop: centeredCrop(0.5) })).toMatch(/^Girada 180° · Recortada/)
+  })
+})
+
+describe('el original siempre se puede recuperar', () => {
+  const stored: PhotoEdit = { rotation: 90, crop: { x: 0.3, y: 0.3, width: 0.3, height: 0.3 } }
+
+  it('reeditar sobre el máster REEMPLAZA el encuadre, no lo compone', () => {
+    // With the master as source the editor opens with baked = NO_EDIT, so what
+    // it returns is what gets stored: composing is the identity.
+    const widened: PhotoEdit = { rotation: 90, crop: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 } }
+    expect(composeEdits(NO_EDIT, widened)).toEqual(widened)
+
+    // And that is the whole point: the new crop is WIDER than the stored one,
+    // which composing onto it could never produce.
+    const composed = composeEdits(stored, widened)
+    expect(composed.crop!.width).toBeLessThan(widened.crop!.width)
+  })
+
+  it('el recorte nuevo no tiene que solaparse con el anterior', () => {
+    const elsewhere: PhotoEdit = { rotation: 0, crop: { x: 0.7, y: 0.7, width: 0.3, height: 0.3 } }
+    expect(composeEdits(NO_EDIT, elsewhere)).toEqual(elsewhere)
+  })
+
+  it('volver al original deja la fila sin encuadre: cuatro nulos y sin giro', () => {
+    const columns = editToColumns(NO_EDIT)
+    expect(columns).toEqual({
+      rotation: 0,
+      crop_x: null,
+      crop_y: null,
+      crop_width: null,
+      crop_height: null,
+    })
+    expect(isNoEdit(editFromColumns(columns))).toBe(true)
+  })
+
+  it('el recorte completo es no tener recorte: no encoge nada', () => {
+    expect(isNoEdit({ rotation: 0, crop: fullCrop() })).toBe(true)
+  })
+
+  // ── Modo degradado: la copia de consulta ya trae el recorte ──
+  it('desde la copia de consulta el recorte solo puede encoger', () => {
+    const relative: PhotoEdit = { rotation: 0, crop: { x: 0, y: 0, width: 1, height: 1 } }
+    // Asking for the whole (degraded) image keeps the stored crop untouched:
+    // the row never claims «sin recorte» over an already cropped file.
+    expect(composeEdits(stored, relative)).toEqual(normalizeEdit(stored))
+    expect(composeEdits(stored, NO_EDIT)).toEqual(normalizeEdit(stored))
+  })
+
+  it('desde la copia de consulta, recortar más sigue siendo relativo al máster', () => {
+    const half: PhotoEdit = { rotation: 0, crop: { x: 0, y: 0, width: 0.5, height: 0.5 } }
+    const absolute = composeEdits(stored, half)
+    // Half of a 0.3-wide crop is 0.15 of the master, not 0.5.
+    expect(absolute.crop!.width).toBeCloseTo(0.15, 5)
+    expect(absolute.rotation).toBe(90)
   })
 })
