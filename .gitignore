@@ -50,6 +50,9 @@ staticfiles/
 coverage.xml
 htmlcov/
 
+# Worktrees temporales de agentes: espacio de trabajo, no contenido del proyecto
+.claude/worktrees/
+
 # Editores y sistema operativo
 .idea/
 .vscode/
