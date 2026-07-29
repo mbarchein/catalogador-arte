@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import type { PreparedShot } from '../../lib/images'
+import { editSummary, sameEdit, type PhotoEdit } from '../../lib/imageEdits'
+import { renderEditedLevels } from '../../lib/imageRender'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
-import { Chips, NoIcon, PlusIcon, YesIcon } from '../../components/ui'
+import { Chips, CropIcon, NoIcon, PlusIcon, YesIcon } from '../../components/ui'
 import { PhotoInput, type PhotoSource } from './PhotoInput'
+import { PhotoEditor } from './PhotoEditor'
 
 /**
  * The "+" tile reopens whatever entry path the last photos came from: while
@@ -64,6 +67,12 @@ export function PhotoPicker({
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [lastSource, setLastSource] = useState<PhotoSource>(rememberedSource)
+  // Shot being straightened, and the state of redoing its copies. The editor
+  // itself does not touch pixels: it returns the framing and here the thumbnail
+  // and the consultation copy are regenerated from the master in memory.
+  const [editingKey, setEditingKey] = useState<string | null>(null)
+  const [applying, setApplying] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
 
   function add(prepared: PreparedShot[], source: PhotoSource) {
     setLastSource(source)
@@ -112,7 +121,49 @@ export function PhotoPicker({
     onChange(shots.map((s) => (s.key === key ? { ...s, shotType: type } : s)))
   }
 
+  /**
+   * Applies the framing to a shot that has not been uploaded yet.
+   *
+   * The source is the master already in memory, so this costs no network: no
+   * download, no re-upload, and the row will be born with the framing already
+   * stored (see uploadShot). Nothing is redone if the cataloger applied without
+   * changing anything.
+   */
+  async function applyEdit(shot: QueuedShot, edit: PhotoEdit) {
+    setEditingKey(null)
+    setEditError(null)
+    if (sameEdit(edit, shot.prepared.edit)) return
+    setApplying(true)
+    try {
+      const levels = await renderEditedLevels(shot.prepared.master, edit)
+      URL.revokeObjectURL(shot.prepared.preview)
+      onChange(
+        shots.map((s) =>
+          s.key === shot.key
+            ? {
+                ...s,
+                prepared: {
+                  ...s.prepared,
+                  thumbnail: levels.thumbnail,
+                  derivative: levels.derivative,
+                  preview: URL.createObjectURL(levels.thumbnail),
+                  edit,
+                },
+              }
+            : s,
+        ),
+      )
+    } catch (e) {
+      setEditError(
+        `No se ha podido aplicar el giro o el recorte: ${e instanceof Error ? e.message : String(e)}`,
+      )
+    } finally {
+      setApplying(false)
+    }
+  }
+
   const openShot = shots.find((s) => s.key === openKey)
+  const editingShot = shots.find((s) => s.key === editingKey)
 
   return (
     <div>
@@ -207,6 +258,18 @@ export function PhotoPicker({
             onChange={(v) => setType(openShot.key, v)}
           />
 
+          {/* Straightening the shot before it goes up: the crop is applied to
+              the copies, never to the master (ADR-002). */}
+          <button
+            type="button"
+            disabled={applying || openShot.status === 'uploading' || openShot.status === 'uploaded'}
+            onClick={() => setEditingKey(openShot.key)}
+            className="btn-secondary w-full"
+          >
+            <CropIcon className="h-5 w-5" />
+            {applying ? 'Aplicando la edición…' : 'Girar y recortar'}
+          </button>
+
           <div className={`grid gap-2 ${withIndex ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {withIndex && (
               <button
@@ -231,8 +294,26 @@ export function PhotoPicker({
             Original {openShot.prepared.originalWidth}×{openShot.prepared.originalHeight} px,{' '}
             {(openShot.prepared.master.size / 1_048_576).toFixed(1)} MB. Se subirán tres
             versiones: miniatura, consulta y máster de archivo.
+            {editSummary(openShot.prepared.edit) &&
+              ` ${editSummary(openShot.prepared.edit)} (el máster se guarda sin tocar).`}
           </p>
+
+          {editError && (
+            <p role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-800">
+              {editError}
+            </p>
+          )}
         </div>
+      )}
+
+      {editingShot && (
+        <PhotoEditor
+          source={editingShot.prepared.master}
+          initialEdit={editingShot.prepared.edit}
+          title={`Toma ${SHOT_TYPE_LABEL[editingShot.shotType]} sin subir`}
+          onApply={(edit) => void applyEdit(editingShot, edit)}
+          onCancel={() => setEditingKey(null)}
+        />
       )}
     </div>
   )

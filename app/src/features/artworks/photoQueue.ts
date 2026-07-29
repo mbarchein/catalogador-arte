@@ -1,4 +1,5 @@
 import type { PreparedShot } from '../../lib/images'
+import { normalizeRotation, type Crop, type PhotoEdit } from '../../lib/imageEdits'
 import type { ShotTypeValue } from '../../lib/types'
 
 /**
@@ -42,6 +43,29 @@ export interface StoredShot {
   derivative: Blob
   originalWidth: number
   originalHeight: number
+  // Framing already applied to the two blobs above. Stored so that a tab
+  // discarded while the camera was in the foreground does not silently lose it:
+  // the copies would come back straightened and the row would be written as if
+  // they were not, and the printed catalog would then reframe them wrong.
+  // Absent in rows written before this feature existed (see storedEdit).
+  rotation?: number
+  crop?: Crop | null
+}
+
+/** The framing of a stored row, tolerating one written before it existed. */
+function storedEdit(row: StoredShot): PhotoEdit {
+  const rotation = normalizeRotation(row.rotation ?? 0)
+  const crop = row.crop
+  if (
+    !crop ||
+    typeof crop.x !== 'number' ||
+    typeof crop.y !== 'number' ||
+    typeof crop.width !== 'number' ||
+    typeof crop.height !== 'number'
+  ) {
+    return { rotation, crop: null }
+  }
+  return { rotation, crop: { x: crop.x, y: crop.y, width: crop.width, height: crop.height } }
 }
 
 function open(): Promise<IDBDatabase> {
@@ -98,6 +122,8 @@ export async function saveQueue(
         derivative: s.prepared.derivative,
         originalWidth: s.prepared.originalWidth,
         originalHeight: s.prepared.originalHeight,
+        rotation: s.prepared.edit.rotation,
+        crop: s.prepared.edit.crop,
       }
       store.put(row)
     }
@@ -163,6 +189,7 @@ export function rehydrate(row: StoredShot): {
       originalHeight: row.originalHeight,
       // The previous object URL died with the page: a new one is created.
       preview: URL.createObjectURL(row.thumbnail),
+      edit: storedEdit(row),
     },
   }
 }
