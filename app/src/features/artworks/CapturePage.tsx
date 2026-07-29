@@ -28,6 +28,7 @@ import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { saveQueue, readQueue, rehydrate, clearQueue } from './photoQueue'
 import { previewId } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
+import { useSeries } from './useSeries'
 import { usePhysicalLocations } from './usePhysicalLocations'
 import {
   INITIAL_BATCH,
@@ -63,6 +64,8 @@ export function CapturePage() {
   // Controlled vocabulary for the batch's fixed type (RF-213). Loaded here
   // and not inside the opening screen so it is ready before the batch opens.
   const { types: artworkTypes, addType } = useArtworkTypes()
+  // Series vocabulary for the batch's fixed series (empty is legitimate).
+  const { series: seriesNames, addSeries } = useSeries()
 
   // Locations already used, as loose suggestions while typing (free text).
   const knownLocations = usePhysicalLocations()
@@ -190,6 +193,22 @@ export function CapturePage() {
               addLabel={(t) => `Añadir «${t}» al catálogo de tipos`}
               onAdd={addType}
             />
+
+            {/* The series is fixed too: a batch is usually one series, and
+                retyping its name on every piece is how two spellings of the
+                same series appear. It may stay empty — not every batch belongs
+                to one — so it does not gate opening the batch. */}
+            <ComboBox
+              id="series"
+              label="Serie"
+              value={batch.fixed.series}
+              onChange={(v) => setBatch((b) => ({ ...b, fixed: { ...b.fixed, series: v } }))}
+              options={seriesNames}
+              placeholder="Busca en el catálogo de series"
+              emptyLabel="Sin serie"
+              addLabel={(t) => `Añadir «${t}» al catálogo de series`}
+              onAdd={addSeries}
+            />
           </FieldGroup>
 
           <FieldGroup title="Ubicación física" hint="se arrastra, ajustable en cada obra">
@@ -309,6 +328,7 @@ export function CapturePage() {
       .insert({
         artist: batch.fixed.artist,
         artwork_type: batch.fixed.artworkType.trim(),
+        series: batch.fixed.series.trim(),
         title: title.trim(),
         // RF-209: a written title at capture time has unverified authorship;
         // a blank one stays pending. The constraint
@@ -376,6 +396,7 @@ export function CapturePage() {
             </p>
             <p className="mt-0.5 truncate font-medium">
               {ARTIST_LABEL[batch.fixed.artist]} · {batch.fixed.artworkType}
+              {batch.fixed.series !== '' && ` · ${batch.fixed.series}`}
             </p>
             <p className="mt-0.5 text-xs text-stone-300">
               {saved.length === 0

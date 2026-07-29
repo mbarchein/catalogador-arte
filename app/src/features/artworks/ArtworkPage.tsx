@@ -45,6 +45,7 @@ import { useLiveChanges } from '../../lib/live'
 import { ArtworkGallery } from './ArtworkGallery'
 import { useArtwork } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
+import { useSeries } from './useSeries'
 import { usePhysicalLocations } from './usePhysicalLocations'
 
 const AUTHORSHIP_ICON: Record<AttributedTitleValue, typeof PenIcon> = {
@@ -217,6 +218,7 @@ export function ArtworkPage() {
         <h2 className="mb-2 font-medium">Identificación</h2>
         <dl className="divide-y divide-stone-100">
           <DataRow label="Tipo" value={artwork.artwork_type} />
+          <DataRow label="Serie" value={artwork.series} />
           <DataRow label="Técnica" value={artwork.technique} />
           <DataRow label="Soporte" value={artwork.support} />
           <DataRow label="Medidas" value={displayMeasurements(artwork)} />
@@ -330,6 +332,7 @@ function EditForm({
   // Controlled vocabulary for "Tipo de obra" (RF-213). Only editors reach
   // this form, so offering the add-to-catalog row is always legitimate here.
   const { types: artworkTypes, addType } = useArtworkTypes()
+  const { series: seriesNames, addSeries } = useSeries()
   // Locations already used, as loose suggestions while typing (free text).
   const knownLocations = usePhysicalLocations()
 
@@ -399,6 +402,7 @@ function EditForm({
         title: data.title.trim(),
         attributed_title: data.attributed_title,
         artwork_type: data.artwork_type.trim(),
+        series: data.series.trim(),
         // execution_date is not sent: the database composes it (generated column).
         start_year: data.start_year,
         end_year: data.end_year,
@@ -455,6 +459,21 @@ function EditForm({
           emptyLabel="Sin tipo (pendiente de revisar)"
           addLabel={(t) => `Añadir «${t}» al catálogo de tipos`}
           onAdd={addType}
+        />
+
+        {/* Same open vocabulary as the type: the series name must be written
+            identically every time or the catalog cannot group by it. Empty is
+            legitimate — not every piece belongs to a series. */}
+        <ComboBox
+          id="e-series"
+          label="Serie"
+          value={data.series}
+          onChange={(v) => set('series', v)}
+          options={seriesNames}
+          placeholder="Busca en el catálogo de series"
+          emptyLabel="Sin serie"
+          addLabel={(t) => `Añadir «${t}» al catálogo de series`}
+          onAdd={addSeries}
         />
       </FieldGroup>
 

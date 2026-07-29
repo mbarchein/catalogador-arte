@@ -11,7 +11,7 @@ import {
 } from './artworksCache'
 
 const FIELDS = `
-  catalog_id, artist, title, attributed_title, artwork_type,
+  catalog_id, artist, title, attributed_title, artwork_type, series,
   execution_date, start_year, end_year, approximate_date, unconfirmed_date, date_note,
   technique, support,
   height_cm, width_cm, depth_cm,

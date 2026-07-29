@@ -45,6 +45,7 @@ export function recordLines(artwork: Artwork): RecordLine[] {
   return [
     { label: 'Fondo', value: ARTIST_LABEL[artwork.artist] },
     { label: 'Tipo de obra', value: datum(artwork.artwork_type) },
+    { label: 'Serie', value: datum(artwork.series) },
     { label: 'Fecha', value: displayDate(artwork.execution_date) },
     { label: 'Técnica', value: datum(artwork.technique) },
     { label: 'Soporte', value: datum(artwork.support) },

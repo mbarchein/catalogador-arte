@@ -17,6 +17,7 @@ const ARTWORK: Artwork = {
   title: 'Bodegón de ensayo',
   attributed_title: 'YES',
   artwork_type: 'Pintura',
+  series: 'Paisajes de la sierra',
   execution_date: 'c. 1980',
   start_year: 1980,
   end_year: null,
@@ -183,6 +184,14 @@ async function pdfOf(loadPhoto: (catalogId: string) => Promise<RecordPhoto | nul
 const noPhoto = async () => null
 
 describe('generateRecordPdf', () => {
+  // The series groups the catalog, so the printed record has to carry it: a
+  // record on a table without its series cannot be filed back.
+  it('prints the series of the artwork', async () => {
+    const { prints } = await pdfOf(noPhoto)
+    expect(prints('Serie')).toBe(true)
+    expect(prints('Paisajes de la sierra')).toBe(true)
+  })
+
   it('produces a real A5 PDF, with the QR embedded', async () => {
     const { bytes } = await pdfOf(noPhoto)
     // With the QR (PNG) embedded, the record weighs quite a bit more than an

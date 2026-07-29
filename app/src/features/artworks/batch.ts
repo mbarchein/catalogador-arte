@@ -22,6 +22,8 @@ export interface Batch {
   fixed: {
     artist: ArtistFund
     artworkType: string
+    /** Series of the batch, from the vocabulary. Empty is legitimate. */
+    series: string
   }
   carried: {
     date: StructuredDate
@@ -31,7 +33,7 @@ export interface Batch {
 }
 
 export const INITIAL_BATCH: Batch = {
-  fixed: { artist: 'ROTILI', artworkType: '' },
+  fixed: { artist: 'ROTILI', artworkType: '', series: '' },
   carried: { date: EMPTY_DATE, technique: '', location: '' },
 }
 
@@ -111,6 +113,8 @@ function normalize(value: unknown): Batch {
         ? (fixed.artist as ArtistFund)
         : 'ROTILI',
       artworkType: typeof fixed.artworkType === 'string' ? fixed.artworkType : '',
+      // A batch stored before the series existed simply has none.
+      series: typeof fixed.series === 'string' ? fixed.series : '',
     },
     carried: {
       date: {

@@ -19,6 +19,13 @@ insert into public.artwork_types (name) values
   ('Dibujo')
 on conflict (name) do nothing;
 
+-- Starting vocabulary of series, for the same reason and with the same rule:
+-- before the artworks, because the integrity trigger checks membership.
+insert into public.series (name) values
+  ('Paisajes de la sierra'),
+  ('Retratos del taller')
+on conflict (name) do nothing;
+
 -- A few sample artworks so the list does not start empty and the chronological
 -- ordering can be checked with dates of different shapes.
 -- Identifiers are provided explicitly so the seed is idempotent; in the
@@ -27,28 +34,28 @@ on conflict (name) do nothing;
 -- column and cannot be written. The three cases cover exact year, approximate
 -- year and range, to verify chronological ordering.
 insert into public.artworks (
-  catalog_id, artist, title, attributed_title, artwork_type,
+  catalog_id, artist, title, attributed_title, artwork_type, series,
   start_year, end_year, approximate_date, technique, support,
   height_cm, width_cm, signed, signature_description,
   conservation_status, physical_location, existence_status,
   measurements_verified, inventory_phase_completed
 ) values
   (
-    'AR-0001', 'ROTILI', 'Paisaje de invierno', 'NO', 'Pintura',
+    'AR-0001', 'ROTILI', 'Paisaje de invierno', 'NO', 'Pintura', 'Paisajes de la sierra',
     1975, 1978, false, 'Óleo sobre lienzo', 'Lienzo',
     73, 60, 'YES', 'ángulo inferior derecho',
     'GOOD', 'edificio a, habitacion amarilla, bloque 3', 'PRESERVED',
     true, true
   ),
   (
-    'AR-0002', 'ROTILI', '', 'NOT_APPLICABLE', 'Dibujo',
+    'AR-0002', 'ROTILI', '', 'NOT_APPLICABLE', 'Dibujo', '',
     1980, null, true, 'Carboncillo sobre papel', 'Papel',
     42, 29.7, 'NO', '',
     'FAIR', 'edificio b, habitacion 4, estanteria 3, balda 2, carpeta 1', 'PRESERVED',
     false, false
   ),
   (
-    'RC-0001', 'RUIZ_CAMPINS', 'El jarrón azul', 'YES', 'Pintura',
+    'RC-0001', 'RUIZ_CAMPINS', 'El jarrón azul', 'YES', 'Pintura', 'Retratos del taller',
     1968, null, false, 'Acrílico sobre tabla', 'Tabla',
     50, 40, 'UNREVIEWED', '',
     'UNREVIEWED', '', 'UNREVIEWED',

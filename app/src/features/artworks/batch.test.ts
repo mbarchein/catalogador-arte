@@ -51,7 +51,7 @@ describe('batch persistence', () => {
     // The real case: the phone screen locks in the storage room and one comes
     // back.
     const batch: Batch = {
-      fixed: { artist: 'RUIZ_CAMPINS', artworkType: 'Dibujo' },
+      fixed: { artist: 'RUIZ_CAMPINS', artworkType: 'Dibujo', series: '' },
       carried: {
         date: { year: 1968, approximate: true, endYear: null, unconfirmed: true },
         technique: 'Carboncillo sobre papel',
@@ -72,7 +72,7 @@ describe('batch persistence', () => {
 describe('one-shot migration from the legacy key', () => {
   it('reads a batch left under catalogador.lote, moves it and deletes the old key', () => {
     const batch: Batch = {
-      fixed: { artist: 'TEST', artworkType: 'Pintura' },
+      fixed: { artist: 'TEST', artworkType: 'Pintura', series: '' },
       carried: {
         date: { year: 1975, approximate: false, endYear: null, unconfirmed: false },
         technique: 'Óleo',
@@ -91,8 +91,8 @@ describe('one-shot migration from the legacy key', () => {
 
   it('prefers the new key when both exist', () => {
     const s = fakeStorage({
-      'catalogador.batch': JSON.stringify({ fixed: { artist: 'TEST', artworkType: 'Dibujo' } }),
-      'catalogador.lote': JSON.stringify({ fixed: { artist: 'ROTILI', artworkType: 'Pintura' } }),
+      'catalogador.batch': JSON.stringify({ fixed: { artist: 'TEST', artworkType: 'Dibujo', series: '' } }),
+      'catalogador.lote': JSON.stringify({ fixed: { artist: 'ROTILI', artworkType: 'Pintura', series: '' } }),
     })
     expect(readBatch(s).fixed.artworkType).toBe('Dibujo')
   })
@@ -117,7 +117,7 @@ describe('resilience to foreign data', () => {
   })
 
   it('keeps the TEST rehearsal fund, which does exist (RF-202)', () => {
-    const stored = JSON.stringify({ fixed: { artist: 'TEST', artworkType: 'Pintura' } })
+    const stored = JSON.stringify({ fixed: { artist: 'TEST', artworkType: 'Pintura', series: '' } })
     expect(readBatch(fakeStorage({ 'catalogador.batch': stored })).fixed.artist).toBe('TEST')
   })
 
@@ -147,14 +147,14 @@ describe('batchConfigured', () => {
     expect(
       batchConfigured({
         ...INITIAL_BATCH,
-        fixed: { artist: 'ROTILI', artworkType: 'Pintura' },
+        fixed: { artist: 'ROTILI', artworkType: 'Pintura', series: '' },
       }),
     ).toBe(true)
   })
 
   it('does not accept a type made only of spaces', () => {
     expect(
-      batchConfigured({ ...INITIAL_BATCH, fixed: { artist: 'ROTILI', artworkType: '   ' } }),
+      batchConfigured({ ...INITIAL_BATCH, fixed: { artist: 'ROTILI', artworkType: '   ', series: '' } }),
     ).toBe(false)
   })
 })
