@@ -51,7 +51,14 @@ export default defineConfig({
             // contenido para siempre. Cambiar la imagen principal de una obra
             // cambia la ruta, y por tanto la entrada del caché: la
             // invalidación es automática.
-            urlPattern: ({ url }) => url.pathname.includes('/storage/v1/object/sign/'),
+            // Solo lo que pinta una etiqueta `img`. Una petición hecha con
+            // `fetch` para LEER los bytes —la ficha en PDF convierte la
+            // derivada a JPEG— no puede servirse de aquí: lo que se guardó al
+            // pintar una miniatura es una respuesta opaca, sin cuerpo legible
+            // y con estado 0, así que la conversión fallaba y la ficha salía
+            // con «Imagen no disponible». Esas peticiones van siempre a la red.
+            urlPattern: ({ url, request }) =>
+              url.pathname.includes('/storage/v1/object/sign/') && request.destination === 'image',
             handler: 'CacheFirst',
             options: {
               cacheName: 'imagenes-obras',
