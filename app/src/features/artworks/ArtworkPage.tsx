@@ -251,33 +251,25 @@ export function ArtworkPage() {
     <Layout
       title={artwork.catalog_id}
       back={listPath}
-      // In the fixed header, not inside the page: this way editing and photo
-      // management are within reach without scrolling back up, however long
-      // the record.
-      action={
-        canEdit ? (
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate(`/artwork/${id}/photos`)}
-              className="btn-secondary min-h-[2.5rem] px-3 text-sm"
-            >
-              <CameraIcon className="h-4 w-4" />
-              Fotos
-            </button>
-            <button
-              onClick={() => navigate({ pathname: `/artwork/${id}/edit`, search: query })}
-              className="btn-primary min-h-[2.5rem] px-3 text-sm"
-            >
-              <PenIcon className="h-4 w-4" />
-              Editar
-            </button>
-          </div>
+      // The navigation goes in the FIXED header: passing to the next artwork is
+      // the most repeated action of a session, and up here it never scrolls
+      // away, however long the record. It takes the place of the title, which
+      // the record's own header says two lines below anyway — and the line under
+      // the controls repeats the code, so the header alone still answers «which
+      // artwork am I on».
+      headerContent={
+        sequence.index > 0 ? (
+          <SequenceBar
+            sequence={sequence}
+            view={view}
+            catalogId={artwork.catalog_id}
+            onGo={goTo}
+          />
         ) : undefined
       }
     >
-      {/* Everything the gesture moves goes inside, the navigation bar included:
-          dragging from the controls themselves is the first thing anybody tries.
-          Remounted per record so it slides in from the side the finger went. */}
+      {/* Everything the gesture moves goes inside, remounted per record so it
+          slides in from the side the finger went. */}
       <SwipeArea
         key={artwork.catalog_id}
         entering={entering}
@@ -287,9 +279,28 @@ export function ArtworkPage() {
           goTo(direction === 'previous' ? sequence.previous : sequence.next, direction)
         }
       >
-        {/* The queue and where this record sits in it. Above everything because
-            it answers "how much is left", which is asked before reading. */}
-        {sequence.index > 0 && <SequenceBar sequence={sequence} view={view} onGo={goTo} />}
+        {canEdit && (
+          /* Photographing and editing head the record, in two full-width
+             buttons: they are what one comes to do with the artwork in front,
+             and in the header they had to fit in a corner next to everything
+             else. Down here the thumb cannot miss them. */
+          <div className="mb-3 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => navigate({ pathname: `/artwork/${id}/photos`, search: query })}
+              className="btn-secondary"
+            >
+              <CameraIcon className="h-5 w-5" />
+              Editar fotos
+            </button>
+            <button
+              onClick={() => navigate({ pathname: `/artwork/${id}/edit`, search: query })}
+              className="btn-primary"
+            >
+              <PenIcon className="h-5 w-5" />
+              Editar ficha
+            </button>
+          </div>
+        )}
 
         {error && (
           /* The query failed but the mirror had the record: outdated data plus a
@@ -437,32 +448,38 @@ export function ArtworkPage() {
 }
 
 /**
- * The two controls that walk the queue, and where the record sits in it
- * (RF-311).
+ * The two controls that walk the queue, and where the record sits in it, for the
+ * fixed header (RF-311).
  *
  * Each control NAMES the artwork it leads to — code and title, cut with an
  * ellipsis when it does not fit. A bare arrow asks the cataloger to jump blind:
  * seeing that what comes next is AR-0043 «Retrato de M.» is what lets her decide
  * whether to keep walking or go back to the list, which is the difference between
- * a queue and a lottery. The position and the name of the queue go underneath,
- * because the gesture cannot say them.
+ * a queue and a lottery.
+ *
+ * The line underneath carries what the arrows cannot: the code of the artwork
+ * being read — the header no longer shows it as a title — its place in the queue,
+ * and which queue it is.
  */
 function SequenceBar({
   sequence,
   view,
+  catalogId,
   onGo,
 }: {
   sequence: ArtworkSequence
   view: ListView
+  catalogId: string
   onGo: (target: string | null, direction: Direction) => void
 }) {
   return (
-    <nav aria-label="Navegación entre obras" className="mb-3">
-      <div className="flex items-stretch gap-2">
+    <nav aria-label="Navegación entre obras">
+      <div className="flex items-stretch gap-1.5">
         <NeighborButton compact direction="previous" row={sequence.previousRow} onGo={onGo} />
         <NeighborButton compact direction="next" row={sequence.nextRow} onGo={onGo} />
       </div>
-      <p className="mt-1 truncate text-center text-xs text-stone-500">
+      <p className="mt-0.5 truncate text-center text-[11px] leading-tight text-stone-500">
+        <span className="font-mono font-medium text-stone-600">{catalogId}</span> ·{' '}
         {sequence.index} de {sequence.total} · {queueLabel(view, sequence.fromList)}
       </p>
     </nav>
@@ -522,8 +539,14 @@ function NeighborButton({
             {back ? 'Anterior' : 'Siguiente'}
           </span>
         )}
-        <span className="block truncate font-mono text-xs font-semibold">{row.catalog_id}</span>
-        <span className="block truncate text-xs text-stone-600">{displayTitle(row.title)}</span>
+        {/* Tight leading: in the header these two lines are what decides how
+            much of the screen the fixed bar eats. */}
+        <span className="block truncate font-mono text-xs font-semibold leading-tight">
+          {row.catalog_id}
+        </span>
+        <span className="block truncate text-xs leading-tight text-stone-600">
+          {displayTitle(row.title)}
+        </span>
       </span>
       {!back && <ChevronRightIcon className="h-5 w-5 shrink-0 text-stone-400" />}
     </button>

@@ -47,9 +47,10 @@ export function Layout({
   /** Main action of the view, on the right side of the header. */
   action?: ReactNode
   /**
-   * Replaces the title with full-width content (the list's search box): the
-   * fixed header is the only place always on screen, and on that view the
-   * title added nothing the tab bar does not already say.
+   * Replaces the title with full-width content: the list's search box, and the
+   * record's previous/next navigation (RF-311). The fixed header is the only
+   * place always on screen, and in both views what goes here is the tool of the
+   * whole view — worth more than a title the view itself already says.
    */
   headerContent?: ReactNode
 }) {
