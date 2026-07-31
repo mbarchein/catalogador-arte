@@ -275,21 +275,9 @@ export function ArtworkPage() {
         ) : undefined
       }
     >
-      {/* The queue and where this record sits in it. Above everything because it
-          is the answer to "how much is left", which is asked before reading. */}
-      {sequence.index > 0 && <SequenceBar sequence={sequence} view={view} onGo={goTo} />}
-
-      {error && (
-        /* The query failed but the mirror had the record: outdated data plus a
-           notice beats a blank page in a storage room, the same choice the list
-           makes. */
-        <p role="status" className="mb-3 rounded-lg bg-amber-100 p-2 text-xs text-amber-900">
-          Sin conexión con el catálogo: se muestra la última copia descargada en este dispositivo.
-        </p>
-      )}
-
-      {/* Everything the gesture moves goes inside, remounted per record so the
-          record slides in from the side the finger went. */}
+      {/* Everything the gesture moves goes inside, the navigation bar included:
+          dragging from the controls themselves is the first thing anybody tries.
+          Remounted per record so it slides in from the side the finger went. */}
       <SwipeArea
         key={artwork.catalog_id}
         entering={entering}
@@ -299,6 +287,19 @@ export function ArtworkPage() {
           goTo(direction === 'previous' ? sequence.previous : sequence.next, direction)
         }
       >
+        {/* The queue and where this record sits in it. Above everything because
+            it answers "how much is left", which is asked before reading. */}
+        {sequence.index > 0 && <SequenceBar sequence={sequence} view={view} onGo={goTo} />}
+
+        {error && (
+          /* The query failed but the mirror had the record: outdated data plus a
+             notice beats a blank page in a storage room, the same choice the
+             list makes. */
+          <p role="status" className="mb-3 rounded-lg bg-amber-100 p-2 text-xs text-amber-900">
+            Sin conexión con el catálogo: se muestra la última copia descargada en este dispositivo.
+          </p>
+        )}
+
         <header className="mb-4">
           <p className="font-mono text-sm text-stone-500">{artwork.catalog_id}</p>
           <h1 className="text-xl font-semibold">{displayTitle(artwork.title)}</h1>
@@ -546,15 +547,20 @@ function NeighborCard({
 /**
  * Horizontal drag over the record to pass to the neighbor artwork (RF-311).
  *
- * The listeners are attached by hand instead of through React's props because
- * `touchmove` has to be NON-PASSIVE: once a gesture is read as horizontal, the
- * page must stop scrolling with it, and React registers its touch listeners as
- * passive, where `preventDefault` does nothing.
+ * **Two inputs, one behaviour.** The finger and the mouse do the same thing and
+ * share the same arithmetic; they differ in what has to be prevented while they
+ * do it. A finger would scroll the page, so `touchmove` is registered
+ * NON-PASSIVE — React attaches its own touch listeners as passive, where
+ * `preventDefault` does nothing, which is why these are attached by hand. A
+ * mouse does not scroll, but it selects text and it clicks whatever it was
+ * released on, so a drag captures the pointer and swallows the click that
+ * follows. Without the mouse half, the gesture simply did not exist on a laptop.
  *
- * The CSS `touch-action` would have been shorter, but it applies by intersection
- * along the ancestors: declaring `pan-y` here would forbid the horizontal
- * panning of the photo carousel INSIDE the record, and over the gallery the
- * gesture belongs to the photographs (`data-swipe-ignore`).
+ * The CSS `touch-action` would have been shorter than the touch half, but it
+ * applies by intersection along the ancestors: declaring `pan-y` here would
+ * forbid the horizontal panning of the photo carousel INSIDE the record, and
+ * over the gallery the gesture belongs to the photographs
+ * (`data-swipe-ignore`).
  *
  * The arithmetic — which axis, what counts as enough, how far it follows the
  * finger — is in sequence.ts, where it can be tested. What is here is the
@@ -597,77 +603,162 @@ function SwipeArea({
       element!.style.transform = offset === null || offset === 0 ? '' : `translateX(${offset}px)`
     }
 
-    function start(event: TouchEvent) {
+    /**
+     * Opens a gesture, unless it starts somewhere that is not ours. `edges`
+     * leaves the strips of the screen to the system's back gesture, which only
+     * exists for a finger.
+     */
+    function begin(x: number, y: number, at: number, target: EventTarget | null, edges: boolean) {
       gesture = null
-      if (event.touches.length !== 1) return
-      const touch = event.touches[0]
-      if (!touch) return
       // Over the gallery the gesture passes photographs, not artworks.
-      if ((event.target as HTMLElement | null)?.closest('[data-swipe-ignore]')) return
-      const box = element!.getBoundingClientRect()
-      const from = touch.clientX - box.left
-      if (from < SYSTEM_EDGE || from > box.width - SYSTEM_EDGE) return
-      gesture = { x: touch.clientX, y: touch.clientY, at: event.timeStamp, axis: null }
+      if ((target as HTMLElement | null)?.closest('[data-swipe-ignore]')) return
+      if (edges) {
+        const box = element!.getBoundingClientRect()
+        const from = x - box.left
+        if (from < SYSTEM_EDGE || from > box.width - SYSTEM_EDGE) return
+      }
+      gesture = { x, y, at, axis: null }
     }
 
-    function move(event: TouchEvent) {
-      const touch = event.touches[0]
-      if (!gesture || event.touches.length !== 1 || !touch) return
-      const dx = touch.clientX - gesture.x
-      const dy = touch.clientY - gesture.y
+    /** Moves the record with the pointer. True when the gesture is ours. */
+    function follow(x: number, y: number): boolean {
+      if (!gesture) return false
+      const dx = x - gesture.x
+      const dy = y - gesture.y
 
       if (gesture.axis === null) {
         const axis = swipeAxis(dx, dy)
-        if (axis === null) return
+        if (axis === null) return false
         if (axis === 'vertical') {
           // Reading the record: the gesture is the page's, and it stays the
           // page's until the finger lifts.
           gesture = null
-          return
+          return false
         }
         gesture.axis = axis
       }
 
-      // Ours now: the page must not scroll with it.
-      event.preventDefault()
       const neighbor = dx < 0 ? latest.current.hasNext : latest.current.hasPrevious
       place(dragOffset(dx, neighbor, element!.clientWidth))
+      return true
     }
 
-    function end(event: TouchEvent) {
+    /** Ends the gesture. True when it passed to another artwork. */
+    function release(x: number, y: number, at: number): boolean {
       const started = gesture
       gesture = null
       // Back to its place, gliding: either the neighbor arrives and this element
       // is replaced, or the record has to look like it never moved.
       place(null)
-      const touch = event.changedTouches[0]
-      if (!started || started.axis !== 'horizontal' || !touch) return
+      if (!started || started.axis !== 'horizontal') return false
 
       const decision = decideSwipe({
-        dx: touch.clientX - started.x,
-        dy: touch.clientY - started.y,
-        elapsed: event.timeStamp - started.at,
+        dx: x - started.x,
+        dy: y - started.y,
+        elapsed: at - started.at,
         width: element!.clientWidth,
       })
-      if (decision === null) return
+      if (decision === null) return false
       const { hasPrevious: back, hasNext: forward, onSwipe: go } = latest.current
-      if (decision === 'previous' ? back : forward) go(decision)
+      if (decision === 'previous' ? !back : !forward) return false
+      go(decision)
+      return true
+    }
+
+    // ── The finger ──
+    function touchStart(event: TouchEvent) {
+      gesture = null
+      const touch = event.touches[0]
+      if (event.touches.length !== 1 || !touch) return
+      begin(touch.clientX, touch.clientY, event.timeStamp, event.target, true)
+    }
+
+    function touchMove(event: TouchEvent) {
+      const touch = event.touches[0]
+      if (event.touches.length !== 1 || !touch) return
+      // Ours: the page must not scroll with it. This is why the listener is
+      // registered non-passive.
+      if (follow(touch.clientX, touch.clientY)) event.preventDefault()
+    }
+
+    function touchEnd(event: TouchEvent) {
+      const touch = event.changedTouches[0]
+      if (!touch) {
+        cancel()
+        return
+      }
+      release(touch.clientX, touch.clientY, event.timeStamp)
+    }
+
+    // ── The mouse (and a pen) ──
+    let captured: number | null = null
+    let passed = false
+
+    function pointerDown(event: PointerEvent) {
+      // A finger has its own handlers above: they are the ones that can stop the
+      // page from scrolling, which no pointer listener can.
+      if (event.pointerType === 'touch' || event.button !== 0) return
+      begin(event.clientX, event.clientY, event.timeStamp, event.target, false)
+    }
+
+    function pointerMove(event: PointerEvent) {
+      if (event.pointerType === 'touch') return
+      if (!follow(event.clientX, event.clientY)) return
+      if (captured === null) {
+        captured = event.pointerId
+        // The drag survives leaving the element, and it does not paint the
+        // record blue as if the cataloger were selecting text.
+        element!.setPointerCapture(event.pointerId)
+        element!.style.userSelect = 'none'
+      }
+    }
+
+    function pointerUp(event: PointerEvent) {
+      if (event.pointerType === 'touch') return
+      loosen()
+      passed = release(event.clientX, event.clientY, event.timeStamp)
+    }
+
+    /** A drag that ended on a button must not also press it. */
+    function clickGuard(event: MouseEvent) {
+      if (!passed) return
+      passed = false
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    function loosen() {
+      if (captured === null) return
+      element!.releasePointerCapture(captured)
+      captured = null
+      element!.style.userSelect = ''
     }
 
     function cancel() {
       gesture = null
+      loosen()
       place(null)
     }
 
-    element.addEventListener('touchstart', start, { passive: true })
-    element.addEventListener('touchmove', move, { passive: false })
-    element.addEventListener('touchend', end, { passive: true })
+    element.addEventListener('touchstart', touchStart, { passive: true })
+    element.addEventListener('touchmove', touchMove, { passive: false })
+    element.addEventListener('touchend', touchEnd, { passive: true })
     element.addEventListener('touchcancel', cancel, { passive: true })
+    element.addEventListener('pointerdown', pointerDown)
+    element.addEventListener('pointermove', pointerMove)
+    element.addEventListener('pointerup', pointerUp)
+    element.addEventListener('pointercancel', cancel)
+    element.addEventListener('click', clickGuard, true)
     return () => {
-      element.removeEventListener('touchstart', start)
-      element.removeEventListener('touchmove', move)
-      element.removeEventListener('touchend', end)
+      element.removeEventListener('touchstart', touchStart)
+      element.removeEventListener('touchmove', touchMove)
+      element.removeEventListener('touchend', touchEnd)
       element.removeEventListener('touchcancel', cancel)
+      element.removeEventListener('pointerdown', pointerDown)
+      element.removeEventListener('pointermove', pointerMove)
+      element.removeEventListener('pointerup', pointerUp)
+      element.removeEventListener('pointercancel', cancel)
+      element.removeEventListener('click', clickGuard, true)
     }
   }, [])
 
