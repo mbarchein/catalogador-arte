@@ -52,8 +52,8 @@ import {
 import { normalizeLocation, locationForSaving } from '../../lib/location'
 import { useLiveChanges } from '../../lib/live'
 import { ArtworkGallery } from './ArtworkGallery'
-import { parseView, type ListView } from './listView'
-import { decideSwipe, dragOffset, queueLabel, swipeAxis } from './sequence'
+import { parseView } from './listView'
+import { decideSwipe, dragOffset, swipeAxis } from './sequence'
 import { useArtwork } from './useArtworks'
 import { useArtworkSequence, type ArtworkSequence } from './useArtworkSequence'
 import { useArtworkTypes } from './useArtworkTypes'
@@ -253,18 +253,11 @@ export function ArtworkPage() {
       back={listPath}
       // The navigation goes in the FIXED header: passing to the next artwork is
       // the most repeated action of a session, and up here it never scrolls
-      // away, however long the record. It takes the place of the title, which
-      // the record's own header says two lines below anyway — and the line under
-      // the controls repeats the code, so the header alone still answers «which
-      // artwork am I on».
+      // away, however long the record. The header splits in two: which artwork
+      // is being read on the left, where to go on the right.
       headerContent={
         sequence.index > 0 ? (
-          <SequenceBar
-            sequence={sequence}
-            view={view}
-            catalogId={artwork.catalog_id}
-            onGo={goTo}
-          />
+          <SequenceBar sequence={sequence} catalogId={artwork.catalog_id} onGo={goTo} />
         ) : undefined
       }
     >
@@ -448,50 +441,52 @@ export function ArtworkPage() {
 }
 
 /**
- * The two controls that walk the queue, and where the record sits in it, for the
- * fixed header (RF-311).
+ * The header of a record: which artwork on the left, where to go on the right
+ * (RF-311).
  *
- * Each control NAMES the artwork it leads to — code and title, cut with an
- * ellipsis when it does not fit. A bare arrow asks the cataloger to jump blind:
- * seeing that what comes next is AR-0043 «Retrato de M.» is what lets her decide
- * whether to keep walking or go back to the list, which is the difference between
- * a queue and a lottery.
+ * The two halves answer the two questions one asks of a queue, and the position
+ * belongs with the artwork being read — «AR-0042, 12 de 87» is one sentence about
+ * where you are, not a caption for the arrows.
  *
- * The line underneath carries what the arrows cannot: the code of the artwork
- * being read — the header no longer shows it as a title — its place in the queue,
- * and which queue it is.
+ * Each control carries the CODE of the artwork it leads to, because a bare arrow
+ * asks the cataloger to jump blind. Not the title: half a phone header does not
+ * hold it, and the pair at the foot of the record has the whole width for both.
  */
 function SequenceBar({
   sequence,
-  view,
   catalogId,
   onGo,
 }: {
   sequence: ArtworkSequence
-  view: ListView
   catalogId: string
   onGo: (target: string | null, direction: Direction) => void
 }) {
   return (
-    <nav aria-label="Navegación entre obras">
-      <div className="flex items-stretch gap-1.5">
+    <div className="flex items-center gap-2">
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-mono text-sm font-semibold leading-tight">{catalogId}</p>
+        <p className="truncate text-[11px] leading-tight text-stone-500">
+          {sequence.index} de {sequence.total}
+          {/* Said only when the queue is not the list one arrived from, which is
+              the one case where the total would be a lie about the listing. */}
+          {!sequence.fromList && ' · todo el catálogo'}
+        </p>
+      </div>
+      <nav aria-label="Navegación entre obras" className="flex flex-1 items-stretch gap-1.5">
         <NeighborButton compact direction="previous" row={sequence.previousRow} onGo={onGo} />
         <NeighborButton compact direction="next" row={sequence.nextRow} onGo={onGo} />
-      </div>
-      <p className="mt-0.5 truncate text-center text-[11px] leading-tight text-stone-500">
-        <span className="font-mono font-medium text-stone-600">{catalogId}</span> ·{' '}
-        {sequence.index} de {sequence.total} · {queueLabel(view, sequence.fromList)}
-      </p>
-    </nav>
+      </nav>
+    </div>
   )
 }
 
 /**
- * The neighbor artwork as a control: its code, its title and the direction.
+ * The neighbor artwork as a control, in two sizes.
  *
- * The same component in the bar and at the end of the record — `compact` only
- * drops the caption the arrow already says and tightens the box. Two different
- * looking controls that do the same thing would be two things to learn.
+ * `compact` is the header one: chevron and code, one line, because two of them
+ * share half a phone header. The full one closes the record with the caption and
+ * the title as well. Same order of information in both — direction, code,
+ * title — so they read as the same control at two sizes.
  */
 function NeighborButton({
   direction,
@@ -505,16 +500,44 @@ function NeighborButton({
   compact?: boolean
 }) {
   const back = direction === 'previous'
+  const label = back ? 'Obra anterior' : 'Obra siguiente'
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        // Inactive at the ends, never gone: a control that disappears moves the
+        // one next to it, and the queue is walked without looking.
+        disabled={row === null}
+        onClick={() => row && onGo(row.catalog_id, direction)}
+        aria-label={
+          row ? `${label}: ${row.catalog_id}, ${displayTitle(row.title)}` : `No hay ${label}`
+        }
+        // Barely any padding and a small chevron on purpose: two of these share
+        // half a 360 px header, and the code has to fit whole — a truncated
+        // «AR-004…» identifies nothing.
+        className="flex min-h-touch min-w-0 flex-1 items-center justify-center gap-0.5 rounded-lg
+                   border border-stone-300 bg-white px-0.5 text-stone-700 active:bg-stone-200
+                   disabled:border-stone-200 disabled:bg-stone-50 disabled:text-stone-300"
+      >
+        {back && <ChevronLeftIcon className="h-3.5 w-3.5 shrink-0" />}
+        {/* An em dash at the ends: the shape of the control does not change, so
+            the thumb finds the other one where it left it. */}
+        <span className="truncate font-mono text-[11px] font-semibold">
+          {row?.catalog_id ?? '—'}
+        </span>
+        {!back && <ChevronRightIcon className="h-3.5 w-3.5 shrink-0" />}
+      </button>
+    )
+  }
+
   if (!row) {
-    // The end of the queue is said, never left as a hole (RF-304). It keeps its
-    // place instead of disappearing: a control that vanishes moves the one next
-    // to it, and the queue is walked without looking.
+    // The end of the queue is said with words down here, where there is room for
+    // them, and never left as a hole (RF-304).
     return (
       <p
-        className={`flex flex-1 items-center justify-center rounded-xl border border-dashed
-                    border-stone-300 px-2 text-center text-xs text-stone-400 ${
-                      compact ? 'min-h-touch' : 'min-h-[3.5rem]'
-                    }`}
+        className="flex min-h-[3.5rem] flex-1 items-center justify-center rounded-xl border
+                   border-dashed border-stone-300 px-2 text-center text-xs text-stone-400"
       >
         {back ? 'Es la primera' : 'Es la última'}
       </p>
@@ -525,28 +548,16 @@ function NeighborButton({
       type="button"
       onClick={() => onGo(row.catalog_id, direction)}
       // The whole thing read out loud, because on screen the title may be cut.
-      aria-label={`${back ? 'Obra anterior' : 'Obra siguiente'}: ${row.catalog_id}, ${displayTitle(
-        row.title,
-      )}`}
-      className={`card flex min-w-0 flex-1 items-center gap-1 text-left active:bg-stone-50 ${
-        compact ? 'min-h-touch p-2' : 'min-h-[3.5rem] p-3'
-      }`}
+      aria-label={`${label}: ${row.catalog_id}, ${displayTitle(row.title)}`}
+      className="card flex min-h-[3.5rem] min-w-0 flex-1 items-center gap-1 p-3 text-left active:bg-stone-50"
     >
       {back && <ChevronLeftIcon className="h-5 w-5 shrink-0 text-stone-400" />}
       <span className={`min-w-0 flex-1 ${back ? '' : 'text-right'}`}>
-        {!compact && (
-          <span className="block text-[11px] uppercase tracking-wide text-stone-500">
-            {back ? 'Anterior' : 'Siguiente'}
-          </span>
-        )}
-        {/* Tight leading: in the header these two lines are what decides how
-            much of the screen the fixed bar eats. */}
-        <span className="block truncate font-mono text-xs font-semibold leading-tight">
-          {row.catalog_id}
+        <span className="block text-[11px] uppercase tracking-wide text-stone-500">
+          {back ? 'Anterior' : 'Siguiente'}
         </span>
-        <span className="block truncate text-xs leading-tight text-stone-600">
-          {displayTitle(row.title)}
-        </span>
+        <span className="block truncate font-mono text-xs font-semibold">{row.catalog_id}</span>
+        <span className="block truncate text-xs text-stone-600">{displayTitle(row.title)}</span>
       </span>
       {!back && <ChevronRightIcon className="h-5 w-5 shrink-0 text-stone-400" />}
     </button>

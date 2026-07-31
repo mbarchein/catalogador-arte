@@ -5,7 +5,6 @@ import {
   dragOffset,
   navigationSequence,
   positionOf,
-  queueLabel,
   sequenceOf,
   swipeAxis,
 } from './sequence'
@@ -171,37 +170,6 @@ describe('navigationSequence (RF-311: which queue the record walks)', () => {
 
   it('with an empty mirror there is nothing to walk', () => {
     expect(navigationSequence([], DEFAULT_VIEW, 'AR-0001')).toEqual({ ids: [], fromList: false })
-  })
-})
-
-describe('queueLabel (RF-311: the queue says which one it is)', () => {
-  it('is the order when nothing narrows the list', () => {
-    expect(queueLabel(DEFAULT_VIEW, true)).toBe('Recientes primero')
-    expect(queueLabel({ ...DEFAULT_VIEW, order: 'CATALOG_ID' }, true)).toBe(
-      'Código de catalogación',
-    )
-  })
-
-  it('says what narrowed it, because that is why the total is not the catalog', () => {
-    expect(queueLabel({ ...DEFAULT_VIEW, series: ['Paisajes'] }, true)).toBe(
-      'Recientes primero · con filtros',
-    )
-    expect(queueLabel({ ...DEFAULT_VIEW, search: 'árbol' }, true)).toBe(
-      'Recientes primero · con búsqueda',
-    )
-    expect(
-      queueLabel({ ...DEFAULT_VIEW, order: 'TITLE', status: 'UNPHOTOGRAPHED', search: 'ar' }, true),
-    ).toBe('Título A–Z · con filtros y búsqueda')
-  })
-
-  it('a search of only spaces narrows nothing, so it is not announced', () => {
-    expect(queueLabel({ ...DEFAULT_VIEW, search: '   ' }, true)).toBe('Recientes primero')
-  })
-
-  it('says so when the queue is not the list one arrived from', () => {
-    expect(queueLabel({ ...DEFAULT_VIEW, series: ['Paisajes'] }, false)).toBe(
-      'Todo el catálogo, por código',
-    )
   })
 })
 
