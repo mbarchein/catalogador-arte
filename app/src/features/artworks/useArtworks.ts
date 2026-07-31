@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { signedUrls } from '../../lib/images'
 import type { ArtistFund, Artwork } from '../../lib/types'
-import { DEFAULT_VIEW, type ListView } from './listView'
+import { DEFAULT_VIEW, serializeView, type ListView } from './listView'
 import { sequenceOf } from './sequence'
 import {
   readArtworksSnapshot,
@@ -157,22 +157,17 @@ export function useArtworks(view: ListView = DEFAULT_VIEW) {
   // the list and the sequence cannot disagree about what comes after what
   // because there is only one place where that is decided.
   //
-  // The view travels field by field: its object identity changes on every
-  // parse of the URL, and depending on it would refilter on each render.
+  // The view travels as its SERIALIZATION, the same string the URL carries: its
+  // object identity changes on every parse and depending on that would refilter
+  // on each render. Field by field also worked until «Sin serie» arrived — an
+  // empty entry joins to the same string as no entry at all, so toggling it
+  // changed nothing — and one canonical string cannot have that class of hole.
+  const key = serializeView(view).toString()
   const artworks = useMemo(() => {
     if (!all) return []
     return sequenceOf(all, view)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    all,
-    view.search,
-    view.funds.join(','),
-    view.types.join(','),
-    view.series.join(','),
-    view.locations.join(','),
-    view.status,
-    view.order,
-  ])
+  }, [all, key])
 
   // Loading only when there is no snapshot at all: with one, the list paints
   // instantly and the refresh happens behind it.

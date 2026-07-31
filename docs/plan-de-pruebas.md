@@ -159,6 +159,7 @@ interfaz que promete lo que no cumple.
 | RF-608 | Volver al listado conserva filtros y número de página | Pendiente |
 | RF-609 | Una ficha dada de baja desaparece de índices y de resultados de búsqueda | Pendiente |
 | RF-610 | El texto buscado va y vuelve de la URL, y la vista recordada del dispositivo no lo guarda. Cubierto en `listView.test.ts` | **Hecho** |
+| RF-602 | El filtro de serie ofrece «Sin serie» siempre y en primer lugar, selecciona las obras sin serie asignada y solo esas, se combina con nombres como un «o», y va y vuelve de la URL como `series=`. Cubierto en `listView.test.ts` | **Hecho** |
 
 ### Bloqueo de edición (RF-700)
 

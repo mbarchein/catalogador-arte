@@ -39,6 +39,10 @@ export interface ListView {
    * is the honest reading of a filter whose entries are names, and the fund
    * filter sits right next to it to disambiguate. The chooser labels each
    * option with its fund, so what will be mixed is visible before choosing.
+   *
+   * `NO_SERIES` is a legitimate entry: «no series yet» is a question one asks
+   * constantly while cataloging — every artwork is born without one — and
+   * without it those pieces were the only ones this filter could not reach.
    */
   series: string[]
   /**
@@ -69,6 +73,15 @@ export const DEFAULT_VIEW: ListView = {
   order: 'RECENT',
   search: '',
 }
+
+/**
+ * Value of the «Sin serie» entry of the series filter: the empty string, which
+ * is exactly what an artwork with no series has stored. So the predicate needs
+ * no special case — the absence of a series is compared like any name — and no
+ * real series can ever collide with it, because the vocabulary refuses an empty
+ * name. In the URL it travels as `series=`.
+ */
+export const NO_SERIES = ''
 
 const STATUS_FILTERS: readonly StatusFilter[] = [
   'ALL',
@@ -141,7 +154,9 @@ export function parseView(params: URLSearchParams): ListView {
     // filter's business (an unknown one simply finds nothing, with the
     // explicit no-results message). Same for series and locations.
     types: [...new Set(params.getAll('type'))].filter((t) => t !== ''),
-    series: [...new Set(params.getAll('series'))].filter((s) => s !== ''),
+    // Series keeps the empty value, unlike the others: `series=` is the
+    // «Sin serie» entry (NO_SERIES), not a leftover.
+    series: [...new Set(params.getAll('series'))],
     // Locations are canonicalized on the way in, so a place typed by hand in
     // the URL is the same string as the option offered in the chooser — or the
     // checkbox of what is filtering could not be unmarked.
@@ -220,6 +235,8 @@ export function isDefaultView(view: ListView): boolean {
 export interface FilterOption {
   value: string
   text: string
+  /** Second line of the row, for an option that needs explaining. */
+  hint?: string
 }
 
 /**
@@ -234,6 +251,11 @@ export interface FilterOption {
  * Two funds with the same series name collapse into ONE option, labeled with
  * both, because the filter matches by name and would select them together
  * anyway. Saying so in the label beats a duplicated row that behaves as one.
+ *
+ * «Sin serie» heads the list, always offered and regardless of the funds
+ * marked: an artwork with no series has none in any fund, and asking for what is
+ * still unassigned is part of the daily work — it is how the pieces waiting to
+ * be grouped get found. It is not sorted among the names because it is not one.
  *
  * `selected` values the vocabulary does not know are kept as options: the
  * checkboxes must reflect what is filtering, even when it comes from a stale
@@ -260,8 +282,15 @@ export function seriesFilterOptions(
       value: name,
       text: `${artists.map((a) => FUND_LABEL[a]).join(', ')} · ${name}`,
     }))
-  const unknown = selected.filter((s) => !byName.has(s)).map((s) => ({ value: s, text: s }))
-  return [...options, ...unknown]
+  // NO_SERIES is offered above, so it is never an "unknown" name down here.
+  const unknown = selected
+    .filter((s) => s !== NO_SERIES && !byName.has(s))
+    .map((s) => ({ value: s, text: s }))
+  return [
+    { value: NO_SERIES, text: 'Sin serie', hint: 'Obras todavía sin serie asignada' },
+    ...options,
+    ...unknown,
+  ]
 }
 
 /**
@@ -438,7 +467,10 @@ export function normalizeStoredView(value: unknown): ListView {
   const types = Array.isArray(v.types) ? v.types.filter(isName) : isName(v.type) ? [v.type] : []
   // A view stored before these two filters existed simply has neither: the
   // absent field falls back to "no selection", like any unknown one.
-  const series = Array.isArray(v.series) ? v.series.filter(isName) : []
+  //
+  // Series accepts the empty string, unlike the rest: it is the «Sin serie»
+  // entry (NO_SERIES), so here it is a selection, not garbage.
+  const series = Array.isArray(v.series) ? v.series.filter((s) => typeof s === 'string') : []
   const locations = Array.isArray(v.locations) ? v.locations.filter(isName) : []
 
   return {

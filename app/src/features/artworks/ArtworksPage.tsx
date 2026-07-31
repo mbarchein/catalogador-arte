@@ -16,6 +16,7 @@ import { useLiveChanges } from '../../lib/live'
 import {
   FUND_LABEL,
   NO_FILTERS,
+  NO_SERIES,
   ORDER_LABEL,
   STATUS_FILTER_LABEL,
   activeFilterCount,
@@ -304,19 +305,26 @@ export function ArtworksPage() {
             </h3>
             {/* Each option says its fund: the vocabulary is per fund, and the
                 filter matches by name, so a name shared by two funds is one
-                option labeled with both (see seriesFilterOptions). */}
+                option labeled with both (see seriesFilterOptions). «Sin serie»
+                heads the list and is always there. */}
             <SearchableCheckList
               options={seriesOptions}
               values={view.series}
               onChange={(series) => updateView({ series })}
               searchLabel="Buscar serie"
               placeholder="Buscar serie"
-              emptyText={
-                view.funds.length > 0
-                  ? 'Los fondos marcados no tienen series en el catálogo.'
-                  : 'Todavía no hay series en el catálogo.'
-              }
             />
+            {/* With «Sin serie» always present the list is never empty, so it can
+                no longer explain by itself that there is nothing else to choose.
+                It is said here: a single row with no explanation would read like
+                a chooser that failed to load. */}
+            {seriesOptions.every((o) => o.value === NO_SERIES) && (
+              <p className="px-3 py-2 text-sm text-stone-600">
+                {view.funds.length > 0
+                  ? 'Los fondos marcados no tienen series en el catálogo.'
+                  : 'Todavía no hay series en el catálogo.'}
+              </p>
+            )}
           </section>
 
           <section>

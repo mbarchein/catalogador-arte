@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_VIEW,
   NO_FILTERS,
+  NO_SERIES,
   activeFilterCount,
   compareByTitle,
   hasNoFilters,
@@ -49,9 +50,9 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
       funds: ['ROTILI'],
       types: ['Dibujo'],
       // A series name the vocabulary does not know is NOT ignored: it is a
-      // plausible entry, and an unknown one simply finds nothing. The empty
-      // value is what gets dropped.
-      series: [],
+      // plausible entry, and an unknown one simply finds nothing. And the empty
+      // value is not dropped either — `series=` is the «Sin serie» entry.
+      series: [NO_SERIES],
       locations: ['edificio a'],
       status: 'ALL',
       order: 'TITLE',
@@ -121,10 +122,12 @@ describe('remembered view (applied when entering with no parameters)', () => {
   })
 
   it('discards garbage inside the new arrays, entry by entry', () => {
+    // The empty entry of `series` survives: it is the «Sin serie» selection
+    // (NO_SERIES), not a leftover. What is not a string does not.
     expect(normalizeStoredView({ series: ['Paisajes', '', 7], locations: 'edificio a' })).toEqual({
       funds: [],
       types: [],
-      series: ['Paisajes'],
+      series: ['Paisajes', NO_SERIES],
       locations: [],
       status: 'ALL',
       order: 'RECENT',
@@ -277,6 +280,10 @@ describe('matchesView (RF-602: the location filter is hierarchical)', () => {
 })
 
 describe('seriesFilterOptions (RF-602, RF-213: the chooser of the series filter)', () => {
+  /** The vocabulary rows, without the «Sin serie» entry, which has its own block. */
+  const named = (options: readonly { value: string }[]) =>
+    options.filter((o) => o.value !== NO_SERIES)
+
   const ENTRIES = [
     { artist: 'ROTILI' as const, name: 'Paisajes de la sierra' },
     { artist: 'RUIZ_CAMPINS' as const, name: 'Retratos del taller' },
@@ -284,7 +291,7 @@ describe('seriesFilterOptions (RF-602, RF-213: the chooser of the series filter)
   ]
 
   it('labels every option with its fund', () => {
-    expect(seriesFilterOptions(ENTRIES, [])).toEqual([
+    expect(named(seriesFilterOptions(ENTRIES, []))).toEqual([
       { value: 'Paisajes de la sierra', text: 'Rotili · Paisajes de la sierra' },
       { value: 'Retratos del taller', text: 'Ruiz Campins · Retratos del taller' },
       { value: 'Serie de ensayo A', text: 'Fondo de pruebas · Serie de ensayo A' },
@@ -294,7 +301,7 @@ describe('seriesFilterOptions (RF-602, RF-213: the chooser of the series filter)
   it('offers only the series of the marked funds', () => {
     // Offering Ruiz Campins series while filtering by Rotili would be offering
     // options that cannot match.
-    expect(seriesFilterOptions(ENTRIES, ['ROTILI']).map((o) => o.value)).toEqual([
+    expect(named(seriesFilterOptions(ENTRIES, ['ROTILI'])).map((o) => o.value)).toEqual([
       'Paisajes de la sierra',
     ])
   })
@@ -304,14 +311,83 @@ describe('seriesFilterOptions (RF-602, RF-213: the chooser of the series filter)
       { artist: 'ROTILI' as const, name: 'Homónima' },
       { artist: 'RUIZ_CAMPINS' as const, name: 'Homónima' },
     ]
-    expect(seriesFilterOptions(shared, [])).toEqual([
+    expect(named(seriesFilterOptions(shared, []))).toEqual([
       { value: 'Homónima', text: 'Rotili, Ruiz Campins · Homónima' },
     ])
   })
 
   it('a marked series the vocabulary does not know stays visible', () => {
     const options = seriesFilterOptions(ENTRIES, ['ROTILI'], ['Retirada'])
-    expect(options.map((o) => o.value)).toEqual(['Paisajes de la sierra', 'Retirada'])
+    expect(named(options).map((o) => o.value)).toEqual(['Paisajes de la sierra', 'Retirada'])
+  })
+})
+
+describe('RF-602: «Sin serie» is an entry of the series filter', () => {
+  const ENTRIES = [
+    { artist: 'ROTILI' as const, name: 'Paisajes de la sierra' },
+    { artist: 'RUIZ_CAMPINS' as const, name: 'Retratos del taller' },
+  ]
+
+  it('heads the list, before the names, and is not sorted among them', () => {
+    const options = seriesFilterOptions(ENTRIES, [])
+    expect(options[0]?.value).toBe(NO_SERIES)
+    expect(options[0]?.text).toBe('Sin serie')
+    expect(options.map((o) => o.value)).toEqual([
+      NO_SERIES,
+      'Paisajes de la sierra',
+      'Retratos del taller',
+    ])
+  })
+
+  it('is offered whatever the funds marked: an unassigned artwork has no fund vocabulary', () => {
+    expect(seriesFilterOptions(ENTRIES, ['ROTILI']).map((o) => o.value)).toEqual([
+      NO_SERIES,
+      'Paisajes de la sierra',
+    ])
+    // And with an empty vocabulary it is the only thing to offer, which is
+    // exactly the state of a catalog where nothing has been grouped yet.
+    expect(seriesFilterOptions([], []).map((o) => o.value)).toEqual([NO_SERIES])
+  })
+
+  it('is not duplicated as an unknown name when it is the one selected', () => {
+    const options = seriesFilterOptions(ENTRIES, [], [NO_SERIES])
+    expect(options.filter((o) => o.value === NO_SERIES)).toHaveLength(1)
+    expect(options.every((o) => o.text !== '')).toBe(true)
+  })
+
+  it('selects the artworks with no series, and only those', () => {
+    const view: ListView = { ...DEFAULT_VIEW, series: [NO_SERIES] }
+    expect(matchesView(stub({ series: '' }), view)).toBe(true)
+    expect(matchesView(stub({ series: 'Paisajes de la sierra' }), view)).toBe(false)
+    // Whatever the fund: what is unassigned is unassigned in both.
+    expect(matchesView(stub({ artist: 'RUIZ_CAMPINS', series: '' }), view)).toBe(true)
+  })
+
+  it('combines with a name as an "or", like any two entries of the filter', () => {
+    const view: ListView = { ...DEFAULT_VIEW, series: [NO_SERIES, 'Paisajes de la sierra'] }
+    expect(matchesView(stub({ series: '' }), view)).toBe(true)
+    expect(matchesView(stub({ series: 'Paisajes de la sierra' }), view)).toBe(true)
+    expect(matchesView(stub({ series: 'Retratos del taller' }), view)).toBe(false)
+  })
+
+  it('travels in the URL as `series=` and comes back, alone or with names', () => {
+    expect(serializeView({ ...DEFAULT_VIEW, series: [NO_SERIES] }).toString()).toBe('series=')
+    expect(parseView(new URLSearchParams('series=')).series).toEqual([NO_SERIES])
+    const both: ListView = { ...DEFAULT_VIEW, series: [NO_SERIES, 'Paisajes'] }
+    expect(parseView(serializeView(both))).toEqual(both)
+  })
+
+  it('counts as filtering: it reduces the list, so the way out has to show', () => {
+    const view: ListView = { ...DEFAULT_VIEW, series: [NO_SERIES] }
+    expect(hasNoFilters(view)).toBe(false)
+    expect(activeFilterCount(view)).toBe(1)
+    expect(isDefaultView(view)).toBe(false)
+  })
+
+  it('is remembered on this device like any other selection', () => {
+    const storage = memoryStorage()
+    saveStoredView({ ...DEFAULT_VIEW, series: [NO_SERIES] }, storage)
+    expect(readStoredView(storage).series).toEqual([NO_SERIES])
   })
 })
 
