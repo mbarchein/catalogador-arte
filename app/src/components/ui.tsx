@@ -110,6 +110,22 @@ export function FunnelIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+export function ChevronLeftIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  )
+}
+
+export function ChevronRightIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  )
+}
+
 export function ImageIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>

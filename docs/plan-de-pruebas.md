@@ -113,6 +113,8 @@ interfaz que promete lo que no cumple.
 | RF-306 | Una obra con `estado_existencia` distinto de «Conservada» muestra el aviso en cabecera (INC-18) | **Hecho** |
 | RF-307 | Un título atribuido se distingue visualmente de un título auténtico (INC-17) | **Hecho** |
 | RF-308 | En modo edición, los campos de cabecera son editables salvo la clave primaria | Pendiente |
+| RF-311 | La secuencia de anterior y siguiente es el listado de origen: respeta filtros, búsqueda y orden, desempata igual que el listado, y en los extremos no hay vecino. Cubierto en `sequence.test.ts`, con el repliegue al catálogo por código cuando la obra no está en el listado | **Hecho** |
+| RF-311 | El umbral del gesto: un arrastre corto no pasa de obra, un movimiento vertical no la pasa nunca, y un golpe rápido sí. Cubierto en `sequence.test.ts` | **Hecho** |
 
 ### Imágenes y adjuntos (RF-400)
 

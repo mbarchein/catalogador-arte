@@ -52,7 +52,11 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
   }
 
   return (
-    <div className="mb-3">
+    /* data-swipe-ignore: over the gallery a horizontal drag passes PHOTOGRAPHS,
+       not artworks (RF-311). The whole block is marked, strip included: both are
+       horizontal scrollers, and «on the photo you move photos» is a rule that
+       can be explained in one sentence. */
+    <div className="mb-3" data-swipe-ignore>
       {/* The strip goes ABOVE the large photo: it is the navigation, and it
           stays put while the carousel below moves. */}
       {images.length > 1 && (

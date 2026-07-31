@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { signedUrls } from '../../lib/images'
 import type { ArtistFund, Artwork } from '../../lib/types'
-import { DEFAULT_VIEW, matchesSearch, matchesView, sortArtworks, type ListView } from './listView'
+import { DEFAULT_VIEW, type ListView } from './listView'
+import { sequenceOf } from './sequence'
 import {
   readArtworksSnapshot,
   saveArtworksSnapshot,
@@ -40,7 +41,7 @@ const THUMBNAIL_URL_TTL_SECONDS = 7 * 24 * 60 * 60
  * RLS policy already hides them from the Reader, but a cataloger does see
  * them, so the explicit filter is needed here too.
  */
-async function fetchAllArtworks(): Promise<Artwork[]> {
+export async function fetchAllArtworks(): Promise<Artwork[]> {
   const all: Artwork[] = []
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
@@ -152,12 +153,15 @@ export function useArtworks(view: ListView = DEFAULT_VIEW) {
     void reload()
   }, [reload])
 
+  // The very same function the record view uses for its previous/next (RF-311):
+  // the list and the sequence cannot disagree about what comes after what
+  // because there is only one place where that is decided.
+  //
   // The view travels field by field: its object identity changes on every
   // parse of the URL, and depending on it would refilter on each render.
   const artworks = useMemo(() => {
     if (!all) return []
-    const rows = all.filter((a) => matchesView(a, view) && matchesSearch(a, view.search))
-    return sortArtworks(rows, view.order)
+    return sequenceOf(all, view)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     all,
@@ -180,29 +184,60 @@ export function useArtworks(view: ListView = DEFAULT_VIEW) {
   return { artworks, thumbnails, loading: all === null, error, reload, refreshThumbnails }
 }
 
-export function useArtwork(id: string | undefined) {
-  const [artwork, setArtwork] = useState<Artwork | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+/**
+ * One artwork, for its record page.
+ *
+ * `mirror` is the local copy of the catalog the record view already holds for
+ * its previous/next sequence (see useArtworkSequence). Painting from it first
+ * matters more than it looks: the mirror is fetched with the SAME field list as
+ * this query, so its row is a complete record, and passing from artwork to
+ * artwork with the thumb becomes instant instead of flashing a spinner at every
+ * swipe (RF-311). The query still runs, and what it brings replaces the copy.
+ *
+ * A stale answer never wins: swiping fast leaves several queries in flight, and
+ * only the one for the record being shown is allowed to write.
+ */
+export function useArtwork(id: string | undefined, mirror: readonly Artwork[] = []) {
+  /** The last answer of the query, and which record it was about. */
+  const [answer, setAnswer] = useState<{
+    id: string
+    artwork: Artwork | null
+    error: string | null
+  } | null>(null)
 
   const reload = useCallback(async () => {
     if (!id) return
-    setLoading(true)
     const { data, error } = await supabase
       .from('artworks')
       .select(FIELDS)
       .eq('catalog_id', id)
       .maybeSingle()
-    if (error) setError(error.message)
-    setArtwork((data ?? null) as unknown as Artwork | null)
-    setLoading(false)
+    setAnswer({
+      id,
+      artwork: (data ?? null) as unknown as Artwork | null,
+      error: error?.message ?? null,
+    })
   }, [id])
 
   useEffect(() => {
     void reload()
   }, [reload])
 
-  return { artwork, loading, error, reload }
+  // Swiping fast leaves several queries in flight: an answer about the record
+  // that was on screen a moment ago is not an answer about this one.
+  const answered = answer !== null && answer.id === id ? answer : null
+  const cached = id === undefined ? null : (mirror.find((row) => row.catalog_id === id) ?? null)
+
+  return {
+    // A failed query does not blank a record the mirror already holds — outdated
+    // data plus a notice beats an empty page in a storage room, the same choice
+    // the list makes. A query that answered NOTHING is a different thing (the
+    // record is deactivated, or not readable by this session) and must show.
+    artwork: answered === null || answered.error !== null ? cached : answered.artwork,
+    loading: answered === null && cached === null,
+    error: answered?.error ?? null,
+    reload,
+  }
 }
 
 /**

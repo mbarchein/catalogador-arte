@@ -216,9 +216,12 @@ export function ArtworksPage() {
                 <li key={artwork.catalog_id}>
                   {/* The code is the only link to the record (RF-604), but on
                       a phone the whole card must be tappable: aiming at a
-                      twelve-character text with a thumb is not reasonable. */}
+                      twelve-character text with a thumb is not reasonable.
+
+                      The view travels with the link: it is what tells the record
+                      which sequence «anterior» and «siguiente» walk (RF-311). */}
                   <Link
-                    to={`/artwork/${artwork.catalog_id}`}
+                    to={{ pathname: `/artwork/${artwork.catalog_id}`, search: searchParams.toString() }}
                     className="card flex gap-3 hover:border-stone-400"
                   >
                     {/* RF-604: thumbnail of the representative image. Which

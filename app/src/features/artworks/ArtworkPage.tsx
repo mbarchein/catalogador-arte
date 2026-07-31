@@ -1,5 +1,12 @@
-import { useState } from 'react'
-import { Navigate, useMatch, useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import {
+  Navigate,
+  useLocation,
+  useMatch,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
@@ -26,6 +33,8 @@ import {
   ActionBar,
   BanIcon,
   CameraIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   Chips,
   ComboBox,
   EllipsisIcon,
@@ -43,10 +52,23 @@ import {
 import { normalizeLocation, locationForSaving } from '../../lib/location'
 import { useLiveChanges } from '../../lib/live'
 import { ArtworkGallery } from './ArtworkGallery'
+import { ORDER_LABEL, hasNoFilters, parseView, type ListView } from './listView'
+import { decideSwipe, dragOffset, swipeAxis } from './sequence'
 import { useArtwork } from './useArtworks'
+import { useArtworkSequence, type ArtworkSequence } from './useArtworkSequence'
 import { useArtworkTypes } from './useArtworkTypes'
 import { useSeries } from './useSeries'
 import { usePhysicalLocations } from './usePhysicalLocations'
+
+/** Which way the record was left, for the animation that brings the next one. */
+type Direction = 'previous' | 'next'
+
+/**
+ * Strip of the screen edges left to the system's own back gesture, in pixels.
+ * Disputing it there would make both gestures unreliable, and one of the two is
+ * the way out of the application.
+ */
+const SYSTEM_EDGE = 24
 
 const AUTHORSHIP_ICON: Record<AttributedTitleValue, typeof PenIcon> = {
   NO: PenIcon,
@@ -68,7 +90,14 @@ function DataRow({ label, value }: { label: string; value: string }) {
 
 export function ArtworkPage() {
   const { id } = useParams<{ id: string }>()
-  const { artwork, loading, error, reload } = useArtwork(id)
+  // The list's view travels in the URL of the record, and it is what defines
+  // the sequence this record belongs to: its filters, its search and its order
+  // (RF-311). Entering cold — the printed QR — there are no parameters and the
+  // sequence is the whole catalog.
+  const [searchParams] = useSearchParams()
+  const view = useMemo(() => parseView(searchParams), [searchParams])
+  const sequence = useArtworkSequence(view, id)
+  const { artwork, loading, error, reload } = useArtwork(id, sequence.rows)
   const { canEdit } = useAuth()
   const navigate = useNavigate()
   // Editing lives in the URL (/artwork/:id/edit), not in local state (see the
@@ -76,6 +105,57 @@ export function ArtworkPage() {
   const editing = useMatch('/artwork/:id/edit') !== null
   const [generatingPdf, setGeneratingPdf] = useState(false)
   const [pdfError, setPdfError] = useState('')
+  const [entering, setEntering] = useState<Direction | null>(null)
+
+  // Every route change from here carries the view along, so the queue survives
+  // going to the photos, editing and coming back.
+  const query = searchParams.toString()
+  const recordPath = useCallback(
+    (target: string | undefined) => ({ pathname: `/artwork/${target}`, search: query }),
+    [query],
+  )
+  const listPath = query === '' ? '/' : `/?${query}`
+
+  /**
+   * Passing to another artwork REPLACES the history entry, like the filters of
+   * the list do: swiping through thirty records must not bury the list under
+   * thirty entries — «atrás» has to come back to the list, which is what the
+   * cataloger means by it.
+   *
+   * With one exception: entering cold, by scanning the printed QR, there is no
+   * in-app history behind, and replacing it would leave «Volver» pointing out of
+   * the application (see Layout.goBack, which reads this same `key`). So the
+   * first jump from a cold record pushes, and the ones after that replace.
+   */
+  const cold = useLocation().key === 'default'
+  const goTo = useCallback(
+    (target: string | null, direction: Direction) => {
+      if (!target) return
+      setEntering(direction)
+      navigate(recordPath(target), { replace: !cold })
+    },
+    [cold, navigate, recordPath],
+  )
+
+  // A record starts at its beginning, not halfway down the previous one.
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [id])
+
+  // Arrow keys: phase 2, documentation and research, happens sitting at a desk.
+  useEffect(() => {
+    if (editing) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return
+      const target = event.target as HTMLElement | null
+      // Not while typing, and not inside a control that uses the arrows itself.
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      if (event.key === 'ArrowLeft') goTo(sequence.previous, 'previous')
+      if (event.key === 'ArrowRight') goTo(sequence.next, 'next')
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [editing, goTo, sequence.previous, sequence.next])
 
   // pdf-lib loads only when the record is requested: it must not bloat the
   // initial bundle.
@@ -109,20 +189,35 @@ export function ArtworkPage() {
 
   if (loading) {
     return (
-      <Layout title={id} back="/">
+      <Layout title={id} back={listPath}>
         <p className="text-sm text-stone-600">Cargando…</p>
       </Layout>
     )
   }
 
-  if (error || !artwork) {
+  if (!artwork) {
     return (
-      <Layout title={id} back="/">
+      <Layout title={id} back={listPath}>
+        {/* Two different things, and confusing them sends the cataloger looking
+            for a record that is perfectly fine: the catalog answered that this
+            record is not available to her, or the catalog did not answer. */}
         <div className="card text-sm">
-          <p className="font-medium">No se ha encontrado la ficha {id}.</p>
-          <p className="mt-1 text-stone-600">
-            Puede que esté dada de baja, o que no tengas permiso para verla.
-          </p>
+          {error ? (
+            <>
+              <p className="font-medium">No se ha podido cargar la ficha {id}.</p>
+              <p className="mt-1 text-stone-600">
+                Sin conexión con el catálogo, y esta ficha no está descargada en este dispositivo.
+                Vuelve a intentarlo donde haya cobertura.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-medium">No se ha encontrado la ficha {id}.</p>
+              <p className="mt-1 text-stone-600">
+                Puede que esté dada de baja, o que no tengas permiso para verla.
+              </p>
+            </>
+          )}
         </div>
       </Layout>
     )
@@ -131,7 +226,7 @@ export function ArtworkPage() {
   // Reaching /edit by URL without permission falls back to the view: the
   // Reader must never see an editable form, even a doomed one (RF-109).
   if (editing && !canEdit) {
-    return <Navigate to={`/artwork/${id}`} replace />
+    return <Navigate to={recordPath(id)} replace />
   }
 
   if (editing) {
@@ -141,9 +236,9 @@ export function ArtworkPage() {
           artwork={artwork}
           onDone={async () => {
             await reload()
-            navigate(`/artwork/${id}`, { replace: true })
+            navigate(recordPath(id), { replace: true })
           }}
-          onCancel={() => navigate(`/artwork/${id}`, { replace: true })}
+          onCancel={() => navigate(recordPath(id), { replace: true })}
         />
       </Layout>
     )
@@ -155,7 +250,7 @@ export function ArtworkPage() {
   return (
     <Layout
       title={artwork.catalog_id}
-      back="/"
+      back={listPath}
       // In the fixed header, not inside the page: this way editing and photo
       // management are within reach without scrolling back up, however long
       // the record.
@@ -170,7 +265,7 @@ export function ArtworkPage() {
               Fotos
             </button>
             <button
-              onClick={() => navigate(`/artwork/${id}/edit`)}
+              onClick={() => navigate({ pathname: `/artwork/${id}/edit`, search: query })}
               className="btn-primary min-h-[2.5rem] px-3 text-sm"
             >
               <PenIcon className="h-4 w-4" />
@@ -180,128 +275,411 @@ export function ArtworkPage() {
         ) : undefined
       }
     >
-      <header className="mb-4">
-        <p className="font-mono text-sm text-stone-500">{artwork.catalog_id}</p>
-        <h1 className="text-xl font-semibold">{displayTitle(artwork.title)}</h1>
-        <p className="text-sm text-stone-600">
-          {ARTIST_LABEL[artwork.artist]} · {displayDate(artwork.execution_date)}
+      {/* The queue and where this record sits in it. Above everything because it
+          is the answer to "how much is left", which is asked before reading. */}
+      {sequence.index > 0 && <SequenceBar sequence={sequence} view={view} onGo={goTo} />}
+
+      {error && (
+        /* The query failed but the mirror had the record: outdated data plus a
+           notice beats a blank page in a storage room, the same choice the list
+           makes. */
+        <p role="status" className="mb-3 rounded-lg bg-amber-100 p-2 text-xs text-amber-900">
+          Sin conexión con el catálogo: se muestra la última copia descargada en este dispositivo.
         </p>
+      )}
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Badge
-            active={artwork.inventory_phase_completed}
-            text={artwork.inventory_phase_completed ? 'Fase 1 completa' : 'Fase 1 en curso'}
-          />
-          <Badge
-            active={artwork.documentation_phase_completed}
-            text={artwork.documentation_phase_completed ? 'Fase 2 completa' : 'Fase 2 en curso'}
-          />
-          {/* RF-306 and RF-307: the notices that change how the record reads
-              go at the top, not buried among the data. */}
-          {statusNotice && (
-            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
-              {statusNotice}
-            </span>
-          )}
-          {titleNotice && (
-            <span className="rounded bg-stone-200 px-2 py-0.5 text-xs text-stone-700">
-              {titleNotice}
-            </span>
-          )}
-        </div>
-
-      </header>
-
-      <ArtworkGallery catalogId={artwork.catalog_id} />
-
-      <section className="card mb-3">
-        <h2 className="mb-2 font-medium">Identificación</h2>
-        <dl className="divide-y divide-stone-100">
-          <DataRow label="Tipo" value={artwork.artwork_type} />
-          <DataRow label="Serie" value={artwork.series} />
-          <DataRow label="Técnica" value={artwork.technique} />
-          <DataRow label="Soporte" value={artwork.support} />
-          <DataRow label="Medidas" value={displayMeasurements(artwork)} />
-          <DataRow
-            label="Firmada"
-            value={
-              artwork.signed === 'YES' && artwork.signature_description
-                ? `Sí, ${artwork.signature_description}`
-                : TRI_STATE_LABEL[artwork.signed]
-            }
-          />
-          <DataRow label="Fecha en la obra" value={TRI_STATE_LABEL[artwork.dated_on_artwork]} />
-          <DataRow label="Título" value={ATTRIBUTED_TITLE_LABEL[artwork.attributed_title]} />
-        </dl>
-      </section>
-
-      <section className="card mb-3">
-        <h2 className="mb-2 font-medium">Conservación y localización</h2>
-        <dl className="divide-y divide-stone-100">
-          <DataRow label="Conservación" value={CONSERVATION_LABEL[artwork.conservation_status]} />
-          <DataRow label="Existencia" value={EXISTENCE_LABEL[artwork.existence_status]} />
-          <DataRow label="Ubicación" value={artwork.physical_location} />
-        </dl>
-      </section>
-
-      <section className="card mb-3">
-        <h2 className="mb-2 font-medium">Estado del proceso</h2>
-        <dl className="divide-y divide-stone-100">
-          <DataRow label="Fotografiada" value={artwork.photographed ? 'Sí' : 'No'} />
-          <DataRow label="Medidas verificadas" value={artwork.measurements_verified ? 'Sí' : 'No'} />
-          <DataRow
-            label="Ficha publicable"
-            value={artwork.catalog_record_complete ? 'Sí' : 'No'}
-          />
-          <DataRow label="Notas" value={artwork.inventory_process_notes} />
-          <DataRow
-            label="Actualizada"
-            value={new Date(artwork.updated_at).toLocaleString('es-ES')}
-          />
-          <DataRow
-            label="Toma de datos"
-            value={
-              artwork.basic_updated_at
-                ? new Date(artwork.basic_updated_at).toLocaleString('es-ES')
-                : ''
-            }
-          />
-        </dl>
-      </section>
-
-      <section className="card mb-3">
-        <h2 className="mb-2 font-medium">Etiqueta e impresión</h2>
-        <p className="mb-3 text-sm text-stone-600">
-          Ficha en A5 con los datos principales, la fotografía de la obra y un código QR que abre
-          esta misma página — para acompañar a la etiqueta física {artwork.catalog_id}.
-        </p>
-        {pdfError && (
-          <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">
-            {pdfError}
+      {/* Everything the gesture moves goes inside, remounted per record so the
+          record slides in from the side the finger went. */}
+      <SwipeArea
+        key={artwork.catalog_id}
+        entering={entering}
+        hasPrevious={sequence.previous !== null}
+        hasNext={sequence.next !== null}
+        onSwipe={(direction) =>
+          goTo(direction === 'previous' ? sequence.previous : sequence.next, direction)
+        }
+      >
+        <header className="mb-4">
+          <p className="font-mono text-sm text-stone-500">{artwork.catalog_id}</p>
+          <h1 className="text-xl font-semibold">{displayTitle(artwork.title)}</h1>
+          <p className="text-sm text-stone-600">
+            {ARTIST_LABEL[artwork.artist]} · {displayDate(artwork.execution_date)}
           </p>
-        )}
-        <button
-          type="button"
-          onClick={() => void printRecord(artwork)}
-          disabled={generatingPdf}
-          className="btn-secondary w-full"
-        >
-          {generatingPdf ? 'Generando…' : 'Descargar ficha en PDF (A5)'}
-        </button>
-      </section>
 
-      {/* The blocks the field schema defines but this delivery does not cover
-          are declared instead of omitted: this way what is missing shows and
-          the record does not look complete. */}
-      <section className="card text-sm text-stone-500">
-        <p className="font-medium text-stone-700">Pendiente en esta entrega</p>
-        <p className="mt-1">
-          Procedencia, historial expositivo, bibliografía, documentación relacionada, series y obras
-          relacionadas. También la descarga del máster de archivo. Ver el orden de construcción en la
-          documentación.
-        </p>
-      </section>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <Badge
+              active={artwork.inventory_phase_completed}
+              text={artwork.inventory_phase_completed ? 'Fase 1 completa' : 'Fase 1 en curso'}
+            />
+            <Badge
+              active={artwork.documentation_phase_completed}
+              text={artwork.documentation_phase_completed ? 'Fase 2 completa' : 'Fase 2 en curso'}
+            />
+            {/* RF-306 and RF-307: the notices that change how the record reads
+                go at the top, not buried among the data. */}
+            {statusNotice && (
+              <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
+                {statusNotice}
+              </span>
+            )}
+            {titleNotice && (
+              <span className="rounded bg-stone-200 px-2 py-0.5 text-xs text-stone-700">
+                {titleNotice}
+              </span>
+            )}
+          </div>
+
+        </header>
+
+        <ArtworkGallery catalogId={artwork.catalog_id} />
+
+        <section className="card mb-3">
+          <h2 className="mb-2 font-medium">Identificación</h2>
+          <dl className="divide-y divide-stone-100">
+            <DataRow label="Tipo" value={artwork.artwork_type} />
+            <DataRow label="Serie" value={artwork.series} />
+            <DataRow label="Técnica" value={artwork.technique} />
+            <DataRow label="Soporte" value={artwork.support} />
+            <DataRow label="Medidas" value={displayMeasurements(artwork)} />
+            <DataRow
+              label="Firmada"
+              value={
+                artwork.signed === 'YES' && artwork.signature_description
+                  ? `Sí, ${artwork.signature_description}`
+                  : TRI_STATE_LABEL[artwork.signed]
+              }
+            />
+            <DataRow label="Fecha en la obra" value={TRI_STATE_LABEL[artwork.dated_on_artwork]} />
+            <DataRow label="Título" value={ATTRIBUTED_TITLE_LABEL[artwork.attributed_title]} />
+          </dl>
+        </section>
+
+        <section className="card mb-3">
+          <h2 className="mb-2 font-medium">Conservación y localización</h2>
+          <dl className="divide-y divide-stone-100">
+            <DataRow label="Conservación" value={CONSERVATION_LABEL[artwork.conservation_status]} />
+            <DataRow label="Existencia" value={EXISTENCE_LABEL[artwork.existence_status]} />
+            <DataRow label="Ubicación" value={artwork.physical_location} />
+          </dl>
+        </section>
+
+        <section className="card mb-3">
+          <h2 className="mb-2 font-medium">Estado del proceso</h2>
+          <dl className="divide-y divide-stone-100">
+            <DataRow label="Fotografiada" value={artwork.photographed ? 'Sí' : 'No'} />
+            <DataRow label="Medidas verificadas" value={artwork.measurements_verified ? 'Sí' : 'No'} />
+            <DataRow
+              label="Ficha publicable"
+              value={artwork.catalog_record_complete ? 'Sí' : 'No'}
+            />
+            <DataRow label="Notas" value={artwork.inventory_process_notes} />
+            <DataRow
+              label="Actualizada"
+              value={new Date(artwork.updated_at).toLocaleString('es-ES')}
+            />
+            <DataRow
+              label="Toma de datos"
+              value={
+                artwork.basic_updated_at
+                  ? new Date(artwork.basic_updated_at).toLocaleString('es-ES')
+                  : ''
+              }
+            />
+          </dl>
+        </section>
+
+        <section className="card mb-3">
+          <h2 className="mb-2 font-medium">Etiqueta e impresión</h2>
+          <p className="mb-3 text-sm text-stone-600">
+            Ficha en A5 con los datos principales, la fotografía de la obra y un código QR que abre
+            esta misma página — para acompañar a la etiqueta física {artwork.catalog_id}.
+          </p>
+          {pdfError && (
+            <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">
+              {pdfError}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => void printRecord(artwork)}
+            disabled={generatingPdf}
+            className="btn-secondary w-full"
+          >
+            {generatingPdf ? 'Generando…' : 'Descargar ficha en PDF (A5)'}
+          </button>
+        </section>
+
+        {/* The blocks the field schema defines but this delivery does not cover
+            are declared instead of omitted: this way what is missing shows and
+            the record does not look complete. */}
+        <section className="card text-sm text-stone-500">
+          <p className="font-medium text-stone-700">Pendiente en esta entrega</p>
+          <p className="mt-1">
+            Procedencia, historial expositivo, bibliografía, documentación relacionada, series y obras
+            relacionadas. También la descarga del máster de archivo. Ver el orden de construcción en la
+            documentación.
+          </p>
+        </section>
+
+        {/* And at the end, the two neighbors with their code and title: reading
+            a record and continuing with the next one is the whole working day,
+            and here it takes one thumb and no scrolling back up. */}
+        {sequence.index > 0 && (
+          <nav aria-label="Obras contiguas" className="mt-3 grid grid-cols-2 gap-2">
+            <NeighborCard direction="previous" row={sequence.previousRow} onGo={goTo} />
+            <NeighborCard direction="next" row={sequence.nextRow} onGo={goTo} />
+          </nav>
+        )}
+      </SwipeArea>
     </Layout>
+  )
+}
+
+/**
+ * Where the record sits in its queue, and the two controls that walk it
+ * (RF-311).
+ *
+ * The position is here because the gesture cannot say it: «12 de 87» is what
+ * answers "how much is left", and naming the queue underneath is what keeps
+ * «siguiente» from being a mystery when the list was filtered — a queue that
+ * does not say what it is looks like a catalog with pieces missing.
+ */
+function SequenceBar({
+  sequence,
+  view,
+  onGo,
+}: {
+  sequence: ArtworkSequence
+  view: ListView
+  onGo: (target: string | null, direction: Direction) => void
+}) {
+  const narrowed = [
+    hasNoFilters(view) ? null : 'filtros',
+    view.search.trim() === '' ? null : 'búsqueda',
+  ].filter((part): part is string => part !== null)
+
+  const queue = sequence.fromList
+    ? `${ORDER_LABEL[view.order]}${narrowed.length > 0 ? ` · con ${narrowed.join(' y ')}` : ''}`
+    : // The artwork was not in the list one arrived from: see navigationSequence.
+      'Todo el catálogo, por código'
+
+  return (
+    <nav aria-label="Navegación entre obras" className="mb-3 flex items-center gap-2">
+      <ChevronButton direction="previous" target={sequence.previous} onGo={onGo} />
+      <div className="min-w-0 flex-1 text-center">
+        <p className="text-sm font-medium">
+          {sequence.index} de {sequence.total}
+        </p>
+        <p className="truncate text-xs text-stone-500">{queue}</p>
+      </div>
+      <ChevronButton direction="next" target={sequence.next} onGo={onGo} />
+    </nav>
+  )
+}
+
+function ChevronButton({
+  direction,
+  target,
+  onGo,
+}: {
+  direction: Direction
+  target: string | null
+  onGo: (target: string | null, direction: Direction) => void
+}) {
+  const back = direction === 'previous'
+  return (
+    <button
+      type="button"
+      // Inactive at the ends, not hidden: a control that disappears moves the
+      // ones next to it, and the queue is walked without looking.
+      disabled={target === null}
+      onClick={() => onGo(target, direction)}
+      aria-label={back ? 'Obra anterior' : 'Obra siguiente'}
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-stone-300
+                 bg-white text-stone-700 active:bg-stone-200
+                 disabled:border-stone-200 disabled:bg-stone-50 disabled:text-stone-300"
+    >
+      {back ? <ChevronLeftIcon className="h-5 w-5" /> : <ChevronRightIcon className="h-5 w-5" />}
+    </button>
+  )
+}
+
+/** The neighbor artwork at the end of the record, with its code and its title. */
+function NeighborCard({
+  direction,
+  row,
+  onGo,
+}: {
+  direction: Direction
+  row: Artwork | null
+  onGo: (target: string | null, direction: Direction) => void
+}) {
+  const back = direction === 'previous'
+  if (!row) {
+    // The end of the queue is said, never left as a hole (RF-304).
+    return (
+      <p className="flex min-h-[3.5rem] items-center justify-center rounded-xl border border-dashed
+                    border-stone-300 px-3 text-center text-xs text-stone-400">
+        {back ? 'Es la primera' : 'Es la última'}
+      </p>
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onGo(row.catalog_id, direction)}
+      className="card flex min-h-[3.5rem] items-center gap-1.5 p-3 text-left active:bg-stone-50"
+    >
+      {back && <ChevronLeftIcon className="h-5 w-5 shrink-0 text-stone-400" />}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11px] uppercase tracking-wide text-stone-500">
+          {back ? 'Anterior' : 'Siguiente'}
+        </span>
+        <span className="block font-mono text-xs font-semibold">{row.catalog_id}</span>
+        <span className="block truncate text-xs text-stone-600">{displayTitle(row.title)}</span>
+      </span>
+      {!back && <ChevronRightIcon className="h-5 w-5 shrink-0 text-stone-400" />}
+    </button>
+  )
+}
+
+/**
+ * Horizontal drag over the record to pass to the neighbor artwork (RF-311).
+ *
+ * The listeners are attached by hand instead of through React's props because
+ * `touchmove` has to be NON-PASSIVE: once a gesture is read as horizontal, the
+ * page must stop scrolling with it, and React registers its touch listeners as
+ * passive, where `preventDefault` does nothing.
+ *
+ * The CSS `touch-action` would have been shorter, but it applies by intersection
+ * along the ancestors: declaring `pan-y` here would forbid the horizontal
+ * panning of the photo carousel INSIDE the record, and over the gallery the
+ * gesture belongs to the photographs (`data-swipe-ignore`).
+ *
+ * The arithmetic — which axis, what counts as enough, how far it follows the
+ * finger — is in sequence.ts, where it can be tested. What is here is the
+ * plumbing of the events.
+ */
+function SwipeArea({
+  entering,
+  hasPrevious,
+  hasNext,
+  onSwipe,
+  children,
+}: {
+  entering: Direction | null
+  hasPrevious: boolean
+  hasNext: boolean
+  onSwipe: (direction: Direction) => void
+  children: ReactNode
+}) {
+  const area = useRef<HTMLDivElement>(null)
+  // What the handlers need, in a ref: they are registered once, and rebuilding
+  // them on every render would drop the gesture in progress.
+  const latest = useRef({ hasPrevious, hasNext, onSwipe })
+  latest.current = { hasPrevious, hasNext, onSwipe }
+
+  useEffect(() => {
+    const element = area.current
+    if (!element) return
+
+    let gesture: { x: number; y: number; at: number; axis: 'horizontal' | 'vertical' | null } | null =
+      null
+
+    /**
+     * The record is moved by writing its style, not through React state.
+     * A finger produces around sixty events per second and each one would
+     * re-render the whole record — gallery included — to move it a few pixels.
+     * This is direct manipulation: the only thing that changes is one transform.
+     */
+    function place(offset: number | null) {
+      element!.style.transition = offset === null ? 'transform 180ms ease-out' : 'none'
+      element!.style.transform = offset === null || offset === 0 ? '' : `translateX(${offset}px)`
+    }
+
+    function start(event: TouchEvent) {
+      gesture = null
+      if (event.touches.length !== 1) return
+      const touch = event.touches[0]
+      if (!touch) return
+      // Over the gallery the gesture passes photographs, not artworks.
+      if ((event.target as HTMLElement | null)?.closest('[data-swipe-ignore]')) return
+      const box = element!.getBoundingClientRect()
+      const from = touch.clientX - box.left
+      if (from < SYSTEM_EDGE || from > box.width - SYSTEM_EDGE) return
+      gesture = { x: touch.clientX, y: touch.clientY, at: event.timeStamp, axis: null }
+    }
+
+    function move(event: TouchEvent) {
+      const touch = event.touches[0]
+      if (!gesture || event.touches.length !== 1 || !touch) return
+      const dx = touch.clientX - gesture.x
+      const dy = touch.clientY - gesture.y
+
+      if (gesture.axis === null) {
+        const axis = swipeAxis(dx, dy)
+        if (axis === null) return
+        if (axis === 'vertical') {
+          // Reading the record: the gesture is the page's, and it stays the
+          // page's until the finger lifts.
+          gesture = null
+          return
+        }
+        gesture.axis = axis
+      }
+
+      // Ours now: the page must not scroll with it.
+      event.preventDefault()
+      const neighbor = dx < 0 ? latest.current.hasNext : latest.current.hasPrevious
+      place(dragOffset(dx, neighbor, element!.clientWidth))
+    }
+
+    function end(event: TouchEvent) {
+      const started = gesture
+      gesture = null
+      // Back to its place, gliding: either the neighbor arrives and this element
+      // is replaced, or the record has to look like it never moved.
+      place(null)
+      const touch = event.changedTouches[0]
+      if (!started || started.axis !== 'horizontal' || !touch) return
+
+      const decision = decideSwipe({
+        dx: touch.clientX - started.x,
+        dy: touch.clientY - started.y,
+        elapsed: event.timeStamp - started.at,
+        width: element!.clientWidth,
+      })
+      if (decision === null) return
+      const { hasPrevious: back, hasNext: forward, onSwipe: go } = latest.current
+      if (decision === 'previous' ? back : forward) go(decision)
+    }
+
+    function cancel() {
+      gesture = null
+      place(null)
+    }
+
+    element.addEventListener('touchstart', start, { passive: true })
+    element.addEventListener('touchmove', move, { passive: false })
+    element.addEventListener('touchend', end, { passive: true })
+    element.addEventListener('touchcancel', cancel, { passive: true })
+    return () => {
+      element.removeEventListener('touchstart', start)
+      element.removeEventListener('touchmove', move)
+      element.removeEventListener('touchend', end)
+      element.removeEventListener('touchcancel', cancel)
+    }
+  }, [])
+
+  return (
+    <div
+      ref={area}
+      className={
+        entering === 'next' ? 'enter-from-right' : entering === 'previous' ? 'enter-from-left' : ''
+      }
+    >
+      {children}
+    </div>
   )
 }
 

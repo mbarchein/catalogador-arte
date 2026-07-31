@@ -51,4 +51,37 @@
   .card {
     @apply rounded-xl border border-stone-200 bg-white p-4 shadow-sm;
   }
+
+  /* Passing to the neighbor artwork (RF-311): the record comes in from the side
+     the finger dragged towards, so the movement says which way the queue went.
+     Short on purpose — it must not delay reading the record. */
+  .enter-from-right {
+    animation: enter-from-right 190ms ease-out;
+  }
+
+  .enter-from-left {
+    animation: enter-from-left 190ms ease-out;
+  }
+}
+
+@keyframes enter-from-right {
+  from {
+    transform: translateX(28%);
+    opacity: 0.5;
+  }
+}
+
+@keyframes enter-from-left {
+  from {
+    transform: translateX(-28%);
+    opacity: 0.5;
+  }
+}
+
+/* Whoever asked the system for less movement gets the record without any. */
+@media (prefers-reduced-motion: reduce) {
+  .enter-from-right,
+  .enter-from-left {
+    animation: none;
+  }
 }
