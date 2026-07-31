@@ -110,6 +110,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-308 | Al pulsar «Editar», toda la ficha entra en modo edición a la vez, cabecera incluida. No hay edición parcial por bloques. |
 | RF-309 | Las fichas de Exposición, Bibliografía, Documento, Serie y Propietario siguen el mismo patrón (cabecera, aviso de bloqueo, botones, bloques apilados), más cortas y sin galería de imágenes técnicas. |
 | RF-310 | La ficha de Documento muestra un único recuadro para `archivo_digitalizado`, con icono según tipo de archivo y botón «Descargar». El bloque «Relacionado con» solo aparece si hay obra o exposición vinculada. |
+| RF-311 | Desde una ficha se pasa a la obra anterior y a la siguiente, con controles visibles y con un gesto de arrastre horizontal. La secuencia es el listado del que se ha llegado —sus filtros, su búsqueda y su orden—, y la ficha dice qué posición ocupa en ella («12 de 87») y de qué cola se trata. No se navega en círculo: en los extremos el control queda inactivo. La secuencia se fija al abrir la ficha y no se reordena mientras se recorre, ni cuando editar la obra cambiaría su sitio. Sobre la galería de imágenes el gesto pasa fotografías, no obras. En modo edición no hay navegación: pasar de obra con el formulario a medias sería perder trabajo. |
 
 ### RF-400 · Imágenes y archivos adjuntos
 
@@ -154,6 +155,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-607 | El filtrado de obras por serie o por propietario no duplica la lógica de búsqueda: desde la ficha de la serie o del propietario, un enlace abre el índice de obras ya filtrado, reutilizando listado y columnas. |
 | RF-608 | «Volver al listado» conserva los filtros aplicados y la página de origen. |
 | RF-609 | Los índices y las búsquedas excluyen las fichas dadas de baja. |
+| RF-610 | El texto buscado viaja en la URL del listado, junto a los filtros y el orden: un listado buscado se comparte como enlace, sobrevive a la recarga y vuelve con «atrás». No se recuerda entre sesiones — la vista guardada en el dispositivo son los filtros y el orden, no lo que se buscó. |
 
 ### RF-700 · Bloqueo de edición
 
