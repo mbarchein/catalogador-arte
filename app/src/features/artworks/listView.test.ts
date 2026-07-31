@@ -11,6 +11,8 @@ import {
   matchesView,
   normalizeStoredView,
   parseView,
+  readStoredView,
+  saveStoredView,
   serializeView,
   seriesFilterOptions,
   sortArtworks,
@@ -30,6 +32,7 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
       locations: ['edificio a', 'edificio b, habitacion 4'],
       status: 'PHASE2_IN_PROGRESS',
       order: 'TITLE',
+      search: 'árbol seco',
     }
     expect(parseView(serializeView(view))).toEqual(view)
   })
@@ -52,6 +55,7 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
       locations: ['edificio a'],
       status: 'ALL',
       order: 'TITLE',
+      search: '',
     })
   })
 
@@ -63,6 +67,13 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
     expect(view.types).toEqual(['Dibujo'])
     expect(view.series).toEqual(['Paisajes'])
     expect(view.locations).toEqual(['edificio a'])
+  })
+
+  it('RF-610: the searched text travels as `q`, and only when it says something', () => {
+    expect(serializeView({ ...DEFAULT_VIEW, search: 'ar-0042' }).toString()).toBe('q=ar-0042')
+    expect(parseView(new URLSearchParams('q=ar-0042')).search).toBe('ar-0042')
+    // Only spaces finds everything, so it is not a search worth putting in a URL.
+    expect(serializeView({ ...DEFAULT_VIEW, search: '   ' }).toString()).toBe('')
   })
 })
 
@@ -77,6 +88,7 @@ describe('remembered view (applied when entering with no parameters)', () => {
       locations: [],
       status: 'ALL',
       order: 'CATALOG_ID',
+      search: '',
     })
   })
 
@@ -88,6 +100,7 @@ describe('remembered view (applied when entering with no parameters)', () => {
       locations: [],
       status: 'ALL',
       order: 'RECENT',
+      search: '',
     })
   })
 
@@ -103,6 +116,7 @@ describe('remembered view (applied when entering with no parameters)', () => {
       locations: [],
       status: 'PHASE1_DONE',
       order: 'TITLE',
+      search: '',
     })
   })
 
@@ -114,9 +128,34 @@ describe('remembered view (applied when entering with no parameters)', () => {
       locations: [],
       status: 'ALL',
       order: 'RECENT',
+      search: '',
     })
   })
+
+  it('RF-610: the device remembers the filters and the order, never the search', () => {
+    // Coming back tomorrow to yesterday's search term would be reducing the
+    // catalog by something nobody asked for again.
+    const storage = memoryStorage()
+    saveStoredView({ ...DEFAULT_VIEW, order: 'TITLE', search: 'ar-0042' }, storage)
+    expect(storage.getItem('catalogador.artworks-view')).not.toContain('ar-0042')
+    expect(readStoredView(storage)).toEqual({ ...DEFAULT_VIEW, order: 'TITLE' })
+  })
 })
+
+/** Minimal in-memory Storage, like the one artworksCache.test.ts uses. */
+function memoryStorage(initial: Record<string, string> = {}): Storage {
+  const data = new Map(Object.entries(initial))
+  return {
+    get length() {
+      return data.size
+    },
+    clear: () => data.clear(),
+    getItem: (k: string) => data.get(k) ?? null,
+    key: (i: number) => [...data.keys()][i] ?? null,
+    removeItem: (k: string) => void data.delete(k),
+    setItem: (k: string, v: string) => void data.set(k, v),
+  }
+}
 
 /** Minimal listed artwork; each test overrides only what it exercises. */
 const stub = (over: Partial<Parameters<typeof matchesView>[0]> = {}) => ({
@@ -398,6 +437,15 @@ describe('view predicates', () => {
     expect(hasNoFilters({ ...DEFAULT_VIEW, types: ['Pintura'] })).toBe(false)
   })
 
+  it('a search is not a filter for the funnel, but it is not the default view', () => {
+    // «Quitar los filtros» does not empty the search box, so counting it would
+    // offer a way out that leaves the list still reduced. It does mean the view
+    // is no longer the default one.
+    expect(hasNoFilters({ ...DEFAULT_VIEW, search: 'ar-0042' })).toBe(true)
+    expect(activeFilterCount({ ...DEFAULT_VIEW, search: 'ar-0042' })).toBe(0)
+    expect(isDefaultView({ ...DEFAULT_VIEW, search: 'ar-0042' })).toBe(false)
+  })
+
   it('the two new filters also count as filtering', () => {
     // Otherwise the no-results message would offer no way out and the funnel
     // would look clean while the list is filtered.
@@ -414,6 +462,7 @@ describe('view predicates', () => {
       locations: ['edificio a'],
       status: 'PHASE1_DONE',
       order: 'TITLE',
+      search: '',
     }
     const cleared = { ...filtered, ...NO_FILTERS }
     expect(hasNoFilters(cleared)).toBe(true)

@@ -156,6 +156,7 @@ interfaz que promete lo que no cumple.
 | RF-607 | El enlace desde una serie o un propietario abre el índice de obras con el filtro ya aplicado | Pendiente |
 | RF-608 | Volver al listado conserva filtros y número de página | Pendiente |
 | RF-609 | Una ficha dada de baja desaparece de índices y de resultados de búsqueda | Pendiente |
+| RF-610 | El texto buscado va y vuelve de la URL, y la vista recordada del dispositivo no lo guarda. Cubierto en `listView.test.ts` | **Hecho** |
 
 ### Bloqueo de edición (RF-700)
 

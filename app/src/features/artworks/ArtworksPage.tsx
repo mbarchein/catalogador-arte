@@ -55,9 +55,10 @@ const ORDER_OPTIONS: { value: ListOrder; text: string; hint?: string }[] = [
 ]
 
 export function ArtworksPage() {
-  const [search, setSearch] = useState('')
-  // The view lives in the URL (RF-608): it survives a reload, comes back with
-  // the back button, and a filtered list can be shared as a link.
+  // The view lives in the URL (RF-608, RF-610): it survives a reload, comes back
+  // with the back button, and a filtered and searched list can be shared as a
+  // link — and it is what the record view walks with «anterior» and «siguiente»
+  // (RF-311), which is why the searched text has to be in there too.
   const [searchParams, setSearchParams] = useSearchParams()
   const view = useMemo(() => parseView(searchParams), [searchParams])
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -91,10 +92,13 @@ export function ArtworksPage() {
     saveStoredView(next)
   }
 
-  const { artworks, thumbnails, loading, error, reload, refreshThumbnails } = useArtworks(
-    search,
-    view,
-  )
+  // Typing does NOT go through updateView: the searched text belongs to this
+  // visit and is not remembered for the next one (RF-610).
+  function updateSearch(search: string) {
+    setSearchParams(serializeView({ ...view, search }), { replace: true })
+  }
+
+  const { artworks, thumbnails, loading, error, reload, refreshThumbnails } = useArtworks(view)
   const { canEdit } = useAuth()
 
   // The list updates live: if another cataloger creates or edits an artwork,
@@ -129,7 +133,7 @@ export function ArtworksPage() {
 
   const activeCount = activeFilterCount(view)
 
-  const noCriteria = search.trim() === '' && hasNoFilters(view)
+  const noCriteria = view.search.trim() === '' && hasNoFilters(view)
 
   return (
     <Layout
@@ -141,8 +145,8 @@ export function ArtworksPage() {
         <input
           className="field min-h-[2.5rem] py-1"
           type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={view.search}
+          onChange={(e) => updateSearch(e.target.value)}
           placeholder="Buscar por código o título"
           aria-label="Buscar obras"
         />

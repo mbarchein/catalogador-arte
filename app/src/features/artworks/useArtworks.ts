@@ -64,7 +64,7 @@ async function fetchAllArtworks(): Promise<Artwork[]> {
  * and calls `reload`). A few hundred records make this cheap; the paged
  * fetch keeps it correct if the catalog outgrows a single response.
  */
-export function useArtworks(search: string, view: ListView = DEFAULT_VIEW) {
+export function useArtworks(view: ListView = DEFAULT_VIEW) {
   const snapshot = useRef(readArtworksSnapshot()).current
   const [all, setAll] = useState<Artwork[] | null>(snapshot?.rows ?? null)
   // Thumbnails paint from the snapshot: their URLs are the ones handed out
@@ -156,13 +156,12 @@ export function useArtworks(search: string, view: ListView = DEFAULT_VIEW) {
   // parse of the URL, and depending on it would refilter on each render.
   const artworks = useMemo(() => {
     if (!all) return []
-    const term = search.trim()
-    const rows = all.filter((a) => matchesView(a, view) && matchesSearch(a, term))
+    const rows = all.filter((a) => matchesView(a, view) && matchesSearch(a, view.search))
     return sortArtworks(rows, view.order)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     all,
-    search,
+    view.search,
     view.funds.join(','),
     view.types.join(','),
     view.series.join(','),

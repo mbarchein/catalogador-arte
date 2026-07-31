@@ -48,6 +48,15 @@ export interface ListView {
   locations: string[]
   status: StatusFilter
   order: ListOrder
+  /**
+   * Free text over identifier and title (RF-602). It is part of the view
+   * because it is part of what the list is showing: RF-610 puts it in the URL
+   * so a searched list is shareable and comes back with the back button, and
+   * RF-311 makes the record's previous/next walk that same searched sequence.
+   *
+   * It is NOT part of the remembered view: see saveStoredView.
+   */
+  search: string
 }
 
 /** Recent first by default: covers both creation and modification. */
@@ -58,6 +67,7 @@ export const DEFAULT_VIEW: ListView = {
   locations: [],
   status: 'ALL',
   order: 'RECENT',
+  search: '',
 }
 
 const STATUS_FILTERS: readonly StatusFilter[] = [
@@ -138,6 +148,9 @@ export function parseView(params: URLSearchParams): ListView {
     locations: canonicalPlaces(params.getAll('location')),
     status: keyOf(STATUS_PARAM, params.get('status')) ?? 'ALL',
     order: keyOf(ORDER_PARAM, params.get('order')) ?? 'RECENT',
+    // Kept as typed, not normalized: it is what the search box shows. The
+    // accent- and case-insensitive comparison happens in matchesSearch.
+    search: params.get('q') ?? '',
   }
 }
 
@@ -150,6 +163,9 @@ export function serializeView(view: ListView): URLSearchParams {
   for (const l of view.locations) params.append('location', l)
   if (view.status !== 'ALL') params.set('status', STATUS_PARAM[view.status])
   if (view.order !== 'RECENT') params.set('order', ORDER_PARAM[view.order])
+  // A search of only spaces finds everything, so it is not a search: leaving it
+  // out keeps the URL clean and the round trip exact.
+  if (view.search.trim() !== '') params.set('q', view.search)
   return params
 }
 
@@ -162,7 +178,13 @@ export const NO_FILTERS: Pick<ListView, 'funds' | 'types' | 'series' | 'location
   status: 'ALL',
 }
 
-/** True when no filter is active (the order is presentation, not a filter). */
+/**
+ * True when no filter is active (the order is presentation, not a filter).
+ *
+ * The search term is not counted either, on purpose: the search box is on
+ * screen showing its own state, and "Quitar los filtros" does not clear it —
+ * counting it here would offer a button that leaves the list still reduced.
+ */
 export function hasNoFilters(view: ListView): boolean {
   return (
     view.funds.length === 0 &&
@@ -190,7 +212,7 @@ export function activeFilterCount(view: ListView): number {
 }
 
 export function isDefaultView(view: ListView): boolean {
-  return hasNoFilters(view) && view.order === 'RECENT'
+  return hasNoFilters(view) && view.order === 'RECENT' && view.search.trim() === ''
 }
 
 // ── Options of the two vocabulary filters ────────────────────
@@ -282,7 +304,12 @@ export function locationFilterOptions(
 // once, so no combination is hidden — that filter answers "what is being
 // documented right now".
 
-type ListedArtwork = Pick<
+/**
+ * What the list and the record's previous/next need of an artwork. Exported so
+ * sequence.ts builds the sequence over exactly the same fields these
+ * predicates read (RF-311): a second, wider type there would let the two drift.
+ */
+export type ListedArtwork = Pick<
   Artwork,
   | 'catalog_id'
   | 'title'
@@ -421,6 +448,9 @@ export function normalizeStoredView(value: unknown): ListView {
     locations,
     status: STATUS_FILTERS.includes(v.status as StatusFilter) ? (v.status as StatusFilter) : 'ALL',
     order: LIST_ORDERS.includes(v.order as ListOrder) ? (v.order as ListOrder) : 'RECENT',
+    // Never restored, whatever a previous version may have stored: RF-610. What
+    // was searched belongs to that visit.
+    search: '',
   }
 }
 
@@ -436,7 +466,18 @@ export function readStoredView(storage: Storage | undefined = getStorage()): Lis
 
 export function saveStoredView(view: ListView, storage: Storage | undefined = getStorage()): void {
   try {
-    storage?.setItem(KEY, JSON.stringify(view))
+    // Field by field, and without the search term (RF-610): what gets
+    // remembered is how this device likes to look at the catalog, not what
+    // somebody was looking for last Tuesday.
+    const remembered: Omit<ListView, 'search'> = {
+      funds: view.funds,
+      types: view.types,
+      series: view.series,
+      locations: view.locations,
+      status: view.status,
+      order: view.order,
+    }
+    storage?.setItem(KEY, JSON.stringify(remembered))
   } catch {
     // Private browsing or exhausted quota: filtering works, memory does not.
   }
