@@ -1,4 +1,6 @@
 import {
+  ORDER_LABEL,
+  hasNoFilters,
   matchesSearch,
   matchesView,
   sortArtworks,
@@ -101,6 +103,24 @@ export function navigationSequence<T extends ListedArtwork>(
     return { ids: listed, fromList: true }
   }
   return { ids: sortArtworks(rows, 'CATALOG_ID').map((r) => r.catalog_id), fromList: false }
+}
+
+/**
+ * Name of the queue being walked, for the record's navigation bar.
+ *
+ * A queue that does not say what it is looks like a catalog with pieces missing:
+ * «12 de 87» over three hundred artworks needs the reason why, and the reason is
+ * the order plus whatever narrowed it.
+ */
+export function queueLabel(view: ListView, fromList: boolean): string {
+  // The artwork was not in the list one arrived from: see navigationSequence.
+  if (!fromList) return 'Todo el catálogo, por código'
+  const narrowed = [
+    hasNoFilters(view) ? null : 'filtros',
+    view.search.trim() === '' ? null : 'búsqueda',
+  ].filter((part): part is string => part !== null)
+  if (narrowed.length === 0) return ORDER_LABEL[view.order]
+  return `${ORDER_LABEL[view.order]} · con ${narrowed.join(' y ')}`
 }
 
 // ── The gesture ──────────────────────────────────────────────

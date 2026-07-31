@@ -52,8 +52,8 @@ import {
 import { normalizeLocation, locationForSaving } from '../../lib/location'
 import { useLiveChanges } from '../../lib/live'
 import { ArtworkGallery } from './ArtworkGallery'
-import { ORDER_LABEL, hasNoFilters, parseView, type ListView } from './listView'
-import { decideSwipe, dragOffset, swipeAxis } from './sequence'
+import { parseView, type ListView } from './listView'
+import { decideSwipe, dragOffset, queueLabel, swipeAxis } from './sequence'
 import { useArtwork } from './useArtworks'
 import { useArtworkSequence, type ArtworkSequence } from './useArtworkSequence'
 import { useArtworkTypes } from './useArtworkTypes'
@@ -426,9 +426,9 @@ export function ArtworkPage() {
             a record and continuing with the next one is the whole working day,
             and here it takes one thumb and no scrolling back up. */}
         {sequence.index > 0 && (
-          <nav aria-label="Obras contiguas" className="mt-3 grid grid-cols-2 gap-2">
-            <NeighborCard direction="previous" row={sequence.previousRow} onGo={goTo} />
-            <NeighborCard direction="next" row={sequence.nextRow} onGo={goTo} />
+          <nav aria-label="Obras contiguas" className="mt-3 flex items-stretch gap-2">
+            <NeighborButton direction="previous" row={sequence.previousRow} onGo={goTo} />
+            <NeighborButton direction="next" row={sequence.nextRow} onGo={goTo} />
           </nav>
         )}
       </SwipeArea>
@@ -437,13 +437,15 @@ export function ArtworkPage() {
 }
 
 /**
- * Where the record sits in its queue, and the two controls that walk it
+ * The two controls that walk the queue, and where the record sits in it
  * (RF-311).
  *
- * The position is here because the gesture cannot say it: «12 de 87» is what
- * answers "how much is left", and naming the queue underneath is what keeps
- * «siguiente» from being a mystery when the list was filtered — a queue that
- * does not say what it is looks like a catalog with pieces missing.
+ * Each control NAMES the artwork it leads to — code and title, cut with an
+ * ellipsis when it does not fit. A bare arrow asks the cataloger to jump blind:
+ * seeing that what comes next is AR-0043 «Retrato de M.» is what lets her decide
+ * whether to keep walking or go back to the list, which is the difference between
+ * a queue and a lottery. The position and the name of the queue go underneath,
+ * because the gesture cannot say them.
  */
 function SequenceBar({
   sequence,
@@ -454,73 +456,49 @@ function SequenceBar({
   view: ListView
   onGo: (target: string | null, direction: Direction) => void
 }) {
-  const narrowed = [
-    hasNoFilters(view) ? null : 'filtros',
-    view.search.trim() === '' ? null : 'búsqueda',
-  ].filter((part): part is string => part !== null)
-
-  const queue = sequence.fromList
-    ? `${ORDER_LABEL[view.order]}${narrowed.length > 0 ? ` · con ${narrowed.join(' y ')}` : ''}`
-    : // The artwork was not in the list one arrived from: see navigationSequence.
-      'Todo el catálogo, por código'
-
   return (
-    <nav aria-label="Navegación entre obras" className="mb-3 flex items-center gap-2">
-      <ChevronButton direction="previous" target={sequence.previous} onGo={onGo} />
-      <div className="min-w-0 flex-1 text-center">
-        <p className="text-sm font-medium">
-          {sequence.index} de {sequence.total}
-        </p>
-        <p className="truncate text-xs text-stone-500">{queue}</p>
+    <nav aria-label="Navegación entre obras" className="mb-3">
+      <div className="flex items-stretch gap-2">
+        <NeighborButton compact direction="previous" row={sequence.previousRow} onGo={onGo} />
+        <NeighborButton compact direction="next" row={sequence.nextRow} onGo={onGo} />
       </div>
-      <ChevronButton direction="next" target={sequence.next} onGo={onGo} />
+      <p className="mt-1 truncate text-center text-xs text-stone-500">
+        {sequence.index} de {sequence.total} · {queueLabel(view, sequence.fromList)}
+      </p>
     </nav>
   )
 }
 
-function ChevronButton({
-  direction,
-  target,
-  onGo,
-}: {
-  direction: Direction
-  target: string | null
-  onGo: (target: string | null, direction: Direction) => void
-}) {
-  const back = direction === 'previous'
-  return (
-    <button
-      type="button"
-      // Inactive at the ends, not hidden: a control that disappears moves the
-      // ones next to it, and the queue is walked without looking.
-      disabled={target === null}
-      onClick={() => onGo(target, direction)}
-      aria-label={back ? 'Obra anterior' : 'Obra siguiente'}
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-stone-300
-                 bg-white text-stone-700 active:bg-stone-200
-                 disabled:border-stone-200 disabled:bg-stone-50 disabled:text-stone-300"
-    >
-      {back ? <ChevronLeftIcon className="h-5 w-5" /> : <ChevronRightIcon className="h-5 w-5" />}
-    </button>
-  )
-}
-
-/** The neighbor artwork at the end of the record, with its code and its title. */
-function NeighborCard({
+/**
+ * The neighbor artwork as a control: its code, its title and the direction.
+ *
+ * The same component in the bar and at the end of the record — `compact` only
+ * drops the caption the arrow already says and tightens the box. Two different
+ * looking controls that do the same thing would be two things to learn.
+ */
+function NeighborButton({
   direction,
   row,
   onGo,
+  compact = false,
 }: {
   direction: Direction
   row: Artwork | null
   onGo: (target: string | null, direction: Direction) => void
+  compact?: boolean
 }) {
   const back = direction === 'previous'
   if (!row) {
-    // The end of the queue is said, never left as a hole (RF-304).
+    // The end of the queue is said, never left as a hole (RF-304). It keeps its
+    // place instead of disappearing: a control that vanishes moves the one next
+    // to it, and the queue is walked without looking.
     return (
-      <p className="flex min-h-[3.5rem] items-center justify-center rounded-xl border border-dashed
-                    border-stone-300 px-3 text-center text-xs text-stone-400">
+      <p
+        className={`flex flex-1 items-center justify-center rounded-xl border border-dashed
+                    border-stone-300 px-2 text-center text-xs text-stone-400 ${
+                      compact ? 'min-h-touch' : 'min-h-[3.5rem]'
+                    }`}
+      >
         {back ? 'Es la primera' : 'Es la última'}
       </p>
     )
@@ -529,14 +507,22 @@ function NeighborCard({
     <button
       type="button"
       onClick={() => onGo(row.catalog_id, direction)}
-      className="card flex min-h-[3.5rem] items-center gap-1.5 p-3 text-left active:bg-stone-50"
+      // The whole thing read out loud, because on screen the title may be cut.
+      aria-label={`${back ? 'Obra anterior' : 'Obra siguiente'}: ${row.catalog_id}, ${displayTitle(
+        row.title,
+      )}`}
+      className={`card flex min-w-0 flex-1 items-center gap-1 text-left active:bg-stone-50 ${
+        compact ? 'min-h-touch p-2' : 'min-h-[3.5rem] p-3'
+      }`}
     >
       {back && <ChevronLeftIcon className="h-5 w-5 shrink-0 text-stone-400" />}
-      <span className="min-w-0 flex-1">
-        <span className="block text-[11px] uppercase tracking-wide text-stone-500">
-          {back ? 'Anterior' : 'Siguiente'}
-        </span>
-        <span className="block font-mono text-xs font-semibold">{row.catalog_id}</span>
+      <span className={`min-w-0 flex-1 ${back ? '' : 'text-right'}`}>
+        {!compact && (
+          <span className="block text-[11px] uppercase tracking-wide text-stone-500">
+            {back ? 'Anterior' : 'Siguiente'}
+          </span>
+        )}
+        <span className="block truncate font-mono text-xs font-semibold">{row.catalog_id}</span>
         <span className="block truncate text-xs text-stone-600">{displayTitle(row.title)}</span>
       </span>
       {!back && <ChevronRightIcon className="h-5 w-5 shrink-0 text-stone-400" />}
