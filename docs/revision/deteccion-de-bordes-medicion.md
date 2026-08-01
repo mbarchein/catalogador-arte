@@ -19,6 +19,36 @@ repositorio y por el mismo motivo.
 
 ---
 
+## 0. Lo que la implementación corrigió de este informe
+
+Añadido al aplicar las decisiones, y va primero porque cambia cómo se lee el resto.
+
+**El agrupamiento de las tres fotografías «de perspectiva» era equivocado.**
+`RC-0013_mxpt7dyn` no es un caso de inclinación: barrida con el banco, sus lados tienen 0,6° y 1,1°,
+muy por debajo del umbral del daño que este informe sitúa entre 0,86° y 1,29°. Lo que le pasa es que
+sus lados quedan colocados 19 y 24 px dentro del borde real, y eso es la causa D —un umbral único por
+eje no sirve a la vez a una costura fuerte y a un borde flojo—, no la E. Las otras dos,
+`RC-0012_fulb26qf` y `RC-0012_lqsk0hhz`, sí lo son y entraron con IoU 0,967 y 0,974, **por encima de
+los 0,963 y 0,931 que este informe predecía**.
+
+**El alcance que hace falta para encontrar un lado inclinado es mayor de lo que se deduce de aquí.**
+El apartado 2.E da un desplazamiento de 132 px y el apartado 3 recomienda una banda de ±32 px; leído
+del tirón, invita a creer que 32 basta. No basta: las dos fotografías canónicas necesitan 65 y 96 px
+de alcance, y con 32 las dos se quedan fuera. Buscar tan lejos exige a cambio una regla nueva —la
+ganancia exigida crece con la distancia a la que se mueve el lado—, porque ensanchar sin ella compra
+dos sugerencias buenas al precio de dos malas.
+
+**La decisión 1 rinde más de lo previsto.** El informe estimaba bajar los falsos positivos de 20 a 8;
+implementadas la cota, la regla de los cuatro lados y el soporte de línea, **las 16 sugerencias malas
+pasaron a 0** y la IoU mediana de 0,945 a 0,986.
+
+**Y una alternativa medida y descartada, que no está en el informe.** Separar el soporte de línea en
+cobertura y coherencia —permitiendo hasta dos cambios de dirección del escalón, para admitir un borde
+cuya iluminación cambia— baja de 16 sugerencias a 12 y no recupera ninguna. La métrica de la mayoría
+de un signo ya toleraba ese caso; el sustituto era más fino en apariencia y más duro en conjunto.
+
+---
+
 ## 1. Lo que se ha medido
 
 **El problema no es que el detector calle: es que habla demasiado y casi siempre se equivoca.**

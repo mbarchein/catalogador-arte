@@ -2,6 +2,24 @@
 
 ### Interfaz
 
+**La sugerencia de recorte pasa a acertar, y a callar cuando no sabe**
+Antes proponía recorte en 36 de 44 fotografías y solo cuatro propuestas eran buenas: dieciséis
+recortaban por donde no toca —cinco se comían parte de la obra— y otras dieciséis proponían casi la
+foto entera. Ahora propone en dieciséis y **ninguna está mal**.
+
+Tres cosas la arreglan. Ya no se inventa los lados que no se ven en la foto, que era de donde salían
+los recortes de «toda la fotografía». Comprueba que cada lado sea de verdad una línea y no una banda
+de pintura o el borde de una captura de pantalla, que era lo que le hacía dibujar rectángulos
+perfectos sobre cosas que no son obra. Y **ya no hace falta que el cuadro esté de frente**: cada lado
+se ajusta con su inclinación, así que las fotos tomadas en ángulo —ocho de cada catorce obras— pasan
+de no funcionar a funcionar; en la peor, el recorte propuesto coincide ya en un 97 % con el que se
+haría a mano.
+
+En el reverso de un lienzo, en un detalle de firma o en un detalle de daño no lo ofrece: ahí no hay
+borde de cuadro que reconocer, y el botón lo dice en vez de proponer cualquier cosa. Y cuando calla,
+el mensaje dice qué hacer —«arrastra las esquinas»— en vez de anunciar una avería: de las veces que
+calla, la mayoría son fotos donde no había nada que recortar.
+
 **La ubicación se elige de una lista de sitios, y se puede corregir de una vez**
 El campo de ubicación deja de ser un texto que hay que escribir igual cada vez. Ahora se elige de una
 lista con los sitios sangrados por niveles y un buscador arriba: cada coma que escribes abre un nivel
@@ -486,16 +504,12 @@ librerías que tenían avisos de seguridad abiertos.
 
 ## En marcha
 
-**El acierto de la sugerencia de recorte**
-La sugerencia se ha medido por fin contra las 44 fotografías del catálogo, y el resultado no es el que
-se esperaba: **propone recorte casi siempre y acierta pocas veces**. De 44 fotos propone en 36, y de
-esas 36 sólo cuatro son buenas; dieciséis recortan por donde no toca —cinco se comen parte de la
-obra— y otras dieciséis proponen prácticamente la foto entera, que no hace daño pero tampoco sirve.
-Callar, en cambio, casi siempre es acertado: de las ocho veces que no propone nada, en seis no había
-nada que proponer.
+**Corregir la perspectiva de una fotografía**
+La sugerencia de recorte ya entiende las fotos tomadas en ángulo, pero sigue proponiendo un
+rectángulo recto. Lo que falta es poder **enderezar** la fotografía: arrastrar las cuatro esquinas de
+la obra y que la imagen salga rectificada, como si se hubiera fotografiado de frente. Se guardarán
+las cuatro esquinas, no la imagen deformada, así que se podrá reajustar cuando se quiera y el
+original nunca se toca.
 
-Así que lo que se va a ajustar no es «que reconozca más», sino que **hable menos y mejor**: exigir que
-los cuatro lados de la obra estén de verdad en la foto, no proponer nada en un reverso o en un detalle
-de firma —eso ya lo dice el tipo de toma— y no pisar el recorte que se hubiera hecho a mano al pedir
-la sugerencia. Las fotografías tomadas en ángulo van a mejorar bastante sin necesidad de corregir la
-perspectiva. Todo lo medido está escrito, con sus números y con lo que queda por decidir.
+Y una cosa pequeña que falta con ella: al pedir la sugerencia se pisa el recorte que se hubiera
+hecho a mano, sin forma de recuperarlo.

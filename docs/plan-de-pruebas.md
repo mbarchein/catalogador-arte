@@ -152,6 +152,25 @@ interfaz que promete lo que no cumple.
 | RF-504 | `paginas` se conserva como dato aislado, consultable sin analizar texto libre | Pendiente |
 | RF-507 | La exportación produce un `.bib` procesable, con todas las entradas y claves únicas | Pendiente |
 
+#### Detección de bordes de la fotografía (RF-410)
+
+La aritmética se verifica con imágenes sintéticas en `edgeDetection.test.ts` —es lo único con verdad
+de referencia— y el acierto sobre fotografías reales se mide con el banco de `scripts/bordes/` contra
+las 44 tomas del volcado, comparando con el recorte que la catalogadora guardó. Las dos cosas hacen
+falta: los tests sintéticos no vieron que la función sugería mal en dieciséis de treinta y seis
+fotografías reales, y el banco no puede decir si un recorte es exacto porque no hay verdad que
+comparar, solo un criterio. El estado medido está en
+[`revision/deteccion-de-bordes-medicion.md`](revision/deteccion-de-bordes-medicion.md).
+
+| Requisito | Qué debe verificar el test | Estado |
+|---|---|---|
+| RF-410 | La sugerencia encuentra un cuadro centrado, descentrado, más oscuro que la pared y con ruido; ofrece marco y lienzo cuando están claramente anidados y uno solo cuando no; y viaja al fotograma girado | **Hecho** |
+| RF-410 | **No** sugiere cuando faltan lados en el encuadre, cuando los lados son una textura que alterna de dirección, cuando la proporción es imposible o cuando no hay contraste. Y sí cuando un objeto interrumpe un borde un tercio de su longitud, dejando el lado en su sitio | **Hecho** |
+| RF-410 | El detector dice POR QUÉ declina, con los números de la decisión: nueve motivos distinguidos, que es lo que permite saber si un silencio es un acierto o una regla llevándose un borde por delante | **Hecho** |
+| RF-410 | Límite escrito y no promesa: el soporte de línea impide que una textura pase por borde, pero no sabe decidir cuál de dos bordes reales es el de la obra | **Hecho** |
+| RF-410 | Sobre las 44 fotografías reales: 16 sugerencias, ninguna mala, IoU mediana 0,986. Se mide con `node scripts/bordes/medir.mjs`, no con un test automático: depende de un volcado que no está en el repositorio | Medido a mano |
+| RF-410 | La corrección de perspectiva con cuatro esquinas y su rectificado | Pendiente |
+
 ### Índices y búsqueda (RF-600)
 
 | Requisito | Qué debe verificar el test | Estado |
