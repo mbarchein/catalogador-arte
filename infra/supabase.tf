@@ -77,6 +77,11 @@ resource "supabase_settings" "principal" {
       enable_confirmations                              = true
       security_update_password_require_reauthentication = true
     },
+    # Contraseñas filtradas, contrastadas con HaveIBeenPwned. Es de plan Pro: en
+    # el tramo gratuito la API responde 402 y el apply falla, así que la clave no
+    # se envía mientras el interruptor esté apagado. El linter de Supabase
+    # seguirá avisando hasta entonces, y el aviso es correcto.
+    var.proteccion_contrasenas_filtradas ? { password_hibp_enabled = true } : {},
     # SMTP propio vía Resend, como en la otra aplicación del equipo. Sin la
     # clave, Supabase usa su SMTP integrado: entrega solo a los miembros del
     # proyecto y con cuentagotas — vale para arrancar, no para el equipo.

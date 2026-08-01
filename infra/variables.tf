@@ -28,6 +28,21 @@ variable "supabase_region" {
   default     = "eu-west-3"
 }
 
+variable "proteccion_contrasenas_filtradas" {
+  description = <<-EOT
+    Rechazar las contraseñas que aparezcan en filtraciones conocidas, que GoTrue
+    contrasta con HaveIBeenPwned.
+
+    **Requiere plan Pro de Supabase.** En el tramo gratuito la API responde 402 y
+    el apply falla, así que por omisión la clave ni se envía. El día que se suba
+    de plan, esto es lo único que hay que cambiar — y conviene: son tres cuentas
+    y una pantalla de acceso, así que delante del catálogo no hay más perímetro
+    que esa contraseña.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "supabase_db_password" {
   description = <<-EOT
     Contraseña de la base de datos PostgreSQL. Déjala en null (el valor por

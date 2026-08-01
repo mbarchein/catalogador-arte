@@ -54,3 +54,7 @@ github_repository = "catalogador-arte"
 
 # Pon a false si el repositorio ya existe en GitHub y prefieres no importarlo.
 gestionar_repositorio = true
+
+# Rechazar contraseñas de filtraciones conocidas. Requiere plan Pro de Supabase:
+# en el tramo gratuito el apply falla con un 402.
+#proteccion_contrasenas_filtradas = true
