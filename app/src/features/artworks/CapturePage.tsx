@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { supabase } from '../../lib/supabase'
-import { normalizeLocation, locationForSaving } from '../../lib/location'
 import {
   MIN_YEAR,
   adjustYear,
@@ -18,7 +17,6 @@ import {
   ComboBox,
   FieldGroup,
   LockIcon,
-  SuggestInput,
   ToggleChip,
   TriStateIcons,
   YearStepper,
@@ -29,7 +27,8 @@ import { saveQueue, readQueue, rehydrate, clearQueue } from './photoQueue'
 import { previewId } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
 import { useSeries } from './useSeries'
-import { usePhysicalLocations } from './usePhysicalLocations'
+import { usePhysicalPlaces } from './usePhysicalPlaces'
+import { PlacePicker } from './PlacePicker'
 import {
   INITIAL_BATCH,
   saveBatch,
@@ -66,7 +65,7 @@ export function CapturePage() {
   const { types: artworkTypes, addType } = useArtworkTypes()
 
   // Locations already used, as loose suggestions while typing (free text).
-  const knownLocations = usePhysicalLocations()
+  const { tree: placeTree, ensurePlace } = usePhysicalPlaces()
 
   const [batch, setBatch] = useState<Batch>(() => readBatch())
   const [open, setOpen] = useState(() => batchConfigured(readBatch()))
@@ -244,17 +243,14 @@ export function CapturePage() {
           </FieldGroup>
 
           <FieldGroup title="Ubicación física" hint="se arrastra, ajustable en cada obra">
-            <SuggestInput
+            <PlacePicker
               id="batch-location"
-              ariaLabel="Ubicación física"
-              placeholder="edificio a, habitacion amarilla, bloque 3"
-              value={batch.carried.location}
-              suggestions={knownLocations}
-              onChange={(v) =>
-                setBatch((b) => ({
-                  ...b,
-                  carried: { ...b.carried, location: normalizeLocation(v) },
-                }))
+              label="Ubicación física"
+              value={batch.carried.placeId}
+              tree={placeTree}
+              ensurePlace={ensurePlace}
+              onChange={(placeId) =>
+                setBatch((b) => ({ ...b, carried: { ...b.carried, placeId } }))
               }
             />
           </FieldGroup>
@@ -375,7 +371,7 @@ export function CapturePage() {
         approximate_date: date.year != null && date.approximate,
         unconfirmed_date: date.year != null && date.unconfirmed,
         signed,
-        physical_location: locationForSaving(batch.carried.location),
+        physical_place_id: batch.carried.placeId,
       })
       .select('catalog_id')
       .single()
@@ -618,17 +614,13 @@ export function CapturePage() {
             />
           </div>
 
-          <SuggestInput
+          <PlacePicker
             id="location"
             label="Ubicación física"
-            value={batch.carried.location}
-            suggestions={knownLocations}
-            onChange={(v) =>
-              setBatch((b) => ({
-                ...b,
-                carried: { ...b.carried, location: normalizeLocation(v) },
-              }))
-            }
+            value={batch.carried.placeId}
+            tree={placeTree}
+            ensurePlace={ensurePlace}
+            onChange={(placeId) => setBatch((b) => ({ ...b, carried: { ...b.carried, placeId } }))}
           />
         </FieldGroup>
 

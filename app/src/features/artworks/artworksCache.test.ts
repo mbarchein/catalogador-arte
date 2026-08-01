@@ -77,7 +77,7 @@ describe('artworks snapshot (instant paint of the list)', () => {
   it('tolerates thumbnails of an unexpected shape', () => {
     const storage = memoryStorage({
       'catalogador.artworks-mirror': JSON.stringify({
-        v: 2,
+        v: 3,
         rows: [ARTWORK],
         thumbnails: { 'AR-0001': { path: 'p' }, 'AR-0002': 42 },
       }),

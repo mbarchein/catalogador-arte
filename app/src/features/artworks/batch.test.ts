@@ -55,7 +55,7 @@ describe('batch persistence', () => {
       carried: {
         date: { year: 1968, approximate: true, endYear: null, unconfirmed: true },
         technique: 'Carboncillo sobre papel',
-        location: 'edificio b, habitacion 4',
+        placeId: '11111111-1111-4111-8111-111111111111',
       },
     }
     saveBatch(batch, storage)
@@ -76,7 +76,7 @@ describe('one-shot migration from the legacy key', () => {
       carried: {
         date: { year: 1975, approximate: false, endYear: null, unconfirmed: false },
         technique: 'Óleo',
-        location: 'edificio a',
+        placeId: '22222222-2222-4222-8222-222222222222',
       },
     }
     const s = fakeStorage({ 'catalogador.lote': JSON.stringify(batch) })
@@ -119,6 +119,28 @@ describe('resilience to foreign data', () => {
   it('keeps the TEST rehearsal fund, which does exist (RF-202)', () => {
     const stored = JSON.stringify({ fixed: { artist: 'TEST', artworkType: 'Pintura', series: '' } })
     expect(readBatch(fakeStorage({ 'catalogador.batch': stored })).fixed.artist).toBe('TEST')
+  })
+
+  // ADR-006: the carried location went from text to an identifier of the tree.
+  // A batch stored by the previous version carries the text, and it is dropped
+  // rather than converted — a name is not an identity, which is the whole reason
+  // for the decision, and resolving it would need the tree here. The batch
+  // survives; only its location has to be chosen once more.
+  it('drops the location text of a batch stored before the tree of places', () => {
+    const old = JSON.stringify({
+      fixed: { artist: 'ROTILI', artworkType: 'Pintura', series: '' },
+      carried: { technique: 'Óleo', location: 'edificio a, habitacion amarilla' },
+    })
+    const batch = readBatch(fakeStorage({ 'catalogador.batch': old }))
+    expect(batch.carried.placeId).toBeNull()
+    // And nothing else of the batch is lost with it.
+    expect(batch.fixed.artworkType).toBe('Pintura')
+    expect(batch.carried.technique).toBe('Óleo')
+  })
+
+  it('discards a place identifier that is not a string', () => {
+    const odd = JSON.stringify({ carried: { placeId: 42 } })
+    expect(readBatch(fakeStorage({ 'catalogador.batch': odd })).carried.placeId).toBeNull()
   })
 
   it('discards wrong types inside the date', () => {

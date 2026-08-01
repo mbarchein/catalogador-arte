@@ -40,7 +40,14 @@ export function recordUrl(catalogId: string, origin?: string): string {
  * The relevant data of the record, in printing order. The interface rule also
  * holds on paper: never an unexplained gap.
  */
-export function recordLines(artwork: Artwork): RecordLine[] {
+/**
+ * `placePath` is where the artwork is, already resolved to text by whoever holds
+ * the tree — «Castelar 4, mesa de Mario» (ADR-006). It travels as an argument
+ * instead of being read off the artwork because the row only carries the
+ * identifier of the node, and this module has no way to walk the tree and no
+ * business doing it.
+ */
+export function recordLines(artwork: Artwork, placePath = ''): RecordLine[] {
   const datum = (v: string) => v.trim() || 'Sin indicar'
   return [
     { label: 'Fondo', value: ARTIST_LABEL[artwork.artist] },
@@ -59,7 +66,7 @@ export function recordLines(artwork: Artwork): RecordLine[] {
     },
     { label: 'Conservación', value: CONSERVATION_LABEL[artwork.conservation_status] },
     { label: 'Existencia', value: EXISTENCE_LABEL[artwork.existence_status] },
-    { label: 'Ubicación', value: datum(artwork.physical_location) },
+    { label: 'Ubicación', value: datum(placePath) },
   ]
 }
 
@@ -216,6 +223,7 @@ export function photoBoxSide(dataHeight: number, pageHeight: number, margin: num
  */
 export async function generateRecordPdf(
   artwork: Artwork,
+  placePath = '',
   origin?: string,
   loadPhoto: (catalogId: string) => Promise<RecordPhoto | null> = loadRecordPhoto,
 ): Promise<Blob> {
@@ -249,7 +257,7 @@ export async function generateRecordPdf(
   // the photo box takes what is left over.
   const valueX = margin + 92
   const valueWidth = width - margin - valueX
-  const rows = recordLines(artwork).map(({ label, value }) => ({
+  const rows = recordLines(artwork, placePath).map(({ label, value }) => ({
     label,
     lines: wrapLines(printableText(value), normal, 10, valueWidth),
   }))

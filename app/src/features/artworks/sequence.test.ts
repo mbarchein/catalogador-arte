@@ -19,7 +19,7 @@ const stub = (over: Partial<Parameters<typeof sequenceOf>[0][number]> = {}) => (
   artist: 'ROTILI' as const,
   artwork_type: '',
   series: '',
-  physical_location: '',
+  physical_place_id: null as string | null,
   inventory_phase_completed: false,
   documentation_phase_completed: false,
   catalog_record_complete: false,

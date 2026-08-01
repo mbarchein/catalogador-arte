@@ -2,16 +2,18 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_VIEW,
   NO_FILTERS,
+  NO_PLACE,
   NO_SERIES,
   activeFilterCount,
   compareByTitle,
   hasNoFilters,
   isDefaultView,
-  locationFilterOptions,
+  legacyPlaceParams,
   matchesSearch,
   matchesView,
   normalizeStoredView,
   parseView,
+  placeFilterOptions,
   readStoredView,
   saveStoredView,
   serializeView,
@@ -19,6 +21,35 @@ import {
   sortArtworks,
   type ListView,
 } from './listView'
+import { buildPlaceTree, placesInside } from '../../lib/places'
+import type { PhysicalPlace } from '../../lib/types'
+
+/**
+ * The tree these tests filter over. Two branches and a retired shelf, which is
+ * the shape the real catalog has: mostly one level, one branch two deep.
+ */
+function node(
+  id: string,
+  name: string,
+  parent_id: string | null = null,
+  active = true,
+): PhysicalPlace {
+  return { id, parent_id, name, active }
+}
+
+const TREE = buildPlaceTree([
+  node('a', 'Edificio A'),
+  node('a1', 'Habitación amarilla', 'a'),
+  node('a2', 'Bloque 3', 'a1'),
+  node('b', 'Edificio B'),
+  node('b1', 'Habitación 4', 'b'),
+  node('c', 'Almacén exterior'),
+  node('c1', 'Jaula 2', 'c'),
+  node('z', 'Balda vaciada', 'a', false),
+])
+
+/** The reach of a filter that marks `ids`: what the list page computes. */
+const scopeOf = (ids: readonly string[]) => placesInside(TREE, ids)
 
 describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
   it('no parameters means the default view', () => {
@@ -30,7 +61,7 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
       funds: ['RUIZ_CAMPINS', 'TEST'],
       types: ['Dibujo', 'Técnica mixta'],
       series: ['Retratos del taller', 'Serie de ensayo A'],
-      locations: ['edificio a', 'edificio b, habitacion 4'],
+      places: ['a', 'b1'],
       status: 'PHASE2_IN_PROGRESS',
       order: 'TITLE',
       search: 'árbol seco',
@@ -44,7 +75,7 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
 
   it('ignores unknown values field by field, like a stale bookmark', () => {
     const params = new URLSearchParams(
-      'fund=PICASSO&fund=ROTILI&type=Dibujo&series=&location=edificio a&status=whatever&order=title',
+      'fund=PICASSO&fund=ROTILI&type=Dibujo&series=&place=a&status=whatever&order=title',
     )
     expect(parseView(params)).toEqual({
       funds: ['ROTILI'],
@@ -53,7 +84,7 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
       // plausible entry, and an unknown one simply finds nothing. And the empty
       // value is not dropped either — `series=` is the «Sin serie» entry.
       series: [NO_SERIES],
-      locations: ['edificio a'],
+      places: ['a'],
       status: 'ALL',
       order: 'TITLE',
       search: '',
@@ -62,12 +93,12 @@ describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
 
   it('deduplicates repeated parameters, the new filters included', () => {
     const params = new URLSearchParams(
-      'type=Dibujo&type=Dibujo&series=Paisajes&series=Paisajes&location=edificio a&location=edificio a',
+      'type=Dibujo&type=Dibujo&series=Paisajes&series=Paisajes&place=a&place=a',
     )
     const view = parseView(params)
     expect(view.types).toEqual(['Dibujo'])
     expect(view.series).toEqual(['Paisajes'])
-    expect(view.locations).toEqual(['edificio a'])
+    expect(view.places).toEqual(['a'])
   })
 
   it('RF-610: the searched text travels as `q`, and only when it says something', () => {
@@ -86,7 +117,7 @@ describe('remembered view (applied when entering with no parameters)', () => {
       funds: ['ROTILI'],
       types: [],
       series: [],
-      locations: [],
+      places: [],
       status: 'ALL',
       order: 'CATALOG_ID',
       search: '',
@@ -98,7 +129,7 @@ describe('remembered view (applied when entering with no parameters)', () => {
       funds: ['ROTILI'],
       types: ['Pintura'],
       series: [],
-      locations: [],
+      places: [],
       status: 'ALL',
       order: 'RECENT',
       search: '',
@@ -114,7 +145,7 @@ describe('remembered view (applied when entering with no parameters)', () => {
       funds: ['TEST'],
       types: [],
       series: [],
-      locations: [],
+      places: [],
       status: 'PHASE1_DONE',
       order: 'TITLE',
       search: '',
@@ -124,11 +155,11 @@ describe('remembered view (applied when entering with no parameters)', () => {
   it('discards garbage inside the new arrays, entry by entry', () => {
     // The empty entry of `series` survives: it is the «Sin serie» selection
     // (NO_SERIES), not a leftover. What is not a string does not.
-    expect(normalizeStoredView({ series: ['Paisajes', '', 7], locations: 'edificio a' })).toEqual({
+    expect(normalizeStoredView({ series: ['Paisajes', '', 7], places: 'a' })).toEqual({
       funds: [],
       types: [],
       series: ['Paisajes', NO_SERIES],
-      locations: [],
+      places: [],
       status: 'ALL',
       order: 'RECENT',
       search: '',
@@ -167,7 +198,7 @@ const stub = (over: Partial<Parameters<typeof matchesView>[0]> = {}) => ({
   artist: 'ROTILI' as const,
   artwork_type: '',
   series: '',
-  physical_location: '',
+  physical_place_id: null as string | null,
   inventory_phase_completed: false,
   documentation_phase_completed: false,
   catalog_record_complete: false,
@@ -247,35 +278,122 @@ describe('matchesView (RF-602: the filters run over the local mirror)', () => {
   })
 })
 
-describe('matchesView (RF-602: the location filter is hierarchical)', () => {
-  const inside = (location: string, place: string) =>
-    matchesView(stub({ physical_location: location }), { ...DEFAULT_VIEW, locations: [place] })
+describe('matchesView (RF-602, RF-215: the location filter is hierarchical)', () => {
+  /** An artwork at `where`, against a filter that marks `marked`. */
+  const at = (where: string | null, marked: readonly string[]) =>
+    matchesView(stub({ physical_place_id: where }), { ...DEFAULT_VIEW, places: [...marked] }, scopeOf(marked))
 
   it('a marked place brings everything inside it', () => {
-    // The question one asks in a storage room: "everything in building a".
-    expect(inside('edificio a, habitacion amarilla, bloque 3', 'edificio a')).toBe(true)
-    expect(
-      inside('edificio a, habitacion amarilla, bloque 3', 'edificio a, habitacion amarilla'),
-    ).toBe(true)
-    expect(inside('edificio a', 'edificio a')).toBe(true)
+    // The question one asks in a storage room: "everything in building A".
+    expect(at('a2', ['a'])).toBe(true)
+    expect(at('a2', ['a1'])).toBe(true)
+    expect(at('a', ['a'])).toBe(true)
   })
 
-  it('what is outside stays outside, and a partial level does NOT count', () => {
-    expect(inside('edificio b, habitacion 4', 'edificio a')).toBe(false)
-    // «edificio a» must not reach «edificio ab»: another building, not a child.
-    expect(inside('edificio ab, habitacion 1', 'edificio a')).toBe(false)
-    // And it does not reach upwards either: the building is not in the room.
-    expect(inside('edificio a', 'edificio a, habitacion amarilla')).toBe(false)
+  it('what is outside stays outside, and it does not reach upwards', () => {
+    expect(at('b1', ['a'])).toBe(false)
+    // The building is not inside the room: containment has one direction.
+    expect(at('a', ['a1'])).toBe(false)
   })
 
-  it('an artwork with no location answers no place', () => {
-    expect(inside('', 'edificio a')).toBe(false)
+  // Where the tree earns its keep: the old text filter compared strings level by
+  // level, so «edificio a» reaching «edificio ab» was a real hazard that needed
+  // its own rule. With identifiers the question cannot even be asked wrong.
+  it('two places with similar names are simply two places', () => {
+    expect(at('b', ['a'])).toBe(false)
+  })
+
+  it('an artwork with no place is out of any place filter', () => {
+    expect(at(null, ['a'])).toBe(false)
+  })
+
+  // RF-215: an artwork with no location is legitimate, so it has to be findable.
+  it('«Sin ubicación» finds exactly the artworks with no place', () => {
+    expect(at(null, [NO_PLACE])).toBe(true)
+    expect(at('a', [NO_PLACE])).toBe(false)
+    // And it combines with real places as one more "or".
+    expect(at(null, [NO_PLACE, 'a'])).toBe(true)
+    expect(at('a2', [NO_PLACE, 'a'])).toBe(true)
+    expect(at('b', [NO_PLACE, 'a'])).toBe(false)
   })
 
   it('several marked places are an "or": any of them is enough', () => {
-    const view: ListView = { ...DEFAULT_VIEW, locations: ['edificio a', 'almacen exterior'] }
-    expect(matchesView(stub({ physical_location: 'almacen exterior, jaula 2' }), view)).toBe(true)
-    expect(matchesView(stub({ physical_location: 'edificio c' }), view)).toBe(false)
+    expect(at('c1', ['a', 'c'])).toBe(true)
+    expect(at('b', ['a', 'c'])).toBe(false)
+  })
+
+  // A link naming a place somebody retired, or one from another catalog: it
+  // filters by nothing rather than by everything.
+  it('an identifier that is not in the tree finds nothing', () => {
+    expect(at('a', ['no-existe'])).toBe(false)
+    expect(at(null, ['no-existe'])).toBe(false)
+  })
+
+  // The asymmetry documented on matchesView: with the tree still in flight,
+  // filtering against an empty scope would empty the list, and the record's
+  // frozen sequence could freeze that emptiness. Showing more for a moment is
+  // recoverable.
+  it('while the tree has not arrived the location filter is skipped, not applied empty', () => {
+    const view: ListView = { ...DEFAULT_VIEW, places: ['a'] }
+    expect(matchesView(stub({ physical_place_id: 'a2' }), view, null)).toBe(true)
+    expect(matchesView(stub({ physical_place_id: 'b' }), view, null)).toBe(true)
+    // With the tree, the second one drops out.
+    expect(matchesView(stub({ physical_place_id: 'b' }), view, scopeOf(['a']))).toBe(false)
+  })
+})
+
+describe('placeFilterOptions (RF-602, RF-215: the chooser of the location filter)', () => {
+  const values = placeFilterOptions(TREE).map((o) => o.value)
+
+  it('offers «Sin ubicación» first, and then the whole tree branch by branch', () => {
+    expect(values).toEqual([NO_PLACE, 'c', 'c1', 'a', 'a1', 'a2', 'b', 'b1'])
+  })
+
+  // Every node is offered even when no artwork sits exactly on it: asking for a
+  // building has to be possible when every piece is on a shelf inside it.
+  it('says where each place hangs from, which is what tells two homonyms apart', () => {
+    const options = placeFilterOptions(TREE)
+    expect(options.find((o) => o.value === 'a')?.hint).toBeUndefined()
+    expect(options.find((o) => o.value === 'a2')?.hint).toBe('En Edificio A, Habitación amarilla')
+  })
+
+  it('leaves the retired places out', () => {
+    expect(values).not.toContain('z')
+  })
+
+  // Hiding what is filtering paints a checkbox nobody can untick.
+  it('a retired place that is selected stays visible, and says so', () => {
+    const options = placeFilterOptions(TREE, ['z'])
+    expect(options.map((o) => o.value)).toContain('z')
+    expect(options.find((o) => o.value === 'z')?.hint).toBe('En Edificio A · lugar retirado')
+  })
+
+  it('an identifier that is not in the tree at all is still offered, to be undone', () => {
+    const options = placeFilterOptions(TREE, ['fantasma'])
+    expect(options.find((o) => o.value === 'fantasma')?.text).toBe('Lugar que ya no existe')
+  })
+})
+
+describe('legacyPlaceParams (RF-215: links shared before the tree existed)', () => {
+  it('turns the old comma text into identifiers', () => {
+    const params = new URLSearchParams('location=edificio a, habitacion amarilla')
+    expect(legacyPlaceParams(params, TREE)).toEqual(['a1'])
+  })
+
+  // The stored text was lowercase and without accents, by the old convention.
+  it('ignores capitals and accents, which is how the old text was stored', () => {
+    expect(legacyPlaceParams(new URLSearchParams('location=habitacion 4'), TREE)).toEqual([])
+    expect(legacyPlaceParams(new URLSearchParams('location=edificio b'), TREE)).toEqual(['b'])
+  })
+
+  it('drops what no longer exists instead of failing', () => {
+    const params = new URLSearchParams('location=edificio a&location=edificio que ya no hay')
+    expect(legacyPlaceParams(params, TREE)).toEqual(['a'])
+  })
+
+  it('answers null when there is nothing to convert, which is the normal case', () => {
+    expect(legacyPlaceParams(new URLSearchParams('place=a'), TREE)).toBeNull()
+    expect(legacyPlaceParams(new URLSearchParams(''), TREE)).toBeNull()
   })
 })
 
@@ -391,43 +509,6 @@ describe('RF-602: «Sin serie» is an entry of the series filter', () => {
   })
 })
 
-describe('locationFilterOptions (RF-602: every place worth asking for)', () => {
-  it('offers each used location and all of its ancestors', () => {
-    // Without the ancestors, «edificio a» would never be offered and the
-    // hierarchical match would be unreachable.
-    expect(
-      locationFilterOptions(['edificio a, habitacion amarilla, bloque 3']).map((o) => o.value),
-    ).toEqual([
-      'edificio a',
-      'edificio a, habitacion amarilla',
-      'edificio a, habitacion amarilla, bloque 3',
-    ])
-  })
-
-  it('deduplicates shared ancestors and sorts so each branch sits under its parent', () => {
-    expect(
-      locationFilterOptions([
-        'edificio a, habitacion 2',
-        'edificio a, habitacion 1',
-        'edificio a, habitacion 1, balda 5',
-      ]).map((o) => o.value),
-    ).toEqual([
-      'edificio a',
-      'edificio a, habitacion 1',
-      'edificio a, habitacion 1, balda 5',
-      'edificio a, habitacion 2',
-    ])
-  })
-
-  it('ignores the artworks with no location', () => {
-    expect(locationFilterOptions(['', ' , '])).toEqual([])
-  })
-
-  it('a marked place nobody uses anymore stays visible, normalized', () => {
-    expect(locationFilterOptions([], ['Edificio C']).map((o) => o.value)).toEqual(['edificio c'])
-  })
-})
-
 describe('matchesSearch (RF-602: identifier and title, accent-insensitive)', () => {
   it('finds by code and by title, ignoring case and accents', () => {
     const a = stub({ catalog_id: 'AR-0042', title: 'Árbol seco' })
@@ -526,8 +607,8 @@ describe('view predicates', () => {
     // Otherwise the no-results message would offer no way out and the funnel
     // would look clean while the list is filtered.
     expect(hasNoFilters({ ...DEFAULT_VIEW, series: ['Paisajes'] })).toBe(false)
-    expect(hasNoFilters({ ...DEFAULT_VIEW, locations: ['edificio a'] })).toBe(false)
-    expect(isDefaultView({ ...DEFAULT_VIEW, locations: ['edificio a'] })).toBe(false)
+    expect(hasNoFilters({ ...DEFAULT_VIEW, places: ['a'] })).toBe(false)
+    expect(isDefaultView({ ...DEFAULT_VIEW, places: ['a'] })).toBe(false)
   })
 
   it('NO_FILTERS clears every filter and nothing else', () => {
@@ -535,7 +616,7 @@ describe('view predicates', () => {
       funds: ['TEST'],
       types: ['Pintura'],
       series: ['Paisajes'],
-      locations: ['edificio a'],
+      places: ['a'],
       status: 'PHASE1_DONE',
       order: 'TITLE',
       search: '',
@@ -554,7 +635,7 @@ describe('view predicates', () => {
         funds: ['TEST'],
         types: ['Pintura'],
         series: ['Paisajes'],
-        locations: ['edificio a'],
+        places: ['a'],
         status: 'PHASE1_DONE',
         order: 'TITLE',
       }),

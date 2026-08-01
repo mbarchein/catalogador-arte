@@ -24,7 +24,14 @@ import type { Artwork } from '../../lib/types'
  */
 
 const KEY = 'catalogador.artworks-mirror'
-const VERSION = 2
+/**
+ * Bumped to 3 when the location became a node of the tree (ADR-006): a snapshot
+ * written by the previous version carries `physical_location` and no
+ * `physical_place_id`, so every artwork in it would read as having no location
+ * and the filter would answer nothing. There is nothing to migrate — the mirror
+ * is a copy of the catalog and it is rebuilt from the server on the next load.
+ */
+const VERSION = 3
 
 /** Name of the service worker cache holding the image bytes. */
 export const IMAGE_CACHE = 'imagenes-obras'

@@ -28,13 +28,19 @@ export interface Batch {
   carried: {
     date: StructuredDate
     technique: string
-    location: string
+    /**
+     * Identifier of the place in the tree, or null (ADR-006). It carries over
+     * because a batch is normally photographed shelf by shelf, and it is an
+     * identifier and not a name so that renaming the shelf mid-batch does not
+     * leave the batch pointing at a place that no longer answers.
+     */
+    placeId: string | null
   }
 }
 
 export const INITIAL_BATCH: Batch = {
   fixed: { artist: 'ROTILI', artworkType: '', series: '' },
-  carried: { date: EMPTY_DATE, technique: '', location: '' },
+  carried: { date: EMPTY_DATE, technique: '', placeId: null },
 }
 
 // 'catalogador' is the product name and acts as the storage namespace.
@@ -124,7 +130,12 @@ function normalize(value: unknown): Batch {
         unconfirmed: date.unconfirmed === true,
       },
       technique: typeof carried.technique === 'string' ? carried.technique : '',
-      location: typeof carried.location === 'string' ? carried.location : '',
+      // A batch stored before the tree existed carries `location`, a text with
+      // the old notation convention. It is dropped rather than converted: a name
+      // is not an identity — which is the whole reason for ADR-006 — and
+      // resolving it would need the tree here, where there is no data access.
+      // The cost is choosing the place once on the next artwork.
+      placeId: typeof carried.placeId === 'string' ? carried.placeId : null,
     },
   }
 }

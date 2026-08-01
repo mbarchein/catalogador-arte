@@ -50,6 +50,25 @@ export interface SeriesEntry {
   name: string
 }
 
+/**
+ * One node of the tree of physical places (ADR-006).
+ *
+ * `parent_id` null is a root, and it is MUTABLE: hanging a place that is a root
+ * today from another one tomorrow is a normal operation, and the reason the tree
+ * exists. `name` is stored exactly as it is written, with its capitals and its
+ * accents; what gets normalized is only the comparison key (see places.ts).
+ *
+ * The trash columns of the row —who retired it and when— are not here: the
+ * interface only needs to know whether the place is still in use, and the rest
+ * belongs to whoever audits the catalog.
+ */
+export interface PhysicalPlace {
+  id: string
+  parent_id: string | null
+  name: string
+  active: boolean
+}
+
 export interface Profile {
   id: string
   email: string
@@ -81,7 +100,19 @@ export interface Artwork {
   signature_description: string
   dated_on_artwork: TriState
   conservation_status: ConservationStatusValue
-  physical_location: string
+  /**
+   * Where the artwork is: a node of `physical_places` (ADR-006). Null is
+   * legitimate — cataloging with the piece in front of you cannot demand
+   * deciding where it is.
+   */
+  physical_place_id: string | null
+  // `physical_location`, the old location as text with the notation convention
+  // of field schema v11, is deliberately NOT here. The column still exists —
+  // it is retired in a later deployment, after this frontend is the only one
+  // running — but nothing reads or writes it any more, and a field no query
+  // selects is a trap: whoever read it would get undefined, with the type
+  // promising a string. It is `not null default ''`, so an insert that leaves
+  // it out is fine.
   existence_status: ExistenceStatusValue
   photographed: boolean
   measurements_verified: boolean

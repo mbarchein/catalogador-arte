@@ -49,6 +49,13 @@ const NOTHING: ArtworkSequence = {
 export function useArtworkSequence(
   view: ListView,
   catalogId: string | undefined,
+  /**
+   * Reach of the location filter (ADR-006), null while the tree has not arrived.
+   * With a location filter active the queue does NOT freeze until it is here:
+   * freezing against an unknown tree would freeze an empty queue, and the frozen
+   * queue is frozen for the whole visit.
+   */
+  placeScope: ReadonlySet<string> | null = null,
 ): ArtworkSequence {
   // The snapshot is read once per visit to the record view, not per record: the
   // component instance survives passing from artwork to artwork (same route),
@@ -81,8 +88,13 @@ export function useArtworkSequence(
 
   if (rows.length === 0) return NOTHING
 
+  // Waiting for the tree when, and only when, the view filters by location: any
+  // other queue can be built right now, and making every record wait for eight
+  // rows of places it does not need would be paying for the exception.
+  if (view.places.length > 0 && placeScope === null) return NOTHING
+
   // Built the first time there are rows to build it with, and kept from then on.
-  if (!frozen.current) frozen.current = navigationSequence(rows, view, catalogId)
+  if (!frozen.current) frozen.current = navigationSequence(rows, view, catalogId, placeScope)
   const { ids, fromList } = frozen.current
 
   const position = positionOf(ids, catalogId)

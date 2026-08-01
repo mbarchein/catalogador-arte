@@ -28,9 +28,18 @@ import {
  * `sortArtworks` breaks every tie by `catalog_id`, so the result is a total and
  * stable order: two artworks can never swap places between one «siguiente» and
  * the next.
+ *
+ * `scope` is the reach of the location filter — the chosen places plus everything
+ * inside them (ADR-006). It travels as an argument and is not derived here
+ * because it comes from the tree, which is loaded state, and this module stays
+ * arithmetic. Null means the tree has not arrived: see matchesView.
  */
-export function sequenceOf<T extends ListedArtwork>(rows: readonly T[], view: ListView): T[] {
-  const matching = rows.filter((a) => matchesView(a, view) && matchesSearch(a, view.search))
+export function sequenceOf<T extends ListedArtwork>(
+  rows: readonly T[],
+  view: ListView,
+  scope: ReadonlySet<string> | null = null,
+): T[] {
+  const matching = rows.filter((a) => matchesView(a, view, scope) && matchesSearch(a, view.search))
   return sortArtworks(matching, view.order)
 }
 
@@ -95,8 +104,9 @@ export function navigationSequence<T extends ListedArtwork>(
   rows: readonly T[],
   view: ListView,
   catalogId: string | undefined,
+  scope: ReadonlySet<string> | null = null,
 ): Sequence {
-  const listed = sequenceOf(rows, view).map((r) => r.catalog_id)
+  const listed = sequenceOf(rows, view, scope).map((r) => r.catalog_id)
   if (catalogId !== undefined && listed.includes(catalogId)) {
     return { ids: listed, fromList: true }
   }

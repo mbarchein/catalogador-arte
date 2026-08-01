@@ -13,6 +13,7 @@ import { displayDate } from '../../lib/dates'
 import { existenceNotice, displayMeasurements, displayTitle } from '../../lib/title'
 import { ARTIST_LABEL, ARTIST_FUNDS } from '../../lib/types'
 import { useLiveChanges } from '../../lib/live'
+import { placesInside } from '../../lib/places'
 import {
   FUND_LABEL,
   NO_FILTERS,
@@ -22,8 +23,9 @@ import {
   activeFilterCount,
   hasNoFilters,
   isDefaultView,
-  locationFilterOptions,
+  legacyPlaceParams,
   parseView,
+  placeFilterOptions,
   readStoredView,
   saveStoredView,
   serializeView,
@@ -34,7 +36,7 @@ import {
 } from './listView'
 import { useArtworks } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
-import { usePhysicalLocations } from './usePhysicalLocations'
+import { usePhysicalPlaces } from './usePhysicalPlaces'
 import { useSeries } from './useSeries'
 
 const FUND_OPTIONS = ARTIST_FUNDS.map((v) => ({ value: v, text: FUND_LABEL[v] }))
@@ -67,7 +69,7 @@ export function ArtworksPage() {
   // No fund is passed: this filter offers the series of several funds at once,
   // each option labeled with the fund it belongs to.
   const { entries: seriesEntries } = useSeries()
-  const usedLocations = usePhysicalLocations()
+  const { tree: placeTree, loading: placesLoading } = usePhysicalPlaces()
 
   // Entering with a clean URL applies the last combination chosen on this
   // device. Only once: after that, the URL is the single truth of the view.
@@ -79,6 +81,21 @@ export function ArtworksPage() {
     const stored = readStoredView()
     if (!isDefaultView(stored)) setSearchParams(serializeView(stored), { replace: true })
   }, [searchParams, setSearchParams])
+
+  // A link shared before the tree existed carries the location as text
+  // (`?location=castelar+4`). It is translated into identifiers as soon as the
+  // tree is here and the address is rewritten, so the link is upgraded in place
+  // instead of half-working forever. Waiting for the tree matters: resolving
+  // against an empty one would drop the filter and quietly show the whole
+  // catalog.
+  const upgraded = useRef(false)
+  useEffect(() => {
+    if (upgraded.current || placesLoading) return
+    const ids = legacyPlaceParams(searchParams, placeTree)
+    if (ids === null) return
+    upgraded.current = true
+    setSearchParams(serializeView({ ...parseView(searchParams), places: ids }), { replace: true })
+  }, [placesLoading, placeTree, searchParams, setSearchParams])
 
   // `replace` on purpose: each change must not pile a history entry, or the
   // phone's back button would walk every filter ever touched before leaving
@@ -99,7 +116,18 @@ export function ArtworksPage() {
     setSearchParams(serializeView({ ...view, search }), { replace: true })
   }
 
-  const { artworks, thumbnails, loading, error, reload, refreshThumbnails } = useArtworks(view)
+  // The reach of the location filter, computed once per view: a chosen place
+  // answers for everything inside it. Null while the tree is on its way, so a
+  // filtered list does not flash empty (see matchesView).
+  const placeScope = useMemo(
+    () => (placesLoading ? null : placesInside(placeTree, view.places)),
+    [placesLoading, placeTree, view.places],
+  )
+
+  const { artworks, thumbnails, loading, error, reload, refreshThumbnails } = useArtworks(
+    view,
+    placeScope,
+  )
   const { canEdit } = useAuth()
 
   // The list updates live: if another cataloger creates or edits an artwork,
@@ -125,11 +153,11 @@ export function ArtworksPage() {
     [seriesEntries, view.funds, view.series],
   )
 
-  // Places, each used location plus its ancestors: without them «edificio a»
-  // would never be offered, and the hierarchical match would be unreachable.
-  const locationOptions = useMemo(
-    () => locationFilterOptions(usedLocations, view.locations),
-    [usedLocations, view.locations],
+  // The whole tree, branch by branch: every node can be asked for, and asking
+  // for one brings everything inside it.
+  const placeOptions = useMemo(
+    () => placeFilterOptions(placeTree, view.places),
+    [placeTree, view.places],
   )
 
   const activeCount = activeFilterCount(view)
@@ -336,9 +364,9 @@ export function ArtworksPage() {
                 shelf and folder under it. That is the question one actually
                 asks in a storage room. */}
             <SearchableCheckList
-              options={locationOptions}
-              values={view.locations}
-              onChange={(locations) => updateView({ locations })}
+              options={placeOptions}
+              values={view.places}
+              onChange={(places) => updateView({ places })}
               searchLabel="Buscar ubicación"
               placeholder="Buscar ubicación"
               emptyText="Todavía no hay ubicaciones registradas."

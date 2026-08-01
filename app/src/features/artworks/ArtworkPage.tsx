@@ -41,7 +41,6 @@ import {
   FieldGroup,
   OptionCards,
   PenIcon,
-  SuggestInput,
   TagIcon,
   Toggle,
   ToggleChip,
@@ -49,7 +48,6 @@ import {
   UnreviewedIcon,
   YearStepper,
 } from '../../components/ui'
-import { normalizeLocation, locationForSaving } from '../../lib/location'
 import { useLiveChanges } from '../../lib/live'
 import { ArtworkGallery } from './ArtworkGallery'
 import { parseView } from './listView'
@@ -58,7 +56,9 @@ import { useArtwork } from './useArtworks'
 import { useArtworkSequence, type ArtworkSequence } from './useArtworkSequence'
 import { useArtworkTypes } from './useArtworkTypes'
 import { useSeries } from './useSeries'
-import { usePhysicalLocations } from './usePhysicalLocations'
+import { placePathText, placesInside } from '../../lib/places'
+import { usePhysicalPlaces } from './usePhysicalPlaces'
+import { PlacePicker } from './PlacePicker'
 
 /** Which way the record was left, for the animation that brings the next one. */
 type Direction = 'previous' | 'next'
@@ -96,7 +96,14 @@ export function ArtworkPage() {
   // sequence is the whole catalog.
   const [searchParams] = useSearchParams()
   const view = useMemo(() => parseView(searchParams), [searchParams])
-  const sequence = useArtworkSequence(view, id)
+  // The tree of places: the record reads the location off it, and the sequence
+  // needs the reach of the location filter when the list was filtered by one.
+  const { tree: placeTree, loading: placesLoading } = usePhysicalPlaces()
+  const placeScope = useMemo(
+    () => (placesLoading ? null : placesInside(placeTree, view.places)),
+    [placesLoading, placeTree, view.places],
+  )
+  const sequence = useArtworkSequence(view, id, placeScope)
   const { artwork, loading, error, reload } = useArtwork(id, sequence.rows)
   const { canEdit } = useAuth()
   const navigate = useNavigate()
@@ -168,7 +175,7 @@ export function ArtworkPage() {
     setPdfError('')
     try {
       const { generateRecordPdf } = await import('../../lib/recordPdf')
-      const blob = await generateRecordPdf(theArtwork)
+      const blob = await generateRecordPdf(theArtwork, placePathText(placeTree, theArtwork.physical_place_id))
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -368,7 +375,7 @@ export function ArtworkPage() {
           <dl className="divide-y divide-stone-100">
             <DataRow label="Conservación" value={CONSERVATION_LABEL[artwork.conservation_status]} />
             <DataRow label="Existencia" value={EXISTENCE_LABEL[artwork.existence_status]} />
-            <DataRow label="Ubicación" value={artwork.physical_location} />
+            <DataRow label="Ubicación" value={placePathText(placeTree, artwork.physical_place_id)} />
           </dl>
         </section>
 
@@ -828,8 +835,10 @@ function EditForm({
   // Series of THIS artwork's fund: each fund has its own vocabulary, and the
   // fund is immutable (RF-204), so the offered set never changes under the form.
   const { names: seriesNames, addSeries } = useSeries(artwork.artist)
-  // Locations already used, as loose suggestions while typing (free text).
-  const knownLocations = usePhysicalLocations()
+  // The tree of places: the field is a chooser over it now, not free text
+  // (ADR-006). Only editors reach this form, so offering to create a place is
+  // always legitimate here.
+  const { tree: placeTree, ensurePlace } = usePhysicalPlaces()
 
   function set<K extends keyof Artwork>(field: K, value: Artwork[K]) {
     setData((d) => ({ ...d, [field]: value }))
@@ -914,7 +923,7 @@ function EditForm({
         dated_on_artwork: data.dated_on_artwork,
         conservation_status: data.conservation_status,
         existence_status: data.existence_status,
-        physical_location: locationForSaving(data.physical_location),
+        physical_place_id: data.physical_place_id,
         measurements_verified: data.measurements_verified,
         inventory_phase_completed: data.inventory_phase_completed,
         documentation_phase_completed: data.documentation_phase_completed,
@@ -1133,12 +1142,13 @@ function EditForm({
           onChange={(v) => set('existence_status', v)}
         />
 
-        <SuggestInput
+        <PlacePicker
           id="e-location"
           label="Ubicación física"
-          value={data.physical_location}
-          suggestions={knownLocations}
-          onChange={(v) => set('physical_location', normalizeLocation(v))}
+          value={data.physical_place_id}
+          tree={placeTree}
+          onChange={(placeId) => set('physical_place_id', placeId)}
+          ensurePlace={ensurePlace}
         />
       </FieldGroup>
 

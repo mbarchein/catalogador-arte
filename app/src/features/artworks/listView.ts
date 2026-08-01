@@ -1,4 +1,9 @@
-import { canonicalPlaces, locationLevels, locationWithin } from '../../lib/location'
+import {
+  findPlaceByPath,
+  flattenPlaces,
+  splitPlacePath,
+  type PlaceTree,
+} from '../../lib/places'
 import { ARTIST_FUNDS, type ArtistFund, type Artwork, type SeriesEntry } from '../../lib/types'
 import { normalizeForSearch } from '../../lib/vocabulary'
 
@@ -46,10 +51,21 @@ export interface ListView {
    */
   series: string[]
   /**
-   * Empty selects every location. Entries are places, matched HIERARCHICALLY:
-   * «edificio a» also brings everything inside it (see locationWithin).
+   * Empty selects every location. Entries are IDENTIFIERS of `physical_places`,
+   * matched HIERARCHICALLY: a selected place also answers for everything inside
+   * it (see placesInside).
+   *
+   * Identifiers and not names (ADR-006): renaming a place must not break a link
+   * shared months ago, and being able to rename freely is the whole reason the
+   * tree has surrogate keys. The price is a URL nobody can read, which is a fair
+   * trade for one that does not rot — and the old readable ones still work, see
+   * legacyPlaceParams.
+   *
+   * `NO_PLACE` is a legitimate entry, like `NO_SERIES`: an artwork with no place
+   * recorded is legitimate too, and without it those pieces would be the only
+   * ones this filter could not reach.
    */
-  locations: string[]
+  places: string[]
   status: StatusFilter
   order: ListOrder
   /**
@@ -68,7 +84,7 @@ export const DEFAULT_VIEW: ListView = {
   funds: [],
   types: [],
   series: [],
-  locations: [],
+  places: [],
   status: 'ALL',
   order: 'RECENT',
   search: '',
@@ -82,6 +98,16 @@ export const DEFAULT_VIEW: ListView = {
  * name. In the URL it travels as `series=`.
  */
 export const NO_SERIES = ''
+
+/**
+ * Value of the «Sin ubicación» entry of the location filter. The empty string
+ * for the same reason as NO_SERIES, and it cannot collide with a real place
+ * because a place is identified by a uuid and named with a non-blank name.
+ *
+ * It answers a question that comes up constantly with the artwork in front of
+ * you: which pieces are still to be placed. In the URL it travels as `place=`.
+ */
+export const NO_PLACE = ''
 
 const STATUS_FILTERS: readonly StatusFilter[] = [
   'ALL',
@@ -157,10 +183,14 @@ export function parseView(params: URLSearchParams): ListView {
     // Series keeps the empty value, unlike the others: `series=` is the
     // «Sin serie» entry (NO_SERIES), not a leftover.
     series: [...new Set(params.getAll('series'))],
-    // Locations are canonicalized on the way in, so a place typed by hand in
-    // the URL is the same string as the option offered in the chooser — or the
-    // checkbox of what is filtering could not be unmarked.
-    locations: canonicalPlaces(params.getAll('location')),
+    // Places travel as identifiers. Like series, the empty value counts: it is
+    // the «Sin ubicación» entry (NO_PLACE). An identifier that no longer exists
+    // finds nothing, with the explicit no-results message — which is the honest
+    // answer to a link that names a place somebody retired.
+    //
+    // The old `location=<texto>` parameter is NOT read here: it needs the tree
+    // to become an identifier, and this function is pure. See legacyPlaceParams.
+    places: [...new Set(params.getAll('place'))],
     status: keyOf(STATUS_PARAM, params.get('status')) ?? 'ALL',
     order: keyOf(ORDER_PARAM, params.get('order')) ?? 'RECENT',
     // Kept as typed, not normalized: it is what the search box shows. The
@@ -175,7 +205,7 @@ export function serializeView(view: ListView): URLSearchParams {
   for (const f of view.funds) params.append('fund', f)
   for (const t of view.types) params.append('type', t)
   for (const s of view.series) params.append('series', s)
-  for (const l of view.locations) params.append('location', l)
+  for (const p of view.places) params.append('place', p)
   if (view.status !== 'ALL') params.set('status', STATUS_PARAM[view.status])
   if (view.order !== 'RECENT') params.set('order', ORDER_PARAM[view.order])
   // A search of only spaces finds everything, so it is not a search: leaving it
@@ -185,11 +215,11 @@ export function serializeView(view: ListView): URLSearchParams {
 }
 
 /** The filters cleared, keeping the order: what "Quitar todo" resets to. */
-export const NO_FILTERS: Pick<ListView, 'funds' | 'types' | 'series' | 'locations' | 'status'> = {
+export const NO_FILTERS: Pick<ListView, 'funds' | 'types' | 'series' | 'places' | 'status'> = {
   funds: [],
   types: [],
   series: [],
-  locations: [],
+  places: [],
   status: 'ALL',
 }
 
@@ -205,7 +235,7 @@ export function hasNoFilters(view: ListView): boolean {
     view.funds.length === 0 &&
     view.types.length === 0 &&
     view.series.length === 0 &&
-    view.locations.length === 0 &&
+    view.places.length === 0 &&
     view.status === 'ALL'
   )
 }
@@ -220,7 +250,7 @@ export function activeFilterCount(view: ListView): number {
     view.funds.length > 0,
     view.types.length > 0,
     view.series.length > 0,
-    view.locations.length > 0,
+    view.places.length > 0,
     view.status !== 'ALL',
     view.order !== 'RECENT',
   ].filter(Boolean).length
@@ -294,32 +324,84 @@ export function seriesFilterOptions(
 }
 
 /**
- * The options of the location filter: every place worth asking for, which is
- * each location in use PLUS all of its ancestors. Without the ancestors,
- * «edificio a» would never be offered when no artwork sits at the building
- * level, and the hierarchical match would have nothing to match with.
+ * The options of the location filter: the whole tree, branch by branch.
  *
- * Sorted as text, which groups each branch under its parent because a parent
- * is a prefix of its children.
+ * Every node is offered, whether or not an artwork sits exactly on it, because
+ * asking for a building has to be possible even when every piece is on a shelf
+ * inside it — the hierarchical match is what resolves that. Before the tree this
+ * list had to be reconstructed by splitting texts and adding the ancestors back;
+ * now the ancestors ARE the tree, and this is a walk.
+ *
+ * The row shows the name and, underneath, where it hangs from, which is what
+ * tells «balda 2» of one shelf from «balda 2» of the next. The search box of the
+ * chooser matches the name, not the branch.
+ *
+ * Retired places are left out — offering a shelf that no longer exists invites
+ * putting an artwork in it — except one that is already selected: hiding what is
+ * filtering paints a checkbox nobody can untick.
  */
-export function locationFilterOptions(
-  locations: readonly string[],
+export function placeFilterOptions(
+  tree: PlaceTree,
   selected: readonly string[] = [],
 ): FilterOption[] {
-  const places = new Set<string>()
-  for (const location of locations) {
-    const levels = locationLevels(location)
-    for (let depth = 1; depth <= levels.length; depth += 1) {
-      places.add(levels.slice(0, depth).join(', '))
-    }
-  }
-  for (const place of selected) {
-    const levels = locationLevels(place)
-    if (levels.length > 0) places.add(levels.join(', '))
-  }
-  return [...places]
-    .sort((a, b) => a.localeCompare(b, 'es'))
-    .map((place) => ({ value: place, text: place }))
+  const chosen = new Set(selected)
+  const options = flattenPlaces(tree, (place) => place.active || chosen.has(place.id)).map(
+    ({ place, path }) => {
+      const inside = path.slice(0, path.length - place.name.length).replace(/, $/, '')
+      return {
+        value: place.id,
+        text: place.name,
+        hint: place.active
+          ? inside === ''
+            ? undefined
+            : `En ${inside}`
+          : inside === ''
+            ? 'Lugar retirado'
+            : `En ${inside} · lugar retirado`,
+      }
+    },
+  )
+
+  // A link shared months ago may name a place that no longer exists at all.
+  // Offering it as a row is what lets the filter be undone; the text says why it
+  // has no name.
+  const known = new Set(tree.byId.keys())
+  const gone = selected
+    .filter((id) => id !== NO_PLACE && !known.has(id))
+    .map((id) => ({ value: id, text: 'Lugar que ya no existe', hint: 'Desmárcalo para quitarlo' }))
+
+  return [
+    { value: NO_PLACE, text: 'Sin ubicación', hint: 'Obras todavía sin ubicación registrada' },
+    ...options,
+    ...gone,
+  ]
+}
+
+/**
+ * The identifiers named by the OLD `location=<texto>` parameters of a URL, or
+ * null when there are none to convert.
+ *
+ * Links to a filtered list were shared before the tree existed, with the
+ * location written out in commas — the notation convention of field schema v11.
+ * Those links keep working: the text is walked down the tree, level by level and
+ * compared normalized, and what comes out are identifiers. A level that does not
+ * exist any more drops out, and if nothing survives the answer is an empty
+ * selection, which shows the whole catalog rather than an empty page.
+ *
+ * The list page calls this once and rewrites the address, so the link is
+ * upgraded in place and stops depending on names it no longer has.
+ */
+export function legacyPlaceParams(
+  params: URLSearchParams,
+  tree: PlaceTree,
+): string[] | null {
+  const legacy = params.getAll('location')
+  if (legacy.length === 0) return null
+  const ids = legacy
+    .map((text) => findPlaceByPath(tree, splitPlacePath(text)))
+    .filter((place): place is NonNullable<typeof place> => place !== null)
+    .map((place) => place.id)
+  return [...new Set(ids)]
 }
 
 // ── From view to query ───────────────────────────────────────
@@ -345,7 +427,7 @@ export type ListedArtwork = Pick<
   | 'artist'
   | 'artwork_type'
   | 'series'
-  | 'physical_location'
+  | 'physical_place_id'
   | 'inventory_phase_completed'
   | 'documentation_phase_completed'
   | 'catalog_record_complete'
@@ -354,17 +436,35 @@ export type ListedArtwork = Pick<
   | 'updated_at'
 >
 
-export function matchesView(a: ListedArtwork, view: ListView): boolean {
+/**
+ * `scope` is the reach of the location filter: the chosen places PLUS everything
+ * inside them, which the caller computes once with `placesInside` instead of once
+ * per artwork.
+ *
+ * **Null means the tree has not arrived yet**, and then the location filter is
+ * skipped rather than applied against nothing. It matters because the two are not
+ * symmetric: with an empty scope every artwork that HAS a place would drop out,
+ * so a filtered list would flash «no se han encontrado obras» while eight rows
+ * are in flight, and the record's frozen sequence could freeze that emptiness.
+ * Showing more than was asked for a moment is recoverable; the other is not.
+ *
+ * `NO_PLACE` is checked apart because "no place" is not a node of the tree and so
+ * cannot be in any set.
+ */
+export function matchesView(
+  a: ListedArtwork,
+  view: ListView,
+  scope: ReadonlySet<string> | null = null,
+): boolean {
   if (view.funds.length > 0 && !view.funds.includes(a.artist)) return false
   if (view.types.length > 0 && !view.types.includes(a.artwork_type)) return false
   // By name, across funds: see the note on ListView.series.
   if (view.series.length > 0 && !view.series.includes(a.series)) return false
   // Hierarchical: a selected place also answers for everything inside it.
-  if (
-    view.locations.length > 0 &&
-    !view.locations.some((place) => locationWithin(a.physical_location, place))
-  ) {
-    return false
+  if (view.places.length > 0 && scope !== null) {
+    const here = a.physical_place_id
+    const matches = here === null ? view.places.includes(NO_PLACE) : scope.has(here)
+    if (!matches) return false
   }
   switch (view.status) {
     case 'ALL':
@@ -471,13 +571,20 @@ export function normalizeStoredView(value: unknown): ListView {
   // Series accepts the empty string, unlike the rest: it is the «Sin serie»
   // entry (NO_SERIES), so here it is a selection, not garbage.
   const series = Array.isArray(v.series) ? v.series.filter((s) => typeof s === 'string') : []
-  const locations = Array.isArray(v.locations) ? v.locations.filter(isName) : []
+  // Places accept the empty string too: it is the «Sin ubicación» entry
+  // (NO_PLACE). What is NOT read is the old `locations` field: it held the
+  // location as text and this one holds identifiers of `physical_places`
+  // (ADR-006), so a view remembered by the previous version comes back with no
+  // location filter. There is nothing to convert — the names it stored are not
+  // identities, which is precisely why the tree exists — and the alternative,
+  // resolving them here, would need the tree in a pure function.
+  const places = Array.isArray(v.places) ? v.places.filter((p) => typeof p === 'string') : []
 
   return {
     funds,
     types,
     series,
-    locations,
+    places,
     status: STATUS_FILTERS.includes(v.status as StatusFilter) ? (v.status as StatusFilter) : 'ALL',
     order: LIST_ORDERS.includes(v.order as ListOrder) ? (v.order as ListOrder) : 'RECENT',
     // Never restored, whatever a previous version may have stored: RF-610. What
@@ -505,7 +612,7 @@ export function saveStoredView(view: ListView, storage: Storage | undefined = ge
       funds: view.funds,
       types: view.types,
       series: view.series,
-      locations: view.locations,
+      places: view.places,
       status: view.status,
       order: view.order,
     }

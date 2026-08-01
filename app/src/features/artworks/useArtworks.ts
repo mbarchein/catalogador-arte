@@ -17,7 +17,7 @@ const FIELDS = `
   technique, support,
   height_cm, width_cm, depth_cm,
   signed, signature_description, dated_on_artwork,
-  conservation_status, physical_location, existence_status,
+  conservation_status, physical_place_id, existence_status,
   photographed, measurements_verified, inventory_phase_completed, documentation_phase_completed,
   catalog_record_complete, inventory_process_notes,
   updated_at, basic_updated_at, updated_by, active
@@ -65,7 +65,16 @@ export async function fetchAllArtworks(): Promise<Artwork[]> {
  * and calls `reload`). A few hundred records make this cheap; the paged
  * fetch keeps it correct if the catalog outgrows a single response.
  */
-export function useArtworks(view: ListView = DEFAULT_VIEW) {
+/**
+ * `placeScope` is the reach of the location filter (ADR-006): the chosen places
+ * plus everything inside them. It comes from the page, which is where the tree is
+ * loaded, and null while it has not arrived — see matchesView for why that is not
+ * the same as an empty set.
+ */
+export function useArtworks(
+  view: ListView = DEFAULT_VIEW,
+  placeScope: ReadonlySet<string> | null = null,
+) {
   const snapshot = useRef(readArtworksSnapshot()).current
   const [all, setAll] = useState<Artwork[] | null>(snapshot?.rows ?? null)
   // Thumbnails paint from the snapshot: their URLs are the ones handed out
@@ -162,12 +171,17 @@ export function useArtworks(view: ListView = DEFAULT_VIEW) {
   // on each render. Field by field also worked until «Sin serie» arrived — an
   // empty entry joins to the same string as no entry at all, so toggling it
   // changed nothing — and one canonical string cannot have that class of hole.
+  //
+  // The scope goes into the key as its own sorted list, for the same reason: the
+  // set is a new object on every render of the page, and the identifiers in it are
+  // what actually changes the answer.
   const key = serializeView(view).toString()
+  const scopeKey = placeScope === null ? 'null' : [...placeScope].sort().join(' ')
   const artworks = useMemo(() => {
     if (!all) return []
-    return sequenceOf(all, view)
+    return sequenceOf(all, view, placeScope)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [all, key])
+  }, [all, key, scopeKey])
 
   // Loading only when there is no snapshot at all: with one, the list paints
   // instantly and the refresh happens behind it.

@@ -11,6 +11,12 @@ import {
 } from './recordPdf'
 import type { Artwork } from './types'
 
+/**
+ * The branch of the place, as the record page resolves it off the tree (ADR-006).
+ * It travels as an argument because the artwork row only holds the identifier.
+ */
+const PLACE_PATH = 'Castelar 4, mesa de Mario'
+
 const ARTWORK: Artwork = {
   catalog_id: 'TS-0001',
   artist: 'TEST',
@@ -33,7 +39,7 @@ const ARTWORK: Artwork = {
   signature_description: 'ángulo inferior derecho',
   dated_on_artwork: 'NO',
   conservation_status: 'GOOD',
-  physical_location: 'Almacén, estantería 3',
+  physical_place_id: 'p1',
   existence_status: 'PRESERVED',
   photographed: false,
   measurements_verified: false,
@@ -75,7 +81,7 @@ describe('printableText', () => {
 })
 
 describe('recordLines', () => {
-  const lines = recordLines(ARTWORK)
+  const lines = recordLines(ARTWORK, PLACE_PATH)
   const valueOf = (label: string) => lines.find((l) => l.label === label)?.value
 
   it('translates the codes to the interface labels', () => {
@@ -89,6 +95,20 @@ describe('recordLines', () => {
 
   it('never leaves a gap: the empty datum is declared', () => {
     expect(valueOf('Soporte')).toBe('Sin indicar')
+  })
+
+  // ADR-006: the row only carries the identifier of the node, so the branch
+  // arrives already resolved by whoever holds the tree. It still reads with
+  // commas on paper, which is what the decision promised.
+  it('prints the branch of the place it receives', () => {
+    expect(valueOf('Ubicación')).toBe('Castelar 4, mesa de Mario')
+  })
+
+  // RF-1002 and the rule of never an unexplained gap: an artwork with no place
+  // is legitimate, and on paper it has to say so.
+  it('declares the artwork with no place instead of leaving it blank', () => {
+    const withoutPlace = recordLines({ ...ARTWORK, physical_place_id: null })
+    expect(withoutPlace.find((l) => l.label === 'Ubicación')?.value).toBe('Sin indicar')
   })
 })
 
@@ -166,7 +186,12 @@ const asHex = (text: string) =>
   Array.from(text, (c) => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
 
 async function pdfOf(loadPhoto: (catalogId: string) => Promise<RecordPhoto | null>) {
-  const blob = await generateRecordPdf(ARTWORK, 'https://catalogo.example', loadPhoto)
+  const blob = await generateRecordPdf(
+    ARTWORK,
+    PLACE_PATH,
+    'https://catalogo.example',
+    loadPhoto,
+  )
   expect(blob.type).toBe('application/pdf')
   const bytes = new Uint8Array(await blob.arrayBuffer())
   const raw = latin1(bytes)
