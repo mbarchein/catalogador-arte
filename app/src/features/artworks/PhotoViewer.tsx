@@ -32,10 +32,14 @@ export function PhotoViewer({
   catalogId: string
   onClose: () => void
 }) {
-  // The callback lives in a ref so the history/keyboard listeners register
-  // once: re-registering on every render could miss the closing pop.
+  // Los callbacks viven en un ref para que los listeners de historia y teclado
+  // se registren una sola vez: volver a registrarlos en cada render podría
+  // perderse el pop del cierre.
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+  // Lo que las flechas necesitan saber, también por referencia y por lo mismo.
+  const paso = useRef({ images, viewId, onView })
+  paso.current = { images, viewId, onView }
 
   useEffect(() => {
     // One history entry for the viewer. Pushing state does not notify the
@@ -43,7 +47,32 @@ export function PhotoViewer({
     window.history.pushState({ photoViewer: true }, '')
     const onPop = () => onCloseRef.current()
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') window.history.back()
+      // «f» cierra igual que Escape: la misma tecla que abre es la que sale, sin
+      // tener que recordar otra. Y sale por el mismo camino que todo lo demás
+      // —consumir la entrada de historia— para que el botón de atrás del móvil
+      // y el teclado no lleven la cuenta por separado.
+      if (e.key === 'Escape' || e.key === 'f' || e.key === 'F') {
+        if (e.metaKey || e.ctrlKey || e.altKey) return
+        e.preventDefault()
+        window.history.back()
+        return
+      }
+
+      // Con el visor abierto, las flechas mueven entre las FOTOGRAFÍAS de esta
+      // obra y no entre obras: lo que se está mirando es la galería, y pasar de
+      // ficha desde aquí dejaría al visor enseñando fotos de otra pieza. Quien
+      // navega el listado es la ficha de debajo, y se aparta mientras esto está
+      // abierto (ver el guardián de ArtworkPage).
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+
+      const { images: fotos, viewId: actual, onView: ver } = paso.current
+      const desde = fotos.findIndex((r) => r.image_id === actual)
+      const destino = fotos[(e.key === 'ArrowLeft' ? desde - 1 : desde + 1)]
+      // Sin dar la vuelta, como la cola de obras: en los extremos no pasa nada.
+      if (desde < 0 || !destino) return
+      e.preventDefault()
+      ver(destino.image_id)
     }
     window.addEventListener('popstate', onPop)
     window.addEventListener('keydown', onKey)
@@ -70,12 +99,18 @@ export function PhotoViewer({
       role="dialog"
       aria-modal="true"
       aria-label={`Fotografías de ${catalogId} a pantalla completa`}
+      // Con qué la ficha de debajo sabe que el visor está abierto y no debe
+      // atender a las flechas. Un atributo en el DOM y no un estado compartido:
+      // el visor es de la galería, y subir el estado hasta la página para que
+      // esta se aparte sería más cableado del que el problema pide.
+      data-photo-viewer
       className="fixed inset-0 z-50 flex flex-col bg-black"
     >
       <div className="flex items-center justify-between p-3 text-white">
         <button
           type="button"
-          aria-label="Cerrar el visor"
+          aria-label="Cerrar el visor (Escape o tecla F)"
+          title="Cerrar · Escape o F"
           // Closing goes through history.back(): the entry pushed on opening
           // is consumed and the popstate listener does the actual close, the
           // same path the phone's back button takes.

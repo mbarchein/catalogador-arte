@@ -35,6 +35,26 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
   )
   const viewing = images[viewIndex]
 
+  // «f» abre la galería a pantalla completa. Vive aquí y no en la página porque
+  // el visor es de la galería: subir el estado solo para atajar una tecla sería
+  // repartir en dos sitios algo que solo uno usa. Con el visor abierto no hace
+  // nada: cerrarlo es Escape o el botón de atrás, como siempre.
+  const hayImagenes = images.length > 0
+  useEffect(() => {
+    if (!hayImagenes) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'f' && event.key !== 'F') return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      if (document.querySelector('[data-photo-viewer]')) return
+      event.preventDefault()
+      setViewerOpen(true)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [hayImagenes])
+
   if (loading) {
     return <div className="mb-3 aspect-[4/3] animate-pulse rounded-xl bg-stone-200" />
   }
@@ -119,7 +139,11 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
         />
         <button
           type="button"
-          aria-label="Ver a pantalla completa"
+          aria-label="Ver a pantalla completa (tecla F)"
+          // `title` para la pista al pasar el ratón: el atajo no se descubre
+          // solo, y en escritorio el icono es donde se va a buscar. En el móvil
+          // no estorba, porque allí no hay hover ni teclado.
+          title="Ver a pantalla completa · tecla F"
           onClick={() => setViewerOpen(true)}
           className="absolute bottom-2 right-2 rounded-full bg-stone-900/70 p-2.5 text-white"
         >

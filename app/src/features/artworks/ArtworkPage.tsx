@@ -150,6 +150,10 @@ export function ArtworkPage() {
       const target = event.target as HTMLElement | null
       // Not while typing, and not inside a control that uses the arrows itself.
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      // Con la galería a pantalla completa, las flechas son suyas: ahí mueven
+      // entre las fotografías de esta obra. Pasar de ficha por debajo dejaría al
+      // visor enseñando las fotos de otra pieza.
+      if (document.querySelector('[data-photo-viewer]')) return
       if (event.key === 'ArrowLeft') goTo(sequence.previous, 'previous')
       if (event.key === 'ArrowRight') goTo(sequence.next, 'next')
     }
