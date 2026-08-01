@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { BanIcon, PenIcon, YesIcon } from '../../components/ui'
+import { BanIcon, NoIcon, PenIcon, YesIcon } from '../../components/ui'
 import { flattenPlaces, placesInside, splitPlacePath } from '../../lib/places'
 import { PlacePicker } from '../artworks/PlacePicker'
 import { usePhysicalPlaces } from '../artworks/usePhysicalPlaces'
@@ -18,11 +18,11 @@ import { usePhysicalPlaces } from '../artworks/usePhysicalPlaces'
  * for — «museo de bellas artes de badajoz muba» becomes «Museo de Bellas Artes
  * de Badajoz (MUBA)» in one edit that the whole catalog reads.
  *
- * RF-1106 wants a «Tablas» section grouping the maintenance of every master
- * table — artwork types and series included, which today live inside the forms.
- * This is its first screen and not the section itself: designing where the other
- * two go is its own piece of work, and inventing it here would be deciding it in
- * passing.
+ * It is the first screen of the «Tablas» section (RF-1106), reached from its own
+ * tab of the footer menu: maintaining a list is not cataloging an artwork, and it
+ * does not belong inside the form of whichever record happened to be open.
+ * Artwork types and series are still added from the form and are yet to move
+ * here.
  *
  * **What this screen does NOT do is check the rules.** Two siblings with the same
  * name, a cycle, retiring a place with artworks inside: all three are refused by
@@ -34,7 +34,7 @@ import { usePhysicalPlaces } from '../artworks/usePhysicalPlaces'
  * the tree is readable from the filter, and nothing here is.
  */
 export function PlacesPage() {
-  const { canEdit } = useAuth()
+  const { canEdit, roleKnown } = useAuth()
   const { tree, loading, error, ensurePlace, renamePlace, movePlace, setPlaceActive } =
     usePhysicalPlaces()
   const [busy, setBusy] = useState(false)
@@ -55,6 +55,13 @@ export function PlacesPage() {
   // brought back, so hiding it would hide the only way out.
   const rows = useMemo(() => flattenPlaces(tree), [tree])
 
+  // Hasta que el perfil llega, el rol no es «no»: es que todavía no se sabe. Sin
+  // esta espera, entrar por la pestaña con la aplicación recién abierta rebotaba
+  // al listado, porque `canEdit` arranca en falso. Lo que protege de verdad son
+  // las políticas RLS; esto solo evita echar a quien sí puede.
+  if (!roleKnown) {
+    return <div className="p-8 text-center text-sm text-stone-600">Cargando…</div>
+  }
   if (!canEdit) return <Navigate to="/" replace />
 
   async function run(action: () => Promise<string | null>) {
@@ -67,7 +74,7 @@ export function PlacesPage() {
   }
 
   return (
-    <Layout title="Ubicaciones" back="/profile">
+    <Layout title="Ubicaciones" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
         Los sitios donde están las obras. Renombrar o mover uno se hace una vez y lo ven todas
         sus obras: la ficha no guarda el nombre, guarda el lugar.
@@ -124,83 +131,98 @@ export function PlacesPage() {
         {rows.map(({ place, depth }) => (
           <li
             key={place.id}
-            className={`card flex items-center gap-2 ${place.active ? '' : 'opacity-60'}`}
+            // El nombre se lleva su línea y las acciones van debajo, alineadas a la
+            // derecha: con tres botones al lado, un nombre como «coleccion
+            // particular familia hormeño (propiedad de…)» se partía en cinco
+            // líneas de dos palabras. El móvil es el dispositivo principal.
+            className={`card flex flex-wrap items-center gap-2 ${
+              place.active ? '' : 'opacity-60'
+            }`}
             // Indentation as padding, so a long name wrapping keeps its level.
             style={{ marginLeft: `${depth * 1}rem` }}
           >
             {renaming?.id === place.id ? (
               <>
                 <input
-                  className="field"
+                  className="field basis-full"
                   autoFocus
                   value={renaming.name}
                   onChange={(e) => setRenaming({ id: place.id, name: e.target.value })}
                   aria-label={`Nuevo nombre de ${place.name}`}
                 />
-                <button
-                  type="button"
-                  aria-label="Guardar el nombre"
-                  className="btn-primary shrink-0"
-                  disabled={busy}
-                  onClick={() =>
-                    void run(async () => {
-                      const message = await renamePlace(place.id, renaming.name)
-                      if (!message) setRenaming(null)
-                      return message
-                    })
-                  }
-                >
-                  <YesIcon className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary shrink-0"
-                  onClick={() => setRenaming(null)}
-                >
-                  Cancelar
-                </button>
+                <div className="ml-auto flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    aria-label="Guardar el nombre"
+                    title="Guardar"
+                    className="btn-primary"
+                    disabled={busy}
+                    onClick={() =>
+                      void run(async () => {
+                        const message = await renamePlace(place.id, renaming.name)
+                        if (!message) setRenaming(null)
+                        return message
+                      })
+                    }
+                  >
+                    <YesIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Dejar el nombre como estaba"
+                    title="Dejar el nombre como estaba"
+                    className="btn-secondary"
+                    onClick={() => setRenaming(null)}
+                  >
+                    <NoIcon className="h-5 w-5" />
+                  </button>
+                </div>
               </>
             ) : (
               <>
-                <span className="min-w-0 flex-1">
-                  <span className="block break-words text-sm font-medium">{place.name}</span>
+                <span className="min-w-0 basis-full">
+                  <span className="block break-words font-medium">{place.name}</span>
                   {!place.active && <span className="block text-xs text-stone-500">Retirada</span>}
                 </span>
-                <button
-                  type="button"
-                  aria-label={`Renombrar ${place.name}`}
-                  className="btn-secondary shrink-0"
-                  onClick={() => setRenaming({ id: place.id, name: place.name })}
-                >
-                  <PenIcon className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary shrink-0 text-xs"
-                  onClick={() => setMoving(place.id)}
-                >
-                  Mover
-                </button>
-                {place.active ? (
+                <div className="ml-auto flex shrink-0 gap-2">
                   <button
                     type="button"
-                    aria-label={`Retirar ${place.name}`}
-                    className="btn-secondary shrink-0"
-                    disabled={busy}
-                    onClick={() => void run(() => setPlaceActive(place.id, false))}
+                    aria-label={`Renombrar ${place.name}`}
+                    title="Renombrar"
+                    className="btn-secondary"
+                    onClick={() => setRenaming({ id: place.id, name: place.name })}
                   >
-                    <BanIcon className="h-5 w-5" />
+                    <PenIcon className="h-5 w-5" />
                   </button>
-                ) : (
                   <button
                     type="button"
-                    className="btn-secondary shrink-0 text-xs"
-                    disabled={busy}
-                    onClick={() => void run(() => setPlaceActive(place.id, true))}
+                    className="btn-secondary text-sm"
+                    onClick={() => setMoving(place.id)}
                   >
-                    Recuperar
+                    Mover
                   </button>
-                )}
+                  {place.active ? (
+                    <button
+                      type="button"
+                      aria-label={`Retirar ${place.name}`}
+                      title="Retirar"
+                      className="btn-secondary"
+                      disabled={busy}
+                      onClick={() => void run(() => setPlaceActive(place.id, false))}
+                    >
+                      <BanIcon className="h-5 w-5" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn-secondary text-sm"
+                      disabled={busy}
+                      onClick={() => void run(() => setPlaceActive(place.id, true))}
+                    >
+                      Recuperar
+                    </button>
+                  )}
+                </div>
               </>
             )}
           </li>
