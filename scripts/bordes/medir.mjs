@@ -33,7 +33,7 @@ function cargarDetector() {
   const entrada = path.join(temporal, 'entrada.ts')
   writeFileSync(
     entrada,
-    `export { detectArtworkEdges } from '${path.join(RAIZ, 'app/src/lib/edgeDetection.ts')}'\n`,
+    `export { analyseArtworkEdges } from '${path.join(RAIZ, 'app/src/lib/edgeDetection.ts')}'\n`,
   )
   const salida = path.join(temporal, 'detector.mjs')
   execFileSync(path.join(RAIZ, 'app/node_modules/.bin/esbuild'), [
@@ -80,7 +80,7 @@ function cargarDetector() {
   return salida
 }
 
-const { detectArtworkEdges } = await import(cargarDetector())
+const { analyseArtworkEdges } = await import(cargarDetector())
 
 const manifest = JSON.parse(readFileSync(path.join(CORPUS, 'manifest.json'), 'utf8'))
 
@@ -142,8 +142,9 @@ const filas = []
 for (const foto of manifest.fotos) {
   const luminancia = new Uint8Array(readFileSync(path.join(CORPUS, 'raw', `${foto.nombre}.raw`)))
   const inicio = process.hrtime.bigint()
-  const sugerencia = detectArtworkEdges(luminancia, foto.ancho, foto.alto)
+  const analisis = analyseArtworkEdges(luminancia, foto.ancho, foto.alto)
   const ms = Number(process.hrtime.bigint() - inicio) / 1e6
+  const sugerencia = analisis.suggestion
 
   const guardado = guardados.get(foto.nombre)
   const area = sugerencia ? sugerencia.outer.width * sugerencia.outer.height : null
@@ -155,6 +156,8 @@ for (const foto of manifest.fotos) {
     area,
     outer: sugerencia?.outer ?? null,
     inner: sugerencia?.inner ?? null,
+    motivo: analisis.reason,
+    detalle: analisis.detail,
     recorteGuardado: guardado?.crop ?? null,
     iouOuter: iou(sugerencia?.outer, guardado?.crop),
     iouInner: iou(sugerencia?.inner, guardado?.crop),
@@ -166,7 +169,7 @@ if (process.argv.includes('--json')) {
   console.log(JSON.stringify(filas, null, 2))
 } else {
   const n = (v, d = 3) => (v === null || v === undefined ? '—' : v.toFixed(d))
-  console.log('fotografía'.padEnd(26), 'veredicto'.padEnd(13), 'área', ' IoU', '  tipo de toma')
+  console.log('fotografía'.padEnd(26), 'veredicto'.padEnd(13), 'área', ' IoU', '  tipo de toma  ', 'por qué calla')
   for (const f of filas) {
     console.log(
       f.nombre.padEnd(26),
@@ -175,6 +178,7 @@ if (process.argv.includes('--json')) {
       n(Math.max(f.iouOuter ?? 0, f.iouInner ?? 0)).padStart(5),
       ' ',
       f.tipoToma ?? '—',
+      f.motivo ?? '',
     )
   }
 
@@ -190,4 +194,13 @@ if (process.argv.includes('--json')) {
     `IoU mediana contra el recorte guardado: ${n(mediana)} (${conIou.length} comparables) · ` +
       `${n(filas.reduce((t, f) => t + f.ms, 0) / filas.length, 1)} ms de media`,
   )
+
+  // Los silencios agrupados por su motivo: es lo que dice si un silencio es la
+  // respuesta correcta o una regla que se está llevando por delante un borde.
+  const porMotivo = new Map()
+  for (const f of silencios) porMotivo.set(f.motivo, (porMotivo.get(f.motivo) ?? 0) + 1)
+  console.log('\nSilencios por motivo:')
+  for (const [motivo, cuantos] of [...porMotivo].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${String(motivo).padEnd(20)} ${cuantos}`)
+  }
 }

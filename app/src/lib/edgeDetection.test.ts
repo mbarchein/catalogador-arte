@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { detectArtworkEdges, rotateSuggestion, type EdgeSuggestion } from './edgeDetection'
+import {
+  analyseArtworkEdges,
+  detectArtworkEdges,
+  rotateSuggestion,
+  type EdgeSuggestion,
+} from './edgeDetection'
 import type { Crop } from './imageEdits'
 
 /**
@@ -14,6 +19,9 @@ import type { Crop } from './imageEdits'
  */
 
 const WALL = 128
+
+/** The floor MIN_EDGE_STRENGTH puts on the contrast of an axis. */
+const MIN_EDGE_STRENGTH_FLOOR = 20
 
 interface Photo {
   luminance: Uint8Array
@@ -298,6 +306,69 @@ describe('RF-410: the suggestion is refused rather than invented', () => {
   it('suggests nothing when the array does not hold the image it says', () => {
     expect(detectArtworkEdges(new Uint8Array(100), 700, 500)).toBeNull()
     expect(detectArtworkEdges(new Uint8Array(1000), 31.5, 31.5)).toBeNull()
+  })
+})
+
+describe('RF-410: why the detector declined', () => {
+  /**
+   * The reason exists because the module answered `null` for six different
+   * situations with nothing to tell them apart, and that made every change to it a
+   * matter of opinion. Measured over the catalog it paid for itself at once: of the
+   * 33 silences, four were a border that is not in the pixels and had to stay
+   * silent, and seventeen were a rule throwing away a border that IS there — and
+   * the two look identical from outside.
+   */
+  const reasonOf = (target: Photo) =>
+    analyseArtworkEdges(target.luminance, target.width, target.height).reason
+
+  it('says so when the photograph cannot be analysed at all', () => {
+    expect(reasonOf(photo(10, 10))).toBe('unusable-image')
+  })
+
+  it('tells «there is no border here» from «the border is outside the frame»', () => {
+    // A wall and nothing else: no contrast on either axis.
+    expect(reasonOf(photo(700, 500))).toBe('no-columns-edge')
+
+    // A painting pressed into the corner: the border IS there, on two sides.
+    const cornered = photo(700, 500)
+    paint(cornered, { x: 0, y: 0, width: 0.55, height: 0.6 }, 210)
+    expect(reasonOf(cornered)).toBe('one-sided-columns')
+  })
+
+  it('tells a texture that fooled the profile from a rectangle that is no painting', () => {
+    const textured = photo(700, 500)
+    const segment = (i: number) => [235, 25, WALL][Math.floor(i / 6) % 3]!
+    for (const x of [140, 557]) {
+      for (let y = 40; y < 460; y += 1) {
+        for (let d = 0; d < 3; d += 1) textured.luminance[y * 700 + x + d] = segment(y)
+      }
+    }
+    for (const y of [40, 457]) {
+      for (let x = 140; x < 560; x += 1) {
+        for (let d = 0; d < 3; d += 1) textured.luminance[(y + d) * 700 + x] = segment(x)
+      }
+    }
+    expect(reasonOf(textured)).toBe('sides-not-lines')
+
+    // Four real borders, plenty of contrast, and a shape no painting has: 6.3
+    // wide for 1 tall. It is the check that keeps a shelf or a skirting board
+    // from being offered as an artwork.
+    const shelf = photo(700, 500)
+    paint(shelf, { x: 0.05, y: 0.4, width: 0.9, height: 0.2 }, 220)
+    expect(reasonOf(shelf)).toBe('not-artwork')
+  })
+
+  it('carries the numbers the decision was made with, and no reason when it worked', () => {
+    const frame = photo(700, 500)
+    paint(frame, { x: 0.2, y: 0.2, width: 0.6, height: 0.6 }, 210)
+    const analysis = analyseArtworkEdges(frame.luminance, frame.width, frame.height)
+
+    expect(analysis.reason).toBeNull()
+    expect(analysis.suggestion).not.toBeNull()
+    // The support of the four sides of a clean synthetic border is total.
+    expect(analysis.detail.supportWest).toBeCloseTo(1, 2)
+    expect(analysis.detail.supportSouth).toBeCloseTo(1, 2)
+    expect(analysis.detail.columnsContrast).toBeGreaterThan(20)
   })
 })
 

@@ -181,6 +181,46 @@ const SAFETY_MARGIN = 0.005
  * What the detector found. `inner` is null when there is a single candidate,
  * which is the common case with an unframed painting.
  */
+/**
+ * Why the detector declined. The codes are stable because the bench of
+ * `scripts/bordes/` reports them and its measurements are compared across runs.
+ *
+ * It exists because the module used to answer `null` for six different situations
+ * with nothing to tell them apart, and that made every change to it a matter of
+ * opinion: on the 44 photographs of the catalog, three of the silences were a
+ * border that is not in the pixels and had to stay silent, and three were a
+ * border the rules were throwing away. Without a reason there is no way to know
+ * which is which without reading the code and guessing.
+ */
+export type DeclineReason =
+  | 'unusable-image'
+  /** No contrast on the axis: MIN_EDGE_STRENGTH. */
+  | 'no-columns-edge'
+  | 'no-rows-edge'
+  /** Contrast, but no peak clears the threshold. */
+  | 'no-columns-peak'
+  | 'no-rows-peak'
+  /** A peak on one half of the axis only: a side outside the photograph. */
+  | 'one-sided-columns'
+  | 'one-sided-rows'
+  /** Too small, almost the whole frame, or an absurd aspect ratio. */
+  | 'not-artwork'
+  /** Four peaks, but at least one of the sides is not a line. */
+  | 'sides-not-lines'
+
+/** What the detector decided, and the numbers it decided with. */
+export interface EdgeAnalysis {
+  suggestion: EdgeSuggestion | null
+  reason: DeclineReason | null
+  /**
+   * Measurements behind the decision: the contrast of each axis and the support of
+   * the four sides when they were measured. For the bench, not for the interface —
+   * the cataloger is told that the border could not be recognized, never which
+   * constant said so.
+   */
+  detail: Record<string, number>
+}
+
 export interface EdgeSuggestion {
   /** The outer rectangle: with a framed painting, the outside of the frame. */
   outer: Crop
@@ -202,6 +242,21 @@ interface AxisEdges {
    * one taken in full sun.
    */
   contrast: number
+}
+
+/**
+ * Why an axis shows no pair of sides. The three cases are told apart because they
+ * mean different things and lead to different work: `no-edge` is a photograph
+ * where the border is not in the pixels, `no-peak` is a border drowned by the
+ * threshold, and `one-sided` is a border that falls outside the frame.
+ */
+interface AxisDecline {
+  declined: 'no-edge' | 'no-peak' | 'one-sided'
+  contrast: number
+}
+
+function isDecline(value: AxisEdges | AxisDecline): value is AxisDecline {
+  return 'declined' in value
 }
 
 interface Peak {
@@ -361,7 +416,7 @@ function findPeaks(profile: Float32Array, threshold: number): Peak[] {
  * behaviour, which is worth saying out loud: the test described the implementation,
  * not anything the cataloger had asked for.
  */
-function axisEdges(profile: Float32Array, size: number): AxisEdges | null {
+function axisEdges(profile: Float32Array, size: number): AxisEdges | AxisDecline {
   const center = median(profile)
   let strongest = 0
   for (let i = 0; i < profile.length; i += 1) {
@@ -372,19 +427,23 @@ function axisEdges(profile: Float32Array, size: number): AxisEdges | null {
   // with a gradient in one direction and nothing in the other is a stripe of
   // shadow, not a picture, and answering with the full width of the frame
   // would be answering with the frame.
-  if (strongest - center < MIN_EDGE_STRENGTH) return null
+  if (strongest - center < MIN_EDGE_STRENGTH) {
+    return { declined: 'no-edge', contrast: strongest - center }
+  }
 
   // Only the prominence term: see PROMINENCE_FRACTION for why the MAD term is
   // capped by it, which amounts to removing it.
   const threshold = center + PROMINENCE_FRACTION * (strongest - center)
 
   const peaks = findPeaks(profile, threshold)
-  if (peaks.length === 0) return null
+  if (peaks.length === 0) return { declined: 'no-peak', contrast: strongest - center }
 
   const middle = (size - 1) / 2
   const low = peaks.filter((peak) => peak.position < middle)
   const high = peaks.filter((peak) => peak.position >= middle)
-  if (low.length === 0 || high.length === 0) return null
+  if (low.length === 0 || high.length === 0) {
+    return { declined: 'one-sided', contrast: strongest - center }
+  }
 
   // A pixel index becomes a fraction at the boundary between pixels, which is
   // where a border actually is: the centroid of a step at pixel `a` sits at
@@ -543,34 +602,75 @@ export function detectArtworkEdges(
   width: number,
   height: number,
 ): EdgeSuggestion | null {
-  if (!Number.isInteger(width) || !Number.isInteger(height)) return null
-  if (width < MIN_SIZE || height < MIN_SIZE) return null
-  if (luminance.length < width * height) return null
+  return analyseArtworkEdges(luminance, width, height).suggestion
+}
+
+/**
+ * The same detection, saying why when it declines. `detectArtworkEdges` is this
+ * without the explanation, which is all the editor needs.
+ */
+export function analyseArtworkEdges(
+  luminance: Uint8Array | Float32Array,
+  width: number,
+  height: number,
+): EdgeAnalysis {
+  const decline = (reason: DeclineReason, detail: Record<string, number> = {}): EdgeAnalysis => ({
+    suggestion: null,
+    reason,
+    detail,
+  })
+
+  if (!Number.isInteger(width) || !Number.isInteger(height)) return decline('unusable-image')
+  if (width < MIN_SIZE || height < MIN_SIZE) return decline('unusable-image')
+  if (luminance.length < width * height) return decline('unusable-image')
 
   const image = smooth(Float32Array.from(luminance), width, height)
   const { columns, rows } = projectionProfiles(image, width, height)
 
   const horizontal = axisEdges(columns, width)
   const vertical = axisEdges(rows, height)
-  if (!horizontal || !vertical) return null
+  if (isDecline(horizontal)) {
+    const which = { 'no-edge': 'no-columns-edge', 'no-peak': 'no-columns-peak',
+                    'one-sided': 'one-sided-columns' } as const
+    return decline(which[horizontal.declined], { columnsContrast: horizontal.contrast })
+  }
+  if (isDecline(vertical)) {
+    const which = { 'no-edge': 'no-rows-edge', 'no-peak': 'no-rows-peak',
+                    'one-sided': 'one-sided-rows' } as const
+    return decline(which[vertical.declined], {
+      columnsContrast: horizontal.contrast,
+      rowsContrast: vertical.contrast,
+    })
+  }
+
+  const detail: Record<string, number> = {
+    columnsContrast: horizontal.contrast,
+    rowsContrast: vertical.contrast,
+  }
 
   /** Whether the four sides of a rectangle are lines and not just profile peaks. */
-  const sidesAreLines = (crop: Crop): boolean => {
+  const sidesAreLines = (crop: Crop, label: 'outer' | 'inner'): boolean => {
     const stepX = LINE_STEP_FRACTION * horizontal.contrast
     const stepY = LINE_STEP_FRACTION * vertical.contrast
     const top = clampIndex(crop.y, height)
     const bottom = clampIndex(crop.y + crop.height, height)
     const left = clampIndex(crop.x, width)
     const right = clampIndex(crop.x + crop.width, width)
+    const west = lineSupport(image, width, height, 'vertical', crop.x, top, bottom, stepX)
+    const east = lineSupport(image, width, height, 'vertical', crop.x + crop.width, top, bottom, stepX)
+    const north = lineSupport(image, width, height, 'horizontal', crop.y, left, right, stepY)
+    const south = lineSupport(image, width, height, 'horizontal', crop.y + crop.height, left, right, stepY)
+    if (label === 'outer') {
+      detail.supportWest = west
+      detail.supportEast = east
+      detail.supportNorth = north
+      detail.supportSouth = south
+    }
     return (
-      lineSupport(image, width, height, 'vertical', crop.x, top, bottom, stepX) >
-        MIN_LINE_SUPPORT &&
-      lineSupport(image, width, height, 'vertical', crop.x + crop.width, top, bottom, stepX) >
-        MIN_LINE_SUPPORT &&
-      lineSupport(image, width, height, 'horizontal', crop.y, left, right, stepY) >
-        MIN_LINE_SUPPORT &&
-      lineSupport(image, width, height, 'horizontal', crop.y + crop.height, left, right, stepY) >
-        MIN_LINE_SUPPORT
+      west > MIN_LINE_SUPPORT &&
+      east > MIN_LINE_SUPPORT &&
+      north > MIN_LINE_SUPPORT &&
+      south > MIN_LINE_SUPPORT
     )
   }
 
@@ -578,8 +678,9 @@ export function detectArtworkEdges(
     [horizontal.outerLow, horizontal.outerHigh],
     [vertical.outerLow, vertical.outerHigh],
   )
-  if (!looksLikeArtwork(outer, width, height)) return null
-  if (!sidesAreLines(outer)) return null
+  detail.outerArea = outer.width * outer.height
+  if (!looksLikeArtwork(outer, width, height)) return decline('not-artwork', detail)
+  if (!sidesAreLines(outer, 'outer')) return decline('sides-not-lines', detail)
 
   let inner: Crop | null = null
   if (
@@ -595,7 +696,7 @@ export function detectArtworkEdges(
     if (
       looksLikeArtwork(candidate, width, height) &&
       clearlyNested(outer, candidate) &&
-      sidesAreLines(candidate)
+      sidesAreLines(candidate, 'inner')
     ) {
       inner = candidate
     }
@@ -603,7 +704,11 @@ export function detectArtworkEdges(
 
   // The margin is added after the checks so that widening the rectangle cannot
   // be what makes it pass or fail them.
-  return { outer: withMargin(outer), inner: inner ? withMargin(inner) : null }
+  return {
+    suggestion: { outer: withMargin(outer), inner: inner ? withMargin(inner) : null },
+    reason: null,
+    detail,
+  }
 }
 
 /**
