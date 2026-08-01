@@ -33,6 +33,15 @@
  * `createImageBitmap`, so what draws pixels lives in imageRender.ts.
  */
 
+import {
+  CORNER_KEYS,
+  cornersBoundingBox,
+  isRectangle,
+  isSimpleQuadrilateral,
+  straightenedSize,
+  type Corners,
+} from './perspective'
+
 /** Clockwise, in degrees. Only quarter turns: see the migration. */
 export type Rotation = 0 | 90 | 180 | 270
 
@@ -48,9 +57,33 @@ export interface PhotoEdit {
   rotation: Rotation
   /** Null means the whole image. */
   crop: Crop | null
+  /**
+   * The four corners of the artwork in the already rotated image, when the framing
+   * is a straightened quadrilateral instead of a rectangle.
+   *
+   * **Corners take precedence over `crop`**: with corners present the renderer
+   * straightens and ignores the rectangle, and the two travel together on purpose
+   * — the rows that already had a crop keep it, the old frontend keeps reading
+   * them, and the deployment stays one-phase because the corner columns are born
+   * null (see the migration).
+   *
+   * They do not break the invariant that makes an edit reversible: what is stored
+   * is still absolute over the master, re-editing still REPLACES it, and the master
+   * is never touched. What they do break is `composeEdits`, whose one caller is the
+   * degraded case where the source already carries the framing baked in — there a
+   * straightened image cannot be straightened again, and perspective is refused
+   * rather than composed.
+   *
+   * Optional and not required: an edit is constructed in a dozen places that have
+   * nothing to do with perspective —the photo queue, the capture flow, every test—
+   * and its absence means «no perspective», which is exactly what those mean. What
+   * `normalizeEdit` returns always has the field, so whatever reads a normalized
+   * edit can rely on it.
+   */
+  corners?: Corners | null
 }
 
-export const NO_EDIT: PhotoEdit = { rotation: 0, crop: null }
+export const NO_EDIT: PhotoEdit = { rotation: 0, crop: null, corners: null }
 
 /**
  * Smallest side the editor lets a crop have, as a fraction. Below this the
@@ -199,13 +232,25 @@ export function composeCrop(outer: Crop, inner: Crop): Crop {
  * photo cropped and then turned would come out framed somewhere else.
  */
 export function composeEdits(base: PhotoEdit, extra: PhotoEdit): PhotoEdit {
+  // Perspective is refused here rather than composed, and the caller has to have
+  // prevented it: this function exists only for the degraded case where the master
+  // could not be downloaded and the source already carries its framing baked in.
+  // A straightened image cannot be straightened again — the second warp would be
+  // over pixels that were already interpolated, and the row would stop telling the
+  // truth about the master. The editor disables the handles there for that reason.
+  if (base.corners || extra.corners) {
+    throw new Error('composeEdits no admite perspectiva: la vía degradada la prohíbe')
+  }
   const rotation = addRotation(base.rotation, extra.rotation)
   const carried = base.crop ? rotateCrop(base.crop, extra.rotation) : null
+  // `corners: null` explicitly, and not omitted: what comes out of here is the
+  // canonical form, the same shape `normalizeEdit` returns, so whoever compares two
+  // edits is comparing the same fields.
   if (!extra.crop) {
-    return { rotation, crop: carried ? clampCrop(carried) : null }
+    return { rotation, crop: carried ? clampCrop(carried) : null, corners: null }
   }
   const composed = composeCrop(carried ?? fullCrop(), extra.crop)
-  return { rotation, crop: clampCrop(composed) }
+  return { rotation, crop: clampCrop(composed), corners: null }
 }
 
 /** Rounds the fractions so that float noise does not reach the database. */
@@ -221,14 +266,47 @@ export function quantizeCrop(crop: Crop, decimals = 6): Crop {
  */
 export function normalizeEdit(edit: PhotoEdit): PhotoEdit {
   const rotation = normalizeRotation(edit.rotation)
-  if (!edit.crop || isFullCrop(edit.crop)) return { rotation, crop: null }
-  return { rotation, crop: quantizeCrop(clampCrop(edit.crop)) }
+
+  // Corners that are, within tolerance, an axis-aligned rectangle get stored as a
+  // crop. Not cosmetic: straightening resamples every pixel, so doing it for a
+  // quadrilateral that IS a rectangle would cost sharpness for nothing — and it
+  // keeps a photograph whose handles were dragged and put back from being recorded
+  // as «straightened».
+  const corners = edit.corners
+  if (corners && isSimpleQuadrilateral(corners) && !isRectangle(corners, RECTANGLE_TOLERANCE)) {
+    return { rotation, crop: null, corners: quantizeCorners(corners) }
+  }
+  const rect = corners ? cornersBoundingBox(corners) : edit.crop
+  if (!rect || isFullCrop(rect)) return { rotation, crop: null, corners: null }
+  return { rotation, crop: quantizeCrop(clampCrop(rect)), corners: null }
+}
+
+/**
+ * How far from square a quadrilateral may be and still be treated as a rectangle.
+ *
+ * A thousandth of the frame is about two pixels of the 2000 px derivative: below
+ * that, straightening changes nothing anybody can see and only costs the
+ * resampling. Above it, the tilt is the whole point.
+ */
+const RECTANGLE_TOLERANCE = 1e-3
+
+/** The corners rounded like a crop, for the same reason: they travel as `numeric`. */
+function quantizeCorners(corners: Corners, decimals = 6): Corners {
+  const factor = 10 ** decimals
+  const round = (value: number) => Math.round(value * factor) / factor
+  const point = (p: { x: number; y: number }) => ({ x: round(p.x), y: round(p.y) })
+  return {
+    nw: point(corners.nw),
+    ne: point(corners.ne),
+    se: point(corners.se),
+    sw: point(corners.sw),
+  }
 }
 
 /** True when the edit changes nothing: neither turned nor trimmed. */
 export function isNoEdit(edit: PhotoEdit): boolean {
   const normalized = normalizeEdit(edit)
-  return normalized.rotation === 0 && normalized.crop === null
+  return normalized.rotation === 0 && normalized.crop === null && normalized.corners === null
 }
 
 /**
@@ -240,6 +318,14 @@ export function sameEdit(a: PhotoEdit, b: PhotoEdit): boolean {
   const x = normalizeEdit(a)
   const y = normalizeEdit(b)
   if (x.rotation !== y.rotation) return false
+  if (x.corners || y.corners) {
+    if (!x.corners || !y.corners) return false
+    return CORNER_KEYS.every(
+      (key) =>
+        Math.abs(x.corners![key].x - y.corners![key].x) <= EPSILON &&
+        Math.abs(x.corners![key].y - y.corners![key].y) <= EPSILON,
+    )
+  }
   if (!x.crop || !y.crop) return x.crop === y.crop
   return (
     Math.abs(x.crop.x - y.crop.x) <= EPSILON &&
@@ -270,6 +356,16 @@ export function cropRectInPixels(
 /** Size in pixels the edited image ends up with, before any downscaling. */
 export function editedSize(size: Size, edit: PhotoEdit): Size {
   const rotated = rotatedSize(size, edit.rotation)
+  // With corners the output is the straightened rectangle, whose proportions come
+  // from the average of the opposite sides (see straightenedSize for why not from
+  // the focal length or from the artwork's measurements).
+  if (edit.corners) {
+    const straightened = straightenedSize(edit.corners)
+    return {
+      width: Math.max(1, Math.round(straightened.width * rotated.width)),
+      height: Math.max(1, Math.round(straightened.height * rotated.height)),
+    }
+  }
   if (!edit.crop) {
     return { width: Math.max(1, Math.round(rotated.width)), height: Math.max(1, Math.round(rotated.height)) }
   }
@@ -403,6 +499,11 @@ export function editSummary(edit: PhotoEdit): string | null {
   const normalized = normalizeEdit(edit)
   const parts: string[] = []
   if (normalized.rotation !== 0) parts.push(`Girada ${normalized.rotation}°`)
+  if (normalized.corners) {
+    const box = cornersBoundingBox(normalized.corners)
+    const percent = Math.round(box.width * box.height * 100)
+    parts.push(`Perspectiva corregida, al ${percent} % del original`)
+  }
   if (normalized.crop) {
     const percent = Math.round(normalized.crop.width * normalized.crop.height * 100)
     parts.push(`Recortada al ${percent} % del original`)
@@ -417,11 +518,61 @@ export interface EditColumns {
   crop_y: number | null
   crop_width: number | null
   crop_height: number | null
+  /** The eight corner columns: all eight or all null, like the four of the crop. */
+  corner_nw_x: number | null
+  corner_nw_y: number | null
+  corner_ne_x: number | null
+  corner_ne_y: number | null
+  corner_se_x: number | null
+  corner_se_y: number | null
+  corner_sw_x: number | null
+  corner_sw_y: number | null
 }
 
-/** The edit as stored: four nulls when there is no crop, never a half rectangle. */
+const NO_CORNER_COLUMNS = {
+  corner_nw_x: null,
+  corner_nw_y: null,
+  corner_ne_x: null,
+  corner_ne_y: null,
+  corner_se_x: null,
+  corner_se_y: null,
+  corner_sw_x: null,
+  corner_sw_y: null,
+} as const
+
+/**
+ * The edit as stored: nulls where there is nothing, never half a rectangle nor half
+ * a quadrilateral — the database refuses both and it would be refusing a shape
+ * nobody can draw.
+ *
+ * The two framings are mutually exclusive here even though the columns can coexist
+ * in a row: `normalizeEdit` has already decided which one this edit is, so writing
+ * both would be writing a rectangle that the renderer is going to ignore. What DOES
+ * coexist in the table are the rows written before the corners existed, which keep
+ * their crop untouched.
+ */
 export function editToColumns(edit: PhotoEdit): EditColumns {
   const normalized = normalizeEdit(edit)
+
+  if (normalized.corners) {
+    const { nw, ne, se, sw } = normalized.corners
+    return {
+      rotation: normalized.rotation,
+      crop_x: null,
+      crop_y: null,
+      crop_width: null,
+      crop_height: null,
+      corner_nw_x: nw.x,
+      corner_nw_y: nw.y,
+      corner_ne_x: ne.x,
+      corner_ne_y: ne.y,
+      corner_se_x: se.x,
+      corner_se_y: se.y,
+      corner_sw_x: sw.x,
+      corner_sw_y: sw.y,
+    }
+  }
+
   if (!normalized.crop) {
     return {
       rotation: normalized.rotation,
@@ -429,6 +580,7 @@ export function editToColumns(edit: PhotoEdit): EditColumns {
       crop_y: null,
       crop_width: null,
       crop_height: null,
+      ...NO_CORNER_COLUMNS,
     }
   }
   return {
@@ -437,6 +589,7 @@ export function editToColumns(edit: PhotoEdit): EditColumns {
     crop_y: normalized.crop.y,
     crop_width: normalized.crop.width,
     crop_height: normalized.crop.height,
+    ...NO_CORNER_COLUMNS,
   }
 }
 
@@ -448,6 +601,24 @@ export function editToColumns(edit: PhotoEdit): EditColumns {
 export function editFromColumns(row: Partial<EditColumns> | null | undefined): PhotoEdit {
   if (!row) return NO_EDIT
   const rotation = normalizeRotation(row.rotation ?? 0)
+
+  // Corners first, because they take precedence in the row too. Eight numbers or
+  // nothing: a row with some of them is one the database could not have accepted,
+  // and reading it as a crop is better than reading it as a broken quadrilateral.
+  const corner = (x: unknown, y: unknown) =>
+    typeof x === 'number' && typeof y === 'number' ? { x, y } : null
+  const nw = corner(row.corner_nw_x, row.corner_nw_y)
+  const ne = corner(row.corner_ne_x, row.corner_ne_y)
+  const se = corner(row.corner_se_x, row.corner_se_y)
+  const sw = corner(row.corner_sw_x, row.corner_sw_y)
+  if (nw && ne && se && sw) {
+    const corners = { nw, ne, se, sw }
+    // And it still has to be a quadrilateral that can be straightened: a row that
+    // somehow held a crossed one would produce an image folded over itself, and
+    // showing the photograph unstraightened is always better than that.
+    if (isSimpleQuadrilateral(corners)) return normalizeEdit({ rotation, crop: null, corners })
+  }
+
   const { crop_x: x, crop_y: y, crop_width: width, crop_height: height } = row
   if (
     typeof x !== 'number' ||
@@ -455,7 +626,7 @@ export function editFromColumns(row: Partial<EditColumns> | null | undefined): P
     typeof width !== 'number' ||
     typeof height !== 'number'
   ) {
-    return { rotation, crop: null }
+    return { rotation, crop: null, corners: null }
   }
   return normalizeEdit({ rotation, crop: { x, y, width, height } })
 }

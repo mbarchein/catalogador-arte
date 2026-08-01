@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { cornersOfRect } from './perspective'
 import {
   MIN_CROP,
   NO_EDIT,
@@ -171,7 +172,7 @@ describe('composeCrop (a crop of a crop)', () => {
 
 describe('composeEdits (the editor works on an already edited photo)', () => {
   it('adds nothing when there is nothing to add', () => {
-    expect(composeEdits(NO_EDIT, NO_EDIT)).toEqual({ rotation: 0, crop: null })
+    expect(composeEdits(NO_EDIT, NO_EDIT)).toEqual({ rotation: 0, crop: null, corners: null })
   })
 
   it('keeps the previous edit when the second one is empty', () => {
@@ -455,6 +456,111 @@ describe('moveCrop (dragging the whole rectangle)', () => {
   })
 })
 
+/** Las ocho columnas de esquina en nulo: lo que escribe un encuadre sin perspectiva. */
+const SIN_ESQUINAS = {
+  corner_nw_x: null,
+  corner_nw_y: null,
+  corner_ne_x: null,
+  corner_ne_y: null,
+  corner_se_x: null,
+  corner_se_y: null,
+  corner_sw_x: null,
+  corner_sw_y: null,
+}
+
+describe('el encuadre por esquinas (RF-410)', () => {
+  /** Un trapecio: el lado de arriba más estrecho que el de abajo. */
+  const trapecio = {
+    nw: { x: 0.3, y: 0.15 },
+    ne: { x: 0.7, y: 0.15 },
+    se: { x: 0.85, y: 0.9 },
+    sw: { x: 0.15, y: 0.9 },
+  }
+
+  it('las esquinas mandan sobre el recorte, y no se escriben las dos cosas', () => {
+    // Las dos columnas pueden convivir en una FILA —es lo que deja el despliegue en
+    // una fase— pero un encuadre concreto es una cosa o la otra: escribir además un
+    // rectángulo sería escribir algo que el renderizador va a ignorar.
+    const columns = editToColumns({ rotation: 0, crop: fullCrop(), corners: trapecio })
+    expect(columns.corner_nw_x).toBeCloseTo(0.3, 6)
+    expect(columns.crop_x).toBeNull()
+    expect(columns.crop_width).toBeNull()
+  })
+
+  it('unas esquinas que son un rectángulo se guardan como recorte', () => {
+    // Enderezar remuestrea cada píxel, así que hacerlo para un cuadrilátero que ES
+    // un rectángulo costaría nitidez a cambio de nada. Y evita que una fotografía
+    // cuyas asas se arrastraron y se devolvieron quede registrada como «corregida».
+    const columns = editToColumns({
+      rotation: 0,
+      crop: null,
+      corners: cornersOfRect({ x: 0.2, y: 0.1, width: 0.5, height: 0.6 }),
+    })
+    expect(columns.corner_nw_x).toBeNull()
+    expect(columns.crop_x).toBeCloseTo(0.2, 6)
+    expect(columns.crop_height).toBeCloseTo(0.6, 6)
+  })
+
+  it('ida y vuelta por las columnas sin perder la forma', () => {
+    const edit: PhotoEdit = { rotation: 90, crop: null, corners: trapecio }
+    const back = editFromColumns(editToColumns(edit))
+    expect(back.rotation).toBe(90)
+    expect(back.corners).not.toBeNull()
+    expect(back.corners!.se.x).toBeCloseTo(trapecio.se.x, 6)
+    expect(sameEdit(edit, back)).toBe(true)
+  })
+
+  it('una fila con esquinas a medias se lee como recorte, no como cuadrilátero roto', () => {
+    // La base no puede haber aceptado esa fila, así que si aparece es un dato
+    // corrupto: leerla como el recorte que sí tiene es mejor que enderezar con tres
+    // esquinas.
+    const back = editFromColumns({
+      rotation: 0,
+      crop_x: 0.1,
+      crop_y: 0.1,
+      crop_width: 0.5,
+      crop_height: 0.5,
+      corner_nw_x: 0.1,
+      corner_nw_y: 0.1,
+    })
+    expect(back.corners).toBeNull()
+    expect(back.crop?.width).toBeCloseTo(0.5, 6)
+  })
+
+  it('una fila con un cuadrilátero cruzado se lee sin enderezar', () => {
+    // Enderezar un lazo da una imagen doblada sobre sí misma. Mostrar la fotografía
+    // sin corregir es siempre mejor que eso.
+    const back = editFromColumns({
+      rotation: 0,
+      corner_nw_x: 0.8, corner_nw_y: 0.2,
+      corner_ne_x: 0.2, corner_ne_y: 0.2,
+      corner_se_x: 0.8, corner_se_y: 0.8,
+      corner_sw_x: 0.2, corner_sw_y: 0.8,
+    })
+    expect(back.corners).toBeNull()
+    expect(back.crop).toBeNull()
+  })
+
+  it('el tamaño de salida es el rectángulo enderezado', () => {
+    // El trapecio mide 0,4 arriba y 0,7 abajo: la media es 0,55 del ancho.
+    const size = editedSize({ width: 2000, height: 1000 }, { rotation: 0, crop: null, corners: trapecio })
+    expect(size.width).toBe(Math.round(0.55 * 2000))
+  })
+
+  it('la vía degradada rechaza la perspectiva en vez de componerla', () => {
+    // `composeEdits` solo tiene un llamante: el caso en que el máster no se pudo
+    // descargar y la copia ya lleva su encuadre incrustado. Un segundo warp iría
+    // sobre píxeles ya interpolados y la fila dejaría de decir la verdad sobre el
+    // máster, así que se rechaza y el editor deshabilita las asas allí.
+    expect(() => composeEdits(NO_EDIT, { rotation: 0, crop: null, corners: trapecio })).toThrow()
+    expect(() => composeEdits({ rotation: 0, crop: null, corners: trapecio }, NO_EDIT)).toThrow()
+  })
+
+  it('y el resumen lo dice en español', () => {
+    expect(editSummary({ rotation: 0, crop: null, corners: trapecio })).toMatch(/Perspectiva corregida/)
+  })
+})
+
 describe('the edit as data (columns of the images row)', () => {
   it('writes four nulls when there is no crop, never half a rectangle', () => {
     expect(editToColumns({ rotation: 90, crop: null })).toEqual({
@@ -463,6 +569,7 @@ describe('the edit as data (columns of the images row)', () => {
       crop_y: null,
       crop_width: null,
       crop_height: null,
+      ...SIN_ESQUINAS,
     })
     // A crop covering everything is stored as no crop: it is what it means.
     expect(editToColumns({ rotation: 0, crop: fullCrop() }).crop_x).toBeNull()
@@ -486,15 +593,16 @@ describe('the edit as data (columns of the images row)', () => {
   })
 
   it('a row from before this feature reads as no edit', () => {
-    expect(editFromColumns(null)).toEqual({ rotation: 0, crop: null })
-    expect(editFromColumns({})).toEqual({ rotation: 0, crop: null })
-    expect(editFromColumns({ rotation: 90 })).toEqual({ rotation: 90, crop: null })
+    expect(editFromColumns(null)).toEqual({ rotation: 0, crop: null, corners: null })
+    expect(editFromColumns({})).toEqual({ rotation: 0, crop: null, corners: null })
+    expect(editFromColumns({ rotation: 90 })).toEqual({ rotation: 90, crop: null, corners: null })
   })
 
   it('a half-written crop is ignored rather than drawn wrong', () => {
     // The database cannot hold this, but a stale client or a manual fix could
     // send it: showing the photo unframed beats not showing it.
     expect(editFromColumns({ rotation: 0, crop_x: 0.1, crop_y: 0.1 })).toEqual({
+      corners: null,
       rotation: 0,
       crop: null,
     })
@@ -506,6 +614,7 @@ describe('normalizeEdit / editSummary', () => {
     expect(normalizeEdit({ rotation: 450 as Rotation, crop: fullCrop() })).toEqual({
       rotation: 90,
       crop: null,
+      corners: null,
     })
   })
 
@@ -526,7 +635,7 @@ describe('el original siempre se puede recuperar', () => {
     // With the master as source the editor opens with baked = NO_EDIT, so what
     // it returns is what gets stored: composing is the identity.
     const widened: PhotoEdit = { rotation: 90, crop: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 } }
-    expect(composeEdits(NO_EDIT, widened)).toEqual(widened)
+    expect(composeEdits(NO_EDIT, widened)).toEqual({ ...widened, corners: null })
 
     // And that is the whole point: the new crop is WIDER than the stored one,
     // which composing onto it could never produce.
@@ -536,7 +645,7 @@ describe('el original siempre se puede recuperar', () => {
 
   it('el recorte nuevo no tiene que solaparse con el anterior', () => {
     const elsewhere: PhotoEdit = { rotation: 0, crop: { x: 0.7, y: 0.7, width: 0.3, height: 0.3 } }
-    expect(composeEdits(NO_EDIT, elsewhere)).toEqual(elsewhere)
+    expect(composeEdits(NO_EDIT, elsewhere)).toEqual({ ...elsewhere, corners: null })
   })
 
   it('volver al original deja la fila sin encuadre: cuatro nulos y sin giro', () => {
@@ -547,6 +656,7 @@ describe('el original siempre se puede recuperar', () => {
       crop_y: null,
       crop_width: null,
       crop_height: null,
+      ...SIN_ESQUINAS,
     })
     expect(isNoEdit(editFromColumns(columns))).toBe(true)
   })
