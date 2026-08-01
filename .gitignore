@@ -62,3 +62,8 @@ htmlcov/
 .vscode/
 *.swp
 .DS_Store
+
+# Corpus del banco de pruebas del detector de bordes: se genera desde un volcado
+# con scripts/bordes/preparar-corpus.py. Son fotografías de obra real y este
+# repositorio es público (ADR-005), igual que volcados/.
+corpus-bordes/
