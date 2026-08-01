@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   addRotation,
@@ -41,6 +41,13 @@ import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
 const KEY_STEP = 0.02
+
+/** Closest and farthest the photograph can be zoomed on the working surface. */
+const MIN_ZOOM = 1
+const MAX_ZOOM = 8
+
+/** Wheel notches to doublings: a notch of 100 units is about a 20 % step. */
+const WHEEL_TO_ZOOM = 0.0018
 
 /** Distance from the loupe to the edges of the working surface. */
 const LOUPE_INSET = '0.75rem'
@@ -199,6 +206,28 @@ export function PhotoEditor({
    * bet into a try.
    */
   const [replaced, setReplaced] = useState<Crop | null>(null)
+  /**
+   * Where the cataloger parked the preview, in pixels of the working surface, or null
+   * while it places itself.
+   *
+   * Once she has moved it, it stays: the automatic placement follows the finger from
+   * corner to corner, and a panel that jumps away every time you grab a different
+   * handle is a panel you cannot watch while you work. Deciding beats guessing, so the
+   * guess stops as soon as there is a decision.
+   */
+  const [previewSpot, setPreviewSpot] = useState<{ x: number; y: number } | null>(null)
+  /**
+   * Zoom and pan of the photograph on the working surface. Presentation only: nothing
+   * here reaches the framing that gets stored.
+   *
+   * It is applied as a CSS transform on the area the handles live in, and that choice
+   * is what keeps the rest of the component untouched — the pointer arithmetic reads
+   * `getBoundingClientRect()` of that area, which already comes back transformed, so
+   * every corner and every drag keeps working with no change. What does need to know
+   * is the loupe, whose contract is «three times what is ON SCREEN»: with the
+   * photograph magnified, the region it reads has to shrink by the same factor.
+   */
+  const [view, setView] = useState({ zoom: 1, x: 0, y: 0 })
 
   const frameRef = useRef<HTMLDivElement | null>(null)
   const areaRef = useRef<HTMLDivElement | null>(null)
@@ -415,6 +444,44 @@ export function PhotoEditor({
     setCorners(cornersOfRect(crop ?? centeredCrop()))
   }
 
+  /**
+   * Starts dragging the preview panel.
+   *
+   * Its own pointer capture and its own listeners, on purpose: it must not go through
+   * the `dragging` machinery of the framing, which is about the photograph and would
+   * take the loupe and the corner arithmetic along with it.
+   */
+  function startPreviewDrag(e: React.PointerEvent) {
+    const frame = frameRef.current?.getBoundingClientRect()
+    const panel = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    if (!frame) return
+    e.preventDefault()
+    e.stopPropagation()
+    previewDragRef.current = {
+      pointer: e.pointerId,
+      dx: e.clientX - panel.left,
+      dy: e.clientY - panel.top,
+    }
+
+    const onMove = (move: PointerEvent) => {
+      const start = previewDragRef.current
+      if (!start || move.pointerId !== start.pointer) return
+      setPreviewSpot({
+        x: move.clientX - frame.left - start.dx,
+        y: move.clientY - frame.top - start.dy,
+      })
+    }
+    const end = () => {
+      previewDragRef.current = null
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+  }
+
   /** Puts back the rectangle a suggestion replaced. */
   function discardSuggestion() {
     if (!replaced) return
@@ -528,6 +595,55 @@ export function PhotoEditor({
 
   const rotated = rotatedSize(natural, rotation)
   const fit = fitInside(rotated, box)
+
+  /**
+   * The pan, kept so that some of the photograph is always on the surface.
+   *
+   * Half its size of slack on each side: enough to bring a corner of the artwork to
+   * the middle of the screen —which is the point of panning, since a corner can sit
+   * outside the photograph— and not enough to lose the photograph off the edge.
+   */
+  const clampPan = useCallback(
+    (next: { zoom: number; x: number; y: number }) => {
+      const width = fit.width * next.zoom
+      const height = fit.height * next.zoom
+      const slackX = Math.max(box.width, width) / 2
+      const slackY = Math.max(box.height, height) / 2
+      return {
+        zoom: next.zoom,
+        x: Math.max(-slackX, Math.min(slackX, next.x)),
+        y: Math.max(-slackY, Math.min(slackY, next.y)),
+      }
+    },
+    [box.width, box.height, fit.width, fit.height],
+  )
+
+  /**
+   * Zooms about a point of the working surface, so what is under the fingers —or under
+   * the cursor— stays under them. Zooming about the centre instead makes the detail
+   * being adjusted run away, which on a phone means chasing it with the pan.
+   */
+  const zoomAbout = useCallback(
+    (factor: number, at: { x: number; y: number }) => {
+      setView((current) => {
+        const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, current.zoom * factor))
+        const ratio = zoom / current.zoom
+        // Measured FROM THE CENTRE, because that is where `transform-origin` is — and
+        // the centre of the area is the centre of the surface, since the area is
+        // centred in it whatever the photograph's proportions. Using the raw surface
+        // coordinate instead treats the top left as the origin, and the error scales
+        // with the zoom: measured, a wheel zoom to 2.9× threw the corner being adjusted
+        // to −459 px, well off screen.
+        const from = { x: at.x - box.width / 2, y: at.y - box.height / 2 }
+        return clampPan({
+          zoom,
+          x: from.x - (from.x - current.x) * ratio,
+          y: from.y - (from.y - current.y) * ratio,
+        })
+      })
+    },
+    [clampPan, box.width, box.height],
+  )
   const ready = fit.width > 0 && fit.height > 0
   const summary = editSummary({ rotation, crop })
 
@@ -617,7 +733,122 @@ export function PhotoEditor({
    * finger on either top corner both ended up in the same place — the two visible at
    * once, one over the other.
    */
+  /**
+   * Pointers down on the working surface, so two of them can be told from one.
+   *
+   * Two fingers are the pinch and the pan, and they WIN over a handle drag in
+   * progress: the second finger landing means the intent changed, and finishing the
+   * handle drag while the photograph moves under it would leave the corner somewhere
+   * nobody chose.
+   */
+  const touchesRef = useRef(new Map<number, { x: number; y: number }>())
+  const pinchRef = useRef<{ distance: number; centre: { x: number; y: number } } | null>(null)
+  /**
+   * One gesture step per frame.
+   *
+   * Two fingers produce two separate `pointermove` events, so reading the pinch on each
+   * of them measures one finger's new position against the other's old one. Measured
+   * with a synthetic two-finger pan —where the distance never changes— the zoom went
+   * 5.30 → 9.5 → 4.44 in a single gesture: pure jitter, and it would be felt on a real
+   * hand. Coalescing to a frame means both positions are fresh before anything moves.
+   */
+  const pinchFrameRef = useRef<number | null>(null)
+
+  /** Two fingers: the distance between them and their midpoint, in surface pixels. */
+  function pinchOf(frame: DOMRect) {
+    const points = [...touchesRef.current.values()]
+    if (points.length < 2) return null
+    const [a, b] = points as [{ x: number; y: number }, { x: number; y: number }]
+    return {
+      distance: Math.hypot(a.x - b.x, a.y - b.y),
+      centre: { x: (a.x + b.x) / 2 - frame.left, y: (a.y + b.y) / 2 - frame.top },
+    }
+  }
+
+  function onSurfacePointerDown(e: React.PointerEvent) {
+    touchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (touchesRef.current.size !== 2) return
+    const frame = frameRef.current?.getBoundingClientRect()
+    if (!frame) return
+    // The gesture changed hands: stop dragging whatever handle was being dragged.
+    setDragging(null)
+    startRef.current = null
+    pinchRef.current = pinchOf(frame)
+  }
+
+  function onSurfacePointerMove(e: React.PointerEvent) {
+    if (!touchesRef.current.has(e.pointerId)) return
+    touchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (!pinchRef.current) return
+    e.preventDefault()
+    if (pinchFrameRef.current !== null) return
+    pinchFrameRef.current = requestAnimationFrame(() => {
+      pinchFrameRef.current = null
+      const frame = frameRef.current?.getBoundingClientRect()
+      const previous = pinchRef.current
+      const current = frame ? pinchOf(frame) : null
+      if (!previous || !current || previous.distance === 0) return
+      // Pinch and two-finger pan are the same gesture read two ways: how much the
+      // distance changed is the zoom, how much the midpoint moved is the pan.
+      setView((state) =>
+        clampPan({
+          zoom: state.zoom,
+          x: state.x + (current.centre.x - previous.centre.x),
+          y: state.y + (current.centre.y - previous.centre.y),
+        }),
+      )
+      zoomAbout(current.distance / previous.distance, current.centre)
+      pinchRef.current = current
+    })
+  }
+
+  function onSurfacePointerUp(e: React.PointerEvent) {
+    touchesRef.current.delete(e.pointerId)
+    if (touchesRef.current.size >= 2) return
+    pinchRef.current = null
+    if (pinchFrameRef.current !== null) {
+      cancelAnimationFrame(pinchFrameRef.current)
+      pinchFrameRef.current = null
+    }
+  }
+
+  /**
+   * The wheel zooms, which is what a mouse and a trackpad both do here. `passive:
+   * false` is not available on a React handler, so the listener is registered by hand
+   * below — without it the browser scrolls the page behind the editor.
+   */
+  useEffect(() => {
+    const node = frameRef.current
+    if (!node) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const frame = node.getBoundingClientRect()
+      zoomAbout(Math.exp(-e.deltaY * WHEEL_TO_ZOOM), {
+        x: e.clientX - frame.left,
+        y: e.clientY - frame.top,
+      })
+    }
+    node.addEventListener('wheel', onWheel, { passive: false })
+    return () => node.removeEventListener('wheel', onWheel)
+  }, [zoomAbout])
+
+  /** Back to the whole photograph, which is where a double tap lands. */
+  function resetView() {
+    setView({ zoom: 1, x: 0, y: 0 })
+  }
+
+  /** Drag of the preview panel itself, in progress. */
+  const previewDragRef = useRef<{ pointer: number; dx: number; dy: number } | null>(null)
+
   const previewPlacement: React.CSSProperties = (() => {
+    // Parked by hand: it stays where it was left, clamped into the surface so a
+    // resize —turning the phone— cannot leave it off screen.
+    if (previewSpot && preview) {
+      return {
+        left: `${Math.max(0, Math.min(box.width - preview.width, previewSpot.x))}px`,
+        top: `${Math.max(0, Math.min(box.height - preview.height, previewSpot.y))}px`,
+      }
+    }
     // Nothing being dragged: a fixed corner, and the top right because the hand comes
     // from the bottom. It DOES sit over the artwork's own corner when the painting
     // fills the frame — the first attempt at this looked for a free corner and there
@@ -648,7 +879,9 @@ export function PhotoEditor({
         // displayed at `fit`, so this is what makes the loupe magnify LOUPE_ZOOM
         // times what the cataloger is seeing, which is the reference that
         // matters — not the pixels of the master, which she never sees.
-        sourceSide: (LOUPE_SIDE / LOUPE_ZOOM) * (rotated.width / fit.width),
+        // Divided by the zoom as well: what is on screen is already magnified by it,
+        // and the loupe promises three times WHAT IS ON SCREEN.
+        sourceSide: (LOUPE_SIDE / LOUPE_ZOOM) * (rotated.width / (fit.width * view.zoom)),
       })
     })
     return () => cancelAnimationFrame(handle)
@@ -657,7 +890,7 @@ export function PhotoEditor({
     // to trigger a repaint is the point changing, which in perspective mode is the
     // only thing that changes — the crop stays still, and depending on IT was the
     // bug.
-  }, [magnified, aimed?.x, aimed?.y, rotation, natural, rotated.width, fit.width])
+  }, [magnified, aimed?.x, aimed?.y, rotation, natural, rotated.width, fit.width, view.zoom])
 
   return createPortal(
     <div
@@ -683,7 +916,15 @@ export function PhotoEditor({
 
       {/* Working surface. `touch-none` on the whole area: the editor covers the
           screen and nothing here should scroll or zoom the page underneath. */}
-      <div ref={frameRef} className="relative min-h-0 flex-1 touch-none overflow-hidden">
+      <div
+        ref={frameRef}
+        onPointerDown={onSurfacePointerDown}
+        onPointerMove={onSurfacePointerMove}
+        onPointerUp={onSurfacePointerUp}
+        onPointerCancel={onSurfacePointerUp}
+        onDoubleClick={resetView}
+        className="relative min-h-0 flex-1 touch-none overflow-hidden"
+      >
         {url && (
           <div
             ref={areaRef}
@@ -693,6 +934,11 @@ export function PhotoEditor({
               top: `${(box.height - fit.height) / 2}px`,
               width: `${fit.width}px`,
               height: `${fit.height}px`,
+              // Zoom and pan of the surface. On the AREA and not on the image, so the
+              // handles travel with the photograph and `getBoundingClientRect()` keeps
+              // answering the transformed rectangle the pointer arithmetic expects.
+              transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`,
+              transformOrigin: 'center center',
             }}
           >
             <img
@@ -750,8 +996,15 @@ export function PhotoEditor({
                     onContextMenu={(e) => e.preventDefault()}
                     // z-20 so it paints over the loupe and the preview: those two are
                     // aids and this is the thing being aimed at.
-                    className="absolute z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none select-none items-center justify-center"
-                    style={{ left: `${corners[corner].x * 100}%`, top: `${corners[corner].y * 100}%` }}
+                    className="absolute z-20 flex h-11 w-11 touch-none select-none items-center justify-center"
+                    style={{
+                      left: `${corners[corner].x * 100}%`,
+                      top: `${corners[corner].y * 100}%`,
+                      // Counter-scaled: the handle keeps its size on screen while the
+                      // photograph grows under it. A 44 px target that becomes 350 px
+                      // at 8× would cover the corner it is meant to place.
+                      transform: `translate(-50%, -50%) scale(${1 / view.zoom})`,
+                    }}
                   >
                     <span
                       aria-hidden
@@ -804,12 +1057,15 @@ export function PhotoEditor({
                   aria-label="Mover el recorte"
                   onPointerDown={(e) => startDrag(e, 'move')}
                   onContextMenu={(e) => e.preventDefault()}
-                  className="absolute touch-none border-2 border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.6)]"
+                  className="absolute touch-none border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.6)]"
                   style={{
                     left: `${crop.x * 100}%`,
                     top: `${crop.y * 100}%`,
                     width: `${crop.width * 100}%`,
                     height: `${crop.height * 100}%`,
+                    // In surface pixels, not scaled: a two-pixel line at 8× would be
+                    // a sixteen-pixel band hiding the border it marks.
+                    borderWidth: `${2 / view.zoom}px`,
                   }}
                 />
 
@@ -828,8 +1084,12 @@ export function PhotoEditor({
                       // 44 px of touch area, with a smaller visible mark: on a
                       // phone the finger needs the room even if the drawing
                       // does not.
-                      className="absolute z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none select-none items-center justify-center"
-                      style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }}
+                      className="absolute z-20 flex h-11 w-11 touch-none select-none items-center justify-center"
+                      style={{
+                        left: `${point.x * 100}%`,
+                        top: `${point.y * 100}%`,
+                        transform: `translate(-50%, -50%) scale(${1 / view.zoom})`,
+                      }}
                     >
                       <span
                         aria-hidden
@@ -853,8 +1113,15 @@ export function PhotoEditor({
             It sits opposite the loupe so the two never fight for the same thumb. */}
         {corners && ready && preview && (
           <div
-            aria-hidden
-            className="pointer-events-none absolute z-10 overflow-hidden rounded-lg border border-white/40 bg-white shadow-lg"
+            role="button"
+            tabIndex={-1}
+            aria-label="Mover la vista previa del resultado"
+            onPointerDown={startPreviewDrag}
+            onContextMenu={(e) => e.preventDefault()}
+            // Interactive, so it takes pointer events — and the handles sit above it
+            // (z-20), so where the two overlap the handle still wins the gesture. That
+            // ordering is what makes this safe to make draggable at all.
+            className="absolute z-10 cursor-grab touch-none overflow-hidden rounded-lg border border-white/40 bg-white shadow-lg active:cursor-grabbing"
             style={{
               ...previewPlacement,
               width: `${preview.width}px`,
@@ -1028,7 +1295,7 @@ export function PhotoEditor({
             className="text-center text-xs text-stone-400"
           >
             {corners !== null
-              ? 'Arrastra las cuatro esquinas de la obra. A la derecha ves cómo va a quedar enderezada; lo que caiga fuera de la fotografía saldrá en blanco'
+              ? 'Arrastra las cuatro esquinas de la obra, y la vista previa a donde te convenga. Para acercarte, pellizca con dos dedos o usa la rueda del ratón; con dos dedos también se mueve la foto, y con dos toques vuelve completa'
               : !canRestoreOriginal
                 ? 'No se puede corregir la perspectiva sobre la copia de consulta: haría falta el máster, y esta vez no se ha podido descargar'
                 : !suggestionMakesSense

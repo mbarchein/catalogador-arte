@@ -8,6 +8,16 @@ Al abrir una fotografía para editarla, su código aparece en la dirección
 guardar o enviar y abre esa misma foto. Si el enlace nombra una fotografía que ya se retiró, se abre la
 principal en vez de dejar la pantalla a medias.
 
+**Acercarse a la foto para colocar las esquinas, y mover la vista previa**
+Ajustar una esquina al milímetro con la foto entera en una pantalla de móvil era pedir mucho. Ahora se
+puede **acercar**: pellizcando con dos dedos, o con la rueda del ratón en el ordenador. Con dos dedos
+también se **desplaza** la foto para llevar la esquina que interesa al centro, y con dos toques vuelve
+completa. Las asas mantienen su tamaño aunque la foto se agrande, así que no tapan la esquina que
+colocan.
+
+Y la vista previa del resultado **se arrastra a donde convenga y se queda ahí**: antes se colocaba
+sola y cambiaba de sitio cada vez que se cogía otra esquina, justo cuando se quería mirar.
+
 **Enderezar una fotografía tomada en ángulo**
 Un cuadro fotografiado de lado sale como un trapecio, y recortarlo con un rectángulo deja pared por dos
 esquinas y se come obra por las otras dos. Ocho de cada catorce obras del catálogo están así. Ahora el
