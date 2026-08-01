@@ -67,6 +67,7 @@ reales contra la base, no comprobando que el fichero de política existe.
 | RF-109 | Matriz completa: para cada una de las nueve tablas y cada operación (`select`, `insert`, `update`, `delete`), qué puede hacer cada rol. Son 9 × 4 × 3 casos y se generan, no se escriben a mano | Pendiente |
 | RF-111 | Test de cierre por omisión: **toda** tabla del esquema tiene RLS activado, y ninguna política permite DELETE. Falla automáticamente cuando alguien añade una tabla sin RLS — es la red que impide el olvido | **Hecho** |
 | RF-111, RF-113 | Un cliente con la clave anónima y **sin sesión** no lee ni una fila de ninguna tabla. Este aserto destapó que la plataforma concede las tablas nuevas al rol anónimo por privilegios por omisión | **Hecho** |
+| RF-111 | Ninguna función del esquema público es ejecutable por PUBLIC ni fija su `search_path` al azar; las de trigger no son invocables desde la API y aun así disparan; un usuario con sesión sigue evaluando las políticas. Cubierto en `function_privileges.test.sql` | **Hecho** |
 | RF-105 | Un Lector lee las obras activas y no puede modificarlas. `contacto` cuando exista la tabla | Parcial |
 | RF-108 | Un Catalogador no puede modificar su propio rol en la tabla de perfiles, ni el de otro usuario. Y el acceso administrativo directo sí puede: sin eso no habría forma de promover al primer superusuario | **Hecho** |
 | RF-112 | El registro está deshabilitado: un intento de alta de cuenta desde el cliente es rechazado | Pendiente |
