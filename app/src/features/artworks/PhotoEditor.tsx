@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import {
   addRotation,
   centeredCrop,
+  clampCrop,
   cornerPoint,
   editSummary,
   fitInside,
@@ -16,14 +17,40 @@ import {
   type PhotoEdit,
   type Rotation,
 } from '../../lib/imageEdits'
+import {
+  CORNER_KEYS,
+  cornersBoundingBox,
+  cornersOfRect,
+  homographyFromUnitSquare,
+  homographyToCssMatrix,
+  invertHomography,
+  isSimpleQuadrilateral,
+  straightenedSize,
+  type Corners,
+} from '../../lib/perspective'
 import { LOUPE_SIDE, LOUPE_ZOOM, loupePixels, paintLoupe } from '../../lib/imageLoupe'
 import { rotateSuggestion, type EdgeSuggestion } from '../../lib/edgeDetection'
 import { suggestArtworkCrop } from '../../lib/imageEdges'
+import type { CropSource } from '../../lib/imageRender'
 import { CropIcon, NoIcon, RotateLeftIcon, RotateRightIcon } from '../../components/ui'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
 const KEY_STEP = 0.02
+
+/**
+ * How far outside the photograph a corner may be dragged, as a fraction.
+ *
+ * Mirrors the `images_corners_within_reach` constraint: in five photographs of the
+ * catalog the sides of the artwork are not inside the frame, and dragging a handle
+ * past the edge is the only way to straighten those. What falls outside is filled
+ * with white and the editor says so.
+ */
+const CORNER_REACH = 0.25
+
+function clampToReach(value: number): number {
+  return Math.min(1 + CORNER_REACH, Math.max(-CORNER_REACH, value))
+}
 
 /** Distance from the loupe to the edges of the working surface. */
 const LOUPE_INSET = '0.75rem'
@@ -152,7 +179,7 @@ export function PhotoEditor({
    * decision to all 44 to fix five, with the artwork in front of you and one hand.
    */
   shotType?: ShotTypeValue | null
-  onApply: (edit: PhotoEdit) => void
+  onApply: (edit: PhotoEdit, cropSource: CropSource) => void
   onCancel: () => void
 }) {
   const [url, setUrl] = useState<string | null>(null)
@@ -166,6 +193,22 @@ export function PhotoEditor({
   // Corner being nudged with the keyboard, so the loupe also serves whoever is
   // not using a finger. It stays while the handle keeps the focus.
   const [nudged, setNudged] = useState<Corner | null>(null)
+  /**
+   * The four corners, when the cataloger is straightening instead of cropping.
+   * Null is the ordinary rectangle; non-null is perspective mode.
+   */
+  const [corners, setCorners] = useState<Corners | null>(
+    () => normalizeEdit(initialEdit).corners ?? null,
+  )
+  /**
+   * The rectangle that was on screen before a suggestion replaced it.
+   *
+   * `suggest()` overwrites the crop, and with sixteen suggestions of forty-four
+   * measured good, asking for one used to be a bet that could cost the framing
+   * already drawn by hand. Keeping the previous one is fifteen lines and turns the
+   * bet into a try.
+   */
+  const [replaced, setReplaced] = useState<Crop | null>(null)
 
   const frameRef = useRef<HTMLDivElement | null>(null)
   const areaRef = useRef<HTMLDivElement | null>(null)
@@ -173,6 +216,8 @@ export function PhotoEditor({
   const loupeRef = useRef<HTMLCanvasElement | null>(null)
   const cropRef = useRef<Crop | null>(crop)
   cropRef.current = crop
+  const cornersRef = useRef<Corners | null>(corners)
+  cornersRef.current = corners
   // Origin of the drag, so a rectangle stopped at the edge does not drift away
   // from the finger.
   const startRef = useRef<{ point: { x: number; y: number }; crop: Crop } | null>(null)
@@ -180,7 +225,7 @@ export function PhotoEditor({
   // The callbacks live in refs so the history listener registers once: doing it
   // on every render could miss the closing pop.
   const editRef = useRef<PhotoEdit>(initialEdit)
-  editRef.current = { rotation, crop }
+  editRef.current = { rotation, crop, corners }
   // Number of the border detection in flight. Asking again, or closing the
   // editor, invalidates the previous answer instead of letting it arrive late
   // and move a rectangle the cataloger is already dragging.
@@ -188,6 +233,9 @@ export function PhotoEditor({
   const appliedRef = useRef(false)
   const onApplyRef = useRef(onApply)
   onApplyRef.current = onApply
+  // In a ref for the same reason as the edit: the history listener that closes the
+  // editor is registered once and reads whatever is current when it fires.
+  const cropSourceRef = useRef<CropSource>('MANUAL')
   const onCancelRef = useRef(onCancel)
   onCancelRef.current = onCancel
 
@@ -202,7 +250,7 @@ export function PhotoEditor({
     // One exit for the three ways of leaving — ✕, Escape and the phone's back
     // button — so the pushed entry is always consumed exactly once.
     const onPop = () => {
-      if (appliedRef.current) onApplyRef.current(normalizeEdit(editRef.current))
+      if (appliedRef.current) onApplyRef.current(normalizeEdit(editRef.current), cropSourceRef.current)
       else onCancelRef.current()
     }
     const onKey = (e: KeyboardEvent) => {
@@ -254,6 +302,26 @@ export function PhotoEditor({
       const point = normalizedPoint(e)
       const start = startRef.current
       if (!point || !start) return
+
+      // In perspective mode a handle moves ONE corner freely, it does not resize a
+      // rectangle: that freedom is the whole feature. A drag that would fold the
+      // quadrilateral over itself is refused and the corner stays where it was —
+      // the database would refuse that row anyway, and refusing the gesture says so
+      // at the finger instead of at the save button.
+      const held = cornersRef.current
+      if (held && gesture !== 'move') {
+        const moved = {
+          ...held,
+          [gesture]: {
+            x: clampToReach(point.x),
+            y: clampToReach(point.y),
+          },
+        } as Corners
+        if (isSimpleQuadrilateral(moved)) setCorners(moved)
+        return
+      }
+      if (held) return
+
       if (gesture === 'move') {
         setCrop(moveCrop(start.crop, point.x - start.point.x, point.y - start.point.y))
       } else {
@@ -277,6 +345,7 @@ export function PhotoEditor({
   }, [dragging])
 
   function close(applied: boolean) {
+    if (applied) cropSourceRef.current = currentCropSource()
     appliedRef.current = applied
     window.history.back()
   }
@@ -315,6 +384,9 @@ export function PhotoEditor({
       return
     }
     setAnalysis({ status: 'found', suggestion, choice: 'outer' })
+    // The rectangle that was there is kept before overwriting it: see `replaced`.
+    setReplaced(cropRef.current ?? centeredCrop())
+    setCorners(null)
     setCrop(suggestion.outer)
   }
 
@@ -325,6 +397,55 @@ export function PhotoEditor({
    * disappears leaves the cataloger wondering what she did wrong.
    */
   const suggestionMakesSense = shotType == null || SUGGESTABLE_SHOTS.has(shotType)
+
+  /**
+   * Turns straightening on and off.
+   *
+   * Entering starts from the rectangle that is on screen, so asking for perspective
+   * never loses the framing already drawn. Leaving keeps the bounding box of the
+   * quadrilateral, which is what the crop would have been — measured, that box is
+   * very close to what the cataloger draws by hand — so the way back is not a way
+   * to lose work either.
+   */
+  function togglePerspective() {
+    if (corners) {
+      setCrop(clampCrop(cornersBoundingBox(corners)))
+      setCorners(null)
+      return
+    }
+    setCorners(cornersOfRect(crop ?? centeredCrop()))
+  }
+
+  /** Puts back the rectangle a suggestion replaced. */
+  function discardSuggestion() {
+    if (!replaced) return
+    setCrop(replaced)
+    setCorners(null)
+    setReplaced(null)
+    setAnalysis({ status: 'idle' })
+  }
+
+  /**
+   * Where the framing on screen came from, for `crop_source`.
+   *
+   * «Suggested» only if it is still, to the millimetre, the rectangle the detector
+   * proposed: the moment a handle moves it becomes «suggested and adjusted», which is
+   * a different thing to measure. Without a suggestion in play it is by hand, and a
+   * photograph whose framing was never touched reports by hand too — nothing else is
+   * true of it.
+   */
+  function currentCropSource(): CropSource {
+    if (analysis.status !== 'found') return 'MANUAL'
+    const candidate =
+      analysis.choice === 'inner' ? analysis.suggestion.inner : analysis.suggestion.outer
+    if (!candidate || !crop || corners) return 'SUGGESTED_ADJUSTED'
+    const same =
+      Math.abs(candidate.x - crop.x) < 1e-6 &&
+      Math.abs(candidate.y - crop.y) < 1e-6 &&
+      Math.abs(candidate.width - crop.width) < 1e-6 &&
+      Math.abs(candidate.height - crop.height) < 1e-6
+    return same ? 'SUGGESTED' : 'SUGGESTED_ADJUSTED'
+  }
 
   /** Loads one of the two candidates into the crop rectangle. */
   function choose(which: 'outer' | 'inner') {
@@ -380,11 +501,64 @@ export function PhotoEditor({
   const ready = fit.width > 0 && fit.height > 0
   const summary = editSummary({ rotation, crop })
 
+  /**
+   * The straightened preview: its size on screen and the transform that draws it.
+   *
+   * The chain, which is where this is easy to get wrong: the photograph is drawn at
+   * `fit` on screen, the corners are fractions of that box, and the straightened
+   * rectangle is `straightenedSize` of the same box. So the transform has to carry
+   * screen pixels to screen pixels — the inverse homography scaled by `fit` on the
+   * way in and by the preview box on the way out.
+   */
+  const preview = (() => {
+    if (!corners || fit.width === 0) return null
+    const forward = homographyFromUnitSquare(corners)
+    const inverse = forward && invertHomography(forward)
+    if (!inverse) return null
+
+    const straightened = straightenedSize(corners)
+    const wide = straightened.width * fit.width
+    const tall = straightened.height * fit.height
+    if (wide <= 0 || tall <= 0) return null
+    // A quarter of the working surface, so it informs without covering the photo.
+    const scale = Math.min(1, Math.min(box.width, box.height) / 3 / Math.max(wide, tall))
+    const width = Math.max(1, Math.round(wide * scale))
+    const height = Math.max(1, Math.round(tall * scale))
+
+    // From screen pixels of the photograph to the unit square, through the inverse,
+    // and out to the pixels of the preview box.
+    const sx = rotation % 180 === 0 ? fit.width : fit.height
+    const sy = rotation % 180 === 0 ? fit.height : fit.width
+    const compose = (a: number, b: number, c: number) => [a, b, c] as const
+    void compose
+    const h = inverse
+    const matrix = [
+      (h[0] * width) / sx,
+      (h[1] * width) / sy,
+      h[2] * width,
+      (h[3] * height) / sx,
+      (h[4] * height) / sy,
+      h[5] * height,
+      h[6] / sx,
+      h[7] / sy,
+      h[8],
+    ] as const
+    return { width, height, transform: homographyToCssMatrix(matrix) }
+  })()
+
   // Which corner the loupe is showing: the one being dragged, or the one being
   // nudged with the keyboard. Nothing while the whole rectangle is moved — there
   // no single pixel is being aimed at — and nothing once the finger lifts.
   const magnified = dragging && dragging !== 'move' ? dragging : nudged
   const aimed = magnified && crop ? cornerPoint(crop, magnified) : null
+
+  /** Opposite the loupe, so the two never compete for the same corner of the screen. */
+  const previewPlacement: React.CSSProperties = aimed
+    ? aimed.x < 0.5
+      ? { right: LOUPE_INSET, bottom: LOUPE_INSET }
+      : { left: LOUPE_INSET, bottom: LOUPE_INSET }
+    : { right: LOUPE_INSET, top: LOUPE_INSET }
+
   // Placement: the corner of the working surface OPPOSITE to where the finger
   // is, recomputed as it moves. Anchoring it to which handle it is would not be
   // enough — the crop can sit in any quadrant, and then the «nw» handle is at
@@ -478,7 +652,51 @@ export function PhotoEditor({
               }}
             />
 
-            {crop && ready && (
+            {corners && ready && (
+              <>
+                {/* The quadrilateral, drawn as an SVG polygon: four sides that are
+                    not axis-aligned cannot be four divs, and a polygon also shows
+                    the shape while it is being dragged. */}
+                <svg
+                  aria-hidden
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  className="pointer-events-none absolute inset-0 h-full w-full"
+                >
+                  <polygon
+                    points={CORNER_KEYS.map((key) => `${corners[key].x * 100},${corners[key].y * 100}`).join(' ')}
+                    fill="rgba(0,0,0,0.35)"
+                    stroke="rgba(255,255,255,0.9)"
+                    strokeWidth="0.4"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+
+                {CORNERS.map(({ corner, label }) => (
+                  <span
+                    key={corner}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Arrastrar la ${label} de la obra`}
+                    onPointerDown={(e) => startDrag(e, corner)}
+                    onKeyDown={(e) => onHandleKeyDown(e, corner)}
+                    onBlur={() => setNudged((c) => (c === corner ? null : c))}
+                    onContextMenu={(e) => e.preventDefault()}
+                    className="absolute flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none select-none items-center justify-center"
+                    style={{ left: `${corners[corner].x * 100}%`, top: `${corners[corner].y * 100}%` }}
+                  >
+                    <span
+                      aria-hidden
+                      className={`block rounded-full border-2 border-stone-900 bg-amber-300 ${
+                        dragging === corner ? 'h-7 w-7' : 'h-5 w-5'
+                      }`}
+                    />
+                  </span>
+                ))}
+              </>
+            )}
+
+            {crop && !corners && ready && (
               <>
                 {/* What is left out, dimmed. Four rectangles instead of a
                     single box-shadow so it also works while dragging. */}
@@ -556,6 +774,43 @@ export function PhotoEditor({
                 })}
               </>
             )}
+          </div>
+        )}
+
+        {/* The straightened result, live.
+            The homography goes into a CSS `matrix3d`, which is the one place a
+            projective transform is free: the browser draws it on the GPU, so
+            dragging a handle costs nothing per frame. Running the pixel loop
+            instead would be 89 ms a frame on the cataloger's phone — measured.
+            It sits opposite the loupe so the two never fight for the same thumb. */}
+        {corners && ready && preview && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute overflow-hidden rounded-lg border border-white/40 bg-white shadow-lg"
+            style={{
+              ...previewPlacement,
+              width: `${preview.width}px`,
+              height: `${preview.height}px`,
+            }}
+          >
+            <img
+              src={url ?? undefined}
+              alt=""
+              draggable={false}
+              className="absolute left-0 top-0 origin-top-left select-none"
+              style={{
+                width: `${rotation % 180 === 0 ? fit.width : fit.height}px`,
+                height: `${rotation % 180 === 0 ? fit.height : fit.width}px`,
+                // `max-width: none` is not decoration: the CSS preflight sets
+                // `img { max-width: 100% }`, which capped this one to the width of
+                // the preview box while the transform assumed the full size — so the
+                // straightened view came out as the top left corner of the wall. The
+                // transform maps IMAGE pixels, so the image has to be at image size.
+                maxWidth: 'none',
+                maxHeight: 'none',
+                transform: preview.transform,
+              }}
+            />
           </div>
         )}
 
@@ -670,13 +925,45 @@ export function PhotoEditor({
             </div>
           )}
 
+          {/* Straightening, and putting back what a suggestion replaced. Both live
+              in this row and not in one of their own: the footer of the editor
+              already measures some 372 px and leaves 250-310 px of working surface
+              on a phone, so a new row would come out of the photograph. */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={!ready || !canRestoreOriginal}
+              aria-pressed={corners !== null}
+              onClick={togglePerspective}
+              className={`btn min-h-touch text-sm ${
+                corners !== null
+                  ? 'bg-white text-stone-900'
+                  : 'border border-stone-600 text-white disabled:opacity-40'
+              }`}
+            >
+              {corners !== null ? 'Volver al rectángulo' : 'Corregir perspectiva'}
+            </button>
+            <button
+              type="button"
+              disabled={!replaced}
+              onClick={discardSuggestion}
+              className="btn min-h-touch border border-stone-600 text-sm text-white disabled:opacity-40"
+            >
+              Descartar la sugerencia
+            </button>
+          </div>
+
           <p
             id="editor-suggestion-help"
             role="status"
             aria-live="polite"
             className="text-center text-xs text-stone-400"
           >
-            {!suggestionMakesSense
+            {corners !== null
+              ? 'Arrastra las cuatro esquinas de la obra. A la derecha ves cómo va a quedar enderezada; lo que caiga fuera de la fotografía saldrá en blanco'
+              : !canRestoreOriginal
+                ? 'No se puede corregir la perspectiva sobre la copia de consulta: haría falta el máster, y esta vez no se ha podido descargar'
+                : !suggestionMakesSense
               ? `En una toma de tipo «${SHOT_TYPE_LABEL[shotType!]}» no hay borde de cuadro que reconocer: ajusta el recorte a mano`
               : analysis.status === 'working'
                 ? 'Analizando la fotografía para reconocer el borde del cuadro…'
@@ -686,7 +973,7 @@ export function PhotoEditor({
                     ? analysis.suggestion.inner
                       ? 'Recorte sugerido: se han reconocido dos bordes. Elige uno, ajusta las esquinas y pulsa «Aplicar»'
                       : 'Recorte sugerido: ajusta las esquinas si hace falta y pulsa «Aplicar»'
-                    : 'Reconoce el borde del cuadro y precarga el recorte. Nunca se aplica solo: siempre lo confirmas tú'}
+                      : 'Reconoce el borde del cuadro y precarga el recorte. Nunca se aplica solo: siempre lo confirmas tú'}
           </p>
         </div>
 

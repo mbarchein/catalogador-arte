@@ -22,6 +22,13 @@ import {
 } from './perspective'
 
 /**
+ * How a framing came to be. Mirrors the `crop_source` enum of the schema: the
+ * values are code, and the interface never shows them.
+ */
+export type CropSource = 'MANUAL' | 'SUGGESTED' | 'SUGGESTED_ADJUSTED'
+
+
+/**
  * The part of the photo edit that touches pixels and the store: it draws the
  * rotation and the crop on a canvas, re-encodes the two derivative levels and
  * publishes them.
@@ -331,8 +338,14 @@ export async function savePhotoEdit(params: {
   source: Blob
   render: PhotoEdit
   store: PhotoEdit
+  /**
+   * Where this framing came from: drawn by hand, accepted from the suggestion as it
+   * came, or suggested and then adjusted. Undefined leaves the column unknown, which
+   * is what a caller that cannot tell should say.
+   */
+  cropSource?: CropSource
 }): Promise<{ thumbnailPath: string; derivativePath: string }> {
-  const { catalogId, imageId, source, render, store } = params
+  const { catalogId, imageId, source, render, store, cropSource } = params
   const levels = await renderEditedLevels(source, render)
   const target = derivativePaths(catalogId)
 
@@ -356,6 +369,12 @@ export async function savePhotoEdit(params: {
       thumbnail_path: target.thumbnail,
       derivative_path: target.derivative,
       ...editToColumns(store),
+      // Where the framing came from. It is written on every save and never left
+      // alone: a photograph reframed by hand after having accepted a suggestion is
+      // no longer «suggested», and the whole point of the column is that a future
+      // measurement of the detector does not have to infer this from a residue of
+      // two ten-thousandths, which is what measuring it cost this time.
+      crop_source: cropSource ?? null,
     })
     .eq('image_id', imageId)
   if (error) throw new Error(`Guardando el encuadre: ${error.message}`)

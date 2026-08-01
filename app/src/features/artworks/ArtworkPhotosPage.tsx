@@ -11,7 +11,7 @@ import {
   NO_EDIT,
   type PhotoEdit,
 } from '../../lib/imageEdits'
-import { editSource, savePhotoEdit } from '../../lib/imageRender'
+import { editSource, savePhotoEdit, type CropSource } from '../../lib/imageRender'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
 import { useAuth } from '../../auth/AuthContext'
@@ -273,7 +273,7 @@ export function ArtworkPhotosPage() {
    * `edit` comes measured over the image the editor worked on; what is stored is
    * the whole transformation from the master.
    */
-  async function applyEdit(edit: PhotoEdit) {
+  async function applyEdit(edit: PhotoEdit, cropSource: CropSource) {
     const current = editing
     setEditing(null)
     if (!current) return
@@ -295,6 +295,7 @@ export function ArtworkPhotosPage() {
         source: current.source,
         render: edit,
         store: absolute,
+        cropSource,
       })
       // The reload brings the new paths; Realtime tells the record and the
       // listing, which also listen to the images table.
@@ -564,7 +565,7 @@ export function ArtworkPhotosPage() {
           // Only from the master: with the consultation copy there is nothing
           // outside the crop to come back to.
           canRestoreOriginal={editing.note === null}
-          onApply={(edit) => void applyEdit(edit)}
+          onApply={(edit, cropSource) => void applyEdit(edit, cropSource)}
           onCancel={() => setEditing(null)}
         />
       )}
