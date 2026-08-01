@@ -11,6 +11,7 @@
 | Entender el diseño de interfaz, las páginas y el comportamiento | [`originales/diseno_interfaz_y_arquitectura_v4.md`](originales/diseno_interfaz_y_arquitectura_v4.md) — con las decisiones de stack ya sustituidas por los ADR |
 | Ver cómo debe quedar la ficha de obra | [`disenos/`](disenos/) |
 | Saber qué está mal o sin decidir en los documentos anteriores | [`revision/incidencias-detectadas.md`](revision/incidencias-detectadas.md) |
+| Saber qué acierta y qué falla la sugerencia de recorte, con números | [`revision/deteccion-de-bordes-medicion.md`](revision/deteccion-de-bordes-medicion.md) |
 | Saber qué está verificado con tests y qué no | [`plan-de-pruebas.md`](plan-de-pruebas.md) |
 | Entender qué hace cada contenedor del stack local, y dónde acaban las fotografías | [`../docker/README.md`](../docker/README.md) |
 | Saber cómo se gestiona la plataforma y qué frontera no cruza Terraform | [`../infra/README.md`](../infra/README.md) |

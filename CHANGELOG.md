@@ -471,8 +471,15 @@ obra y las series se siguen añadiendo desde el formulario de la ficha, que es d
 todavía no se pueden renombrar ni retirar desde ningún sitio. Es lo siguiente.
 
 **El acierto de la sugerencia de recorte**
-El detector de bordes ya está en el editor y está probado con fotografías sintéticas, pero lo que
-acierta o falla con un marco dorado, un reflejo o una pared con rodapié se comprueba a mano en el
-navegador, y es lo que se está ajustando. Las fotografías tomadas en ángulo quedan deliberadamente
-fuera por ahora: corregir la perspectiva no es recortar, y necesita su propia decisión sobre qué se
-guarda en la ficha.
+La sugerencia se ha medido por fin contra las 44 fotografías del catálogo, y el resultado no es el que
+se esperaba: **propone recorte casi siempre y acierta pocas veces**. De 44 fotos propone en 36, y de
+esas 36 sólo cuatro son buenas; dieciséis recortan por donde no toca —cinco se comen parte de la
+obra— y otras dieciséis proponen prácticamente la foto entera, que no hace daño pero tampoco sirve.
+Callar, en cambio, casi siempre es acertado: de las ocho veces que no propone nada, en seis no había
+nada que proponer.
+
+Así que lo que se va a ajustar no es «que reconozca más», sino que **hable menos y mejor**: exigir que
+los cuatro lados de la obra estén de verdad en la foto, no proponer nada en un reverso o en un detalle
+de firma —eso ya lo dice el tipo de toma— y no pisar el recorte que se hubiera hecho a mano al pedir
+la sugerencia. Las fotografías tomadas en ángulo van a mejorar bastante sin necesidad de corregir la
+perspectiva. Todo lo medido está escrito, con sus números y con lo que queda por decidir.
