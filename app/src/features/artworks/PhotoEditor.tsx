@@ -550,14 +550,20 @@ export function PhotoEditor({
   // nudged with the keyboard. Nothing while the whole rectangle is moved — there
   // no single pixel is being aimed at — and nothing once the finger lifts.
   const magnified = dragging && dragging !== 'move' ? dragging : nudged
-  const aimed = magnified && crop ? cornerPoint(crop, magnified) : null
-
-  /** Opposite the loupe, so the two never compete for the same corner of the screen. */
-  const previewPlacement: React.CSSProperties = aimed
-    ? aimed.x < 0.5
-      ? { right: LOUPE_INSET, bottom: LOUPE_INSET }
-      : { left: LOUPE_INSET, bottom: LOUPE_INSET }
-    : { right: LOUPE_INSET, top: LOUPE_INSET }
+  /**
+   * The point under the finger, whichever framing is being adjusted.
+   *
+   * In perspective mode it is the corner OF THE QUADRILATERAL and not of the
+   * rectangle: the rectangle does not move then, so reading it from there left the
+   * loupe frozen on a corner nobody was touching.
+   */
+  const aimed = !magnified
+    ? null
+    : corners
+      ? corners[magnified]
+      : crop
+        ? cornerPoint(clampCrop(crop), magnified)
+        : null
 
   // Placement: the corner of the working surface OPPOSITE to where the finger
   // is, recomputed as it moves. Anchoring it to which handle it is would not be
@@ -570,10 +576,26 @@ export function PhotoEditor({
       }
     : {}
 
+  /**
+   * The preview: the same side as the loupe, the other half of the screen.
+   *
+   * Sharing the column and flipping the row is what GUARANTEES they never land on
+   * the same corner, and that is the point of writing it this way. The first version
+   * repeated the loupe's horizontal rule and always sat at the bottom, so with the
+   * finger on either top corner both ended up in the same place — the two visible at
+   * once, one over the other.
+   */
+  const previewPlacement: React.CSSProperties = aimed
+    ? {
+        ...(aimed.x < 0.5 ? { right: LOUPE_INSET } : { left: LOUPE_INSET }),
+        ...(aimed.y < 0.5 ? { top: LOUPE_INSET } : { bottom: LOUPE_INSET }),
+      }
+    : { right: LOUPE_INSET, top: LOUPE_INSET }
+
   useEffect(() => {
     const canvas = loupeRef.current
     const image = imageRef.current
-    if (!magnified || !crop || !canvas || !image) return
+    if (!magnified || !aimed || !canvas || !image) return
     if (natural.width === 0 || fit.width === 0) return
     // One paint per frame at most: a pointer fires far more often than the screen
     // refreshes, and every move already re-renders the rectangle.
@@ -581,8 +603,7 @@ export function PhotoEditor({
       paintLoupe(canvas, image, {
         natural,
         rotation,
-        crop,
-        corner: magnified,
+        point: aimed,
         // From screen pixels to pixels of the rotated image: the photograph is
         // displayed at `fit`, so this is what makes the loupe magnify LOUPE_ZOOM
         // times what the cataloger is seeing, which is the reference that
@@ -591,7 +612,12 @@ export function PhotoEditor({
       })
     })
     return () => cancelAnimationFrame(handle)
-  }, [magnified, crop, rotation, natural, rotated.width, fit.width])
+    // `aimed.x` and `aimed.y` and not `aimed`: the object is new on every render,
+    // and depending on it would repaint even when the point has not moved. What has
+    // to trigger a repaint is the point changing, which in perspective mode is the
+    // only thing that changes — the crop stays still, and depending on IT was the
+    // bug.
+  }, [magnified, aimed?.x, aimed?.y, rotation, natural, rotated.width, fit.width])
 
   return createPortal(
     <div
@@ -818,7 +844,7 @@ export function PhotoEditor({
             `aria-hidden` because it says nothing new: it is the same corner,
             bigger. It lives outside the image area, anchored to the working
             surface, so its placement does not depend on where the photo fits. */}
-        {magnified && crop && ready && (
+        {magnified && aimed && ready && (
           <canvas
             ref={loupeRef}
             aria-hidden

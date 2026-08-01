@@ -1,4 +1,4 @@
-import { loupeRegion, type Corner, type Crop, type Rotation, type Size } from './imageEdits'
+import { loupeRegion, type Rotation, type Size } from './imageEdits'
 
 /**
  * The loupe of the photo editor: the corner being adjusted, magnified.
@@ -10,9 +10,42 @@ import { loupeRegion, type Corner, type Crop, type Rotation, type Size } from '.
  * region of the photograph it corresponds to is `loupeRegion` in imageEdits.ts,
  * which is arithmetic and is tested.
  *
- * Like imageRender.ts, what is here cannot be tested in this repository: the test
- * environment has no canvas. It is verified in the browser.
+ * What draws cannot be tested in this repository —the test environment has no
+ * canvas— and is verified in the browser. Where the loupe GOES is arithmetic and is
+ * tested: see `aidCorners` below.
  */
+
+/** A corner of the working surface. */
+export type ScreenCorner = 'nw' | 'ne' | 'sw' | 'se'
+
+/**
+ * Where the loupe and the straightened preview go, given the point under the finger.
+ *
+ * The loupe goes to the corner OPPOSITE the finger, recomputed as it moves: anchoring
+ * it to which handle is being dragged would not be enough, because the framing can
+ * sit in any quadrant and then the «nw» handle is at the bottom right of the screen
+ * with the thumb over the loupe.
+ *
+ * The preview takes the same column as the loupe and the other row. Sharing the
+ * column and flipping the row is what GUARANTEES the two never land on the same
+ * corner — which is the whole reason this is a function with a test instead of two
+ * ternaries in the markup. The first version repeated the loupe's horizontal rule and
+ * always sat at the bottom, so with the finger on either top corner both ended up in
+ * the same place, one drawn over the other.
+ */
+export function aidCorners(point: { x: number; y: number }): {
+  loupe: ScreenCorner
+  preview: ScreenCorner
+} {
+  const right = point.x < 0.5
+  const below = point.y < 0.5
+  const corner = (isRight: boolean, isBelow: boolean): ScreenCorner =>
+    isBelow ? (isRight ? 'se' : 'sw') : isRight ? 'ne' : 'nw'
+  return {
+    loupe: corner(right, below),
+    preview: corner(right, !below),
+  }
+}
 
 /** Side of the loupe on screen, in CSS pixels. */
 export const LOUPE_SIDE = 112
@@ -35,7 +68,7 @@ export function loupePixels(): number {
 }
 
 /**
- * The two lines of the crop, crossing at the centre of the loupe. `side` is in
+ * The two lines of the framing, crossing at the centre of the loupe. `side` is in
  * pixels of the canvas backing store, which on a phone is not the same as CSS
  * pixels: the lines are measured in the same units so they do not come out
  * hairline on a dense screen.
@@ -76,8 +109,14 @@ export function paintLoupe(
     /** Size of the image as decoded, before the rotation. */
     natural: Size
     rotation: Rotation
-    crop: Crop
-    corner: Corner
+    /**
+     * The point being aimed at, in fractions of the rotated image: a corner of the
+     * crop, or a corner of the perspective quadrilateral. A point and not a
+     * rectangle-plus-corner, because the loupe only ever needed the point — and
+     * asking for the rectangle was what left it frozen while a quadrilateral corner
+     * was being dragged, since that rectangle does not move then.
+     */
+    point: { x: number; y: number }
     /** Side of the region to show, in pixels of the rotated image. */
     sourceSide: number
   },
@@ -91,8 +130,7 @@ export function paintLoupe(
   const region = loupeRegion(
     params.natural,
     params.rotation,
-    params.crop,
-    params.corner,
+    params.point,
     params.sourceSide,
   )
 
