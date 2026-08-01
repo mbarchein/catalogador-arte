@@ -155,11 +155,14 @@ interfaz que promete lo que no cumple.
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
 | RF-602 | Cada filtro reduce el conjunto por separado, y dos filtros combinados aplican ambas condiciones a la vez | Pendiente |
+| RF-602 | El filtro de ubicación es jerárquico sobre el árbol (ADR-006): un lugar marcado responde por todo lo que tiene dentro y no hacia arriba; «Sin ubicación» encuentra las obras sin sitio; un identificador que ya no existe no encuentra nada en vez de encontrarlo todo; y mientras el árbol no ha llegado el filtro se salta en vez de aplicarse contra un conjunto vacío. Cubierto en `listView.test.ts` | **Hecho** |
+| RF-602 | El selector del filtro ofrece el árbol entero rama por rama, dice de qué lugar cuelga cada nodo, deja fuera los retirados y mantiene visible el que esté marcado. Cubierto en `listView.test.ts` | **Hecho** |
 | RF-602 | La búsqueda de texto libre encuentra por `id_catalogacion`, por `titulo` y por `titulos_alt` | Pendiente |
 | RF-604 | El contador de resultados y la paginación son coherentes con el total, incluida la última página incompleta | Pendiente |
 | RF-605 | Una búsqueda sin resultados devuelve 200 con el mensaje esperado, no una página vacía ni un 404 | Pendiente |
 | RF-607 | El enlace desde una serie o un propietario abre el índice de obras con el filtro ya aplicado | Pendiente |
 | RF-608 | Volver al listado conserva filtros y número de página | Pendiente |
+| RF-608 | Un enlace compartido con la ubicación en texto (`?location=…`, anterior a ADR-006) se resuelve contra el árbol y se reescribe a identificadores; lo que ya no existe se descarta sin romper el enlace. Cubierto en `listView.test.ts` | **Hecho** |
 | RF-609 | Una ficha dada de baja desaparece de índices y de resultados de búsqueda | Pendiente |
 | RF-610 | El texto buscado va y vuelve de la URL, y la vista recordada del dispositivo no lo guarda. Cubierto en `listView.test.ts` | **Hecho** |
 | RF-602 | El filtro de serie ofrece «Sin serie» siempre y en primer lugar, selecciona las obras sin serie asignada y solo esas, se combina con nombres como un «o», y va y vuelve de la URL como `series=`. Cubierto en `listView.test.ts` | **Hecho** |
@@ -204,7 +207,7 @@ interfaz que promete lo que no cumple.
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-1002 | La vista incluye los campos especificados, y el marcador cuando no hay imagen. Cubiertos en `recordPdf.test.ts` los campos, la imagen representativa incrustada y el marcador «Imagen no disponible», también cuando falla la descarga. Falta la serie, cuya tabla aún no existe | Parcial |
+| RF-1002 | La vista incluye los campos especificados, y el marcador cuando no hay imagen. Cubiertos en `recordPdf.test.ts` los campos, la imagen representativa incrustada y el marcador «Imagen no disponible», también cuando falla la descarga. La ubicación se imprime como la rama del árbol («Castelar 4, mesa de Mario») y la obra sin lugar se declara en vez de dejar hueco. Falta la serie, cuya tabla aún no existe | Parcial |
 | RF-1003 | El QR se genera y su contenido es la URL absoluta de la ficha completa | Pendiente |
 
 ### Navegación (RF-1100)
@@ -214,6 +217,7 @@ interfaz que promete lo que no cumple.
 | RF-1102 | Las migas de pan reflejan la jerarquía correcta en cada tipo de página | Pendiente |
 | RF-1103 | Los indicadores de la página de inicio coinciden con el contenido real de la base de datos | Pendiente |
 | RF-1104 | El botón de alta no aparece para un Lector | Pendiente |
+| RF-1106 | La pantalla de ubicaciones crea, renombra, mueve y retira, y no aparece para un Lector. Sin cubrir: es interfaz y necesita un recorrido de navegador. Las reglas que protege —hermanos homónimos, ciclos, lugar con obras dentro— sí están cubiertas en `physical_places.test.sql` y `artwork_physical_place.test.sql` | Parcial |
 
 ### Aplicación instalable y captura en móvil (RF-1200)
 

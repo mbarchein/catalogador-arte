@@ -7,6 +7,26 @@ apartado lo más reciente va primero.
 
 ## Interfaz
 
+**La ubicación se elige de una lista de sitios, y se puede corregir de una vez** · *1 de agosto de 2026*
+El campo de ubicación deja de ser un texto que hay que escribir igual cada vez. Ahora se elige de una
+lista con los sitios sangrados por niveles y un buscador arriba: cada coma que escribes abre un nivel
+dentro del anterior y crea lo que falte, y si el nombre lleva una coma dentro —una dirección postal la
+lleva— hay un botón que se lo traga entero. «Sin ubicación» es una opción más de la lista, porque una
+obra sin sitio registrado es una respuesta legítima cuando la tienes delante y no sabes aún dónde va.
+Los nombres se escriben como se leen, con sus mayúsculas y sus tildes.
+
+Hay además una pantalla propia de ubicaciones, en el perfil, para crear, renombrar, mover y retirar
+sitios. Ahí es donde se arreglan de una vez los nombres que venían del sistema anterior: corregir
+«museo de bellas artes de badajoz muba» es una edición, y la ven todas sus obras. Mover una estantería
+se lleva consigo todo lo que hay dentro.
+
+**El filtro de ubicación busca por sitio y no por cómo se escribió** · *1 de agosto de 2026*
+Filtrar por un sitio sigue trayendo todo lo que hay dentro de él, a cualquier profundidad, pero ahora
+se apoya en la lista de sitios y no en comparar textos. Dos consecuencias que se notan: se puede
+filtrar por «Sin ubicación» para ver qué obras están pendientes de colocar, y renombrar un sitio ya no
+rompe un enlace guardado o compartido. Los enlaces de antes siguen funcionando: se traducen solos al
+abrirlos.
+
 **El teclado manda sobre la galería a pantalla completa** · *1 de agosto de 2026*
 Con una fotografía abierta a pantalla completa, las flechas del teclado pasan entre las fotos de la
 obra y ya no entre obras, que era lo que hacían antes; la tecla «f» abre y cierra la pantalla
@@ -208,6 +228,15 @@ puede retirar un lugar que tenga obras o sitios dentro. De aquí sale además un
 catálogo: el nombre de una lista maestra no es su identidad, así que renombrar una entrada no vuelve
 a ser una conversión de datos. (ADR-006)
 
+**Los sitios que había se han convertido, y ninguna obra se ha quedado sin el suyo** · *1 de agosto de 2026*
+Los textos de ubicación de las diecisiete obras que tenían uno se han repartido por sus comas y han
+salido ocho sitios, dos de ellos dentro de otro. Los nombres han entrado tal como estaban guardados,
+en minúsculas y sin tildes, y se corrigen desde la pantalla de ubicaciones una vez por sitio. Un valor
+que era de prueba no se ha convertido: la obra que lo llevaba se ha quedado sin ubicación, que es lo
+que era. La conversión no ha tocado la traza de quién editó cada obra ni la fecha en que se examinó
+por última vez, porque trasladar un dato no es haber tenido la pieza delante; cambiar una obra de
+sitio sí lo es, y esa sí mueve la fecha.
+
 **Los museos y las colecciones son lugares provisionales** · *1 de agosto de 2026*
 Seis de las veintiuna obras están en manos de terceros, y hoy eso se escribe dentro del nombre del
 lugar, la propiedad incluida. Entran en el árbol como sitios a sabiendas de que no es su lugar
@@ -377,13 +406,10 @@ librerías que tenían avisos de seguridad abiertos.
 
 ## En marcha
 
-**La pantalla del árbol de lugares**
-El árbol ya está creado y las obras ya cuelgan de él: los sitios que estaban escritos como texto se
-han convertido en ocho lugares, y cada obra apunta al suyo. Esos ocho nombres están todavía en
-minúsculas y sin tildes, porque es como estaban guardados, y se corrigen desde la aplicación una vez
-por lugar y no una vez por obra. Falta la pantalla desde la que crear, renombrar, mover y retirar
-lugares, prevista en una sección de «Tablas» que reunirá el mantenimiento de las listas, y falta que
-la ficha y el filtro del listado dejen de leer el texto viejo para leer el árbol.
+**La sección «Tablas»**
+Las ubicaciones ya tienen su pantalla, pero los tipos de obra y las series se siguen manteniendo desde
+dentro de los formularios. Está previsto reunir las tres en una sección propia; dónde encaja cada una
+es lo que queda por decidir.
 
 **El acierto de la sugerencia de recorte**
 El detector de bordes ya está en el editor y está probado con fotografías sintéticas, pero lo que
