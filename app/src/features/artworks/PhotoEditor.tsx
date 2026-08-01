@@ -29,8 +29,12 @@ import {
   straightenedSize,
   type Corners,
 } from '../../lib/perspective'
-import { LOUPE_SIDE, LOUPE_ZOOM, loupePixels, paintLoupe } from '../../lib/imageLoupe'
-import { rotateSuggestion, type EdgeSuggestion } from '../../lib/edgeDetection'
+import { LOUPE_SIDE, LOUPE_ZOOM, aidCorners, loupePixels, paintLoupe } from '../../lib/imageLoupe'
+import {
+  rotateSuggestion,
+  type EdgeCandidate,
+  type EdgeSuggestion,
+} from '../../lib/edgeDetection'
 import { suggestArtworkCrop } from '../../lib/imageEdges'
 import { CropIcon, NoIcon, RotateLeftIcon, RotateRightIcon } from '../../components/ui'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
@@ -367,8 +371,22 @@ export function PhotoEditor({
     setAnalysis({ status: 'found', suggestion, choice: 'outer' })
     // The rectangle that was there is kept before overwriting it: see `replaced`.
     setReplaced(cropRef.current ?? centeredCrop())
-    setCorners(null)
-    setCrop(suggestion.outer)
+    load(suggestion.outer)
+  }
+
+  /**
+   * Puts a candidate on screen: the rectangle always, and the quadrilateral when the
+   * detector found the sides tilted.
+   *
+   * The corners are loaded only when the master is the source, and that is not a
+   * detail: over the consultation copy the straightening cannot be expressed —
+   * `composeEdits` refuses it and the handles are disabled there — so offering a
+   * quadrilateral would offer something that cannot be applied. The box is always
+   * loaded, so the suggestion never comes back empty.
+   */
+  function load(candidate: EdgeCandidate) {
+    setCrop(candidate.box)
+    setCorners(candidate.corners && canRestoreOriginal ? candidate.corners : null)
   }
 
   /**
@@ -419,12 +437,28 @@ export function PhotoEditor({
     if (analysis.status !== 'found') return 'MANUAL'
     const candidate =
       analysis.choice === 'inner' ? analysis.suggestion.inner : analysis.suggestion.outer
-    if (!candidate || !crop || corners) return 'SUGGESTED_ADJUSTED'
+    if (!candidate) return 'SUGGESTED_ADJUSTED'
+
+    // With a quadrilateral on screen, «as suggested» means the four corners are still
+    // the ones the detector gave. Comparing the rectangle instead would call it
+    // suggested after every handle had been moved, because the box does not change
+    // when a corner slides along a side.
+    if (corners) {
+      if (!candidate.corners) return 'SUGGESTED_ADJUSTED'
+      const untouched = CORNER_KEYS.every(
+        (key) =>
+          Math.abs(candidate.corners![key].x - corners[key].x) < 1e-6 &&
+          Math.abs(candidate.corners![key].y - corners[key].y) < 1e-6,
+      )
+      return untouched ? 'SUGGESTED' : 'SUGGESTED_ADJUSTED'
+    }
+
+    if (!crop) return 'SUGGESTED_ADJUSTED'
     const same =
-      Math.abs(candidate.x - crop.x) < 1e-6 &&
-      Math.abs(candidate.y - crop.y) < 1e-6 &&
-      Math.abs(candidate.width - crop.width) < 1e-6 &&
-      Math.abs(candidate.height - crop.height) < 1e-6
+      Math.abs(candidate.box.x - crop.x) < 1e-6 &&
+      Math.abs(candidate.box.y - crop.y) < 1e-6 &&
+      Math.abs(candidate.box.width - crop.width) < 1e-6 &&
+      Math.abs(candidate.box.height - crop.height) < 1e-6
     return same ? 'SUGGESTED' : 'SUGGESTED_ADJUSTED'
   }
 
@@ -434,7 +468,7 @@ export function PhotoEditor({
     const candidate = which === 'inner' ? analysis.suggestion.inner : analysis.suggestion.outer
     if (!candidate) return
     setAnalysis({ ...analysis, choice: which })
-    setCrop(candidate)
+    load(candidate)
   }
 
   function startDrag(e: React.PointerEvent, what: Corner | 'move') {
@@ -565,12 +599,14 @@ export function PhotoEditor({
   // is, recomputed as it moves. Anchoring it to which handle it is would not be
   // enough — the crop can sit in any quadrant, and then the «nw» handle is at
   // the bottom right of the screen with the thumb over the loupe.
-  const loupePlacement: React.CSSProperties = aimed
-    ? {
-        ...(aimed.x < 0.5 ? { right: LOUPE_INSET } : { left: LOUPE_INSET }),
-        ...(aimed.y < 0.5 ? { bottom: LOUPE_INSET } : { top: LOUPE_INSET }),
-      }
-    : {}
+  const loupePlacement: React.CSSProperties = (() => {
+    if (!aimed) return {}
+    const corner = aidCorners(aimed).loupe
+    return {
+      ...(corner === 'ne' || corner === 'se' ? { right: LOUPE_INSET } : { left: LOUPE_INSET }),
+      ...(corner === 'nw' || corner === 'ne' ? { top: LOUPE_INSET } : { bottom: LOUPE_INSET }),
+    }
+  })()
 
   /**
    * The preview: the same side as the loupe, the other half of the screen.
@@ -581,12 +617,20 @@ export function PhotoEditor({
    * finger on either top corner both ended up in the same place — the two visible at
    * once, one over the other.
    */
-  const previewPlacement: React.CSSProperties = aimed
-    ? {
-        ...(aimed.x < 0.5 ? { right: LOUPE_INSET } : { left: LOUPE_INSET }),
-        ...(aimed.y < 0.5 ? { top: LOUPE_INSET } : { bottom: LOUPE_INSET }),
-      }
-    : { right: LOUPE_INSET, top: LOUPE_INSET }
+  const previewPlacement: React.CSSProperties = (() => {
+    // Nothing being dragged: a fixed corner, and the top right because the hand comes
+    // from the bottom. It DOES sit over the artwork's own corner when the painting
+    // fills the frame — the first attempt at this looked for a free corner and there
+    // is none, because the four corners of a photographed painting are near the four
+    // corners of the photograph. What solves it is the stacking order: the handles
+    // paint above the preview, so the yellow dot stays visible on top of it and
+    // nothing becomes ungrabbable.
+    const corner = aimed ? aidCorners(aimed).preview : 'ne'
+    return {
+      ...(corner === 'ne' || corner === 'se' ? { right: LOUPE_INSET } : { left: LOUPE_INSET }),
+      ...(corner === 'nw' || corner === 'ne' ? { top: LOUPE_INSET } : { bottom: LOUPE_INSET }),
+    }
+  })()
 
   useEffect(() => {
     const canvas = loupeRef.current
@@ -704,7 +748,9 @@ export function PhotoEditor({
                     onKeyDown={(e) => onHandleKeyDown(e, corner)}
                     onBlur={() => setNudged((c) => (c === corner ? null : c))}
                     onContextMenu={(e) => e.preventDefault()}
-                    className="absolute flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none select-none items-center justify-center"
+                    // z-20 so it paints over the loupe and the preview: those two are
+                    // aids and this is the thing being aimed at.
+                    className="absolute z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none select-none items-center justify-center"
                     style={{ left: `${corners[corner].x * 100}%`, top: `${corners[corner].y * 100}%` }}
                   >
                     <span
@@ -782,7 +828,7 @@ export function PhotoEditor({
                       // 44 px of touch area, with a smaller visible mark: on a
                       // phone the finger needs the room even if the drawing
                       // does not.
-                      className="absolute flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none select-none items-center justify-center"
+                      className="absolute z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none select-none items-center justify-center"
                       style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }}
                     >
                       <span
@@ -808,7 +854,7 @@ export function PhotoEditor({
         {corners && ready && preview && (
           <div
             aria-hidden
-            className="pointer-events-none absolute overflow-hidden rounded-lg border border-white/40 bg-white shadow-lg"
+            className="pointer-events-none absolute z-10 overflow-hidden rounded-lg border border-white/40 bg-white shadow-lg"
             style={{
               ...previewPlacement,
               width: `${preview.width}px`,
@@ -846,7 +892,7 @@ export function PhotoEditor({
             aria-hidden
             width={loupePixels()}
             height={loupePixels()}
-            className="pointer-events-none absolute rounded-lg border-2 border-white/80 shadow-lg"
+            className="pointer-events-none absolute z-10 rounded-lg border-2 border-white/80 shadow-lg"
             style={{ width: `${LOUPE_SIDE}px`, height: `${LOUPE_SIDE}px`, ...loupePlacement }}
           />
         )}
