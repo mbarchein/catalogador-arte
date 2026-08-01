@@ -148,8 +148,13 @@ export function ArtworksPage() {
 
   // Series of the selected funds only, each labeled with its fund. Same rule
   // for what the vocabulary does not know: it stays visible as marked.
+  //
+  // Retired series are dropped here, as retired types already are by `types`:
+  // what is no longer on offer for cataloging is no longer offered for filtering
+  // either. One asymmetry left on purpose — a series that is filtering right now
+  // survives as a marked option, so a saved link does not quietly widen.
   const seriesOptions = useMemo(
-    () => seriesFilterOptions(seriesEntries, view.funds, view.series),
+    () => seriesFilterOptions(seriesEntries.filter((e) => e.active), view.funds, view.series),
     [seriesEntries, view.funds, view.series],
   )
 

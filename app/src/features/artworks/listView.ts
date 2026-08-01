@@ -289,10 +289,13 @@ export interface FilterOption {
  *
  * `selected` values the vocabulary does not know are kept as options: the
  * checkboxes must reflect what is filtering, even when it comes from a stale
- * link.
+ * link. A RETIRED series arrives here as one of those: whoever hides them is the
+ * caller, which is why the parameter asks for the two fields this reads and not
+ * for a whole `SeriesEntry` — a filter chooser has no business knowing an entry
+ * has an identity.
  */
 export function seriesFilterOptions(
-  entries: readonly SeriesEntry[],
+  entries: readonly Pick<SeriesEntry, 'artist' | 'name'>[],
   funds: readonly ArtistFund[],
   selected: readonly string[] = [],
 ): FilterOption[] {

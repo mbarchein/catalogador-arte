@@ -42,12 +42,28 @@ export type ExistenceStatusValue =
   | 'UNREVIEWED'
 
 /**
- * One entry of the series vocabulary. The series belongs to a fund and the
- * pair is its key in `series`: each artist works in their own series.
+ * One entry of the artwork-type vocabulary (RF-213).
+ *
+ * `id` is the identity since ADR-007: the name is an attribute, which is what
+ * makes renaming one row instead of a pass over every artwork. `active` false is
+ * a retired type — still readable, no longer on offer (RF-901).
+ */
+export interface ArtworkTypeEntry {
+  id: string
+  name: string
+  active: boolean
+}
+
+/**
+ * One entry of the series vocabulary. The series belongs to a fund, and the
+ * pair (fund, name) is unique — each artist works in their own series — but
+ * since ADR-007 it is no longer the identity: `id` is.
  */
 export interface SeriesEntry {
+  id: string
   artist: ArtistFund
   name: string
+  active: boolean
 }
 
 /**
