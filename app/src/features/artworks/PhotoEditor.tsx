@@ -776,12 +776,12 @@ export function PhotoEditor({
     const width = Math.max(1, Math.round(wide * scale))
     const height = Math.max(1, Math.round(tall * scale))
 
-    // From screen pixels of the photograph to the unit square, through the inverse,
-    // and out to the pixels of the preview box.
-    const sx = rotation % 180 === 0 ? fit.width : fit.height
-    const sy = rotation % 180 === 0 ? fit.height : fit.width
-    const compose = (a: number, b: number, c: number) => [a, b, c] as const
-    void compose
+    // From screen pixels of the ROTATED photograph to the unit square, through the
+    // inverse, and out to the pixels of the preview box. Always the rotated frame,
+    // because that is the space the corners are fractions of — normalizing by the
+    // `<img>` element's own sides instead swapped them on a quarter turn.
+    const sx = fit.width
+    const sy = fit.height
     const h = inverse
     const matrix = [
       (h[0] * width) / sx,
@@ -794,7 +794,26 @@ export function PhotoEditor({
       h[7] / sy,
       h[8],
     ] as const
-    return { width, height, transform: homographyToCssMatrix(matrix) }
+
+    /**
+     * The turn, composed BEFORE the homography.
+     *
+     * What the preview draws is the photograph as it was decoded, while the corners
+     * live over the turned one — so without this the panel showed the artwork in its
+     * original orientation while the screen showed it turned, and at 90 and 270 the
+     * homography was also being fed sides that did not match. Written as a turn about
+     * the top left corner —the element's `transform-origin`— plus the shift that puts
+     * the result back inside the frame, which for a quarter turn is exactly one side.
+     */
+    const spin =
+      rotation === 90
+        ? ` translate(${fit.width}px, 0px) rotate(90deg)`
+        : rotation === 180
+          ? ` translate(${fit.width}px, ${fit.height}px) rotate(180deg)`
+          : rotation === 270
+            ? ` translate(0px, ${fit.height}px) rotate(270deg)`
+            : ''
+    return { width, height, transform: `${homographyToCssMatrix(matrix)}${spin}` }
   })()
 
   // Which corner the loupe is showing: the one being dragged, or the one being

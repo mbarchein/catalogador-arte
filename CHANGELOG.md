@@ -222,6 +222,12 @@ trapecio que propone la varita no caía sobre el cuadro, y la lupa enseñaba un 
 estaba tocando—, pero eran el mismo: las medidas del encuadre estaban bien todo el rato; lo que estaba
 mal era la fotografía de debajo. Ya se dibuja con sus proporciones en los cuatro giros.
 
+**La vista previa del enderezado no giraba con la foto**
+Al girar una fotografía mientras se corrigen sus esquinas, el recuadro que enseña cómo va a quedar
+seguía mostrando la obra en su orientación original, así que dejaba de parecerse a lo que había en
+pantalla. Además, a 90 y 270 grados salía sesgada: el enderezado se calculaba con los lados
+intercambiados. Ahora el recuadro gira con la foto y enseña el resultado recto en los cuatro giros.
+
 **Girar con la perspectiva puesta dejaba las esquinas donde estaban**
 Girar la fotografía llevaba el recorte consigo, pero no las cuatro esquinas de la corrección de
 perspectiva: se quedaban en su sitio mientras la foto giraba debajo, y había que rehacerlas. Ahora giran
