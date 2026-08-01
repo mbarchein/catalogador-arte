@@ -960,6 +960,18 @@ export function PhotoEditor({
                 // rotated fit computed above.
                 width: `${rotation % 180 === 0 ? fit.width : fit.height}px`,
                 height: `${rotation % 180 === 0 ? fit.height : fit.width}px`,
+                // Not decoration, and the same trap as in the preview panel: the CSS
+                // preflight sets `img { max-width: 100% }`, and after a quarter turn
+                // the width asked for is the LONG side while the box around it is the
+                // short one — so the browser clipped the width and left the height,
+                // and a 4:3 photograph was drawn square. Measured: 720×540 asked,
+                // 540×540 drawn. The photo looked squashed by a quarter, the
+                // suggested quadrilateral no longer sat on the painting —its corners
+                // were right, the image under them was not— and the loupe, which
+                // reads the intrinsic pixels and ignores the CSS size, disagreed with
+                // the screen. One cause, three symptoms.
+                maxWidth: 'none',
+                maxHeight: 'none',
                 transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
               }}
             />
