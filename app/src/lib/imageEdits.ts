@@ -37,7 +37,7 @@ import {
   CORNER_KEYS,
   cornersBoundingBox,
   isRectangle,
-  isSimpleQuadrilateral,
+  isConvexQuadrilateral,
   straightenedSize,
   type Corners,
 } from './perspective'
@@ -291,7 +291,7 @@ export function normalizeEdit(edit: PhotoEdit): PhotoEdit {
   // keeps a photograph whose handles were dragged and put back from being recorded
   // as «straightened».
   const corners = edit.corners
-  if (corners && isSimpleQuadrilateral(corners) && !isRectangle(corners, RECTANGLE_TOLERANCE)) {
+  if (corners && isConvexQuadrilateral(corners) && !isRectangle(corners, RECTANGLE_TOLERANCE)) {
     return { rotation, crop: null, corners: quantizeCorners(corners) }
   }
   const rect = corners ? cornersBoundingBox(corners) : edit.crop
@@ -637,7 +637,7 @@ export function editFromColumns(row: Partial<EditColumns> | null | undefined): P
     // And it still has to be a quadrilateral that can be straightened: a row that
     // somehow held a crossed one would produce an image folded over itself, and
     // showing the photograph unstraightened is always better than that.
-    if (isSimpleQuadrilateral(corners)) return normalizeEdit({ rotation, crop: null, corners })
+    if (isConvexQuadrilateral(corners)) return normalizeEdit({ rotation, crop: null, corners })
   }
 
   const { crop_x: x, crop_y: y, crop_width: width, crop_height: height } = row

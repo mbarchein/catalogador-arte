@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CORNER_REACH,
   applyHomography,
   cornersBoundingBox,
   cornersOfRect,
@@ -7,7 +8,8 @@ import {
   homographyToCssMatrix,
   invertHomography,
   isRectangle,
-  isSimpleQuadrilateral,
+  isConvexQuadrilateral,
+  moveCorner,
   signedArea,
   straightenedSize,
   type Corners,
@@ -52,14 +54,14 @@ describe('signedArea and the simple quadrilateral (RF-410)', () => {
       se: { x: 0.8, y: 0.8 },
       sw: { x: 0.2, y: 0.8 },
     }
-    expect(isSimpleQuadrilateral(crossed)).toBe(false)
+    expect(isConvexQuadrilateral(crossed)).toBe(false)
   })
 
   it('a degenerate quadrilateral is refused, and a real one accepted', () => {
     const point = cornersOfRect({ x: 0.5, y: 0.5, width: 0, height: 0 })
-    expect(isSimpleQuadrilateral(point)).toBe(false)
-    expect(isSimpleQuadrilateral(square())).toBe(true)
-    expect(isSimpleQuadrilateral(keystone())).toBe(true)
+    expect(isConvexQuadrilateral(point)).toBe(false)
+    expect(isConvexQuadrilateral(square())).toBe(true)
+    expect(isConvexQuadrilateral(keystone())).toBe(true)
   })
 })
 
@@ -199,6 +201,52 @@ describe('straightenedSize (RF-410)', () => {
   })
 })
 
+describe('moveCorner (RF-410)', () => {
+  /** Las esquinas movidas sin comprobar nada, para poder medir lo que se rechaza. */
+  const moveCorner2 = (corners: Corners, key: 'nw' | 'ne' | 'se' | 'sw', point: { x: number; y: number }) => ({
+    ...corners,
+    [key]: point,
+  })
+
+  it('moves the corner asked for and leaves the other three alone', () => {
+    const moved = moveCorner(keystone(), 'nw', { x: 0.4, y: 0.25 })!
+    expect(moved.nw).toEqual({ x: 0.4, y: 0.25 })
+    expect(moved.ne).toEqual(keystone().ne)
+    expect(moved.se).toEqual(keystone().se)
+    expect(moved.sw).toEqual(keystone().sw)
+  })
+
+  it('lets a corner out of the photograph, up to the reach the schema allows', () => {
+    const moved = moveCorner(keystone(), 'nw', { x: -0.2, y: -0.1 })!
+    expect(moved.nw).toEqual({ x: -0.2, y: -0.1 })
+    // And no further: past the reach it is clamped, not refused, so a finger that
+    // slips does not lose the drag.
+    expect(moveCorner(keystone(), 'nw', { x: -5, y: -5 })!.nw).toEqual({
+      x: -CORNER_REACH,
+      y: -CORNER_REACH,
+    })
+  })
+
+  it('refuses the move that would fold the quadrilateral over itself', () => {
+    // The top left dragged past the top right: straightening that gives an image
+    // doubled over.
+    //
+    // This case is here because the first version accepted it. The check was the
+    // signed area, and this shape scores 0.332 — a self-intersecting polygon keeps a
+    // positive area when its larger lobe wins, so the area alone never was a test for
+    // crossing. The database had the same hole and it is fixed in its own migration.
+    expect(signedArea(moveCorner2(keystone(), 'nw', { x: 0.95, y: 0.16 }))).toBeGreaterThan(0.3)
+    expect(moveCorner(keystone(), 'nw', { x: 0.95, y: 0.16 })).toBeNull()
+  })
+
+  it('survives a point that is not a number', () => {
+    const moved = moveCorner(keystone(), 'se', { x: Number.NaN, y: 0.9 })
+    // Not a crash and not a NaN in the row: the coordinate falls back to zero, and
+    // whether the result is a quadrilateral is then decided as always.
+    expect(moved === null || Number.isFinite(moved.se.x)).toBe(true)
+  })
+})
+
 describe('cornersOfRect, cornersBoundingBox and isRectangle (RF-410)', () => {
   it('a rectangle survives the round trip through corners', () => {
     const rect = { x: 0.12, y: 0.34, width: 0.5, height: 0.4 }
@@ -229,7 +277,7 @@ describe('cornersOfRect, cornersBoundingBox and isRectangle (RF-410)', () => {
       se: { x: 1.05, y: 1.08 },
       sw: { x: -0.05, y: 1.02 },
     }
-    expect(isSimpleQuadrilateral(outside)).toBe(true)
+    expect(isConvexQuadrilateral(outside)).toBe(true)
     expect(cornersBoundingBox(outside).x).toBeCloseTo(-0.1, 10)
     expect(homographyFromUnitSquare(outside)).not.toBeNull()
   })

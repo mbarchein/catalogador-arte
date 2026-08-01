@@ -68,12 +68,10 @@ export type CornerKey = (typeof CORNER_KEYS)[number]
 /**
  * Twice the signed area of the quadrilateral (the shoelace formula).
  *
- * Positive means the corners run clockwise on screen and the quadrilateral does
- * not cross itself; the magnitude says how far it is from degenerate. It mirrors
- * the `images_corners_simple_quadrilateral` constraint on purpose, so the editor
- * can refuse the gesture that would produce a row the database rejects — the rule
- * lives in the database, and this is the interface knowing it beforehand rather
- * than a second copy of it.
+ * Positive means the corners run clockwise on screen, and the magnitude says how far
+ * it is from degenerate. What it does NOT say is that the quadrilateral does not cross
+ * itself: a self-intersecting one keeps a positive area whenever its larger lobe wins.
+ * That is why `isConvexQuadrilateral` exists and why this is not used alone.
  */
 export function signedArea(corners: Corners): number {
   const order = CORNER_KEYS.map((key) => corners[key])
@@ -86,9 +84,37 @@ export function signedArea(corners: Corners): number {
   return total
 }
 
-/** Whether these corners are a quadrilateral that can be straightened at all. */
-export function isSimpleQuadrilateral(corners: Corners): boolean {
-  return signedArea(corners) > 0.01
+/**
+ * Whether these corners can be straightened at all: a convex quadrilateral, run
+ * clockwise on screen, with an interior.
+ *
+ * **Convex and not merely «does not cross itself»**, and the difference is not
+ * pedantry: the signed area alone —which is what this used to check, and what the
+ * schema still checked— accepts plenty of crossed quadrilaterals, because a
+ * self-intersecting polygon keeps a positive area whenever its larger lobe wins.
+ * Measured: dragging the top left corner to (0.95, 0.16) of the trapezoid of the
+ * tests crosses two sides and still scores an area of 0.332.
+ *
+ * Convexity is also the right rule and not just a stricter one: the projective image
+ * of a rectangle is convex, always. So anything non-convex is not a photograph of a
+ * painting seen at an angle, whatever else it may be.
+ *
+ * The test is the sign of the cross product at each vertex — all four the same, and
+ * with this traversal all four positive. The area is kept alongside it with a job of
+ * its own: excluding the quadrilateral that is technically convex and too small to
+ * be anything.
+ */
+export function isConvexQuadrilateral(corners: Corners): boolean {
+  if (!(signedArea(corners) > 0.01)) return false
+  const order = CORNER_KEYS.map((key) => corners[key])
+  for (let i = 0; i < order.length; i += 1) {
+    const a = order[i]!
+    const b = order[(i + 1) % order.length]!
+    const c = order[(i + 2) % order.length]!
+    const cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)
+    if (!(cross > 0)) return false
+  }
+  return true
 }
 
 /**
@@ -245,6 +271,43 @@ export function homographyToCssMatrix(h: Homography): string {
   const [a, b, c, d, e, f, g, i, j] = h
   const values = [a, d, 0, g, b, e, 0, i, 0, 0, 1, 0, c, f, 0, j]
   return `matrix3d(${values.map((value) => Number(value.toFixed(9))).join(', ')})`
+}
+
+/**
+ * How far outside the image a corner may be dragged, as a fraction.
+ *
+ * Mirrors the `images_corners_within_reach` constraint of the schema: in five
+ * photographs of the catalog the sides of the artwork are not inside the frame, and
+ * dragging a handle past the edge is the only way to straighten those. What falls
+ * outside is filled with white.
+ */
+export const CORNER_REACH = 0.25
+
+/**
+ * One corner moved to `point`, or null when the move is refused.
+ *
+ * Refused means the result would not be a convex quadrilateral — which is what
+ * happens as soon as a handle is dragged past its neighbour — and straightening that
+ * gives an image folded over itself. The database refuses the row too; answering null
+ * here is what lets the interface refuse the gesture at the finger instead of at the
+ * save button.
+ *
+ * It exists as a function because the finger and the keyboard both do this, and two
+ * copies of «clamp, then check the fold» would drift: the arrow keys would keep
+ * accepting what a drag refuses.
+ */
+export function moveCorner(
+  corners: Corners,
+  key: CornerKey,
+  point: Point,
+): Corners | null {
+  const clamp = (value: number) =>
+    Math.min(1 + CORNER_REACH, Math.max(-CORNER_REACH, Number.isFinite(value) ? value : 0))
+  const moved: Corners = {
+    ...corners,
+    [key]: { x: clamp(point.x), y: clamp(point.y) },
+  }
+  return isConvexQuadrilateral(moved) ? moved : null
 }
 
 /** The bounding box of the four corners: what a crop would have been. */

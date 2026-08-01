@@ -91,6 +91,22 @@ begin
   end;
 
   begin
+    -- El caso que la primera versión de la restricción ACEPTABA: cruza dos lados y
+    -- conserva 0,332 de área con signo, porque un polígono autointersectado mantiene
+    -- área positiva cuando gana su lóbulo mayor. El área nunca fue una prueba de que
+    -- no se cruce; la convexidad sí (20260801180000).
+    update public.images set
+      corner_nw_x = 0.95, corner_nw_y = 0.16,
+      corner_ne_x = 0.70, corner_ne_y = 0.15,
+      corner_se_x = 0.85, corner_se_y = 0.90,
+      corner_sw_x = 0.15, corner_sw_y = 0.90
+     where image_id = v_id;
+    raise exception 'FAIL: ha entrado un cruce que el área con signo no ve';
+  exception when check_violation then
+    raise notice 'OK: un cruce con área positiva también se rechaza';
+  end;
+
+  begin
     -- Y uno degenerado: las cuatro esquinas en el mismo punto.
     update public.images set
       corner_nw_x = 0.5, corner_nw_y = 0.5, corner_ne_x = 0.5, corner_ne_y = 0.5,
