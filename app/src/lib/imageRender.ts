@@ -14,6 +14,12 @@ import {
   rotatedSize,
   type PhotoEdit,
 } from './imageEdits'
+import {
+  applyHomography,
+  cornersBoundingBox,
+  homographyFromUnitSquare,
+  straightenedSize,
+} from './perspective'
 
 /**
  * The part of the photo edit that touches pixels and the store: it draws the
@@ -75,6 +81,143 @@ function editedCanvas(bitmap: ImageBitmap, edit: PhotoEdit): HTMLCanvasElement {
 }
 
 /**
+ * Longest edge of the canvas the straightening works on.
+ *
+ * The warp is a loop over pixels, so its cost is the area — and the source cannot
+ * be the master. **`getImageData` of a 9248×6936 master is 256 MB of array**, which
+ * a phone does not have. So the rotated photograph is first drawn down to this size
+ * with `drawImage`, which goes through the GPU and is nearly free, and the loop runs
+ * on that.
+ *
+ * 2400 and not 2000: the consultation copy is 2000 px, and warping at exactly that
+ * size would resample twice at the same resolution. A fifth more gives the
+ * straightening something to lose without ever upscaling the derivative.
+ *
+ * Measured on the cataloger's own phone —a Redmi Note 8 Pro, eight cores— the loop
+ * costs 89 ms at 2000 px and 247 ms at 4000 px, including reading and writing the
+ * pixels. WebGL was 1.76× faster at 2000 px and only 1.20× at 4000, where the
+ * texture upload dominates: thirty-eight milliseconds do not pay for two shaders, a
+ * lost-context path and a fallback that would be needed anyway.
+ */
+const WARP_LONG_EDGE = 2400
+
+/**
+ * Draws the artwork straightened: the quadrilateral of its four corners mapped onto
+ * a rectangle.
+ *
+ * The transform is projective and Canvas 2D cannot apply it —`setTransform` takes
+ * six numbers and is affine— so the pixels are walked one by one. It walks the
+ * DESTINATION and asks each output pixel where it comes from, which is the only way
+ * to fill every one of them exactly once; walking the source leaves holes wherever
+ * the transform stretches.
+ *
+ * The bilinear sample is four reads and three interpolations per channel. Nearest
+ * neighbour would be cheaper and shows as stair steps on exactly the long straight
+ * borders this exists to straighten.
+ */
+function straightenedCanvas(bitmap: ImageBitmap, edit: PhotoEdit): HTMLCanvasElement {
+  const corners = edit.corners
+  if (!corners) throw new Error('straightenedCanvas sin esquinas')
+  const homography = homographyFromUnitSquare(corners)
+  if (!homography) throw new Error('Las cuatro esquinas no forman un cuadrilátero')
+
+  const rotated = rotatedSize({ width: bitmap.width, height: bitmap.height }, edit.rotation)
+  const box = cornersBoundingBox(corners)
+  const boxPixels = {
+    x: box.x * rotated.width,
+    y: box.y * rotated.height,
+    width: box.width * rotated.width,
+    height: box.height * rotated.height,
+  }
+  const scale = Math.min(1, WARP_LONG_EDGE / Math.max(boxPixels.width, boxPixels.height))
+
+  // ── The working canvas: rotated, cut to the bounding box, scaled down ──
+  const work = document.createElement('canvas')
+  work.width = Math.max(1, Math.ceil(boxPixels.width * scale))
+  work.height = Math.max(1, Math.ceil(boxPixels.height * scale))
+  const workCtx = work.getContext('2d', { willReadFrequently: true })
+  if (!workCtx) throw new Error('El navegador no ha dado un contexto de dibujo')
+
+  // White underneath, and not transparent: a corner may sit outside the photograph
+  // —five photographs of the catalog have sides of the artwork out of frame, and
+  // dragging a handle past the edge is the only way to straighten them— and what is
+  // not in the shot has to read as blank paper, not as a hole that samples black.
+  workCtx.fillStyle = '#ffffff'
+  workCtx.fillRect(0, 0, work.width, work.height)
+
+  workCtx.scale(scale, scale)
+  workCtx.translate(-boxPixels.x, -boxPixels.y)
+  if (edit.rotation === 90) {
+    workCtx.translate(rotated.width, 0)
+    workCtx.rotate(Math.PI / 2)
+  } else if (edit.rotation === 180) {
+    workCtx.translate(rotated.width, rotated.height)
+    workCtx.rotate(Math.PI)
+  } else if (edit.rotation === 270) {
+    workCtx.translate(0, rotated.height)
+    workCtx.rotate(-Math.PI / 2)
+  }
+  workCtx.drawImage(bitmap, 0, 0)
+
+  // ── The warp ──────────────────────────────────────────────
+  const straightened = straightenedSize(corners)
+  const out = document.createElement('canvas')
+  out.width = Math.max(1, Math.round(straightened.width * rotated.width * scale))
+  out.height = Math.max(1, Math.round(straightened.height * rotated.height * scale))
+  const outCtx = out.getContext('2d')
+  if (!outCtx) throw new Error('El navegador no ha dado un contexto de dibujo')
+
+  const source = workCtx.getImageData(0, 0, work.width, work.height)
+  const destination = outCtx.createImageData(out.width, out.height)
+  const src = source.data
+  const dst = destination.data
+  const sw = work.width
+  const sh = work.height
+
+  for (let y = 0; y < out.height; y += 1) {
+    // The centre of the pixel and not its corner: sampling at the corner shifts the
+    // whole image half a pixel, which on a border is visible.
+    const v = (y + 0.5) / out.height
+    for (let x = 0; x < out.width; x += 1) {
+      const u = (x + 0.5) / out.width
+      const point = applyHomography(homography, { x: u, y: v })
+      // From a fraction of the rotated image to a pixel of the working canvas.
+      const sx = (point.x * rotated.width - boxPixels.x) * scale - 0.5
+      const sy = (point.y * rotated.height - boxPixels.y) * scale - 0.5
+      const at = (y * out.width + x) * 4
+      dst[at + 3] = 255
+
+      if (sx < 0 || sy < 0 || sx > sw - 1 || sy > sh - 1) {
+        dst[at] = 255
+        dst[at + 1] = 255
+        dst[at + 2] = 255
+        continue
+      }
+      const x0 = Math.floor(sx)
+      const y0 = Math.floor(sy)
+      const x1 = Math.min(sw - 1, x0 + 1)
+      const y1 = Math.min(sh - 1, y0 + 1)
+      const fx = sx - x0
+      const fy = sy - y0
+      const i00 = (y0 * sw + x0) * 4
+      const i10 = (y0 * sw + x1) * 4
+      const i01 = (y1 * sw + x0) * 4
+      const i11 = (y1 * sw + x1) * 4
+      for (let channel = 0; channel < 3; channel += 1) {
+        dst[at + channel] =
+          src[i00 + channel]! * (1 - fx) * (1 - fy) +
+          src[i10 + channel]! * fx * (1 - fy) +
+          src[i01 + channel]! * (1 - fx) * fy +
+          src[i11 + channel]! * fx * fy
+      }
+    }
+  }
+
+  outCtx.putImageData(destination, 0, 0)
+  return out
+}
+
+/**
  * Encodes one level from an already edited canvas.
  *
  * It does not reuse the private `downscale` of images.ts because there the
@@ -109,7 +252,8 @@ export async function renderEditedLevels(source: Blob, edit: PhotoEdit): Promise
   // quarter turn would start from a different picture than the one on screen.
   const bitmap = await createImageBitmap(source, { imageOrientation: 'from-image' })
   try {
-    const edited = editedCanvas(bitmap, edit)
+    // Corners take precedence over the crop, the same order the row has.
+    const edited = edit.corners ? straightenedCanvas(bitmap, edit) : editedCanvas(bitmap, edit)
     const [thumbnail, derivative] = await Promise.all([
       encodeLevel(edited, 'thumbnail'),
       encodeLevel(edited, 'derivative'),
