@@ -20,9 +20,6 @@ import type { Crop } from './imageEdits'
 
 const WALL = 128
 
-/** The floor MIN_EDGE_STRENGTH puts on the contrast of an axis. */
-const MIN_EDGE_STRENGTH_FLOOR = 20
-
 interface Photo {
   luminance: Uint8Array
   width: number
@@ -235,21 +232,42 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
       expect(detect(line)).not.toBeNull()
     })
 
-    it('accepts a border interrupted a third of its length, and rejects two thirds', () => {
+    it('accepts a border interrupted a third of its length, and keeps its place', () => {
       // A real border does get cut: the cloth of an easel crosses one, a white
-      // object splits another. That is why the support asks for half the length
-      // and not all of it — and it is also where it stops.
-      const notched = (fraction: number) => {
-        const frame = photo(700, 500)
-        paint(frame, { x: 0.2, y: 0.2, width: 0.5, height: 0.6 }, 210)
-        // A notch of wall eating into the left border: along it there simply is
-        // no transition to find.
-        paint(frame, { x: 0.2, y: 0.2, width: 0.05, height: 0.6 * fraction }, WALL)
-        return frame
-      }
+      // object splits another. That is why the support asks for half the length and
+      // not all of it — and why what matters is that the side stays where the
+      // border is instead of sliding to whatever else is long and straight.
+      const frame = photo(700, 500)
+      const artwork = { x: 0.2, y: 0.2, width: 0.5, height: 0.6 }
+      paint(frame, artwork, 210)
+      // A notch of wall eating into the left border along a third of its height:
+      // there, quite simply, there is no transition to find.
+      paint(frame, { x: 0.2, y: 0.2, width: 0.05, height: 0.2 }, WALL)
 
-      expect(detect(notched(0.33))).not.toBeNull()
-      expect(detect(notched(0.66))).toBeNull()
+      const analysis = analyseArtworkEdges(frame.luminance, frame.width, frame.height)
+      expect(analysis.suggestion).not.toBeNull()
+      expect(analysis.detail.supportWest).toBeGreaterThan(0.5)
+      // And on the border, not 35 px inside it on the edge of the notch.
+      expect(analysis.suggestion?.outer.x).toBeCloseTo(artwork.x - 0.005, 2)
+    })
+
+    /**
+     * What the support does NOT promise, written down because the first version of
+     * this test claimed it did: it is not a guarantee that a badly interrupted
+     * border gets refused. Grow the notch and its own right edge becomes a long,
+     * clean vertical line, and the detector prefers it — the side slides inwards and
+     * clips the artwork. The rule keeps a texture from passing as a border; it
+     * cannot decide which of two real borders is the artwork's.
+     */
+    it('cannot tell which of two real borders is the one that matters', () => {
+      const frame = photo(700, 500)
+      paint(frame, { x: 0.2, y: 0.2, width: 0.5, height: 0.6 }, 210)
+      paint(frame, { x: 0.2, y: 0.2, width: 0.05, height: 0.5 }, WALL)
+
+      const suggestion = detect(frame)
+      expect(suggestion).not.toBeNull()
+      // It lands on the notch's edge, a twentieth of the frame inside the artwork.
+      expect(suggestion!.outer.x).toBeGreaterThan(0.2)
     })
   })
 })

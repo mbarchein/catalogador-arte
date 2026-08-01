@@ -135,6 +135,50 @@ const LINE_STEP_FRACTION = 0.2
 const LINE_WINDOW = 2
 
 /**
+ * Widest tilt looked for, as pixels of drift per pixel along the side.
+ *
+ * 0.25 is about fourteen degrees, and the worst convergence measured on the real
+ * photographs is 11.69°. Looking wider would cost time to find tilts that a
+ * photograph of a painting does not have, and would start fitting the diagonal of
+ * something else.
+ */
+const MAX_SLOPE = 0.25
+
+/**
+ * How much better a tilted line has to be than the straight one to be believed.
+ *
+ * Without this gate, a frontal photograph comes back with a slope of 0.004 —
+ * noise— and the four sides tilt a little each way, so the bounding box grows by
+ * a couple of pixels for nothing and the answer stops being reproducible. Eight
+ * per cent is enough that a real 1° tilt still wins, which is where the measured
+ * threshold of the damage sits: 0.86° still worked with straight profiles and
+ * 1.29° already failed.
+ */
+const MIN_SLOPE_GAIN = 1.08
+
+/**
+ * Half-width, in pixels, of the band the side is looked for in.
+ *
+ * The straight profile already says approximately where each side is — what the
+ * tilt breaks is the HEIGHT of its peak, not its position — so the search only
+ * has to sweep its neighbourhood. Thirty-two pixels of a 700 px copy is four and a
+ * half per cent of the frame, more than the worst displacement measured (19 %
+ * happened on a side the straight profile had placed 132 px away, and that side is
+ * one the four-sides rule now rejects outright).
+ */
+const SLOPE_BAND = 32
+
+/**
+ * Spacing, in pixels, of the coarse pass of the slope search.
+ *
+ * A tilted border is a broad maximum and not a spike: a line four pixels off still
+ * crosses it over most of its length, so the coarse pass finds its neighbourhood
+ * and one refinement lands on it. Sweeping every pixel against every slope from
+ * the start costs seconds per photograph, which a suggestion cannot spend.
+ */
+const COARSE_OFFSET_STEP = 4
+
+/**
  * Minimum gradient, in Sobel units averaged over the whole axis, between the
  * strongest peak of a profile and its median. The Sobel response to a step of
  * `d` luminance levels is `4d`, and a border rarely crosses the entire frame, so
@@ -259,6 +303,18 @@ function isDecline(value: AxisEdges | AxisDecline): value is AxisDecline {
   return 'declined' in value
 }
 
+/**
+ * Everything one pass over the pixels leaves behind: the two profiles, and the
+ * two signed Sobel components as maps. See projectionProfiles for why the maps
+ * are kept.
+ */
+interface Gradients {
+  columns: Float32Array
+  rows: Float32Array
+  gx: Float32Array
+  gy: Float32Array
+}
+
 interface Peak {
   /** Position in pixels of the reduced copy, with subpixel precision. */
   position: number
@@ -315,9 +371,16 @@ function projectionProfiles(
   image: Float32Array,
   width: number,
   height: number,
-): { columns: Float32Array; rows: Float32Array } {
+): Gradients {
   const columns = new Float32Array(width)
   const rows = new Float32Array(height)
+  // The two components are KEPT, and not just added up. They cost one pass that
+  // was being made anyway, they weigh 4 MB for a 700 px copy, and with them the
+  // slope search below reads an array instead of recomputing a Sobel window per
+  // sample — which is the difference between a few milliseconds and a hundred.
+  // Signed, because the sign is what tells a border from a texture.
+  const gx = new Float32Array(width * height)
+  const gy = new Float32Array(width * height)
 
   for (let y = 1; y < height - 1; y += 1) {
     const row = y * width
@@ -333,11 +396,13 @@ function projectionProfiles(
       const south = image[below + x]!
       const southEast = image[below + x + 1]!
 
-      const gx = northEast + 2 * east + southEast - (northWest + 2 * west + southWest)
-      const gy = southWest + 2 * south + southEast - (northWest + 2 * north + northEast)
+      const horizontal = northEast + 2 * east + southEast - (northWest + 2 * west + southWest)
+      const vertical = southWest + 2 * south + southEast - (northWest + 2 * north + northEast)
 
-      columns[x] = columns[x]! + Math.abs(gx)
-      rows[y] = rows[y]! + Math.abs(gy)
+      gx[row + x] = horizontal
+      gy[row + x] = vertical
+      columns[x] = columns[x]! + Math.abs(horizontal)
+      rows[y] = rows[y]! + Math.abs(vertical)
     }
   }
 
@@ -346,7 +411,7 @@ function projectionProfiles(
   const rowTerms = width - 2
   for (let y = 0; y < height; y += 1) rows[y] = rows[y]! / rowTerms
 
-  return { columns, rows }
+  return { columns, rows, gx, gy }
 }
 
 function median(values: Float32Array): number {
@@ -474,38 +539,38 @@ function axisEdges(profile: Float32Array, size: number): AxisEdges | AxisDecline
  * counted first and then the pixels that disagree with it are discarded.
  */
 function lineSupport(
-  image: Float32Array,
+  gradient: Float32Array,
   width: number,
   height: number,
   axis: 'vertical' | 'horizontal',
-  at: number,
+  side: Side,
   from: number,
   to: number,
   step: number,
 ): number {
   const across = axis === 'vertical' ? width : height
   const along = axis === 'vertical' ? height : width
-  const start = Math.max(1, Math.min(from, to))
-  const end = Math.min(along - 2, Math.max(from, to))
+  // Redondeados: son índices de un array, y llegan con precisión subpíxel.
+  const start = Math.max(1, Math.round(Math.min(from, to)))
+  const end = Math.min(along - 2, Math.round(Math.max(from, to)))
   if (end <= start) return 0
+  const middle = (start + end) / 2
 
   let best = 0
-  for (let offset = -LINE_WINDOW; offset <= LINE_WINDOW; offset += 1) {
-    const fixed = clampIndex(at, across) + offset
-    // A side pressed against the edge of the photograph has no neighbours to take
-    // a gradient from, so it can never show a step there. Skipping instead of
-    // answering zero is what lets a border two pixels inside the frame still be
-    // found, while a side that IS the frame finds nothing anywhere in its window.
-    if (fixed < 1 || fixed > across - 2) continue
-
+  for (let shift = -LINE_WINDOW; shift <= LINE_WINDOW; shift += 1) {
     let positive = 0
     let negative = 0
     for (let i = start; i <= end; i += 1) {
-      const x = axis === 'vertical' ? fixed : i
-      const y = axis === 'vertical' ? i : fixed
-      const gradient = axis === 'vertical' ? sobelX(image, width, x, y) : sobelY(image, width, x, y)
-      if (Math.abs(gradient) < step) continue
-      if (gradient > 0) positive += 1
+      const drifted = Math.round(side.at + side.slope * (i - middle)) + shift
+      // A side pressed against the edge of the photograph has no neighbours to
+      // take a gradient from, so it shows no step there. Skipping instead of
+      // counting a zero is what lets a border two pixels inside the frame still
+      // be found, while a side that IS the frame finds nothing anywhere.
+      if (drifted < 1 || drifted > across - 2) continue
+      const index = axis === 'vertical' ? i * width + drifted : drifted * width + i
+      const value = gradient[index]!
+      if (Math.abs(value) < step) continue
+      if (value > 0) positive += 1
       else negative += 1
     }
     const support = Math.max(positive, negative) / (end - start + 1)
@@ -515,45 +580,133 @@ function lineSupport(
   return best
 }
 
-/** Pixel index of a fraction, the inverse of the `fraction` of axisEdges. */
-function clampIndex(at: number, size: number): number {
-  return Math.max(0, Math.min(size - 1, Math.round(at * size - 0.5)))
+/** One side of the quadrilateral: where it crosses the middle, and how it leans. */
+interface Side {
+  /** Position in pixels, on the axis perpendicular to the side. */
+  at: number
+  /** Pixels of drift per pixel travelled along the side. Zero is a straight side. */
+  slope: number
 }
 
-function sobelX(image: Float32Array, width: number, x: number, y: number): number {
-  const row = y * width
-  const above = row - width
-  const below = row + width
-  return (
-    image[above + x + 1]! +
-    2 * image[row + x + 1]! +
-    image[below + x + 1]! -
-    (image[above + x - 1]! + 2 * image[row + x - 1]! + image[below + x - 1]!)
-  )
-}
+/**
+ * The best line through a side: its position and its tilt.
+ *
+ * Why this is needed at all: the profile adds up the perpendicular gradient along
+ * strictly vertical columns, so a side tilted by an angle that drifts S pixels
+ * over its length spreads its energy over S cells instead of concentrating it in
+ * four. The peak flattens by (4 + drift) / 4, and past about 1.3° it stops being a
+ * peak — measured, eight of the fourteen artworks of the catalog are past 1°.
+ * Nothing about the border changed; the way of looking at it did.
+ *
+ * So the same sum is repeated with the column SHEARED by each candidate slope, and
+ * the winner is the one whose sum is highest — which is the slope at which the
+ * border lines up with the direction being added along. It reads the precomputed
+ * gradient map, so a candidate costs one array read per pixel of the side.
+ *
+ * A straight side has to come back with a slope of exactly zero, not with the
+ * noise that best fits: see MIN_SLOPE_GAIN.
+ */
+function refineSide(
+  gradient: Float32Array,
+  width: number,
+  height: number,
+  axis: 'vertical' | 'horizontal',
+  at: number,
+  from: number,
+  to: number,
+): Side {
+  const across = axis === 'vertical' ? width : height
+  const along = axis === 'vertical' ? height : width
+  // Redondeados, por lo mismo que en lineSupport: son índices.
+  const start = Math.max(1, Math.round(Math.min(from, to)))
+  const end = Math.min(along - 2, Math.round(Math.max(from, to)))
+  const span = end - start
+  if (span < 8) return { at, slope: 0 }
+  const middle = (start + end) / 2
 
-function sobelY(image: Float32Array, width: number, x: number, y: number): number {
-  const row = y * width
-  const above = row - width
-  const below = row + width
-  return (
-    image[below + x - 1]! +
-    2 * image[below + x]! +
-    image[below + x + 1]! -
-    (image[above + x - 1]! + 2 * image[above + x]! + image[above + x + 1]!)
-  )
-}
-
-function rectangle(
-  horizontal: [number, number],
-  vertical: [number, number],
-): Crop {
-  return {
-    x: horizontal[0],
-    y: vertical[0],
-    width: horizontal[1] - horizontal[0],
-    height: vertical[1] - vertical[0],
+  /** Mean absolute gradient along the line through `offset` with `slope`. */
+  const strength = (offset: number, slope: number): number => {
+    let total = 0
+    let counted = 0
+    for (let i = start; i <= end; i += 1) {
+      const drifted = Math.round(offset + slope * (i - middle))
+      if (drifted < 1 || drifted > across - 2) continue
+      const index = axis === 'vertical' ? i * width + drifted : drifted * width + i
+      total += Math.abs(gradient[index]!)
+      counted += 1
+    }
+    // Normalised by the WHOLE span and not by the pixels that fell inside, which
+    // is the difference between «this line fits the border» and «the piece of this
+    // line that stayed in the photograph fits something». Dividing by `counted`
+    // rewards a steep slope that leaves the frame early: it keeps the strongest
+    // stretch and drops the rest from the denominator. Here what it did not cross
+    // counts as zero, because a shorter line is not a better fit.
+    void counted
+    return total / (span + 1)
   }
+
+  // ── Where the side is, straight ─────────────────────────────
+  // The band is swept once with no tilt, to get the reference the tilt has to
+  // beat. It is NOT used to narrow where the tilt is searched: measured, a tilt
+  // strong enough to flatten the peak also lets the texture of the wall win the
+  // straight sweep, and then the straight crossing is 132 px away from the real
+  // side — a fifth of the frame. Searching the tilt around that would be
+  // searching around the wrong place, which is exactly the case this exists for.
+  const rounded = Math.round(at)
+  const first = Math.max(1, rounded - SLOPE_BAND)
+  const last = Math.min(across - 2, rounded + SLOPE_BAND)
+
+  let straight = 0
+  for (let offset = first; offset <= last; offset += 1) {
+    const value = strength(offset, 0)
+    if (value > straight) straight = value
+  }
+
+  // ── And how it leans ────────────────────────────────────────
+  // Coarse grid over the whole band and every plausible slope, then one refinement
+  // around the winner. The full grid at one-pixel and one-step resolution costs
+  // seconds per photograph; this costs milliseconds and lands on the same line,
+  // because a tilted border is a broad maximum in both directions and not a spike.
+  const fine = Math.max(0.002, 2 / span)
+  const coarseSlope = Math.max(fine, MAX_SLOPE / 12)
+  let best: Side = { at, slope: 0 }
+  let bestStrength = straight
+
+  const sweep = (
+    slopeFrom: number,
+    slopeTo: number,
+    slopeStep: number,
+    offsetFrom: number,
+    offsetTo: number,
+    offsetStep: number,
+  ) => {
+    for (let slope = slopeFrom; slope <= slopeTo + 1e-9; slope += slopeStep) {
+      if (Math.abs(slope) < slopeStep / 2) continue
+      for (let offset = offsetFrom; offset <= offsetTo; offset += offsetStep) {
+        if (offset < 1 || offset > across - 2) continue
+        const value = strength(offset, slope)
+        if (value > bestStrength) {
+          bestStrength = value
+          best = { at: offset, slope }
+        }
+      }
+    }
+  }
+
+  sweep(-MAX_SLOPE, MAX_SLOPE, coarseSlope, first, last, COARSE_OFFSET_STEP)
+  if (best.slope !== 0) {
+    sweep(
+      best.slope - coarseSlope,
+      best.slope + coarseSlope,
+      fine,
+      best.at - COARSE_OFFSET_STEP,
+      best.at + COARSE_OFFSET_STEP,
+      1,
+    )
+  }
+
+  // The gate: a tilt is only believed if it beats the straight line clearly.
+  return bestStrength > straight * MIN_SLOPE_GAIN ? best : { at, slope: 0 }
 }
 
 /** Whether a rectangle can plausibly be the painting of the photograph. */
@@ -625,7 +778,7 @@ export function analyseArtworkEdges(
   if (luminance.length < width * height) return decline('unusable-image')
 
   const image = smooth(Float32Array.from(luminance), width, height)
-  const { columns, rows } = projectionProfiles(image, width, height)
+  const { columns, rows, gx, gy } = projectionProfiles(image, width, height)
 
   const horizontal = axisEdges(columns, width)
   const vertical = axisEdges(rows, height)
@@ -647,40 +800,113 @@ export function analyseArtworkEdges(
     columnsContrast: horizontal.contrast,
     rowsContrast: vertical.contrast,
   }
+  const stepX = LINE_STEP_FRACTION * horizontal.contrast
+  const stepY = LINE_STEP_FRACTION * vertical.contrast
+  const toPixels = (fraction: number, size: number) => fraction * size - 0.5
 
-  /** Whether the four sides of a rectangle are lines and not just profile peaks. */
-  const sidesAreLines = (crop: Crop, label: 'outer' | 'inner'): boolean => {
-    const stepX = LINE_STEP_FRACTION * horizontal.contrast
-    const stepY = LINE_STEP_FRACTION * vertical.contrast
-    const top = clampIndex(crop.y, height)
-    const bottom = clampIndex(crop.y + crop.height, height)
-    const left = clampIndex(crop.x, width)
-    const right = clampIndex(crop.x + crop.width, width)
-    const west = lineSupport(image, width, height, 'vertical', crop.x, top, bottom, stepX)
-    const east = lineSupport(image, width, height, 'vertical', crop.x + crop.width, top, bottom, stepX)
-    const north = lineSupport(image, width, height, 'horizontal', crop.y, left, right, stepY)
-    const south = lineSupport(image, width, height, 'horizontal', crop.y + crop.height, left, right, stepY)
-    if (label === 'outer') {
-      detail.supportWest = west
-      detail.supportEast = east
-      detail.supportNorth = north
-      detail.supportSouth = south
+  /**
+   * The bounding box of the quadrilateral the four sides really draw, or null when
+   * one of the four is not a line.
+   *
+   * **The tilt is fitted BEFORE the support is measured, and that order is the
+   * whole point.** Measured on the catalog, ten of the seventeen photographs the
+   * support rejected failed on a single side, two of them by four thousandths — and
+   * the side that failed was the tilted one every time. A tilted border walked
+   * along a straight vertical line only meets it where the two cross, so measuring
+   * the support straight punishes exactly the photographs the tilt exists to
+   * recover. Fitting first and measuring along the fitted line asks the question
+   * that was meant: is there a line here, wherever it leans.
+   *
+   * What comes out is the box that contains the quadrilateral, deliberately: it is
+   * measured that a bounding box is what the cataloger draws by hand — on the most
+   * tilted photograph her stored crop starts at 0.0301 and the corner of the
+   * quadrilateral falls at 0.027 — and it needs no column in the schema, no
+   * migration and no new gesture. Keeping the corners is the next step.
+   */
+  const boxOf = (
+    h: [number, number],
+    v: [number, number],
+    label: 'outer' | 'inner',
+  ): Crop | null => {
+    const top = toPixels(v[0], height)
+    const bottom = toPixels(v[1], height)
+    const left = toPixels(h[0], width)
+    const right = toPixels(h[1], width)
+
+    // Each side is fitted along the span the OTHER two mark: a side of the painting
+    // only exists between its neighbours, and fitting it along the whole photograph
+    // would let the wall above and below vote on its tilt.
+    const west = refineSide(gx, width, height, 'vertical', left, top, bottom)
+    const east = refineSide(gx, width, height, 'vertical', right, top, bottom)
+    const north = refineSide(gy, width, height, 'horizontal', top, left, right)
+    const south = refineSide(gy, width, height, 'horizontal', bottom, left, right)
+
+    const support = {
+      west: lineSupport(gx, width, height, 'vertical', west, top, bottom, stepX),
+      east: lineSupport(gx, width, height, 'vertical', east, top, bottom, stepX),
+      north: lineSupport(gy, width, height, 'horizontal', north, left, right, stepY),
+      south: lineSupport(gy, width, height, 'horizontal', south, left, right, stepY),
     }
-    return (
-      west > MIN_LINE_SUPPORT &&
-      east > MIN_LINE_SUPPORT &&
-      north > MIN_LINE_SUPPORT &&
-      south > MIN_LINE_SUPPORT
-    )
+    if (label === 'outer') {
+      detail.supportWest = support.west
+      detail.supportEast = support.east
+      detail.supportNorth = support.north
+      detail.supportSouth = support.south
+      detail.slopeWest = west.slope
+      detail.slopeEast = east.slope
+      detail.slopeNorth = north.slope
+      detail.slopeSouth = south.slope
+    }
+    if (
+      support.west <= MIN_LINE_SUPPORT ||
+      support.east <= MIN_LINE_SUPPORT ||
+      support.north <= MIN_LINE_SUPPORT ||
+      support.south <= MIN_LINE_SUPPORT
+    ) {
+      return null
+    }
+
+    // The four corners, each the intersection of a vertical side with a horizontal
+    // one. Written out because the slopes are referred to the middle of each span,
+    // and getting that offset wrong shifts the whole box by pixels.
+    const midV = (top + bottom) / 2
+    const midH = (left + right) / 2
+    const corner = (a: Side, b: Side): { x: number; y: number } => {
+      const denominator = 1 - a.slope * b.slope
+      // Two sides at right angles cannot be parallel, so this only approaches zero
+      // with slopes no painting has. Falling back to the unadjusted crossing beats
+      // dividing by nothing.
+      if (Math.abs(denominator) < 1e-6) return { x: a.at, y: b.at }
+      const x = (a.at + a.slope * (b.at - midV) - a.slope * b.slope * midH) / denominator
+      return { x, y: b.at + b.slope * (x - midH) }
+    }
+
+    const corners = [
+      corner(west, north),
+      corner(east, north),
+      corner(west, south),
+      corner(east, south),
+    ]
+    const xs = corners.map((c) => c.x)
+    const ys = corners.map((c) => c.y)
+    const fraction = (pixel: number, size: number) => (pixel + 0.5) / size
+
+    return clampCrop({
+      x: fraction(Math.min(...xs), width),
+      y: fraction(Math.min(...ys), height),
+      width: (Math.max(...xs) - Math.min(...xs)) / width,
+      height: (Math.max(...ys) - Math.min(...ys)) / height,
+    })
   }
 
-  const outer = rectangle(
+  const outer = boxOf(
     [horizontal.outerLow, horizontal.outerHigh],
     [vertical.outerLow, vertical.outerHigh],
+    'outer',
   )
+  if (!outer) return decline('sides-not-lines', detail)
   detail.outerArea = outer.width * outer.height
   if (!looksLikeArtwork(outer, width, height)) return decline('not-artwork', detail)
-  if (!sidesAreLines(outer, 'outer')) return decline('sides-not-lines', detail)
 
   let inner: Crop | null = null
   if (
@@ -689,15 +915,12 @@ export function analyseArtworkEdges(
     vertical.innerLow !== null &&
     vertical.innerHigh !== null
   ) {
-    const candidate = rectangle(
+    const candidate = boxOf(
       [horizontal.innerLow, horizontal.innerHigh],
       [vertical.innerLow, vertical.innerHigh],
+      'inner',
     )
-    if (
-      looksLikeArtwork(candidate, width, height) &&
-      clearlyNested(outer, candidate) &&
-      sidesAreLines(candidate, 'inner')
-    ) {
+    if (candidate && looksLikeArtwork(candidate, width, height) && clearlyNested(outer, candidate)) {
       inner = candidate
     }
   }
