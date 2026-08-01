@@ -163,10 +163,18 @@ if [ -d "$volcado/obras" ]; then
 fi
 
 if [ -d "$volcado/masters" ]; then
+  # Misma herramienta que en la bajada, y por las mismas razones (ver db-pull).
+  # minio hace aquí de B2: la función de firmas local apunta a él.
   echo "Subiendo los másters a minio…"
-  docker run --rm --network host -v "$PWD/$volcado/masters:/entrada:ro" \
-    -e MC_HOST_local="http://minio-local:minio-local-secreto@localhost:${PUERTO_S3:-9100}" \
-    --entrypoint mc minio/mc mirror --overwrite /entrada local/masters-local
+  docker run --rm --network host \
+    --user "$(id -u):$(id -g)" \
+    -e HOME=/tmp \
+    -e AWS_ACCESS_KEY_ID=minio-local \
+    -e AWS_SECRET_ACCESS_KEY=minio-local-secreto \
+    -e AWS_DEFAULT_REGION=local \
+    -v "$PWD/$volcado/masters:/entrada:ro" \
+    amazon/aws-cli s3 sync /entrada s3://masters-local \
+      --endpoint-url "http://localhost:${PUERTO_S3:-9100}" --no-progress
 fi
 
 echo

@@ -177,34 +177,26 @@ en_volcado 'psql "$PGURL" --csv -c "select id, email, created_at, coalesce(raw_u
 # Se copia el bucket entero y no solo lo que citan las filas importadas: un
 # fichero huérfano en el bucket es justo la clase de cosa que se viene a
 # investigar con una copia local delante.
-# La región va en la configuración y no en la URL porque mc no la acepta de
-# ninguna otra forma —no hay opción ni variable de entorno— y estos dos destinos
-# la exigen para firmar. El fichero se crea con permisos cerrados y se borra al
-# salir: lleva las credenciales dentro.
-espejo() { # $1 url  $2 clave  $3 secreto  $4 región  $5 bucket  $6 carpeta
-  local configuracion estado=0
-  configuracion=$(mktemp -d)
-  chmod 700 "$configuracion"
-  cat > "$configuracion/config.json" <<JSON
-{
-  "version": "10",
-  "aliases": {
-    "origen": {
-      "url": "$1",
-      "accessKey": "$2",
-      "secretKey": "$3",
-      "api": "S3v4",
-      "path": "auto",
-      "region": "$4"
-    }
-  }
-}
-JSON
+# Con la CLI de AWS y no con mc, por dos razones que se descubren al usarlo: el
+# endpoint S3 de Supabase lleva ruta (…/storage/v1/s3) y mc solo acepta
+# scheme://host[:port]; y así las credenciales van por variables de entorno, sin
+# fichero de configuración montado que el contenedor deje escrito como root y
+# que después no haya forma de borrar desde el anfitrión.
+#
+# --user con el uid de quien llama, por lo mismo: lo descargado tiene que quedar
+# a nombre de su dueño y no de root, o `volcados/` se vuelve imborrable. HOME
+# apunta a /tmp porque la imagen quiere un sitio donde escribir aunque no haya
+# nada que guardar.
+espejo() { # $1 endpoint  $2 clave  $3 secreto  $4 región  $5 bucket  $6 carpeta
   mkdir -p "$destino/$6"
-  docker run --rm -v "$configuracion:/root/.mc" -v "$PWD/$destino:/salida" \
-    --entrypoint mc minio/mc mirror --overwrite "origen/$5" "/salida/$6" || estado=$?
-  rm -rf "$configuracion"
-  return $estado
+  docker run --rm \
+    --user "$(id -u):$(id -g)" \
+    -e HOME=/tmp \
+    -e AWS_ACCESS_KEY_ID="$2" \
+    -e AWS_SECRET_ACCESS_KEY="$3" \
+    -e AWS_DEFAULT_REGION="$4" \
+    -v "$PWD/$destino/$6:/salida" \
+    amazon/aws-cli s3 sync "s3://$5" /salida --endpoint-url "$1" --no-progress
 }
 
 if [ -n "${FOTOS:-}" ]; then
