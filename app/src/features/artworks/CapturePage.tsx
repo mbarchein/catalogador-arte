@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { supabase } from '../../lib/supabase'
 import { normalizeLocation, locationForSaving } from '../../lib/location'
 import {

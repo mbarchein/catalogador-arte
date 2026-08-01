@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { SignOut, Layout } from '../../components/Layout'
 import {
@@ -63,7 +63,7 @@ function Diagnostics() {
       </h3>
       <dl className="divide-y divide-stone-100">
         <DataRow label="React" value={cleanRange(BUILD.deps.react)} />
-        <DataRow label="React Router" value={cleanRange(BUILD.deps['react-router-dom'])} />
+        <DataRow label="React Router" value={cleanRange(BUILD.deps['react-router'])} />
         <DataRow label="Cliente Supabase" value={cleanRange(BUILD.deps['@supabase/supabase-js'])} />
         <DataRow label="Vite" value={`${cleanRange(BUILD.deps.vite)} (compilación)`} />
       </dl>

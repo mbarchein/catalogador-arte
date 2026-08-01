@@ -19,7 +19,7 @@ const BUILD = {
   commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? '').slice(0, 7),
   deps: {
     react: pkg.dependencies.react,
-    'react-router-dom': pkg.dependencies['react-router-dom'],
+    'react-router': pkg.dependencies['react-router'],
     '@supabase/supabase-js': pkg.dependencies['@supabase/supabase-js'],
     vite: pkg.devDependencies.vite,
   },

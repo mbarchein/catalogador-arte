@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Layout } from '../components/Layout'
 import { PasswordField } from '../components/ui'
 import { validateNewPassword } from '../lib/password'

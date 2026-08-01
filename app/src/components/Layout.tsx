@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router'
 import { useState, type ReactNode } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { FooterMenu } from './FooterMenu'
