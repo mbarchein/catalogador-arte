@@ -46,14 +46,24 @@ export function TablesPage() {
           name="Ubicaciones"
           hint="Los sitios donde están las obras, unos dentro de otros. Crear, renombrar, mover y retirar."
         />
+        <TableRow
+          to="/artwork-types"
+          name="Tipos de obra"
+          hint="Lo que ofrece el campo «Tipo de obra». Crear, renombrar y retirar."
+        />
+        <TableRow
+          to="/series"
+          name="Series"
+          hint="Las series de cada fondo. Crear, renombrar y retirar."
+        />
       </ul>
 
       {/* Never a blank space, and never a link that does nothing: what is not here
-          yet is said, with where it is meanwhile. */}
+          yet is said, so that it is not looked for. */}
       <p className="mt-4 text-sm text-stone-600">
-        Los tipos de obra y las series se siguen añadiendo desde el propio formulario de la
-        ficha, que es donde hacen falta. Traerlos aquí —para renombrarlos y retirarlos— está
-        pendiente.
+        Los fondos —Rotili, Ruiz Campins y el de pruebas— no se mantienen aquí: su nombre está
+        dentro del identificador de catalogación de cada obra, la etiqueta pegada al cuadro, y
+        tocarlos es otra decisión.
       </p>
     </Layout>
   )

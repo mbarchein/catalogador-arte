@@ -6,6 +6,7 @@ import { BanIcon, NoIcon, PenIcon, YesIcon } from '../../components/ui'
 import { flattenPlaces, placesInside, splitPlacePath } from '../../lib/places'
 import { PlacePicker } from '../artworks/PlacePicker'
 import { usePhysicalPlaces } from '../artworks/usePhysicalPlaces'
+import { useTableAction } from '../tables/MasterTableRow'
 
 /**
  * The places screen: creating, renaming, moving and retiring (RF-215, RF-1106,
@@ -20,9 +21,9 @@ import { usePhysicalPlaces } from '../artworks/usePhysicalPlaces'
  *
  * It is the first screen of the «Tablas» section (RF-1106), reached from its own
  * tab of the footer menu: maintaining a list is not cataloging an artwork, and it
- * does not belong inside the form of whichever record happened to be open.
- * Artwork types and series are still added from the form and are yet to move
- * here.
+ * does not belong inside the form of whichever record happened to be open. The
+ * artwork types and the series have their own screens there now, with the same
+ * shape minus the hierarchy.
  *
  * **What this screen does NOT do is check the rules.** Two siblings with the same
  * name, a cycle, retiring a place with artworks inside: all three are refused by
@@ -37,8 +38,10 @@ export function PlacesPage() {
   const { canEdit, roleKnown } = useAuth()
   const { tree, loading, error, ensurePlace, renamePlace, movePlace, setPlaceActive } =
     usePhysicalPlaces()
-  const [busy, setBusy] = useState(false)
-  const [failure, setFailure] = useState<string | null>(null)
+  // Shared with the other two screens of the section: the same three actions,
+  // the same convention (null means it worked), and the same reason for scrolling
+  // the message into view on a phone.
+  const { busy, failure, failureRef, run } = useTableAction()
   /** Node being renamed, and the text in the field. */
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
   /** Node being moved: the picker of the new parent opens for it. */
@@ -64,15 +67,6 @@ export function PlacesPage() {
   }
   if (!canEdit) return <Navigate to="/" replace />
 
-  async function run(action: () => Promise<string | null>) {
-    setBusy(true)
-    setFailure(null)
-    const message = await action()
-    setBusy(false)
-    if (message) setFailure(message)
-    return message === null
-  }
-
   return (
     <Layout title="Ubicaciones" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
@@ -81,7 +75,7 @@ export function PlacesPage() {
       </p>
 
       {failure && (
-        <p role="alert" className="card mb-3 text-sm text-red-700">
+        <p ref={failureRef} role="alert" className="card mb-3 text-sm text-red-700">
           {failure}
         </p>
       )}

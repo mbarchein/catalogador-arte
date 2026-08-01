@@ -7,6 +7,8 @@ import { ArtworkPage } from './features/artworks/ArtworkPage'
 import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
 import { PlacesPage } from './features/places/PlacesPage'
+import { ArtworkTypesPage } from './features/tables/ArtworkTypesPage'
+import { SeriesPage } from './features/tables/SeriesPage'
 import { TablesPage } from './features/tables/TablesPage'
 import { ProfilePage } from './features/profile/ProfilePage'
 
@@ -34,11 +36,13 @@ export function App() {
       <Route path="/artwork/:id/edit" element={<ArtworkPage />} />
       <Route path="/artwork/:id/photos" element={<ArtworkPhotosPage />} />
       <Route path="/profile" element={<ProfilePage />} />
-      {/* RF-1106: la sección «Tablas» y el mantenimiento de las ubicaciones, su
-          primera pantalla. Solo Catalogador, comprobado dentro de cada una: la
-          pestaña oculta del pie no es una protección. */}
+      {/* RF-1106: la sección «Tablas» y el mantenimiento de cada tabla maestra.
+          Solo Catalogador, comprobado dentro de cada una: la pestaña oculta del
+          pie no es una protección. */}
       <Route path="/tables" element={<TablesPage />} />
       <Route path="/places" element={<PlacesPage />} />
+      <Route path="/artwork-types" element={<ArtworkTypesPage />} />
+      <Route path="/series" element={<SeriesPage />} />
       {/* The recovery email link opens a temporary session and lands here; it
           also serves as the password change from Mi perfil. */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
