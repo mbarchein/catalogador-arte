@@ -234,3 +234,16 @@ invita a confundir autoría de la obra con autoría del registro.
 | Bloquean la fase 5 (vistas) | INC-19, INC-06, INC-07, INC-16, INC-17, INC-18 | Afectan a la estructura de la ficha y al bloqueo |
 | Corregir al redactar, sin bloquear | INC-01 a INC-05, INC-08, INC-09, INC-10, INC-14, INC-15, INC-21 | Ya resueltas en la especificación de requisitos |
 | Anotadas sin acción | INC-22, INC-23 | Sin consecuencia sobre el producto |
+
+### INC-24 · La convención de notación de `ubicacion_fisica` no se sostiene
+
+**Divergencia con el documento fuente.** El esquema de campos v11 fija para `ubicacion_fisica` (cambio
+v2.5) una convención de notación: siempre en minúsculas y sin tildes, con los niveles de la jerarquía
+separados por comas. Con veintiuna obras catalogadas, las tres suposiciones que la sostenían resultaron
+falsas: los nombres propios de instituciones y ciudades necesitan sus mayúsculas, la coma aparece dentro
+de los valores —una dirección postal la lleva— y la jerarquía real es de uno o dos niveles, no de los
+cinco previstos. Además, con el texto copiado en cada obra, renombrar un sitio era una migración de
+datos, justo mientras el estudio está en reordenación.
+
+*Resolución:* [ADR-006](../decisiones/ADR-006-ubicacion-como-arbol-de-lugares.md) sustituye la convención
+por un árbol de lugares con clave propia (RF-215). Los ADR prevalecen sobre los originales.

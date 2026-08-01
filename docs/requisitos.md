@@ -95,6 +95,8 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-212 | `obras_relacionadas` es una relación múltiple autorreferencial dentro de Obras, no un campo de texto. |
 | RF-213 | `agrupacion` y `etapa` se implementan como texto libre mientras no exista taxonomía cerrada, sin selección de opciones predefinidas. |
 | RF-214 | Un dato dudoso o sin confirmar se marca con `[?]` junto al dato en campos de texto libre; en campos de selección se usa la opción «Desconocido». |
+| RF-215 | La ubicación física es un **árbol de lugares** con clave propia, no un texto con convención de notación ([ADR-006](decisiones/ADR-006-ubicacion-como-arbol-de-lugares.md)). El nombre se guarda tal cual se escribe, con mayúsculas y tildes; la comparación se hace normalizada. Dos hermanos no pueden llamarse igual, la jerarquía no admite ciclos, un lugar con contenido no se retira, y `parent_id` es mutable: reorganizar el árbol —incluido colgar de otro sitio lo que hoy es raíz— es una operación normal que no toca ninguna obra. Una obra puede no tener ubicación. |
+| RF-216 | La clave primaria de una tabla maestra no es su nombre. Renombrar una entrada del vocabulario es un `update` de una fila y nunca una migración de datos. |
 
 ### RF-300 · Ficha de obra
 
@@ -212,6 +214,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-1103 | La página de inicio ofrece accesos directos a cada sección e indicadores: número de obras catalogadas, pendientes de fase 1 y de fase 2, y últimas fichas modificadas. |
 | RF-1104 | Cada índice presenta en su cabecera un botón «+ Nueva…», visible solo para el Catalogador. |
 | RF-1105 | La gestión de usuarios (invitar, asignar rol, revocar) se realiza desde el panel de Supabase, reservado al Superusuario. La aplicación no incluye pantallas de administración de usuarios. |
+| RF-1106 | Las tablas maestras se gestionan desde una sección propia, «Tablas», visible solo para el Catalogador. Agrupa lo que hoy vive dentro de los formularios (tipos de obra, series) y lo que necesita pantalla propia (ubicaciones: crear, renombrar, mover y retirar). |
 
 ### RF-1200 · Aplicación instalable y captura con el móvil
 
