@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { BottomSheet, YesIcon } from '../../components/ui'
 import {
+  findPlaceByPath,
   flattenPlaces,
-  placeKey,
   placePathText,
   splitPlacePath,
   type PlaceTree,
@@ -41,6 +41,7 @@ export function PlacePicker({
   tree,
   onChange,
   ensurePlace,
+  addPlaceInside,
   exclude,
   noneLabel = 'Sin ubicación',
   noneHint = 'La obra queda sin sitio registrado',
@@ -76,6 +77,15 @@ export function PlacePicker({
    * sheet only offers what already exists.
    */
   ensurePlace?: (levels: readonly string[]) => Promise<{ id: string } | { error: string }>
+  /**
+   * Creates one place with the typed text verbatim, commas included, inside the
+   * one currently selected. Without it that second button is not offered, which
+   * is the right thing for whoever may not add places.
+   */
+  addPlaceInside?: (
+    parentId: string | null,
+    name: string,
+  ) => Promise<{ id: string } | { error: string }>
 }) {
   const [open, setOpen] = useState(openOnMount)
   const [typed, setTyped] = useState('')
@@ -112,18 +122,12 @@ export function PlacePicker({
 
   const levels = splitPlacePath(typed)
   // Nothing to create when the path already exists: what is offered then is the
-  // row that is already on the list.
-  const already = useMemo(() => {
-    const wanted = levels.map(placeKey).join(' › ')
-    return rows.some(
-      (row) =>
-        splitPlacePath(row.path)
-          .map(placeKey)
-          .join(' › ') === wanted,
-    )
-  }, [rows, levels])
+  // row that is already on the list. Resolved against the tree and not by
+  // comparing path texts, because a name may contain a comma and comparing texts
+  // would split it — the very ambiguity ADR-006 removed.
+  const already = useMemo(() => findPlaceByPath(tree, levels) !== null, [tree, levels])
 
-  const canCreate = ensurePlace !== undefined && levels.length > 0 && !already
+  const canCreate = levels.length > 0 && !already
 
   function close() {
     setOpen(false)
@@ -132,17 +136,16 @@ export function PlacePicker({
   }
 
   async function create(asOneLevel: boolean) {
-    if (!ensurePlace) return
     setCreating(true)
     setError(null)
-    // Whole, commas included, INSIDE what is selected; or as a branch from the
-    // roots. The first is the escape hatch for «c/Colón 11-1C»; the second is
-    // the normal case.
-    const path = asOneLevel
-      ? [...splitPlacePath(current), typed.trim()]
-      : levels
-    const result = await ensurePlace(path)
+    // Whole, commas included, INSIDE what is selected — by identifier, never by
+    // reparsing its path — or as a branch walked down from the roots. The first
+    // is the escape hatch for «c/Colón 11-1C»; the second is the normal case.
+    const result = asOneLevel
+      ? await addPlaceInside?.(value, typed.trim())
+      : await ensurePlace?.(levels)
     setCreating(false)
+    if (!result) return
     if ('error' in result) {
       setError(result.error)
       return
@@ -224,20 +227,22 @@ export function PlacePicker({
           )}
         </div>
 
-        {canCreate && (
+        {canCreate && (ensurePlace !== undefined || addPlaceInside !== undefined) && (
           <div className="mt-3 space-y-2 border-t border-stone-100 pt-3">
-            <button
-              type="button"
-              disabled={creating}
-              onClick={() => void create(false)}
-              className="btn-primary min-h-touch w-full"
-            >
-              Crear «{levels.join(', ')}»
-            </button>
+            {ensurePlace !== undefined && (
+              <button
+                type="button"
+                disabled={creating}
+                onClick={() => void create(false)}
+                className="btn-primary min-h-touch w-full"
+              >
+                Crear «{levels.join(', ')}»
+              </button>
+            )}
             {/* Only worth offering when the text has a comma inside: without one
                 the two buttons would do almost the same thing, and two buttons
                 for one action is how a form starts lying. */}
-            {typed.includes(',') && (
+            {typed.includes(',') && addPlaceInside !== undefined && (
               <button
                 type="button"
                 disabled={creating}

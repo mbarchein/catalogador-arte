@@ -118,6 +118,40 @@ export function usePhysicalPlaces() {
   )
 
   /**
+   * Creates ONE place with the name given, verbatim, inside `parentId`.
+   *
+   * Separate from `ensurePlace` because the name is not a path: it may contain
+   * commas — «c/Colón 11-1C, 2ºB» — and going through a path would split it. And
+   * the parent travels as an identifier and not as a branch of names, for the
+   * same reason: a name is not an identity (ADR-006), and rebuilding the parent
+   * by parsing its own path text would reintroduce exactly the ambiguity the
+   * decision removed.
+   */
+  const addPlaceInside = useCallback(
+    async (
+      parentId: string | null,
+      name: string,
+    ): Promise<{ id: string } | { error: string }> => {
+      const clean = name.trim()
+      if (clean === '') return { error: 'Escribe el nombre del lugar' }
+
+      const { data, error } = await supabase
+        .from('physical_places')
+        .insert({ parent_id: parentId, name: clean })
+        .select('id')
+        .single()
+
+      if (error) {
+        if (error.code === '23505') return { error: 'Ya hay un lugar con ese nombre ahí dentro' }
+        return { error: `No se ha podido crear el lugar: ${error.message}` }
+      }
+      await reload()
+      return { id: (data as { id: string }).id }
+    },
+    [reload],
+  )
+
+  /**
    * Renames a place. The name travels as it is written; the database compares it
    * normalized against its siblings and refuses a duplicate, and that rejection
    * is what this turns into a sentence the cataloger can act on.
@@ -191,6 +225,7 @@ export function usePhysicalPlaces() {
     error,
     reload,
     ensurePlace,
+    addPlaceInside,
     renamePlace,
     movePlace,
     setPlaceActive,

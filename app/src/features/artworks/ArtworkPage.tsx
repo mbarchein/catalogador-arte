@@ -838,7 +838,7 @@ function EditForm({
   // The tree of places: the field is a chooser over it now, not free text
   // (ADR-006). Only editors reach this form, so offering to create a place is
   // always legitimate here.
-  const { tree: placeTree, ensurePlace } = usePhysicalPlaces()
+  const { tree: placeTree, ensurePlace, addPlaceInside } = usePhysicalPlaces()
 
   function set<K extends keyof Artwork>(field: K, value: Artwork[K]) {
     setData((d) => ({ ...d, [field]: value }))
@@ -1149,6 +1149,7 @@ function EditForm({
           tree={placeTree}
           onChange={(placeId) => set('physical_place_id', placeId)}
           ensurePlace={ensurePlace}
+          addPlaceInside={addPlaceInside}
         />
       </FieldGroup>
 

@@ -65,7 +65,7 @@ export function CapturePage() {
   const { types: artworkTypes, addType } = useArtworkTypes()
 
   // Locations already used, as loose suggestions while typing (free text).
-  const { tree: placeTree, ensurePlace } = usePhysicalPlaces()
+  const { tree: placeTree, ensurePlace, addPlaceInside } = usePhysicalPlaces()
 
   const [batch, setBatch] = useState<Batch>(() => readBatch())
   const [open, setOpen] = useState(() => batchConfigured(readBatch()))
@@ -249,6 +249,7 @@ export function CapturePage() {
               value={batch.carried.placeId}
               tree={placeTree}
               ensurePlace={ensurePlace}
+              addPlaceInside={addPlaceInside}
               onChange={(placeId) =>
                 setBatch((b) => ({ ...b, carried: { ...b.carried, placeId } }))
               }
@@ -620,6 +621,7 @@ export function CapturePage() {
             value={batch.carried.placeId}
             tree={placeTree}
             ensurePlace={ensurePlace}
+            addPlaceInside={addPlaceInside}
             onChange={(placeId) => setBatch((b) => ({ ...b, carried: { ...b.carried, placeId } }))}
           />
         </FieldGroup>

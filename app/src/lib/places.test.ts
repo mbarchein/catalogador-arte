@@ -229,4 +229,24 @@ describe('splitPlacePath (RF-215)', () => {
     expect(splitPlacePath('')).toEqual([])
     expect(splitPlacePath(' , , ')).toEqual([])
   })
+
+  /**
+   * The hazard that killed the old convention, still alive whenever a branch is
+   * turned into text and parsed back. A name MAY contain a comma — a postal
+   * address does — so the round trip is lossy, and nothing in the interface may
+   * depend on it: creating a place inside another travels by identifier
+   * (`addPlaceInside`), never by reparsing the branch of its parent.
+   */
+  it('a name with a comma inside does not survive the round trip through text', () => {
+    const tree = buildPlaceTree([
+      place('t', 'Villafranca de los Barros'),
+      place('d', 'Calle Mayor 3, 2ºB', 't'),
+    ])
+    const asText = placePathText(tree, 'd')
+    expect(asText).toBe('Villafranca de los Barros, Calle Mayor 3, 2ºB')
+
+    // Three levels where there were two, and the path finds nothing.
+    expect(splitPlacePath(asText)).toHaveLength(3)
+    expect(findPlaceByPath(tree, splitPlacePath(asText))).toBeNull()
+  })
 })
