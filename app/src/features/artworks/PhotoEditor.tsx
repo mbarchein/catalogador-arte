@@ -25,7 +25,7 @@ import {
   homographyFromUnitSquare,
   homographyToCssMatrix,
   invertHomography,
-  isSimpleQuadrilateral,
+  moveCorner,
   straightenedSize,
   type Corners,
 } from '../../lib/perspective'
@@ -37,20 +37,6 @@ import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
 const KEY_STEP = 0.02
-
-/**
- * How far outside the photograph a corner may be dragged, as a fraction.
- *
- * Mirrors the `images_corners_within_reach` constraint: in five photographs of the
- * catalog the sides of the artwork are not inside the frame, and dragging a handle
- * past the edge is the only way to straighten those. What falls outside is filled
- * with white and the editor says so.
- */
-const CORNER_REACH = 0.25
-
-function clampToReach(value: number): number {
-  return Math.min(1 + CORNER_REACH, Math.max(-CORNER_REACH, value))
-}
 
 /** Distance from the loupe to the edges of the working surface. */
 const LOUPE_INSET = '0.75rem'
@@ -220,7 +206,7 @@ export function PhotoEditor({
   cornersRef.current = corners
   // Origin of the drag, so a rectangle stopped at the edge does not drift away
   // from the finger.
-  const startRef = useRef<{ point: { x: number; y: number }; crop: Crop } | null>(null)
+  const startRef = useRef<{ point: { x: number; y: number }; crop: Crop | null } | null>(null)
 
   // The callbacks live in refs so the history listener registers once: doing it
   // on every render could miss the closing pop.
@@ -304,23 +290,18 @@ export function PhotoEditor({
       if (!point || !start) return
 
       // In perspective mode a handle moves ONE corner freely, it does not resize a
-      // rectangle: that freedom is the whole feature. A drag that would fold the
-      // quadrilateral over itself is refused and the corner stays where it was —
-      // the database would refuse that row anyway, and refusing the gesture says so
-      // at the finger instead of at the save button.
+      // rectangle: that freedom is the whole feature. `moveCorner` clamps to the reach
+      // the schema allows and answers null for a move that would fold the
+      // quadrilateral — refused at the finger, with the corner staying where it was,
+      // instead of at the save button.
       const held = cornersRef.current
-      if (held && gesture !== 'move') {
-        const moved = {
-          ...held,
-          [gesture]: {
-            x: clampToReach(point.x),
-            y: clampToReach(point.y),
-          },
-        } as Corners
-        if (isSimpleQuadrilateral(moved)) setCorners(moved)
+      if (held) {
+        if (gesture === 'move') return
+        const moved = moveCorner(held, gesture, point)
+        if (moved) setCorners(moved)
         return
       }
-      if (held) return
+      if (!start.crop) return
 
       if (gesture === 'move') {
         setCrop(moveCrop(start.crop, point.x - start.point.x, point.y - start.point.y))
@@ -459,7 +440,13 @@ export function PhotoEditor({
   function startDrag(e: React.PointerEvent, what: Corner | 'move') {
     const current = cropRef.current
     const area = areaRef.current?.getBoundingClientRect()
-    if (!current || !area || area.width === 0 || area.height === 0) return
+    if (!area || area.width === 0 || area.height === 0) return
+    // The rectangle is needed only to drag the rectangle. Requiring it always is what
+    // left the perspective handles dead on REOPENING a photograph already
+    // straightened: there the stored edit has corners and `crop` null, so this
+    // returned before the drag ever started — and it worked when the mode was turned
+    // on in the same session only because the crop was still lying around.
+    if (!current && !cornersRef.current) return
     // The handle owns the gesture from the first pixel: no hold to wait for.
     e.preventDefault()
     e.stopPropagation()
@@ -471,6 +458,15 @@ export function PhotoEditor({
   }
 
   function nudge(corner: Corner, dx: number, dy: number) {
+    // The same two framings as the drag, and through the same rule: the arrow keys
+    // must not accept what a finger is refused.
+    const held = cornersRef.current
+    if (held) {
+      const from = held[corner]
+      const moved = moveCorner(held, corner, { x: from.x + dx, y: from.y + dy })
+      if (moved) setCorners(moved)
+      return
+    }
     const current = cropRef.current
     if (!current) return
     const point = cornerPoint(current, corner)
