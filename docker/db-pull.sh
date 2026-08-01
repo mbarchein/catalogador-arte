@@ -124,6 +124,11 @@ en_pg() {
   en_imagen "$IMAGEN_PG" "$1"
 }
 
+# La referencia del proyecto, para el endpoint S3 del almacenamiento. Vale
+# cualquiera de las dos formas de la URL: la directa lleva db.<ref>.supabase.co
+# y la del pooler, el usuario postgres.<ref>.
+REF=$(sed -nE 's#.*@db\.([a-z0-9]+)\.supabase\.co.*#\1#p; s#.*://postgres\.([a-z0-9]+):.*#\1#p' <<<"$URL" | head -1)
+
 echo "Consultando la versión del servidor…"
 servidor=$(en_pg 'psql "$PGURL" -tAc "show server_version"' | tr -d '[:space:]')
 cliente=$(en_pg 'pg_dump --version' | grep -oE '[0-9]+' | head -1)
@@ -158,6 +163,59 @@ en_volcado 'pg_dump "$PGURL" --data-only --schema=public --no-owner --no-privile
 echo "Volcando las cuentas (sin contraseñas)…"
 en_volcado 'psql "$PGURL" --csv -c "select id, email, created_at, coalesce(raw_user_meta_data::text, '"'"'{}'"'"') as meta from auth.users order by created_at"' \
   > "$destino/usuarios.csv"
+
+# ── Las fotografías ─────────────────────────────────────────
+#
+# Están en dos sitios y pesan órdenes de magnitud distintos, así que el
+# parámetro tiene dos niveles:
+#
+#   FOTOS=1     lo que la aplicación ENSEÑA: miniatura y derivada de cada toma,
+#               en el bucket «obras» de Supabase. Unos cientos de KB por toma.
+#   FOTOS=todo  además, los MÁSTERS de archivo, que están en B2 y rondan entre 8
+#               y 35 MB cada uno. Puede ser un gigabyte largo.
+#
+# Se copia el bucket entero y no solo lo que citan las filas importadas: un
+# fichero huérfano en el bucket es justo la clase de cosa que se viene a
+# investigar con una copia local delante.
+espejo() { # $1 = MC_HOST del origen, $2 = bucket remoto, $3 = carpeta destino
+  mkdir -p "$destino/$3"
+  docker run --rm -e "MC_HOST_origen=$1" -v "$PWD/$destino:/salida" \
+    --entrypoint mc minio/mc mirror --overwrite "origen/$2" "/salida/$3"
+}
+
+if [ -n "${FOTOS:-}" ]; then
+  if [ -z "${SUPABASE_S3_KEY_ID:-}" ] || [ -z "${SUPABASE_S3_KEY_SECRET:-}" ]; then
+    cat >&2 <<'AYUDA'
+Para traer las fotografías hacen falta credenciales S3 del almacenamiento, en .env:
+
+  SUPABASE_S3_KEY_ID / SUPABASE_S3_KEY_SECRET
+
+Se crean en el panel del proyecto: Storage → S3 Access Keys → New access key.
+Son credenciales SOLO de almacenamiento; no dan acceso a la base de datos.
+AYUDA
+    exit 1
+  fi
+  echo "Trayendo miniaturas y derivadas del bucket obras…"
+  espejo "https://$SUPABASE_S3_KEY_ID:$SUPABASE_S3_KEY_SECRET@$REF.supabase.co/storage/v1/s3" \
+         obras obras
+fi
+
+if [ "${FOTOS:-}" = "todo" ]; then
+  if [ -z "${B2_KEY_ID:-}" ] || [ -z "${B2_KEY_SECRET:-}" ] || [ -z "${B2_BUCKET_MASTERS:-}" ]; then
+    cat >&2 <<'AYUDA'
+Para traer los másters hacen falta credenciales de BATE2, en .env:
+
+  B2_KEY_ID / B2_KEY_SECRET / B2_BUCKET_MASTERS
+
+El nombre del bucket sale de la infraestructura:
+  terraform -chdir=infra output -raw b2_bucket_masters
+AYUDA
+    exit 1
+  fi
+  echo "Trayendo los másters de B2. Esto tarda y ocupa…"
+  espejo "https://$B2_KEY_ID:$B2_KEY_SECRET@s3.${B2_REGION:-eu-central-003}.backblazeb2.com" \
+         "$B2_BUCKET_MASTERS" masters
+fi
 
 obras=$(grep -c '^AR-\|^RC-\|^TEST-' "$destino/publico.sql" 2>/dev/null || true)
 cat > "$destino/metadatos.txt" <<META

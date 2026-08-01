@@ -74,15 +74,16 @@ movil: ## Explica cómo abrir la app desde el móvil en la red local
 	 echo "Instalar como aplicación: menú del navegador → «Añadir a pantalla de inicio»."
 
 # Copia de producción para trabajar en local. El esquema NO viaja: sale de las
-# migraciones, que son la fuente única. Lo que viaja son las filas.
-db-pull: ## Descarga los datos de produccion a volcados/ (necesita SUPABASE_DB_URL en .env)
-	bash docker/db-pull.sh
+# migraciones, que son la fuente única. Lo que viaja son las filas, y con
+# FOTOS=1 también las fotografías (FOTOS=todo añade los másters de B2).
+db-pull: ## Descarga los datos de produccion a volcados/ (FOTOS=1 o FOTOS=todo)
+	FOTOS=$(FOTOS) bash docker/db-pull.sh
 
 db-load: ## Carga el ultimo volcado en local (o VOLCADO=ruta). BORRA los datos locales
 	bash docker/db-load.sh $(VOLCADO)
 
-db-clone: ## db-pull y db-load seguidos: produccion lista para trabajar en local
-	$(MAKE) db-pull
+db-clone: ## db-pull y db-load seguidos (FOTOS=1 o FOTOS=todo)
+	$(MAKE) db-pull FOTOS=$(FOTOS)
 	$(MAKE) db-load
 
 db-test: ## Tests de SQL: políticas RLS y reglas del esquema

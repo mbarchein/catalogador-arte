@@ -59,14 +59,17 @@ Para reproducir algo con el catálogo real delante, `make db-clone` trae los dat
 carga en local. Necesita `SUPABASE_DB_URL` en `.env` (ver `.env.example`).
 
 ```bash
-make db-pull   # descarga los datos a volcados/
-make db-load   # los carga en el stack local, BORRANDO lo que hubiera
-make db-clone  # las dos cosas seguidas
+make db-pull            # descarga los datos a volcados/
+make db-load            # los carga en el stack local, BORRANDO lo que hubiera
+make db-clone           # las dos cosas seguidas
+FOTOS=1 make db-clone   # además, las fotografías que la aplicación enseña
+FOTOS=todo make db-clone  # y también los másters de archivo (pesan)
 ```
 
 Viajan las filas, no el esquema: el esquema local sale de `supabase/migrations`, que es la fuente única.
-Tampoco viajan las fotografías, que viven en el almacenamiento, ni las contraseñas — en local todas las
-cuentas, incluidas las importadas, entran con `password123`.
+Las contraseñas tampoco viajan — en local todas las cuentas, incluidas las importadas, entran con
+`password123`. Las fotografías solo con `FOTOS`, que necesita las credenciales de almacenamiento
+descritas en `.env.example`.
 
 El volcado contiene datos reales, con datos personales dentro. `volcados/` está en `.gitignore` y este
 repositorio es público: no lo subas y bórralo cuando termines.
