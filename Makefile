@@ -23,7 +23,7 @@ AVISO_HOST := $(if $(DEV_HOST_ENV),Configurado para la red local: abre http://$(
         db-pull db-load db-clone
 
 help: ## Lista de comandos
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-13s\033[0m %s\n", $$1, $$2}'
 
 up: ## Levanta el stack local completo y siembra los usuarios

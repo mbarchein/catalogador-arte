@@ -1,10 +1,10 @@
 # Flujos de la infraestructura. El detalle de cada paso —qué credencial hace
 # falta y de dónde sale— está en README.md; esto son los atajos.
 .DEFAULT_GOAL := help
-.PHONY: help check fmt init plan apply output password bootstrap
+.PHONY: help check fmt init plan apply output password b2-keys bootstrap
 
 help: ## Lista de comandos
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
 check: ## Formato y validez de los dos módulos (sin credenciales)
@@ -63,3 +63,8 @@ output: ## Salidas no sensibles (URLs, referencias, buckets)
 
 password: ## La contraseña de la base de datos, desde el estado
 	@terraform output -raw db_password && echo
+
+b2-keys: ## Las lineas de .env con la clave de solo lectura de B2
+	@echo "B2_KEY_ID=$$(terraform output -raw b2_lectura_key_id)"
+	@echo "B2_KEY_SECRET=$$(terraform output -raw b2_lectura_key_secret)"
+	@echo "B2_BUCKET_MASTERS=$$(terraform output -raw b2_bucket_masters)"

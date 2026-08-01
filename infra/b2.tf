@@ -52,6 +52,21 @@ resource "b2_application_key" "masters" {
   ]
 }
 
+# Clave de SOLO LECTURA para traerse los másters a un portátil (FOTOS=todo en
+# `make db-clone`). Es una segunda clave y no la de la función Edge a propósito:
+# aquella puede escribir porque tiene que subir másters, y una copia local no
+# tiene ninguna razón para poder tocar el archivo. Separarlas también permite
+# revocar esta sin dejar la aplicación sin firmar.
+resource "b2_application_key" "masters_lectura" {
+  key_name   = "${var.proyecto}-lectura-local"
+  bucket_ids = [b2_bucket.masters.bucket_id]
+  capabilities = [
+    "listBuckets",
+    "listFiles",
+    "readFiles",
+  ]
+}
+
 locals {
   s3_endpoint_b2 = "https://s3.${var.b2_region}.backblazeb2.com"
 }
@@ -59,4 +74,18 @@ locals {
 output "b2_bucket_masters" {
   description = "Bucket de másters en B2"
   value       = b2_bucket.masters.bucket_name
+}
+
+# Las dos mitades de la clave de lectura, para .env. Como la contraseña de la
+# base: sensibles, se leen con `terraform output -raw` (o `make -C infra b2-keys`).
+output "b2_lectura_key_id" {
+  description = "Identificador de la clave de solo lectura de B2 (B2_KEY_ID)"
+  value       = b2_application_key.masters_lectura.application_key_id
+  sensitive   = true
+}
+
+output "b2_lectura_key_secret" {
+  description = "Secreto de la clave de solo lectura de B2 (B2_KEY_SECRET)"
+  value       = b2_application_key.masters_lectura.application_key
+  sensitive   = true
 }
