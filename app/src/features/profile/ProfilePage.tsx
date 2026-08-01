@@ -133,7 +133,7 @@ function Installation() {
 }
 
 export function ProfilePage() {
-  const { profile, session, canEdit } = useAuth()
+  const { profile, session } = useAuth()
 
   return (
     <Layout title="Mi perfil" back="/">
@@ -151,21 +151,6 @@ export function ProfilePage() {
           Cambiar la contraseña
         </Link>
       </section>
-
-      {/* Las listas maestras se mantienen aparte de las fichas (RF-1106). De
-          momento solo las ubicaciones tienen pantalla propia, y entra aquí porque
-          es donde vive lo que no es una obra. */}
-      {canEdit && (
-        <section className="card mb-3">
-          <h2 className="mb-2 font-medium">Tablas</h2>
-          <Link
-            to="/places"
-            className="inline-block min-h-touch text-sm text-stone-600 underline hover:text-stone-800"
-          >
-            Ubicaciones: crear, renombrar, mover y retirar
-          </Link>
-        </section>
-      )}
 
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Instalar en el móvil</h2>

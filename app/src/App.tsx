@@ -7,6 +7,7 @@ import { ArtworkPage } from './features/artworks/ArtworkPage'
 import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
 import { PlacesPage } from './features/places/PlacesPage'
+import { TablesPage } from './features/tables/TablesPage'
 import { ProfilePage } from './features/profile/ProfilePage'
 
 export function App() {
@@ -33,9 +34,10 @@ export function App() {
       <Route path="/artwork/:id/edit" element={<ArtworkPage />} />
       <Route path="/artwork/:id/photos" element={<ArtworkPhotosPage />} />
       <Route path="/profile" element={<ProfilePage />} />
-      {/* RF-1106: mantenimiento de las ubicaciones. Primera pantalla de la
-          sección «Tablas» que el requisito prevé; la propia pantalla explica por
-          qué la sección todavía no existe. Solo Catalogador, comprobado dentro. */}
+      {/* RF-1106: la sección «Tablas» y el mantenimiento de las ubicaciones, su
+          primera pantalla. Solo Catalogador, comprobado dentro de cada una: la
+          pestaña oculta del pie no es una protección. */}
+      <Route path="/tables" element={<TablesPage />} />
       <Route path="/places" element={<PlacesPage />} />
       {/* The recovery email link opens a temporary session and lands here; it
           also serves as the password change from Mi perfil. */}

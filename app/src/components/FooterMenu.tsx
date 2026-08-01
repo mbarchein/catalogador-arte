@@ -34,6 +34,18 @@ function AddIcon() {
   )
 }
 
+// Estanterías apiladas: las tablas maestras son las listas de las que se elige,
+// y el icono tenía que distinguirse de la cuadrícula de obras.
+function TablesIcon() {
+  return (
+    <svg {...svg}>
+      <rect x="3" y="4" width="18" height="5" rx="1" />
+      <rect x="3" y="12" width="18" height="5" rx="1" />
+      <path d="M7 19h10" />
+    </svg>
+  )
+}
+
 function ProfileIcon() {
   return (
     <svg {...svg}>
@@ -56,6 +68,9 @@ export function FooterMenu() {
     { to: '/', end: true, text: 'Obras', Icon: ArtworksIcon },
     // RF-1104: capture only exists for whoever can edit.
     ...(canEdit ? [{ to: '/capture', end: false, text: 'Añadir', Icon: AddIcon }] : []),
+    // RF-1106: el mantenimiento de las listas maestras es del Catalogador, y no
+    // vive dentro del formulario de ninguna obra.
+    ...(canEdit ? [{ to: '/tables', end: false, text: 'Tablas', Icon: TablesIcon }] : []),
     { to: '/profile', end: false, text: 'Mi perfil', Icon: ProfileIcon },
   ]
 
