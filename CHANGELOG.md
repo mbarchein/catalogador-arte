@@ -69,6 +69,15 @@ que evitará que dos personas trabajen a la vez sobre la misma ficha.
 
 ### La base de datos del catálogo
 
+**Los tipos de obra y las series se pueden renombrar sin tocar las obras**
+Hasta ahora el nombre de un tipo de obra o de una serie era su identidad, así que corregirlo obligaba
+a reescribir todas las obras que lo usaran, y por eso no se podía hacer desde la aplicación. Ahora
+cada uno tiene su propia identidad y el nombre es un dato más: corregir «Técnica mixta» o el nombre de
+una serie será una edición que verá el catálogo entero. Aparece además la posibilidad de retirar un
+tipo o una serie que ya no se usen —sin borrarlos, como todo aquí—, con la misma regla que los
+lugares: no se retira lo que todavía tiene obras dentro. La pantalla para hacerlo es lo siguiente; el
+cambio de hoy es el que lo hace posible.
+
 **Sin haber entrado no se llega a nada**
 La primera versión del catálogo creyó cerrar las operaciones internas de la base y no las cerró: la
 orden que se escribió retiraba el permiso a quien no ha entrado, pero quien lo tenía era «todo el

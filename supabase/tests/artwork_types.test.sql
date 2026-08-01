@@ -127,18 +127,30 @@ end $$;
 
 reset role;
 
--- ── Nobody updates or deletes, not even the cataloger ────────
--- There is neither grant nor policy: renaming or retiring a type is a future
--- superuser feature, and nothing is ever really deleted (RF-901).
+-- ── The cataloger renames; nobody deletes ────────────────────
+-- This assert said the opposite until ADR-007: renaming was closed to everyone
+-- because the name WAS the key, so renaming meant rewriting every artwork that
+-- used it. With a surrogate key it is one row, and it is the cataloger's job —
+-- the same rule as for places. What stays closed is DELETE (RF-901), which the
+-- next assert covers.
+--
+-- The full rule, including the reader who reaches no row to rename, lives in
+-- master_table_keys.test.sql.
 do $$
+declare v_nombre text;
 begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c2","role":"authenticated"}';
   set local role authenticated;
   update public.artwork_types set name = 'Renombrada' where name = 'Acuarela de prueba RLS';
-  raise exception 'FAIL: a vocabulary entry could be renamed';
-exception
-  when insufficient_privilege then
-    raise notice 'OK: update on the vocabulary is denied even to the cataloger';
+  reset role;
+
+  select name into v_nombre from public.artwork_types where name = 'Renombrada';
+  if v_nombre is null then
+    raise exception 'FAIL: the cataloger could not rename a vocabulary entry';
+  end if;
+  -- Left as it was found, so the asserts that follow keep talking about it.
+  update public.artwork_types set name = 'Acuarela de prueba RLS' where name = 'Renombrada';
+  raise notice 'OK: the cataloger renames a type, and it is one row (ADR-007)';
 end $$;
 
 reset role;

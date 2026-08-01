@@ -195,6 +195,33 @@ begin
 end $$;
 SQL
 
+# ── Transitorio: tipos y series de un volcado antiguo ───────
+# Mismo caso que el árbol de lugares, y misma fecha de caducidad (ADR-007): un
+# volcado traído antes de 20260801160000 trae el tipo y la serie de cada obra
+# como texto y sin identificador, así que el catálogo local se quedaría sin tipo
+# ni serie en la ficha. Se emparejan por el texto recortado, que es lo que el
+# trigger de vocabulario ya exigía. Se borra cuando se retiren esas dos columnas.
+echo "Reconectando tipos y series (volcado sin identificadores)…"
+$PSQL <<'SQL' > /dev/null
+set session_replication_role = replica;
+
+update public.artworks a
+   set artwork_type_id = t.id
+  from public.artwork_types t
+ where a.artwork_type_id is null
+   and btrim(a.artwork_type) <> ''
+   and t.name = btrim(a.artwork_type);
+
+-- Por fondo Y nombre: el mismo nombre en otro fondo es otra serie.
+update public.artworks a
+   set series_id = s.id
+  from public.series s
+ where a.series_id is null
+   and btrim(a.series) <> ''
+   and s.artist = a.artist
+   and s.name = btrim(a.series);
+SQL
+
 # Las cuentas de prueba locales se recrean: se han borrado con las demás, y sin
 # ellas solo se podría entrar con un correo de producción.
 echo "Recreando las cuentas de prueba locales…"

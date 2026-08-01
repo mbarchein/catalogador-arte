@@ -58,36 +58,51 @@ on conflict do nothing;
 -- ordering can be checked with dates of different shapes.
 -- Identifiers are provided explicitly so the seed is idempotent; in the
 -- application the trigger assigns them.
+--
+-- What the artwork points AT is resolved by name with a subquery, and not with an
+-- identifier written here: the master tables have surrogate keys now (ADR-007),
+-- so on a database where that vocabulary entry already exists its id is whatever
+-- it was given then, and a hardcoded one would simply not exist.
 -- The date lives in structured fields (ADR-004): execution_date is a generated
 -- column and cannot be written. The three cases cover exact year, approximate
 -- year and range, to verify chronological ordering.
 insert into public.artworks (
-  catalog_id, artist, title, attributed_title, artwork_type, series,
+  catalog_id, artist, title, attributed_title,
+  artwork_type, artwork_type_id, series, series_id,
   start_year, end_year, approximate_date, technique, support,
   height_cm, width_cm, signed, signature_description,
   conservation_status, physical_location, physical_place_id, existence_status,
   measurements_verified, inventory_phase_completed
 ) values
   (
-    'AR-0001', 'ROTILI', 'Paisaje de invierno', 'NO', 'Pintura', 'Paisajes de la sierra',
+    'AR-0001', 'ROTILI', 'Paisaje de invierno', 'NO',
+    'Pintura', (select id from public.artwork_types where name = 'Pintura'),
+    'Paisajes de la sierra',
+    (select id from public.series where artist = 'ROTILI' and name = 'Paisajes de la sierra'),
     1975, 1978, false, 'Óleo sobre lienzo', 'Lienzo',
     73, 60, 'YES', 'ángulo inferior derecho',
     'GOOD', 'edificio a, habitacion amarilla, bloque 3',
-    '00000000-0000-0000-0000-00000000a003', 'PRESERVED',
+    (select id from public.physical_places where name = 'Bloque 3'), 'PRESERVED',
     true, true
   ),
   (
-    'AR-0002', 'ROTILI', '', 'NOT_APPLICABLE', 'Dibujo', '',
+    -- Sin serie: no toda pieza pertenece a una, y «ninguna» es una respuesta.
+    'AR-0002', 'ROTILI', '', 'NOT_APPLICABLE',
+    'Dibujo', (select id from public.artwork_types where name = 'Dibujo'),
+    '', null,
     1980, null, true, 'Carboncillo sobre papel', 'Papel',
     42, 29.7, 'NO', '',
     'FAIR', 'edificio b, habitacion 4, estanteria 3, balda 2, carpeta 1',
-    '00000000-0000-0000-0000-00000000b005', 'PRESERVED',
+    (select id from public.physical_places where name = 'Carpeta 1'), 'PRESERVED',
     false, false
   ),
   -- No place, on purpose: an artwork with nowhere recorded is legitimate
   -- (RF-215) and the list has to show it without a hole.
   (
-    'RC-0001', 'RUIZ_CAMPINS', 'El jarrón azul', 'YES', 'Pintura', 'Retratos del taller',
+    'RC-0001', 'RUIZ_CAMPINS', 'El jarrón azul', 'YES',
+    'Pintura', (select id from public.artwork_types where name = 'Pintura'),
+    'Retratos del taller',
+    (select id from public.series where artist = 'RUIZ_CAMPINS' and name = 'Retratos del taller'),
     1968, null, false, 'Acrílico sobre tabla', 'Tabla',
     50, 40, 'UNREVIEWED', '',
     'UNREVIEWED', '', null, 'UNREVIEWED',
