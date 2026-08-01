@@ -560,6 +560,7 @@ export function ArtworkPhotosPage() {
           initialEdit={editing.initial}
           title={editing.row.image_id}
           note={editing.note}
+          shotType={editing.row.shot_type}
           // Only from the master: with the consultation copy there is nothing
           // outside the crop to come back to.
           canRestoreOriginal={editing.note === null}

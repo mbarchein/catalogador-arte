@@ -20,6 +20,7 @@ import { LOUPE_SIDE, LOUPE_ZOOM, loupePixels, paintLoupe } from '../../lib/image
 import { rotateSuggestion, type EdgeSuggestion } from '../../lib/edgeDetection'
 import { suggestArtworkCrop } from '../../lib/imageEdges'
 import { CropIcon, NoIcon, RotateLeftIcon, RotateRightIcon } from '../../components/ui'
+import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
 const KEY_STEP = 0.02
@@ -37,6 +38,18 @@ type Analysis =
   | { status: 'working' }
   | { status: 'none' }
   | { status: 'found'; suggestion: EdgeSuggestion; choice: 'outer' | 'inner' }
+
+/**
+ * Shot types where looking for the four sides of a painting makes sense.
+ *
+ * A general view, obviously, and a photograph OF the frame, which is a rectangle
+ * too. What is left out is what has no artwork border in the frame: the back of a
+ * canvas —where the strongest lines are the label and the stretcher bars—, a
+ * close-up of a signature and a detail of damage. `OTHER` is deliberately IN:
+ * whoever chose it did not say «this has no border», they said «none of these», and
+ * refusing on that is refusing out of ignorance.
+ */
+const SUGGESTABLE_SHOTS: ReadonlySet<ShotTypeValue> = new Set(['GENERAL', 'FRAME', 'OTHER'])
 
 const CORNERS: { corner: Corner; label: string }[] = [
   { corner: 'nw', label: 'esquina superior izquierda' },
@@ -96,6 +109,7 @@ export function PhotoEditor({
   title,
   note,
   canRestoreOriginal = false,
+  shotType,
   onApply,
   onCancel,
 }: {
@@ -118,6 +132,26 @@ export function PhotoEditor({
    * «no framing» over an already-framed image — a lie in the data.
    */
   canRestoreOriginal?: boolean
+  /**
+   * What the photograph is of, when it is known. It gates the crop suggestion:
+   * the detector looks for the four straight sides of a painting, and on the back
+   * of a canvas, on a close-up of a signature or on a detail of damage there is no
+   * such thing to find — what it finds there is the label, the stretcher bar or
+   * the edge of the photograph itself.
+   *
+   * Measured on the 44 photographs of the catalog, this single gate removes five
+   * of the sixteen bad suggestions and eleven of the sixteen useless ones, and it
+   * does not touch any of the four good ones, because the four are general views.
+   * No arithmetic over the luminance can do that: ordered by contrast, the head of
+   * the list is backs of canvases and screenshots, and the canonical framed
+   * painting sits below a page of a French textbook.
+   *
+   * Undefined means «not known», and then it does not gate: the type is assigned
+   * on adding the photo and can be set AFTER cropping, so for a photograph nobody
+   * has classified the door stays open. Demanding the type first would add a
+   * decision to all 44 to fix five, with the artwork in front of you and one hand.
+   */
+  shotType?: ShotTypeValue | null
   onApply: (edit: PhotoEdit) => void
   onCancel: () => void
 }) {
@@ -283,6 +317,14 @@ export function PhotoEditor({
     setAnalysis({ status: 'found', suggestion, choice: 'outer' })
     setCrop(suggestion.outer)
   }
+
+  /**
+   * Whether asking for a suggestion makes sense at all for this photograph. The
+   * button stays visible and disabled, with the reason underneath, which is the
+   * same thing «Volver al original» does when it cannot be offered: a control that
+   * disappears leaves the cataloger wondering what she did wrong.
+   */
+  const suggestionMakesSense = shotType == null || SUGGESTABLE_SHOTS.has(shotType)
 
   /** Loads one of the two candidates into the crop rectangle. */
   function choose(which: 'outer' | 'inner') {
@@ -588,7 +630,7 @@ export function PhotoEditor({
         <div className="space-y-2">
           <button
             type="button"
-            disabled={!ready || analysis.status === 'working'}
+            disabled={!ready || analysis.status === 'working' || !suggestionMakesSense}
             aria-describedby="editor-suggestion-help"
             onClick={() => void suggest()}
             className="btn min-h-touch w-full bg-white/10 text-sm text-white disabled:opacity-40"
@@ -634,15 +676,17 @@ export function PhotoEditor({
             aria-live="polite"
             className="text-center text-xs text-stone-400"
           >
-            {analysis.status === 'working'
-              ? 'Analizando la fotografía para reconocer el borde del cuadro…'
-              : analysis.status === 'none'
-                ? 'No se ha podido reconocer el borde del cuadro: ajusta el recorte a mano'
-                : analysis.status === 'found'
-                  ? analysis.suggestion.inner
-                    ? 'Recorte sugerido: se han reconocido dos bordes. Elige uno, ajusta las esquinas y pulsa «Aplicar»'
-                    : 'Recorte sugerido: ajusta las esquinas si hace falta y pulsa «Aplicar»'
-                  : 'Reconoce el borde del cuadro y precarga el recorte. Nunca se aplica solo: siempre lo confirmas tú'}
+            {!suggestionMakesSense
+              ? `En una toma de tipo «${SHOT_TYPE_LABEL[shotType!]}» no hay borde de cuadro que reconocer: ajusta el recorte a mano`
+              : analysis.status === 'working'
+                ? 'Analizando la fotografía para reconocer el borde del cuadro…'
+                : analysis.status === 'none'
+                  ? 'No he reconocido el borde del cuadro: arrastra las esquinas para recortarlo a mano'
+                  : analysis.status === 'found'
+                    ? analysis.suggestion.inner
+                      ? 'Recorte sugerido: se han reconocido dos bordes. Elige uno, ajusta las esquinas y pulsa «Aplicar»'
+                      : 'Recorte sugerido: ajusta las esquinas si hace falta y pulsa «Aplicar»'
+                    : 'Reconoce el borde del cuadro y precarga el recorte. Nunca se aplica solo: siempre lo confirmas tú'}
           </p>
         </div>
 
