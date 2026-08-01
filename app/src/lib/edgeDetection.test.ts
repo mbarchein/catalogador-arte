@@ -155,21 +155,94 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
     expectCrop(suggestion?.outer, widened(artwork), 0.01)
   })
 
-  it('finds a painting whose border falls outside the photograph on two sides', () => {
-    // Filling the frame with the artwork is what happens when the photo is taken
-    // up close. The visible border is on the right and at the bottom, and the
-    // other two sides are the edge of the photograph.
+  /**
+   * This case used to assert the opposite: that a painting with two sides out of
+   * frame got a suggestion, with `outer.x` and `outer.y` at exactly 0 — the edge
+   * of the photograph standing in for the sides that are not visible.
+   *
+   * Measured against the 44 real photographs of the catalog, that completion was
+   * the second largest source of bad suggestions: 22 invented sides across 15 of
+   * the 36 suggestions, and with them 14 rectangles covering more than 90 % of the
+   * frame, all legal because MAX_AREA is 0.98. So the test was describing the
+   * implementation and not a requirement, and the requirement it seemed to serve —
+   * «the artwork photographed up close» — was being served by answering with the
+   * whole photograph, which answers nothing.
+   *
+   * The price is two good suggestions of the 44 that go quiet. It is paid on
+   * purpose: a wrong suggestion looks like a measurement, and silence does not.
+   */
+  it('stays quiet when two sides of the painting are outside the photograph', () => {
     const frame = photo(700, 500)
     paint(frame, { x: 0, y: 0, width: 0.55, height: 0.6 }, 210)
 
-    const suggestion = detect(frame)
-    expect(suggestion).not.toBeNull()
-    expect(suggestion?.outer.x).toBe(0)
-    expect(suggestion?.outer.y).toBe(0)
-    // The margin cannot go outwards past the edge of the image, so it all lands
-    // on the side that has room. Widening is always safe; narrowing would not be.
-    expect(suggestion?.outer.width).toBeCloseTo(0.56, 3)
-    expect(suggestion?.outer.height).toBeCloseTo(0.61, 3)
+    expect(detect(frame)).toBeNull()
+  })
+
+  it('and finds the same painting as soon as its four sides are in frame', () => {
+    // The contrary case, so what changed is a rule about sides and not a loss of
+    // sensitivity: the same artwork, the same contrast, moved off the corner.
+    const frame = photo(700, 500)
+    const artwork = { x: 0.06, y: 0.08, width: 0.55, height: 0.6 }
+    paint(frame, artwork, 210)
+
+    expectCrop(detect(frame)?.outer, widened(artwork), 0.01)
+  })
+
+  describe('the sides have to be lines, not just peaks of the profile', () => {
+    /**
+     * A profile peak says «the gradient adds up a lot along this whole column»,
+     * and a band of paint does that as well as a border does. On the real
+     * photographs this was what a threshold could not separate: two of the bad
+     * suggestions had four peaks that no constant tells from an artwork.
+     */
+    /**
+     * Both halves of the rule at once: four sides made of segments that are light,
+     * dark and absent in turn. Each side produces a peak in its profile — the
+     * gradient of the segments adds up down the column just as a border's does —
+     * and yet neither direction reaches a third of its length, so it is a texture
+     * and not a line. The control below is the same band with one direction, which
+     * IS a line and has to be found: without it this test would pass just as well
+     * against a detector that had stopped detecting anything.
+     */
+    it('rejects sides whose transition changes direction along them', () => {
+      const band = (target: Photo, segment: (i: number) => number) => {
+        for (const x of [140, 557]) {
+          for (let y = 40; y < 460; y += 1) {
+            for (let d = 0; d < 3; d += 1) target.luminance[y * 700 + x + d] = segment(y)
+          }
+        }
+        for (const y of [40, 457]) {
+          for (let x = 140; x < 560; x += 1) {
+            for (let d = 0; d < 3; d += 1) target.luminance[(y + d) * 700 + x] = segment(x)
+          }
+        }
+      }
+
+      const textured = photo(700, 500)
+      band(textured, (i) => [235, 25, WALL][Math.floor(i / 6) % 3]!)
+      expect(detect(textured)).toBeNull()
+
+      const line = photo(700, 500)
+      band(line, () => 235)
+      expect(detect(line)).not.toBeNull()
+    })
+
+    it('accepts a border interrupted a third of its length, and rejects two thirds', () => {
+      // A real border does get cut: the cloth of an easel crosses one, a white
+      // object splits another. That is why the support asks for half the length
+      // and not all of it — and it is also where it stops.
+      const notched = (fraction: number) => {
+        const frame = photo(700, 500)
+        paint(frame, { x: 0.2, y: 0.2, width: 0.5, height: 0.6 }, 210)
+        // A notch of wall eating into the left border: along it there simply is
+        // no transition to find.
+        paint(frame, { x: 0.2, y: 0.2, width: 0.05, height: 0.6 * fraction }, WALL)
+        return frame
+      }
+
+      expect(detect(notched(0.33))).not.toBeNull()
+      expect(detect(notched(0.66))).toBeNull()
+    })
   })
 })
 

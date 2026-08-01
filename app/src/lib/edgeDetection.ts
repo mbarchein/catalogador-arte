@@ -61,25 +61,78 @@ import { clampCrop, rotateCrop, type Crop } from './imageEdits'
 const MIN_SIZE = 24
 
 /**
- * How far above the profile's own noise a peak has to stand, measured in
- * median absolute deviations. Four is strict enough that the grain of a wall
- * does not produce peaks and loose enough that a border in shadow still does.
- * The median and the MAD are used instead of mean and standard deviation
- * because the peaks we are looking for would inflate both: a measure of the
- * noise must not be moved by the signal.
- */
-const MAD_MULTIPLIER = 4
-
-/** Turns a median absolute deviation into the equivalent standard deviation. */
-const MAD_TO_SIGMA = 1.4826
-
-/**
  * A peak also has to reach this fraction of the strongest one. It is what keeps
  * a noisy background out when there IS a clear border: with visible noise the
  * MAD is small and half the profile pokes over the median, but nothing there
  * comes close to the border.
+ *
+ * **And it is the only term of the threshold, on purpose.** The threshold used to
+ * be `max(median + 4·MAD, median + 0.25·contrast)`, and since the strongest value
+ * of a profile is `median + contrast`, that maximum could sit ABOVE the profile's
+ * own peak: with the MAD term, no peak at all was mathematically possible once the
+ * raw MAD reached `contrast / 5.9304`. It happened in six axes of five real
+ * photographs — in one of them the column threshold was 168.81 against a maximum
+ * of 78.69, more than double. A threshold that cannot be crossed is not strict, it
+ * is broken.
+ *
+ * Capping the MAD term at this one is the same thing as removing it, because the
+ * maximum of the two then always picks this one — so it is removed, and with it
+ * the median absolute deviation. It was measured that the noise floor it provided
+ * is not missed: with the term capped, its multiplier at 4, 3 and 2.5 gives
+ * identical results on the 44 photographs.
+ *
+ * The cap ALONE makes things worse — three suggestions are born where there was
+ * silence and the three are bad — and that is why it ships together with the
+ * four-sides rule and the line support below, never before them.
  */
 const PROMINENCE_FRACTION = 0.25
+
+/**
+ * Fraction of a side's length that has to show a real step for the side to count.
+ *
+ * A profile peak says «along this whole column the gradient adds up a lot», and
+ * that is not the same as «there is a line here»: a band of paint, the grain of a
+ * plaster wall or the interface of a screenshot add up just as well. Six of the
+ * bad suggestions were rectangles perfectly fitted to something that is not an
+ * artwork, and two of them had four peaks that a threshold cannot tell from a
+ * border — the only thing that separates them is walking along the candidate side
+ * and asking in what fraction of its length there is actually a step, with a
+ * consistent sign.
+ *
+ * A half and not all of it, because a real border does get interrupted: the cloth
+ * of an easel crosses one, a white object splits another. Demanding the whole
+ * length would throw away two of the four good suggestions; measured on the 44
+ * photographs, a border interrupted a third of its length is still found and one
+ * interrupted two thirds is not.
+ *
+ * The comparison is «MORE than half», strictly, and that is what makes the sign
+ * rule bite: a side whose transition alternates in equal measure — a texture, a
+ * band of paint, the interface of a screenshot — lands at exactly one half, and
+ * one half is not more than half. On the corpus the strict and the loose form give
+ * the same 11 suggestions, so the strictness costs nothing there and buys the case
+ * the arithmetic is actually about.
+ */
+const MIN_LINE_SUPPORT = 0.5
+
+/**
+ * How big the gradient has to be, at one point of a side, to count as a step
+ * there. Measured against that axis's own contrast, so it means the same on a
+ * photograph taken in shade and on one taken in full sun.
+ */
+const LINE_STEP_FRACTION = 0.2
+
+/**
+ * Half-width, in pixels, of the window the support is looked for in.
+ *
+ * The position of a side comes from the centroid of a peak and is subpixel, while
+ * a real border is two or three pixels wide once the copy has been reduced to 700
+ * px and smoothed. Measuring the support at exactly the rounded column lands next
+ * to the border about as often as on it, and next to it the gradient is already
+ * small: with no window at all this rejected 20 of the 28 candidates, good ones
+ * included. So the support of a side is the best support in its neighbourhood,
+ * which is what «there is a line here» actually means.
+ */
+const LINE_WINDOW = 2
 
 /**
  * Minimum gradient, in Sobel units averaged over the whole axis, between the
@@ -142,6 +195,13 @@ interface AxisEdges {
   /** Null when there is no second pair of peaks inside the first one. */
   innerLow: number | null
   innerHigh: number | null
+  /**
+   * How much the strongest peak of this axis stands over its median. It travels
+   * out because the line support measures its step against it: the same absolute
+   * gradient means a border on a photograph taken in shade and means nothing on
+   * one taken in full sun.
+   */
+  contrast: number
 }
 
 interface Peak {
@@ -241,12 +301,6 @@ function median(values: Float32Array): number {
   return (sorted[middle - 1]! + sorted[middle]!) / 2
 }
 
-function medianAbsoluteDeviation(values: Float32Array, center: number): number {
-  const deviations = new Float32Array(values.length)
-  for (let i = 0; i < values.length; i += 1) deviations[i] = Math.abs(values[i]! - center)
-  return median(deviations)
-}
-
 /**
  * Peaks of a profile above `threshold`.
  *
@@ -286,18 +340,29 @@ function findPeaks(profile: Float32Array, threshold: number): Peak[] {
 }
 
 /**
- * The sides found on one axis, or null when that axis shows no border.
+ * The sides found on one axis, or null when that axis does not show two.
  *
  * Peaks are split by the centre of the frame, and the painting is taken to be
  * what contains that centre: whoever took the photo pointed the camera at the
- * artwork. That rule is what lets a painting whose border falls outside the
- * photograph be detected — with a single peak on the axis, the missing side is
- * the edge of the frame — instead of having to guess which of the two halves is
- * the painting.
+ * artwork.
+ *
+ * **Both sides have to come from a real peak.** This used to answer 0 or 1 —
+ * the edge of the frame — for the half-axis that had no peak, and say nothing
+ * about having done so. It was meant to catch the painting photographed up close,
+ * with a side outside the frame; what it actually produced was 22 invented sides
+ * across 15 of the 36 suggestions, and with them 14 rectangles covering more than
+ * 90 % of the photograph and 6 covering more than 95 %, all of them legal because
+ * `MAX_AREA` is 0.98. A rectangle that is the whole photograph is not a
+ * suggestion, it is a way of saying nothing while looking like a measurement.
+ *
+ * The price is real and it is paid knowingly: two good suggestions are lost, both
+ * of artworks with one side legitimately out of frame. In exchange, seven bad ones
+ * and eight useless ones go quiet. `edgeDetection.test.ts` used to REQUIRE the old
+ * behaviour, which is worth saying out loud: the test described the implementation,
+ * not anything the cataloger had asked for.
  */
 function axisEdges(profile: Float32Array, size: number): AxisEdges | null {
   const center = median(profile)
-  const spread = MAD_TO_SIGMA * medianAbsoluteDeviation(profile, center)
   let strongest = 0
   for (let i = 0; i < profile.length; i += 1) {
     if (profile[i]! > strongest) strongest = profile[i]!
@@ -309,10 +374,9 @@ function axisEdges(profile: Float32Array, size: number): AxisEdges | null {
   // would be answering with the frame.
   if (strongest - center < MIN_EDGE_STRENGTH) return null
 
-  const threshold = Math.max(
-    center + MAD_MULTIPLIER * spread,
-    center + PROMINENCE_FRACTION * (strongest - center),
-  )
+  // Only the prominence term: see PROMINENCE_FRACTION for why the MAD term is
+  // capped by it, which amounts to removing it.
+  const threshold = center + PROMINENCE_FRACTION * (strongest - center)
 
   const peaks = findPeaks(profile, threshold)
   if (peaks.length === 0) return null
@@ -320,6 +384,7 @@ function axisEdges(profile: Float32Array, size: number): AxisEdges | null {
   const middle = (size - 1) / 2
   const low = peaks.filter((peak) => peak.position < middle)
   const high = peaks.filter((peak) => peak.position >= middle)
+  if (low.length === 0 || high.length === 0) return null
 
   // A pixel index becomes a fraction at the boundary between pixels, which is
   // where a border actually is: the centroid of a step at pixel `a` sits at
@@ -327,11 +392,97 @@ function axisEdges(profile: Float32Array, size: number): AxisEdges | null {
   const fraction = (position: number) => (position + 0.5) / size
 
   return {
-    outerLow: low.length > 0 ? fraction(low[0]!.position) : 0,
-    outerHigh: high.length > 0 ? fraction(high[high.length - 1]!.position) : 1,
+    outerLow: fraction(low[0]!.position),
+    outerHigh: fraction(high[high.length - 1]!.position),
     innerLow: low.length > 1 ? fraction(low[1]!.position) : null,
     innerHigh: high.length > 1 ? fraction(high[high.length - 2]!.position) : null,
+    contrast: strongest - center,
   }
+}
+
+/**
+ * What fraction of a side actually shows a step, with a consistent sign.
+ *
+ * `axis` says which way the side runs: a vertical side is walked down the rows at
+ * a fixed column, and a horizontal one across the columns at a fixed row. `from`
+ * and `to` bound it — a side of the painting only exists between the other two
+ * sides, and measuring it along the whole photograph would count as absence the
+ * part where there is simply no artwork.
+ *
+ * The sign has to agree because that is what tells a border from a texture: a
+ * border is the same transition all the way along —canvas to wall, or wall to
+ * canvas— while a band of paint or a plaster wall alternates. The dominant sign is
+ * counted first and then the pixels that disagree with it are discarded.
+ */
+function lineSupport(
+  image: Float32Array,
+  width: number,
+  height: number,
+  axis: 'vertical' | 'horizontal',
+  at: number,
+  from: number,
+  to: number,
+  step: number,
+): number {
+  const across = axis === 'vertical' ? width : height
+  const along = axis === 'vertical' ? height : width
+  const start = Math.max(1, Math.min(from, to))
+  const end = Math.min(along - 2, Math.max(from, to))
+  if (end <= start) return 0
+
+  let best = 0
+  for (let offset = -LINE_WINDOW; offset <= LINE_WINDOW; offset += 1) {
+    const fixed = clampIndex(at, across) + offset
+    // A side pressed against the edge of the photograph has no neighbours to take
+    // a gradient from, so it can never show a step there. Skipping instead of
+    // answering zero is what lets a border two pixels inside the frame still be
+    // found, while a side that IS the frame finds nothing anywhere in its window.
+    if (fixed < 1 || fixed > across - 2) continue
+
+    let positive = 0
+    let negative = 0
+    for (let i = start; i <= end; i += 1) {
+      const x = axis === 'vertical' ? fixed : i
+      const y = axis === 'vertical' ? i : fixed
+      const gradient = axis === 'vertical' ? sobelX(image, width, x, y) : sobelY(image, width, x, y)
+      if (Math.abs(gradient) < step) continue
+      if (gradient > 0) positive += 1
+      else negative += 1
+    }
+    const support = Math.max(positive, negative) / (end - start + 1)
+    if (support > best) best = support
+  }
+
+  return best
+}
+
+/** Pixel index of a fraction, the inverse of the `fraction` of axisEdges. */
+function clampIndex(at: number, size: number): number {
+  return Math.max(0, Math.min(size - 1, Math.round(at * size - 0.5)))
+}
+
+function sobelX(image: Float32Array, width: number, x: number, y: number): number {
+  const row = y * width
+  const above = row - width
+  const below = row + width
+  return (
+    image[above + x + 1]! +
+    2 * image[row + x + 1]! +
+    image[below + x + 1]! -
+    (image[above + x - 1]! + 2 * image[row + x - 1]! + image[below + x - 1]!)
+  )
+}
+
+function sobelY(image: Float32Array, width: number, x: number, y: number): number {
+  const row = y * width
+  const above = row - width
+  const below = row + width
+  return (
+    image[below + x - 1]! +
+    2 * image[below + x]! +
+    image[below + x + 1]! -
+    (image[above + x - 1]! + 2 * image[above + x]! + image[above + x + 1]!)
+  )
 }
 
 function rectangle(
@@ -403,11 +554,32 @@ export function detectArtworkEdges(
   const vertical = axisEdges(rows, height)
   if (!horizontal || !vertical) return null
 
+  /** Whether the four sides of a rectangle are lines and not just profile peaks. */
+  const sidesAreLines = (crop: Crop): boolean => {
+    const stepX = LINE_STEP_FRACTION * horizontal.contrast
+    const stepY = LINE_STEP_FRACTION * vertical.contrast
+    const top = clampIndex(crop.y, height)
+    const bottom = clampIndex(crop.y + crop.height, height)
+    const left = clampIndex(crop.x, width)
+    const right = clampIndex(crop.x + crop.width, width)
+    return (
+      lineSupport(image, width, height, 'vertical', crop.x, top, bottom, stepX) >
+        MIN_LINE_SUPPORT &&
+      lineSupport(image, width, height, 'vertical', crop.x + crop.width, top, bottom, stepX) >
+        MIN_LINE_SUPPORT &&
+      lineSupport(image, width, height, 'horizontal', crop.y, left, right, stepY) >
+        MIN_LINE_SUPPORT &&
+      lineSupport(image, width, height, 'horizontal', crop.y + crop.height, left, right, stepY) >
+        MIN_LINE_SUPPORT
+    )
+  }
+
   const outer = rectangle(
     [horizontal.outerLow, horizontal.outerHigh],
     [vertical.outerLow, vertical.outerHigh],
   )
   if (!looksLikeArtwork(outer, width, height)) return null
+  if (!sidesAreLines(outer)) return null
 
   let inner: Crop | null = null
   if (
@@ -420,7 +592,11 @@ export function detectArtworkEdges(
       [horizontal.innerLow, horizontal.innerHigh],
       [vertical.innerLow, vertical.innerHigh],
     )
-    if (looksLikeArtwork(candidate, width, height) && clearlyNested(outer, candidate)) {
+    if (
+      looksLikeArtwork(candidate, width, height) &&
+      clearlyNested(outer, candidate) &&
+      sidesAreLines(candidate)
+    ) {
       inner = candidate
     }
   }
