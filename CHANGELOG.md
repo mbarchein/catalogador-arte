@@ -2,6 +2,12 @@
 
 ### Interfaz
 
+**La fotografía abierta va en la dirección de la página**
+Al abrir una fotografía para editarla, su código aparece en la dirección
+—`/artwork/TS-0005/photos/TS-0005_v2`—, así que recargar no la pierde y el enlace se puede
+guardar o enviar y abre esa misma foto. Si el enlace nombra una fotografía que ya se retiró, se abre la
+principal en vez de dejar la pantalla a medias.
+
 **Enderezar una fotografía tomada en ángulo**
 Un cuadro fotografiado de lado sale como un trapecio, y recortarlo con un rectángulo deja pared por dos
 esquinas y se come obra por las otras dos. Ocho de cada catorce obras del catálogo están así. Ahora el

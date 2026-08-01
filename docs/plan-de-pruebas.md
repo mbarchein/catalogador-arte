@@ -186,6 +186,7 @@ comparar, solo un criterio. El estado medido está en
 | RF-605 | Una búsqueda sin resultados devuelve 200 con el mensaje esperado, no una página vacía ni un 404 | Pendiente |
 | RF-607 | El enlace desde una serie o un propietario abre el índice de obras con el filtro ya aplicado | Pendiente |
 | RF-608 | Volver al listado conserva filtros y número de página | Pendiente |
+| RF-608 | La fotografía abierta viaja en la ruta (`/artwork/:id/photos/:imageId`): sobrevive a la recarga, se comparte como enlace, cambiar de miniatura no apila entradas de historial, y un identificador que la obra no tiene se corrige a la principal. Comprobado a mano en el navegador el 1 de agosto de 2026 | Comprobado a mano |
 | RF-608 | Un enlace compartido con la ubicación en texto (`?location=…`, anterior a ADR-006) se resuelve contra el árbol y se reescribe a identificadores; lo que ya no existe se descarta sin romper el enlace. Cubierto en `listView.test.ts` | **Hecho** |
 | RF-609 | Una ficha dada de baja desaparece de índices y de resultados de búsqueda | Pendiente |
 | RF-610 | El texto buscado va y vuelve de la URL, y la vista recordada del dispositivo no lo guarda. Cubierto en `listView.test.ts` | **Hecho** |

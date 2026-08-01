@@ -34,7 +34,11 @@ export function App() {
           bookmarked and the phone's back button leaves the form instead of
           leaving the record. */}
       <Route path="/artwork/:id/edit" element={<ArtworkPage />} />
+      {/* La fotografía abierta va en la ruta por el mismo motivo que la edición
+          de la ficha: sobrevive a una recarga, se comparte como enlace y el botón
+          «atrás» del móvil cierra su panel en vez de salir de la pantalla. */}
       <Route path="/artwork/:id/photos" element={<ArtworkPhotosPage />} />
+      <Route path="/artwork/:id/photos/:imageId" element={<ArtworkPhotosPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       {/* RF-1106: la sección «Tablas» y el mantenimiento de cada tabla maestra.
           Solo Catalogador, comprobado dentro de cada una: la pestaña oculta del

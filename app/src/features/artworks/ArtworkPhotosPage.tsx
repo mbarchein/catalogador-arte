@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Navigate, useParams } from 'react-router'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
 import { uploadShot } from '../../lib/images'
@@ -34,13 +34,42 @@ import { ReorderableThumbnails } from './ReorderableThumbnails'
  * "Cancelar" that cannot undo would promise what it cannot keep.
  */
 export function ArtworkPhotosPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id, imageId } = useParams<{ id: string; imageId?: string }>()
+  const navigate = useNavigate()
   const access = useEditingAccess()
   const catalogId = id ?? ''
   const { images, thumbUrls, mainId, manuallyChosen, loading, reload } =
     useArtworkImages(catalogId)
 
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  /**
+   * Which photograph has its panel open lives in the ROUTE, not in local state
+   * (`/artwork/TS-0005/photos/TS-0005_v2`): it survives a reload, it can be sent as
+   * a link, and the phone's back button closes the panel instead of leaving the
+   * screen. The same reason the record's edit mode is a route — see App.tsx.
+   */
+  const selectedId = imageId ?? null
+
+  /**
+   * Opens a photograph's panel, or closes it with null.
+   *
+   * Always `replace`, never push. The first version pushed when nothing was open, to
+   * make «atrás» close the panel — and that branch is unreachable: the effect below
+   * opens a photograph as soon as the rows arrive, so «nothing open» only exists in
+   * an artwork with no photographs at all. Verified in the browser: «atrás» from the
+   * screen goes to the record, which is what it did before this was a route.
+   *
+   * What `replace` does buy is the thing that would be felt: tapping through
+   * thumbnails does not pile a history entry each, so «atrás» does not walk every
+   * photograph looked at before leaving. It is the same reason the list's filters
+   * replace instead of pushing.
+   */
+  const openPhoto = useCallback(
+    (next: string | null) => {
+      const base = `/artwork/${catalogId}/photos`
+      navigate(next ? `${base}/${next}` : base, { replace: true })
+    },
+    [catalogId, navigate],
+  )
   // Order being dragged, before the database confirms it. null means "what the
   // database says": there is one order and one owner, so a dropped thumbnail
   // never fights the order arriving from a reload or from Realtime.
@@ -71,12 +100,19 @@ export function ArtworkPhotosPage() {
   // jumps on its own while the cataloger is working.
   useEffect(() => {
     if (loading) return
-    setSelectedId((current) =>
-      current && images.some((r) => r.image_id === current)
-        ? current
-        : (mainId ?? images[0]?.image_id ?? null),
-    )
-  }, [loading, images, mainId])
+    const known = selectedId !== null && images.some((r) => r.image_id === selectedId)
+    if (known) return
+    // Nothing open, or the address names a photograph this artwork does not have —
+    // a link shared before it was retired, or one typed by hand. It is corrected
+    // with `replace` so «atrás» does not walk through the wrong address, and it
+    // waits for the rows: correcting while they are still loading would throw away
+    // a perfectly good link.
+    const fallback = mainId ?? images[0]?.image_id ?? null
+    if (fallback === selectedId) return
+    navigate(fallback ? `/artwork/${catalogId}/photos/${fallback}` : `/artwork/${catalogId}/photos`, {
+      replace: true,
+    })
+  }, [loading, images, mainId, selectedId, catalogId, navigate])
 
   /**
    * The photos in the order on screen. While a thumbnail is being dragged that
@@ -226,7 +262,7 @@ export function ArtworkPhotosPage() {
       setError(error.message)
     } else {
       const { main } = await reload()
-      setSelectedId(main)
+      openPhoto(main)
       setNotice('Fotografía retirada. El archivo se conserva.')
     }
     setConfirmRemoval(null)
@@ -395,7 +431,7 @@ export function ArtworkPhotosPage() {
               mainId={mainId}
               selectedId={selectedId}
               onSelect={(imageId) => {
-                setSelectedId(imageId)
+                openPhoto(imageId)
                 setConfirmRemoval(null)
               }}
               onReorder={(from, to) => {
@@ -421,7 +457,7 @@ export function ArtworkPhotosPage() {
                 thumbUrls={thumbUrls}
                 viewId={selectedId}
                 onView={(imageId) => {
-                  setSelectedId(imageId)
+                  openPhoto(imageId)
                   setConfirmRemoval(null)
                 }}
                 catalogId={catalogId}
