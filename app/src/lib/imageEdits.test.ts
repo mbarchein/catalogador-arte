@@ -403,7 +403,7 @@ describe('RF-410: loupeRegion (magnifying the corner under the finger)', () => {
 
   it('centers the square on the corner, in pixels of the original', () => {
     // The «se» corner sits at (0.7, 0.7) of the image, which is (700, 560) px.
-    const region = loupeRegion(size, 0, crop, 'se', 40)
+    const region = loupeRegion(size, 0, cornerPoint(crop, 'se'), 40)
     expect(region.x).toBeCloseTo(680, 6)
     expect(region.y).toBeCloseTo(540, 6)
     expect(region.width).toBeCloseTo(40, 6)
@@ -414,14 +414,14 @@ describe('RF-410: loupeRegion (magnifying the corner under the finger)', () => {
     // Turned 90° clockwise the image is 800x1000, and the «nw» corner of the
     // crop — (0.2, 0.3) there, that is (160, 300) px — comes from (300, 640) of
     // the original: turning clockwise sends (x, y) to (height - y, x).
-    const region = loupeRegion(size, 90, crop, 'nw', 40)
+    const region = loupeRegion(size, 90, cornerPoint(crop, 'nw'), 40)
     expect(region.x + region.width / 2).toBeCloseTo(300, 6)
     expect(region.y + region.height / 2).toBeCloseTo(640, 6)
   })
 
   it('shows a square of the same pixels whatever the rotation', () => {
     for (const rotation of [0, 90, 180, 270] as const) {
-      const region = loupeRegion(size, rotation, crop, 'ne', 60)
+      const region = loupeRegion(size, rotation, cornerPoint(crop, 'ne'), 60)
       expect(region.width).toBeCloseTo(60, 6)
       expect(region.height).toBeCloseTo(60, 6)
     }
@@ -431,13 +431,13 @@ describe('RF-410: loupeRegion (magnifying the corner under the finger)', () => {
     // With the corner on the edge of the photograph, half the loupe has nothing
     // to show. Moving the region to fill it would take the corner off the centre
     // of the loupe, and the crosshair drawn there would point somewhere else.
-    const region = loupeRegion(size, 0, { x: 0, y: 0, width: 0.5, height: 0.5 }, 'nw', 40)
+    const region = loupeRegion(size, 0, { x: 0, y: 0 }, 40)
     expect(region.x).toBe(-20)
     expect(region.y).toBe(-20)
   })
 
   it('survives a degenerate crop without producing nonsense', () => {
-    const region = loupeRegion(size, 0, { x: 0.5, y: 0.5, width: 0, height: 0 }, 'se', 40)
+    const region = loupeRegion(size, 0, { x: 0.5, y: 0.5 }, 40)
     expect(Number.isFinite(region.x)).toBe(true)
     expect(Number.isFinite(region.y)).toBe(true)
     expect(region.width).toBe(40)
@@ -547,12 +547,28 @@ describe('el encuadre por esquinas (RF-410)', () => {
     expect(size.width).toBe(Math.round(0.55 * 2000))
   })
 
-  it('la vía degradada rechaza la perspectiva en vez de componerla', () => {
-    // `composeEdits` solo tiene un llamante: el caso en que el máster no se pudo
-    // descargar y la copia ya lleva su encuadre incrustado. Un segundo warp iría
-    // sobre píxeles ya interpolados y la fila dejaría de decir la verdad sobre el
-    // máster, así que se rechaza y el editor deshabilita las asas allí.
-    expect(() => composeEdits(NO_EDIT, { rotation: 0, crop: null, corners: trapecio })).toThrow()
+  /**
+   * Este caso afirmaba lo contrario y por eso pasaba mientras la función estaba
+   * rota: decía que componer perspectiva SIEMPRE lanza. Pero `composeEdits` se
+   * llama en cada guardado, también desde el máster, y ahí no hay nada sobre lo que
+   * componer — así que aplicar la primera corrección de perspectiva lanzaba. Lo
+   * imposible es la perspectiva sobre algo ya incrustado, no la perspectiva.
+   */
+  it('desde el máster, la perspectiva pasa tal cual: no hay nada que componer', () => {
+    const perspectiva: PhotoEdit = { rotation: 0, crop: null, corners: trapecio }
+    const compuesta = composeEdits(NO_EDIT, perspectiva)
+    expect(compuesta.corners).not.toBeNull()
+    expect(sameEdit(compuesta, perspectiva)).toBe(true)
+  })
+
+  it('pero sobre un encuadre ya incrustado se rechaza', () => {
+    // La vía degradada: el máster no se pudo descargar y la copia de consulta ya
+    // viene recortada. Un segundo warp iría sobre píxeles ya interpolados y la fila
+    // dejaría de decir la verdad sobre el máster.
+    const horneado: PhotoEdit = { rotation: 0, crop: { x: 0.1, y: 0.1, width: 0.6, height: 0.6 } }
+    expect(() => composeEdits(horneado, { rotation: 0, crop: null, corners: trapecio })).toThrow()
+    // Y sobre una base ya enderezada, cualquier cosa: no hay forma de expresar un
+    // encuadre sobre el máster partiendo de una imagen rectificada.
     expect(() => composeEdits({ rotation: 0, crop: null, corners: trapecio }, NO_EDIT)).toThrow()
   })
 

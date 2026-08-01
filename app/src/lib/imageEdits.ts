@@ -242,15 +242,23 @@ export function composeCrop(outer: Crop, inner: Crop): Crop {
  * photo cropped and then turned would come out framed somewhere else.
  */
 export function composeEdits(base: PhotoEdit, extra: PhotoEdit): PhotoEdit {
-  // Perspective is refused here rather than composed, and the caller has to have
-  // prevented it: this function exists only for the degraded case where the master
-  // could not be downloaded and the source already carries its framing baked in.
-  // A straightened image cannot be straightened again — the second warp would be
-  // over pixels that were already interpolated, and the row would stop telling the
-  // truth about the master. The editor disables the handles there for that reason.
-  if (base.corners || extra.corners) {
-    throw new Error('composeEdits no admite perspectiva: la vía degradada la prohíbe')
+  // What cannot be composed is perspective ON TOP OF something already baked in.
+  //
+  // This is called on every save, also from the master — where `base` is NO_EDIT and
+  // there is nothing to compose over, so a perspective edit passes through as it is.
+  // Refusing that too was a real bug: applying the first straightening threw.
+  //
+  // What is genuinely impossible is the degraded path: the master could not be
+  // downloaded, the consultation copy already carries its framing, and a second warp
+  // would go over pixels that were already interpolated — the row would stop telling
+  // the truth about the master. Same if the BASE is straightened, whatever comes on
+  // top. The editor refuses to open there, and this is the backstop.
+  if (base.corners || (extra.corners && !isNoEdit(base))) {
+    throw new Error(
+      'No se puede corregir la perspectiva sobre una imagen que ya lleva un encuadre aplicado',
+    )
   }
+  if (extra.corners) return normalizeEdit(extra)
   const rotation = addRotation(base.rotation, extra.rotation)
   const carried = base.crop ? rotateCrop(base.crop, extra.rotation) : null
   // `corners: null` explicitly, and not omitted: what comes out of here is the
@@ -470,19 +478,22 @@ export function resizeCrop(
 export function loupeRegion(
   size: Size,
   rotation: number,
-  crop: Crop,
-  corner: Corner,
+  point: { x: number; y: number },
   side: number,
 ): { x: number; y: number; width: number; height: number } {
   const rotated = rotatedSize(size, rotation)
   const span = Math.max(1, finite(side, 1))
-  const point = cornerPoint(clampCrop(crop), corner)
+  // The point as given, NOT clamped into the image: a corner of the perspective
+  // quadrilateral is allowed to sit outside the photograph, and sliding the region
+  // inwards would show the cataloger a different place from the one she is aiming
+  // at. What falls outside is painted as background by paintLoupe.
+  const aimed = { x: finite(point.x, 0.5), y: finite(point.y, 0.5) }
   const width = span / Math.max(1, rotated.width)
   const height = span / Math.max(1, rotated.height)
-  // Square centred on the corner, in fractions of the rotated image, and then
-  // back through the rotation: the same arithmetic as any other crop of crop.
+  // Square centred on the point, in fractions of the rotated image, and then back
+  // through the rotation: the same arithmetic as any other crop of crop.
   const region = rotateCrop(
-    { x: point.x - width / 2, y: point.y - height / 2, width, height },
+    { x: aimed.x - width / 2, y: aimed.y - height / 2, width, height },
     -rotation,
   )
   return {
