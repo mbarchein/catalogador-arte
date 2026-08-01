@@ -42,6 +42,16 @@ import {
   type Corners,
 } from './perspective'
 
+/**
+ * How a framing came to be. Mirrors the `crop_source` enum of the schema: the values
+ * are code and the interface never shows them.
+ *
+ * It lives here and not next to the renderer because it is part of the vocabulary of
+ * an edit, and because both the renderer and the uploader need it — putting it in
+ * either of those two made them import each other.
+ */
+export type CropSource = 'MANUAL' | 'SUGGESTED' | 'SUGGESTED_ADJUSTED'
+
 /** Clockwise, in degrees. Only quarter turns: see the migration. */
 export type Rotation = 0 | 90 | 180 | 270
 

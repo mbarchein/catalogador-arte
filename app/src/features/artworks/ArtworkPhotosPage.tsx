@@ -9,9 +9,10 @@ import {
   editSummary,
   sameEdit,
   NO_EDIT,
+  type CropSource,
   type PhotoEdit,
 } from '../../lib/imageEdits'
-import { editSource, savePhotoEdit, type CropSource } from '../../lib/imageRender'
+import { editSource, savePhotoEdit } from '../../lib/imageRender'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
 import { useAuth } from '../../auth/AuthContext'
@@ -114,7 +115,11 @@ export function ArtworkPhotosPage() {
         // Never marked as index: which one represents the artwork is decided
         // separately, and adding a photo should not change the cover without
         // anyone asking.
-        await uploadShot(catalogId, shot.prepared, { shotType: shot.shotType, isIndex: false })
+        await uploadShot(catalogId, shot.prepared, {
+          shotType: shot.shotType,
+          isIndex: false,
+          cropSource: shot.prepared.cropSource,
+        })
         URL.revokeObjectURL(shot.prepared.preview)
         done += 1
       } catch (e) {

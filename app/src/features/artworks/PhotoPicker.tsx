@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { PreparedShot } from '../../lib/images'
-import { editSummary, sameEdit, type PhotoEdit } from '../../lib/imageEdits'
+import { editSummary, sameEdit, type CropSource, type PhotoEdit } from '../../lib/imageEdits'
 import { renderEditedLevels } from '../../lib/imageRender'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 import { Chips, CropIcon, NoIcon, PlusIcon, YesIcon } from '../../components/ui'
@@ -137,7 +137,7 @@ export function PhotoPicker({
    * stored (see uploadShot). Nothing is redone if the cataloger applied without
    * changing anything.
    */
-  async function applyEdit(shot: QueuedShot, edit: PhotoEdit) {
+  async function applyEdit(shot: QueuedShot, edit: PhotoEdit, cropSource: CropSource) {
     setEditingKey(null)
     setEditError(null)
     if (sameEdit(edit, shot.prepared.edit)) return
@@ -156,6 +156,7 @@ export function PhotoPicker({
                   derivative: levels.derivative,
                   preview: URL.createObjectURL(levels.thumbnail),
                   edit,
+                  cropSource,
                 },
               }
             : s,
@@ -323,7 +324,7 @@ export function PhotoPicker({
           // The source is the master File still in memory: the original frame
           // is always one tap away.
           canRestoreOriginal
-          onApply={(edit) => void applyEdit(editingShot, edit)}
+          onApply={(edit, cropSource) => void applyEdit(editingShot, edit, cropSource)}
           onCancel={() => setEditingKey(null)}
         />
       )}

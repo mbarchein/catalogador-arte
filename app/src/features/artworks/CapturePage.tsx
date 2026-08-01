@@ -296,7 +296,11 @@ export function CapturePage() {
       )
       setShots(current)
       try {
-        await uploadShot(artworkId, s.prepared, { shotType: s.shotType, isIndex: s.isIndex })
+        await uploadShot(artworkId, s.prepared, {
+          shotType: s.shotType,
+          isIndex: s.isIndex,
+          cropSource: s.prepared.cropSource,
+        })
         current = current.map((x) => (x.key === s.key ? { ...x, status: 'uploaded' as const } : x))
       } catch (err) {
         current = current.map((x) =>

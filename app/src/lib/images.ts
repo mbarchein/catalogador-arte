@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { NO_EDIT, editToColumns, type PhotoEdit } from './imageEdits'
+import { NO_EDIT, editToColumns, type CropSource, type PhotoEdit } from './imageEdits'
 
 /**
  * Three levels per shot (ADR-002). Derivatives are generated **in the browser
@@ -30,6 +30,8 @@ export interface PreparedShot {
   originalHeight: number
   /** Local URL for the preview. Must be revoked when the shot is discarded. */
   preview: string
+  /** Where the framing came from, when the editor was used before uploading. */
+  cropSource?: CropSource
   /**
    * Rotation and crop already applied to `thumbnail` and `derivative`, and
    * stored with the row so the printed-catalog pipeline can rebuild the same
@@ -242,7 +244,7 @@ export async function masterDownloadUrl(masterPath: string): Promise<string> {
 export async function uploadShot(
   catalogId: string,
   shot: PreparedShot,
-  options: { shotType: string; isIndex: boolean },
+  options: { shotType: string; isIndex: boolean; cropSource?: CropSource },
 ): Promise<UploadResult> {
   const target = paths(catalogId, shot.master)
 
@@ -288,6 +290,11 @@ export async function uploadShot(
       // printed-catalog pipeline rebuilds them from the master and must be able
       // to reproduce it.
       ...editToColumns(shot.edit),
+      // Where the framing of a brand-new shot came from. A photograph uploaded
+      // without touching the editor has no framing to attribute, so it stays
+      // unknown rather than being called «by hand»: that is the whole point of the
+      // column, and filling it with a guess would put the guess beyond reach.
+      crop_source: options.cropSource ?? null,
     })
     .select('image_id')
     .single()

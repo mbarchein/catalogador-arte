@@ -14,6 +14,7 @@ import {
   rotatedSize,
   type Corner,
   type Crop,
+  type CropSource,
   type PhotoEdit,
   type Rotation,
 } from '../../lib/imageEdits'
@@ -31,7 +32,6 @@ import {
 import { LOUPE_SIDE, LOUPE_ZOOM, loupePixels, paintLoupe } from '../../lib/imageLoupe'
 import { rotateSuggestion, type EdgeSuggestion } from '../../lib/edgeDetection'
 import { suggestArtworkCrop } from '../../lib/imageEdges'
-import type { CropSource } from '../../lib/imageRender'
 import { CropIcon, NoIcon, RotateLeftIcon, RotateRightIcon } from '../../components/ui'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 

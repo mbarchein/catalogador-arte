@@ -12,6 +12,7 @@ import {
   cropRectInPixels,
   editToColumns,
   rotatedSize,
+  type CropSource,
   type PhotoEdit,
 } from './imageEdits'
 import {
@@ -20,12 +21,6 @@ import {
   homographyFromUnitSquare,
   straightenedSize,
 } from './perspective'
-
-/**
- * How a framing came to be. Mirrors the `crop_source` enum of the schema: the
- * values are code, and the interface never shows them.
- */
-export type CropSource = 'MANUAL' | 'SUGGESTED' | 'SUGGESTED_ADJUSTED'
 
 
 /**
