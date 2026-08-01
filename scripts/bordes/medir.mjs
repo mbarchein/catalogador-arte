@@ -58,7 +58,9 @@ function cargarDetector() {
                       'MIN_EDGE_STRENGTH', 'MAX_AREA', 'MIN_AREA']
   const banderas = { soporte: 'MIN_LINE_SUPPORT', paso: 'LINE_STEP_FRACTION',
                      prominencia: 'PROMINENCE_FRACTION', fuerza: 'MIN_EDGE_STRENGTH',
-                     areaMax: 'MAX_AREA', areaMin: 'MIN_AREA' }
+                     areaMax: 'MAX_AREA', areaMin: 'MIN_AREA',
+                     banda: 'SLOPE_BAND', ganancia: 'MIN_SLOPE_GAIN',
+                     inclinacionMax: 'MAX_SLOPE', penalizacion: 'DISTANCE_GAIN' }
   let fuente = readFileSync(salida, 'utf8')
   const cambios = []
   for (const [bandera, constante] of Object.entries(banderas)) {

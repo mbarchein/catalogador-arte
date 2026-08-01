@@ -157,6 +157,28 @@ const MAX_SLOPE = 0.25
 const MIN_SLOPE_GAIN = 1.08
 
 /**
+ * How much MORE the gate demands of a line at the far edge of the band.
+ *
+ * Moving the side ninety pixels means the straight profile was wrong about which
+ * feature is the border, and that is a strong claim: it should need strong
+ * evidence. So the gain required grows linearly with the distance from where the
+ * profile placed the side — 1.08 on top of it, 2.08 at the edge of the band.
+ *
+ * It is what makes a wide band safe. Measured on the catalog, the two keystone
+ * photographs win their true border by factors of 3.1 and 6.2, so they clear the
+ * penalty comfortably, while the lines that a wide band picks up on a photograph
+ * whose artwork has no sides in frame do not.
+ *
+ * 0.4 is the middle of a measured plateau and not a value that happens to work:
+ * 0.3, 0.4 and 0.5 all give nine useful suggestions and none bad, below 0.3 a bad
+ * one gets in, and above 0.5 one of the two keystone photographs drops out. Sitting
+ * in the middle of the plateau instead of on its edge is the difference between a
+ * constant and a coincidence — the archived measurement has a case where four
+ * thousandths of difference undid an entire fix.
+ */
+const DISTANCE_GAIN = 0.4
+
+/**
  * Half-width, in pixels, of the band the side is looked for in.
  *
  * The straight profile already says approximately where each side is — what the
@@ -166,7 +188,7 @@ const MIN_SLOPE_GAIN = 1.08
  * happened on a side the straight profile had placed 132 px away, and that side is
  * one the four-sides rule now rejects outright).
  */
-const SLOPE_BAND = 32
+const SLOPE_BAND = 96
 
 /**
  * Spacing, in pixels, of the coarse pass of the slope search.
@@ -672,6 +694,16 @@ function refineSide(
   let best: Side = { at, slope: 0 }
   let bestStrength = straight
 
+  /**
+   * What a candidate has to beat: the straight line, plus a penalty that grows with
+   * how far it moves the side. Compared against the *penalised* value so that a
+   * distant candidate does not win merely by being stronger — it has to be stronger
+   * by the margin its distance demands.
+   */
+  const required = (offset: number) =>
+    straight * (MIN_SLOPE_GAIN + DISTANCE_GAIN * (Math.abs(offset - rounded) / SLOPE_BAND))
+
+  let bestMargin = 1
   const sweep = (
     slopeFrom: number,
     slopeTo: number,
@@ -685,7 +717,13 @@ function refineSide(
       for (let offset = offsetFrom; offset <= offsetTo; offset += offsetStep) {
         if (offset < 1 || offset > across - 2) continue
         const value = strength(offset, slope)
-        if (value > bestStrength) {
+        const threshold = required(offset)
+        if (threshold <= 0) continue
+        // Ranked by how much each candidate clears its OWN requirement, which is
+        // what makes near and far candidates comparable.
+        const margin = value / threshold
+        if (margin > bestMargin) {
+          bestMargin = margin
           bestStrength = value
           best = { at: offset, slope }
         }
@@ -705,8 +743,10 @@ function refineSide(
     )
   }
 
-  // The gate: a tilt is only believed if it beats the straight line clearly.
-  return bestStrength > straight * MIN_SLOPE_GAIN ? best : { at, slope: 0 }
+  // The gate is already in `required`: a candidate only became `best` by clearing
+  // it, so reaching here with a slope means it was believed.
+  void bestStrength
+  return best.slope !== 0 ? best : { at, slope: 0 }
 }
 
 /** Whether a rectangle can plausibly be the painting of the photograph. */
