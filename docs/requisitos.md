@@ -2,9 +2,22 @@
 
 Aplicación web de inventario y catalogación razonada — fondos de Alberto Rotili y María Ruiz Campins.
 
-Este documento consolida en forma de requisitos verificables las decisiones dispersas en los dos
-documentos de trabajo originales. Cada requisito tiene un identificador estable que los tests citan
-para dejar constancia de qué está verificado y qué no.
+Este documento tiene **dos capas, y conviene no confundirlas**.
+
+La primera es el **requisito histórico**: los apartados 5 y 6 recogen lo que los dos documentos de
+trabajo originales pedían, consolidado en forma verificable y con un identificador estable por
+requisito. Esa lista se escribió antes de construir nada y sin filtro de ingeniería: describe lo que
+se quería, no lo que resultó sensato hacer. Tiene mecanismos pensados para un equipo que aquí es una
+persona, dimensionados con cifras que después se midieron y salieron otras, y funciones que ninguna
+necesidad ha reclamado todavía.
+
+La segunda es **lo que se decidió al construir**: el apartado 8 recoge las decisiones reales, con lo
+que cada una cambió respecto al requisito histórico, y el apartado 9 nombra lo que se ha retirado por
+sobreingeniería o por sobrar. Donde las dos capas discrepen, **manda la segunda**.
+
+Los identificadores no se reutilizan ni se renumeran, ni siquiera los de un requisito retirado: los
+tests los citan, el plan de pruebas los cruza y una tabla de correspondencias solo sirve si sus claves
+no se mueven. Un requisito retirado se tacha en su tabla —`~~RF-701~~`— y se explica en el apartado 9.
 
 ---
 
@@ -16,7 +29,7 @@ documental, procedencia, historial expositivo y bibliográfico), y que actúa co
 verdad para dos productos derivados que hoy están aparcados: el catálogo online y el catálogo impreso.
 
 El alcance de esta especificación es **la aplicación de inventario y catalogación**. Los dos productos
-derivados quedan fuera (ver apartado 8).
+derivados quedan fuera (ver apartado 10).
 
 ## 2. Documentos de referencia
 
@@ -58,6 +71,10 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 ---
 
 ## 5. Requisitos funcionales
+
+**Capa histórica.** Lo que pedían los documentos originales, con su identificador. Lo que de verdad
+gobierna hoy está en el apartado 8, y lo retirado, tachado aquí y explicado en el 9. Un requisito sin
+tachar y sin mención en el 8 sigue vigente tal como está escrito.
 
 ### RF-100 · Autenticación, roles y permisos
 
@@ -130,7 +147,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-410 | Las derivadas y la miniatura **se generan en el navegador antes de subir**, no en el servidor. Una fotografía de móvil ronda los 4-12 MB y subirla íntegra tres veces desde un almacén con mala cobertura no es viable. |
 | RF-411 | La aplicación no muestra nunca un máster en una vista: la ficha ofrece «Descargar máster» con URL firmada por la función Edge, también para el Lector — enviar el original a una imprenta o un comisario es exactamente su caso de uso. La subida exige poder editar. |
 | RF-412 | Todo acceso a imágenes pasa por una única función del frontend que resuelve la URL de cada nivel, de modo que cambiar de proveedor de almacenamiento sea un cambio en un solo lugar. |
-| RF-413 | El campo `archivo_digitalizado` de Archivo/Documentación sigue el mismo esquema de tres niveles, con la miniatura correspondiente a la primera página del documento. |
+| ~~RF-413~~ | El campo `archivo_digitalizado` de Archivo/Documentación sigue el mismo esquema de tres niveles, con la miniatura correspondiente a la primera página del documento. |
 
 ### RF-500 · Exposiciones, bibliografía y tablas puente
 
@@ -142,15 +159,15 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-504 | La cita de una obra en una referencia se registra en Obra_Bibliografia, manteniendo `paginas` como campo estructurado independiente de `notas`, por ser dato citable de forma exacta. |
 | RF-505 | La ficha de exposición incluye un bloque «Obras participantes» con miniatura, `id_catalogacion` enlazado y `nota_obra_en_expo` de cada fila. |
 | RF-506 | La ficha bibliográfica incluye un bloque «Obras citadas» con `id_catalogacion` enlazado y `paginas`/`notas`, sin miniatura. |
-| RF-507 | La tabla Bibliografía debe poder exportarse a un archivo `.bib` reutilizable por biblatex, con `clave_bibtex`, `autor`, `editor`, `titulo` y `año` como campos independientes. |
+| ~~RF-507~~ | La tabla Bibliografía debe poder exportarse a un archivo `.bib` reutilizable por biblatex, con `clave_bibtex`, `autor`, `editor`, `titulo` y `año` como campos independientes. |
 
 ### RF-600 · Índices y búsqueda
 
 | Id | Requisito |
 |---|---|
-| RF-601 | Obras dispone de dos índices: índice de identificadores e índice visual en mosaico de imágenes. |
+| ~~RF-601~~ | Obras dispone de dos índices: índice de identificadores e índice visual en mosaico de imágenes. |
 | RF-602 | La búsqueda de obras ofrece filtros combinables entre sí, no un campo por botón. Filtros principales, siempre visibles: texto libre (sobre `id_catalogacion`, `titulo` y `titulos_alt`), `artista`, rango de fechas (solapamiento sobre `anio_inicio`/`anio_fin`), `serie` y `tipo_obra`. |
-| RF-603 | Filtros avanzados, colapsados por defecto: `tecnica`, `estado_existencia`, `fase_inventario_completada`, `fase_documentacion_completada` y rango mínimo-máximo de medidas. |
+| ~~RF-603~~ | Filtros avanzados, colapsados por defecto: `tecnica`, `estado_existencia`, `fase_inventario_completada`, `fase_documentacion_completada` y rango mínimo-máximo de medidas. |
 | RF-604 | Las columnas de resultados son: `id_catalogacion` (único enlace a la ficha), miniatura, `titulo`, `artista` y `fecha_ejecucion`, con contador «mostrando X–Y de Z resultados» y paginación. |
 | RF-605 | Una búsqueda sin resultados devuelve la misma página de búsqueda con el mensaje «No se han encontrado obras con estos criterios» en lugar de la tabla. Nunca una página en blanco. |
 | RF-606 | Tienen búsqueda dedicada Obras, Exposiciones, Bibliografía y Documentación. Series y Propietarios/Instituciones no la necesitan por bajo volumen: basta el listado simple. |
@@ -161,16 +178,19 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 
 ### RF-700 · Bloqueo de edición
 
+**Grupo retirado entero** (apartado 9.1). Se conserva escrito porque es la única constancia de por qué
+la aplicación no lo tiene y de qué habría que rehacer si algún día hicieran falta dos manos.
+
 | Id | Requisito |
 |---|---|
-| RF-701 | Una ficha solo puede estar en edición por un catalogador a la vez. |
-| RF-702 | El bloqueo se activa al pulsar «Editar», no al abrir la ficha en modo consulta. |
-| RF-703 | El bloqueo se libera al guardar o al cancelar explícitamente. |
-| RF-704 | El bloqueo se libera automáticamente tras un periodo de inactividad configurable (orientativo: 20-30 minutos), para cubrir desconexiones y cierres accidentales. |
-| RF-705 | Cualquier catalogador puede ver quién tiene una ficha bloqueada y desde cuándo. |
-| RF-706 | Cualquier catalogador puede forzar el desbloqueo de una ficha antes de que expire el timeout. |
-| RF-707 | El aviso de bloqueo indica el modo (consulta o edición) y, si aplica, quién tiene la ficha abierta. No se muestra al Lector, para quien carece de utilidad. |
-| RF-708 | El bloqueo **se impone en la base de datos mediante un *trigger*** que rechaza la escritura si otro usuario mantiene un bloqueo sin caducar. Comprobarlo únicamente en el cliente lo convertiría en una advertencia y no en un bloqueo, porque al no haber servidor propio nada impide escribir directamente contra la API. |
+| ~~RF-701~~ | Una ficha solo puede estar en edición por un catalogador a la vez. |
+| ~~RF-702~~ | El bloqueo se activa al pulsar «Editar», no al abrir la ficha en modo consulta. |
+| ~~RF-703~~ | El bloqueo se libera al guardar o al cancelar explícitamente. |
+| ~~RF-704~~ | El bloqueo se libera automáticamente tras un periodo de inactividad configurable (orientativo: 20-30 minutos), para cubrir desconexiones y cierres accidentales. |
+| ~~RF-705~~ | Cualquier catalogador puede ver quién tiene una ficha bloqueada y desde cuándo. |
+| ~~RF-706~~ | Cualquier catalogador puede forzar el desbloqueo de una ficha antes de que expire el timeout. |
+| ~~RF-707~~ | El aviso de bloqueo indica el modo (consulta o edición) y, si aplica, quién tiene la ficha abierta. No se muestra al Lector, para quien carece de utilidad. |
+| ~~RF-708~~ | El bloqueo **se impone en la base de datos mediante un *trigger*** que rechaza la escritura si otro usuario mantiene un bloqueo sin caducar. Comprobarlo únicamente en el cliente lo convertiría en una advertencia y no en un bloqueo, porque al no haber servidor propio nada impide escribir directamente contra la API. |
 
 ### RF-800 · Trazabilidad de actualización
 
@@ -202,7 +222,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | RF-1001 | La ficha imprimible es un documento de uso interno, pensado para adjuntarse físicamente a la obra. |
 | RF-1002 | Incluye `id_catalogacion`, `titulo` (o «[Sin título]»), `artista`, `tecnica`, dimensiones, `fecha_ejecucion`, `serie`, `ubicacion_fisica` y la imagen índice (o el marcador «Imagen no disponible»). |
 | RF-1003 | Incluye un código QR con enlace directo a la ficha completa en la aplicación, para llegar a toda la información digital con el móvil y la obra delante. |
-| RF-1004 | Se implementa como vista de impresión propia con `@media print`, sin intervención del pipeline LaTeX, que queda reservado al catálogo razonado. |
+| ~~RF-1004~~ | Se implementa como vista de impresión propia con `@media print`, sin intervención del pipeline LaTeX, que queda reservado al catálogo razonado. |
 | RF-1005 | Es accesible desde la ficha de obra, sin entrada propia en el menú principal. |
 
 ### RF-1100 · Navegación y página de inicio
@@ -210,7 +230,7 @@ No existe actor anónimo: la aplicación no tiene ninguna zona pública.
 | Id | Requisito |
 |---|---|
 | RF-1101 | Barra superior fija con las secciones: Inicio, Obras, Exposiciones, Bibliografía, Documentación, Series y Propietarios. |
-| RF-1102 | Migas de pan en cada página, con la jerarquía completa (ej. `Inicio > Obras > AR-0001`). |
+| ~~RF-1102~~ | Migas de pan en cada página, con la jerarquía completa (ej. `Inicio > Obras > AR-0001`). |
 | RF-1103 | La página de inicio ofrece accesos directos a cada sección e indicadores: número de obras catalogadas, pendientes de fase 1 y de fase 2, y últimas fichas modificadas. |
 | RF-1104 | Cada índice presenta en su cabecera un botón «+ Nueva…», visible solo para el Catalogador. |
 | RF-1105 | La gestión de usuarios (invitar, asignar rol, revocar) se realiza desde el panel de Supabase, reservado al Superusuario. La aplicación no incluye pantallas de administración de usuarios. |
@@ -225,7 +245,7 @@ aplicación, no un añadido.
 |---|---|
 | RF-1201 | La aplicación es una PWA instalable: manifiesto, iconos y presentación a pantalla completa una vez añadida a la pantalla de inicio. |
 | RF-1202 | El armazón de la aplicación se cachea para que arranque de inmediato en visitas sucesivas. **Los datos no se cachean**: no hay funcionamiento sin conexión. |
-| RF-1203 | No existe alta ni edición sin conexión. Es una decisión deliberada: la edición desconectada es incompatible con el bloqueo de edición (RF-701), que no se puede garantizar contra un cliente que no está hablando con la base de datos. |
+| RF-1203 | No existe alta ni edición sin conexión. Es una decisión deliberada: la edición desconectada es incompatible con el bloqueo de edición (RF-701), que no se puede garantizar contra un cliente que no está hablando con la base de datos. **El motivo ha cambiado** al retirarse el bloqueo (9.1): sigue sin haberla porque no hay resolución de conflictos y la copia local del catálogo es de solo lectura. |
 | RF-1204 | Existe un flujo de **captura rápida** distinto del formulario completo: fotografiar, y rellenar solo el mínimo imprescindible para que la ficha exista (`artista`, `id_catalogacion`, `tipo_obra`, medidas). El resto se completa después desde cualquier dispositivo. |
 | RF-1205 | El flujo de captura rápida es operable con una sola mano y sin teclado físico: campos numéricos con teclado numérico, selecciones con objetivos táctiles amplios y ninguna interacción que dependa de pasar el cursor por encima. |
 | RF-1206 | La cámara se invoca directamente desde el formulario, sin obligar a salir a la aplicación de fotos y volver a elegir el archivo. |
@@ -243,82 +263,175 @@ aplicación, no un añadido.
 
 ## 6. Requisitos no funcionales
 
-Revisados por [ADR-001](decisiones/ADR-001-stack-y-despliegue.md) y
+**Capa histórica**, revisada por [ADR-001](decisiones/ADR-001-stack-y-despliegue.md) y
 [ADR-002](decisiones/ADR-002-almacenamiento-de-imagenes.md), que sustituyen las decisiones de stack de
 los documentos originales.
 
-| Id | Requisito |
-|---|---|
-| RNF-101 | La aplicación es una PWA estática que habla directamente con Supabase: PostgreSQL gestionado, PostgREST como API, Supabase Auth y Supabase Storage. No hay servidor de aplicación propio. |
-| RNF-102 | El frontend se construye con Vite, React y **TypeScript**. Los tipos de las nueve tablas se generan desde el esquema con la CLI de Supabase, no se mantienen a mano: es lo que compensa la pérdida de las validaciones que aportaba un ORM. |
-| RNF-103 | **Revisado por [ADR-005](decisiones/ADR-005-vercel-repo-publico-y-vivo.md).** El frontend se aloja en Vercel, con despliegue desde GitHub Actions al fusionar en `main`. Cloudflare quedó descartado para tráfico de usuarios por los bloqueos de LaLiga en España. |
-| RNF-104 | La plataforma se gestiona como código con Terraform en `infra/`. El esquema de la base de datos y las políticas RLS **no** son Terraform: viven en SQL versionado que aplica la CLI de Supabase. |
-| RNF-105 | La aplicación se presenta en español de España, con zona horaria `Europe/Madrid`. |
-| RNF-106 | La interfaz se diseña **partiendo del móvil**, no adaptándose a él: es el dispositivo del caso de uso principal. |
-| RNF-107 | El pipeline del catálogo impreso sigue siendo Python: un script local que se conecta por `psycopg2` directamente a PostgreSQL, ya que Supabase es PostgreSQL. La elección de TypeScript en el frontend no lo afecta. |
-| RNF-108 | El diseño asume hasta unas 500 obras por fondo: del orden de 5000 tomas, con másters de **2-8 MB como mínimo** cada uno (10-40 GB en total). |
-| RNF-109 | Los datos residen en la Unión Europea: región europea en Supabase, donde vive todo dato personal y de catálogo. Los activos estáticos del frontend (sin datos) se sirven desde la red global de Vercel. |
-| RNF-110 | **Revisado por ADR-005 y la actualización de ADR-002.** Derivadas y miniaturas en Supabase Storage (bucket privado). Los másters van a Backblaze B2 **desde el inicio de la captura real** —con 2-8 MB por toma, el gratuito de Supabase se agota entre la toma 125 y la 500— mediante una función Edge que firma subidas y descargas, porque las credenciales de B2 no pueden viajar en el cliente. |
-| RNF-111 | El acceso a ficheros se concede mediante URL firmada de caducidad corta. Ningún bucket es públicamente legible. |
-| RNF-112 | Los másters se conservan según la regla **3-2-1**: tres copias, dos medios distintos, una fuera del lugar de trabajo. Para las obras con `estado_existencia` Destruida o Perdida, la fotografía es la única prueba que quedará de que existieron. |
-| RNF-113 | Existe un volcado periódico de la base de datos en almacenamiento propio. El tramo gratuito de Supabase no incluye copias de seguridad, y sin ficha las imágenes dejan de ser un catálogo. |
-| RNF-114 | Todo el código y toda la infraestructura viven bajo control de versiones con Git desde el primer día. |
-| RNF-115 | La rama `main` está protegida: no se fusiona sin que la verificación automática pase. `terraform apply` no se ejecuta desde integración continua. |
+Aquí es donde más se nota la falta de filtro de ingeniería: la lista mezcla decisiones de arquitectura
+que gobiernan de verdad con cifras de dimensionado inventadas antes de medir nada y con obviedades que
+no son requisitos. Lo que cada una es, y lo que la implementación midió, está en la columna «Estado».
+
+| Id | Requisito | Estado |
+|---|---|---|
+| RNF-101 | La aplicación es una PWA estática que habla directamente con Supabase: PostgreSQL gestionado, PostgREST como API, Supabase Auth y Supabase Storage. No hay servidor de aplicación propio. | Vigente. Es ADR-001 y lo sostiene todo lo demás. |
+| RNF-102 | El frontend se construye con Vite, React y **TypeScript**. Los tipos de las nueve tablas se generan desde el esquema con la CLI de Supabase, no se mantienen a mano: es lo que compensa la pérdida de las validaciones que aportaba un ORM. | **Revisado.** Vite, React y TypeScript, sí. Los tipos **se escriben a mano** en `app/src/lib/types.ts`: generarlos exige que el proyecto remoto exista y una CLI en el pipeline, y con nueve tablas previstas —tres construidas— el coste no se paga. El fichero avisa de que cualquier cambio en una migración obliga a tocarlo, que es el precio real de la decisión. |
+| RNF-103 | **Revisado por [ADR-005](decisiones/ADR-005-vercel-repo-publico-y-vivo.md).** El frontend se aloja en Vercel, con despliegue desde GitHub Actions al fusionar en `main`. Cloudflare quedó descartado para tráfico de usuarios por los bloqueos de LaLiga en España. | Vigente (ADR-005). |
+| RNF-104 | La plataforma se gestiona como código con Terraform en `infra/`. El esquema de la base de datos y las políticas RLS **no** son Terraform: viven en SQL versionado que aplica la CLI de Supabase. | Vigente, y la frontera se ha respetado: `infra/` no contiene ni una política RLS. |
+| RNF-105 | La aplicación se presenta en español de España, con zona horaria `Europe/Madrid`. | Vigente. |
+| RNF-106 | La interfaz se diseña **partiendo del móvil**, no adaptándose a él: es el dispositivo del caso de uso principal. | Vigente, y es el criterio que más veces ha decidido un diseño: el menú al pie, el editor a pantalla completa, las asas grandes del recorte, la lupa de la esquina. |
+| ~~RNF-107~~ | El pipeline del catálogo impreso sigue siendo Python: un script local que se conecta por `psycopg2` directamente a PostgreSQL, ya que Supabase es PostgreSQL. La elección de TypeScript en el frontend no lo afecta. | **Retirado** (9.2): es un requisito de un producto que está fuera de alcance. |
+| RNF-108 | El diseño asume hasta unas 500 obras por fondo: del orden de 5000 tomas, con másters de **2-8 MB como mínimo** cada uno (10-40 GB en total). | **Revisado** con datos medidos (9.2). El sobre de 2-8 MB por toma no se cumple: los másters reales van de 0,2 a 19 MB. Las 500 obras por fondo siguen siendo una estimación sin comprobar; hoy hay 21 obras y 45 másters. |
+| RNF-109 | Los datos residen en la Unión Europea: región europea en Supabase, donde vive todo dato personal y de catálogo. Los activos estáticos del frontend (sin datos) se sirven desde la red global de Vercel. | Vigente. |
+| RNF-110 | **Revisado por ADR-005 y la actualización de ADR-002.** Derivadas y miniaturas en Supabase Storage (bucket privado). Los másters van a Backblaze B2 **desde el inicio de la captura real** —con 2-8 MB por toma, el gratuito de Supabase se agota entre la toma 125 y la 500— mediante una función Edge que firma subidas y descargas, porque las credenciales de B2 no pueden viajar en el cliente. | Vigente (ADR-002 y ADR-005). |
+| RNF-111 | El acceso a ficheros se concede mediante URL firmada de caducidad corta. Ningún bucket es públicamente legible. | **Revisado.** Toda URL se firma y ningún bucket es legible sin firma, pero «corta» no vale para las miniaturas: se firman a siete días porque la URL es la clave de caché del navegador y refirmarlas en cada visita tiraría todas las imágenes ya descargadas. El motivo está escrito junto a la constante. |
+| RNF-112 | Los másters se conservan según la regla **3-2-1**: tres copias, dos medios distintos, una fuera del lugar de trabajo. Para las obras con `estado_existencia` Destruida o Perdida, la fotografía es la única prueba que quedará de que existieron. | **Revisado** (9.2). Es criterio archivístico, no requisito verificable de la aplicación. Hoy hay dos copias en dos medios —B2 y el espejo local que baja `make db-clone`— y la tercera fuera del lugar de trabajo no existe. |
+| RNF-113 | Existe un volcado periódico de la base de datos en almacenamiento propio. El tramo gratuito de Supabase no incluye copias de seguridad, y sin ficha las imágenes dejan de ser un catálogo. | Pendiente. Hoy el volcado se lanza a mano (`make db-pull`); automatizarlo sigue en pie. |
+| ~~RNF-114~~ | Todo el código y toda la infraestructura viven bajo control de versiones con Git desde el primer día. | **Retirado** (9.2): no es un requisito, es cómo se trabaja. |
+| RNF-115 | La rama `main` está protegida: no se fusiona sin que la verificación automática pase. `terraform apply` no se ejecuta desde integración continua. | Vigente y verificado: la protección de rama está en `infra/github.tf` y exige el check «verificar». |
 
 ---
 
-## 7. Orden de construcción
+## 7. Estado real de construcción
 
-La hoja de ruta original queda obsoleta: sus fases 1 y 2 construían un entorno de Django que ya no se
-usa. Ese trabajo no se pierde del todo — la máquina Ubuntu pasa a ser el almacén de los másters y el
-lugar desde el que se lanzará el pipeline del catálogo impreso.
+La hoja de ruta original quedaba obsoleta por dos motivos: sus fases 1 y 2 construían un entorno de
+Django que no se usa, y las siguientes se marcaron pendientes y nunca se volvieron a mirar mientras se
+construían. Lo que sigue es el estado, no un plan.
 
-| Fase | Contenido | Estado |
+| Área | Estado |
+|---|---|
+| Plataforma como código (Terraform), dominio, alojamiento y almacén de másters | Construido |
+| Verificación automática y despliegue en integración continua | Construido, con filtros de rutas por bloque de trabajo |
+| Políticas RLS, privilegios y su batería de tests | Construido: dieciocho ficheros de test de SQL en verde, y el cierre por omisión avisa si alguien añade una tabla sin política |
+| Esquema: Obras, Imágenes y las tres tablas maestras (tipos de obra, series, lugares) | Construido |
+| Esquema: Exposiciones, Bibliografía, sus dos tablas puente, Propietarios/Instituciones y Archivo/Documentación | **No construido.** Son cuatro de las nueve tablas y las dos puente; nada del catálogo razonado documental existe todavía |
+| Frontend: acceso, listado con filtros y búsqueda, ficha, edición, captura rápida en móvil | Construido |
+| Fotografías: tres niveles generados en el navegador, orden, imagen índice, giro y recorte como dato | Construido |
+| Ficha imprimible en PDF con QR | Construido |
+| Vistas en vivo por WebSocket | Construido para obras e imágenes |
+| Sección «Tablas»: ubicaciones | Construido. Tipos de obra y series, pendientes de pantalla |
+| Papelera | **No construida.** La baja lógica sí está en el esquema y en los *triggers*; lo que falta es la pantalla desde la que ver y restaurar |
+| Bloqueo de edición | **Retirado** (9.1) |
+| Volcados automáticos de la base de datos | Pendiente. Hoy se lanzan a mano |
+
+Un aviso sobre las cifras de este documento y del plan de pruebas: la cabecera del plan sigue diciendo
+«44 asertos en verde» y hoy son cientos. Esa clase de número se queda atrás en cuanto se escribe, y lo
+que vale es la salida de `make verificar`.
+
+## 8. Decisiones tomadas al construir
+
+Lo que gobierna hoy y no estaba en los documentos originales, o estaba de otra manera. Cada decisión
+con consecuencia de arquitectura tiene su ADR; las demás viven comentadas donde se aplican, que es
+donde se leen.
+
+### 8.1 Arquitectura, con ADR propio
+
+| Decisión | Qué cambió |
+|---|---|
+| [ADR-001](decisiones/ADR-001-stack-y-despliegue.md) · PWA estática sobre Supabase | Sustituye Django en la máquina del equipo. Consecuencia que ordena todo lo demás: sin servidor propio, las políticas RLS son el único perímetro |
+| [ADR-002](decisiones/ADR-002-almacenamiento-de-imagenes.md) · Tres niveles por toma, máster fuera de Supabase | El máster nunca se modifica: es el documento de archivo |
+| [ADR-003](decisiones/ADR-003-asignacion-del-identificador.md) · El identificador lo asigna la base | Resuelve DP-01. *Trigger* con cerrojo por fondo: dos catalogadores a la vez no obtienen el mismo número |
+| [ADR-004](decisiones/ADR-004-fecha-estructurada.md) · La fecha vive estructurada | `fecha_ejecucion` pasa a columna generada. Revisa RF-207 y elimina `fecha_orden` |
+| [ADR-005](decisiones/ADR-005-vercel-repo-publico-y-vivo.md) · Vercel, repositorio público | Cloudflare descartado por los bloqueos de LaLiga en España |
+| [ADR-006](decisiones/ADR-006-ubicacion-como-arbol-de-lugares.md) · La ubicación es un árbol de lugares | Revisa la convención de notación del esquema de campos. Establece que la clave de una tabla maestra no es su nombre |
+| [ADR-007](decisiones/ADR-007-claves-sustitutas-en-las-tablas-maestras.md) · Clave sustituta en toda tabla maestra | Retira la deuda que ADR-006 dejó escrita: tipos de obra y series ya la tienen; el fondo, que hoy es un enumerado, va en una segunda entrega |
+
+### 8.2 Decisiones de interfaz que revisan un requisito
+
+| Requisito histórico | Lo que se construyó, y por qué |
+|---|---|
+| RF-1101 · barra superior fija con siete secciones | **Menú al pie con cuatro pestañas** (Obras, Añadir, Tablas, Mi perfil). Siete secciones eran las nueve tablas del esquema, y cuatro de ellas no existen. Al pie porque el pulgar llega, que es RNF-106 aplicado en vez de citado |
+| RF-601 · dos índices, de identificadores y visual en mosaico | **Un solo listado**, con la miniatura en cada fila. Dos índices sobre los mismos datos son dos sitios donde arreglar el mismo fallo |
+| RF-602, RF-603 · filtros principales visibles y avanzados colapsados | **Una sola hoja con todos**, y un botón de embudo que dice cuántos están activos. La distinción principal/avanzado era una jerarquía inventada; lo que de verdad hacía falta era ver de un vistazo que el listado está filtrado |
+| RF-604 · paginación y contador «mostrando X–Y de Z» | **El catálogo entero viaja al dispositivo** y se filtra en local, así que no hay páginas que numerar. El contador se queda («5 obras»), porque un listado reducido que parece completo es cómo se pierde una ficha |
+| RF-1004 · vista de impresión con `@media print` | **PDF generado en el navegador** con pdf-lib, tamaño A5. `@media print` deja el resultado a merced del diálogo de impresión de cada móvil; un PDF se adjunta a la obra, se envía y se archiva igual en todas partes |
+| RF-1002 · la ficha imprimible lleva `ubicacion_fisica` | Lleva la rama del árbol de lugares, que es lo que ese campo ha pasado a ser (ADR-006) |
+| RF-311 | No estaba en los originales: la ficha se recorre como cola del listado del que se llegó. Salió de usar la aplicación, no de especificarla |
+
+### 8.3 Decisiones que los originales no contemplaban
+
+- **El catálogo se copia al dispositivo** y el listado se pinta desde esa copia, así que filtrar,
+  ordenar y buscar son inmediatos y el listado abre sin esperar. La copia se borra al cerrar sesión:
+  el móvil puede ser compartido.
+- **El giro y el recorte de una fotografía se guardan como dato**, no como fichero nuevo, y el máster
+  no se toca. Lleva a que la sugerencia de recorte sea posible, y a que volver al original completo
+  sea siempre posible.
+- **Los errores de regla los redacta la base de datos**, en español y con su pista de qué hacer antes,
+  y la interfaz los muestra tal cual. Una segunda copia de la regla en el cliente es una regla que se
+  queda atrás.
+- **El despliegue de un cambio de esquema es en dos fases** cuando retira una columna en uso: el
+  frontend viejo corre unos segundos contra el esquema nuevo. Por eso las columnas de texto que
+  sustituyen ADR-006 y ADR-007 siguen ahí.
+- **Los identificadores de catalogación y las rutas ya impresas son legado y no se tocan**: `/obra/:id`
+  se mantiene para siempre como redirección porque está en códigos QR pegados a obras reales.
+
+## 9. Retirado: sobreingeniería y requisitos superfluos
+
+Los requisitos históricos se escribieron para un equipo, con nueve tablas y un volumen que todavía no
+existe. Lo que sigue se retira: sigue escrito y tachado en su tabla, porque la única constancia de por
+qué la aplicación no lo tiene es el propio requisito.
+
+### 9.1 Sobreingeniería
+
+| Requisito | Qué pedía | Por qué se retira |
 |---|---|---|
-| 1 | Infraestructura como código: proyecto de Supabase, buckets, Pages y repositorio | Completada |
-| 2 | Verificación automática en integración continua | Completada |
-| 3 | Esquema en SQL: las nueve tablas, más trazabilidad y papelera, como migraciones versionadas | **Siguiente** |
-| 4 | **Políticas RLS y sus tests.** Antes de cualquier interfaz: es el perímetro de seguridad | Pendiente |
-| 5 | Armazón del frontend, autenticación y flujo de captura rápida en móvil | Pendiente |
-| 6 | Ficha de obra completa, índices y búsqueda | Pendiente |
-| 7 | Subida de imágenes en tres niveles y ficha imprimible con QR | Pendiente |
-| 8 | Papelera y bloqueo de edición con su *trigger* | Pendiente |
-| 9 | **Másters a Backblaze B2**: función Edge de firmas, bucket y flujo de subida | **Completada** — bucket y clave sin borrado en Terraform; MinIO como B2 local |
-| 10 | Dominio propio (`catalogo.ruizcampins.com`, solo-DNS hacia Vercel) | **Completada** en Terraform; se activa con el `apply` |
-| 11 | Volcados automáticos de la base de datos | Pendiente |
+| ~~RF-701~~ a ~~RF-708~~ · bloqueo de edición | Bloqueo por ficha, con caducidad por inactividad, quién la tiene abierta, desbloqueo forzado y un *trigger* que rechaza la escritura ajena | Ocho requisitos, una tabla o unas columnas, un *trigger* y una pantalla, para un catálogo que edita una persona. El conflicto que evita se resuelve hoy con que un formulario en edición no se refresca por eventos ajenos (RF-1303), y si algún día hay dos manos, lo honesto es avisar de que el dato ha cambiado bajo el formulario, no impedir abrirlo. Arrastraba además una consecuencia grande: RF-1203 prohibía la edición sin conexión *por el bloqueo*. La prohibición se mantiene, por otro motivo — no hay resolución de conflictos y la copia local es de lectura |
+| ~~RF-601~~ · dos índices de obras | Un índice de identificadores y otro visual en mosaico | Un listado con miniatura cubre los dos. Ver 8.2 |
+| ~~RF-603~~ · filtros avanzados colapsados | Segunda fila de filtros, plegada | La jerarquía entre filtros era inventada. Ver 8.2 |
+| ~~RF-1102~~ · migas de pan con jerarquía completa | `Inicio > Obras > AR-0001` en cada página | En una pantalla de móvil, tres niveles de migas gastan la línea que necesita el título de la obra. Se navega con el botón «atrás», que además vuelve al listado con sus filtros puestos (RF-608) |
+| ~~RF-1004~~ · `@media print` | Vista de impresión con CSS | Sustituido por un PDF. Ver 8.2 |
+| ~~RF-413~~ · tres niveles para el archivo digitalizado | Miniatura de la primera página del PDF, derivada y máster para cada documento | Generar la miniatura de la primera página de un PDF en el navegador es trabajo real, para una tabla que no existe y un caso que nadie ha pedido. Cuando exista Archivo/Documentación se decidirá con el caso delante |
+| ~~RF-507~~ · exportación a `.bib` | La tabla Bibliografía exportable a biblatex | Requisito del catálogo impreso, que está fuera de alcance, sobre una tabla que no existe |
 
-La fase 4 va deliberadamente antes que cualquier pantalla. En el stack anterior los permisos podían
-dejarse para después porque el servidor negaba por omisión; aquí, una tabla sin política es una tabla
-abierta.
+### 9.2 Requisitos no funcionales superfluos o mal planteados
 
-## 8. Fuera de alcance
+| Requisito | Por qué |
+|---|---|
+| ~~RNF-107~~ · el pipeline del catálogo impreso es Python | Es un requisito de un producto aparcado y fuera de alcance. Pasa al apartado 10, donde ya está el producto |
+| ~~RNF-114~~ · todo bajo control de versiones desde el primer día | No es un requisito verificable, es cómo se trabaja. Ningún test puede fallar por esto y ninguna decisión depende de ello |
+| RNF-108 · 500 obras por fondo, másters de 2-8 MB | Se conserva **como supuesto de dimensionado y no como requisito**, y con la cifra corregida: los másters reales van de 0,2 a 19 MB, así que el sobre estaba mal por los dos extremos. Importa porque de él salió la decisión de llevar los másters a B2 desde el principio, y esa sigue siendo buena por el extremo alto |
+| RNF-112 · regla 3-2-1 | Se conserva **como criterio archivístico**. Hoy hay dos copias en dos medios; la tercera fuera del lugar de trabajo no existe, y decir que el requisito está cumplido sería falso |
+
+### 9.3 Lo que NO se retira, aunque no esté construido
+
+Para que la distinción quede clara: las cuatro tablas que faltan —Exposiciones, Bibliografía,
+Propietarios/Instituciones, Archivo/Documentación— y la papelera **no son sobreingeniería**. Son el
+catálogo razonado, que es la mitad del propósito del proyecto (apartado 1), y la papelera es la
+contrapartida de que nada se borre nunca. Están sin construir, que es distinto de estar de más.
+
+## 10. Fuera de alcance
 
 - **Catálogo online.** Web aparte, alimentada por exportación periódica, no conectada a esta base de
   datos en vivo. Aparcado.
 - **Catálogo impreso.** Pipeline base de datos → script Python/Jinja2 → `.tex` → PDF con biblatex,
-  lanzado bajo demanda sobre fichas marcadas como publicables. Aparcado.
+  lanzado bajo demanda sobre fichas marcadas como publicables. Aparcado. Con él quedan fuera su
+  elección de lenguaje (~~RNF-107~~) y la exportación a `.bib` (~~RF-507~~), que eran requisitos de
+  este producto colados en la especificación de la aplicación.
 - **Purga real desde la papelera**, ni siquiera para el Superusuario (RF-907).
 - **Detección automática de duplicados** (RF-909).
 - **Restricción de visibilidad por campo** según rol: el Lector ve todos los campos (RF-105).
 - **Funcionamiento sin conexión.** La PWA es instalable y cachea su armazón, pero no los datos, y no
   admite alta ni edición desconectada (RF-1202, RF-1203).
 - **Pantallas de administración de usuarios.** Se usa el panel de Supabase (RF-1105).
+- **Bloqueo de edición.** Retirado por sobreingeniería, no aparcado: ver 9.1. Si algún día editan dos
+  personas a la vez, la respuesta prevista es avisar de que el dato ha cambiado bajo el formulario.
 
-## 9. Decisiones pendientes
+## 11. Decisiones pendientes
 
-Cuestiones que los documentos originales no resuelven y que bloquean o condicionan la construcción.
-El detalle del razonamiento está en
+Cuestiones que los documentos originales no resuelven. Varias se resolvieron al construir sin
+necesidad de un ADR —una decisión que no tiene alternativas defendibles no necesita documento— y otras
+han quedado sin objeto porque lo que condicionaban se ha retirado. Se dejan tachadas en vez de
+borradas, por lo mismo que los requisitos. El detalle del razonamiento original está en
 [`revision/incidencias-detectadas.md`](revision/incidencias-detectadas.md).
 
-| Id | Decisión | Bloquea |
+| Id | Decisión | Estado |
 |---|---|---|
-| ~~DP-01~~ | **Resuelta** en [ADR-003](decisiones/ADR-003-asignacion-del-identificador.md): lo asigna la base de datos con un *trigger* y un cerrojo por fondo | — |
-| DP-02 | Formato de `id_imagen`, que el esquema no especifica | Fase 3 |
-| DP-03 | Si `clave_bibtex` debe seguir siendo clave primaria inmutable o pasar a campo único editable con clave técnica detrás | Fase 3 |
-| DP-04 | Taxonomía cerrada de `agrupacion` y de `etapa`, cuando haya volumen suficiente de obra catalogada | Nada por ahora: texto libre hasta entonces |
-| DP-05 | Si el catálogo online será una web por autor o conjunta | Nada: producto aparcado |
-| DP-06 | Convención definitiva de nomenclatura de archivos de imagen, ahora con tres niveles por toma | Fase 7 |
-| DP-07 | Dónde se almacena el estado del bloqueo de edición: columnas en la propia tabla o tabla aparte. La imposición mediante *trigger* ya está decidida (RF-708); lo que falta es dónde vive el dato | Fase 8 |
-| DP-08 | Si los campos Sí/No de fase 1 (`tiene_marco`, `requiere_restauracion`, `requiere_reenmarcacion`) necesitan un tercer valor «Sin revisar», por coherencia con RF-205 | Fase 3 |
-| ~~DP-10~~ | **Resuelta**: código bajo licencia MIT (`LICENSE`), la misma que la otra aplicación del equipo. Las obras del catálogo quedan explícitamente fuera de la licencia — la distinción está escrita en el README | — |
-| DP-09 | **Formato del máster fotográfico**: JPEG a máxima calidad, RAW o TIFF, dentro del sobre fijado de 2-8 MB mínimo por toma. Criterio archivístico, no de infraestructura. Debe decidirse **antes de fotografiar en serie**: reconvertir 5000 archivos después no recupera lo que el JPEG ya descartó | El trabajo de campo, y dimensiona B2 |
+| ~~DP-01~~ | Quién asigna `id_catalogacion` | **Resuelta** en [ADR-003](decisiones/ADR-003-asignacion-del-identificador.md): la base, con un *trigger* y un cerrojo por fondo |
+| ~~DP-02~~ | Formato de `id_imagen` | **Resuelta al construir**, sin ADR porque no lo necesitaba: `<id_catalogacion>_v<n>`, correlativo por obra, asignado por la base con su cerrojo igual que `id_catalogacion` y con una restricción que comprueba el formato |
+| ~~DP-06~~ | Nomenclatura de los ficheros de imagen con tres niveles | **Resuelta al construir**: `<id_catalogacion>/<id_catalogacion>_<sufijo>_<nivel>.webp`, con `min`, `der` y `master` como niveles. El sufijo aleatorio evita que sustituir una toma reutilice una ruta que algún caché ya tiene |
+| ~~DP-07~~ | Dónde vive el estado del bloqueo de edición | **Sin objeto**: el bloqueo se retira (9.1) |
+| ~~DP-10~~ | Licencia | **Resuelta**: MIT (`LICENSE`), la misma que la otra aplicación del equipo. Las obras del catálogo quedan explícitamente fuera, y la distinción está escrita en el README |
+| DP-08 | Si los campos Sí/No de fase 1 (`tiene_marco`, `requiere_restauracion`, `requiere_reenmarcacion`) necesitan un tercer valor «Sin revisar», por coherencia con RF-205 | Abierta, y **decidible cuando esos campos se construyan**: hoy no existen |
+| DP-09 | **Formato del máster fotográfico**: JPEG a máxima calidad, RAW o TIFF. Criterio archivístico, no de infraestructura. Debe decidirse **antes de fotografiar en serie**: reconvertir miles de archivos después no recupera lo que el JPEG ya descartó | Abierta, y es la única que bloquea trabajo de campo |
+| DP-03 | Si `clave_bibtex` sigue siendo clave primaria o pasa a campo único con clave técnica detrás | **Ya decidida por ADR-007** en lo esencial: toda tabla maestra lleva clave sustituta. Queda por decidir solo cuando exista Bibliografía |
+| DP-04 | Taxonomía cerrada de `agrupacion` y de `etapa` | Abierta y sin prisa: texto libre hasta que haya volumen. Los campos todavía no existen |
+| DP-05 | Si el catálogo online será una web por autor o conjunta | **Retirada de esta lista**: es una decisión de un producto fuera de alcance, y no bloquea nada de la aplicación |
