@@ -248,6 +248,21 @@ export function ArtworkPhotosPage() {
     try {
       const stored = editFromColumns(row)
       const source = await editSource(row)
+
+      // A straightened photograph cannot be re-edited from the consultation copy.
+      // That copy IS the straightened image, so there is no way to express a framing
+      // over the master starting from it, and `composeEdits` refuses perspective for
+      // exactly that reason — it would throw here. Saying so is better than the
+      // error it would produce two taps later.
+      if (!source.fromMaster && stored.corners) {
+        setError(
+          'Esta fotografía tiene la perspectiva corregida y no se ha podido descargar el máster. ' +
+            'Reencuadrarla desde la copia de consulta deformaría la imagen otra vez, así que hay que ' +
+            'esperar a tener mejor cobertura. El máster de archivo está intacto.',
+        )
+        return
+      }
+
       setEditing({
         row,
         source: source.blob,
