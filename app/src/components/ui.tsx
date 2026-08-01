@@ -182,6 +182,47 @@ export function CropIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+/** A painting photographed from one side: the rectangle comes out a trapezium. */
+export function PerspectiveIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M5 4.5 19 7v10L5 19.5z" />
+    </svg>
+  )
+}
+
+/** The detector doing the work for you: a wand, with its spark. */
+export function WandIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M4 20 15 9" />
+      <path d="m17.5 6.5-2-2" />
+      <path d="M18 3v3M21 8h-3M19.5 11.5 21 13" />
+    </svg>
+  )
+}
+
+/** Back to the beginning: an arrow returning to where everything started. */
+export function RevertIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M5 4v16" />
+      <path d="M20 12H10" />
+      <path d="M14 7l-5 5 5 5" />
+    </svg>
+  )
+}
+
+/** Four arrows out of a centre: drag me in any direction. */
+export function MoveIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M12 3v18M3 12h18" />
+      <path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" />
+    </svg>
+  )
+}
+
 export function EllipsisIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>

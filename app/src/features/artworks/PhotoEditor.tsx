@@ -36,11 +36,30 @@ import {
   type EdgeSuggestion,
 } from '../../lib/edgeDetection'
 import { suggestArtworkCrop } from '../../lib/imageEdges'
-import { CropIcon, NoIcon, RotateLeftIcon, RotateRightIcon } from '../../components/ui'
+import {
+  CropIcon,
+  ImageIcon,
+  MoveIcon,
+  NoIcon,
+  PerspectiveIcon,
+  RevertIcon,
+  RotateLeftIcon,
+  RotateRightIcon,
+  WandIcon,
+} from '../../components/ui'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
 const KEY_STEP = 0.02
+
+/** An arrow key as a step; nothing for any other key. */
+function arrowStep(key: string): [number, number] | null {
+  if (key === 'ArrowLeft') return [-KEY_STEP, 0]
+  if (key === 'ArrowRight') return [KEY_STEP, 0]
+  if (key === 'ArrowUp') return [0, -KEY_STEP]
+  if (key === 'ArrowDown') return [0, KEY_STEP]
+  return null
+}
 
 /** Closest and farthest the photograph can be zoomed on the working surface. */
 const MIN_ZOOM = 1
@@ -74,6 +93,18 @@ type Analysis =
  * refusing on that is refusing out of ignorance.
  */
 const SUGGESTABLE_SHOTS: ReadonlySet<ShotTypeValue> = new Set(['GENERAL', 'FRAME', 'OTHER'])
+
+/**
+ * The three states of the framing, which is a single axis: the whole photograph, an
+ * upright rectangle, or the four free corners of a painting shot at an angle.
+ */
+type Framing = 'NONE' | 'RECTANGLE' | 'PERSPECTIVE'
+
+const FRAMINGS: { value: Framing; label: string; Icon: typeof ImageIcon }[] = [
+  { value: 'NONE', label: 'Sin recorte', Icon: ImageIcon },
+  { value: 'RECTANGLE', label: 'Rectángulo', Icon: CropIcon },
+  { value: 'PERSPECTIVE', label: 'Perspectiva', Icon: PerspectiveIcon },
+]
 
 const CORNERS: { corner: Corner; label: string }[] = [
   { corner: 'nw', label: 'esquina superior izquierda' },
@@ -119,6 +150,11 @@ const CORNERS: { corner: Corner; label: string }[] = [
  *     cataloger did not ask for arrives as an opinion about her framing.
  *     What it does is PRELOAD the rectangle. It never applies: what leaves the
  *     editor is always what she confirmed with «Aplicar».
+ *  8. One drag is one meaning, whatever it is made of: on a handle it adjusts that
+ *     handle, anywhere else it pans the photograph — one finger, the mouse or a pen
+ *     alike. Two fingers are the pinch, and the pinch has precedence over everything:
+ *     they land one after the other and often on top of a handle, and a corner that
+ *     moves while the photograph zooms is a corner nobody placed.
  *
  * The suggestion is stored, and not only drawn, because with a framed painting
  * there are two candidates — the frame and the canvas — and switching between
@@ -440,17 +476,36 @@ export function PhotoEditor({
   const suggestionMakesSense = shotType == null || SUGGESTABLE_SHOTS.has(shotType)
 
   /**
-   * Turns straightening on and off.
+   * The framing is ONE axis with three states, and naming it that way is what makes
+   * the footer readable.
    *
-   * Entering starts from the rectangle that is on screen, so asking for perspective
-   * never loses the framing already drawn. Leaving keeps the bounding box of the
-   * quadrilateral, which is what the crop would have been — measured, that box is
-   * very close to what the cataloger draws by hand — so the way back is not a way
-   * to lose work either.
+   * It used to be two separate switches —«Recortar/Quitar recorte» and «Corregir
+   * perspectiva/Volver al rectángulo»— sitting in different rows with a third button
+   * in between, each flipping its own label when pressed. Two controls for one
+   * decision, and a label that never says whether it describes the state or the
+   * action: «Quitar recorte» reads both ways. As a single selector the state is what
+   * is shown and the labels stop moving.
    */
-  function togglePerspective() {
-    if (corners) {
-      setCrop(clampCrop(cornersBoundingBox(corners)))
+  const framing: Framing = corners ? 'PERSPECTIVE' : crop ? 'RECTANGLE' : 'NONE'
+
+  /**
+   * Moves the framing to one of its three states.
+   *
+   * Entering the quadrilateral starts from the rectangle that is on screen, so asking
+   * for perspective never loses the framing already drawn. Leaving it keeps the
+   * bounding box of the quadrilateral, which is what the crop would have been —
+   * measured, that box is very close to what the cataloger draws by hand — so the way
+   * back is not a way to lose work either.
+   */
+  function setFraming(next: Framing) {
+    if (next === framing) return
+    if (next === 'NONE') {
+      setCrop(null)
+      setCorners(null)
+      return
+    }
+    if (next === 'RECTANGLE') {
+      setCrop(corners ? clampCrop(cornersBoundingBox(corners)) : (crop ?? centeredCrop()))
       setCorners(null)
       return
     }
@@ -552,6 +607,11 @@ export function PhotoEditor({
   }
 
   function startDrag(e: React.PointerEvent, what: Corner | 'move') {
+    // Another pointer already on the surface means the hand is making a pinch, not
+    // adjusting a corner: the two fingers of a pinch land one after the other and
+    // often on top of a handle, and letting the second one grab it is what made a
+    // zoom near a corner drag that corner instead. The pinch has precedence, always.
+    if (touchesRef.current.size > 1) return
     const current = cropRef.current
     const area = areaRef.current?.getBoundingClientRect()
     if (!area || area.width === 0 || area.height === 0) return
@@ -588,22 +648,54 @@ export function PhotoEditor({
   }
 
   function onHandleKeyDown(e: React.KeyboardEvent, corner: Corner) {
-    const step =
-      e.key === 'ArrowLeft'
-        ? [-KEY_STEP, 0]
-        : e.key === 'ArrowRight'
-          ? [KEY_STEP, 0]
-          : e.key === 'ArrowUp'
-            ? [0, -KEY_STEP]
-            : e.key === 'ArrowDown'
-              ? [0, KEY_STEP]
-              : null
+    const step = arrowStep(e.key)
     if (!step) return
     e.preventDefault()
-    nudge(corner, step[0] ?? 0, step[1] ?? 0)
+    nudge(corner, step[0], step[1])
     // The loupe is as useful with the keyboard as with a finger: a nudge of two
     // percent is invisible on a photo shrunk to fit the screen.
     setNudged(corner)
+  }
+
+  /**
+   * The arrow keys on the middle handle move the whole rectangle.
+   *
+   * Same rule as the corners: a function cannot be reachable by gesture only. No
+   * loupe here — moving the frame is not aiming at a pixel.
+   */
+  function onMoveKeyDown(e: React.KeyboardEvent) {
+    const step = arrowStep(e.key)
+    const current = cropRef.current
+    if (!step || !current) return
+    e.preventDefault()
+    setCrop(moveCrop(current, step[0], step[1]))
+  }
+
+  /**
+   * ONE line of help, the one that matters right now.
+   *
+   * There used to be two paragraphs always on screen, 474 characters between them on
+   * a phone, saying overlapping things — both explained dragging the corners — and
+   * together they cost more vertical room than the row of buttons they explained.
+   * Ordered by how much the cataloger needs it: what she cannot do comes before what
+   * the detector is doing, and that before how to drag.
+   */
+  function helpText(): string {
+    if (!canRestoreOriginal)
+      return 'Sobre la copia de consulta puedes girar y recortar más, pero no ensanchar el recorte, corregir la perspectiva ni volver al original: lo que quedó fuera no está en esta copia.'
+    if (analysis.status === 'working') return 'Analizando la fotografía para reconocer el borde del cuadro…'
+    if (analysis.status === 'none')
+      return 'No he reconocido el borde del cuadro: arrastra las esquinas para recortarlo a mano.'
+    if (analysis.status === 'found' && analysis.suggestion.inner)
+      return 'Recorte sugerido: se han reconocido dos bordes. Elige uno y ajusta las esquinas.'
+    if (analysis.status === 'found') return 'Recorte sugerido: ajusta las esquinas si hace falta.'
+    if (!suggestionMakesSense && framing !== 'NONE')
+      return `En una toma de tipo «${SHOT_TYPE_LABEL[shotType!]}» no hay borde de cuadro que reconocer: ajusta el encuadre a mano.`
+    if (framing === 'PERSPECTIVE')
+      return 'Perspectiva: arrastra las cuatro esquinas de la obra. Para acercarte, pellizca o usa la rueda.'
+    if (framing === 'RECTANGLE')
+      return 'Rectángulo: arrastra las esquinas, o el asa del centro para moverlo entero. Se deshace cuando quieras.'
+    return 'Sin recorte: se guarda la fotografía entera. Un cuadro tomado de lado se endereza con Perspectiva.'
   }
 
   const rotated = rotatedSize(natural, rotation)
@@ -747,12 +839,17 @@ export function PhotoEditor({
    * once, one over the other.
    */
   /**
-   * Pointers down on the working surface, so two of them can be told from one.
+   * Every pointer down on the working surface, recorded in the CAPTURE phase.
    *
-   * Two fingers are the pinch and the pan, and they WIN over a handle drag in
-   * progress: the second finger landing means the intent changed, and finishing the
-   * handle drag while the photograph moves under it would leave the corner somewhere
-   * nobody chose.
+   * The capture phase is the whole point and not a detail. A handle claims its gesture
+   * by stopping the event, so a finger landing on one never reached this bookkeeping:
+   * the surface counted one pointer while the hand had two, the count never got to two,
+   * and the rule that gives the pinch precedence could not fire. That is exactly the
+   * zoom near a corner that dragged the corner instead of zooming.
+   *
+   * Two fingers WIN over any handle drag in progress: the second finger landing means
+   * the intent changed, and finishing the handle drag while the photograph moves under
+   * it would leave the corner somewhere nobody chose.
    */
   const touchesRef = useRef(new Map<number, { x: number; y: number }>())
   const pinchRef = useRef<{ distance: number; centre: { x: number; y: number } } | null>(null)
@@ -767,6 +864,22 @@ export function PhotoEditor({
    */
   const pinchFrameRef = useRef<number | null>(null)
 
+  /**
+   * The pan in progress: ONE pointer dragging, whatever it is made of.
+   *
+   * One finger and the mouse do the same thing here, and that is deliberate. Reserving
+   * the pan for two fingers left the single finger doing nothing over most of the
+   * photograph, and the mouse cannot make a pinch at all. So the plain drag carries the
+   * pan on every device, anywhere that is not a handle — reaching the surface already
+   * means nothing claimed the gesture, since `startDrag` and the preview panel stop the
+   * event on the things that do.
+   *
+   * The pointer is captured, and that is not decoration: a pan that reaches the edge of
+   * the surface —which is exactly what panning is for— would otherwise stop dead the
+   * moment the finger or the cursor leaves it.
+   */
+  const panRef = useRef<{ pointer: number; x: number; y: number } | null>(null)
+
   /** Two fingers: the distance between them and their midpoint, in surface pixels. */
   function pinchOf(frame: DOMRect) {
     const points = [...touchesRef.current.values()]
@@ -778,18 +891,53 @@ export function PhotoEditor({
     }
   }
 
-  function onSurfacePointerDown(e: React.PointerEvent) {
+  /**
+   * Counts the pointers, and hands the gesture to the pinch as soon as there are two.
+   *
+   * Registered on the capture phase, so it runs BEFORE the handles and the preview
+   * panel and sees every pointer even though those stop the event.
+   */
+  function trackPointer(e: React.PointerEvent) {
     touchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (touchesRef.current.size !== 2) return
     const frame = frameRef.current?.getBoundingClientRect()
     if (!frame) return
-    // The gesture changed hands: stop dragging whatever handle was being dragged.
+    // The gesture changed hands: whatever was being dragged or panned stops here.
+    // `startRef` is cleared on the spot and not through the state, because the state
+    // only lands on the next render and a move arriving before it would still drag the
+    // corner — a corner that jumps as the second finger lands is the confusion this
+    // rule exists to remove.
     setDragging(null)
     startRef.current = null
+    panRef.current = null
     pinchRef.current = pinchOf(frame)
   }
 
+  /**
+   * Starts the pan. Bubble phase on purpose: getting here means no handle and no panel
+   * claimed the gesture, so the surface is free to take it.
+   */
+  function startPan(e: React.PointerEvent) {
+    // Left button only: the right one opens the menu and the middle one pastes on some
+    // systems, and neither should slide the photograph.
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    // A second pointer means a pinch is being made, and the pinch has its own pan.
+    if (touchesRef.current.size !== 1) return
+    panRef.current = { pointer: e.pointerId, x: e.clientX, y: e.clientY }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
   function onSurfacePointerMove(e: React.PointerEvent) {
+    const pan = panRef.current
+    if (pan && e.pointerId === pan.pointer) {
+      // Read from the event before handing anything to `setView`: the update runs
+      // later and the deltas have to be the ones of THIS move.
+      const dx = e.clientX - pan.x
+      const dy = e.clientY - pan.y
+      panRef.current = { pointer: pan.pointer, x: e.clientX, y: e.clientY }
+      setView((state) => clampPan({ zoom: state.zoom, x: state.x + dx, y: state.y + dy }))
+      return
+    }
     if (!touchesRef.current.has(e.pointerId)) return
     touchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (!pinchRef.current) return
@@ -815,15 +963,36 @@ export function PhotoEditor({
     })
   }
 
-  function onSurfacePointerUp(e: React.PointerEvent) {
-    touchesRef.current.delete(e.pointerId)
-    if (touchesRef.current.size >= 2) return
-    pinchRef.current = null
-    if (pinchFrameRef.current !== null) {
-      cancelAnimationFrame(pinchFrameRef.current)
-      pinchFrameRef.current = null
+  /**
+   * The end of a pointer, heard on `window` and not on the surface.
+   *
+   * On the surface it is missed whenever the finger lifts outside it —over the buttons,
+   * past the edge of the screen— and a pointer left in the map counts forever: from
+   * then on every gesture would look like a pinch and no handle would move again for
+   * the rest of the session. Refs only, so it registers once.
+   */
+  useEffect(() => {
+    const end = (e: PointerEvent) => {
+      touchesRef.current.delete(e.pointerId)
+      if (panRef.current?.pointer === e.pointerId) panRef.current = null
+      if (touchesRef.current.size >= 2) return
+      pinchRef.current = null
+      if (pinchFrameRef.current !== null) {
+        cancelAnimationFrame(pinchFrameRef.current)
+        pinchFrameRef.current = null
+      }
+      // One finger left of a pinch: it takes the pan over from where it IS, so lifting
+      // one finger neither stops the gesture dead nor makes the photograph jump.
+      const [remaining] = [...touchesRef.current.entries()]
+      if (remaining) panRef.current = { pointer: remaining[0], ...remaining[1] }
     }
-  }
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+    return () => {
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+    }
+  }, [])
 
   /**
    * The wheel zooms, which is what a mouse and a trackpad both do here. `passive:
@@ -928,15 +1097,18 @@ export function PhotoEditor({
       </div>
 
       {/* Working surface. `touch-none` on the whole area: the editor covers the
-          screen and nothing here should scroll or zoom the page underneath. */}
+          screen and nothing here should scroll or zoom the page underneath.
+          `select-none` and the grabbing cursor are for the mouse pan: without the
+          first, a drag paints a text selection over the photograph — and the pointer
+          down is deliberately NOT default-prevented, because that also suppresses the
+          double click that goes back to the whole photograph. */}
       <div
         ref={frameRef}
-        onPointerDown={onSurfacePointerDown}
+        onPointerDownCapture={trackPointer}
+        onPointerDown={startPan}
         onPointerMove={onSurfacePointerMove}
-        onPointerUp={onSurfacePointerUp}
-        onPointerCancel={onSurfacePointerUp}
         onDoubleClick={resetView}
-        className="relative min-h-0 flex-1 touch-none overflow-hidden"
+        className="relative min-h-0 flex-1 cursor-grab touch-none select-none overflow-hidden active:cursor-grabbing"
       >
         {url && (
           <div
@@ -1075,14 +1247,14 @@ export function PhotoEditor({
                   }}
                 />
 
-                {/* The rectangle itself: dragging inside it moves the frame. */}
+                {/* The rectangle itself is only drawn: a drag inside it pans the
+                    photograph, like anywhere else on the surface. That is where the
+                    pan is needed most —zoomed on a corner the rectangle covers the
+                    whole screen and there is no free background left to grab— and what
+                    moves the frame is the handle in the middle. */}
                 <div
-                  role="button"
-                  tabIndex={-1}
-                  aria-label="Mover el recorte"
-                  onPointerDown={(e) => startDrag(e, 'move')}
-                  onContextMenu={(e) => e.preventDefault()}
-                  className="absolute touch-none border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.6)]"
+                  aria-hidden
+                  className="pointer-events-none absolute border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.6)]"
                   style={{
                     left: `${crop.x * 100}%`,
                     top: `${crop.y * 100}%`,
@@ -1093,6 +1265,35 @@ export function PhotoEditor({
                     borderWidth: `${2 / view.zoom}px`,
                   }}
                 />
+
+                {/* The handle in the middle, which moves the whole rectangle. It is
+                    drawn BEFORE the corners on purpose: with the same z-index the
+                    later element wins the gesture where they overlap, and on a small
+                    crop the corners have to keep winning — they are the finer
+                    adjustment, and the middle one is reachable anywhere inside. */}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Mover el recorte"
+                  onPointerDown={(e) => startDrag(e, 'move')}
+                  onKeyDown={onMoveKeyDown}
+                  onContextMenu={(e) => e.preventDefault()}
+                  className="absolute z-20 flex h-11 w-11 touch-none select-none items-center justify-center"
+                  style={{
+                    left: `${(crop.x + crop.width / 2) * 100}%`,
+                    top: `${(crop.y + crop.height / 2) * 100}%`,
+                    transform: `translate(-50%, -50%) scale(${1 / view.zoom})`,
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    className={`flex items-center justify-center rounded-full border-2 border-stone-900 bg-white text-stone-900 ${
+                      dragging === 'move' ? 'h-8 w-8' : 'h-7 w-7'
+                    }`}
+                  >
+                    <MoveIcon className="h-4 w-4" />
+                  </span>
+                </span>
 
                 {CORNERS.map(({ corner, label }) => {
                   const point = cornerPoint(crop, corner)
@@ -1202,170 +1403,180 @@ export function PhotoEditor({
         )}
       </div>
 
-      {/* Controls at the bottom, within reach of the thumb. */}
+      {/* Controls at the bottom, within reach of the thumb — and centred as one
+          block. The width is capped at the phone the editor is designed for, so on a
+          laptop the row of tools does not drift to one edge while «Aplicar» stretches
+          to the other: the controls stay together under the middle of the photograph,
+          which is where the eye already is. On a phone the cap is wider than the
+          screen and nothing changes. */}
       <div
-        className="space-y-2 p-3"
+        className="mx-auto w-full max-w-md space-y-2 p-3"
         style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
       >
         {note && (
           <p className="rounded-lg bg-amber-100 p-2 text-xs text-amber-900">{note}</p>
         )}
 
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => rotate(-90)}
-            className="btn min-h-[3.25rem] flex-col gap-0.5 bg-white/10 text-xs text-white"
-          >
-            <RotateLeftIcon className="h-6 w-6" />
-            Rotar a la izquierda
-          </button>
-          <button
-            type="button"
-            onClick={() => rotate(90)}
-            className="btn min-h-[3.25rem] flex-col gap-0.5 bg-white/10 text-xs text-white"
-          >
-            <RotateRightIcon className="h-6 w-6" />
-            Rotar a la derecha
-          </button>
-          <button
-            type="button"
-            onClick={() => setCrop((c) => (c ? null : centeredCrop()))}
-            aria-pressed={crop !== null}
-            className={`btn min-h-[3.25rem] flex-col gap-0.5 text-xs ${
-              crop ? 'bg-white text-stone-900' : 'bg-white/10 text-white'
-            }`}
-          >
-            <CropIcon className="h-6 w-6" />
-            {crop ? 'Quitar recorte' : 'Recortar'}
-          </button>
-        </div>
+        {/* Every tool in one row of 44 px targets, and not a label in sight.
+            Drawings instead of words is what makes it fit: as labelled buttons the two
+            turns alone took a row of three lines each on a phone. What names them is
+            the help line underneath, which always starts with the framing that is
+            selected — an icon that is never spelled out anywhere is a guess. */}
+        <div className="flex items-center justify-center gap-2">
+          {/* The two turns share a box, like the framing does: they are one pair —
+              the same thing in two directions— and grouped they read as a pair
+              instead of as two unrelated icons. */}
+          <div role="group" aria-label="Girar" className="flex shrink-0 gap-1 rounded-lg bg-white/10 p-1">
+            <button
+              type="button"
+              aria-label="Rotar a la izquierda"
+              title="Rotar a la izquierda"
+              onClick={() => rotate(-90)}
+              className="btn h-11 w-11 rounded-md p-0 text-white active:bg-white/20"
+            >
+              <RotateLeftIcon className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              aria-label="Rotar a la derecha"
+              title="Rotar a la derecha"
+              onClick={() => rotate(90)}
+              className="btn h-11 w-11 rounded-md p-0 text-white active:bg-white/20"
+            >
+              <RotateRightIcon className="h-6 w-6" />
+            </button>
+          </div>
 
-        {/* Border detection: on demand, and it only preloads the rectangle. */}
-        <div className="space-y-2">
+          {/* A track with a thumb, and not three buttons in a row: the white fill
+              inside the track reads as «this one is selected», while the same fill
+              standing alone would read as «this is the main action» — which is what
+              made three white buttons compete on one screen. */}
+          <div
+            role="group"
+            aria-label="Encuadre"
+            className="flex shrink-0 gap-1 rounded-lg bg-white/10 p-1"
+          >
+            {FRAMINGS.map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                type="button"
+                // Straightening cannot be expressed over the consultation copy, so the
+                // segment is disabled there with the reason underneath.
+                disabled={!ready || (value === 'PERSPECTIVE' && !canRestoreOriginal)}
+                aria-pressed={framing === value}
+                aria-label={label}
+                title={label}
+                aria-describedby="editor-help"
+                onClick={() => setFraming(value)}
+                className={`btn h-11 w-11 rounded-md p-0 disabled:opacity-40 ${
+                  framing === value ? 'bg-white text-stone-900' : 'text-stone-300'
+                }`}
+              >
+                <Icon className="h-6 w-6" />
+              </button>
+            ))}
+          </div>
+
           <button
             type="button"
             disabled={!ready || analysis.status === 'working' || !suggestionMakesSense}
-            aria-describedby="editor-suggestion-help"
+            aria-label={analysis.status === 'working' ? 'Analizando la fotografía…' : 'Sugerir recorte'}
+            title={analysis.status === 'working' ? 'Analizando la fotografía…' : 'Sugerir recorte'}
+            aria-describedby="editor-help"
             onClick={() => void suggest()}
-            className="btn min-h-touch w-full bg-white/10 text-sm text-white disabled:opacity-40"
+            className={`btn h-11 w-11 shrink-0 bg-white/10 p-0 text-white disabled:opacity-40 ${
+              analysis.status === 'working' ? 'animate-pulse' : ''
+            }`}
           >
-            {analysis.status === 'working' ? 'Analizando la fotografía…' : 'Sugerir recorte'}
+            <WandIcon className="h-6 w-6" />
           </button>
+        </div>
+
+        <div className="space-y-2">
 
           {/* With two candidates the cataloger picks: in a catalogue raisonné the
               work is usually the canvas, but the frame can be part of the piece
               and only she can tell. */}
+          {/* The same track and thumb as the framing, because it is the same kind of
+              thing: a state being chosen, not an action being fired. */}
           {analysis.status === 'found' && analysis.suggestion.inner && (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                aria-pressed={analysis.choice === 'outer'}
-                onClick={() => choose('outer')}
-                className={`btn min-h-touch text-sm ${
-                  analysis.choice === 'outer'
-                    ? 'bg-white text-stone-900'
-                    : 'border border-stone-600 text-white'
-                }`}
-              >
-                Hasta el marco
-              </button>
-              <button
-                type="button"
-                aria-pressed={analysis.choice === 'inner'}
-                onClick={() => choose('inner')}
-                className={`btn min-h-touch text-sm ${
-                  analysis.choice === 'inner'
-                    ? 'bg-white text-stone-900'
-                    : 'border border-stone-600 text-white'
-                }`}
-              >
-                Solo la obra
-              </button>
+            <div
+              role="group"
+              aria-label="Hasta dónde recortar"
+              className="grid grid-cols-2 gap-1 rounded-lg bg-white/10 p-1"
+            >
+              {([
+                { value: 'outer', label: 'Hasta el marco' },
+                { value: 'inner', label: 'Solo la obra' },
+              ] as const).map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={analysis.choice === value}
+                  onClick={() => choose(value)}
+                  className={`btn min-h-touch rounded-md px-1 text-sm ${
+                    analysis.choice === value ? 'bg-white text-stone-900' : 'text-stone-300'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           )}
 
-          {/* Straightening, and putting back what a suggestion replaced. Both live
-              in this row and not in one of their own: the footer of the editor
-              already measures some 372 px and leaves 250-310 px of working surface
-              on a phone, so a new row would come out of the photograph. */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Putting back what a suggestion replaced: inline and only while there is
+              something to put back. As a permanent button it sat disabled almost
+              always, spending half a row on an action that belongs to the seconds
+              right after a suggestion lands. */}
+          {replaced && (
             <button
               type="button"
-              disabled={!ready || !canRestoreOriginal}
-              aria-pressed={corners !== null}
-              onClick={togglePerspective}
-              className={`btn min-h-touch text-sm ${
-                corners !== null
-                  ? 'bg-white text-stone-900'
-                  : 'border border-stone-600 text-white disabled:opacity-40'
-              }`}
-            >
-              {corners !== null ? 'Volver al rectángulo' : 'Corregir perspectiva'}
-            </button>
-            <button
-              type="button"
-              disabled={!replaced}
               onClick={discardSuggestion}
-              className="btn min-h-touch border border-stone-600 text-sm text-white disabled:opacity-40"
+              className="btn min-h-touch w-full text-sm text-stone-300 underline underline-offset-4"
             >
-              Descartar la sugerencia
+              Deshacer la sugerencia
             </button>
-          </div>
+          )}
 
-          <p
-            id="editor-suggestion-help"
-            role="status"
-            aria-live="polite"
-            className="text-center text-xs text-stone-400"
-          >
-            {corners !== null
-              ? 'Arrastra las cuatro esquinas de la obra, y la vista previa a donde te convenga. Para acercarte, pellizca con dos dedos o usa la rueda del ratón; con dos dedos también se mueve la foto, y con dos toques vuelve completa'
-              : !canRestoreOriginal
-                ? 'No se puede corregir la perspectiva sobre la copia de consulta: haría falta el máster, y esta vez no se ha podido descargar'
-                : !suggestionMakesSense
-              ? `En una toma de tipo «${SHOT_TYPE_LABEL[shotType!]}» no hay borde de cuadro que reconocer: ajusta el recorte a mano`
-              : analysis.status === 'working'
-                ? 'Analizando la fotografía para reconocer el borde del cuadro…'
-                : analysis.status === 'none'
-                  ? 'No he reconocido el borde del cuadro: arrastra las esquinas para recortarlo a mano'
-                  : analysis.status === 'found'
-                    ? analysis.suggestion.inner
-                      ? 'Recorte sugerido: se han reconocido dos bordes. Elige uno, ajusta las esquinas y pulsa «Aplicar»'
-                      : 'Recorte sugerido: ajusta las esquinas si hace falta y pulsa «Aplicar»'
-                      : 'Reconoce el borde del cuadro y precarga el recorte. Nunca se aplica solo: siempre lo confirmas tú'}
+          <p id="editor-help" role="status" aria-live="polite" className="text-center text-xs text-stone-400">
+            {helpText()}
           </p>
         </div>
 
-        {/* Back to square one, always available while the master is the source:
-            the framing is data, not a cut, so the original frame can be
-            recovered whenever — today or in a year — and the crop redone from
-            scratch. That is what makes cropping a safe decision. */}
-        {/* Shown even when it cannot be used, and disabled with the reason: an
-            action that simply is not there leaves the cataloger wondering
-            whether the crop is final. */}
-        {(rotation !== 0 || crop !== null || !canRestoreOriginal) && (
+        {/* Back to square one: the framing is data, not a cut, so the original frame
+            can be recovered whenever — today or in a year — and the crop redone from
+            scratch. That is what makes cropping a safe decision, and why it gets a row
+            of its own instead of the ghost button it used to be, squeezed between two
+            paragraphs of help. Amber and not white: it weighs like a main action, but
+            white is «Aplicar», the only thing that confirms and closes.
+
+            It only appears when there IS a turn to undo, and that is the whole point:
+            it clears the turn and the framing, while «Sin recorte» clears the framing,
+            so with no turn applied the two did letter for letter the same thing —
+            `setCrop(null); setCorners(null)`— and the loudest control in the footer
+            was a duplicate of a segment sitting right above it. With no turn, the way
+            back to the original IS the first segment of the selector.
+
+            The exception is the consultation copy, where it shows disabled: there it
+            is not an action but an explanation, and the reason is in the help line.
+            An action that is simply missing leaves the cataloger wondering whether
+            the crop is final. */}
+        {(rotation !== 0 || !canRestoreOriginal) && (
           <button
             type="button"
             disabled={!canRestoreOriginal}
-            aria-describedby="editor-original-help"
+            aria-describedby="editor-help"
             onClick={() => {
               setRotation(0)
               setCrop(null)
+              setCorners(null)
             }}
-            className="btn min-h-touch w-full border border-stone-600 text-sm text-white disabled:opacity-40"
+            className="btn min-h-touch w-full border border-amber-400/70 bg-amber-400/10 text-sm text-amber-200 disabled:opacity-40"
           >
-            Volver al original, sin giro ni recorte
+            <RevertIcon className="h-5 w-5" />
+            Volver al original
           </button>
         )}
-
-        <p id="editor-original-help" className="text-center text-xs text-stone-400">
-          {!canRestoreOriginal
-            ? 'Sobre la copia de consulta puedes girar y recortar más, pero no ensanchar el recorte ni volver al original: lo que quedó fuera no está en esta copia.'
-            : crop
-              ? 'Arrastra las esquinas para ajustar el recorte, o el centro para moverlo. El original de archivo no se modifica nunca: puedes ensanchar el recorte o volver al original cuando quieras.'
-              : 'El máster de archivo no se modifica: se rehacen las copias que se muestran, y siempre puedes volver al original.'}
-        </p>
 
         <div className="grid grid-cols-2 gap-2">
           <button
