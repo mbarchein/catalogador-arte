@@ -1,0 +1,185 @@
+name: Clasificar cambios
+description: >-
+  Decide qué bloques del pipeline hay que ejecutar según los ficheros que ha
+  tocado el evento. Fuente única de esa clasificación para los dos workflows.
+
+# Por qué esto vive en una acción compuesta y no copiado en cada workflow: dos
+# copias de una lista de rutas se separan solas, y separarse significa que un
+# workflow se salta algo que el otro no. Con una sola copia, la lista se cambia
+# en un sitio; y como está bajo .github/, tocarla dispara el pipeline entero
+# (ver el patrón `.github/*` más abajo), así que el cambio se ejercita a sí mismo.
+#
+# Requiere que el repositorio esté ya descargado con historia suficiente para
+# comparar contra la base del evento: `actions/checkout` con `fetch-depth: 0`.
+# Si la base no está disponible, esta acción NO adivina: clasifica todo como
+# relevante y lo dice en el registro.
+
+outputs:
+  infra:
+    description: Hay que verificar el Terraform de infra/
+    value: ${{ steps.filtro.outputs.infra }}
+  datos:
+    description: Hay que ejecutar los tests de SQL contra el stack local
+    value: ${{ steps.filtro.outputs.datos }}
+  app:
+    description: Hay que verificar (y publicar) el frontend de app/
+    value: ${{ steps.filtro.outputs.app }}
+  esquema:
+    description: Hay algo que se DESPLIEGA a Supabase (migraciones, funciones, config)
+    value: ${{ steps.filtro.outputs.esquema }}
+
+runs:
+  using: composite
+  steps:
+    - name: Clasificar los ficheros cambiados
+      id: filtro
+      shell: bash
+      env:
+        EVENTO: ${{ github.event_name }}
+        # Punta anterior de la rama en un push. En el primer push de una rama
+        # llega a ceros, y tras un force-push puede apuntar a un commit que ya
+        # no existe: los dos casos caen en la escotilla de «verificar todo».
+        ANTES: ${{ github.event.before }}
+      run: |
+        set -euo pipefail
+
+        infra=false; datos=false; app=false; esquema=false
+        todo() { infra=true; datos=true; app=true; esquema=true; }
+
+        case "$EVENTO" in
+          pull_request)
+            # En una pull request, HEAD es el commit de fusión que prepara
+            # GitHub y HEAD^1 es la punta de la rama base, así que este diff es
+            # exactamente «lo que la PR cambia respecto a main».
+            base="HEAD^1"; cabeza="HEAD" ;;
+          push)
+            base="$ANTES"; cabeza="$GITHUB_SHA" ;;
+          *)
+            # workflow_dispatch y cualquier otro evento sin base: no hay nada
+            # con lo que comparar. Es además la escotilla para forzar a mano el
+            # pipeline completo.
+            base=""; cabeza="" ;;
+        esac
+
+        # La lista de rutas va a un fichero temporal separada por bytes nulos, y
+        # no a una variable separada por saltos de línea, por dos motivos:
+        #
+        #  - `git diff --name-only` SIN `-z` entrecomilla y escapa las rutas que
+        #    considera raras. Con `core.quotepath` en su valor por omisión (true,
+        #    y los runners de GitHub no lo cambian) eso incluye TODO carácter no
+        #    ASCII: `docs/ubicación.md` sale como `"docs/ubicaci\303\263n.md"`,
+        #    que no coincide ni con `docs/*` ni con `*.md` y caería en el comodín
+        #    «sin clasificar», disparando el pipeline entero — y en un push a
+        #    main, también `esquema`, o sea `supabase db push` en producción por
+        #    un fichero de documentación. En un repositorio cuya documentación
+        #    está en español, ese es el nombre de fichero más probable. Con `-z`
+        #    git emite la ruta cruda, sin entrecomillar, y de paso deja de ser un
+        #    problema el nombre con espacios, comillas o saltos de línea.
+        #  - A un fichero y no a `$(...)`: la sustitución de órdenes de bash
+        #    DESCARTA los bytes nulos (avisa y sigue), así que
+        #    `ficheros=$(git diff -z ...)` pegaría todas las rutas en una sola
+        #    cadena y cualquier cambio de más de un fichero caería también en el
+        #    comodín.
+        lista="$(mktemp)"
+
+        motivo=""
+        if [ -z "$base" ] || [ -z "$cabeza" ]; then
+          motivo="el evento «$EVENTO» no trae una base con la que comparar"
+        elif ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null; then
+          motivo="la base «$base» no está en el clon (¿fetch-depth insuficiente, force-push o primer push de la rama?)"
+        elif ! git diff -z --name-only "$base" "$cabeza" >"$lista"; then
+          motivo="git diff contra «$base» ha fallado"
+        fi
+
+        if [ -n "$motivo" ]; then
+          # Dirección segura: si no se sabe qué ha cambiado, se verifica todo.
+          # Equivocarse aquí cuesta minutos de CI; equivocarse al revés se salta
+          # los tests de las políticas RLS, que son el único perímetro de
+          # seguridad de este proyecto.
+          echo "Sin lista de cambios fiable: $motivo"
+          echo "Se verifica TODO."
+          todo
+        else
+          echo "Ficheros cambiados:"
+          tr '\0' '\n' <"$lista"
+
+          while IFS= read -r -d '' f; do
+            [ -n "$f" ] || continue
+            case "$f" in
+              # Todo app/ y no solo app/src/: package-lock.json es la clave del
+              # caché y la entrada de `npm ci`, y vite.config.ts define además
+              # el entorno de los tests. El Dockerfile y nginx.conf solo los usa
+              # `make preview`, pero disparar de más es el lado bueno del error.
+              #
+              # Esta rama va ANTES que la de los ficheros irrelevantes, y no es
+              # cosmético: `case` se queda con la PRIMERA coincidencia, así que
+              # con `*.md` delante un `app/public/nota.md` se clasificaría como
+              # irrelevante. Hoy no hay ningún .md bajo app/ y el build no lee
+              # ninguno, pero el día que la aplicación importe un Markdown el
+              # fallo sería silencioso: el cambio no se publicaría y nadie se
+              # enteraría. Con app/ delante, un .md de app/ compila y publica de
+              # más, que es el lado del error que este diseño acepta.
+              app/*) app=true ;;
+
+              # Nada de lo que CI ejecuta lee estos ficheros. Los README de
+              # infra/ y docker/ entran por `*.md` aunque vivan al lado de
+              # código: son documentación. `scripts/generar-iconos.py` genera
+              # PNG que ya están versionados (app/public/icons/), y CI no lo
+              # ejecuta nunca; lo que sí importa es su salida, que cae en app/.
+              docs/*|*.md|LICENSE|.gitignore|.env.example|scripts/*) ;;
+
+              # Terraform de la plataforma: solo se comprueba formato y validez.
+              # No se aplica desde CI (se aplica a mano, ver infra/README.md).
+              infra/*) infra=true ;;
+
+              # Lo que además de verificarse se DESPLIEGA a Supabase:
+              # `supabase db push` aplica las migraciones, `functions deploy`
+              # sube las funciones Edge, y config.toml es lo único que lee la
+              # CLI. De ahí la salida `esquema`, separada de `datos`.
+              #
+              # Hueco conocido, anterior a este filtro y sin arreglar aquí:
+              # supabase/functions/ activa `esquema` (se despliega) pero ningún
+              # job la comprueba — no hay `deno check` y el stack de compose no
+              # levanta el servicio `functions`. Cuando lo haya, es un bloque
+              # nuevo con su propia salida, no un remiendo de esta rama.
+              supabase/migrations/*|supabase/functions/*|supabase/config.toml)
+                datos=true; esquema=true ;;
+
+              # Lo que ejecuta o sostiene los tests de SQL sin desplegarse: los
+              # propios tests, la semilla, el stack de compose y el Makefile.
+              # El Makefile va aquí porque `make db-test` es LO QUE EJECUTA los
+              # tests de RLS (el bucle, el ON_ERROR_STOP=1 y el `|| exit 1` que
+              # hace que un test rojo tumbe el pipeline): si cambia, hay que
+              # comprobar que siguen ejecutándose, porque un Makefile roto es un
+              # pipeline verde que no prueba nada. Y docker/migrate.sh imprime
+              # el «Migraciones OK» que los dos workflows buscan con grep, así
+              # que tocarlo puede romper CI sin tocar ni una política.
+              supabase/*|docker/*|docker-compose.yml|Makefile) datos=true ;;
+
+              # Cambiar el pipeline (workflows o esta misma acción) dispara el
+              # pipeline entero, incluido él mismo.
+              .github/*) todo ;;
+
+              # Ruta sin clasificar: se verifica TODO. Esta rama es la red de
+              # seguridad del diseño, no un descuido. Si mañana aparece una
+              # carpeta nueva y nadie la añade a las listas de arriba, NO se
+              # salta la verificación: la dispara entera hasta que alguien
+              # decida a qué bloque pertenece. Añadir aquí una carpeta nueva es
+              # una decisión explícita, olvidarla solo cuesta minutos de CI.
+              *)
+                echo "  → «$f» no está clasificado: se verifica TODO"
+                todo ;;
+            esac
+            # Redirección y no tubería: una tubería ejecuta el bucle en un
+            # subshell y las variables volverían a false al terminar.
+          done <"$lista"
+        fi
+
+        {
+          echo "infra=$infra"
+          echo "datos=$datos"
+          echo "app=$app"
+          echo "esquema=$esquema"
+        } >> "$GITHUB_OUTPUT"
+
+        echo "→ infra=$infra datos=$datos app=$app esquema=$esquema"

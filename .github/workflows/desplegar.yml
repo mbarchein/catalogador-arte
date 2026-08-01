@@ -16,18 +16,45 @@ name: desplegar
 on:
   push:
     branches: [main]
-    # Cambios que no afectan a lo desplegado. La infraestructura se aplica a
-    # mano por política (ver infra/README.md), y docker/ es el stack local.
+    # Aquí solo va lo que no puede afectar a NADA de lo que este workflow hace:
+    # ni al despliegue ni a la verificación que lo precede. Si un cambio no
+    # dispara el workflow, sus jobs no llegan a evaluar ningún `if`, así que este
+    # filtro es el más ancho de los dos y gana siempre: lo que se ignore aquí no
+    # se verifica ni se despliega, y no hay condición que lo recupere.
+    #
+    # infra/** está aquí porque este workflow no ejecuta Terraform en ningún job:
+    # la plataforma se aplica a mano por política (ver infra/README.md).
+    #
+    # Ojo con lo que YA NO está en esta lista: Makefile, docker/** y
+    # docker-compose.yml. No cambian nada de lo desplegado, pero SÍ son lo que
+    # ejecuta la verificación de más abajo (`make db-test` sobre el stack de
+    # compose). Ignorarlos aquí significaba que un Makefile roto entraba en main
+    # sin que nadie lo ejecutara — y main admite push directo del administrador
+    # (enforce_admins = false) —, con el fallo apareciendo en el siguiente
+    # despliegue de verdad, atribuido al commit equivocado. Ahora disparan la
+    # verificación pero no el despliegue: eso lo decide el `if` de cada job.
+    #
+    # Una ruta nueva que nadie añada a esta lista dispara el workflow, que es el
+    # lado seguro del error: cuesta minutos de CI, no se salta comprobaciones.
+    #
+    # `*.md` y no `**.md`: en los filtros de GitHub, `*` no cruza la barra, así
+    # que esto ignora los .md de la raíz (README, CHANGELOG, CLAUDE) pero NO los
+    # de app/, que el clasificador cuenta como parte del frontend. Con `**.md` un
+    # push que solo cambiara un Markdown de app/ no llegaba ni a arrancar este
+    # workflow, y el cambio se quedaba sin publicar sin ningún aviso. Los .md de
+    # docs/ e infra/ ya entran por sus carpetas; los de docker/, por su patrón.
     paths-ignore:
-      - '**.md'
+      - '*.md'
       - 'docs/**'
       - 'infra/**'
-      - 'docker/**'
-      - 'docker-compose.yml'
-      - 'Makefile'
+      - 'docker/**.md'
       - 'scripts/**'
+      - 'LICENSE'
       - '.gitignore'
       - '.env.example'
+  # Al disparo manual no se le aplican los filtros de rutas, y la acción que
+  # clasifica los cambios no tiene con qué comparar: despliega todo. Es la
+  # escotilla para forzar un despliegue completo.
   workflow_dispatch:
 
 permissions:
@@ -40,12 +67,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Qué ha cambiado de verdad en este push. Misma acción compuesta que usa
+  # verificar.yml, a propósito: si la clasificación estuviera copiada en los dos
+  # ficheros, las dos copias se separarían y un workflow acabaría saltándose algo
+  # que el otro comprueba. La lista de rutas y su justificación están allí.
+  cambios:
+    runs-on: ubuntu-latest
+    outputs:
+      datos: ${{ steps.filtro.outputs.datos }}
+      app: ${{ steps.filtro.outputs.app }}
+      esquema: ${{ steps.filtro.outputs.esquema }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Historia completa: la acción compara contra la punta anterior de la
+          # rama, que con la profundidad 1 por omisión no está en el clon. Si no
+          # la encuentra no adivina: clasifica todo como relevante.
+          fetch-depth: 0
+
+      - id: filtro
+        uses: ./.github/actions/clasificar-cambios
+
   # Se verifica otra vez aunque la protección de rama ya exigiera «verificar» en
   # la PR: main admite push directo del administrador (enforce_admins = false), y
   # desplegar sin verificar por esa puerta sería un agujero. Incluye los tests de
   # RLS contra una base real: son el perímetro de seguridad y por tanto la puerta
   # del despliegue, no un extra.
   verificar:
+    needs: cambios
+    # Se verifica siempre que haya cambiado algo verificable, aunque no se vaya a
+    # desplegar nada: es lo que hace que un cambio en el Makefile o en el stack
+    # de compose no entre en main sin ejecutarse. Todo lo que activa `esquema`
+    # activa también `datos`, así que este job nunca se salta dejando a `migrar`
+    # sin puerta.
+    if: needs.cambios.outputs.datos == 'true' || needs.cambios.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -96,7 +151,13 @@ jobs:
         run: docker compose logs --tail=80
 
   migrar:
-    needs: verificar
+    needs: [cambios, verificar]
+    # Sin status functions a propósito: si `verificar` falla o se salta, este job
+    # se salta también, porque la dirección segura es no desplegar. `esquema` es
+    # true cuando cambia algo que la CLI de Supabase sube: las migraciones, las
+    # funciones Edge o su config.toml. Los tests de SQL y seed.sql no se
+    # despliegan, así que no bastan para llegar hasta aquí.
+    if: needs.verificar.result == 'success' && needs.cambios.outputs.esquema == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -128,6 +189,33 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
 
+  # Los secretos de la función Edge tienen su propio job, y no un paso dentro de
+  # «migrar», porque son la única cosa de este workflow cuyo valor cambia SIN que
+  # cambie ningún fichero del repositorio: los deriva Terraform del bucket real
+  # (infra/github.tf) y se renuevan al rotar la clave de B2. Ese `terraform apply`
+  # se hace a mano y su commit solo toca infra/**, que está en el paths-ignore de
+  # arriba: no dispara nada. Si este paso colgara de «migrar» —que ahora solo
+  # corre cuando cambia el esquema o las funciones— una clave rotada no llegaría
+  # a Supabase hasta el siguiente cambio de esquema, y mientras tanto la función
+  # firmaría con la credencial revocada: subir másters fallaría en producción con
+  # todo el CI en verde. Por eso se reempujan en TODO despliegue verificado: es
+  # idempotente y tarda segundos.
+  #
+  # No va delante de «migrar» ni «migrar» detrás de él a propósito: si «migrar»
+  # se saltara por un fallo aquí, «publicar» lo vería como «skipped» y publicaría
+  # el frontend nuevo sin haber aplicado las migraciones, que es exactamente lo
+  # que la cabecera de este fichero prohíbe. Van en paralelo.
+  secretos:
+    needs: verificar
+    if: needs.verificar.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
       # Las credenciales de B2 llegan a la función por aquí, desde los secretos
       # que Terraform derivó del bucket real. Nombres S3_* a propósito: cambiar
       # de proveedor de almacenamiento es cambiar estos valores, no el código.
@@ -144,7 +232,20 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
 
   publicar:
-    needs: migrar
+    needs: [cambios, verificar, migrar]
+    # `!cancelled()` es OBLIGATORIO aquí: sin él, un `migrar` SALTADO (un push
+    # que solo toca app/, sin migraciones) arrastraría a este job y el frontend
+    # no se publicaría nunca. Es el fallo clásico del despliegue que cuelga de un
+    # job saltado, y no se ve hasta que alguien pregunta por qué su cambio no
+    # está en producción.
+    #
+    # Lo que no se toca es la promesa de la cabecera —primero el esquema, después
+    # el frontend—: si `migrar` ha FALLADO, aquí no se publica nada.
+    if: >-
+      !cancelled()
+      && needs.verificar.result == 'success'
+      && (needs.migrar.result == 'success' || needs.migrar.result == 'skipped')
+      && needs.cambios.outputs.app == 'true'
     runs-on: ubuntu-latest
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -165,6 +266,15 @@ jobs:
       # Vienen de las variables de Actions, que Terraform deriva de los recursos
       # reales, así que no pueden quedar desactualizadas: el proyecto de Vercel
       # no guarda ninguna variable — CI es la única fuente.
+      #
+      # Al incrustarse al compilar, el valor que hay publicado es el que había
+      # cuando se compiló. Y este job solo corre cuando cambia app/, así que
+      # cambiar una de esas variables con `terraform apply` (por ejemplo la URL
+      # de la aplicación, que va en el QR de la ficha impresa) NO se recoge en el
+      # siguiente despliegue cualquiera: hay que lanzar este workflow con
+      # `workflow_dispatch`, que al no tener base con la que comparar despliega
+      # todo. Los secretos S3_* no dependen de esto: se reempujan siempre, en el
+      # job `secretos`, precisamente porque nadie se acuerda de estas cosas.
       - name: Publicar en Vercel
         run: |
           npm install --global vercel@latest

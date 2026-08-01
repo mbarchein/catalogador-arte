@@ -1,17 +1,25 @@
 name: verificar
 
-# La puerta de las pull requests. El nombre del job «verificar» es el contexto
-# que exige la protección de la rama main (infra/github.tf): si se renombra,
-# hay que cambiarlo allí.
+# La puerta de las pull requests. El nombre del job de cierre «verificar» es el
+# contexto que exige la protección de la rama main (infra/github.tf): si se
+# renombra, hay que cambiarlo allí. Añadir jobs a este workflow es seguro;
+# renombrar o quitar el job «verificar» rompe la fusión de todas las PR.
 #
 # Ya no se dispara en push a main: ahí corre desplegar.yml, que verifica de
 # nuevo antes de tocar producción. Así cada evento ejecuta un solo pipeline.
 #
-# Este workflow NO lleva paths-ignore, y no es descuido: es una comprobación
-# REQUERIDA por la protección de rama. Si se saltara en una PR que solo toca
-# documentación, el contexto «verificar» no se reportaría nunca y la PR quedaría
-# bloqueada para siempre esperando a un check que no va a llegar. El paths-ignore
-# vive en desplegar.yml, que no es requerido por nadie.
+# Este workflow NO lleva filtro de rutas en `on`, y no es descuido: es una
+# comprobación REQUERIDA por la protección de rama. Un job saltado por un filtro
+# de rutas no reporta estado, así que filtrar aquí dejaría a una PR que solo toca
+# documentación esperando para siempre un check que no va a llegar. Lo que se
+# salta son los BLOQUES de trabajo, con el `if` de cada job a partir de lo que
+# clasifica el job `cambios`; el job de cierre corre y reporta siempre.
+#
+# Tampoco vale el truco del workflow espejo con un job del mismo nombre que hace
+# `exit 0` en las rutas inversas: `paths` y `paths-ignore` no son complementarios
+# (una PR que toca documentación Y código coincide con los dos), así que se
+# crearían dos check runs llamados «verificar» y el verde falso podría tapar al
+# rojo de verdad.
 
 on:
   pull_request:
@@ -21,14 +29,34 @@ permissions:
   contents: read
 
 jobs:
-  verificar:
-    name: verificar
+  # Qué ha cambiado de verdad. La clasificación vive en una acción compuesta y
+  # no aquí para que desplegar.yml use exactamente la misma lista: dos copias se
+  # separan solas, y separarse significa saltarse algo en uno de los dos sitios.
+  cambios:
     runs-on: ubuntu-latest
+    outputs:
+      infra: ${{ steps.filtro.outputs.infra }}
+      datos: ${{ steps.filtro.outputs.datos }}
+      app: ${{ steps.filtro.outputs.app }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Historia completa: la acción compara contra la base del evento y con
+          # la profundidad 1 por omisión ese commit no existe en el clon. Sin él
+          # la acción no adivina, clasifica todo como relevante — seguro, pero
+          # entonces el pipeline entero corre en cada PR y filtrar no serviría.
+          fetch-depth: 0
 
+      - id: filtro
+        uses: ./.github/actions/clasificar-cambios
+
+  infra:
+    needs: cambios
+    if: needs.cambios.outputs.infra == 'true'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      # ── Infraestructura ─────────────────────────────────────
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v4
         with:
@@ -49,9 +77,17 @@ jobs:
           terraform validate
         working-directory: infra
 
-      # ── Base de datos ───────────────────────────────────────
-      # Los tests de RLS van primero a propósito: sin backend, las políticas son
-      # el único perímetro de seguridad, y su fallo no corrompe datos, los expone.
+  # Los tests de RLS tienen su propio job y ya no van detrás del frontend: sin
+  # backend, las políticas son el único perímetro de seguridad, y su fallo no
+  # corrompe datos, los expone. Que este bloque corra en paralelo con el
+  # frontend recupera además el tiempo que antes daba el orden secuencial.
+  datos:
+    needs: cambios
+    if: needs.cambios.outputs.datos == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
       # El up ya espera a las migraciones: rest depende de migrate con
       # service_completed_successfully. No añadir `docker compose wait migrate`:
       # solo sabe esperar a contenedores corriendo, y si migrate ya terminó
@@ -65,7 +101,17 @@ jobs:
       - name: Tests de políticas RLS y reglas del esquema
         run: make db-test
 
-      # ── Frontend ────────────────────────────────────────────
+      - name: Registros del stack si algo falló
+        if: failure()
+        run: docker compose logs --tail=80
+
+  frontend:
+    needs: cambios
+    if: needs.cambios.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -91,6 +137,33 @@ jobs:
           VITE_SUPABASE_URL: http://localhost:8321
           VITE_SUPABASE_ANON_KEY: clave-de-compilacion-sin-uso
 
-      - name: Registros del stack si algo falló
-        if: failure()
-        run: docker compose logs --tail=80
+  # El contexto que exige la protección de rama (infra/github.tf). No lleva
+  # filtro de rutas y lleva `always()`: corre y reporta SIEMPRE, también cuando
+  # los tres bloques se saltan. Es lo único que evita que una PR de solo
+  # documentación quede bloqueada esperando un check que no va a llegar.
+  verificar:
+    name: verificar
+    needs: [cambios, infra, datos, frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      # `always()` sin comprobar los resultados convertiría este job en un sello
+      # verde permanente: con `always()`, un `needs` fallido ya no tumba al job
+      # que depende de él. Por eso se enumeran los resultados uno a uno.
+      - name: Resultado de los bloques de verificación
+        env:
+          RESULTADOS: >-
+            ${{ needs.cambios.result }} ${{ needs.infra.result }}
+            ${{ needs.datos.result }} ${{ needs.frontend.result }}
+        run: |
+          set -euo pipefail
+          echo "Resultados: $RESULTADOS"
+          # «skipped» es un resultado válido: significa que no ha cambiado nada
+          # de lo que ese bloque comprueba. Solo fallan «failure» y «cancelled».
+          for r in $RESULTADOS; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "Un bloque de verificación terminó en «$r»"; exit 1 ;;
+            esac
+          done
+          echo "Verificación OK"
