@@ -6,6 +6,7 @@ import {
   type EdgeSuggestion,
 } from './edgeDetection'
 import type { Crop } from './imageEdits'
+import { cornersBoundingBox, isConvexQuadrilateral } from './perspective'
 
 /**
  * The detector is exercised with synthetic photographs: a luminance array built
@@ -104,7 +105,7 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
     expect(suggestion).not.toBeNull()
     // Within a couple of pixels of the reduced copy: the profiles place the
     // border between pixels, not on one of them.
-    expectCrop(suggestion?.outer, widened(artwork), 0.003)
+    expectCrop(suggestion?.outer.box, widened(artwork), 0.003)
     expect(suggestion?.inner).toBeNull()
   })
 
@@ -114,7 +115,7 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
     paint(frame, artwork, 205)
 
     const suggestion = detect(frame)
-    expectCrop(suggestion?.outer, widened(artwork), 0.003)
+    expectCrop(suggestion?.outer.box, widened(artwork), 0.003)
   })
 
   it('finds a darker painting than the wall, not only a lighter one', () => {
@@ -122,7 +123,7 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
     const artwork: Crop = { x: 0.25, y: 0.15, width: 0.5, height: 0.7 }
     paint(frame, artwork, 40)
 
-    expectCrop(detect(frame)?.outer, widened(artwork), 0.003)
+    expectCrop(detect(frame)?.outer.box, widened(artwork), 0.003)
   })
 
   it('offers two nested candidates for a framed painting: the frame and the canvas', () => {
@@ -133,8 +134,8 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
     paint(frame, canvas, 200)
 
     const suggestion = detect(frame)
-    expectCrop(suggestion?.outer, widened(moulding), 0.005)
-    expectCrop(suggestion?.inner, widened(canvas), 0.005)
+    expectCrop(suggestion?.outer.box, widened(moulding), 0.005)
+    expectCrop(suggestion?.inner?.box, widened(canvas), 0.005)
   })
 
   it('gives a single candidate when the second rectangle is not clearly inside', () => {
@@ -146,7 +147,7 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
     paint(frame, { x: 0.21, y: 0.21, width: 0.58, height: 0.58 }, 200)
 
     const suggestion = detect(frame)
-    expectCrop(suggestion?.outer, widened(moulding), 0.01)
+    expectCrop(suggestion?.outer.box, widened(moulding), 0.01)
     expect(suggestion?.inner).toBeNull()
   })
 
@@ -157,7 +158,7 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
     addNoise(frame, 25, 7)
 
     const suggestion = detect(frame)
-    expectCrop(suggestion?.outer, widened(artwork), 0.01)
+    expectCrop(suggestion?.outer.box, widened(artwork), 0.01)
   })
 
   /**
@@ -190,7 +191,7 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
     const artwork = { x: 0.06, y: 0.08, width: 0.55, height: 0.6 }
     paint(frame, artwork, 210)
 
-    expectCrop(detect(frame)?.outer, widened(artwork), 0.01)
+    expectCrop(detect(frame)?.outer.box, widened(artwork), 0.01)
   })
 
   describe('the sides have to be lines, not just peaks of the profile', () => {
@@ -248,7 +249,7 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
       expect(analysis.suggestion).not.toBeNull()
       expect(analysis.detail.supportWest).toBeGreaterThan(0.5)
       // And on the border, not 35 px inside it on the edge of the notch.
-      expect(analysis.suggestion?.outer.x).toBeCloseTo(artwork.x - 0.005, 2)
+      expect(analysis.suggestion?.outer.box.x).toBeCloseTo(artwork.x - 0.005, 2)
     })
 
     /**
@@ -267,7 +268,7 @@ describe('RF-410: crop suggested from the borders of the painting', () => {
       const suggestion = detect(frame)
       expect(suggestion).not.toBeNull()
       // It lands on the notch's edge, a twentieth of the frame inside the artwork.
-      expect(suggestion!.outer.x).toBeGreaterThan(0.2)
+      expect(suggestion!.outer.box.x).toBeGreaterThan(0.2)
     })
   })
 })
@@ -393,27 +394,47 @@ describe('RF-410: why the detector declined', () => {
 describe('RF-410: the suggestion travels to the rotated frame', () => {
   it('turns both candidates with the image, because the crop is over the rotated one', () => {
     const suggestion: EdgeSuggestion = {
-      outer: { x: 0.1, y: 0.2, width: 0.5, height: 0.6 },
-      inner: { x: 0.15, y: 0.25, width: 0.4, height: 0.5 },
+      outer: { box: { x: 0.1, y: 0.2, width: 0.5, height: 0.6 }, corners: null },
+      inner: { box: { x: 0.15, y: 0.25, width: 0.4, height: 0.5 }, corners: null },
     }
 
     const turned = rotateSuggestion(suggestion, 90)
-    expectCrop(turned.outer, { x: 0.2, y: 0.1, width: 0.6, height: 0.5 }, 1e-9)
-    expectCrop(turned.inner, { x: 0.25, y: 0.15, width: 0.5, height: 0.4 }, 1e-9)
+    expectCrop(turned.outer.box, { x: 0.2, y: 0.1, width: 0.6, height: 0.5 }, 1e-9)
+    expectCrop(turned.inner?.box, { x: 0.25, y: 0.15, width: 0.5, height: 0.4 }, 1e-9)
 
     // Four quarter turns are no turn at all.
     let full = suggestion
     for (let i = 0; i < 4; i += 1) full = rotateSuggestion(full, 90)
-    expectCrop(full.outer, suggestion.outer, 1e-9)
+    expectCrop(full.outer.box, suggestion.outer.box, 1e-9)
+  })
+
+  it('turns the quadrilateral too, and it stays convex', () => {
+    // The box and the corners have to end up describing the same thing after the
+    // turn: rotating one and not the other would leave the editor drawing a
+    // quadrilateral over a photograph that has moved under it.
+    const corners = {
+      nw: { x: 0.3, y: 0.15 },
+      ne: { x: 0.7, y: 0.15 },
+      se: { x: 0.85, y: 0.9 },
+      sw: { x: 0.15, y: 0.9 },
+    }
+    const turned = rotateSuggestion(
+      { outer: { box: cornersBoundingBox(corners), corners }, inner: null },
+      90,
+    )
+    expect(turned.outer.corners).not.toBeNull()
+    expect(isConvexQuadrilateral(turned.outer.corners!)).toBe(true)
+    // The box of the turned corners is the turned box: one measurement, two views.
+    expectCrop(cornersBoundingBox(turned.outer.corners!), turned.outer.box, 1e-9)
   })
 
   it('keeps a single candidate single', () => {
     const turned = rotateSuggestion(
-      { outer: { x: 0.1, y: 0.2, width: 0.5, height: 0.6 }, inner: null },
+      { outer: { box: { x: 0.1, y: 0.2, width: 0.5, height: 0.6 }, corners: null }, inner: null },
       270,
     )
     expect(turned.inner).toBeNull()
-    expectCrop(turned.outer, { x: 0.2, y: 0.4, width: 0.6, height: 0.5 }, 1e-9)
+    expectCrop(turned.outer.box, { x: 0.2, y: 0.4, width: 0.6, height: 0.5 }, 1e-9)
   })
 })
 
@@ -430,6 +451,6 @@ describe('RF-410: the suggestion accepts luminance however it was computed', () 
       frame.height,
     )
     expect(fromFloats).toEqual(fromBytes)
-    expectCrop(fromFloats?.outer, widened(artwork), 0.003)
+    expectCrop(fromFloats?.outer.box, widened(artwork), 0.003)
   })
 })

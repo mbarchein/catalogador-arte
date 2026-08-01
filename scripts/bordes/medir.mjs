@@ -149,20 +149,23 @@ for (const foto of manifest.fotos) {
   const sugerencia = analisis.suggestion
 
   const guardado = guardados.get(foto.nombre)
-  const area = sugerencia ? sugerencia.outer.width * sugerencia.outer.height : null
+  // El candidato lleva la caja y, si el detector vio inclinación, el cuadrilátero.
+  const caja = sugerencia?.outer.box ?? null
+  const area = caja ? caja.width * caja.height : null
   filas.push({
     nombre: foto.nombre,
     obra: foto.obra,
     tipoToma: guardado?.shotType ?? null,
     veredicto: !sugerencia ? 'silencio' : sugerencia.inner ? 'marco+lienzo' : 'solo-marco',
     area,
-    outer: sugerencia?.outer ?? null,
-    inner: sugerencia?.inner ?? null,
+    outer: caja,
+    inner: sugerencia?.inner?.box ?? null,
+    esquinas: sugerencia?.outer.corners ?? null,
     motivo: analisis.reason,
     detalle: analisis.detail,
     recorteGuardado: guardado?.crop ?? null,
-    iouOuter: iou(sugerencia?.outer, guardado?.crop),
-    iouInner: iou(sugerencia?.inner, guardado?.crop),
+    iouOuter: iou(caja, guardado?.crop),
+    iouInner: iou(sugerencia?.inner?.box, guardado?.crop),
     ms,
   })
 }
@@ -180,7 +183,7 @@ if (process.argv.includes('--json')) {
       n(Math.max(f.iouOuter ?? 0, f.iouInner ?? 0)).padStart(5),
       ' ',
       f.tipoToma ?? '—',
-      f.motivo ?? '',
+      f.esquinas ? 'perspectiva' : (f.motivo ?? ''),
     )
   }
 

@@ -1,4 +1,11 @@
 import { clampCrop, rotateCrop, type Crop } from './imageEdits'
+import {
+  CORNER_KEYS,
+  isConvexQuadrilateral,
+  rotateCorners,
+  type CornerKey,
+  type Corners,
+} from './perspective'
 
 /**
  * Suggesting the crop of a painting from its projection profiles.
@@ -293,11 +300,32 @@ export interface EdgeAnalysis {
   detail: Record<string, number>
 }
 
+/**
+ * One candidate: the rectangle, and the quadrilateral it came from.
+ *
+ * The two are the same measurement seen two ways. Each side is fitted with its own
+ * slope, so the four corners are the intersections of the adjacent sides — and the
+ * rectangle is their bounding box. Answering only the box, which is what this used to
+ * do, threw away the tilt right after measuring it.
+ */
+export interface EdgeCandidate {
+  /** The bounding box, which is what a crop can express. */
+  box: Crop
+  /**
+   * The four corners, when they are worth offering: null when the sides came out
+   * straight —a photograph taken square on, where the quadrilateral IS the box and
+   * straightening would resample every pixel for nothing— and null when they do not
+   * form a convex quadrilateral, which the schema refuses and the renderer could not
+   * straighten anyway.
+   */
+  corners: Corners | null
+}
+
 export interface EdgeSuggestion {
-  /** The outer rectangle: with a framed painting, the outside of the frame. */
-  outer: Crop
-  /** The rectangle nested inside it: with a framed painting, the canvas. */
-  inner: Crop | null
+  /** The outer candidate: with a framed painting, the outside of the frame. */
+  outer: EdgeCandidate
+  /** The candidate nested inside it: with a framed painting, the canvas. */
+  inner: EdgeCandidate | null
 }
 
 /** One side of the rectangle found on an axis, in fractions of that axis. */
@@ -774,14 +802,39 @@ function clearlyNested(outer: Crop, inner: Crop): boolean {
   )
 }
 
-/** The rectangle widened by the safety margin, never outside the image. */
-function withMargin(crop: Crop): Crop {
-  return clampCrop({
-    x: crop.x - SAFETY_MARGIN,
-    y: crop.y - SAFETY_MARGIN,
-    width: crop.width + 2 * SAFETY_MARGIN,
-    height: crop.height + 2 * SAFETY_MARGIN,
+/**
+ * The candidate widened by the safety margin, never outside the image.
+ *
+ * The box grows by the margin per side, as before. The quadrilateral grows by pushing
+ * each corner away from the centre of the four, which is the same «err outwards» in a
+ * shape that has no sides to speak of — and it keeps it convex, because scaling about
+ * an interior point cannot fold a convex shape.
+ *
+ * The corners are NOT clamped into the image, unlike the box: a corner is allowed to
+ * sit outside the photograph, and clamping it would quietly straighten to a different
+ * quadrilateral than the one that was measured.
+ */
+function withMargin(candidate: EdgeCandidate): EdgeCandidate {
+  const box = clampCrop({
+    x: candidate.box.x - SAFETY_MARGIN,
+    y: candidate.box.y - SAFETY_MARGIN,
+    width: candidate.box.width + 2 * SAFETY_MARGIN,
+    height: candidate.box.height + 2 * SAFETY_MARGIN,
   })
+  if (!candidate.corners) return { box, corners: null }
+
+  const points = CORNER_KEYS.map((key) => candidate.corners![key])
+  const centre = {
+    x: points.reduce((total, p) => total + p.x, 0) / points.length,
+    y: points.reduce((total, p) => total + p.y, 0) / points.length,
+  }
+  const push = (value: number, from: number) => value + Math.sign(value - from) * SAFETY_MARGIN
+  const widened = {} as Record<CornerKey, { x: number; y: number }>
+  CORNER_KEYS.forEach((key) => {
+    const point = candidate.corners![key]
+    widened[key] = { x: push(point.x, centre.x), y: push(point.y, centre.y) }
+  })
+  return { box, corners: widened as Corners }
 }
 
 /**
@@ -869,11 +922,11 @@ export function analyseArtworkEdges(
    * quadrilateral falls at 0.027 — and it needs no column in the schema, no
    * migration and no new gesture. Keeping the corners is the next step.
    */
-  const boxOf = (
+  const candidateOf = (
     h: [number, number],
     v: [number, number],
     label: 'outer' | 'inner',
-  ): Crop | null => {
+  ): EdgeCandidate | null => {
     const top = toPixels(v[0], height)
     const bottom = toPixels(v[1], height)
     const left = toPixels(h[0], width)
@@ -927,46 +980,65 @@ export function analyseArtworkEdges(
       return { x, y: b.at + b.slope * (x - midH) }
     }
 
-    const corners = [
-      corner(west, north),
-      corner(east, north),
-      corner(west, south),
-      corner(east, south),
-    ]
-    const xs = corners.map((c) => c.x)
-    const ys = corners.map((c) => c.y)
     const fraction = (pixel: number, size: number) => (pixel + 0.5) / size
-
-    return clampCrop({
-      x: fraction(Math.min(...xs), width),
-      y: fraction(Math.min(...ys), height),
-      width: (Math.max(...xs) - Math.min(...xs)) / width,
-      height: (Math.max(...ys) - Math.min(...ys)) / height,
+    const asPoint = (p: { x: number; y: number }) => ({
+      x: fraction(p.x, width),
+      y: fraction(p.y, height),
     })
+    const quadrilateral: Corners = {
+      nw: asPoint(corner(west, north)),
+      ne: asPoint(corner(east, north)),
+      se: asPoint(corner(east, south)),
+      sw: asPoint(corner(west, south)),
+    }
+
+    const xs = [quadrilateral.nw.x, quadrilateral.ne.x, quadrilateral.se.x, quadrilateral.sw.x]
+    const ys = [quadrilateral.nw.y, quadrilateral.ne.y, quadrilateral.se.y, quadrilateral.sw.y]
+    const box = clampCrop({
+      x: Math.min(...xs),
+      y: Math.min(...ys),
+      width: Math.max(...xs) - Math.min(...xs),
+      height: Math.max(...ys) - Math.min(...ys),
+    })
+
+    // The corners are only worth offering when they say something the box does not.
+    // With every side straight the quadrilateral IS the box, and straightening it
+    // would resample every pixel to arrive at the same framing — which costs
+    // sharpness for nothing. And a non-convex one the schema refuses and the renderer
+    // could not straighten: measured over the 44 photographs all sixteen suggestions
+    // come out convex, so this is a backstop and not the common path.
+    const tilted = [west, east, north, south].some((side) => side.slope !== 0)
+    const corners = tilted && isConvexQuadrilateral(quadrilateral) ? quadrilateral : null
+
+    return { box, corners }
   }
 
-  const outer = boxOf(
+  const outer = candidateOf(
     [horizontal.outerLow, horizontal.outerHigh],
     [vertical.outerLow, vertical.outerHigh],
     'outer',
   )
   if (!outer) return decline('sides-not-lines', detail)
-  detail.outerArea = outer.width * outer.height
-  if (!looksLikeArtwork(outer, width, height)) return decline('not-artwork', detail)
+  detail.outerArea = outer.box.width * outer.box.height
+  if (!looksLikeArtwork(outer.box, width, height)) return decline('not-artwork', detail)
 
-  let inner: Crop | null = null
+  let inner: EdgeCandidate | null = null
   if (
     horizontal.innerLow !== null &&
     horizontal.innerHigh !== null &&
     vertical.innerLow !== null &&
     vertical.innerHigh !== null
   ) {
-    const candidate = boxOf(
+    const candidate = candidateOf(
       [horizontal.innerLow, horizontal.innerHigh],
       [vertical.innerLow, vertical.innerHigh],
       'inner',
     )
-    if (candidate && looksLikeArtwork(candidate, width, height) && clearlyNested(outer, candidate)) {
+    if (
+      candidate &&
+      looksLikeArtwork(candidate.box, width, height) &&
+      clearlyNested(outer.box, candidate.box)
+    ) {
       inner = candidate
     }
   }
@@ -974,7 +1046,10 @@ export function analyseArtworkEdges(
   // The margin is added after the checks so that widening the rectangle cannot
   // be what makes it pass or fail them.
   return {
-    suggestion: { outer: withMargin(outer), inner: inner ? withMargin(inner) : null },
+    suggestion: {
+      outer: withMargin(outer),
+      inner: inner ? withMargin(inner) : null,
+    },
     reason: null,
     detail,
   }
@@ -994,8 +1069,12 @@ export function rotateSuggestion(
   suggestion: EdgeSuggestion,
   rotation: number,
 ): EdgeSuggestion {
+  const turn = (candidate: EdgeCandidate): EdgeCandidate => ({
+    box: rotateCrop(candidate.box, rotation),
+    corners: candidate.corners ? rotateCorners(candidate.corners, rotation) : null,
+  })
   return {
-    outer: rotateCrop(suggestion.outer, rotation),
-    inner: suggestion.inner ? rotateCrop(suggestion.inner, rotation) : null,
+    outer: turn(suggestion.outer),
+    inner: suggestion.inner ? turn(suggestion.inner) : null,
   }
 }
