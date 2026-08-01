@@ -69,6 +69,9 @@ FOTOS=1 make db-clone   # además, las fotografías que la aplicación enseña
 FOTOS=todo make db-clone  # y también los másters de archivo (pesan)
 ```
 
+`db-load` pregunta antes de borrar lo que haya en local. `CONFIRM=yes` se salta la pregunta, para cuando
+se encadena con otra cosa: `make db-clone FOTOS=1 CONFIRM=yes`.
+
 Viajan las filas, no el esquema: el esquema local sale de `supabase/migrations`, que es la fuente única.
 Las contraseñas tampoco viajan — en local todas las cuentas, incluidas las importadas, entran con
 `password123`. Las fotografías solo con `FOTOS`, que necesita las credenciales de almacenamiento

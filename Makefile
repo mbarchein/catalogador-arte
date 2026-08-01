@@ -79,12 +79,12 @@ movil: ## Explica cómo abrir la app desde el móvil en la red local
 db-pull: ## Descarga los datos de produccion a volcados/ (FOTOS=1 o FOTOS=todo)
 	FOTOS=$(FOTOS) bash docker/db-pull.sh
 
-db-load: ## Carga el ultimo volcado en local (o VOLCADO=ruta). BORRA los datos locales
-	bash docker/db-load.sh $(VOLCADO)
+db-load: ## Carga el ultimo volcado (VOLCADO=ruta, CONFIRM=yes). BORRA los datos locales
+	CONFIRM=$(CONFIRM) bash docker/db-load.sh $(VOLCADO)
 
-db-clone: ## db-pull y db-load seguidos (FOTOS=1 o FOTOS=todo)
+db-clone: ## db-pull y db-load seguidos (FOTOS=1 o FOTOS=todo, CONFIRM=yes)
 	$(MAKE) db-pull FOTOS=$(FOTOS)
-	$(MAKE) db-load
+	$(MAKE) db-load CONFIRM=$(CONFIRM)
 
 db-test: ## Tests de SQL: políticas RLS y reglas del esquema
 	@echo "Los tests de RLS son la primera prioridad del plan de pruebas:"

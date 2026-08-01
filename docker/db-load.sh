@@ -7,9 +7,9 @@
 # local de migraciones aplicadas, queda fuera de la limpieza: vaciarlo haría que
 # el aplicador las repitiera todas al siguiente arranque.
 #
-#   make db-load                 # el volcado más reciente
-#   make db-load VOLCADO=ruta    # uno concreto
-#   SI=1 make db-load            # sin preguntar
+#   make db-load                     # el volcado más reciente
+#   make db-load VOLCADO=ruta        # uno concreto
+#   make db-load CONFIRM=yes         # sin preguntar
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -37,7 +37,10 @@ echo "Volcado:  $volcado"
 echo
 echo "Esto BORRA las obras, imágenes, vocabularios, perfiles y cuentas locales,"
 echo "y los sustituye por los de producción."
-if [ "${SI:-}" != "1" ]; then
+# CONFIRM=yes se salta la pregunta. El valor es una palabra y no un 1 a
+# propósito: quien lo escribe en un guion tiene que decir que sí con todas las
+# letras, porque lo que hay al otro lado es un borrado.
+if [ "$(printf '%s' "${CONFIRM:-}" | tr '[:upper:]' '[:lower:]')" != "yes" ]; then
   read -r -p "¿Seguir? [s/N] " respuesta
   case "$respuesta" in
     s|S|si|Si|SI|sí|Sí) ;;
