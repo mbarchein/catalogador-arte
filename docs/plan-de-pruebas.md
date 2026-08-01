@@ -238,8 +238,8 @@ comparar, solo un criterio. El estado medido está en
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-1002 | La vista incluye los campos especificados, y el marcador cuando no hay imagen. Cubiertos en `recordPdf.test.ts` los campos, la imagen representativa incrustada y el marcador «Imagen no disponible», también cuando falla la descarga. La ubicación se imprime como la rama del árbol («Castelar 4, mesa de Mario») y la obra sin lugar se declara en vez de dejar hueco. Falta la serie, cuya tabla aún no existe | Parcial |
-| RF-1003 | El QR se genera y su contenido es la URL absoluta de la ficha completa | Pendiente |
+| RF-1002 | La vista incluye los campos especificados, y el marcador cuando no hay imagen. Cubiertos en `recordPdf.test.ts` los campos, la imagen representativa incrustada, su colocación en la banda del pie y el marcador «Imagen no disponible», también cuando falla la descarga. La ubicación se imprime como la rama del árbol («Castelar 4, mesa de Mario») y la obra sin lugar se declara en vez de dejar hueco. Falta la serie, cuya tabla aún no existe | Parcial |
+| RF-1003 | El QR se genera y su contenido es la URL absoluta de la ficha completa. Cubiertos en `recordPdf.test.ts` la composición de la URL, la presencia del QR en el documento y su colocación en la cabecera, por encima de la fotografía y sin encoger nunca. Falta descodificar el QR impreso para comprobar que lo que codifica es esa URL | Parcial |
 
 ### Navegación (RF-1100)
 
