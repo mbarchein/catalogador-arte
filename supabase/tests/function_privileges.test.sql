@@ -143,4 +143,21 @@ exception when insufficient_privilege then
   raise exception 'FAIL: revocar EXECUTE ha roto la evaluación de la política para un usuario con sesión';
 end $$;
 
+-- ── 7. El esquema público no está abierto a PUBLIC ──────────
+-- Mismo malentendido que en las funciones: `revoke ... from anon` no deshace lo
+-- que PUBLIC concede. Aquí se comprueba el resultado, que es lo que importa.
+do $$
+begin
+  if has_schema_privilege('anon', 'public', 'usage') then
+    raise exception 'FAIL: anon tiene USAGE sobre el esquema público';
+  end if;
+  -- Y los que la API necesita, que sin esto se queda sin arrancar.
+  if not has_schema_privilege('authenticated', 'public', 'usage')
+     or not has_schema_privilege('authenticator', 'public', 'usage')
+  then
+    raise exception 'FAIL: authenticated o authenticator han perdido el USAGE del esquema';
+  end if;
+  raise notice 'OK: el esquema público está cerrado a PUBLIC y abierto a quien lo necesita';
+end $$;
+
 rollback;
