@@ -10,10 +10,51 @@ principal en vez de dejar la pantalla a medias.
 
 **Acercarse a la foto para colocar las esquinas, y mover la vista previa**
 Ajustar una esquina al milímetro con la foto entera en una pantalla de móvil era pedir mucho. Ahora se
-puede **acercar**: pellizcando con dos dedos, o con la rueda del ratón en el ordenador. Con dos dedos
-también se **desplaza** la foto para llevar la esquina que interesa al centro, y con dos toques vuelve
-completa. Las asas mantienen su tamaño aunque la foto se agrande, así que no tapan la esquina que
-colocan.
+puede **acercar**: pellizcando con dos dedos, o con la rueda del ratón en el ordenador. Con dos toques
+vuelve completa. Las asas mantienen su tamaño aunque la foto se agrande, así que no tapan la esquina
+que colocan.
+
+Y la foto **se desplaza arrastrándola**, con un dedo o con el ratón, desde cualquier sitio que no sea
+un asa —la propia zona recortada incluida—: acercada a una esquina esa zona ocupa la pantalla entera, y
+esperar a encontrar un hueco libre alrededor sería no poder moverse. Para mover el recuadro del
+recorte, este estrena **un asa en su centro** que lo arrastra entero y que también responde a las
+flechas del teclado.
+
+**La botonera del editor, ordenada**
+Al girar y recortar, los botones de debajo ocupaban más pantalla que la propia fotografía: corrigiendo
+la perspectiva quedaban 304 píxeles de foto contra 472 de botones. Y había **dos interruptores para una
+sola decisión** —«Recortar/Quitar recorte» por un lado, «Corregir perspectiva/Volver al rectángulo» por
+otro, en filas distintas y con otro botón en medio—, cada uno cambiando de texto al pulsarlo, así que la
+etiqueta no decía si describía lo que había puesto o lo que iba a pasar.
+
+Ahora el encuadre es **un solo selector de tres posiciones: sin recorte, rectángulo o perspectiva**. Se
+ve de un vistazo cuál está puesto y ninguna etiqueta cambia de significado. Las seis herramientas —los
+dos giros, las tres del encuadre y sugerir— caben en **una sola fila de iconos**, la ayuda es **una sola
+línea** que empieza nombrando el encuadre puesto, y «Deshacer la sugerencia», que antes estaba siempre
+ahí apagado, aparece solo cuando hay una sugerencia que deshacer.
+
+La fotografía gana con eso **264 píxeles recortando y 296 corrigiendo perspectiva** —pasa de ocupar un
+tercio de la pantalla a casi tres cuartos—, y la botonera ya no cambia de tamaño al cambiar de modo.
+
+Los botones van además **centrados como un bloque**. En el móvil no se nota, pero en el ordenador antes
+los iconos se iban a una esquina de la pantalla mientras «Aplicar» se estiraba hasta la otra; ahora todo
+queda junto debajo del centro de la fotografía.
+
+**«Volver al original» ya se ve, y ya no repite a otro botón**
+Estaba en gris, entre dos párrafos de ayuda. Ahora tiene fila propia, color ámbar e icono, justo encima
+de Cancelar y Aplicar — y sigue sin ser blanco, que es el color de «Aplicar», lo único que confirma y
+cierra.
+
+Y **aparece solo cuando hay un giro que deshacer**, que es lo único que él quita y el selector no:
+sin giro hacía exactamente lo mismo que «sin recorte», o sea que el botón más llamativo de la pantalla
+duplicaba una casilla que estaba justo encima. Sobre la copia de consulta sigue apareciendo apagado,
+porque ahí no es una acción sino la explicación de por qué no se puede.
+
+**La pinza manda sobre las asas**
+Al pellizcar para acercarse a una esquina, el dedo que caía encima del asa se la llevaba consigo: la
+foto se acercaba y la esquina se iba con ella, dejándola donde nadie la había puesto. Ahora, en cuanto
+aparece el segundo dedo, el gesto pasa a ser un zoom y el asa se queda quieta — aunque el arrastre ya
+hubiera empezado.
 
 Y la vista previa del resultado **se arrastra a donde convenga y se queda ahí**: antes se colocaba
 sola y cambiaba de sitio cada vez que se cogía otra esquina, justo cuando se quería mirar.
@@ -171,6 +212,21 @@ Reproducir un fallo con los datos de verdad delante ya no exige consultar el cat
 un comando trae las filas y, si se pide, también las fotografías, y las deja cargadas en el entorno
 de trabajo. Las contraseñas no viajan nunca y la copia no entra en el repositorio, que es público:
 son datos reales y llevan datos personales dentro.
+
+### Correcciones
+
+**La foto girada un cuarto de vuelta salía achatada**
+Al girar una fotografía 90 o 270 grados, el editor la dibujaba deformada: un cuadro de 4:3 se veía casi
+cuadrado, aplastado una cuarta parte. De ahí salían otros dos síntomas que parecían fallos distintos —el
+trapecio que propone la varita no caía sobre el cuadro, y la lupa enseñaba un sitio distinto del que se
+estaba tocando—, pero eran el mismo: las medidas del encuadre estaban bien todo el rato; lo que estaba
+mal era la fotografía de debajo. Ya se dibuja con sus proporciones en los cuatro giros.
+
+**Girar con la perspectiva puesta dejaba las esquinas donde estaban**
+Girar la fotografía llevaba el recorte consigo, pero no las cuatro esquinas de la corrección de
+perspectiva: se quedaban en su sitio mientras la foto giraba debajo, y había que rehacerlas. Ahora giran
+juntos el giro, el recorte, las esquinas y la sugerencia guardada, así que dar un cuarto de vuelta no
+cuesta el trabajo ya hecho.
 
 ---
 
