@@ -53,6 +53,24 @@ Después, http://localhost:5173 con cualquiera de estas cuentas (contraseña `pa
 Para probar en el móvil, que es el dispositivo del caso de uso principal, `make movil` explica los dos
 pasos. Merece la pena hacerlo pronto: catalogar de pie con una mano se juzga mal desde un escritorio.
 
+### Trabajar con los datos de producción
+
+Para reproducir algo con el catálogo real delante, `make db-clone` trae los datos de producción y los
+carga en local. Necesita `SUPABASE_DB_URL` en `.env` (ver `.env.example`).
+
+```bash
+make db-pull   # descarga los datos a volcados/
+make db-load   # los carga en el stack local, BORRANDO lo que hubiera
+make db-clone  # las dos cosas seguidas
+```
+
+Viajan las filas, no el esquema: el esquema local sale de `supabase/migrations`, que es la fuente única.
+Tampoco viajan las fotografías, que viven en el almacenamiento, ni las contraseñas — en local todas las
+cuentas, incluidas las importadas, entran con `password123`.
+
+El volcado contiene datos reales, con datos personales dentro. `volcados/` está en `.gitignore` y este
+repositorio es público: no lo subas y bórralo cuando termines.
+
 ## Qué hay construido
 
 Primera entrega: **captura básica de obra**. La tabla Obras con los campos de fase 1 —los que se

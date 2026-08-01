@@ -32,6 +32,10 @@ __pycache__/
 
 # Configuración local y secretos
 .env
+
+# Copias de producción traídas con `make db-pull`. Son datos reales, con datos
+# personales de coleccionistas dentro, y este repositorio es público.
+volcados/
 *.local.py
 local_settings.py
 

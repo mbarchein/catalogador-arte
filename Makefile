@@ -19,7 +19,8 @@ DEV_HOST_ENV := $(shell grep -E '^DEV_HOST=' .env 2>/dev/null | cut -d= -f2)
 HOST := $(if $(DEV_HOST_ENV),$(DEV_HOST_ENV),localhost)
 AVISO_HOST := $(if $(DEV_HOST_ENV),Configurado para la red local: abre http://$(DEV_HOST_ENV):$(PUERTO_APP) en el movil.,Para probar desde el movil: make movil)
 .PHONY: help up down reset logs ps psql seed-users db-test test typecheck permisos \
-        build preview clean verificar infra-check infra-plan infra-apply movil
+        build preview clean verificar infra-check infra-plan infra-apply movil \
+        db-pull db-load db-clone
 
 help: ## Lista de comandos
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -71,6 +72,18 @@ movil: ## Explica cómo abrir la app desde el móvil en la red local
 	 echo "  3. abre http://$$ip:5173 en el móvil, en la misma wifi"; \
 	 echo; \
 	 echo "Instalar como aplicación: menú del navegador → «Añadir a pantalla de inicio»."
+
+# Copia de producción para trabajar en local. El esquema NO viaja: sale de las
+# migraciones, que son la fuente única. Lo que viaja son las filas.
+db-pull: ## Descarga los datos de produccion a volcados/ (necesita SUPABASE_DB_URL en .env)
+	bash docker/db-pull.sh
+
+db-load: ## Carga el ultimo volcado en local (o VOLCADO=ruta). BORRA los datos locales
+	bash docker/db-load.sh $(VOLCADO)
+
+db-clone: ## db-pull y db-load seguidos: produccion lista para trabajar en local
+	$(MAKE) db-pull
+	$(MAKE) db-load
 
 db-test: ## Tests de SQL: políticas RLS y reglas del esquema
 	@echo "Los tests de RLS son la primera prioridad del plan de pruebas:"
