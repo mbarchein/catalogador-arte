@@ -113,6 +113,7 @@ describe('recordLines', () => {
 })
 
 // A5 portrait, in points, and the margin of the record.
+const A5_WIDTH = 419.53
 const A5_HEIGHT = 595.28
 const MARGIN = 36
 
@@ -184,6 +185,50 @@ async function printedText(bytes: Uint8Array): Promise<string> {
 
 const asHex = (text: string) =>
   Array.from(text, (c) => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+
+/**
+ * Where each image is drawn, read back from the content stream.
+ *
+ * pdf-lib paints an image by transforming the unit square: inside its `q`/`Q`
+ * block it translates to the lower-left corner and scales to the size, with the
+ * identity matrices of the rotation and the skew in between. All of them are of
+ * the form `a 0 0 d e f cm`, so the placement is their composition: the sides
+ * multiply and the only displacement is the one that positions the image.
+ */
+async function imagePlacements(bytes: Uint8Array) {
+  const content = await printedText(bytes)
+  const drawing = /\/\S+ Do/
+  return content
+    .split(/\bq\b/)
+    .filter((block) => drawing.test(block))
+    .map((block) => {
+      const matrices = Array.from(
+        block.slice(0, block.search(drawing)).matchAll(/(-?[\d.]+) 0 0 (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) cm/g),
+        (m) => ({ a: Number(m[1]), d: Number(m[2]), e: Number(m[3]), f: Number(m[4]) }),
+      )
+      const move = matrices.find(({ e, f }) => e !== 0 || f !== 0) ?? { e: 0, f: 0 }
+      return {
+        x: move.e,
+        y: move.f,
+        width: matrices.reduce((side, { a }) => side * a, 1),
+        height: matrices.reduce((side, { d }) => side * d, 1),
+      }
+    })
+}
+
+/** Side of the QR on the sheet: it never shrinks (RF-1003). */
+const QR_SIDE = 108
+
+const withPhoto = async () => ({ jpeg: SMALL_JPEG, shotType: 'GENERAL' }) as RecordPhoto
+
+/**
+ * Which of the two images is which: only the QR is a 108 pt square, and the
+ * photograph is scaled to fit its box without ever being deformed.
+ */
+const splitImages = (images: Awaited<ReturnType<typeof imagePlacements>>) => {
+  const qr = images.find((i) => i.width === QR_SIDE && i.height === QR_SIDE)
+  return { qr, photo: images.find((i) => i !== qr) }
+}
 
 async function pdfOf(loadPhoto: (catalogId: string) => Promise<RecordPhoto | null>) {
   const blob = await generateRecordPdf(
@@ -272,5 +317,47 @@ describe('generateRecordPdf', () => {
       shotType: 'GENERAL',
     }))
     expect(prints('Imagen no disponible')).toBe(true)
+  })
+})
+
+/**
+ * Which of the two images goes on top is not a matter of taste: the QR travels
+ * with the identifier at the head of the sheet, because it is what is aimed at
+ * with the phone and the artwork in front (RF-1003), and the photograph closes
+ * the page (RF-1002). The record is printed and glued to the artwork, so the
+ * arrangement is fixed here and not left to whoever next touches the layout.
+ */
+describe('the arrangement of the sheet', () => {
+  it('draws exactly two images: the QR and the photograph', async () => {
+    const images = await imagePlacements((await pdfOf(withPhoto)).bytes)
+    expect(images).toHaveLength(2)
+    const { qr, photo } = splitImages(images)
+    expect(qr).toBeDefined()
+    expect(photo).toBeDefined()
+  })
+
+  it('puts the QR in the header, right under the running head', async () => {
+    const { qr } = splitImages(await imagePlacements((await pdfOf(withPhoto)).bytes))
+    // The running head takes the first 12 pt of the printable area.
+    expect(qr!.y + qr!.height).toBeCloseTo(A5_HEIGHT - MARGIN - 12, 5)
+  })
+
+  it('puts the photograph in the footer band, resting on the bottom air', async () => {
+    const { photo } = splitImages(await imagePlacements((await pdfOf(withPhoto)).bytes))
+    // The 12 pt below are for the printed URL, along the bottom edge.
+    expect(photo!.y).toBeCloseTo(MARGIN + 12, 5)
+  })
+
+  it('never lets the photograph rise above the QR', async () => {
+    const { qr, photo } = splitImages(await imagePlacements((await pdfOf(withPhoto)).bytes))
+    expect(qr!.y).toBeGreaterThan(photo!.y + photo!.height)
+  })
+
+  // Both hang from the right edge: a single column, the data at their left.
+  it('aligns both to the right margin', async () => {
+    const images = await imagePlacements((await pdfOf(withPhoto)).bytes)
+    const { qr, photo } = splitImages(images)
+    expect(qr!.x + qr!.width).toBeCloseTo(A5_WIDTH - MARGIN, 5)
+    expect(photo!.x + photo!.width).toBeCloseTo(A5_WIDTH - MARGIN, 5)
   })
 })

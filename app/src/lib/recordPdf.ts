@@ -195,24 +195,29 @@ const PAPER_GRAY = rgb(0.95, 0.945, 0.94)
  */
 const PHOTO_BOX = 170
 const MIN_PHOTO_BOX = 96
-/** Gap between the photo column and the header text. */
-const PHOTO_GAP = 14
-/** Side of the QR in the footer: at 108 pt any phone reads it at arm's length. */
+/** Gap between the right-hand column — QR above, photograph below — and the text. */
+const COLUMN_GAP = 14
+/** Side of the QR in the header: at 108 pt any phone reads it at arm's length. */
 const QR_SIDE = 108
 /** Height of a printed data line, and the air between two rows. */
 const LINE = 13
 const ROW_GAP = 4
 
-/** Top of the footer band — the QR and its note. Nothing goes below it. */
-const footerTopAt = (margin: number) => margin + 12 + QR_SIDE + 14
+/** Top of the footer band — the photograph and its note. Nothing goes below it. */
+const footerTopAt = (margin: number, photoSide: number) =>
+  margin + 12 + photoSide + COLUMN_GAP
 
 /**
- * Side of the photo box for a data block of that height: what is left between
- * the running head and the footer, bounded by `MIN_PHOTO_BOX` and `PHOTO_BOX`.
- * The 20 pt are the rule that closes the header band and its air.
+ * Side of the photo box for a data block of that height, bounded by
+ * `MIN_PHOTO_BOX` and `PHOTO_BOX`: what the page has left once the header band
+ * — where the QR sits, and the QR is the one thing that never gives way
+ * (RF-1003) — and the data have taken their share. The 20 pt are the rule that
+ * closes the header band and its air; the 12 and the `COLUMN_GAP` are the air
+ * below and above the photograph in the footer.
  */
 export function photoBoxSide(dataHeight: number, pageHeight: number, margin: number): number {
-  const room = pageHeight - margin - 12 - (footerTopAt(margin) + dataHeight + 20)
+  const room =
+    pageHeight - margin - 12 - QR_SIDE - 20 - dataHeight - (margin + 12 + COLUMN_GAP)
   return Math.max(MIN_PHOTO_BOX, Math.min(PHOTO_BOX, room))
 }
 
@@ -237,9 +242,12 @@ export async function generateRecordPdf(
   const italic = await doc.embedFont(StandardFonts.HelveticaOblique)
 
   // ── Photograph ──────────────────────────────────────────────
-  // A failure here never stops the printing: neither the network of a storage
-  // room nor a browser without canvas is a reason to leave the cataloger
-  // without a record. Without a photo the gap is explained (RF-1002).
+  // Resolved first although it prints last, at the foot of the page: it is the
+  // slow part, and the layout needs to know whether there is an image before
+  // measuring anything. A failure here never stops the printing: neither the
+  // network of a storage room nor a browser without canvas is a reason to leave
+  // the cataloger without a record. Without a photo the gap is explained
+  // (RF-1002).
   const photo = await loadPhoto(artwork.catalog_id).catch(() => null)
   let embedded: PDFImage | null = null
   if (photo) {
@@ -253,8 +261,8 @@ export async function generateRecordPdf(
 
   // ── What the data needs, before deciding the photo ───────────
   // The data block goes at full width and its height depends on how much each
-  // value wraps, so it is measured first: the footer (QR) is untouchable and
-  // the photo box takes what is left over.
+  // value wraps, so it is measured first: the QR of the header is untouchable
+  // and the photo box takes what is left over at the foot of the page.
   const valueX = margin + 92
   const valueWidth = width - margin - valueX
   const rows = recordLines(artwork, placePath).map(({ label, value }) => ({
@@ -263,54 +271,30 @@ export async function generateRecordPdf(
   }))
   const dataHeight =
     rows.reduce((total, row) => total + row.lines.length, 0) * LINE + rows.length * ROW_GAP
-  const footerTop = footerTopAt(margin)
   const photoBox = photoBoxSide(dataHeight, height, margin)
+  const footerTop = footerTopAt(margin, photoBox)
 
   let y = height - margin
 
   // ── Header ──────────────────────────────────────────────────
-  // Running head across the full width: the photo column starts below it.
+  // Running head across the full width: the QR column starts below it.
   page.drawText('INVENTARIO Y CATÁLOGO RAZONADO — ROTILI / RUIZ CAMPINS', {
     x: margin, y, size: 7, font: normal, color: GRAY,
   })
   y -= 12
 
-  // The photo occupies the right column of the header band, scaled to fit the
-  // box: the proportions of the artwork are data too.
-  const photoSize = embedded
-    ? embedded.scaleToFit(photoBox, photoBox)
-    : { width: photoBox, height: photoBox * 0.72 }
-  const photoX = width - margin - photoSize.width
-  let photoBottom = y - photoSize.height
-  if (embedded) {
-    page.drawImage(embedded, {
-      x: photoX, y: photoBottom, width: photoSize.width, height: photoSize.height,
-    })
-    // A general shot needs no caption; anything else does, because a signature
-    // detail or a back side does not portray the artwork.
-    if (photo && photo.shotType !== 'GENERAL') {
-      photoBottom -= 9
-      page.drawText(printableText(SHOT_TYPE_LABEL[photo.shotType]), {
-        x: photoX, y: photoBottom, size: 7, font: normal, color: GRAY,
-      })
-      photoBottom -= 3
-    }
-  } else {
-    page.drawRectangle({
-      x: photoX, y: photoBottom, width: photoSize.width, height: photoSize.height,
-      color: PAPER_GRAY, borderColor: GRAY, borderWidth: 0.6,
-    })
-    const marker = 'Imagen no disponible'
-    page.drawText(marker, {
-      x: photoX + (photoSize.width - normal.widthOfTextAtSize(marker, 8)) / 2,
-      y: photoBottom + photoSize.height / 2 - 3,
-      size: 8, font: normal, color: GRAY,
-    })
-  }
+  // The QR occupies the right column of the header band, next to the identifier
+  // (RF-1003): both are what the phone is pointed at with the artwork in front,
+  // and the code is the one element of the sheet that never shrinks.
+  const url = recordUrl(artwork.catalog_id, origin)
+  const qrPng = await QRCode.toDataURL(url, { margin: 0, width: QR_SIDE * 3 })
+  const qrImage = await doc.embedPng(qrPng)
+  const qrX = width - margin - QR_SIDE
+  const qrBottom = y - QR_SIDE
+  page.drawImage(qrImage, { x: qrX, y: qrBottom, width: QR_SIDE, height: QR_SIDE })
 
-  // Header text keeps clear of the photo column, whose width depends on whether
-  // the photograph is portrait or landscape.
-  const headerWidth = photoX - PHOTO_GAP - margin
+  // Header text keeps clear of the QR column, whose width is always the same.
+  const headerWidth = qrX - COLUMN_GAP - margin
 
   y -= 12
   page.drawText(printableText(artwork.catalog_id), {
@@ -332,7 +316,7 @@ export async function generateRecordPdf(
     y -= 16
   }
   // The rule closes the band below whichever column reaches further down.
-  y = Math.min(y, photoBottom) - 4
+  y = Math.min(y, qrBottom) - 4
   page.drawLine({
     start: { x: margin, y }, end: { x: width - margin, y },
     thickness: 0.8, color: GRAY,
@@ -355,19 +339,53 @@ export async function generateRecordPdf(
     y -= rowGap
   }
 
-  // ── QR and footer ───────────────────────────────────────────
-  const url = recordUrl(artwork.catalog_id, origin)
-  const qrPng = await QRCode.toDataURL(url, { margin: 0, width: QR_SIDE * 3 })
-  const qrImage = await doc.embedPng(qrPng)
-  const qrX = width - margin - QR_SIDE
-  page.drawImage(qrImage, { x: qrX, y: margin + 12, width: QR_SIDE, height: QR_SIDE })
+  // ── Photograph and footer ───────────────────────────────────
+  // The photograph closes the sheet, in the right column of the footer band and
+  // scaled to fit the box: the proportions of the artwork are data too. It sits
+  // on the bottom air, so the foot of the page is the same however tall the
+  // image turns out to be.
+  const photoSize = embedded
+    ? embedded.scaleToFit(photoBox, photoBox)
+    : { width: photoBox, height: photoBox * 0.72 }
+  const photoX = width - margin - photoSize.width
+  const photoBottom = margin + 12
+  if (embedded) {
+    page.drawImage(embedded, {
+      x: photoX, y: photoBottom, width: photoSize.width, height: photoSize.height,
+    })
+    // A general shot needs no caption; anything else does, because a signature
+    // detail or a back side does not portray the artwork. The caption goes
+    // above the image: below it there is only the bottom edge and the printed
+    // URL.
+    if (photo && photo.shotType !== 'GENERAL') {
+      page.drawText(printableText(SHOT_TYPE_LABEL[photo.shotType]), {
+        x: photoX, y: photoBottom + photoSize.height + 4, size: 7, font: normal, color: GRAY,
+      })
+    }
+  } else {
+    page.drawRectangle({
+      x: photoX, y: photoBottom, width: photoSize.width, height: photoSize.height,
+      color: PAPER_GRAY, borderColor: GRAY, borderWidth: 0.6,
+    })
+    const marker = 'Imagen no disponible'
+    page.drawText(marker, {
+      x: photoX + (photoSize.width - normal.widthOfTextAtSize(marker, 8)) / 2,
+      y: photoBottom + photoSize.height / 2 - 3,
+      size: 8, font: normal, color: GRAY,
+    })
+  }
+
   page.drawText(printableText(url), {
     x: margin, y: margin, size: 6.5, font: normal, color: GRAY,
   })
 
-  const qrNote = 'El código abre esta misma ficha en la aplicación, con sus fotografías y su historial al día.'
-  let noteY = margin + 12 + QR_SIDE - 8
-  for (const line of wrapLines(qrNote, normal, 8, qrX - margin - 14)) {
+  // The note names where the code is, because it does not sit beside it: the
+  // note belongs to the foot, with the rest of what the sheet says about itself.
+  const qrNote = 'El código QR de la cabecera abre esta misma ficha en la aplicación, con sus fotografías y su historial al día.'
+  // Anchored to the top of the reserved box, not to the image: a landscape
+  // photograph is shorter than the box and the note would drift down with it.
+  let noteY = margin + 12 + photoBox - 8
+  for (const line of wrapLines(qrNote, normal, 8, photoX - margin - COLUMN_GAP)) {
     page.drawText(line, { x: margin, y: noteY, size: 8, font: normal, color: GRAY })
     noteY -= 10.5
   }
