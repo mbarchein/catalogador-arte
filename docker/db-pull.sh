@@ -177,10 +177,34 @@ en_volcado 'psql "$PGURL" --csv -c "select id, email, created_at, coalesce(raw_u
 # Se copia el bucket entero y no solo lo que citan las filas importadas: un
 # fichero huérfano en el bucket es justo la clase de cosa que se viene a
 # investigar con una copia local delante.
-espejo() { # $1 = MC_HOST del origen, $2 = bucket remoto, $3 = carpeta destino
-  mkdir -p "$destino/$3"
-  docker run --rm -e "MC_HOST_origen=$1" -v "$PWD/$destino:/salida" \
-    --entrypoint mc minio/mc mirror --overwrite "origen/$2" "/salida/$3"
+# La región va en la configuración y no en la URL porque mc no la acepta de
+# ninguna otra forma —no hay opción ni variable de entorno— y estos dos destinos
+# la exigen para firmar. El fichero se crea con permisos cerrados y se borra al
+# salir: lleva las credenciales dentro.
+espejo() { # $1 url  $2 clave  $3 secreto  $4 región  $5 bucket  $6 carpeta
+  local configuracion estado=0
+  configuracion=$(mktemp -d)
+  chmod 700 "$configuracion"
+  cat > "$configuracion/config.json" <<JSON
+{
+  "version": "10",
+  "aliases": {
+    "origen": {
+      "url": "$1",
+      "accessKey": "$2",
+      "secretKey": "$3",
+      "api": "S3v4",
+      "path": "auto",
+      "region": "$4"
+    }
+  }
+}
+JSON
+  mkdir -p "$destino/$6"
+  docker run --rm -v "$configuracion:/root/.mc" -v "$PWD/$destino:/salida" \
+    --entrypoint mc minio/mc mirror --overwrite "origen/$5" "/salida/$6" || estado=$?
+  rm -rf "$configuracion"
+  return $estado
 }
 
 if [ -n "${FOTOS:-}" ]; then
@@ -196,8 +220,12 @@ AYUDA
     exit 1
   fi
   echo "Trayendo miniaturas y derivadas del bucket obras…"
-  espejo "https://$SUPABASE_S3_KEY_ID:$SUPABASE_S3_KEY_SECRET@$REF.supabase.co/storage/v1/s3" \
-         obras obras
+  # El anfitrión que documenta Supabase para S3 es <ref>.storage.supabase.co, no
+  # el del proyecto. La región es la misma que se lee junto a la clave en el
+  # panel y por omisión la del proyecto en Terraform.
+  espejo "https://$REF.storage.supabase.co/storage/v1/s3" \
+         "$SUPABASE_S3_KEY_ID" "$SUPABASE_S3_KEY_SECRET" \
+         "${SUPABASE_S3_REGION:-${SUPABASE_REGION:-eu-west-3}}" obras obras
 fi
 
 if [ "${FOTOS:-}" = "todo" ]; then
@@ -213,7 +241,8 @@ AYUDA
     exit 1
   fi
   echo "Trayendo los másters de B2. Esto tarda y ocupa…"
-  espejo "https://$B2_KEY_ID:$B2_KEY_SECRET@s3.${B2_REGION:-eu-central-003}.backblazeb2.com" \
+  espejo "https://s3.${B2_REGION:-eu-central-003}.backblazeb2.com" \
+         "$B2_KEY_ID" "$B2_KEY_SECRET" "${B2_REGION:-eu-central-003}" \
          "$B2_BUCKET_MASTERS" masters
 fi
 
