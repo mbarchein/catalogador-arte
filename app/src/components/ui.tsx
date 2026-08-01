@@ -1254,8 +1254,20 @@ export function SearchableCheckList<T extends string>({
 export function ActionBar({ children, notice }: { children: ReactNode; notice?: ReactNode }) {
   return (
     <div
-      className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-stone-200 bg-stone-100/95 px-4 pt-3 backdrop-blur"
-      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+      className="sticky z-10 -mx-4 mt-4 border-t border-stone-200 bg-stone-100/95 px-4 pb-3 pt-3 backdrop-blur"
+      // Pegada por encima del menú del pie, no al borde de la ventana.
+      //
+      // Con `bottom: 0` la barra se quedaba DEBAJO del menú: los dos son
+      // `sticky bottom-0` con el mismo z-index, y el menú va después en el
+      // documento, así que pintaba encima. «Guardar» y «Cancelar» solo aparecían
+      // al llegar al final del formulario con el dedo, que es exactamente lo que
+      // una barra pegada existe para evitar.
+      //
+      // 3.5rem es la altura del menú (`h-14`), y su franja segura la añade él
+      // mismo, así que aquí se suma pero no se vuelve a rellenar. Al final del
+      // recorrido la posición natural de la barra ya coincide con esta, y no
+      // salta.
+      style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
     >
       {/* The notice goes here and not at the top of the page: the result of
           pressing a button must appear where it was just pressed, not where
