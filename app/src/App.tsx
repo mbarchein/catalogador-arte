@@ -6,6 +6,7 @@ import { CapturePage } from './features/artworks/CapturePage'
 import { ArtworkPage } from './features/artworks/ArtworkPage'
 import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
+import { PlacesPage } from './features/places/PlacesPage'
 import { ProfilePage } from './features/profile/ProfilePage'
 
 export function App() {
@@ -32,6 +33,10 @@ export function App() {
       <Route path="/artwork/:id/edit" element={<ArtworkPage />} />
       <Route path="/artwork/:id/photos" element={<ArtworkPhotosPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      {/* RF-1106: mantenimiento de las ubicaciones. Primera pantalla de la
+          sección «Tablas» que el requisito prevé; la propia pantalla explica por
+          qué la sección todavía no existe. Solo Catalogador, comprobado dentro. */}
+      <Route path="/places" element={<PlacesPage />} />
       {/* The recovery email link opens a temporary session and lands here; it
           also serves as the password change from Mi perfil. */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />

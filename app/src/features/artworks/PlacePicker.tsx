@@ -41,6 +41,11 @@ export function PlacePicker({
   tree,
   onChange,
   ensurePlace,
+  exclude,
+  noneLabel = 'Sin ubicación',
+  noneHint = 'La obra queda sin sitio registrado',
+  openOnMount = false,
+  title = 'Ubicación de la obra',
 }: {
   id: string
   label: string
@@ -49,13 +54,30 @@ export function PlacePicker({
   tree: PlaceTree
   onChange: (placeId: string | null) => void
   /**
+   * Places that must not be offered. The places screen passes the node it is
+   * moving and everything inside it: hanging a shelf from its own drawer is a
+   * cycle, and the database refuses it — offering it would be inviting the error
+   * instead of preventing it.
+   */
+  exclude?: ReadonlySet<string>
+  /** What the "no place" row reads, which is not the same thing when choosing a parent. */
+  noneLabel?: string
+  noneHint?: string
+  /**
+   * Opens the sheet as soon as it mounts, and shows no field of its own. For the
+   * caller that already pressed its own button — the places screen, whose «Mover»
+   * must not need a second tap to open the same sheet.
+   */
+  openOnMount?: boolean
+  title?: string
+  /**
    * Creates the place a path names, and whatever is missing above it, and
    * answers its identifier. Omit it for whoever may not add places: then the
    * sheet only offers what already exists.
    */
   ensurePlace?: (levels: readonly string[]) => Promise<{ id: string } | { error: string }>
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(openOnMount)
   const [typed, setTyped] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -67,8 +89,13 @@ export function PlacePicker({
   // artwork already points at stays, or its own location would vanish from the
   // sheet that is supposed to show it.
   const rows = useMemo(
-    () => flattenPlaces(tree, (place) => place.active || place.id === value),
-    [tree, value],
+    () =>
+      flattenPlaces(
+        tree,
+        (place) =>
+          !(exclude?.has(place.id) ?? false) && (place.active || place.id === value),
+      ),
+    [tree, value, exclude],
   )
 
   const term = normalizeForSearch(typed)
@@ -126,24 +153,28 @@ export function PlacePicker({
 
   return (
     <div>
-      <span className="label" id={`${id}-label`}>
-        {label}
-      </span>
-      <button
-        type="button"
-        id={id}
-        aria-labelledby={`${id}-label`}
-        onClick={() => setOpen(true)}
-        className="field flex min-h-touch w-full items-center justify-between gap-2 text-left"
-      >
-        {/* Never a blank space: a record with no location says so. */}
-        <span className={current === '' ? 'text-stone-400' : ''}>
-          {current === '' ? 'Sin ubicación' : current}
-        </span>
-        <span className="shrink-0 text-xs text-stone-500">Cambiar</span>
-      </button>
+      {!openOnMount && (
+        <>
+          <span className="label" id={`${id}-label`}>
+            {label}
+          </span>
+          <button
+            type="button"
+            id={id}
+            aria-labelledby={`${id}-label`}
+            onClick={() => setOpen(true)}
+            className="field flex min-h-touch w-full items-center justify-between gap-2 text-left"
+          >
+            {/* Never a blank space: a record with no location says so. */}
+            <span className={current === '' ? 'text-stone-400' : ''}>
+              {current === '' ? 'Sin ubicación' : current}
+            </span>
+            <span className="shrink-0 text-xs text-stone-500">Cambiar</span>
+          </button>
+        </>
+      )}
 
-      <BottomSheet open={open} onClose={close} title="Ubicación de la obra">
+      <BottomSheet open={open} onClose={close} title={title}>
         <input
           className="field mb-3"
           type="search"
@@ -164,8 +195,8 @@ export function PlacePicker({
 
         <div role="group" className="space-y-1">
           <PlaceRow
-            text="Sin ubicación"
-            hint="La obra queda sin sitio registrado"
+            text={noneLabel}
+            hint={noneHint}
             depth={0}
             active={value === null}
             onClick={() => {
