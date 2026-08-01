@@ -1,10 +1,3 @@
-# Registro de cambios
-
-Qué ha ido cambiando en el catalogador, contado por lo que se puede hacer con él. Por fechas,
-la más reciente primero, y dentro de cada una por apartados. Al final, lo que está en marcha.
-
----
-
 ## 1 de agosto de 2026
 
 ### Interfaz
