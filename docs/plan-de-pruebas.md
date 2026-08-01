@@ -103,6 +103,7 @@ interfaz que promete lo que no cumple.
 | RF-210 | `fotografiada` es No sin imágenes, Sí con una imagen activa, y **No cuando su única imagen está de baja** (INC-14) | Pendiente |
 | RF-211 | `medidas_verificadas` sigue en No aunque `alto_cm` y `ancho_cm` tengan valor | Pendiente |
 | RF-212 | `obras_relacionadas` acepta varias obras y no admite texto | Pendiente |
+| RF-215 | El nombre se guarda como se escribe; dos hermanos —o dos raíces— con el mismo nombre normalizado se rechazan; el árbol no admite ciclos; renombrar y mover son un `update`; un lugar con contenido no se retira; la baja se sella y se deshace; y el Lector ve el árbol sin poder tocarlo. Cubierto en `physical_places.test.sql` | **Hecho** |
 
 ### Ficha de obra (RF-300)
 
