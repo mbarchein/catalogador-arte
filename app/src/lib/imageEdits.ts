@@ -38,6 +38,7 @@ import {
   cornersBoundingBox,
   isRectangle,
   isConvexQuadrilateral,
+  rotateCorners,
   straightenedSize,
   type Corners,
 } from './perspective'
@@ -215,6 +216,25 @@ export function rotateCrop(crop: Crop, rotation: number): Crop {
     return { x: crop.y, y: 1 - crop.x - crop.width, width: crop.height, height: crop.width }
   }
   return { ...crop }
+}
+
+/**
+ * The WHOLE edit turned with the photograph: the turn, the rectangle and the
+ * quadrilateral, in one call.
+ *
+ * It exists because the editor turned them one by one at the call site — the turn on
+ * one line, the rectangle on the next, the stored candidates on a third — and the
+ * quadrilateral was simply missing from that list. Turning a photograph that had its
+ * four corners placed left them in the previous frame, and since a quarter turn swaps
+ * the sides of the image, the shape came out transposed over a painting that had
+ * moved. Three sibling lines are three chances to forget one; one function is none.
+ */
+export function rotateEdit(edit: PhotoEdit, rotation: number): PhotoEdit {
+  return {
+    rotation: addRotation(edit.rotation, rotation),
+    crop: edit.crop ? rotateCrop(edit.crop, rotation) : null,
+    corners: edit.corners ? rotateCorners(edit.corners, rotation) : null,
+  }
 }
 
 /**

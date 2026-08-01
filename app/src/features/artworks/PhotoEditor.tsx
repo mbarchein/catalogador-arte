@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  addRotation,
   centeredCrop,
   clampCrop,
   cornerPoint,
@@ -11,6 +10,7 @@ import {
   normalizeEdit,
   resizeCrop,
   rotateCrop,
+  rotateEdit,
   rotatedSize,
   type Corner,
   type Crop,
@@ -364,12 +364,25 @@ export function PhotoEditor({
     window.history.back()
   }
 
-  /** Turning must not move the framing: the rectangle turns with the photo. */
+  /**
+   * Turning must not move the framing: everything drawn over the photograph turns
+   * with it.
+   *
+   * The turn, the rectangle and the quadrilateral go together through `rotateEdit`,
+   * which is the whole reason it exists: they used to be turned one by one here and
+   * the quadrilateral was left out, so turning a straightened photograph left its
+   * four corners in the previous frame.
+   */
   function rotate(delta: number) {
-    setRotation((r) => addRotation(r, delta))
-    setCrop((c) => (c ? rotateCrop(c, delta) : null))
-    // The stored candidates travel too, or choosing between frame and canvas
-    // after turning the photo would load a rectangle from the previous frame.
+    const turned = rotateEdit(editRef.current, delta)
+    setRotation(turned.rotation)
+    setCrop(turned.crop ?? null)
+    setCorners(turned.corners ?? null)
+    // What a suggestion replaced travels too, or «Deshacer la sugerencia» would put
+    // back a rectangle measured over the previous frame.
+    setReplaced((c) => (c ? rotateCrop(c, delta) : null))
+    // And so do the stored candidates, or choosing between frame and canvas after
+    // turning the photo would load a rectangle from the previous frame.
     setAnalysis((a) =>
       a.status === 'found' ? { ...a, suggestion: rotateSuggestion(a.suggestion, delta) } : a,
     )

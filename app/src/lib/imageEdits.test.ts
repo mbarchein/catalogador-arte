@@ -24,6 +24,7 @@ import {
   normalizeRotation,
   resizeCrop,
   rotateCrop,
+  rotateEdit,
   rotatedSize,
   sameEdit,
   swapsSides,
@@ -116,6 +117,50 @@ describe('clampCrop', () => {
     const small = clampCrop({ x: 0.99, y: 0.99, width: 0.001, height: 0.001 }, MIN_CROP)
     expect(small.width).toBeCloseTo(MIN_CROP, 9)
     expect(small.x + small.width).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('rotateEdit: todo lo dibujado sobre la foto gira con ella (RF-410)', () => {
+  // Un cuadro torcido, que es cuando hay cuatro esquinas y no un rectángulo.
+  const corners = {
+    nw: { x: 0.175, y: 0.1 },
+    ne: { x: 0.875, y: 0.18 },
+    se: { x: 0.86, y: 0.87 },
+    sw: { x: 0.15, y: 0.78 },
+  }
+
+  it('gira las esquinas, y no solo el giro y el recorte', () => {
+    // La incidencia: el editor giraba el giro, el recorte y los candidatos uno a
+    // uno, y se dejaba las esquinas. Girar una foto ya enderezada dejaba el
+    // cuadrilátero en el marco anterior, transpuesto sobre un cuadro que se había
+    // movido.
+    const turned = rotateEdit({ rotation: 0, crop: null, corners }, 90)
+    expect(turned.rotation).toBe(90)
+    expect(turned.corners).not.toBeNull()
+    // Un cuarto de vuelta en el sentido del reloj: (x, y) → (1 − y, x), y el nombre
+    // corre — la que era noroeste aparece al nordeste.
+    expect(turned.corners!.ne.x).toBeCloseTo(1 - corners.nw.y, 6)
+    expect(turned.corners!.ne.y).toBeCloseTo(corners.nw.x, 6)
+  })
+
+  it('cuatro cuartos de vuelta devuelven el encuadre intacto', () => {
+    let edit: PhotoEdit = {
+      rotation: 0,
+      crop: { x: 0.1, y: 0.2, width: 0.3, height: 0.4 },
+      corners,
+    }
+    for (let i = 0; i < 4; i += 1) edit = rotateEdit(edit, 90)
+    expect(edit.rotation).toBe(0)
+    expectCrop(edit.crop, { x: 0.1, y: 0.2, width: 0.3, height: 0.4 })
+    for (const key of ['nw', 'ne', 'se', 'sw'] as const) {
+      expect(edit.corners![key].x).toBeCloseTo(corners[key].x, 6)
+      expect(edit.corners![key].y).toBeCloseTo(corners[key].y, 6)
+    }
+  })
+
+  it('sin encuadre no inventa ninguno', () => {
+    const turned = rotateEdit({ rotation: 270, crop: null, corners: null }, 90)
+    expect(turned).toEqual({ rotation: 0, crop: null, corners: null })
   })
 })
 
