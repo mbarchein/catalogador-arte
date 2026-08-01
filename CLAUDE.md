@@ -39,6 +39,23 @@
   (`git config --local user.email`), lo que prevalece sobre la identidad global de la máquina.
   Nunca firmar con la cuenta corporativa.
 
+## Registro de cambios
+
+- **Todo cambio que la usuaria pueda notar se anota en [`CHANGELOG.md`](CHANGELOG.md)**, en la sección
+  que le corresponda: «Interfaz», «La base de datos del catálogo», «Diseño lógico de la aplicación y
+  esquema de datos» o «Correcciones». Lo que no se nota desde la aplicación —refactorizaciones,
+  arreglos del stack local, actualizaciones de dependencias— o se deja fuera o se agrupa en una línea.
+- **El destinatario es la usuaria que cataloga, no un programador.** Se cuenta la consecuencia
+  práctica, no el mecanismo: no «nueva tabla `physical_places` con *trigger* anticiclos», sino «mover
+  una estantería entera se hace una vez y lo ven todas sus obras». Sin nombres de tabla, sin nombres
+  de fichero y sin jerga.
+- **Una entrada por grupo significativo de cambios, no por commit**, con la fecha del grupo (el mes, o
+  el día si es de un solo día) y lo más reciente primero dentro de cada sección.
+- La sección final **«En marcha»** recoge lo que está a medias. Al terminar algo que estuviera ahí, se
+  retira de «En marcha» y pasa a su sección: dejarlo en las dos es peor que no tenerlo.
+- Se actualiza **junto al trabajo que describe**, no en una pasada al final. Puede ir en el mismo
+  commit o en un `docs:` inmediatamente posterior.
+
 ## Tests
 
 - **Todo código lleva tests.** Ninguna política, *trigger*, componente o utilidad se da por terminado
