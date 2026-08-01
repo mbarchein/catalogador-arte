@@ -23,6 +23,27 @@ filtrar por «Sin ubicación» para ver qué obras están pendientes de colocar,
 rompe un enlace guardado o compartido. Los enlaces de antes siguen funcionando: se traducen solos al
 abrirlos.
 
+**Los tipos de obra y las series ya se mantienen desde «Tablas»**
+La sección «Tablas» del menú del pie tiene ahora sus tres listas: ubicaciones, tipos de obra y series.
+En las dos nuevas se puede crear una entrada, corregir su nombre y retirar la que ya no se use. Y
+corregir un nombre es una sola edición: cambiar «Tecnica mixta» por «Técnica mixta» lo ven al momento
+todas las obras que lo llevan y también el filtro del listado, sin repasar ficha por ficha. Los tipos
+y las series se siguen añadiendo desde el propio formulario de la ficha, que es donde hacen falta con
+la obra delante; lo que antes no se podía hacer desde ningún sitio era arreglarlos.
+
+Cada serie aparece bajo el fondo al que pertenece, y al crear una hay que elegir el fondo: los dos
+fondos pueden tener una serie con el mismo nombre y son dos series distintas, así que una lista de
+nombres a secas sería una invitación a meter una obra en la serie de otro artista. El fondo de una
+serie ya creada no se cambia, porque cambiarlo dejaría sus obras en un fondo que no es el suyo; para
+eso se mueven las obras. Y los fondos en sí no se tocan desde aquí: su nombre está dentro del
+identificador pegado a cada cuadro.
+
+Nada se borra: se retira. Lo retirado deja de ofrecerse al catalogar y al filtrar, sigue visible en su
+lista en gris y vuelve con un botón. Un tipo o una serie que todavía tenga obras dentro no se puede
+retirar, y la aplicación lo dice con lo que hay que hacer antes —cambiar el tipo de esas obras, o
+sacarlas de la serie—. Escribir en «Añadir» un nombre que ya existe no lo duplica, aunque se escriba
+con otras mayúsculas o tildes, y escribir uno que estaba retirado lo recupera.
+
 **El teclado manda sobre la galería a pantalla completa**
 Con una fotografía abierta a pantalla completa, las flechas del teclado pasan entre las fotos de la
 obra y ya no entre obras, que era lo que hacían antes; la tecla «f» abre y cierra la pantalla
@@ -75,8 +96,8 @@ a reescribir todas las obras que lo usaran, y por eso no se podía hacer desde l
 cada uno tiene su propia identidad y el nombre es un dato más: corregir «Técnica mixta» o el nombre de
 una serie será una edición que verá el catálogo entero. Aparece además la posibilidad de retirar un
 tipo o una serie que ya no se usen —sin borrarlos, como todo aquí—, con la misma regla que los
-lugares: no se retira lo que todavía tiene obras dentro. La pantalla para hacerlo es lo siguiente; el
-cambio de hoy es el que lo hace posible.
+lugares: no se retira lo que todavía tiene obras dentro. Las pantallas que lo hacen están en la
+sección «Tablas», más arriba; este cambio es el que lo hace posible.
 
 **Sin haber entrado no se llega a nada**
 La primera versión del catálogo creyó cerrar las operaciones internas de la base y no las cerró: la
@@ -464,11 +485,6 @@ librerías que tenían avisos de seguridad abiertos.
 ---
 
 ## En marcha
-
-**Los tipos de obra y las series, en la sección «Tablas»**
-La sección ya existe, con su pestaña en el pie, y de momento solo lleva las ubicaciones. Los tipos de
-obra y las series se siguen añadiendo desde el formulario de la ficha, que es donde hacen falta, pero
-todavía no se pueden renombrar ni retirar desde ningún sitio. Es lo siguiente.
 
 **El acierto de la sugerencia de recorte**
 La sugerencia se ha medido por fin contra las 44 fotografías del catálogo, y el resultado no es el que
