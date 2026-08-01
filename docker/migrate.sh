@@ -27,6 +27,28 @@ for f in $(ls /migrations/*.sql | sort); do
   psql -v ON_ERROR_STOP=1 -c "insert into public._migraciones (nombre) values ('$nombre')"
 done
 
+# Privilegios del esquema `storage` que la plataforma concede en la nube y la
+# imagen self-host no. Sin ellos, storage-api no puede ni leer la fila del bucket
+# para comprobar el tamaño máximo, y responde a cualquier subida con «new row
+# violates row-level security policy»: un mensaje que manda a mirar las políticas
+# cuando lo que falta es un GRANT. El resultado era que subir una fotografía
+# funcionaba en la nube y fallaba en local, que es justo al revés de para lo que
+# existe un stack local.
+#
+# Va aquí y no en una migración a propósito: en la nube ya están concedidos, y
+# una migración que los repita tocaría privilegios de producción sin necesidad.
+echo "→ privilegios de storage (solo local)"
+psql -v ON_ERROR_STOP=1 <<'SQL'
+grant select on storage.buckets to anon, authenticated, service_role;
+grant select, insert, update, delete on storage.objects to anon, authenticated, service_role;
+
+-- storage.buckets tiene RLS y ninguna política, así que el GRANT solo no basta.
+-- Esto abre la LISTA de buckets, no su contenido: la puerta de los ficheros
+-- siguen siendo las políticas de storage.objects que instalan las migraciones.
+drop policy if exists buckets_legibles_en_local on storage.buckets;
+create policy buckets_legibles_en_local on storage.buckets for select using (true);
+SQL
+
 if [ -f /seed.sql ]; then
   echo "→ seed.sql"
   psql -v ON_ERROR_STOP=1 -f /seed.sql
