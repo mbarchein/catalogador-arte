@@ -12,6 +12,8 @@
 | Ver cómo debe quedar la ficha de obra | [`disenos/`](disenos/) |
 | Saber qué está mal o sin decidir en los documentos anteriores | [`revision/incidencias-detectadas.md`](revision/incidencias-detectadas.md) |
 | Saber qué está verificado con tests y qué no | [`plan-de-pruebas.md`](plan-de-pruebas.md) |
+| Entender qué hace cada contenedor del stack local, y dónde acaban las fotografías | [`../docker/README.md`](../docker/README.md) |
+| Saber cómo se gestiona la plataforma y qué frontera no cruza Terraform | [`../infra/README.md`](../infra/README.md) |
 
 ## Jerarquía documental
 

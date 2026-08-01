@@ -53,6 +53,9 @@ Después, http://localhost:5173 con cualquiera de estas cuentas (contraseña `pa
 Para probar en el móvil, que es el dispositivo del caso de uso principal, `make movil` explica los dos
 pasos. Merece la pena hacerlo pronto: catalogar de pie con una mano se juzga mal desde un escritorio.
 
+Qué hace cada contenedor, y dónde acaba en local lo que en producción va a Supabase y a Backblaze, en
+[`docker/README.md`](docker/README.md).
+
 ### Trabajar con los datos de producción
 
 Para reproducir algo con el catálogo real delante, `make db-clone` trae los datos de producción y los
