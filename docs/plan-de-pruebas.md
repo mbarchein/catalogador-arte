@@ -169,7 +169,8 @@ comparar, solo un criterio. El estado medido está en
 | RF-410 | El detector dice POR QUÉ declina, con los números de la decisión: nueve motivos distinguidos, que es lo que permite saber si un silencio es un acierto o una regla llevándose un borde por delante | **Hecho** |
 | RF-410 | Límite escrito y no promesa: el soporte de línea impide que una textura pase por borde, pero no sabe decidir cuál de dos bordes reales es el de la obra | **Hecho** |
 | RF-410 | Sobre las 44 fotografías reales: 16 sugerencias, ninguna mala, IoU mediana 0,986. Se mide con `node scripts/bordes/medir.mjs`, no con un test automático: depende de un volcado que no está en el repositorio | Medido a mano |
-| RF-410 | La corrección de perspectiva con cuatro esquinas y su rectificado | Pendiente |
+| RF-409, RF-410 | Las cuatro esquinas: las ocho columnas o ninguna, una esquina puede salirse del encuadre pero no irse, un cuadrilátero cruzado o degenerado se rechaza —rectificar un lazo da una imagen doblada—, y el recorte y las esquinas conviven, que es lo que permite desplegar en una fase. Y la procedencia del encuadre nace desconocida y no «a mano». Cubierto en `image_perspective.test.sql` | **Hecho** |
+| RF-410 | El rectificado en el navegador y las cuatro asas del editor | Pendiente |
 
 ### Índices y búsqueda (RF-600)
 
