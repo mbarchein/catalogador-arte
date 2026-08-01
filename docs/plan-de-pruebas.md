@@ -104,6 +104,7 @@ interfaz que promete lo que no cumple.
 | RF-211 | `medidas_verificadas` sigue en No aunque `alto_cm` y `ancho_cm` tengan valor | Pendiente |
 | RF-212 | `obras_relacionadas` acepta varias obras y no admite texto | Pendiente |
 | RF-215 | El nombre se guarda como se escribe; dos hermanos —o dos raíces— con el mismo nombre normalizado se rechazan; el árbol no admite ciclos; renombrar y mover son un `update`; un lugar con contenido no se retira; la baja se sella y se deshace; y el Lector ve el árbol sin poder tocarlo. Cubierto en `physical_places.test.sql` | **Hecho** |
+| RF-215 | La obra apunta a un nodo, o a ninguno, que también es legítimo; renombrar el lugar lo ve el catálogo entero sin mover las fechas de la obra; un lugar con obras activas dentro no se retira, y una obra en la papelera no lo impide; la clave ajena rechaza apuntar a un lugar inexistente; y el traslado de los textos no dejó obras sin nodo ni la auditoría apagada. Cubierto en `artwork_physical_place.test.sql` | **Hecho** |
 
 ### Ficha de obra (RF-300)
 
@@ -182,7 +183,7 @@ interfaz que promete lo que no cumple.
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
 | RF-801 | Cualquier cambio actualiza `fecha_actualizacion` | Pendiente |
-| RF-802 | Un cambio en un campo de fase 1 actualiza `fecha_actualizacion_basica`; un cambio de fase 2 **no** la actualiza | **Hecho** |
+| RF-802 | Un cambio en un campo de fase 1 actualiza `fecha_actualizacion_basica`; un cambio de fase 2 **no** la actualiza. Con el árbol de lugares (ADR-006): cambiar la obra de sitio la mueve, renombrar el sitio no (`artwork_physical_place.test.sql`) | **Hecho** |
 | RF-803 | `actualizado_por` recoge el usuario de la sesión que guardó | Pendiente |
 | RF-804 | Las seis tablas con clave primaria propia disponen de los tres campos (INC-09) | Pendiente |
 

@@ -62,7 +62,7 @@ echo "Vaciando el catálogo local…"
 $PSQL <<'SQL' > /dev/null
 begin;
 truncate table public.images, public.artworks, public.series,
-               public.artwork_types, public.profiles;
+               public.artwork_types, public.physical_places, public.profiles;
 delete from auth.users;
 -- Red de seguridad: si una carga anterior dejó identidades sin cuenta, se van
 -- ahora. Sin esto el arreglo no alcanza a una base ya rota.
@@ -125,6 +125,74 @@ from auth.users u
 where not exists (
   select 1 from auth.identities i where i.user_id = u.id and i.provider = 'email'
 );
+SQL
+
+# ── Transitorio: el árbol de lugares de un volcado antiguo ──
+# Un volcado traído ANTES de que 20260801150000 llegara a producción no lleva
+# `physical_places` ni `physical_place_id`: solo el texto de la convención vieja.
+# Cargado tal cual, el catálogo local se quedaría sin ninguna ubicación, que
+# parece un fallo de la aplicación y no lo es.
+#
+# Esto repite el reparto por comas de esa migración a propósito y con su fecha de
+# caducidad puesta: se borra cuando se retire la columna `physical_location`, que
+# es cuando dejarán de existir volcados sin árbol. No se ha convertido en una
+# función del esquema para no dejar en producción, para siempre, una herramienta
+# de un solo uso.
+echo "Reconstruyendo el árbol de lugares (volcado sin ubicaciones)…"
+$PSQL <<'SQL' > /dev/null
+-- Con los triggers apagados, igual que la carga del volcado y por el mismo
+-- motivo: esto no es que alguien haya editado 17 obras ni que las haya tenido
+-- delante (RF-801, RF-802), y con `auth.uid()` nulo la auditoría les borraría el
+-- «actualizado por» que acaba de llegar de producción.
+set session_replication_role = replica;
+
+do $$
+declare
+  v_artwork record;
+  v_level text;
+  v_parent uuid;
+  v_node uuid;
+begin
+  -- Solo si el volcado no traía árbol. Si lo traía, no se toca nada.
+  if exists (select 1 from public.physical_places) then
+    return;
+  end if;
+
+  for v_artwork in
+    select catalog_id, physical_location
+      from public.artworks
+     where btrim(coalesce(physical_location, '')) <> ''
+       and public.place_key(physical_location) <> 'zzzz'
+     order by catalog_id
+  loop
+    v_parent := null;
+    v_node := null;
+
+    foreach v_level in array string_to_array(v_artwork.physical_location, ',')
+    loop
+      v_level := btrim(v_level);
+      continue when v_level = '';
+
+      select id into v_node
+        from public.physical_places
+       where parent_id is not distinct from v_parent
+         and public.place_key(name) = public.place_key(v_level);
+
+      if v_node is null then
+        insert into public.physical_places (parent_id, name)
+        values (v_parent, v_level)
+        returning id into v_node;
+      end if;
+
+      v_parent := v_node;
+    end loop;
+
+    if v_node is not null then
+      update public.artworks set physical_place_id = v_node
+       where catalog_id = v_artwork.catalog_id;
+    end if;
+  end loop;
+end $$;
 SQL
 
 # Las cuentas de prueba locales se recrean: se han borrado con las demás, y sin

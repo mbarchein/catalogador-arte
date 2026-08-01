@@ -14,6 +14,26 @@ insert into auth.users (id, email) values
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000e1';
 update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000e2';
 
+-- Y el árbol vacío, haya lo que haya en la base. Estos tests corren tanto sobre
+-- una base recién migrada como sobre una copia local del volcado de producción,
+-- donde el traslado de datos de 20260801150000 ya creó lugares que se llaman
+-- igual que estos fixtures: sin esto el test fallaría por el índice de raíces
+-- homónimas y no por lo que pretende comprobar. Todo vive dentro de la
+-- transacción que se deshace al final.
+--
+-- Se vacía por hojas y en bucle porque `parent_id` es `on delete restrict`: un
+-- solo `delete` que se llevara padre e hijo a la vez lo rechazaría la propia
+-- restricción.
+update public.artworks set physical_place_id = null;
+do $$
+begin
+  loop
+    delete from public.physical_places p
+     where not exists (select 1 from public.physical_places c where c.parent_id = p.id);
+    exit when not found;
+  end loop;
+end $$;
+
 -- ── 1. El nombre se guarda tal cual ──────────────────────────
 -- Es el motivo de la decisión: la convención anterior escribía en la ficha y en
 -- el PDF «museo de bellas artes de badajoz».
