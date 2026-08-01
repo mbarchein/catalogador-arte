@@ -51,9 +51,15 @@ case "$SUPABASE_DB_URL" in
 esac
 
 # Las herramientas de cliente salen de la misma imagen que el stack local, que
-# ya está descargada. Si producción corriera una versión mayor de PostgreSQL,
-# pg_dump se negaría a leerla: se cambia con IMAGEN_PG.
-IMAGEN_PG=${IMAGEN_PG:-supabase/postgres:15.8.1.085}
+# ya está descargada y sirve para conectar y preguntar. Para volcar puede hacer
+# falta otra: ver más abajo.
+IMAGEN_PG=${IMAGEN_PG:-supabase/postgres:17.6.1.158}
+
+# --entrypoint sh y no `bash -c`: la imagen del volcado puede ser una alpine,
+# que no lleva bash. Lo que se ejecuta dentro es sh corriente.
+en_imagen() {
+  docker run --rm -i --entrypoint sh -e PGURL="$URL" -e PGCONNECT_TIMEOUT=15 "$1" -c "$2"
+}
 
 # La conexión directa de Supabase (db.<ref>.supabase.co) solo escucha en IPv6, y
 # muchas redes domésticas y de oficina no lo enrutan: el error es un «Network is
@@ -80,8 +86,8 @@ URL=""
 for candidata in "${candidatas[@]}"; do
   anfitrion=$(sed -nE 's#.*@([^:/]+).*#\1#p' <<<"$candidata")
   printf '  %s … ' "$anfitrion"
-  if docker run --rm -e PGURL="$candidata" -e PGCONNECT_TIMEOUT=10 "$IMAGEN_PG" \
-       bash -c 'psql "$PGURL" -tAc "select 1"' >/dev/null 2>&1; then
+  if docker run --rm --entrypoint sh -e PGURL="$candidata" -e PGCONNECT_TIMEOUT=10 \
+       "$IMAGEN_PG" -c 'psql "$PGURL" -tAc "select 1"' >/dev/null 2>&1; then
     echo "conecta"
     URL="$candidata"
     break
@@ -115,7 +121,7 @@ if [ "$URL" != "$SUPABASE_DB_URL" ]; then
 fi
 
 en_pg() {
-  docker run --rm -i -e PGURL="$URL" "$IMAGEN_PG" bash -c "$1"
+  en_imagen "$IMAGEN_PG" "$1"
 }
 
 echo "Consultando la versión del servidor…"
@@ -123,21 +129,26 @@ servidor=$(en_pg 'psql "$PGURL" -tAc "show server_version"' | tr -d '[:space:]')
 cliente=$(en_pg 'pg_dump --version' | grep -oE '[0-9]+' | head -1)
 mayor_servidor=${servidor%%.*}
 
+# pg_dump se niega a leer un servidor más nuevo que él, y la nube va por delante
+# de la imagen del stack local. Como la versión del servidor ya se conoce, no hay
+# nada que preguntar: se coge la imagen oficial de esa versión. psql sí conecta
+# hacia arriba, así que para lo demás vale la de siempre.
+IMAGEN_VOLCADO="$IMAGEN_PG"
 if [ "$mayor_servidor" -gt "$cliente" ]; then
-  cat >&2 <<AYUDA
-Producción corre PostgreSQL $servidor y las herramientas de $IMAGEN_PG son la $cliente.
-pg_dump no lee un servidor más nuevo que él. Repite con una imagen que coincida:
-
-  IMAGEN_PG=postgres:$mayor_servidor-alpine make db-pull
-AYUDA
-  exit 1
+  IMAGEN_VOLCADO="postgres:$mayor_servidor-alpine"
+  echo "Producción corre PostgreSQL $servidor y $IMAGEN_PG trae la $cliente."
+  echo "Volcando con $IMAGEN_VOLCADO (se descarga la primera vez)…"
 fi
+
+en_volcado() {
+  en_imagen "$IMAGEN_VOLCADO" "$1"
+}
 
 destino="volcados/$(date +%Y%m%d-%H%M)"
 mkdir -p "$destino"
 
 echo "Volcando los datos del esquema público…"
-en_pg 'pg_dump "$PGURL" --data-only --schema=public --no-owner --no-privileges' \
+en_volcado 'pg_dump "$PGURL" --data-only --schema=public --no-owner --no-privileges' \
   > "$destino/publico.sql"
 
 # Los usuarios hacen falta por integridad: perfiles referencia auth.users, y las
@@ -145,7 +156,7 @@ en_pg 'pg_dump "$PGURL" --data-only --schema=public --no-owner --no-privileges' 
 # cuatro columnas, y NO el hash de la contraseña: es un secreto de una persona
 # real que no pinta nada en un portátil, y la carga local pone una conocida.
 echo "Volcando las cuentas (sin contraseñas)…"
-en_pg 'psql "$PGURL" --csv -c "select id, email, created_at, coalesce(raw_user_meta_data::text, '"'"'{}'"'"') as meta from auth.users order by created_at"' \
+en_volcado 'psql "$PGURL" --csv -c "select id, email, created_at, coalesce(raw_user_meta_data::text, '"'"'{}'"'"') as meta from auth.users order by created_at"' \
   > "$destino/usuarios.csv"
 
 obras=$(grep -c '^AR-\|^RC-\|^TEST-' "$destino/publico.sql" 2>/dev/null || true)

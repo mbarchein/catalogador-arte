@@ -20,8 +20,13 @@ x-jwt: &jwt-env
   SERVICE_ROLE_KEY: &service-key eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UtbG9jYWwiLCJpYXQiOjE3MzU2ODk2MDAsImV4cCI6MjA4Mjc1ODQwMH0.hKugUZ3psc796Vm1pvDwNp_KGtbvF22bnuyE6pjGQFk
 
 services:
+  # La MISMA versión mayor que producción (PostgreSQL 17). No es cosmética: un
+  # volcado de la nube se hace con pg_dump 17 y su preámbulo incluye SET que no
+  # existen en la 15, así que `make db-load` fallaba contra un local más viejo.
+  # Y un fallo que solo aparece en la nube es lo que un stack local existe para
+  # evitar. Al cambiarla hay que recrear el volumen: `make clean && make up`.
   db:
-    image: supabase/postgres:15.8.1.085
+    image: supabase/postgres:17.6.1.158
     ports:
       - "${PUERTO_DB:-5433}:5432"
     environment:
@@ -87,7 +92,7 @@ services:
       - "${PUERTO_CORREO:-8325}:8025"
 
   migrate:
-    image: supabase/postgres:15.8.1.085
+    image: supabase/postgres:17.6.1.158
     depends_on:
       auth:
         condition: service_healthy
