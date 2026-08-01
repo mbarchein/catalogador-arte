@@ -14,13 +14,27 @@ export interface ImageRow {
   photo_date: string | null
   sort_order: number
   // Framing applied to the copies that are served, kept as data so it can be
-  // reapplied to the master (see imageEdits.ts). The four crop columns are all
-  // null or all present; the database guarantees it.
+  // reapplied to the master (see imageEdits.ts). The four crop columns are all null
+  // or all present, and so are the eight corner ones; the database guarantees both.
+  //
+  // The corners have to be READ and not only written, which is not obvious and cost
+  // a bug: without them here the straightening was stored and never came back, so
+  // the editor reopened without it and the summary announced «sin giro ni recorte»
+  // over a photograph that was straightened. Whatever field this type declares, the
+  // query below has to select.
   rotation: number
   crop_x: number | null
   crop_y: number | null
   crop_width: number | null
   crop_height: number | null
+  corner_nw_x: number | null
+  corner_nw_y: number | null
+  corner_ne_x: number | null
+  corner_ne_y: number | null
+  corner_se_x: number | null
+  corner_se_y: number | null
+  corner_sw_x: number | null
+  corner_sw_y: number | null
 }
 
 /**
@@ -43,7 +57,10 @@ export function useArtworkImages(catalogId: string) {
     const { data } = await supabase
       .from('images')
       .select(
-        'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, photo_date, sort_order, rotation, crop_x, crop_y, crop_width, crop_height',
+        'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, ' +
+          'photo_date, sort_order, rotation, crop_x, crop_y, crop_width, crop_height, ' +
+          'corner_nw_x, corner_nw_y, corner_ne_x, corner_ne_y, ' +
+          'corner_se_x, corner_se_y, corner_sw_x, corner_sw_y',
       )
       .eq('catalog_id', catalogId)
       .eq('active', true)
