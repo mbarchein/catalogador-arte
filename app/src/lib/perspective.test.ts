@@ -4,6 +4,8 @@ import {
   cornersBoundingBox,
   cornersOfRect,
   homographyFromUnitSquare,
+  homographyToCssMatrix,
+  invertHomography,
   isRectangle,
   isSimpleQuadrilateral,
   signedArea,
@@ -119,6 +121,49 @@ describe('homographyFromUnitSquare (RF-410)', () => {
 
   it('answers null when there is no transform rather than a bad one', () => {
     expect(homographyFromUnitSquare(cornersOfRect({ x: 0.5, y: 0.5, width: 0, height: 0 }))).toBeNull()
+  })
+})
+
+describe('invertHomography and the CSS matrix (RF-410)', () => {
+  it('the inverse undoes the transform on any point', () => {
+    const h = homographyFromUnitSquare(keystone())!
+    const back = invertHomography(h)!
+    for (const point of [{ x: 0.2, y: 0.3 }, { x: 0.9, y: 0.05 }, { x: 0.5, y: 0.5 }]) {
+      const round = applyHomography(back, applyHomography(h, point))
+      expect(round.x).toBeCloseTo(point.x, 9)
+      expect(round.y).toBeCloseTo(point.y, 9)
+    }
+  })
+
+  it('and takes the four corners back to the corners of the square', () => {
+    const corners = keystone()
+    const back = invertHomography(homographyFromUnitSquare(corners)!)!
+    const nw = applyHomography(back, corners.nw)
+    const se = applyHomography(back, corners.se)
+    expect(nw.x).toBeCloseTo(0, 9)
+    expect(nw.y).toBeCloseTo(0, 9)
+    expect(se.x).toBeCloseTo(1, 9)
+    expect(se.y).toBeCloseTo(1, 9)
+  })
+
+  it('answers null for a singular matrix instead of infinities', () => {
+    expect(invertHomography([1, 0, 0, 2, 0, 0, 0, 0, 1])).toBeNull()
+  })
+
+  /**
+   * The order of a `matrix3d` is COLUMN-major, which is the usual place to get this
+   * wrong. Pinned with a transform whose numbers can be read: the identity, and one
+   * that only translates.
+   */
+  it('the CSS matrix is column-major', () => {
+    expect(homographyToCssMatrix([1, 0, 0, 0, 1, 0, 0, 0, 1])).toBe(
+      'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)',
+    )
+    // A translation lives in the third column of the homography, which becomes the
+    // FOURTH group of four in the CSS matrix.
+    expect(homographyToCssMatrix([1, 0, 7, 0, 1, 9, 0, 0, 1])).toBe(
+      'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 7, 9, 0, 1)',
+    )
   })
 })
 

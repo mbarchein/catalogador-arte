@@ -192,6 +192,61 @@ export function applyHomography(h: Homography, point: Point): Point {
   }
 }
 
+/**
+ * The inverse transform: from the photograph back to the straightened rectangle.
+ *
+ * Needed for the preview, and only for it. The renderer walks the destination and
+ * asks where each pixel comes from, so it wants square → corners; the browser, given
+ * a CSS transform, walks the source, so it wants corners → square.
+ *
+ * A 3×3 inverse by the adjugate, which for nine numbers is shorter and clearer than
+ * elimination and has no pivoting to get wrong. Null when the matrix is singular,
+ * which for a homography means the quadrilateral had no interior.
+ */
+export function invertHomography(h: Homography): Homography | null {
+  const [a, b, c, d, e, f, g, i, j] = h
+  const A = e * j - f * i
+  const B = f * g - d * j
+  const C = d * i - e * g
+  const determinant = a * A + b * B + c * C
+  if (Math.abs(determinant) < 1e-12) return null
+  const k = 1 / determinant
+  return [
+    A * k,
+    (c * i - b * j) * k,
+    (b * f - c * e) * k,
+    B * k,
+    (a * j - c * g) * k,
+    (c * d - a * f) * k,
+    C * k,
+    (b * g - a * i) * k,
+    (a * e - b * d) * k,
+  ] as const
+}
+
+/**
+ * The transform as a CSS `matrix3d`, so the browser can draw the preview.
+ *
+ * **A homography does fit in a CSS transform**, which is the one place a projective
+ * transform is free: `matrix3d` is 4×4 and homogeneous, and CSS divides by the
+ * fourth coordinate exactly as the homography divides by the third. So the preview
+ * costs nothing per frame while a handle is being dragged — the alternative, running
+ * the pixel loop on every pointer move, is 89 ms a frame on a phone.
+ *
+ * The order is column-major, which is what `matrix3d` takes and the usual place to
+ * get this wrong: the first four numbers are the first COLUMN, not the first row. Z
+ * is left as the identity because the plane does not move in depth; what makes it
+ * projective is the fourth row, which carries the two perspective terms.
+ *
+ * The result is in the units the element is drawn at, so the caller applies it with
+ * `transform-origin: 0 0` over a box of the size of the straightened rectangle.
+ */
+export function homographyToCssMatrix(h: Homography): string {
+  const [a, b, c, d, e, f, g, i, j] = h
+  const values = [a, d, 0, g, b, e, 0, i, 0, 0, 1, 0, c, f, 0, j]
+  return `matrix3d(${values.map((value) => Number(value.toFixed(9))).join(', ')})`
+}
+
 /** The bounding box of the four corners: what a crop would have been. */
 export function cornersBoundingBox(corners: Corners): {
   x: number
