@@ -2,6 +2,25 @@
 
 ### Interfaz
 
+**Enderezar una fotografía tomada en ángulo**
+Un cuadro fotografiado de lado sale como un trapecio, y recortarlo con un rectángulo deja pared por dos
+esquinas y se come obra por las otras dos. Ocho de cada catorce obras del catálogo están así. Ahora el
+editor tiene «Corregir perspectiva»: se arrastran las cuatro esquinas de la obra y, al lado, se ve en
+todo momento cómo va a quedar enderezada.
+
+Lo que se guarda son **las cuatro esquinas, no la imagen deformada**, así que se pueden volver a mover
+cuando se quiera y el original de archivo no se toca nunca. Si una esquina de la obra se sale de la
+fotografía se puede arrastrar fuera del borde —es la única manera de enderezar esas tomas— y esa zona
+saldrá en blanco, que el editor avisa. Y si se arrastra una esquina por encima de su vecina, el editor no
+lo permite: enderezar eso daría una imagen doblada sobre sí misma.
+
+No se ofrece cuando la fotografía original no se ha podido descargar y se está trabajando sobre la copia
+de consulta: enderezar lo ya enderezado estropearía la imagen, y el botón lo dice en vez de fallar
+después.
+
+Y una cosa pequeña que iba con esto: pedir la sugerencia ya no pisa sin remedio el recorte que se
+hubiera hecho a mano. Hay un botón para devolverlo.
+
 **La sugerencia de recorte pasa a acertar, y a callar cuando no sabe**
 Antes proponía recorte en 36 de 44 fotografías y solo cuatro propuestas eran buenas: dieciséis
 recortaban por donde no toca —cinco se comían parte de la obra— y otras dieciséis proponían casi la
@@ -504,12 +523,22 @@ librerías que tenían avisos de seguridad abiertos.
 
 ## En marcha
 
-**Corregir la perspectiva de una fotografía**
-La sugerencia de recorte ya entiende las fotos tomadas en ángulo, pero sigue proponiendo un
-rectángulo recto. Lo que falta es poder **enderezar** la fotografía: arrastrar las cuatro esquinas de
-la obra y que la imagen salga rectificada, como si se hubiera fotografiado de frente. Se guardarán
-las cuatro esquinas, no la imagen deformada, así que se podrá reajustar cuando se quiera y el
-original nunca se toca.
+**Los fondos, como lista y no como valores fijos**
+Los tipos de obra, las series y las ubicaciones ya son listas que se pueden corregir y ampliar desde la
+aplicación. Los dos fondos —Rotili y Ruiz Campins— siguen siendo valores fijos escritos en el programa,
+porque de ellos depende el prefijo del código de catalogación que va pegado a cada obra. Convertirlos es
+lo siguiente, y hay que hacerlo con cuidado por eso mismo.
 
-Y una cosa pequeña que falta con ella: al pedir la sugerencia se pisa el recorte que se hubiera
-hecho a mano, sin forma de recuperarlo.
+**La papelera**
+Nada se borra nunca de verdad, y eso ya está garantizado por la base: retirar una obra, una fotografía,
+un lugar o una serie deja la fila con quién y cuándo. Lo que falta es la pantalla desde la que ver lo
+retirado y restaurarlo.
+
+**Las fichas de exposiciones, bibliografía, propietarios y documentación**
+La mitad documental del catálogo razonado —el historial expositivo, las referencias bibliográficas, quién
+tiene cada obra y el archivo digitalizado— todavía no existe. Es lo que queda más grande.
+
+**Tres fotografías donde la sugerencia de recorte sigue callando**
+De las cuarenta y cuatro, en tres reconoce mal por dónde va el borde: no por la inclinación, que ya está
+resuelta, sino porque en esas fotos una costura interna del cuadro contrasta más que su propio marco.
+Está identificado y medido; arreglarlo es afinar cómo se elige el borde, no una función nueva.

@@ -21,11 +21,15 @@ import { clampCrop, rotateCrop, type Crop } from './imageEdits'
  * whole idea, and it is why this works with two passes over the pixels instead
  * of with a Hough transform or a contour tracer.
  *
- * **Why not a library.** OpenCV.js is several megabytes of WebAssembly and any
- * segmentation model is more; this application exists to start instantly on a
- * phone inside a storage room with bad coverage, and it caches its shell to do
- * so (RNF, see vite.config.ts). Paying that download to save a hundred lines of
- * arithmetic would be trading the requirement for the convenience.
+ * **Why not a library**, now measured instead of argued. OpenCV.js was run over the
+ * same 44 luminance buffers: it wins 0.014 of IoU on one tilted photograph and
+ * LOSES on the other two, for 2.74 MB of brotli — ×8.5 the precache of the PWA, or
+ * 49.8 s on 2G. `jscanify`, the wrapper that does exactly this, gives 41
+ * suggestions out of 44, zero silences, and hands a quadrilateral to the photograph
+ * of a forest fire. The conclusion of the original argument holds; its mechanism was
+ * wrong, and that is worth keeping straight in case a heavy dependency is ever
+ * considered again: what is unaffordable is the download, not the compiling, which
+ * is 21 ms.
  *
  * **Two candidates, not one.** A framed painting gives four peaks per axis: the
  * outside of the frame and the inside, where the canvas starts. In a catalogue
@@ -40,16 +44,18 @@ import { clampCrop, rotateCrop, type Crop } from './imageEdits'
  * interface says so and lets the crop be done by hand. A wrong suggestion is
  * worse than none: it looks like a measurement.
  *
- * **Deliberately out of scope: perspective.** A painting photographed at an
- * angle is not a rectangle in the photo, it is a trapezoid, and these profiles
- * see its slanted sides as broad smears rather than peaks — so the suggestion
- * degrades into nothing, which is the honest outcome. Correcting it is another
- * project: it needs a homography instead of a crop, four corners in the schema
- * instead of `crop_x/y/width/height`, a review of the «back to the original»
- * invariant of imageEdits.ts — which holds because rotating and cropping are
- * reversible framings, and a warp is not — and the Python pipeline of the
- * printed catalog reproducing the same warp. Free rotation and storing
- * quadrilaterals are the same project. Postponed on purpose.
+ * **Perspective, which used to be out of scope here.** This header said that a
+ * painting photographed at an angle «degrades into nothing, which is the honest
+ * outcome». Measured, that was false: it degraded into silently bad suggestions, and
+ * NONE of the eight silences was refused for being a trapezoid. Eight of the
+ * fourteen artworks of the catalog are past 1° of convergence and two reach 11.69°,
+ * which is well past the 0.86°–1.29° where a straight profile stops finding a peak.
+ *
+ * So each side is now fitted with its own slope and what comes out is the bounding
+ * box of the quadrilateral they draw — no new column, no new gesture, and measured
+ * to be very close to what the cataloger draws by hand. Storing the four corners and
+ * straightening with a homography is the next step and its own decision (ADR-008);
+ * this module only measures the geometry.
  *
  * There is no DOM here, on purpose, like in imageEdits.ts: this module is the
  * arithmetic over an array of luminance and it can be tested for real with

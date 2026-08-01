@@ -335,6 +335,7 @@ donde se leen.
 | [ADR-005](decisiones/ADR-005-vercel-repo-publico-y-vivo.md) · Vercel, repositorio público | Cloudflare descartado por los bloqueos de LaLiga en España |
 | [ADR-006](decisiones/ADR-006-ubicacion-como-arbol-de-lugares.md) · La ubicación es un árbol de lugares | Revisa la convención de notación del esquema de campos. Establece que la clave de una tabla maestra no es su nombre |
 | [ADR-007](decisiones/ADR-007-claves-sustitutas-en-las-tablas-maestras.md) · Clave sustituta en toda tabla maestra | Retira la deuda que ADR-006 dejó escrita: tipos de obra y series ya la tienen; el fondo, que hoy es un enumerado, va en una segunda entrega |
+| [ADR-008](decisiones/ADR-008-perspectiva-como-cuatro-esquinas.md) · La perspectiva se guarda como cuatro esquinas | Revisa el «fuera de alcance» que el detector declaraba y la forma del encuadre de ADR-002. El máster sigue intacto y el rectificado se recalcula |
 
 ### 8.2 Decisiones de interfaz que revisan un requisito
 

@@ -170,7 +170,9 @@ comparar, solo un criterio. El estado medido está en
 | RF-410 | Límite escrito y no promesa: el soporte de línea impide que una textura pase por borde, pero no sabe decidir cuál de dos bordes reales es el de la obra | **Hecho** |
 | RF-410 | Sobre las 44 fotografías reales: 16 sugerencias, ninguna mala, IoU mediana 0,986. Se mide con `node scripts/bordes/medir.mjs`, no con un test automático: depende de un volcado que no está en el repositorio | Medido a mano |
 | RF-409, RF-410 | Las cuatro esquinas: las ocho columnas o ninguna, una esquina puede salirse del encuadre pero no irse, un cuadrilátero cruzado o degenerado se rechaza —rectificar un lazo da una imagen doblada—, y el recorte y las esquinas conviven, que es lo que permite desplegar en una fase. Y la procedencia del encuadre nace desconocida y no «a mano». Cubierto en `image_perspective.test.sql` | **Hecho** |
-| RF-410 | El rectificado en el navegador y las cuatro asas del editor | Pendiente |
+| RF-410 | La geometría de la homografía: lleva el cuadrado unidad a las cuatro esquinas, mantiene rectas las rectas, no manda el centro al centroide, un paralelogramo devuelve tercera fila exactamente cero, la inversa la deshace, y el `matrix3d` de CSS es por columnas. Cubierto en `perspective.test.ts` | **Hecho** |
+| RF-410 | El encuadre por esquinas: mandan sobre el recorte, unas esquinas que son un rectángulo se guardan como recorte, ida y vuelta por las columnas, una fila con esquinas a medias o cruzadas se lee sin enderezar, y la vía degradada lanza en vez de componer. Cubierto en `imageEdits.test.ts` | **Hecho** |
+| RF-410 | El rectificado en el navegador y las cuatro asas del editor: son canvas e interfaz, y se comprueban a mano en el navegador hasta que Playwright esté montado. Comprobado el 1 de agosto de 2026: las cuatro asas, el rechazo del cuadrilátero cruzado en el dedo, la previsualización rectificada y el botón deshabilitado sobre la copia de consulta | Comprobado a mano |
 
 ### Índices y búsqueda (RF-600)
 
