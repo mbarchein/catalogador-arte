@@ -101,3 +101,23 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider')
   return ctx
 }
+
+/**
+ * Whether this session may edit — with «not known yet» as its own answer.
+ *
+ * Every view that only exists for whoever can edit needs the same three-way
+ * decision, and it needed it in six places with the ordering copied by hand. Copying
+ * it is what produced the bug twice: the profile arrives AFTER the session, so a
+ * screen that reads `canEdit` on the first render reads false and throws out the very
+ * cataloger it belongs to — visible only on a hard reload of its URL, which is why it
+ * survived the first fix.
+ *
+ * `denied` means the role is known and it is not enough. `loading` means the question
+ * cannot be answered yet, and the caller has to wait rather than guess. What actually
+ * protects the data is the RLS policies; this only decides what to paint.
+ */
+export function useEditingAccess(): 'loading' | 'allowed' | 'denied' {
+  const { canEdit, roleKnown } = useAuth()
+  if (!roleKnown) return 'loading'
+  return canEdit ? 'allowed' : 'denied'
+}

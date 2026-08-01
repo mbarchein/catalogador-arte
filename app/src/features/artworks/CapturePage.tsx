@@ -9,13 +9,14 @@ import {
   type StructuredDate,
 } from '../../lib/structuredDate'
 import { ARTIST_LABEL, type ArtistFund, type TriState } from '../../lib/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import {
   ActionBar,
   Chips,
   ComboBox,
   FieldGroup,
+  LoadingNotice,
   LockIcon,
   ToggleChip,
   TriStateIcons,
@@ -58,7 +59,7 @@ const FUNDS = [
  * false datum in the catalog, not an interface annoyance.
  */
 export function CapturePage() {
-  const { canEdit } = useAuth()
+  const access = useEditingAccess()
 
   // Controlled vocabulary for the batch's fixed type (RF-213). Loaded here
   // and not inside the opening screen so it is ready before the batch opens.
@@ -143,7 +144,16 @@ export function CapturePage() {
     }
   }, [open, batch.fixed.artist, saved.length])
 
-  if (!canEdit) {
+  // Same order as everywhere else: the message only after the role is known, or a
+  // reload of this address would tell the cataloger she cannot catalog.
+  if (access === 'loading') {
+    return (
+      <Layout title="Captura" back="/">
+        <LoadingNotice />
+      </Layout>
+    )
+  }
+  if (access === 'denied') {
     return (
       <Layout title="Captura" back="/">
         <div className="card">

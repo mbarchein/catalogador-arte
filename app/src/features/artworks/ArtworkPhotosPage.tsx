@@ -15,8 +15,8 @@ import {
 import { editSource, savePhotoEdit } from '../../lib/imageRender'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
-import { useAuth } from '../../auth/AuthContext'
-import { Chips, CropIcon } from '../../components/ui'
+import { useEditingAccess } from '../../auth/AuthContext'
+import { Chips, CropIcon, LoadingNotice } from '../../components/ui'
 import { moveItem } from '../../lib/reorder'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { useArtworkImages, type ImageRow } from './artworkImages'
@@ -35,7 +35,7 @@ import { ReorderableThumbnails } from './ReorderableThumbnails'
  */
 export function ArtworkPhotosPage() {
   const { id } = useParams<{ id: string }>()
-  const { canEdit } = useAuth()
+  const access = useEditingAccess()
   const catalogId = id ?? ''
   const { images, thumbUrls, mainId, manuallyChosen, loading, reload } =
     useArtworkImages(catalogId)
@@ -334,8 +334,12 @@ export function ArtworkPhotosPage() {
     }
   }
 
-  // A reader reaching this URL falls back to the record view (RF-109).
-  if (!canEdit) {
+  // A reader reaching this URL falls back to the record view (RF-109) — but only
+  // once the role is KNOWN. Deciding on the first render sent the cataloger back to
+  // the record every time she reloaded this address, because the profile arrives
+  // after the session. See useEditingAccess.
+  if (access === 'loading') return <LoadingNotice />
+  if (access === 'denied') {
     return <Navigate to={`/artwork/${catalogId}`} replace />
   }
 

@@ -1251,6 +1251,15 @@ export function SearchableCheckList<T extends string>({
  * at the bottom it stays under the thumb, which is where one-handed work
  * happens. The padding-bottom respects the phone's bottom bar.
  */
+/**
+ * «Cargando…», centrado. Existe porque estaba copiado en cinco pantallas: es lo que
+ * se pinta mientras una vista no puede decidir todavía qué mostrar, y el sitio donde
+ * eso se decide es `useEditingAccess`.
+ */
+export function LoadingNotice({ children = 'Cargando…' }: { children?: ReactNode }) {
+  return <div className="p-8 text-center text-sm text-stone-600">{children}</div>
+}
+
 export function ActionBar({ children, notice }: { children: ReactNode; notice?: ReactNode }) {
   return (
     <div

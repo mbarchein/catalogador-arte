@@ -1,7 +1,7 @@
 import { Link, Navigate } from 'react-router'
-import { useAuth } from '../../auth/AuthContext'
+import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { ChevronRightIcon } from '../../components/ui'
+import { ChevronRightIcon, LoadingNotice } from '../../components/ui'
 
 /**
  * The «Tablas» section: maintenance of the master tables (RF-1106).
@@ -23,15 +23,11 @@ import { ChevronRightIcon } from '../../components/ui'
  * Reader — but the check is here too: a hidden button is not a protection.
  */
 export function TablesPage() {
-  const { canEdit, roleKnown } = useAuth()
-  // Hasta que el perfil llega, el rol no es «no»: es que todavía no se sabe. Sin
-  // esta espera, entrar por la pestaña con la aplicación recién abierta rebotaba
-  // al listado, porque `canEdit` arranca en falso. Lo que protege de verdad son
-  // las políticas RLS; esto solo evita echar a quien sí puede.
-  if (!roleKnown) {
-    return <div className="p-8 text-center text-sm text-stone-600">Cargando…</div>
-  }
-  if (!canEdit) return <Navigate to="/" replace />
+  const access = useEditingAccess()
+  // La espera importa: el rol llega después de la sesión, así que decidir en el
+  // primer render echaría a quien sí puede. Ver useEditingAccess.
+  if (access === 'loading') return <LoadingNotice />
+  if (access === 'denied') return <Navigate to="/" replace />
 
   return (
     <Layout title="Tablas">

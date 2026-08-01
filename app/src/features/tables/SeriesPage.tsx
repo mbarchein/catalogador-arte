@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Navigate } from 'react-router'
-import { useAuth } from '../../auth/AuthContext'
+import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { Chips } from '../../components/ui'
+import { Chips, LoadingNotice } from '../../components/ui'
 import { groupByFund } from '../../lib/masterTables'
 import { ARTIST_FUNDS, ARTIST_LABEL, type ArtistFund } from '../../lib/types'
 import { useSeries } from '../artworks/useSeries'
@@ -34,7 +34,7 @@ const FUNDS = ARTIST_FUNDS.map((fund) => ({ value: fund, text: ARTIST_LABEL[fund
  * Cataloger only (RF-1106). A Reader who reaches the address is sent to the list.
  */
 export function SeriesPage() {
-  const { canEdit, roleKnown } = useAuth()
+  const access = useEditingAccess()
   const { entries, loading, error, addSeries, renameSeries, setSeriesActive } = useSeries()
   const { busy, failure, failureRef, run } = useTableAction()
   const [creating, setCreating] = useState('')
@@ -45,14 +45,10 @@ export function SeriesPage() {
 
   const groups = useMemo(() => groupByFund(entries), [entries])
 
-  // Hasta que el perfil llega, el rol no es «no»: es que todavía no se sabe. Sin
-  // esta espera, entrar por la pestaña con la aplicación recién abierta rebotaba
-  // al listado, porque `canEdit` arranca en falso. Lo que protege de verdad son
-  // las políticas RLS; esto solo evita echar a quien sí puede.
-  if (!roleKnown) {
-    return <div className="p-8 text-center text-sm text-stone-600">Cargando…</div>
-  }
-  if (!canEdit) return <Navigate to="/" replace />
+  // La espera importa: el rol llega después de la sesión, así que decidir en el
+  // primer render echaría a quien sí puede. Ver useEditingAccess.
+  if (access === 'loading') return <LoadingNotice />
+  if (access === 'denied') return <Navigate to="/" replace />
 
   return (
     <Layout title="Series" back="/tables">

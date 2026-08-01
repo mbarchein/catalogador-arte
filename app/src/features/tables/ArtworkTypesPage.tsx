@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router'
-import { useAuth } from '../../auth/AuthContext'
+import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
+import { LoadingNotice } from '../../components/ui'
 import { useArtworkTypes } from '../artworks/useArtworkTypes'
 import { MasterTableRow, useTableAction } from './MasterTableRow'
 
@@ -29,19 +30,15 @@ import { MasterTableRow, useTableAction } from './MasterTableRow'
  * Cataloger only (RF-1106). A Reader who reaches the address is sent to the list.
  */
 export function ArtworkTypesPage() {
-  const { canEdit, roleKnown } = useAuth()
+  const access = useEditingAccess()
   const { entries, loading, error, addType, renameType, setTypeActive } = useArtworkTypes()
   const { busy, failure, failureRef, run } = useTableAction()
   const [creating, setCreating] = useState('')
 
-  // Hasta que el perfil llega, el rol no es «no»: es que todavía no se sabe. Sin
-  // esta espera, entrar por la pestaña con la aplicación recién abierta rebotaba
-  // al listado, porque `canEdit` arranca en falso. Lo que protege de verdad son
-  // las políticas RLS; esto solo evita echar a quien sí puede.
-  if (!roleKnown) {
-    return <div className="p-8 text-center text-sm text-stone-600">Cargando…</div>
-  }
-  if (!canEdit) return <Navigate to="/" replace />
+  // La espera importa: el rol llega después de la sesión, así que decidir en el
+  // primer render echaría a quien sí puede. Ver useEditingAccess.
+  if (access === 'loading') return <LoadingNotice />
+  if (access === 'denied') return <Navigate to="/" replace />
 
   return (
     <Layout title="Tipos de obra" back="/tables">
