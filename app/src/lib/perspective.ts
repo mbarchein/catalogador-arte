@@ -310,6 +310,37 @@ export function moveCorner(
   return isConvexQuadrilateral(moved) ? moved : null
 }
 
+/**
+ * The same quadrilateral over the image turned `rotation` degrees clockwise.
+ *
+ * Two things happen at once and forgetting the second is the trap: each point moves,
+ * AND each corner changes its NAME. After a quarter turn clockwise the corner that was
+ * top left appears at the top right, so it becomes the NE — and the traversal has to
+ * stay clockwise on screen or the convexity check, which depends on the order, would
+ * start refusing perfectly good quadrilaterals. Both are one shift per quarter turn
+ * around the NW → NE → SE → SW cycle.
+ *
+ * The point mapping matches `rotateCrop` of imageEdits.ts on a degenerate crop, which
+ * is where it comes from: for 90° a point (x, y) lands at (1 - y, x).
+ */
+export function rotateCorners(corners: Corners, rotation: number): Corners {
+  const quarters = ((Math.round(rotation / 90) % 4) + 4) % 4
+  if (quarters === 0) return { ...corners }
+
+  const turn = (p: Point): Point =>
+    quarters === 1
+      ? { x: 1 - p.y, y: p.x }
+      : quarters === 2
+        ? { x: 1 - p.x, y: 1 - p.y }
+        : { x: p.y, y: 1 - p.x }
+
+  const turned = {} as Record<CornerKey, Point>
+  CORNER_KEYS.forEach((key, i) => {
+    turned[CORNER_KEYS[(i + quarters) % 4]!] = turn(corners[key])
+  })
+  return turned as Corners
+}
+
 /** The bounding box of the four corners: what a crop would have been. */
 export function cornersBoundingBox(corners: Corners): {
   x: number

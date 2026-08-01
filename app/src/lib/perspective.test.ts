@@ -10,6 +10,7 @@ import {
   isRectangle,
   isConvexQuadrilateral,
   moveCorner,
+  rotateCorners,
   signedArea,
   straightenedSize,
   type Corners,
@@ -198,6 +199,47 @@ describe('straightenedSize (RF-410)', () => {
       sw: { x: 0.3, y: 0.15 },
     }
     expect(straightenedSize(turned).width).toBeCloseTo(straightenedSize(keystone()).width, 10)
+  })
+})
+
+describe('rotateCorners (RF-410)', () => {
+  it('the unit square: each corner moves AND takes the next name', () => {
+    // The trap of this function. After a quarter turn clockwise the corner that was
+    // top left is at the top right, so it is the NE — and the traversal has to stay
+    // clockwise or the convexity check would refuse the result.
+    const square = cornersOfRect({ x: 0, y: 0, width: 1, height: 1 })
+    const turned = rotateCorners(square, 90)
+    expect(turned.ne).toEqual({ x: 1, y: 0 })
+    expect(turned.se).toEqual({ x: 1, y: 1 })
+    expect(turned.sw).toEqual({ x: 0, y: 1 })
+    expect(turned.nw).toEqual({ x: 0, y: 0 })
+  })
+
+  it('a keystone survives four quarter turns and comes back', () => {
+    let turned = keystone()
+    for (let i = 0; i < 4; i += 1) turned = rotateCorners(turned, 90)
+    for (const key of ['nw', 'ne', 'se', 'sw'] as const) {
+      expect(turned[key].x).toBeCloseTo(keystone()[key].x, 12)
+      expect(turned[key].y).toBeCloseTo(keystone()[key].y, 12)
+    }
+  })
+
+  it('and stays convex at every turn, which is what the order is for', () => {
+    for (const rotation of [0, 90, 180, 270]) {
+      expect(isConvexQuadrilateral(rotateCorners(keystone(), rotation))).toBe(true)
+    }
+  })
+
+  it('the bounding box turns like a crop does', () => {
+    // Cross-check against the arithmetic that already existed and is already tested:
+    // rotating the corners and boxing them has to give the same as boxing them and
+    // rotating the box.
+    const box = cornersBoundingBox(keystone())
+    const viaCorners = cornersBoundingBox(rotateCorners(keystone(), 90))
+    expect(viaCorners.x).toBeCloseTo(1 - box.y - box.height, 12)
+    expect(viaCorners.y).toBeCloseTo(box.x, 12)
+    expect(viaCorners.width).toBeCloseTo(box.height, 12)
+    expect(viaCorners.height).toBeCloseTo(box.width, 12)
   })
 })
 
