@@ -12,6 +12,7 @@
 // providers means changing S3_ENDPOINT and the credentials, not this code.
 
 import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20'
+import { isSignablePath } from './paths.ts'
 
 const S3_ENDPOINT = Deno.env.get('S3_ENDPOINT') ?? ''
 const S3_REGION = Deno.env.get('S3_REGION') ?? 'auto'
@@ -58,13 +59,10 @@ async function userRole(authHeader: string | null): Promise<string | null> {
   return typeof role === 'string' ? role : null
 }
 
-// Only paths shaped like a master of this catalog get signed. Signing any key
-// would turn the function into a universal signer for the bucket.
-// The prefixes are those of artworks_id_format: when a new fund is added it
-// must be added here too, or its photos will not upload (it happened with TS-).
-// The pattern validates paths of files ALREADY uploaded — it is data; only the
-// constant's name changed to English.
-const VALID_PATH = /^(AR|RC|TS)-\d{4}\/[A-Za-z0-9._-]+_master\.[A-Za-z0-9]+$/
+// Which keys may be signed lives in `./paths.ts`, so that the frontend suite can
+// cover it: there is no Deno here and this function had no tests at all until the
+// corrected copy of RF-420 needed signing. Read that module for why there are two
+// kinds and why only one of them is rewritable.
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS })
@@ -81,8 +79,8 @@ Deno.serve(async (request) => {
   if (operation !== 'upload' && operation !== 'download') {
     return reply(400, { error: 'operation debe ser «upload» o «download»' })
   }
-  if (!path || !VALID_PATH.test(path)) {
-    return reply(400, { error: 'ruta no válida para un máster' })
+  if (!isSignablePath(path)) {
+    return reply(400, { error: 'ruta no válida para un fichero de archivo' })
   }
 
   const role = await userRole(request.headers.get('Authorization'))

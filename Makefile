@@ -20,7 +20,7 @@ HOST := $(if $(DEV_HOST_ENV),$(DEV_HOST_ENV),localhost)
 AVISO_HOST := $(if $(DEV_HOST_ENV),Configurado para la red local: abre http://$(DEV_HOST_ENV):$(PUERTO_APP) en el movil.,Para probar desde el movil: make movil)
 .PHONY: help up down reset logs ps psql seed-users db-test test typecheck permisos \
         build preview clean verificar infra-check infra-plan infra-apply movil \
-        db-pull db-load db-clone
+        db-pull db-load db-clone casos-color
 
 help: ## Lista de comandos
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -100,6 +100,20 @@ db-test: ## Tests de SQL: políticas RLS y reglas del esquema
 
 test: ## Tests del frontend
 	docker compose exec app npm test
+
+# Ata las dos implementaciones de la cadena de color: la del navegador y la de la
+# herramienta local que genera las copias corregidas pendientes (RF-421). Regenera
+# el fichero de casos versionado —parámetros contra las tablas de 256 entradas que
+# producen— desde los tests del frontend, y con él verifica las tablas de Python.
+#
+# `make test` ya avisa cuando el fichero deja de coincidir con el código; esto es
+# lo que hay que ejecutar cuando avisa, y después mirar el diff: si el fichero
+# cambia, el color de la aplicación ha cambiado. Los tests de Python no necesitan
+# red ni base de datos.
+casos-color: ## Regenera los casos de color y verifica la herramienta por lotes
+	docker compose exec -T -e UPDATE_COLOR_CASES=1 app \
+	  npx vitest run src/lib/imageColor.fixture.test.ts
+	python3 scripts/copias-corregidas/test_corrected_copies.py
 
 typecheck: ## Comprobación de tipos del frontend
 	docker compose exec app npm run typecheck
