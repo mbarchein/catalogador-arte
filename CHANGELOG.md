@@ -1,3 +1,161 @@
+## 3 de agosto de 2026
+
+### Interfaz
+
+**Corregir la luz de la sala sin tocar la fotografía original**
+Un almacén no tiene luz de estudio: la misma obra sale amarilla bajo una bombilla, verdosa bajo un
+fluorescente y azulada junto a una ventana, y ese tinte no es de la obra, es de la sala. El editor de
+fotografías tiene ahora un segundo botón en la cabecera que abre los mandos del color, al pie y donde
+estaban las herramientas, porque el balance de blancos se juzga mirando la superficie entera y un panel
+encima de la obra tapa justo lo que hay que ver.
+
+Los mandos son estos y no más: **temperatura**, **matiz**, **exposición**, **negros**, **blancos**,
+**medios tonos** y **altas luces suaves**, y un interruptor de **blanco y negro** para el reverso y el
+detalle de firma. Se mueven con el dedo y también con las flechas del teclado, con dos toques vuelven a
+su valor de partida, y cada uno se deshace por separado sin llevarse los demás. Debajo hay un histograma
+**del encuadre elegido** —no de la pared que rodea la obra— y un aviso en cuanto el ajuste empieza a
+comerse el detalle de las sombras o de las luces.
+
+Se ve sobre la obra mientras se ajusta, con la fotografía a tamaño de pantalla, y también en el recuadro
+que enseña cómo va a quedar enderezada.
+
+Hay tres atajos: **tomar un gris de la propia fotografía** tocando una zona que se sabe neutra —un
+cartón gris, una pared blanca, el paspartú—, un **ajuste automático** que propone valores y **calla en
+el balance de blancos cuando no encuentra grises fiables**, porque una sugerencia equivocada es peor que
+ninguna, y una lista de **tipos de luz** de la que partir: luz de ventana, día nublado, fluorescente
+frío o cálido, led neutro, bombilla, mezcla de ventana y techo, flash del móvil. Son un punto de
+partida ajustable, nunca una medición, y así están etiquetados.
+
+Al fotografiar una tanda, la segunda foto se corrige **con un toque**, repitiendo la luz de la anterior,
+y al cerrar el lote esa luz se olvida: otra tarde es otra sala. En una obra ya catalogada, el reverso, la
+firma, el daño y el marco **heredan** el ajuste de la toma general, se pueden cambiar por separado y se
+restablecen a lo heredado, y la pantalla dice cuándo un ajuste viene heredado en vez de decidido ahí.
+
+Y lo más importante: **nada de esto toca la fotografía original**. Lo que se guarda son los valores, no
+una imagen aplastada; el original de archivo se sube una vez y no se reescribe nunca. Volver a ajustar
+reemplaza el ajuste anterior, no lo apila encima, así que corregir veinte veces no degrada nada.
+«Volver al original» devuelve la fotografía a como salió de la cámara, giro, recorte, perspectiva y
+color incluidos.
+
+**Lo que este ajuste no va a tener nunca, y por qué**
+No hay saturación, ni vibrancia, ni contraste, ni realce de sombras o de luces, ni enfoque, ni quitar
+niebla, ni quitar reflejos, ni virados. No es que falten: **no se van a poner**. Una fotografía de
+catálogo tiene que testificar el estado de la obra, y un barniz amarilleado, un color apagado, un dorado
+con su pátina o una humedad **son el dato**. Saturar eso no mejora la fotografía: falsea el documento. Lo
+que sí se corrige es la luz que había en la sala, que no es de la obra.
+
+Por lo mismo, en el **detalle de daño** y en el **marco** solo se ofrece corregir la dominante, la
+temperatura y la exposición; el resto de mandos se ven en pantalla, apagados y con el motivo escrito al
+lado, porque ahí el amarilleo, el óxido o la pátina son justo lo que hay que conservar. Y el blanco y
+negro solo se ofrece en el reverso y en el detalle de firma, donde lo que importa es leer una etiqueta o
+un trazo.
+
+**El testigo de gris, y una hoja para imprimirlo en casa**
+Si en la toma se coloca al lado de la obra una tira de grises, la aplicación **la reconoce sobre la
+fotografía**, la señala y ofrece tomar su gris. Nunca aplica nada por su cuenta: propone, y se acepta o
+no.
+
+Hay una página nueva que lo explica con dibujos —dónde se pone, cómo no ponerlo (en sombra, con reflejo)
+y que **no ponerlo también vale**, porque todo lo demás funciona igual— y desde la que se descarga una
+hoja lista para imprimir en A5. La hoja lleva por escrito su propia advertencia: el gris de una
+impresora doméstica sirve como patrón para ver la escalera, pero **no** como referencia de dominante,
+porque su tinta no es neutra. Para eso hace falta una carta comprada, y la aplicación distingue las dos:
+la carta mueve el balance de blancos, la hoja impresa solo se anota.
+
+**Lo que la fotografía trae dentro**
+El otro botón nuevo de la cabecera muestra los datos del propio fichero: **fecha de la toma**, cámara,
+aplicación de cámara, tamaño del original, sensibilidad, exposición, diafragma, objetivo y flash. Solo
+los que estén; nunca un hueco con guiones, y nunca un juicio: la aplicación no opina sobre si una toma
+está bien expuesta.
+
+Con las fechas se distinguen dos cosas que antes se confundían. La **fecha del disparo**, cuando la
+cámara la escribió, y la **fecha del fichero, marcada como aproximada**, cuando esa falta — que es el
+caso de las catorce fotografías de 2022, y sin ese respaldo ninguna se podría fechar. Las dos se guardan
+**junto a** la fecha de la ficha, nunca en su lugar: la ficha dice cuándo entró la fotografía en el
+catálogo y el fichero dice cuándo se disparó, y pueden diferir legítimamente. Cuando difieren, se dice
+en voz baja —«la foto dice 9 de octubre de 2022»— sin alarma, porque hoy difieren las treinta y nueve.
+Cuando no hay datos, se explica si es que la fotografía no los trae o que el original de archivo no se
+ha podido descargar: son dos cosas distintas y llevaban el mismo silencio.
+
+**Decir de dónde viene cada fotografía**
+De cada fotografía se puede declarar si es **propia**, **tomada de otro catálogo** o **recibida de un
+tercero**. Cuatro de las cuarenta y cuatro son reproducciones de catálogos en línea, y en las que no son
+propias **no se ofrece corregir el color**, con el motivo escrito en la pantalla: corregir la dominante
+de la reproducción de otro es enmendar su revelado sin saber qué luz tenía delante. Se declara, nunca se
+deduce: una fotografía con pinta de captura de pantalla puede ser perfectamente propia.
+
+Tampoco se ofrece cuando el original de archivo no se ha podido descargar y se está trabajando sobre la
+copia de consulta, que ya lleva el color cocido; también ahí lo dice en vez de fallar después.
+
+**Una copia a tamaño completo para mandar a una imprenta**
+Al aplicar una corrección se prepara además, aparte de las copias con las que trabaja la aplicación, una
+**copia a resolución completa con todo aplicado** —giro, recorte, perspectiva y color—, que es la que hay
+que mandar a una imprenta o a un comisario. Se rehace cada vez que se reedita, y si no hay ninguna
+corrección no se hace ninguna copia: para eso ya está el original.
+
+Un móvil no siempre puede con un fichero de veinte megapíxeles, y cuando no puede **queda anotado y se
+dice**, con el motivo, en vez de guardar una imagen en blanco o reducida en silencio. La ficha de cada
+fotografía muestra ahora si esa copia está, falta o quedó pendiente, y lo pendiente se genera después
+desde un ordenador. Nunca se sube un fichero que no se haya comprobado antes.
+
+De momento **esa copia siempre queda pendiente**, por un permiso que falta abrir. Está explicado en «En
+marcha», al final de este documento: la corrección no se pierde, y lo que falta es el último paso.
+
+**La ficha de cada fotografía cuenta más cosas**
+Además de lo anterior: el tamaño del original, y lo que se hizo con la fotografía en una sola línea
+—girada, recortada, perspectiva corregida y el ajuste de color—. Revisar el color de una foto y dejarlo
+como estaba **queda anotado como revisado** sin reescribir ninguna copia: «sin revisar» no es «no», y
+distinguir «lo miré y estaba bien» de «nadie lo ha mirado» es la mitad del trabajo de catalogar.
+
+### La base de datos del catálogo
+
+**El color se guarda como valores, no como una imagen retocada**
+Cada fotografía guarda ahora los valores de su corrección de color, de dónde salieron —a mano, del
+automático, de un gris tomado de la propia foto, de un testigo, o revisada y dejada igual—, y cuánto
+detalle costó el ajuste en las sombras y en las luces. Guardar valores y no una imagen aplastada es lo
+que permite reeditar años después, rehacer las copias cuando cambie el tamaño de pantalla habitual y
+tener la certeza de que el original de archivo sigue siendo el que salió de la cámara.
+
+Junto a ello se guardan la fecha que trae el fichero y si es exacta o aproximada, el tamaño del original,
+la procedencia de la fotografía y el estado de la copia a tamaño completo. La base se encarga de que
+esas cosas no puedan quedar a medias: una fecha aproximada sin decir que lo es no entra, media
+descripción de un fichero no entra, «la copia está» y «la copia falta» no pueden ser verdad a la vez, y
+la ruta de una copia no puede ser nunca la del original de archivo.
+
+**Nada de esto se rellena hacia atrás**
+Las treinta y nueve fotografías que ya estaban se quedan sin fecha del fichero y como propias, que es lo
+correcto para treinta y cinco de ellas. Rellenar las demás es trabajo de una pasada con los originales
+delante, no de la aplicación.
+
+### Correcciones
+
+**La corrección de perspectiva se perdía al recargar la pestaña**
+Una fotografía tomada en ángulo y enderezada antes de subirla perdía **las cuatro esquinas** si la
+pestaña se recargaba con la foto todavía en la cola: la corrección seguía viéndose, porque estaba cocida
+en las copias, pero el dato desaparecía y no se podía volver a ajustar. Era pérdida de datos y no una
+molestia. Ahora la cola guarda las esquinas y de dónde salieron, y una cola escrita por la versión
+anterior se lee sin fallar.
+
+**El editor decía «Sin cambios» con la perspectiva corregida en pantalla**
+El resumen de la cabecera nombraba el giro y el recorte, pero no la corrección de perspectiva, así que
+una fotografía enderezada se anunciaba como intacta mientras el trapecio estaba dibujado encima. Ahora
+el resumen nombra todo lo que se ha hecho, el color incluido, y dice cuándo un ajuste viene heredado.
+
+**Un cuadro ligeramente ladeado salía estirado al enderezarlo**
+Enderezar un rectángulo girado unos pocos grados devolvía una imagen un uno por ciento más ancha o más
+alta de lo que le corresponde. Es poco y se nota: la proporción de una obra es un dato de catálogo. Ya
+sale con su proporción, y el tamaño resultante ya no intercambia el ancho con el alto en las fotografías
+giradas un cuarto de vuelta.
+
+**Se podía subir una imagen con el nombre y el tipo equivocados**
+Algunos navegadores, al pedirles una copia comprimida, devuelven otro formato **sin decirlo**. Las copias
+se subían entonces con la extensión y el tipo de lo que se había pedido, no de lo que de verdad eran, así
+que el catálogo podía contener ficheros que se llaman de una manera y son de otra — y eso rompe en el
+sitio más tonto, meses después, al abrirlos con otro programa. Ahora el formato se comprueba en los bytes
+del fichero antes de subirlo.
+
+---
+
 ## 1 de agosto de 2026
 
 ### Interfaz
@@ -600,6 +758,23 @@ librerías que tenían avisos de seguridad abiertos.
 ---
 
 ## En marcha
+
+**La copia a tamaño completo se prepara, pero todavía no se puede guardar**
+Y hay que decirlo claro, porque es lo único de la entrega del color que no está terminado: la aplicación
+ya construye la copia a resolución completa y ya comprueba que ha salido bien, pero **el permiso de
+subida solo admite hoy los originales de archivo**, así que la copia se rechaza al guardarla y toda
+fotografía corregida queda con su copia **pendiente**. La corrección no se pierde —está guardada como
+valores, que es lo que importa— y la pantalla lo dice con su motivo en vez de callarse. Lo que falta es
+abrir ese permiso a las copias, y entonces la cola se vacía sola con lo que ya está hecho: desde el
+móvil al corregir, y desde un ordenador para lo que el móvil no pueda.
+
+**El color, todavía sin abrir en un teléfono de verdad**
+Todo lo del color está comprobado con pruebas automáticas —ochocientas sesenta y ocho, y las cuentas del
+color verificadas dos veces, una en la aplicación y otra en la herramienta del ordenador, contra un
+fichero de casos común— pero **nadie lo ha usado aún con un móvil en la mano y una obra delante**. Lo que
+solo se puede comprobar así: que arrastrar un mando va fluido, que el toque del cuentagotas no se
+confunde con mover la foto, que los mandos caben en una pantalla estrecha y que la corrección que se ve
+en pantalla es exactamente la que se guarda. Es la siguiente tarea y no es opcional.
 
 **Los fondos, como lista y no como valores fijos**
 Los tipos de obra, las series y las ubicaciones ya son listas que se pueden corregir y ampliar desde la
