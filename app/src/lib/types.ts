@@ -41,6 +41,70 @@ export type ExistenceStatusValue =
   | 'UNKNOWN'
   | 'UNREVIEWED'
 
+// ── Colour of a photograph (RF-414, RF-417, RF-418) ──────────
+// The four enums added by 20260803120000_image_color.sql. Values are code, as
+// everywhere else; the label maps at the bottom decide what is read on screen.
+//
+// They live here, next to the rest of the schema vocabulary, and not beside the
+// colour model: `CropSource` ended up in imageEdits.ts because renderer and
+// uploader both needed it and neither could own it, but these four are also read
+// by the record and by the photograph panel, which have nothing to do with
+// editing. Whoever adds a value to one of these enums in a migration has to come
+// back here — a value the map does not cover is a crash at the lookup, not a
+// blank.
+
+/**
+ * How the colour correction of a photograph came to be.
+ *
+ * This is the ONE colour column where null is not the identity value but
+ * «nobody has looked at it yet», and the reason `REVIEWED_UNCHANGED` exists:
+ * «sin revisar» no es «no» (CLAUDE.md), so a photograph judged correct with the
+ * artwork in front of you has to be distinguishable from one never opened.
+ */
+export type ColorSource =
+  | 'MANUAL'
+  | 'NEUTRAL_PICKED'
+  | 'AUTO'
+  | 'AUTO_ADJUSTED'
+  | 'PRESET'
+  | 'REVIEWED_UNCHANGED'
+
+/**
+ * Where the neutral reference of the correction came from (RF-418).
+ *
+ * The value is not decoration: it says how much the grey can be believed, and
+ * `TARGET_PRINT` is believed less than `TARGET_CARD` even though both are a
+ * detected target (home ink is not neutral). See COLOR_REFERENCE_DESCRIPTION.
+ */
+export type ColorReference = 'TARGET_CARD' | 'TARGET_PRINT' | 'SCENE' | 'NONE'
+
+/**
+ * Kind of light chosen as a starting point for temperature and tint (RF-414).
+ *
+ * A list one picks from, never a measurement: the light is not deduced from the
+ * photograph, and the interface has to say so wherever these labels appear.
+ */
+export type LightPreset =
+  | 'DAYLIGHT'
+  | 'OVERCAST'
+  | 'FLUORESCENT_COOL'
+  | 'FLUORESCENT_WARM'
+  | 'LED_NEUTRAL'
+  | 'INCANDESCENT'
+  | 'MIXED_WINDOW_CEILING'
+  | 'FLASH'
+
+/**
+ * Where the photograph comes from (RF-417). `OWN` is the default in the schema,
+ * and the column is not nullable: with null the rule «colour only on our own
+ * photographs» would arrive switched off for every existing row.
+ *
+ * On anything other than `OWN` the colour adjustment is not offered — the
+ * parameters are absolute over our master, and a reproduction taken from someone
+ * else's catalog already comes with its colour baked in by whoever made it.
+ */
+export type PhotoProvenance = 'OWN' | 'OTHER_CATALOG' | 'THIRD_PARTY'
+
 /**
  * One entry of the artwork-type vocabulary (RF-213).
  *
@@ -222,4 +286,71 @@ export const SHOT_TYPE_LABEL: Record<ShotTypeValue, string> = {
   DAMAGE_DETAIL: 'Daño',
   FRAME: 'Marco',
   OTHER: 'Otro',
+}
+
+/**
+ * How the colour of a photograph was decided (RF-414). These are read as a
+ * statement about the record, not as a menu: the cataloger does not pick
+ * «AUTO_ADJUSTED», the editor writes it after the automatic value has been
+ * touched by hand.
+ */
+export const COLOR_SOURCE_LABEL: Record<ColorSource, string> = {
+  MANUAL: 'Ajustado a mano',
+  NEUTRAL_PICKED: 'Gris tomado de la fotografía',
+  AUTO: 'Ajuste automático',
+  AUTO_ADJUSTED: 'Ajuste automático retocado a mano',
+  PRESET: 'A partir del tipo de luz',
+  REVIEWED_UNCHANGED: 'Revisado y dejado como estaba',
+}
+
+/** Where the neutral reference came from (RF-418). */
+export const COLOR_REFERENCE_LABEL: Record<ColorReference, string> = {
+  TARGET_CARD: 'Carta de gris',
+  TARGET_PRINT: 'Hoja de grises impresa en casa',
+  SCENE: 'Gris de la propia escena',
+  NONE: 'Sin referencia, a ojo',
+}
+
+/**
+ * How much each reference can be believed. It is shown next to the value and not
+ * left implicit, because the difference matters and no label can carry it: a
+ * detected target is not proof of a trustworthy grey when the target is printed
+ * on a domestic printer.
+ */
+export const COLOR_REFERENCE_DESCRIPTION: Record<ColorReference, string> = {
+  TARGET_CARD: 'Testigo de gris detectado, declarado como carta comprada: su gris es fiable',
+  TARGET_PRINT:
+    'Testigo de gris detectado, declarado como hoja impresa en casa: la tinta doméstica no es ' +
+    'neutra, así que sirve para los puntos negro y blanco, pero no como referencia de dominante',
+  SCENE: 'Gris tomado de la escena —una pared, un cartón, un paño—: referencia razonable',
+  NONE: 'Corregido a ojo, sin ninguna referencia neutra',
+}
+
+/**
+ * Kinds of light on offer (RF-414). Each one is a STARTING POINT for temperature
+ * and tint that can be moved afterwards, and the panel that shows this list has
+ * to say exactly that: the application does not measure the light of the room,
+ * and a suggestion presented as a measurement is worse than no suggestion
+ * (docs/revision/deteccion-de-bordes-medicion.md).
+ */
+export const LIGHT_PRESET_LABEL: Record<LightPreset, string> = {
+  DAYLIGHT: 'Luz de ventana',
+  OVERCAST: 'Día nublado',
+  FLUORESCENT_COOL: 'Fluorescente blanco frío',
+  FLUORESCENT_WARM: 'Fluorescente cálido',
+  LED_NEUTRAL: 'LED neutro',
+  INCANDESCENT: 'Bombilla incandescente',
+  MIXED_WINDOW_CEILING: 'Mezcla de ventana y techo',
+  FLASH: 'Flash del móvil',
+}
+
+/**
+ * Where the photograph comes from (RF-417). The labels describe the real case
+ * and not an abstract category, because that is what lets the cataloger choose
+ * without stopping to think what the word means.
+ */
+export const PHOTO_PROVENANCE_LABEL: Record<PhotoProvenance, string> = {
+  OWN: 'Fotografía propia',
+  OTHER_CATALOG: 'Tomada de otro catálogo',
+  THIRD_PARTY: 'Recibida de un tercero',
 }
