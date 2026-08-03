@@ -1,3 +1,4 @@
+import { applyColorLuts, type ColorLuts } from './imageColor'
 import { loupeRegion, type Rotation, type Size } from './imageEdits'
 
 /**
@@ -10,9 +11,17 @@ import { loupeRegion, type Rotation, type Size } from './imageEdits'
  * region of the photograph it corresponds to is `loupeRegion` in imageEdits.ts,
  * which is arithmetic and is tested.
  *
+ * The colour adjustment reaches the loupe too, and it has to: the `<img>` on the
+ * working surface is corrected by an SVG `<filter>`, and a loupe showing the raw
+ * pixels next to it would be a magnifier of a different photograph. It cannot use
+ * the same filter — this is a canvas and not an element — so it applies the same
+ * table in CPU, which is exactly what `applyColorLuts` is for. **Nothing is
+ * re-derived here**: the table comes from imageColor.ts, the normative definition.
+ *
  * What draws cannot be tested in this repository —the test environment has no
- * canvas— and is verified in the browser. Where the loupe GOES is arithmetic and is
- * tested: see `aidCorners` below.
+ * canvas— and is verified in the browser. What IS arithmetic or rule is separated out
+ * and tested: where the loupe goes (`aidCorners`) and whether the table applies at
+ * all (`loupeTables`).
  */
 
 /** A corner of the working surface. */
@@ -45,6 +54,37 @@ export function aidCorners(point: { x: number; y: number }): {
     loupe: corner(right, below),
     preview: corner(right, !below),
   }
+}
+
+/**
+ * What the loupe is being used for right now.
+ *
+ * `FRAMING` is a corner of the crop or of the perspective quadrilateral: the
+ * cataloger is comparing the line she is dragging with the border of the artwork, so
+ * what she has to see is the photograph as it will be — corrected.
+ *
+ * `EYEDROPPER` is taking the neutral grey (RF-418), and there it is the opposite:
+ * the sample has to be aimed at the **raw** pixels. Showing the corrected ones would
+ * mean aiming at a grey that is already grey, which measures the correction already
+ * applied instead of the light of the room, and every second pick would undo the
+ * previous one.
+ */
+export type LoupeMode = 'FRAMING' | 'EYEDROPPER'
+
+/**
+ * The table the loupe must really apply, which in eyedropper mode is none.
+ *
+ * A function of two lines with a test, and not a ternary at the call site, because
+ * the rule is the requirement: the pixels under the eyedropper are raw. Written
+ * inline it would be a condition nobody could fail a test on, and the way it breaks
+ * is silent — a grey that looks right and a white balance that drifts one pick at a
+ * time.
+ */
+export function loupeTables(
+  luts: ColorLuts | null | undefined,
+  mode: LoupeMode,
+): ColorLuts | null {
+  return mode === 'EYEDROPPER' ? null : (luts ?? null)
 }
 
 /** Side of the loupe on screen, in CSS pixels. */
@@ -99,6 +139,14 @@ function crosshair(ctx: CanvasRenderingContext2D, side: number): void {
  * square canvas is turned about its centre, which for a quarter turn of a square
  * is the whole mapping.
  *
+ * **The colour table goes on before the background and before the crosshair, and the
+ * order is not cosmetic**: applied afterwards, a black point of 40 would take the
+ * crosshair — a white line at 95 % over a dark stroke — and crush it into the very
+ * shadow it is drawn over, leaving the cataloger placing a border by feel. So the
+ * pixels of the photograph are corrected first, the dark surround is painted
+ * *underneath* them with `destination-over`, and the two lines go on top of
+ * everything, untouched.
+ *
  * It draws or it does not: it never throws, because the loupe is an aid and the
  * drag has to keep working without it.
  */
@@ -119,6 +167,17 @@ export function paintLoupe(
     point: { x: number; y: number }
     /** Side of the region to show, in pixels of the rotated image. */
     sourceSide: number
+    /**
+     * The colour adjustment being previewed, if any. The same tables the working
+     * surface shows through its SVG filter, so the magnifier and the photograph are
+     * the same photograph.
+     */
+    luts?: ColorLuts | null
+    /**
+     * What the loupe is for right now. Defaults to framing; the eyedropper has to say
+     * so, and saying so is what gets it the raw pixels (see `loupeTables`).
+     */
+    mode?: LoupeMode
   },
 ): void {
   const ctx = canvas.getContext('2d')
@@ -133,13 +192,16 @@ export function paintLoupe(
     params.point,
     params.sourceSide,
   )
+  const tables = loupeTables(params.luts, params.mode ?? 'FRAMING')
 
   try {
     ctx.save()
-    // What falls outside the photograph, when the corner sits on its edge. The
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    // Cleared and not filled: the surround is painted at the end, underneath, so the
+    // colour table only ever touches pixels of the photograph. What falls outside the
+    // photograph —when the corner sits on its edge— stays transparent until then. The
     // region is deliberately not slid inwards to avoid this: see loupeRegion.
-    ctx.fillStyle = '#1c1917'
-    ctx.fillRect(0, 0, side, side)
+    ctx.clearRect(0, 0, side, side)
     ctx.translate(side / 2, side / 2)
     ctx.rotate((params.rotation * Math.PI) / 180)
     ctx.translate(-side / 2, -side / 2)
@@ -153,6 +215,39 @@ export function paintLoupe(
     ctx.drawImage(image, region.x, region.y, region.width, region.height, 0, 0, side, side)
   } catch {
     /* A region the browser refuses to read leaves the loupe as it was. */
+  } finally {
+    ctx.restore()
+  }
+
+  if (tables) {
+    try {
+      // A hundred and twelve pixels square, or two hundred and twenty-four on a dense
+      // screen: fifty thousand lookups, which is nothing next to the `pointermove`
+      // that asked for it. The table is applied in CPU because a canvas has no
+      // filter that can be trusted — `ctx.filter` is a silent no-op on old WebKit,
+      // and the declared target is phones from 2020 on.
+      const pixels = ctx.getImageData(0, 0, side, side)
+      applyColorLuts(tables, pixels.data)
+      ctx.putImageData(pixels, 0, 0)
+    } catch {
+      /*
+       * A canvas the browser will not let us read —an image from another origin
+       * taints it— leaves the loupe with the raw pixels. Worse than corrected and far
+       * better than nothing: the drag has to keep working. The colour panel is only
+       * offered over the master, which travels as a Blob of this same origin, so this
+       * is the path nobody should reach.
+       */
+    }
+  }
+
+  // The dark surround, painted UNDERNEATH everything already drawn: what falls
+  // outside the photograph, without having gone through the table.
+  try {
+    ctx.save()
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.globalCompositeOperation = 'destination-over'
+    ctx.fillStyle = '#1c1917'
+    ctx.fillRect(0, 0, side, side)
   } finally {
     ctx.restore()
   }

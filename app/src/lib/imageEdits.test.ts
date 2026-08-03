@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import { cornersOfRect } from './perspective'
 import {
+  COLOR_RANGES,
+  GRAY_LABEL,
+  NO_COLOR,
+  buildColorLuts,
+  normalizeColor,
+  type ColorEdit,
+  type ColorParam,
+} from './imageColor'
+import {
+  COLOR_PARAM_ORDER,
   MIN_CROP,
   NO_EDIT,
   addRotation,
   centeredCrop,
   clampCrop,
+  colorAvailability,
+  colorParamsForShotType,
   composeCrop,
   composeEdits,
   cornerPoint,
@@ -16,22 +28,50 @@ import {
   editedSize,
   fitInside,
   fullCrop,
+  inheritColor,
   isFullCrop,
+  isInheritedColor,
   isNoEdit,
   loupeRegion,
   moveCrop,
   normalizeEdit,
   normalizeRotation,
   resizeCrop,
+  restrictColorToShotType,
   rotateCrop,
   rotateEdit,
   rotatedSize,
   sameEdit,
   swapsSides,
+  withOwnColor,
   type Crop,
   type PhotoEdit,
   type Rotation,
 } from './imageEdits'
+
+/**
+ * Las catorce columnas de color en su valor identidad: lo que escribe una fotografía
+ * sin ajuste.
+ *
+ * Escritas a mano y no con `colorToColumns`, para que los nombres que se comprueban
+ * sean los de la migración y no los que este módulo diga que son.
+ */
+const SIN_COLOR = {
+  color_temperature: null,
+  color_tint: null,
+  color_exposure: null,
+  color_black: null,
+  color_white: null,
+  color_gamma: null,
+  color_shoulder: null,
+  color_gray: false,
+  color_neutral_x: null,
+  color_neutral_y: null,
+  color_source: null,
+  color_reference: null,
+  color_light: null,
+  color_inherited: false,
+}
 
 /** Compares fractions without demanding bit equality. */
 function expectCrop(actual: Crop | null, expected: Crop) {
@@ -160,7 +200,7 @@ describe('rotateEdit: todo lo dibujado sobre la foto gira con ella (RF-410)', ()
 
   it('sin encuadre no inventa ninguno', () => {
     const turned = rotateEdit({ rotation: 270, crop: null, corners: null }, 90)
-    expect(turned).toEqual({ rotation: 0, crop: null, corners: null })
+    expect(turned).toEqual({ rotation: 0, crop: null, corners: null, color: NO_COLOR })
   })
 })
 
@@ -217,7 +257,12 @@ describe('composeCrop (a crop of a crop)', () => {
 
 describe('composeEdits (the editor works on an already edited photo)', () => {
   it('adds nothing when there is nothing to add', () => {
-    expect(composeEdits(NO_EDIT, NO_EDIT)).toEqual({ rotation: 0, crop: null, corners: null })
+    expect(composeEdits(NO_EDIT, NO_EDIT)).toEqual({
+      rotation: 0,
+      crop: null,
+      corners: null,
+      color: NO_COLOR,
+    })
   })
 
   it('keeps the previous edit when the second one is empty', () => {
@@ -620,6 +665,28 @@ describe('el encuadre por esquinas (RF-410)', () => {
   it('y el resumen lo dice en español', () => {
     expect(editSummary({ rotation: 0, crop: null, corners: trapecio })).toMatch(/Perspectiva corregida/)
   })
+
+  /**
+   * Incidencia: el editor mostraba «Sin cambios» mientras la perspectiva estaba
+   * corregida en pantalla.
+   *
+   * La causa no estaba aquí —`editSummary` describe las esquinas desde el primer
+   * día— sino en la cabecera del editor, que construía su propio objeto con el giro
+   * y el recorte y **se dejaba las esquinas fuera**. Este caso fija las dos mitades
+   * del contrato: qué tiene que decir una edición que solo trae esquinas, y que
+   * omitir el campo es exactamente lo que producía el «Sin cambios». Así, quien
+   * vuelva a pasar una edición a medias verá aquí escrito lo que se rompe.
+   */
+  it('la perspectiva sola ya es un cambio, y omitir las esquinas es lo que lo silenciaba', () => {
+    const soloPerspectiva: PhotoEdit = { rotation: 0, crop: null, corners: trapecio }
+    expect(editSummary(soloPerspectiva)).not.toBeNull()
+    // Lo que veía la usuaria: el mismo encuadre sin el campo de las esquinas no
+    // describe nada, y la cabecera lo pinta como «Sin cambios».
+    expect(editSummary({ rotation: soloPerspectiva.rotation, crop: soloPerspectiva.crop })).toBeNull()
+    // Y lo que se muestra describe lo que se guarda: el resumen de la edición en
+    // curso y el de su forma canónica son el mismo texto.
+    expect(editSummary(soloPerspectiva)).toBe(editSummary(normalizeEdit(soloPerspectiva)))
+  })
 })
 
 describe('the edit as data (columns of the images row)', () => {
@@ -631,6 +698,7 @@ describe('the edit as data (columns of the images row)', () => {
       crop_width: null,
       crop_height: null,
       ...SIN_ESQUINAS,
+      ...SIN_COLOR,
     })
     // A crop covering everything is stored as no crop: it is what it means.
     expect(editToColumns({ rotation: 0, crop: fullCrop() }).crop_x).toBeNull()
@@ -654,9 +722,14 @@ describe('the edit as data (columns of the images row)', () => {
   })
 
   it('a row from before this feature reads as no edit', () => {
-    expect(editFromColumns(null)).toEqual({ rotation: 0, crop: null, corners: null })
-    expect(editFromColumns({})).toEqual({ rotation: 0, crop: null, corners: null })
-    expect(editFromColumns({ rotation: 90 })).toEqual({ rotation: 90, crop: null, corners: null })
+    expect(editFromColumns(null)).toEqual({ rotation: 0, crop: null, corners: null, color: NO_COLOR })
+    expect(editFromColumns({})).toEqual({ rotation: 0, crop: null, corners: null, color: NO_COLOR })
+    expect(editFromColumns({ rotation: 90 })).toEqual({
+      rotation: 90,
+      crop: null,
+      corners: null,
+      color: NO_COLOR,
+    })
   })
 
   it('a half-written crop is ignored rather than drawn wrong', () => {
@@ -666,6 +739,7 @@ describe('the edit as data (columns of the images row)', () => {
       corners: null,
       rotation: 0,
       crop: null,
+      color: NO_COLOR,
     })
   })
 })
@@ -676,6 +750,7 @@ describe('normalizeEdit / editSummary', () => {
       rotation: 90,
       crop: null,
       corners: null,
+      color: NO_COLOR,
     })
   })
 
@@ -696,7 +771,7 @@ describe('el original siempre se puede recuperar', () => {
     // With the master as source the editor opens with baked = NO_EDIT, so what
     // it returns is what gets stored: composing is the identity.
     const widened: PhotoEdit = { rotation: 90, crop: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 } }
-    expect(composeEdits(NO_EDIT, widened)).toEqual({ ...widened, corners: null })
+    expect(composeEdits(NO_EDIT, widened)).toEqual({ ...widened, corners: null, color: NO_COLOR })
 
     // And that is the whole point: the new crop is WIDER than the stored one,
     // which composing onto it could never produce.
@@ -706,10 +781,17 @@ describe('el original siempre se puede recuperar', () => {
 
   it('el recorte nuevo no tiene que solaparse con el anterior', () => {
     const elsewhere: PhotoEdit = { rotation: 0, crop: { x: 0.7, y: 0.7, width: 0.3, height: 0.3 } }
-    expect(composeEdits(NO_EDIT, elsewhere)).toEqual({ ...elsewhere, corners: null })
+    expect(composeEdits(NO_EDIT, elsewhere)).toEqual({
+      ...elsewhere,
+      corners: null,
+      color: NO_COLOR,
+    })
   })
 
-  it('volver al original deja la fila sin encuadre: cuatro nulos y sin giro', () => {
+  it('volver al original deja la fila sin encuadre NI COLOR: todo a nulo y sin giro', () => {
+    // «Volver al original» limpia también el color (RF-414): si dejara el ajuste
+    // puesto, la fila diría que la fotografía está corregida mientras los ficheros se
+    // regeneran desde el máster sin tocar.
     const columns = editToColumns(NO_EDIT)
     expect(columns).toEqual({
       rotation: 0,
@@ -718,6 +800,7 @@ describe('el original siempre se puede recuperar', () => {
       crop_width: null,
       crop_height: null,
       ...SIN_ESQUINAS,
+      ...SIN_COLOR,
     })
     expect(isNoEdit(editFromColumns(columns))).toBe(true)
   })
@@ -741,5 +824,454 @@ describe('el original siempre se puede recuperar', () => {
     // Half of a 0.3-wide crop is 0.15 of the master, not 0.5.
     expect(absolute.crop!.width).toBeCloseTo(0.15, 5)
     expect(absolute.rotation).toBe(90)
+  })
+})
+
+/* ================================================================= el color */
+
+/**
+ * Un ajuste real de los que salen de un almacén con bombilla: dominante cálida
+ * corregida con el cuentagotas, medio paso de exposición y el rango tonal recogido.
+ */
+const AJUSTE: ColorEdit = normalizeColor({
+  temperature: -34,
+  tint: -5,
+  exposure: 1 / 3,
+  blackPoint: 6,
+  whitePoint: 248,
+  gamma: 1.1,
+  shoulder: 20,
+  neutral: { x: 0.32, y: 0.71 },
+  source: 'NEUTRAL_PICKED',
+  reference: 'SCENE',
+  light: 'INCANDESCENT',
+})
+
+/** Un cuadro torcido, para comprobar que el color convive con las esquinas. */
+const TORCIDO = {
+  nw: { x: 0.3, y: 0.15 },
+  ne: { x: 0.7, y: 0.15 },
+  se: { x: 0.85, y: 0.9 },
+  sw: { x: 0.15, y: 0.9 },
+}
+
+describe('el color entra en el modelo de edición (RF-414)', () => {
+  it('NO_EDIT trae el color neutro, y una edición sin color se lee igual', () => {
+    expect(NO_EDIT.color).toEqual(NO_COLOR)
+    expect(isNoEdit(NO_EDIT)).toBe(true)
+    // Sin el campo y con el campo neutro son lo mismo: los mismos píxeles y la misma
+    // fila, que es lo que evita reescribir ficheros por una diferencia que no se ve.
+    expect(normalizeEdit({ rotation: 0, crop: null }).color).toEqual(NO_COLOR)
+    expect(sameEdit({ rotation: 0, crop: null }, NO_EDIT)).toBe(true)
+  })
+
+  it('normalizeEdit deja el color en su forma canónica y no lo anula nunca', () => {
+    const normalized = normalizeEdit({ rotation: 0, crop: null, color: { temperature: 12 } })
+    expect(normalized.color.temperature).toBe(12)
+    expect(normalized.color.gamma).toBe(1)
+    // Un color neutro NO es la ausencia de color: puede estar diciendo «se miró con la
+    // obra delante y se dejó como estaba», que es trabajo hecho. «Sin revisar» no es
+    // «no», y anularlo aquí borraría justo eso.
+    const reviewed = normalizeEdit({ rotation: 0, crop: null, color: { source: 'REVIEWED_UNCHANGED' } })
+    expect(reviewed.color.source).toBe('REVIEWED_UNCHANGED')
+    // Y, para los píxeles, sigue sin ser un cambio: no se regenera ningún fichero.
+    expect(isNoEdit(reviewed)).toBe(true)
+  })
+
+  it('un valor de color imposible se lee como identidad, no como el tope', () => {
+    // La regla es de imageColor.ts y aquí solo se comprueba que se delega en ella: un
+    // número que la base no podría haber aceptado enseña la fotografía como es, en vez
+    // de alterarla a lo bestia por un dato que nadie escribió.
+    expect(normalizeEdit({ rotation: 0, crop: null, color: { gamma: 9 } }).color.gamma).toBe(1)
+    expect(
+      normalizeEdit({ rotation: 0, crop: null, color: { temperature: Number.NaN } }).color.temperature,
+    ).toBe(0)
+  })
+
+  it('solo el color ya es un cambio (RF-414)', () => {
+    expect(isNoEdit({ rotation: 0, crop: null, color: { temperature: 12 } })).toBe(false)
+    expect(isNoEdit({ rotation: 0, crop: null, color: { gray: true } })).toBe(false)
+    expect(isNoEdit({ rotation: 0, crop: null, color: AJUSTE })).toBe(false)
+  })
+
+  /**
+   * El caso que sostiene toda la fase: si `sameEdit` no mirara el color, «Aplicar»
+   * decidiría que no hay nada que regenerar, los ficheros se quedarían como estaban y
+   * la corrección que la usuaria acaba de hacer se perdería **en silencio**, con la
+   * fila diciendo que está aplicada.
+   */
+  it('sameEdit distingue dos ediciones que solo difieren en el color (RF-414)', () => {
+    const encuadre: PhotoEdit = { rotation: 90, crop: { x: 0.1, y: 0.1, width: 0.6, height: 0.6 } }
+    expect(sameEdit(encuadre, { ...encuadre, color: AJUSTE })).toBe(false)
+    expect(
+      sameEdit(
+        { ...encuadre, color: AJUSTE },
+        { ...encuadre, color: { ...AJUSTE, temperature: AJUSTE.temperature + 1 } },
+      ),
+    ).toBe(false)
+    // Un solo mando, y el paso más pequeño que hay: un sexto de EV.
+    expect(
+      sameEdit(
+        { rotation: 0, crop: null, color: { exposure: 0 } },
+        { rotation: 0, crop: null, color: { exposure: 1 / 6 } },
+      ),
+    ).toBe(false)
+    expect(sameEdit(NO_EDIT, { rotation: 0, crop: null, color: { gray: true } })).toBe(false)
+    // Y dos formas de escribir el mismo ajuste siguen siendo el mismo: abrir el editor,
+    // mirar y aplicar no reescribe ningún fichero.
+    expect(
+      sameEdit({ rotation: 0, crop: null, color: AJUSTE }, { rotation: 0, crop: null, color: { ...AJUSTE } }),
+    ).toBe(true)
+  })
+
+  it('dos ajustes que solo difieren en su procedencia son la misma foto y filas distintas', () => {
+    const a: PhotoEdit = { rotation: 0, crop: null, color: AJUSTE }
+    const b: PhotoEdit = {
+      rotation: 0,
+      crop: null,
+      color: { ...AJUSTE, neutral: { x: 0.9, y: 0.9 }, source: 'MANUAL' },
+    }
+    // Los mismos píxeles: no hay derivadas que regenerar.
+    expect(sameEdit(a, b)).toBe(true)
+    // Pero no la misma fila, y quien necesite saber si cambió compara las columnas.
+    expect(editToColumns(a)).not.toEqual(editToColumns(b))
+    expect(editToColumns(b).color_neutral_x).toBeCloseTo(0.9, 5)
+  })
+
+  it('el resumen dice el color en la misma línea y en español (RF-414)', () => {
+    const summary = editSummary({ rotation: 90, crop: null, color: AJUSTE })
+    expect(summary).toContain('Girada 90°')
+    expect(summary).toContain(COLOR_RANGES.temperature.label)
+    expect(summary).toContain('Exposición +0,33 EV')
+    // Sin color no se inventa ninguna coletilla.
+    expect(editSummary({ rotation: 90, crop: null })).toBe('Girada 90°')
+    expect(editSummary({ rotation: 0, crop: null, color: { gray: true } })).toContain(GRAY_LABEL)
+    // Un ajuste que no hace nada no es un cambio que anunciar, ni cuando consta que se
+    // revisó: eso se lee en la ficha, no en la línea de «lo que se ha hecho».
+    expect(editSummary({ rotation: 0, crop: null, color: { source: 'REVIEWED_UNCHANGED' } })).toBeNull()
+  })
+
+  it('el punto donde se tomó el gris gira con la fotografía (RF-418)', () => {
+    // Es el cuarto hermano de la lista de rotateEdit: no cambia ningún píxel, y por eso
+    // es fácil olvidarlo. Lo que se rompe es lo único para lo que existe el campo —
+    // saber en un año que el gris se tomó del cartón y no del cuadro.
+    const color = normalizeColor({ temperature: 10, neutral: { x: 0.2, y: 0.7 } })
+    const turned = rotateEdit({ rotation: 0, crop: null, color }, 90)
+    expect(turned.color.neutral).not.toBeNull()
+    expect(turned.color.neutral!.x).toBeCloseTo(1 - 0.7, 5)
+    expect(turned.color.neutral!.y).toBeCloseTo(0.2, 5)
+    // La corrección en sí no gira: una tabla de 256 entradas no tiene orientación.
+    expect(turned.color.temperature).toBe(10)
+    // Y cuatro cuartos de vuelta devuelven el punto a su sitio.
+    let edit: PhotoEdit = { rotation: 0, crop: null, color }
+    for (let i = 0; i < 4; i += 1) edit = rotateEdit(edit, 90)
+    expect(normalizeColor(edit.color).neutral).toEqual(color.neutral)
+  })
+})
+
+describe('el color como dato: las columnas de la fila (RF-414)', () => {
+  it('nulo es identidad: solo se escribe lo que hace algo', () => {
+    const columns = editToColumns({ rotation: 0, crop: null, color: { temperature: 12, gray: true } })
+    expect(columns.color_temperature).toBe(12)
+    expect(columns.color_tint).toBeNull()
+    expect(columns.color_gamma).toBeNull()
+    expect(columns.color_white).toBeNull()
+    expect(columns.color_shoulder).toBeNull()
+    expect(columns.color_gray).toBe(true)
+  })
+
+  it('los nombres son los de la migración, y las dos del empastado no se escriben aquí', () => {
+    const columns = editToColumns({ rotation: 0, crop: null, color: AJUSTE })
+    for (const name of Object.keys(SIN_COLOR)) expect(columns).toHaveProperty(name)
+    // `color_clipped_low` y `color_clipped_high` no son el ajuste: son la medición de lo
+    // que aplicarlo le hizo a los píxeles, «se anota al aplicar». Aquí no hay píxeles, y
+    // rellenarlas desde este módulo sería una cuenta que nadie ha hecho (las escribe
+    // clippingToColumns, en imageHistogram.ts).
+    expect(columns).not.toHaveProperty('color_clipped_low')
+    expect(columns).not.toHaveProperty('color_clipped_high')
+  })
+
+  it('el color convive con las esquinas, no en su lugar', () => {
+    const columns = editToColumns({ rotation: 0, crop: null, corners: TORCIDO, color: AJUSTE })
+    expect(columns.corner_nw_x).toBeCloseTo(TORCIDO.nw.x, 6)
+    expect(columns.crop_x).toBeNull()
+    expect(columns.color_temperature).toBe(AJUSTE.temperature)
+    expect(columns.color_source).toBe('NEUTRAL_PICKED')
+  })
+
+  it('ida y vuelta por las columnas: el aspecto y su procedencia (RF-414)', () => {
+    const edit: PhotoEdit = {
+      rotation: 180,
+      crop: { x: 0.1, y: 0.2, width: 0.5, height: 0.6 },
+      color: AJUSTE,
+    }
+    const back = editFromColumns(editToColumns(edit))
+    expect(back.color).toEqual(AJUSTE)
+    expect(back.rotation).toBe(180)
+    expect(sameEdit(edit, back)).toBe(true)
+  })
+
+  it('y devuelve la misma tabla de 256 entradas, que es lo que ven los píxeles', () => {
+    // La comparación que de verdad importa: el redondeo de `numeric` no puede cambiar
+    // el color con el que sale la derivada.
+    const back = editFromColumns(editToColumns({ rotation: 0, crop: null, color: AJUSTE }))
+    const written = buildColorLuts(back.color)
+    const original = buildColorLuts(AJUSTE)
+    expect(Array.from(written.r)).toEqual(Array.from(original.r))
+    expect(Array.from(written.g)).toEqual(Array.from(original.g))
+    expect(Array.from(written.b)).toEqual(Array.from(original.b))
+    expect(written.gray).toBe(original.gray)
+  })
+
+  it('una fila anterior a la migración se lee como color neutro (RF-414)', () => {
+    // Las 39 filas activas se quedaron a nulo y nadie las reescribe: el despliegue es de
+    // una sola fase porque nulo aquí significa «este parámetro no hace nada».
+    const back = editFromColumns({
+      rotation: 90,
+      crop_x: 0.1,
+      crop_y: 0.1,
+      crop_width: 0.5,
+      crop_height: 0.5,
+    })
+    expect(back.color).toEqual(NO_COLOR)
+    // La excepción es color_source, donde nulo es «nadie ha mirado todavía el color de
+    // esta fotografía» y no «se miró y se dejó igual».
+    expect(back.color.source).toBeNull()
+    expect(editFromColumns({ rotation: 0, color_source: 'REVIEWED_UNCHANGED' }).color.source).toBe(
+      'REVIEWED_UNCHANGED',
+    )
+  })
+
+  it('un parámetro que la base no podría haber aceptado no arrastra a los demás', () => {
+    const back = editFromColumns({ rotation: 0, color_temperature: 900, color_tint: 8 })
+    expect(back.color.temperature).toBe(0)
+    expect(back.color.tint).toBe(8)
+  })
+})
+
+describe('composeEdits y el color (RF-414, camino degradado)', () => {
+  it('desde el máster el color pasa tal cual: no hay nada que componer', () => {
+    const nuevo: PhotoEdit = { rotation: 0, crop: null, color: AJUSTE }
+    const composed = composeEdits(NO_EDIT, nuevo)
+    expect(composed.color).toEqual(AJUSTE)
+    expect(sameEdit(composed, nuevo)).toBe(true)
+  })
+
+  it('y la perspectiva y el color a la vez, también', () => {
+    const composed = composeEdits(NO_EDIT, { rotation: 0, crop: null, corners: TORCIDO, color: AJUSTE })
+    expect(composed.corners).not.toBeNull()
+    expect(composed.color.temperature).toBe(AJUSTE.temperature)
+  })
+
+  it('sobre una imagen que ya lleva el encuadre aplicado se rechaza, y lo dice en español', () => {
+    // La copia de consulta pasó por un WebP con pérdida: ajustar el color ahí corregiría
+    // los defectos de la compresión como si fueran la obra.
+    const horneado: PhotoEdit = { rotation: 0, crop: { x: 0.1, y: 0.1, width: 0.6, height: 0.6 } }
+    expect(() => composeEdits(horneado, { rotation: 0, crop: null, color: AJUSTE })).toThrow(
+      'No se puede ajustar el color sobre una imagen que ya lleva aplicado un ajuste anterior',
+    )
+    // Y sobre una que ya lleva el color cocido, cualquier ajuste nuevo.
+    expect(() =>
+      composeEdits({ rotation: 0, crop: null, color: AJUSTE }, { rotation: 0, crop: null, color: { tint: 5 } }),
+    ).toThrow(/color/)
+  })
+
+  it('pero el color ya aplicado viaja intacto cuando solo se recorta', () => {
+    // Recortar más sí se puede desde la copia de consulta, y la fila no puede quedarse
+    // diciendo que no hay color sobre un fichero que lo lleva cocido.
+    const stored: PhotoEdit = {
+      rotation: 0,
+      crop: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 },
+      color: AJUSTE,
+    }
+    const composed = composeEdits(stored, { rotation: 0, crop: { x: 0, y: 0, width: 0.5, height: 0.5 } })
+    expect(composed.color).toEqual(AJUSTE)
+    expect(composed.crop!.width).toBeCloseTo(0.4, 6)
+  })
+})
+
+describe('cuándo se ofrece el ajuste de color (RF-414, RF-417)', () => {
+  it('no se ofrece en una fotografía que no es propia, y se dice por qué', () => {
+    expect(colorAvailability(true, 'OWN')).toEqual({ available: true, reason: null })
+    expect(colorAvailability(true, null)).toEqual({ available: true, reason: null })
+    const otro = colorAvailability(true, 'OTHER_CATALOG')
+    expect(otro.available).toBe(false)
+    expect(otro.reason).toMatch(/otro catálogo/)
+    expect(otro.reason).toMatch(/revelado de otra persona/)
+    expect(colorAvailability(true, 'THIRD_PARTY').reason).toMatch(/tercero/)
+  })
+
+  it('ni sobre la copia de consulta, que ya lleva el color aplicado', () => {
+    const degradado = colorAvailability(false, 'OWN')
+    expect(degradado.available).toBe(false)
+    expect(degradado.reason).toMatch(/máster de archivo/)
+    expect(degradado.reason).toMatch(/copia de consulta/)
+  })
+
+  it('cuando fallan las dos cosas manda la que no se puede arreglar', () => {
+    // Una reproducción ajena no será ajustable nunca; un máster que no se ha descargado
+    // puede descargarse al siguiente intento. Decir lo segundo mandaría a la usuaria a
+    // arreglar lo que no es.
+    expect(colorAvailability(false, 'OTHER_CATALOG').reason).toMatch(/otro catálogo/)
+  })
+
+  it('nunca un hueco: si no se ofrece, hay razón', () => {
+    for (const provenance of ['OWN', 'OTHER_CATALOG', 'THIRD_PARTY'] as const) {
+      for (const master of [true, false]) {
+        const availability = colorAvailability(master, provenance)
+        if (availability.available) expect(availability.reason).toBeNull()
+        else expect((availability.reason ?? '').length).toBeGreaterThan(20)
+      }
+    }
+  })
+})
+
+describe('qué parámetros ofrece cada tipo de toma (RF-414, §3.1)', () => {
+  const TODOS: readonly ColorParam[] = [...COLOR_PARAM_ORDER]
+
+  it('la lista de mandos cubre exactamente la tabla del conjunto cerrado', () => {
+    // Un parámetro añadido a COLOR_RANGES sin colocarlo aquí desaparecería del panel sin
+    // una queja; y uno de más aquí es un mando que la base no sabría guardar.
+    expect([...TODOS].sort()).toEqual(Object.keys(COLOR_RANGES).sort())
+  })
+
+  it('el blanco y negro solo en el reverso y en el detalle de firma', () => {
+    expect(colorParamsForShotType('BACK').gray).toEqual({ offered: true, reason: null })
+    expect(colorParamsForShotType('SIGNATURE_DETAIL').gray.offered).toBe(true)
+    const general = colorParamsForShotType('GENERAL')
+    expect(general.gray.offered).toBe(false)
+    expect(general.gray.reason).toMatch(/reverso/)
+    // En un daño o un marco el color ES el dato, así que ahí tiene su propia razón.
+    expect(colorParamsForShotType('DAMAGE_DETAIL').gray.reason).toMatch(/detalle de daño/)
+    expect(colorParamsForShotType('FRAME').gray.offered).toBe(false)
+  })
+
+  it('en un detalle de daño y en uno de marco, solo la dominante y la exposición', () => {
+    for (const shotType of ['DAMAGE_DETAIL', 'FRAME'] as const) {
+      const params = colorParamsForShotType(shotType)
+      expect(params.offered).toEqual(['temperature', 'tint', 'exposure'])
+      expect(params.disabled.map((entry) => entry.param)).toEqual([
+        'blackPoint',
+        'whitePoint',
+        'gamma',
+        'shoulder',
+      ])
+      // Visibles y desactivados, con la razón en la línea de ayuda: un mando que
+      // desaparece no explica nada.
+      for (const entry of params.disabled) expect(entry.reason.length).toBeGreaterThan(20)
+    }
+    expect(colorParamsForShotType('DAMAGE_DETAIL').disabled[0]!.reason).toMatch(/amarilleo|humedad|óxido/)
+    expect(colorParamsForShotType('FRAME').disabled[0]!.reason).toMatch(/dorado/)
+  })
+
+  it('ningún parámetro se queda sin sitio, sea el tipo de toma el que sea', () => {
+    for (const shotType of ['GENERAL', 'BACK', 'SIGNATURE_DETAIL', 'DAMAGE_DETAIL', 'FRAME', 'OTHER'] as const) {
+      const params = colorParamsForShotType(shotType)
+      const all = [...params.offered, ...params.disabled.map((entry) => entry.param)]
+      expect([...all].sort()).toEqual([...TODOS].sort())
+    }
+    // Un tipo de toma desconocido se trata como la general: ofrece lo que ella y nunca
+    // habilita lo que un detalle prohíbe.
+    expect(colorParamsForShotType(null).offered).toEqual(TODOS)
+    expect(colorParamsForShotType(null).gray.offered).toBe(false)
+  })
+
+  it('lo que un tipo de toma no ofrece vuelve a su identidad', () => {
+    // Para lo que escribe varios mandos de golpe y no sabe dónde aterriza: el
+    // automático, un preset de luz y un ajuste heredado. Sin esto, el automático sobre
+    // un detalle de daño movería el punto negro por un mando que ahí está desactivado.
+    const restringido = restrictColorToShotType(AJUSTE, 'DAMAGE_DETAIL')
+    expect(restringido.temperature).toBe(AJUSTE.temperature)
+    expect(restringido.tint).toBe(AJUSTE.tint)
+    expect(restringido.exposure).toBe(AJUSTE.exposure)
+    expect(restringido.blackPoint).toBe(0)
+    expect(restringido.whitePoint).toBe(255)
+    expect(restringido.gamma).toBe(1)
+    expect(restringido.shoulder).toBe(0)
+    // La procedencia no se toca: lo que se ha restringido es el aspecto.
+    expect(restringido.source).toBe(AJUSTE.source)
+    expect(restringido.reference).toBe(AJUSTE.reference)
+    expect(restringido.light).toBe(AJUSTE.light)
+  })
+
+  it('y el blanco y negro cae donde el color es el dato', () => {
+    expect(restrictColorToShotType({ gray: true }, 'BACK').gray).toBe(true)
+    expect(restrictColorToShotType({ gray: true }, 'FRAME').gray).toBe(false)
+    expect(restrictColorToShotType({ gray: true }, 'GENERAL').gray).toBe(false)
+    // En una toma general no hay nada que restringir de los siete mandos.
+    expect(restrictColorToShotType(AJUSTE, 'GENERAL')).toEqual(AJUSTE)
+  })
+})
+
+describe('el ajuste heredado de la toma general (RF-414, §7)', () => {
+  const general: ColorEdit = normalizeColor({
+    temperature: -30,
+    tint: -4,
+    exposure: 0.5,
+    blackPoint: 8,
+    gamma: 1.15,
+    neutral: { x: 0.4, y: 0.6 },
+    source: 'NEUTRAL_PICKED',
+    reference: 'SCENE',
+    light: 'INCANDESCENT',
+  })
+  const reverso: PhotoEdit = { rotation: 90, crop: { x: 0.1, y: 0.1, width: 0.7, height: 0.7 } }
+
+  it('heredar marca el ajuste como heredado y conserva el encuadre de la toma', () => {
+    const back = inheritColor(reverso, general, 'BACK')
+    expect(back.color.inherited).toBe(true)
+    expect(isInheritedColor(back)).toBe(true)
+    expect(back.color.temperature).toBe(general.temperature)
+    expect(back.color.gamma).toBe(general.gamma)
+    expect(back.rotation).toBe(90)
+    expectCrop(back.crop, { x: 0.1, y: 0.1, width: 0.7, height: 0.7 })
+    // Y el hecho llega a la fila: es la columna la que lo dice, no una comparación de
+    // números, que diría «heredado» también cuando coinciden por casualidad.
+    expect(editToColumns(back).color_inherited).toBe(true)
+  })
+
+  it('el punto donde se tomó el gris NO se hereda: es un sitio de otra fotografía (RF-418)', () => {
+    const back = inheritColor(reverso, general, 'BACK')
+    expect(back.color.neutral).toBeNull()
+    expect(editToColumns(back).color_neutral_x).toBeNull()
+    // Pero de dónde salieron los números sí se conserva.
+    expect(back.color.source).toBe('NEUTRAL_PICKED')
+    expect(back.color.light).toBe('INCANDESCENT')
+  })
+
+  it('un detalle de daño hereda la luz de la sala y no el rango tonal (§3.1)', () => {
+    const damage = inheritColor({ rotation: 0, crop: null }, general, 'DAMAGE_DETAIL')
+    expect(damage.color.temperature).toBe(general.temperature)
+    expect(damage.color.exposure).toBe(general.exposure)
+    expect(damage.color.blackPoint).toBe(0)
+    expect(damage.color.gamma).toBe(1)
+    expect(damage.color.inherited).toBe(true)
+  })
+
+  it('cambiarlo a mano deja de ser heredado, aunque los números coincidan', () => {
+    const heredado = inheritColor(reverso, general, 'BACK')
+    const propio = withOwnColor(heredado, heredado.color)
+    expect(propio.color.inherited).toBe(false)
+    expect(isInheritedColor(propio)).toBe(false)
+    // Los mismos píxeles: lo que ha cambiado es cómo llegó el ajuste, no su aspecto.
+    expect(sameEdit(heredado, propio)).toBe(true)
+    expect(editToColumns(propio).color_inherited).toBe(false)
+  })
+
+  it('restablecer a lo heredado es volver a heredar', () => {
+    const tocado = withOwnColor(reverso, { ...general, temperature: 0 })
+    expect(isInheritedColor(tocado)).toBe(false)
+    expect(tocado.color.temperature).toBe(0)
+    const restablecido = inheritColor(tocado, general, 'BACK')
+    expect(restablecido.color.temperature).toBe(general.temperature)
+    expect(restablecido.color.inherited).toBe(true)
+    expect(restablecido.rotation).toBe(90)
+  })
+
+  it('y la pantalla lo dice: el resumen menciona la herencia', () => {
+    expect(editSummary(inheritColor(reverso, general, 'BACK'))).toMatch(/heredado de la toma general/)
+    // Sobre un ajuste que no hace nada no se anuncia ninguna herencia: sería anunciar la
+    // herencia de nada.
+    expect(editSummary(inheritColor(reverso, NO_COLOR, 'BACK'))).not.toMatch(/heredado/)
   })
 })

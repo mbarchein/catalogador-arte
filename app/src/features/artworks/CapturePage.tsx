@@ -22,7 +22,8 @@ import {
   TriStateIcons,
   YearStepper,
 } from '../../components/ui'
-import { uploadShot } from '../../lib/images'
+import { CORRECTED_NOT_GENERATED, uploadShot, type CorrectedCopyResult } from '../../lib/images'
+import { renderCorrectedCopy } from '../../lib/imageRender'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { saveQueue, readQueue, rehydrate, clearQueue } from './photoQueue'
 import { previewId } from './useArtworks'
@@ -99,6 +100,16 @@ export function CapturePage() {
   // the field schema fears.
   const [pendingArtwork, setPendingArtwork] = useState<string | null>(null)
   const [queueRestored, setQueueRestored] = useState(false)
+  /**
+   * Why a photograph of this piece has no full-resolution corrected copy, in the
+   * generator's own words (RF-420).
+   *
+   * It is said next to the code of the saved record and never instead of it: the shot IS
+   * registered and its correction IS stored, and what is missing is the file that goes to
+   * a print shop, which a computer generates later (RF-421). Saying nothing is what
+   * ADR-010 refuses — a queue nobody knows about is never emptied.
+   */
+  const [copyPending, setCopyPending] = useState<string | null>(null)
 
   useEffect(() => {
     saveBatch(batch)
@@ -299,6 +310,7 @@ export function CapturePage() {
    */
   async function uploadPending(artworkId: string, queue: QueuedShot[]): Promise<QueuedShot[]> {
     let current = queue
+    const pending: string[] = []
     for (const s of queue) {
       if (s.status === 'uploaded') continue
       current = current.map((x) =>
@@ -306,11 +318,16 @@ export function CapturePage() {
       )
       setShots(current)
       try {
-        await uploadShot(artworkId, s.prepared, {
+        const result = await uploadShot(artworkId, s.prepared, {
           shotType: s.shotType,
           isIndex: s.isIndex,
           cropSource: s.prepared.cropSource,
+          // The full-resolution copy with everything applied (RF-420), built HERE because
+          // this is the one moment the master is already in memory: doing it later would
+          // mean downloading it again over the connection of a storage room.
+          correctedCopy: await correctedCopyOf(s),
         })
+        if (result.correctedPending) pending.push(result.correctedPending)
         current = current.map((x) => (x.key === s.key ? { ...x, status: 'uploaded' as const } : x))
       } catch (err) {
         current = current.map((x) =>
@@ -321,7 +338,34 @@ export function CapturePage() {
       }
       setShots(current)
     }
+    // The first reason and how many share it: they are all the same sentence when the
+    // phone is the same phone, and repeating it once per photograph would bury the code of
+    // the record, which is what has to be written on the physical label.
+    setCopyPending(
+      pending.length === 0
+        ? null
+        : pending.length === 1
+          ? (pending[0] ?? null)
+          : `${pending.length} fotografías sin copia a resolución completa: ${pending[0]}`,
+    )
     return current
+  }
+
+  /**
+   * The full-resolution corrected copy of a shot about to be uploaded (RF-420).
+   *
+   * It never throws and never takes the upload down with it: a master that will not
+   * decode, or a canvas ceiling this phone cannot reach, leaves the copy pending — a row
+   * that says «hace falta y falta» and a queue a computer empties later (RF-421). Losing
+   * the photograph over the fourth level would be the wrong trade by a wide margin, and a
+   * shot with no correction answers «no hace falta» without decoding anything.
+   */
+  async function correctedCopyOf(shot: QueuedShot): Promise<CorrectedCopyResult> {
+    try {
+      return await renderCorrectedCopy(shot.prepared.master, shot.prepared.edit)
+    } catch {
+      return { status: 'PENDING', reason: CORRECTED_NOT_GENERATED }
+    }
   }
 
   function clearPiece(savedId: string) {
@@ -341,6 +385,9 @@ export function CapturePage() {
     e.preventDefault()
     setSaving(true)
     setError(null)
+    // What was pending belonged to the previous piece. It survives `clearPiece`, because
+    // it is read next to the code of the record just saved, and it is cleared here.
+    setCopyPending(null)
 
     // Retry: the artwork already exists and only photos are missing.
     if (pendingArtwork) {
@@ -688,19 +735,27 @@ export function CapturePage() {
                 No se ha podido guardar: {error} Los datos siguen aquí.
               </p>
             ) : last ? (
-              <p
-                role="status"
-                className="flex items-baseline justify-between gap-2 rounded-lg bg-green-50 p-2 text-sm text-green-900"
-              >
-                <span>
-                  Guardada como{' '}
-                  <span className="font-mono text-base font-bold">{last}</span> — escríbelo en
-                  la etiqueta
-                </span>
-                <Link to={`/artwork/${last}`} className="shrink-0 underline">
-                  Ver ficha
-                </Link>
-              </p>
+              <div className="space-y-1">
+                <p
+                  role="status"
+                  className="flex items-baseline justify-between gap-2 rounded-lg bg-green-50 p-2 text-sm text-green-900"
+                >
+                  <span>
+                    Guardada como{' '}
+                    <span className="font-mono text-base font-bold">{last}</span> — escríbelo en
+                    la etiqueta
+                  </span>
+                  <Link to={`/artwork/${last}`} className="shrink-0 underline">
+                    Ver ficha
+                  </Link>
+                </p>
+                {/* Said in a lower voice and underneath, never in place of the code: the
+                    photograph and its correction are saved, and what is missing is the copy
+                    for a print shop. It is not an error and it is not silence either. */}
+                {copyPending && (
+                  <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">{copyPending}</p>
+                )}
+              </div>
             ) : null
           }
         >

@@ -1,11 +1,26 @@
 import { useState } from 'react'
 import type { PreparedShot } from '../../lib/images'
-import { editSummary, sameEdit, type CropSource, type PhotoEdit } from '../../lib/imageEdits'
+import {
+  editSummary,
+  isNoEdit,
+  sameEdit,
+  withOwnColor,
+  type CropSource,
+  type PhotoEdit,
+} from '../../lib/imageEdits'
+import { isNoColor, normalizeColor, type ColorEdit } from '../../lib/imageColor'
 import { renderEditedLevels } from '../../lib/imageRender'
-import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
+import {
+  PHOTO_PROVENANCE_LABEL,
+  SHOT_TYPE_LABEL,
+  type PhotoProvenance,
+  type ShotTypeValue,
+} from '../../lib/types'
 import { Chips, CropIcon, NoIcon, PlusIcon, YesIcon } from '../../components/ui'
 import { PhotoInput, type PhotoSource } from './PhotoInput'
 import { PhotoEditor } from './PhotoEditor'
+import { readBatchColor, rememberBatchColor } from './batch'
+import { PHOTO_PROVENANCES, carriedColorOffer, traceOnlyChange } from './photoDetails'
 
 /**
  * The "+" tile reopens whatever entry path the last photos came from: while
@@ -39,6 +54,32 @@ let counter = 0
 export function newKey(): string {
   counter += 1
   return `t${counter}`
+}
+
+/**
+ * The colour of the batch's general shot, which is what the other shots of the same
+ * artwork inherit (§7: «la toma general manda»).
+ *
+ * The first general shot in the strip, in the order they were taken, and never the one
+ * being edited: the general shot inherits from nobody. Undefined when there is none or
+ * when its colour does nothing, because then «heredar» would copy neutrality and look
+ * broken.
+ *
+ * This is the staged twin of `generalColorOf`: here the adjustment is not in a row yet,
+ * it is in the edit of a shot waiting in the queue.
+ */
+export function stagedGeneralColor(
+  shots: readonly QueuedShot[],
+  exceptKey?: string | null,
+): ColorEdit | undefined {
+  for (const shot of shots) {
+    if (shot.shotType !== 'GENERAL' || shot.key === exceptKey) continue
+    const color = shot.prepared.edit.color
+    // Normalized on the way out: a `PhotoEdit` may carry a partial adjustment — that is
+    // what `ColorInput` is for — and what is inherited has to be a complete one.
+    if (color && !isNoColor(color)) return normalizeColor(color)
+  }
+  return undefined
 }
 
 /**
@@ -130,17 +171,65 @@ export function PhotoPicker({
   }
 
   /**
-   * Applies the framing to a shot that has not been uploaded yet.
+   * Where the photograph comes from (RF-417). **Chosen, never inferred**: a 1080×2400
+   * file with no camera data looks exactly like a screenshot of an online catalog, and
+   * looking like one is not being one — the project already decided the same about
+   * `crop_source`.
+   *
+   * It lives in the prepared shot and not in the queued one so that the offline queue
+   * persists it (photoQueue.ts) and `uploadShot` finds it: a reload while the camera is
+   * in the foreground must not turn somebody else's reproduction back into own work,
+   * because on own work the colour adjustment IS offered.
+   */
+  function setProvenance(key: string, provenance: PhotoProvenance) {
+    onChange(
+      shots.map((s) =>
+        s.key === key ? { ...s, prepared: { ...s.prepared, provenance } } : s,
+      ),
+    )
+  }
+
+  /**
+   * Applies the framing and the colour to a shot that has not been uploaded yet.
    *
    * The source is the master already in memory, so this costs no network: no
-   * download, no re-upload, and the row will be born with the framing already
-   * stored (see uploadShot). Nothing is redone if the cataloger applied without
-   * changing anything.
+   * download, no re-upload, and the row will be born with the framing and the colour
+   * already stored (see uploadShot). This is the moment RF-414 is cheapest — the master
+   * in RAM and the artwork in front of you — and the reason the correction is baked
+   * into the thumbnail and the consultation copy here instead of being redone from B2
+   * later.
+   *
+   * Nothing is re-rendered if the cataloger applied without changing a pixel; but the
+   * edit is still kept when only its TRACE changed, which is a different thing and is
+   * spelled out in `traceOnlyChange`.
    */
-  async function applyEdit(shot: QueuedShot, edit: PhotoEdit, cropSource: CropSource) {
+  async function applyEdit(shot: QueuedShot, edit: PhotoEdit, cropSource?: CropSource) {
     setEditingKey(null)
     setEditError(null)
-    if (sameEdit(edit, shot.prepared.edit)) return
+    if (sameEdit(edit, shot.prepared.edit)) {
+      // Same pixels, different row: «se miró con la obra delante y se dejó como estaba»,
+      // or the grey was sampled somewhere else. Nothing to re-encode, and the trace has
+      // to survive all the same — it is the only thing that tells a reviewed photograph
+      // from a pending one, and this shot has not been uploaded yet, so the row will be
+      // born with whatever is kept here.
+      if (traceOnlyChange(edit, shot.prepared.edit)) {
+        onChange(
+          shots.map((s) =>
+            s.key === shot.key
+              ? {
+                  ...s,
+                  prepared: {
+                    ...s.prepared,
+                    edit,
+                    cropSource: cropSource ?? s.prepared.cropSource,
+                  },
+                }
+              : s,
+          ),
+        )
+      }
+      return
+    }
     setApplying(true)
     try {
       const levels = await renderEditedLevels(shot.prepared.master, edit)
@@ -156,15 +245,20 @@ export function PhotoPicker({
                   derivative: levels.derivative,
                   preview: URL.createObjectURL(levels.thumbnail),
                   edit,
-                  cropSource,
+                  cropSource: cropSource ?? s.prepared.cropSource,
                 },
               }
             : s,
         ),
       )
+      // The light of the batch, remembered for the next shot (RF-414). Written after
+      // the render and not before: what is offered to repeat is an adjustment that
+      // really came out on a photograph, not one that failed halfway. An adjustment
+      // that does nothing clears it, so undoing a correction also withdraws the offer.
+      rememberBatchColor(edit.color)
     } catch (e) {
       setEditError(
-        `No se ha podido aplicar el giro o el recorte: ${e instanceof Error ? e.message : String(e)}`,
+        `No se ha podido aplicar la corrección: ${e instanceof Error ? e.message : String(e)}`,
       )
     } finally {
       setApplying(false)
@@ -173,6 +267,13 @@ export function PhotoPicker({
 
   const openShot = shots.find((s) => s.key === openKey)
   const editingShot = shots.find((s) => s.key === editingKey)
+  // Read on every render and not held in state: the batch colour is written by this
+  // same component and by the one on the photos page, and a copy in state would be a
+  // second truth that goes stale exactly when it matters — the shot after the one just
+  // corrected. It is one `localStorage` read of a short string.
+  const carried = openShot
+    ? carriedColorOffer(readBatchColor(), openShot.shotType, openShot.prepared.provenance)
+    : { color: null, reason: null }
 
   return (
     <div>
@@ -267,8 +368,19 @@ export function PhotoPicker({
             onChange={(v) => setType(openShot.key, v)}
           />
 
-          {/* Straightening the shot before it goes up: the crop is applied to
-              the copies, never to the master (ADR-002). */}
+          {/* Where the photograph comes from (RF-417). It is asked and not guessed,
+              and it is asked HERE because this is the only moment at which the person
+              who knows the answer is looking at the file. */}
+          <Chips
+            id={`provenance-${openShot.key}`}
+            label="Procedencia"
+            options={PHOTO_PROVENANCES.map((v) => ({ value: v, text: PHOTO_PROVENANCE_LABEL[v] }))}
+            value={openShot.prepared.provenance ?? 'OWN'}
+            onChange={(v) => setProvenance(openShot.key, v)}
+          />
+
+          {/* Straightening the shot before it goes up: the crop and the colour are
+              applied to the copies, never to the master (ADR-002). */}
           <button
             type="button"
             disabled={applying || openShot.status === 'uploading' || openShot.status === 'uploaded'}
@@ -276,8 +388,49 @@ export function PhotoPicker({
             className="btn-secondary w-full"
           >
             <CropIcon className="h-5 w-5" />
-            {applying ? 'Aplicando la edición…' : 'Girar y recortar'}
+            {applying ? 'Aplicando la corrección…' : 'Girar, recortar y color'}
           </button>
+
+          {/* «El mismo color que la anterior» (RF-414): the whole batch is photographed
+              under the same light, so the second photograph's adjustment is the first
+              one's. It is a starting point and not a decision — it lands on the controls
+              and can be adjusted from there — and it is one tap instead of three per
+              shot, which is what decides whether a correct tool gets used at all.
+
+              Shown disabled with its reason and never hidden: a control that simply is
+              not there is indistinguishable from one that is broken, which is the
+              criterion the editor already applies to «Sugerir recorte». */}
+          <div>
+            <button
+              type="button"
+              disabled={
+                carried.color === null ||
+                applying ||
+                openShot.status === 'uploading' ||
+                openShot.status === 'uploaded'
+              }
+              onClick={() => {
+                // `withOwnColor` and not a spread of the object: the adjustment this shot
+                // decides for itself is not an inherited one, and that column says how the
+                // numbers arrived and not which numbers they are.
+                if (carried.color) {
+                  void applyEdit(
+                    openShot,
+                    withOwnColor(openShot.prepared.edit, carried.color),
+                    openShot.prepared.cropSource,
+                  )
+                }
+              }}
+              className="btn-secondary w-full disabled:opacity-40"
+            >
+              El mismo color que la anterior
+            </button>
+            <p className="mt-1 text-xs text-stone-500">
+              {carried.reason ??
+                'Repite en esta fotografía el ajuste de color de la última que corregiste. Es un ' +
+                  'punto de partida: se puede ajustar después en el editor.'}
+            </p>
+          </div>
 
           <div className={`grid gap-2 ${withIndex ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {withIndex && (
@@ -301,11 +454,33 @@ export function PhotoPicker({
 
           <p className="text-xs text-stone-500">
             Original {openShot.prepared.originalWidth}×{openShot.prepared.originalHeight} px,{' '}
-            {(openShot.prepared.master.size / 1_048_576).toFixed(1)} MB. Se subirán tres
-            versiones: miniatura, consulta y máster de archivo.
+            {/* Decimal comma, like every other number the cataloger reads (es-ES). */}
+            {(openShot.prepared.master.size / 1_048_576).toFixed(1).replace('.', ',')} MB. Se
+            subirán tres versiones: miniatura, consulta y máster de archivo.
             {editSummary(openShot.prepared.edit) &&
               ` ${editSummary(openShot.prepared.edit)} (el máster se guarda sin tocar).`}
+            {/* The fourth level, said before it is promised: with a correction there is
+                also a full-resolution copy (RF-420), and when the phone cannot make it
+                the row records that it is missing instead of pretending it is there. */}
+            {!isNoEdit(openShot.prepared.edit) &&
+              ' Al llevar correcciones se guarda además una copia a tamaño completo con todo' +
+                ' aplicado, la que se manda a una imprenta; si el móvil no puede con ella, queda' +
+                ' anotada como pendiente y se genera después desde un ordenador.'}
           </p>
+
+          {/* A reproduction that is not ours, said where the consequence is: the colour
+              adjustment will not be offered for it (RF-417). And if it already carries
+              one — it was corrected before being marked — that is said too, because a
+              correction baked into the copies does not come off by relabelling the row. */}
+          {(openShot.prepared.provenance ?? 'OWN') !== 'OWN' && (
+            <p className="text-xs text-stone-500">
+              En una fotografía que no es propia no se ofrece el ajuste de color: corregir la
+              dominante de una reproducción ajena es enmendar el revelado de otra persona.
+              {!isNoColor(openShot.prepared.edit.color) &&
+                ' Esta ya lleva un ajuste aplicado: si no debe llevarlo, ábrela y usa «Volver al' +
+                  ' original».'}
+            </p>
+          )}
 
           {editError && (
             <p role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-800">
@@ -324,6 +499,17 @@ export function PhotoPicker({
           // The source is the master File still in memory: the original frame
           // is always one tap away.
           canRestoreOriginal
+          // RF-417: what gates the colour panel, and the reason it prints when it is
+          // closed. Absent is own work, which is what the column defaults to.
+          provenance={editingShot.prepared.provenance}
+          // What the back, the signature, the damage and the frame of this same artwork
+          // inherit (§7). It comes from the staged general shot, because the row does not
+          // exist yet — this is the same rule as `generalColorOf`, one queue earlier.
+          generalColor={stagedGeneralColor(shots, editingShot.key)}
+          // The date the row will get, so §7.1 can whisper a discrepancy with the date
+          // the file carries. `uploadShot` writes today's date as `photo_date`, so this
+          // is not an approximation of it: it is it.
+          recordPhotoDate={new Date().toISOString().slice(0, 10)}
           onApply={(edit, cropSource) => void applyEdit(editingShot, edit, cropSource)}
           onCancel={() => setEditingKey(null)}
         />

@@ -139,12 +139,44 @@ export function isConvexQuadrilateral(corners: Corners): boolean {
  * So: deterministic, reproducible in the Python pipeline, and independent of any
  * datum anybody can edit. It does not recover the physical proportion and does not
  * claim to.
+ *
+ * **Why the frame in pixels is an argument and not optional.** The corners are
+ * fractions, and a fraction of the width and a fraction of the height are only the
+ * same length when the frame is square. Measuring a side with `hypot` on the
+ * fractions alone therefore adds two different units, and the error does not come
+ * from the convergence —which is what this function is for— but from the TILT in
+ * the plane and the frame's proportion: a rectangle that really is 800 × 500 px,
+ * merely turned 5° on a 16:9 frame, came out as 806,54 × 498,70, a proportion
+ * 1,08 % too wide. Measured on the ten stored rows the deformation ran from 0,02 %
+ * to 0,66 %, so nothing needed regenerating, but the arithmetic was wrong.
+ *
+ * The algebra is one line: `hypot(dx·W, dy·H) = W·hypot(dx, dy·H/W)`, and likewise
+ * `= H·hypot(dx·W/H, dy)`. So each side is measured in the unit of the side it
+ * belongs to and what comes back is still a fraction of W and a fraction of H — the
+ * callers keep multiplying by `rotated.width` and `rotated.height` as before.
+ *
+ * `frame` is **the size of the image the corners are fractions of, already rotated**,
+ * never the size it is drawn at on screen — the two agree in proportion today, and
+ * relying on that is how the sides got swapped at 90° and 270° once already. It is
+ * required rather than defaulted so that a new caller cannot silently get the square
+ * frame back.
  */
-export function straightenedSize(corners: Corners): { width: number; height: number } {
-  const distance = (a: Point, b: Point) => Math.hypot(b.x - a.x, b.y - a.y)
+export function straightenedSize(
+  corners: Corners,
+  frame: { width: number; height: number },
+): { width: number; height: number } {
+  // Guarded because this arrives from a decoder or from a layout: a zero or a NaN
+  // would turn every side into NaN, and a NaN reaches the canvas as a blank file.
+  const w = Number.isFinite(frame.width) && frame.width > 0 ? frame.width : 1
+  const h = Number.isFinite(frame.height) && frame.height > 0 ? frame.height : 1
+  const aspect = w / h
+  /** A side of the artwork's width, as a fraction of the frame's width. */
+  const alongWidth = (a: Point, b: Point) => Math.hypot(b.x - a.x, (b.y - a.y) / aspect)
+  /** A side of the artwork's height, as a fraction of the frame's height. */
+  const alongHeight = (a: Point, b: Point) => Math.hypot((b.x - a.x) * aspect, b.y - a.y)
   return {
-    width: (distance(corners.nw, corners.ne) + distance(corners.sw, corners.se)) / 2,
-    height: (distance(corners.nw, corners.sw) + distance(corners.ne, corners.se)) / 2,
+    width: (alongWidth(corners.nw, corners.ne) + alongWidth(corners.sw, corners.se)) / 2,
+    height: (alongHeight(corners.nw, corners.sw) + alongHeight(corners.ne, corners.se)) / 2,
   }
 }
 

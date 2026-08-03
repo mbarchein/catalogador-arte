@@ -2,27 +2,125 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
-import { uploadShot } from '../../lib/images'
+import { CORRECTED_NOT_GENERATED, uploadShot, type CorrectedCopyResult } from '../../lib/images'
 import {
+  colorAvailability,
   composeEdits,
-  editFromColumns,
   editSummary,
+  editToColumns,
+  isNoEdit,
   sameEdit,
   NO_EDIT,
   type CropSource,
+  type NormalizedPhotoEdit,
   type PhotoEdit,
 } from '../../lib/imageEdits'
-import { editSource, savePhotoEdit } from '../../lib/imageRender'
-import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
+import { editSource, renderCorrectedCopy, savePhotoEdit } from '../../lib/imageRender'
+import {
+  PHOTO_PROVENANCE_LABEL,
+  SHOT_TYPE_LABEL,
+  type PhotoProvenance,
+  type ShotTypeValue,
+} from '../../lib/types'
 import { displayDate } from '../../lib/dates'
 import { useEditingAccess } from '../../auth/AuthContext'
 import { Chips, CropIcon, LoadingNotice } from '../../components/ui'
 import { moveItem } from '../../lib/reorder'
+import { rememberBatchColor } from './batch'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { useArtworkImages, type ImageRow } from './artworkImages'
+import {
+  PHOTO_DETAIL_COLUMNS,
+  PHOTO_PROVENANCES,
+  correctedStateText,
+  generalColorOf,
+  photoEdit,
+  provenanceOf,
+  traceOnlyChange,
+  type PhotoDetailRow,
+} from './photoDetails'
 import { PhotoCarousel } from './PhotoCarousel'
+import { photoDateWhisper } from './PhotoDataPanel'
 import { PhotoEditor } from './PhotoEditor'
 import { ReorderableThumbnails } from './ReorderableThumbnails'
+
+/**
+ * The columns of the photographs that the gallery's query does not ask for: the
+ * colour, the date the file carries, the size of the original, the provenance and the
+ * state of the full-resolution copy (see photoDetails.ts for why they are read
+ * separately).
+ *
+ * Reloaded whenever the gallery's rows are replaced, which happens on mount, after
+ * every action of this screen and whenever Realtime says somebody else touched a
+ * photograph — `useArtworkImages` hands back a NEW array each time it reloads, so
+ * depending on it is depending on «the rows were read again». Deliberately not a second
+ * `useLiveChanges` on the same table: two channels with the same topic name for the
+ * same filter is a fight over the same subscription, and there is nothing here to learn
+ * that the reload does not already bring.
+ *
+ * `error` is not decoration. These columns decide whether the colour panel is offered
+ * (RF-417) and, above all, they are WRITTEN BACK on every save: the fourteen colour
+ * columns travel inside `editToColumns`, so a save built on a row that could not be
+ * read would quietly overwrite a real adjustment with the identity. What depends on
+ * that is not this display but `openEditor`, which reads the row again on its own and
+ * refuses to open without it.
+ */
+function usePhotoDetails(catalogId: string, images: readonly ImageRow[], loading: boolean) {
+  const [details, setDetails] = useState<Record<string, PhotoDetailRow>>({})
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    if (loading) return
+    if (images.length === 0) {
+      setDetails({})
+      setError(false)
+      return
+    }
+    let current = true
+    void supabase
+      .from('images')
+      .select(PHOTO_DETAIL_COLUMNS)
+      .eq('catalog_id', catalogId)
+      .eq('active', true)
+      .then(({ data, error: failure }) => {
+        if (!current) return
+        setError(failure !== null)
+        const rows = (data ?? []) as unknown as PhotoDetailRow[]
+        setDetails(
+          Object.fromEntries(
+            rows.map((row) => [row.image_id, { ...row, provenance: provenanceOf(row.provenance) }]),
+          ),
+        )
+      })
+    return () => {
+      current = false
+    }
+  }, [catalogId, images, loading])
+
+  return { details, detailsFailed: error }
+}
+
+/**
+ * The colour, the provenance and the state of the corrected copy of ONE photograph,
+ * read again at the moment of opening the editor.
+ *
+ * Not taken from the list already on screen, and that is the difference between a
+ * detail and a defect: `savePhotoEdit` writes the whole transformation, so it writes
+ * the fourteen colour columns too. Opening the editor on a row whose colour was never
+ * read means saving the identity over an adjustment somebody made — a silent
+ * destruction of work that the photograph would show and the row would deny. One row
+ * of short columns, next to a master download of several megabytes.
+ */
+async function fetchPhotoDetail(imageId: string): Promise<PhotoDetailRow | null> {
+  const { data, error } = await supabase
+    .from('images')
+    .select(PHOTO_DETAIL_COLUMNS)
+    .eq('image_id', imageId)
+    .maybeSingle()
+  if (error || !data) return null
+  const row = data as unknown as PhotoDetailRow
+  return { ...row, provenance: provenanceOf(row.provenance) }
+}
 
 /**
  * Photo management of a record, on its own route (/artwork/:id/photos): the
@@ -40,6 +138,7 @@ export function ArtworkPhotosPage() {
   const catalogId = id ?? ''
   const { images, thumbUrls, mainId, manuallyChosen, loading, reload } =
     useArtworkImages(catalogId)
+  const { details, detailsFailed } = usePhotoDetails(catalogId, images, loading)
 
   /**
    * Which photograph has its panel open lives in the ROUTE, not in local state
@@ -87,10 +186,21 @@ export function ArtworkPhotosPage() {
    * is the framing that image ALREADY shows: no framing when it is the master,
    * the stored one when the master could not be downloaded and the consultation
    * copy is used instead — the copy carries it in its pixels.
+   *
+   * `stored` and `detail` are the row as it was read when the editor opened, and they
+   * are kept instead of looked up again on save: what the save compares against and
+   * writes has to be the state the cataloger was shown, not one that changed underneath
+   * while the panel was open. `fromMaster` is that same fact stated for
+   * `savePhotoEdit`, which needs it to decide whether a full-resolution copy can be
+   * built at all (RF-420) — and it was already being carried, disguised as
+   * `note === null`.
    */
   const [editing, setEditing] = useState<{
     row: ImageRow
+    detail: PhotoDetailRow
     source: Blob
+    fromMaster: boolean
+    stored: NormalizedPhotoEdit
     baked: PhotoEdit
     initial: PhotoEdit
     note: string | null
@@ -131,6 +241,11 @@ export function ArtworkPhotosPage() {
   }, [images, draggedOrder])
 
   const selected = ordered.find((r) => r.image_id === selectedId)
+  const selectedDetail = selectedId ? details[selectedId] : undefined
+  // The framing and the colour read together, which is the only way they mean anything:
+  // the summary of a photograph with a correction and no colour column read would
+  // announce «sin ajuste de color» over a photograph that plainly shows one.
+  const selectedEdit = photoEdit(selected, selectedDetail)
 
   function discardStaged() {
     staged.forEach((s) => URL.revokeObjectURL(s.prepared.preview))
@@ -142,20 +257,40 @@ export function ArtworkPhotosPage() {
     setNotice(null)
     const queue = staged
     const failed: QueuedShot[] = []
+    const pending: string[] = []
     let done = 0
     for (let i = 0; i < queue.length; i += 1) {
       const shot = queue[i]
       if (!shot) continue
-      setUploading(`Subiendo ${i + 1} de ${queue.length}…`)
       try {
+        // The full-resolution copy is built HERE and not later, because here the master is
+        // still in memory: RF-420 with no download. One shot at a time, which keeps the
+        // peak at one master and not at the whole queue — this is a file the size of the
+        // master, and a phone holding four of them at once is a phone that reloads.
+        //
+        // Announced with its own message because on a 9248 px master it is twelve seconds
+        // of a screen that would otherwise claim to be uploading. `isNoEdit` here decides
+        // only the WORDING; whether there is a copy at all is the generator's call.
+        setUploading(
+          isNoEdit(shot.prepared.edit)
+            ? `Subiendo ${i + 1} de ${queue.length}…`
+            : `Preparando la copia a tamaño completo de la ${i + 1} de ${queue.length}…`,
+        )
+        const correctedCopy = await correctedCopyOf(shot)
+        setUploading(`Subiendo ${i + 1} de ${queue.length}…`)
         // Never marked as index: which one represents the artwork is decided
         // separately, and adding a photo should not change the cover without
         // anyone asking.
-        await uploadShot(catalogId, shot.prepared, {
+        const result = await uploadShot(catalogId, shot.prepared, {
           shotType: shot.shotType,
           isIndex: false,
           cropSource: shot.prepared.cropSource,
+          // Chosen in the staging panel and persisted with the queue, so a reload while
+          // the camera was in the foreground does not turn a reproduction into own work.
+          provenance: shot.prepared.provenance,
+          correctedCopy,
         })
+        if (result.correctedPending) pending.push(result.correctedPending)
         URL.revokeObjectURL(shot.prepared.preview)
         done += 1
       } catch (e) {
@@ -173,7 +308,34 @@ export function ArtworkPhotosPage() {
     if (failed.length > 0) {
       setError(`No se han podido subir ${failed.length} de ${queue.length}: ${failed[0]?.error}`)
     } else {
-      setNotice(done === 1 ? 'Fotografía añadida.' : `${done} fotografías añadidas.`)
+      // What is missing is said with the photographs that were added, and not instead of
+      // them: the shot IS registered and its correction IS stored; what is pending is a
+      // file for a print shop, and staying quiet about it is what ADR-010 refuses.
+      const missing =
+        pending.length > 0
+          ? ` ${pending.length === 1 ? 'Una' : pending.length} sin copia a resolución completa: ${pending[0]}`
+          : ''
+      setNotice(
+        (done === 1 ? 'Fotografía añadida.' : `${done} fotografías añadidas.`) + missing,
+      )
+    }
+  }
+
+  /**
+   * The full-resolution corrected copy of a shot about to be uploaded (RF-420).
+   *
+   * It never throws and never takes the upload down with it: a master that will not
+   * decode, or a canvas ceiling this phone cannot reach, leaves the copy pending — which
+   * is a row that says «hace falta y falta» and a queue a computer empties later
+   * (RF-421). Losing the photograph over the fourth level would be the wrong trade by a
+   * wide margin, and a shot with no correction answers «no hace falta» without decoding
+   * anything.
+   */
+  async function correctedCopyOf(shot: QueuedShot): Promise<CorrectedCopyResult> {
+    try {
+      return await renderCorrectedCopy(shot.prepared.master, shot.prepared.edit)
+    } catch {
+      return { status: 'PENDING', reason: CORRECTED_NOT_GENERATED }
     }
   }
 
@@ -282,7 +444,20 @@ export function ArtworkPhotosPage() {
     setNotice(null)
     setWorking(row.master_path ? 'Descargando el máster…' : 'Abriendo la copia de consulta…')
     try {
-      const stored = editFromColumns(row)
+      // The colour and the provenance first, and if they cannot be read the editor does
+      // not open. Not caution: saving writes the fourteen colour columns from what was
+      // read here, so opening without them would turn a crop into the deletion of an
+      // adjustment nobody asked to remove.
+      const detail = await fetchPhotoDetail(row.image_id)
+      if (!detail) {
+        setError(
+          'No se han podido leer el color y la procedencia de esta fotografía, así que no se abre ' +
+            'el editor: guardar sin ese dato borraría el ajuste que ya tenga. Vuelve a intentarlo ' +
+            'con mejor cobertura. El máster de archivo está intacto.',
+        )
+        return
+      }
+      const stored = photoEdit(row, detail)
       const source = await editSource(row)
 
       // A straightened photograph cannot be re-edited from the consultation copy.
@@ -301,12 +476,15 @@ export function ArtworkPhotosPage() {
 
       setEditing({
         row,
+        detail,
         source: source.blob,
+        fromMaster: source.fromMaster,
+        stored,
         baked: source.fromMaster ? NO_EDIT : stored,
         initial: source.fromMaster ? stored : NO_EDIT,
         note: source.fromMaster
           ? null
-          : 'No se ha podido descargar el máster: se parte de la copia de consulta, que ya viene recortada y tiene menos resolución. Puedes recortar más, pero no ensanchar el recorte ni volver al original. El máster de archivo no se toca: inténtalo de nuevo con mejor cobertura para reencuadrar desde él.',
+          : 'No se ha podido descargar el máster: se parte de la copia de consulta, que ya viene recortada, tiene menos resolución y lleva el color ya aplicado. Puedes recortar más, pero no ensanchar el recorte, ni ajustar el color, ni volver al original. El máster de archivo no se toca: inténtalo de nuevo con mejor cobertura para reencuadrar desde él.',
       })
     } catch (e) {
       setError(
@@ -320,54 +498,135 @@ export function ArtworkPhotosPage() {
   }
 
   /**
-   * Publishes the framing. The new copies go to NEW paths and the row is
-   * pointed at them: the paths of the bucket are immutable because the service
-   * worker caches images by path, and overwriting one would keep showing the old
-   * framing from the phone's cache. The superseded files stay in the bucket —
-   * here nothing is ever really deleted — and the master is not touched.
+   * Publishes the correction: the framing and the colour of the room's light. The new
+   * copies go to NEW paths and the row is pointed at them: the paths of the bucket are
+   * immutable because the service worker caches images by path, and overwriting one
+   * would keep showing the old framing from the phone's cache. The superseded files
+   * stay in the bucket — here nothing is ever really deleted — and the master is not
+   * touched.
    *
    * `edit` comes measured over the image the editor worked on; what is stored is
-   * the whole transformation from the master.
+   * the whole transformation from the master, colour included, absolute over it and
+   * replacing whatever was there before (RF-414).
    */
   async function applyEdit(edit: PhotoEdit, cropSource: CropSource) {
     const current = editing
     setEditing(null)
     if (!current) return
-    const stored = editFromColumns(current.row)
+    const stored = current.stored
     const absolute = composeEdits(current.baked, edit)
     if (sameEdit(absolute, stored)) {
+      // Same pixels. Two different situations, and telling them apart is what keeps a
+      // review from being lost: if the ROW changed —«se abrió el panel de color, se miró
+      // la obra y se dejó como estaba», or the grey was sampled somewhere else— that
+      // trace is written on its own, without touching a single file. `sameEdit`
+      // deliberately ignores where the numbers came from, and `imageEdits.ts` exports
+      // `editToColumns` for exactly this comparison.
+      if (traceOnlyChange(absolute, stored)) {
+        await saveEditTrace(current.row.image_id, absolute, cropSource)
+        return
+      }
       // Not rewriting for nothing: every rewrite leaves the previous copies
       // orphaned in the bucket.
-      setNotice('El encuadre no ha cambiado: no se ha reescrito ninguna copia.')
+      setNotice('El encuadre y el color no han cambiado: no se ha reescrito ninguna copia.')
       return
     }
-    setWorking('Aplicando el encuadre y subiendo las copias…')
+    setWorking('Aplicando la corrección y subiendo las copias…')
     setError(null)
     setNotice(null)
     try {
-      await savePhotoEdit({
+      const result = await savePhotoEdit({
         catalogId,
         imageId: current.row.image_id,
         source: current.source,
         render: edit,
         store: absolute,
         cropSource,
+        // What switches RF-420 on. Said explicitly and not deduced inside: from the
+        // consultation copy a «full-resolution» copy would be a quietly reduced one,
+        // which is what ADR-010 forbids, so whoever does not know says nothing and the
+        // copy stays pending — recoverable from a computer (RF-421).
+        sourceIsMaster: current.fromMaster,
+        masterPath: current.row.master_path,
       })
+      // The light of the batch, remembered for the next photograph (RF-414). It is the
+      // same room and the same afternoon whether the shot is already uploaded or still
+      // waiting, so correcting one here also fills «El mismo color que la anterior» for
+      // the ones being added above. Cleared by itself when the correction is undone.
+      rememberBatchColor(absolute.color)
       // The reload brings the new paths; Realtime tells the record and the
       // listing, which also listen to the images table.
       await reload()
+      // The print copy is announced only when there is something to say. Pending comes
+      // with the generator's own reason — it says the size, that it is generated later
+      // from a computer and that the master is intact — and «uploaded» says nothing,
+      // because a file that is where it should be is not news.
+      const pending =
+        result.corrected.status === 'PENDING' ? ` ${result.corrected.reason}` : ''
       setNotice(
-        `${editSummary(absolute) ?? 'Encuadre original restablecido'}. El máster de archivo se conserva intacto.`,
+        `${editSummary(absolute) ?? 'Fotografía original restablecida'}. El máster de archivo se conserva intacto.${pending}`,
       )
     } catch (e) {
       setError(
-        `No se ha podido guardar el encuadre: ${
+        `No se ha podido guardar la corrección: ${
           e instanceof Error ? e.message : String(e)
         }. La fotografía sigue como estaba.`,
       )
     } finally {
       setWorking(null)
     }
+  }
+
+  /**
+   * Writes the row when the pixels did not change but the trace did.
+   *
+   * No files are encoded and none are uploaded: what changed is where the grey was
+   * measured, which preset the numbers came from, or the fact that the colour was
+   * reviewed and left alone (`REVIEWED_UNCHANGED`) — which is the one thing that tells
+   * «revisado» from «pendiente», and «sin revisar» no es «no». The geometry columns are
+   * written along with them and land on the values they already had, because the edit is
+   * the same one.
+   */
+  async function saveEditTrace(imageId: string, edit: PhotoEdit, cropSource: CropSource) {
+    setWorking('Anotando la revisión del color…')
+    setError(null)
+    setNotice(null)
+    const { error } = await supabase
+      .from('images')
+      .update({ ...editToColumns(edit), crop_source: cropSource })
+      .eq('image_id', imageId)
+    if (error) {
+      setError(`No se ha podido anotar la revisión del color: ${error.message}`)
+    } else {
+      await reload()
+      setNotice(
+        'El color no cambia ningún píxel, así que no se ha reescrito ninguna copia: solo se ha ' +
+          'anotado que esta fotografía ya se ha revisado.',
+      )
+    }
+    setWorking(null)
+  }
+
+  /**
+   * Where the photograph comes from (RF-417), chosen and never inferred.
+   *
+   * It is one tap and it has a consequence that is not obvious: on anything other than
+   * own work the colour adjustment stops being offered, because correcting the cast of
+   * somebody else's reproduction is amending their development of an artwork nobody here
+   * saw under that light. The screen says so under the control.
+   */
+  async function changeProvenance(imageId: string, provenance: PhotoProvenance) {
+    setSaving(true)
+    setError(null)
+    setNotice(null)
+    const { error } = await supabase.from('images').update({ provenance }).eq('image_id', imageId)
+    if (error) {
+      setError(error.message)
+    } else {
+      await reload()
+      setNotice(`Procedencia actualizada: ${PHOTO_PROVENANCE_LABEL[provenance].toLowerCase()}.`)
+    }
+    setSaving(false)
   }
 
   // A reader reaching this URL falls back to the record view (RF-109) — but only
@@ -469,7 +728,27 @@ export function ArtworkPhotosPage() {
                 <p className="text-xs text-stone-500">
                   {selected.image_id}
                   {selected.photo_date ? ` · ${displayDate(selected.photo_date)}` : ''}
+                  {/* The size of the original as the decoder gave it, orientation already
+                      applied. It is in the row precisely because the master is in B2 and
+                      reading it back would mean downloading megabytes. */}
+                  {selectedDetail?.original_width && selectedDetail.original_height
+                    ? ` · ${selectedDetail.original_width}×${selectedDetail.original_height} px`
+                    : ''}
                 </p>
+
+                {/* The date the file carries, next to the record's and never instead of it
+                    (RF-416). Same sentence as the editor's data panel, from the same
+                    function: two wordings for the same discrepancy would be two rules.
+                    In a low voice — today all 39 rows disagree, because their stored date
+                    is the day they were uploaded — and saying which of the two it is,
+                    because an approximation read as a measurement is worse than no date. */}
+                {photoDateWhisper(selectedDetail?.file_photo_date, selected.photo_date) && (
+                  <p className="text-xs text-stone-500">
+                    {photoDateWhisper(selectedDetail?.file_photo_date, selected.photo_date)}
+                    {selectedDetail?.file_photo_date_exact === false &&
+                      ' Es la fecha del fichero, aproximada: la cámara no escribió la del disparo.'}
+                  </p>
+                )}
 
                 <Chips
                   id="p-shot-type"
@@ -483,9 +762,32 @@ export function ArtworkPhotosPage() {
                   onChange={(v) => void changeShotType(selected.image_id, v)}
                 />
 
-                {/* Straightening and trimming. It only redoes the copies that
-                    are served: the archive master stays as it left the camera
-                    (ADR-002). */}
+                {/* Where the photograph comes from (RF-417). Asked and never inferred:
+                    a 1080×2400 file with no camera data looks exactly like a screenshot
+                    of an online catalog, and looking like one is not being one. Four of
+                    the 44 masters are reproductions and nothing in the record said so. */}
+                <div>
+                  <Chips
+                    id="p-provenance"
+                    label="Procedencia"
+                    options={PHOTO_PROVENANCES.map((v) => ({
+                      value: v,
+                      text: PHOTO_PROVENANCE_LABEL[v],
+                    }))}
+                    value={selectedDetail?.provenance ?? 'OWN'}
+                    onChange={(v) => void changeProvenance(selected.image_id, v)}
+                  />
+                  {/* The consequence, in the same place as the cause, and taken from the
+                      model's own rule so it cannot drift from what the editor does. */}
+                  <p className="mt-1 text-xs text-stone-500">
+                    {colorAvailability(true, selectedDetail?.provenance).reason ??
+                      'En una fotografía propia se ofrece el ajuste de color de la luz de la sala.'}
+                  </p>
+                </div>
+
+                {/* Straightening, trimming and the colour of the room's light. It only
+                    redoes the copies that are served: the archive master stays as it
+                    left the camera (ADR-002). */}
                 <div>
                   <button
                     type="button"
@@ -494,13 +796,31 @@ export function ArtworkPhotosPage() {
                     className="btn-secondary w-full"
                   >
                     <CropIcon className="h-5 w-5" />
-                    {working ?? 'Girar y recortar'}
+                    {working ?? 'Girar, recortar y color'}
                   </button>
                   <p className="mt-1 text-xs text-stone-500">
-                    {editSummary(editFromColumns(selected))
-                      ? `${editSummary(editFromColumns(selected))}. El máster de archivo se conserva sin tocar.`
-                      : 'Sin giro ni recorte. Se editan las copias, nunca el máster de archivo.'}
+                    {editSummary(selectedEdit)
+                      ? `${editSummary(selectedEdit)}. El máster de archivo se conserva sin tocar.`
+                      : 'Sin giro, recorte ni ajuste de color. Se editan las copias, nunca el máster de archivo.'}
                   </p>
+                  {/* The state of the fourth level, always said and never a gap: a copy,
+                      no copy needed, a copy that is needed and missing, or a photograph
+                      corrected before copies existed (RF-420). */}
+                  <p className="mt-1 text-xs text-stone-500">
+                    {/* «Todavía no lo sé» is not the same as «no se ha podido leer», and
+                        the second sentence over the first second of a load would be a
+                        false alarm on every visit. */}
+                    {selectedDetail || detailsFailed
+                      ? correctedStateText(selectedDetail, selectedEdit)
+                      : 'Comprobando el color y el estado de la copia a resolución completa…'}
+                  </p>
+                  {detailsFailed && (
+                    <p className="mt-1 text-xs text-amber-800">
+                      No se han podido leer el color, la procedencia ni el estado de la copia a
+                      resolución completa de esta ficha. Lo que se ve arriba puede estar
+                      incompleto; los datos guardados no se han tocado.
+                    </p>
+                  )}
                 </div>
 
                 {/* Same move, one place at a time: dragging is faster but it
@@ -623,8 +943,20 @@ export function ArtworkPhotosPage() {
           note={editing.note}
           shotType={editing.row.shot_type}
           // Only from the master: with the consultation copy there is nothing
-          // outside the crop to come back to.
-          canRestoreOriginal={editing.note === null}
+          // outside the crop to come back to. It is also what closes the colour panel on
+          // the degraded path — those pixels already carry the colour baked in, and
+          // adjusting them again would correct the compression as if it were the artwork.
+          canRestoreOriginal={editing.fromMaster}
+          // RF-417: the other switch of the colour panel, and the reason it prints.
+          provenance={editing.detail.provenance}
+          // §7: the general shot rules. The back, the signature, the damage and the frame
+          // start from her adjustment and can be brought back to it; the general shot
+          // itself is left out, because it inherits from nobody.
+          generalColor={generalColorOf(ordered, details, editing.row.image_id)}
+          // The record's own date for this photograph, so §7.1 can name a discrepancy
+          // with the date the file carries — in a low voice, without alarm. Today all 39
+          // rows differ, because the record date is the day they were uploaded.
+          recordPhotoDate={editing.row.photo_date}
           onApply={(edit, cropSource) => void applyEdit(edit, cropSource)}
           onCancel={() => setEditing(null)}
         />

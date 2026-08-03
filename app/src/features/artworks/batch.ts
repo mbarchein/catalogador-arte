@@ -1,3 +1,4 @@
+import { isNoColor, normalizeColor, type ColorEdit, type ColorInput } from '../../lib/imageColor'
 import { EMPTY_DATE, type StructuredDate } from '../../lib/structuredDate'
 import { ARTIST_FUNDS, type ArtistFund } from '../../lib/types'
 
@@ -50,6 +51,23 @@ const KEY = 'catalogador.batch'
 // simply normalizes to the initial batch, the documented behavior for foreign
 // shapes.
 const LEGACY_KEY = 'catalogador.lote'
+/**
+ * The colour adjustment of the last photograph corrected in the batch (RF-414).
+ *
+ * A sibling key and **not a field of `Batch`**, which is where it belongs
+ * conceptually and where it would be lost. The capture page holds the batch in React
+ * state and rewrites the whole stored object whenever that state changes, so a colour
+ * written here by the photo picker — a different component, with no way to tell the
+ * page about it — would be wiped by the next tap on any batch field. Two keys in the
+ * same namespace, written and cleared by the same three functions of this module, is
+ * the same lifetime without that race.
+ *
+ * No migration from an older key: this one is new and nothing was ever stored under
+ * it. A value of a shape this version does not understand normalizes to the neutral
+ * adjustment, which reads as «nothing to carry» — the documented behavior of this file
+ * for foreign shapes.
+ */
+const COLOR_KEY = 'catalogador.batch-color'
 
 /**
  * The batch survives reloads and the phone discarding the tab. In a storage
@@ -96,8 +114,62 @@ export function forgetBatch(storage: Storage | undefined = getStorage()): void {
   try {
     storage?.removeItem(KEY)
     storage?.removeItem(LEGACY_KEY)
+    // Closing the batch forgets the light too. It is the one deliberate gesture that
+    // says «I am done with this shelf», and carrying an afternoon's colour into the
+    // next session — another room, another window, another day — is precisely the
+    // inherited data nobody asked for that the two halves of `Batch` exist to prevent.
+    storage?.removeItem(COLOR_KEY)
   } catch {
     /* nothing to do */
+  }
+}
+
+/**
+ * The colour adjustment to offer as «el mismo color que la anterior», or null.
+ *
+ * Null both when nothing has been remembered and when what was remembered does
+ * nothing: an adjustment at its identity is not a light to carry, and offering it would
+ * be a control that visibly does nothing when tapped.
+ *
+ * Everything that comes from storage goes through `normalizeColor`, which reads
+ * anything out of range, `NaN`, or an enum value it does not know as that field's
+ * identity — so a value written by a future version, or by hand, cannot put a number
+ * on screen that the database would refuse.
+ */
+export function readBatchColor(storage: Storage | undefined = getStorage()): ColorEdit | null {
+  if (!storage) return null
+  try {
+    const raw = storage.getItem(COLOR_KEY)
+    if (!raw) return null
+    const color = normalizeColor(JSON.parse(raw) as ColorInput)
+    return isNoColor(color) ? null : color
+  } catch {
+    // A corrupt value cannot prevent photographing.
+    return null
+  }
+}
+
+/**
+ * Remembers the adjustment just applied, so the next shot of the batch starts from it.
+ *
+ * Stored normalized, which is what the row stores as well: the value that comes back
+ * is the value the database accepted, and not a finger's raw drag. An adjustment that
+ * does nothing REMOVES the key instead of writing a neutral one — undoing a correction
+ * has to undo the offer too, or the next photograph would be handed a light that was
+ * explicitly abandoned.
+ */
+export function rememberBatchColor(
+  color: ColorInput,
+  storage: Storage | undefined = getStorage(),
+): void {
+  try {
+    if (!color || isNoColor(color)) {
+      storage?.removeItem(COLOR_KEY)
+      return
+    }
+    storage?.setItem(COLOR_KEY, JSON.stringify(normalizeColor(color)))
+  } catch {
+    // Private browsing or exhausted quota: work continues without persistence.
   }
 }
 

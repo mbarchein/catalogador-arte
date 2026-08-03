@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   centeredCrop,
   clampCrop,
+  colorAvailability,
+  withOwnColor,
   cornerPoint,
   editSummary,
   fitInside,
@@ -29,13 +31,39 @@ import {
   straightenedSize,
   type Corners,
 } from '../../lib/perspective'
-import { LOUPE_SIDE, LOUPE_ZOOM, aidCorners, loupePixels, paintLoupe } from '../../lib/imageLoupe'
+import {
+  LOUPE_SIDE,
+  LOUPE_ZOOM,
+  aidCorners,
+  loupePixels,
+  paintLoupe,
+  type LoupeMode,
+} from '../../lib/imageLoupe'
 import {
   rotateSuggestion,
   type EdgeCandidate,
   type EdgeSuggestion,
 } from '../../lib/edgeDetection'
 import { suggestArtworkCrop } from '../../lib/imageEdges'
+import {
+  buildColorLuts,
+  colorSvgTables,
+  isNoColor,
+  withNeutralPick,
+  type ColorEdit,
+  type ColorInput,
+} from '../../lib/imageColor'
+import { readAnalysisPixels, type PixelRaster } from '../../lib/imagePixels'
+import { EXIF_SLICE_BYTES, readPhotoExif, type PhotoExif } from '../../lib/exif'
+import type { GrayTargetCandidate } from '../../lib/grayTarget'
+import {
+  ColorControls,
+  ColorIcon,
+  reviewedColor,
+  sampleAt,
+  showsColorFilter,
+} from './ColorControls'
+import { DataIcon, PhotoDataPanel } from './PhotoDataPanel'
 import {
   CropIcon,
   ImageIcon,
@@ -47,7 +75,7 @@ import {
   RotateRightIcon,
   WandIcon,
 } from '../../components/ui'
-import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
+import { SHOT_TYPE_LABEL, type PhotoProvenance, type ShotTypeValue } from '../../lib/types'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
 const KEY_STEP = 0.02
@@ -106,6 +134,29 @@ const FRAMINGS: { value: Framing; label: string; Icon: typeof ImageIcon }[] = [
   { value: 'PERSPECTIVE', label: 'Perspectiva', Icon: PerspectiveIcon },
 ]
 
+/**
+ * What the FOOT of the dialog is showing. One axis with three states, like the framing.
+ *
+ * The colour controls and the photograph's data take the place of the row of tools
+ * instead of floating over the artwork (§7): a white balance is judged looking at the
+ * whole surface, and a panel on top of it would also collide with the loupe, which lands
+ * in the corner opposite the finger. The row of tools measures 308 of the 336 usable
+ * pixels of a 360 px phone, so a seventh icon does not fit either — which is why the two
+ * ways in are round buttons in the header, where the close, the title and the summary
+ * already live and a 44 px target costs no vertical room at all.
+ */
+type Panel = 'TOOLS' | 'COLOR' | 'DATA'
+
+/**
+ * How far a finger may travel and still be a tap, in CSS pixels of the surface.
+ *
+ * The eyedropper is an ARMED MODE that does not take the gesture away from the pan or
+ * from the pinch: while it is armed a drag still slides the photograph and two fingers
+ * still zoom it, and what takes the sample is a tap. Twelve pixels is the slack a thumb
+ * leaves on a phone held in one hand with an artwork in the other.
+ */
+const PICK_SLOP = 12
+
 const CORNERS: { corner: Corner; label: string }[] = [
   { corner: 'nw', label: 'esquina superior izquierda' },
   { corner: 'ne', label: 'esquina superior derecha' },
@@ -155,6 +206,21 @@ const CORNERS: { corner: Corner; label: string }[] = [
  *     alike. Two fingers are the pinch, and the pinch has precedence over everything:
  *     they land one after the other and often on top of a handle, and a corner that
  *     moves while the photograph zooms is a corner nobody placed.
+ *  9. The colour (RF-414) is previewed with an inline SVG `<filter>` carrying the
+ *     **256** entries of the same lookup table the export applies, and
+ *     `color-interpolation-filters="sRGB"` on it, which is the silent failure number
+ *     one of the feature: without it the browser interpolates in linear light, the
+ *     table is applied to numbers that did not build it, and the preview stops
+ *     matching the file while both keep looking plausible. It goes on the two `<img>`
+ *     — the surface and the straightened preview — and **never on the area the handles
+ *     live in**: there it would tint the handles and the polygon, and `filter` creates
+ *     a stacking context that would break the `z-10`/`z-20` arbitration the loupe, the
+ *     preview panel and the handles depend on.
+ * 10. The colour is corrected with the artwork in front of you, so the sample the
+ *     eyedropper takes must be of the RAW pixels: a grey that is already grey measures
+ *     the correction and not the light of the room, and every second pick would undo
+ *     part of the previous one. That is `loupeTables`' rule and the loupe is told which
+ *     mode it is in.
  *
  * The suggestion is stored, and not only drawn, because with a framed painting
  * there are two candidates — the frame and the canvas — and switching between
@@ -170,6 +236,9 @@ export function PhotoEditor({
   note,
   canRestoreOriginal = false,
   shotType,
+  provenance,
+  generalColor,
+  recordPhotoDate,
   onApply,
   onCancel,
 }: {
@@ -212,6 +281,28 @@ export function PhotoEditor({
    * decision to all 44 to fix five, with the artwork in front of you and one hand.
    */
   shotType?: ShotTypeValue | null
+  /**
+   * Where the photograph comes from (RF-417). It gates the colour panel and nothing
+   * else: on a reproduction taken from another catalog or received from a third party
+   * the adjustment is not offered, because correcting its cast would be amending
+   * somebody else's development of an artwork this cataloger never saw under that
+   * light. The rule itself is `colorAvailability`'s and it is never rewritten here.
+   *
+   * Absent means «propia», which is what the column defaults to and what 40 of the 44
+   * masters are.
+   */
+  provenance?: PhotoProvenance | null
+  /**
+   * The colour adjustment of the artwork's GENERAL shot, when there is one.
+   *
+   * «La toma general manda» (§7): the back, the signature, the damage and the frame
+   * start from her adjustment, are changed from there one by one, and can be brought
+   * back to it. Absent —or neutral— means there is nothing to inherit and the offer is
+   * not made; on the general shot itself it is ignored, because it inherits from nobody.
+   */
+  generalColor?: ColorInput
+  /** `photo_date` of the record, so §7.1 can name a discrepancy in a low voice. */
+  recordPhotoDate?: string | null
   onApply: (edit: PhotoEdit, cropSource: CropSource) => void
   onCancel: () => void
 }) {
@@ -264,6 +355,48 @@ export function PhotoEditor({
    * photograph magnified, the region it reads has to shrink by the same factor.
    */
   const [view, setView] = useState({ zoom: 1, x: 0, y: 0 })
+  /**
+   * The colour adjustment (RF-414), absolute over the master exactly like the framing.
+   *
+   * It is the COMMITTED value: while a strip is being dragged the value in flight lives
+   * in a ref inside the strip and reaches the screen through the filter's attributes, so
+   * this state is written once, when the finger lifts. The bottleneck is not the pixels —
+   * building the three 256-entry tables costs 0,5 ms — it is React re-rendering the
+   * sixteen hundred lines of JSX below on every `pointermove`.
+   */
+  const [color, setColor] = useState<ColorEdit>(() => normalizeEdit(initialEdit).color)
+  /** Which of the three things the foot of the dialog is showing. */
+  const [panel, setPanel] = useState<Panel>('TOOLS')
+  /** What the file says about the camera, or null when it says nothing. `undefined` = not read. */
+  const [exif, setExif] = useState<PhotoExif | null | undefined>(undefined)
+  /**
+   * The analysis raster of the photograph, kept while the editor is open.
+   *
+   * Decoding a 12 MP master and drawing it shrunk costs hundreds of milliseconds on the
+   * phone used in a storeroom, and the colour panel measures the histogram again on every
+   * release of a strip: `imagePixels` says explicitly that caching it is the caller's job,
+   * because only the caller knows when the editor closes. Half a million pixels, not the
+   * master.
+   */
+  const rasterRef = useRef<PixelRaster | null>(null)
+  /**
+   * Number of the decode in flight. A change of photograph invalidates the previous answer
+   * instead of letting it arrive late and be measured as this one — the same idiom, and the
+   * same reason, as `analysisTicket` of the border detection.
+   */
+  const rasterTicket = useRef(0)
+  const [rasterState, setRasterState] = useState<'idle' | 'working' | 'ready' | 'failed'>('idle')
+  /** The eyedropper as an armed mode: it takes no gesture away, it interprets a tap. */
+  const [eyedropper, setEyedropper] = useState(false)
+  /** Where the finger is while the eyedropper is armed, so the loupe can show the raw pixels. */
+  const [aim, setAim] = useState<{ x: number; y: number } | null>(null)
+  /** What the last pick said, when the sample could not be believed. */
+  const [pickNotice, setPickNotice] = useState<string | null>(null)
+  /**
+   * Grey targets found, drawn over the photograph and **offered**: the detection never
+   * applies anything by itself (RF-418).
+   */
+  const [candidates, setCandidates] = useState<readonly GrayTargetCandidate[]>([])
 
   const frameRef = useRef<HTMLDivElement | null>(null)
   const areaRef = useRef<HTMLDivElement | null>(null)
@@ -280,7 +413,24 @@ export function PhotoEditor({
   // The callbacks live in refs so the history listener registers once: doing it
   // on every render could miss the closing pop.
   const editRef = useRef<PhotoEdit>(initialEdit)
-  editRef.current = { rotation, crop, corners }
+  editRef.current = { rotation, crop, corners, color }
+  /**
+   * Whether the colour was LOOKED AT, which is not the same as changed.
+   *
+   * «Sin revisar» no es «no»: opening the panel with the artwork in front of you and
+   * deciding the colour was already right is work done, and with every column null there
+   * is no way to tell it from «nobody has ever looked». That is what `REVIEWED_UNCHANGED`
+   * is for, and `reviewedColor` only ever writes it when the look is untouched — so it
+   * changes no pixel and rewrites no file.
+   */
+  const reviewedRef = useRef(false)
+  /** Read by the history listener, which is registered once and must see the current panel. */
+  const panelRef = useRef<Panel>(panel)
+  panelRef.current = panel
+  const eyedropperRef = useRef(eyedropper)
+  eyedropperRef.current = eyedropper
+  /** The pointer that may still turn out to be a tap of the eyedropper. */
+  const pickRef = useRef<{ pointer: number; x: number; y: number; moved: boolean } | null>(null)
   // Number of the border detection in flight. Asking again, or closing the
   // editor, invalidates the previous answer instead of letting it arrive late
   // and move a rectangle the cataloger is already dragging.
@@ -297,7 +447,35 @@ export function PhotoEditor({
   useEffect(() => {
     const objectUrl = URL.createObjectURL(source)
     setUrl(objectUrl)
-    return () => URL.revokeObjectURL(objectUrl)
+    setExif(undefined)
+
+    /**
+     * The camera data of §7.1, read here because this is the effect that already has the
+     * file: only the first 128 KB, which over the 44 masters of the dump gives the same
+     * answer as the whole file in 44 of 44 — EXIF lives in the APP1 segment, before the
+     * pixels, and a segment is capped at 64 KB. The alternative is `await
+     * source.arrayBuffer()` on an 8 MB photograph, on a phone, in the same tick that
+     * builds the object URL.
+     *
+     * It never throws and it never explains the machine: a PNG, a HEIC, a JPEG with no
+     * EXIF and a `slice` the browser refuses are all «esta fotografía no trae datos de
+     * cámara», and the panel has the two sentences that tell that apart from a master that
+     * did not download.
+     */
+    let alive = true
+    void (async () => {
+      try {
+        const buffer = await source.slice(0, EXIF_SLICE_BYTES).arrayBuffer()
+        if (alive) setExif(readPhotoExif(buffer))
+      } catch {
+        if (alive) setExif(null)
+      }
+    })()
+
+    return () => {
+      alive = false
+      URL.revokeObjectURL(objectUrl)
+    }
   }, [source])
 
   useEffect(() => {
@@ -305,11 +483,33 @@ export function PhotoEditor({
     // One exit for the three ways of leaving — ✕, Escape and the phone's back
     // button — so the pushed entry is always consumed exactly once.
     const onPop = () => {
-      if (appliedRef.current) onApplyRef.current(normalizeEdit(editRef.current), cropSourceRef.current)
-      else onCancelRef.current()
+      if (appliedRef.current) {
+        const edit = normalizeEdit(editRef.current)
+        // The one place `REVIEWED_UNCHANGED` is stamped: on the way out, and only when the
+        // panel was opened and the look was left alone.
+        onApplyRef.current(
+          { ...edit, color: reviewedColor(edit.color, reviewedRef.current) },
+          cropSourceRef.current,
+        )
+      } else onCancelRef.current()
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') window.history.back()
+      if (e.key !== 'Escape') return
+      // Escape peels one layer at a time and never throws the work away: with the
+      // eyedropper armed it disarms it, with a panel open it closes the panel, and only
+      // with the tools on screen does it leave the editor. Going straight to
+      // `history.back()` from an open panel would discard the framing and the colour she
+      // has not applied yet.
+      if (eyedropperRef.current) {
+        setEyedropper(false)
+        setAim(null)
+        return
+      }
+      if (panelRef.current !== 'TOOLS') {
+        setPanel('TOOLS')
+        return
+      }
+      window.history.back()
     }
     window.addEventListener('popstate', onPop)
     window.addEventListener('keydown', onKey)
@@ -398,6 +598,171 @@ export function PhotoEditor({
     if (applied) cropSourceRef.current = currentCropSource()
     appliedRef.current = applied
     window.history.back()
+  }
+
+  /* ------------------------------------------------------------------- colour */
+
+  /**
+   * Whether the colour adjustment is offered at all, and why not when it is not.
+   *
+   * The rule is `colorAvailability`'s and it is not restated here: not over the
+   * consultation copy, which already carries the colour baked into pixels that went
+   * through a lossy WebP, and not on a photograph that is not ours (RF-417). The panel
+   * still opens when the answer is no — what it shows then is the reason, because a
+   * control that is simply missing is indistinguishable from one that is broken.
+   */
+  const availability = useMemo(
+    () => colorAvailability(canRestoreOriginal, provenance),
+    [canRestoreOriginal, provenance],
+  )
+
+  /**
+   * The preview filter, and the three nodes whose `tableValues` a drag rewrites by hand.
+   *
+   * A suffix of its own and not a constant: two editors mounted at once would otherwise
+   * share one filter, and the second would silently colour the first's photograph. Not
+   * `useId` either, whose output carries `:` in React 18 and `«»` in React 19 — legal in an
+   * `id`, and exactly the sort of thing that makes `url(#…)` and a CSS selector disagree.
+   */
+  const [filterId] = useState(() => `photo-color-${Math.random().toString(36).slice(2, 10)}`)
+  const funcR = useRef<SVGFEFuncRElement | null>(null)
+  const funcG = useRef<SVGFEFuncGElement | null>(null)
+  const funcB = useRef<SVGFEFuncBElement | null>(null)
+
+  const svgTables = useMemo(() => colorSvgTables(color), [color])
+  /**
+   * The filter is on while the panel is open even with a neutral adjustment. That is not
+   * waste: the strips write the tables STRAIGHT TO THE DOM without going through React,
+   * so a filter React had not rendered yet would leave the first drag of an untouched
+   * photograph previewing nothing. With the panel closed it is on only when there is
+   * something to show. The identity table is exactly the identity — ADR-009 pins
+   * `lut[c][i] === i` with a test — so having it on changes no pixel.
+   */
+  const colorFilter = showsColorFilter(panel === 'COLOR' && availability.available, color)
+  /** The same tables the filter shows, for the loupe, which applies them in CPU. */
+  const luts = useMemo(() => (colorFilter ? buildColorLuts(color) : null), [colorFilter, color])
+
+  /**
+   * The colour on screen, without a re-render.
+   *
+   * Called once per frame from inside a strip, and once more right after every commit: the
+   * DOM was mutated by hand, so if the committed value happens to equal the last one React
+   * rendered, React would leave the hand-written attribute in place. Writing it again costs
+   * 0,5 ms and removes the whole class of bug.
+   */
+  function previewColor(next: ColorEdit) {
+    const tables = colorSvgTables(next)
+    funcR.current?.setAttribute('tableValues', tables.r)
+    funcG.current?.setAttribute('tableValues', tables.g)
+    funcB.current?.setAttribute('tableValues', tables.b)
+  }
+
+  function commitColor(next: ColorEdit) {
+    previewColor(next)
+    setColor(next)
+  }
+
+  /**
+   * A new photograph invalidates the pixels of the previous one, and everything measured on
+   * them: a histogram of the artwork before this one is worse than no histogram.
+   *
+   * Declared BEFORE the effect that loads them, which is the part that matters: effects run
+   * in declaration order, so on a change of source this clears first and the loader starts
+   * again straight after. The other way round the loader would start and this would throw
+   * its answer away.
+   */
+  useEffect(() => {
+    rasterTicket.current += 1
+    rasterRef.current = null
+    setRasterState('idle')
+    setCandidates([])
+    setEyedropper(false)
+    setPickNotice(null)
+  }, [source])
+
+  /**
+   * The pixels the panel measures, decoded once and kept while the editor is open.
+   *
+   * On demand and never on opening, for the same reason as the border suggestion: it costs a
+   * decode of the master plus a pass over the pixels, and spending that on every editor —
+   * most of which only turn a photograph — would slow the common case for the rare one.
+   *
+   * `rasterState` is deliberately NOT a dependency, and that is not an oversight: writing
+   * `working` from inside would re-run the effect, and the cleanup of the run that launched
+   * the decode would discard its own answer. The photograph would stay «midiendo» forever.
+   * What guards a late answer is the ticket, the same idiom the border detection uses.
+   */
+  useEffect(() => {
+    if (panel !== 'COLOR' || !availability.available) return
+    if (rasterRef.current) return
+    const ticket = rasterTicket.current
+    setRasterState('working')
+    void readAnalysisPixels(source).then((raster) => {
+      if (rasterTicket.current !== ticket) return
+      rasterRef.current = raster
+      setRasterState(raster ? 'ready' : 'failed')
+    })
+  }, [panel, availability.available, source])
+
+  /**
+   * Closing the colour panel takes its aids with it.
+   *
+   * A staircase still drawn on the photograph with no button left to accept it is a mark
+   * that says nothing, and an armed eyedropper with nothing on screen saying so is a trap:
+   * the next tap on the artwork would silently change the white balance.
+   */
+  useEffect(() => {
+    if (panel === 'COLOR') return
+    setCandidates([])
+    setEyedropper(false)
+    setAim(null)
+  }, [panel])
+
+  /**
+   * A point of the working surface as fractions of the rotated photograph, or null when it
+   * is off the photograph.
+   *
+   * Read off `areaRef`, whose `getBoundingClientRect()` already comes back with the zoom
+   * and the pan applied — the same reason every corner drag reads it and needs no change
+   * when the surface is magnified.
+   */
+  function surfacePoint(clientX: number, clientY: number): { x: number; y: number } | null {
+    const area = areaRef.current?.getBoundingClientRect()
+    if (!area || area.width === 0 || area.height === 0) return null
+    const x = (clientX - area.left) / area.width
+    const y = (clientY - area.top) / area.height
+    if (x < 0 || x > 1 || y < 0 || y > 1) return null
+    return { x, y }
+  }
+
+  /**
+   * Takes the neutral grey the cataloger tapped (RF-418).
+   *
+   * The sample is the median of a patch of the RAW pixels —`sampleAt` explains why the
+   * median and why the analysis raster— and what it writes is the white balance and the
+   * traceability of it, nothing else. When the sample cannot be believed, `withNeutralPick`
+   * answers null and the panel says so: a wrong suggestion that looks measured is worse
+   * than none, and quietly doing nothing would be the worst of the three.
+   */
+  function pickAt(point: { x: number; y: number }) {
+    if (!rasterRef.current) {
+      setPickNotice(
+        'No se han podido medir los píxeles de esta fotografía, así que el cuentagotas no puede tomar el gris.',
+      )
+      return
+    }
+    const sample = sampleAt(rasterRef.current, rotation, point)
+    const next = withNeutralPick(color, sample, point, 'SCENE')
+    if (!next) {
+      setPickNotice(
+        'Ese punto está quemado o demasiado oscuro para medir su color: no se puede saber cuánto se pasó del blanco ni la proporción entre canales. Prueba con un gris medio — una pared, el cartón, el testigo.',
+      )
+      return
+    }
+    setPickNotice('Gris tomado de la escena: el balance de blancos se ha fijado con él.')
+    // Through `withOwnColor`, which clears `inherited` even when the numbers do not move:
+    // the column says how the adjustment arrived, and this one arrived from her finger.
+    commitColor(withOwnColor(editRef.current, next).color)
   }
 
   /**
@@ -682,7 +1047,7 @@ export function PhotoEditor({
    */
   function helpText(): string {
     if (!canRestoreOriginal)
-      return 'Sobre la copia de consulta puedes girar y recortar más, pero no ensanchar el recorte, corregir la perspectiva ni volver al original: lo que quedó fuera no está en esta copia.'
+      return 'Sobre la copia de consulta puedes girar y recortar más, pero no ensanchar el recorte, corregir la perspectiva, ajustar el color ni volver al original: lo que quedó fuera no está en esta copia, y el color ya viene aplicado en ella.'
     if (analysis.status === 'working') return 'Analizando la fotografía para reconocer el borde del cuadro…'
     if (analysis.status === 'none')
       return 'No he reconocido el borde del cuadro: arrastra las esquinas para recortarlo a mano.'
@@ -750,7 +1115,16 @@ export function PhotoEditor({
     [clampPan, box.width, box.height],
   )
   const ready = fit.width > 0 && fit.height > 0
-  const summary = editSummary({ rotation, crop })
+  /**
+   * What the header says was done — read from the very object that gets applied.
+   *
+   * Not from a literal built here, which is what it used to be and is how it came
+   * to lie: that literal carried `rotation` and `crop` and forgot `corners`, so a
+   * photograph whose four corners had been dragged, and that was neither turned nor
+   * cropped, announced «Sin cambios» while the correction was on screen. One source
+   * of truth for both, and the header cannot drift from what is stored again.
+   */
+  const summary = editSummary(editRef.current)
 
   /**
    * The straightened preview: its size on screen and the transform that draws it.
@@ -767,7 +1141,13 @@ export function PhotoEditor({
     const inverse = forward && invertHomography(forward)
     if (!inverse) return null
 
-    const straightened = straightenedSize(corners)
+    // Measured against `rotated`, the photograph's own pixels, and not against `fit`,
+    // which is where it is drawn: the two agree in proportion —`fitInside` keeps
+    // it— but the corners are fractions of the rotated photograph, and taking the
+    // proportion from the box on screen is one refactor away from taking it from the
+    // `<img>`'s sides, which is exactly how the straightening came out skewed at 90°
+    // and 270° once already.
+    const straightened = straightenedSize(corners, rotated)
     const wide = straightened.width * fit.width
     const tall = straightened.height * fit.height
     if (wide <= 0 || tall <= 0) return null
@@ -827,13 +1207,22 @@ export function PhotoEditor({
    * rectangle: the rectangle does not move then, so reading it from there left the
    * loupe frozen on a corner nobody was touching.
    */
-  const aimed = !magnified
+  const cornerAim = !magnified
     ? null
     : corners
       ? corners[magnified]
       : crop
         ? cornerPoint(clampCrop(crop), magnified)
         : null
+  /**
+   * With the eyedropper armed the loupe follows the finger instead of a corner, and it
+   * shows the RAW pixels: the grey has to be aimed at the light of the room and not at the
+   * correction already applied, or every second pick would undo part of the previous one.
+   * The rule is `loupeTables`', which `paintLoupe` asks for the mode.
+   */
+  const picking = eyedropper && aim !== null
+  const aimed = picking ? aim : cornerAim
+  const loupeMode: LoupeMode = picking ? 'EYEDROPPER' : 'FRAMING'
 
   // Placement: the corner of the working surface OPPOSITE to where the finger
   // is, recomputed as it moves. Anchoring it to which handle it is would not be
@@ -929,7 +1318,17 @@ export function PhotoEditor({
     setDragging(null)
     startRef.current = null
     panRef.current = null
+    // And the pending tap of the eyedropper: two fingers are a pinch, and a grey sampled
+    // where the second finger happened to land is a grey nobody chose.
+    pickRef.current = null
+    setAim(null)
     pinchRef.current = pinchOf(frame)
+  }
+
+  /** A cancelled pointer takes no sample: it is not a lift, it is the system taking over. */
+  function onSurfacePointerCancel() {
+    pickRef.current = null
+    setAim(null)
   }
 
   /**
@@ -942,11 +1341,47 @@ export function PhotoEditor({
     if (e.pointerType === 'mouse' && e.button !== 0) return
     // A second pointer means a pinch is being made, and the pinch has its own pan.
     if (touchesRef.current.size !== 1) return
+    // The eyedropper rides ALONG with the pan and does not replace it (§7): what is
+    // recorded here is where the pointer landed, and only a lift that never travelled
+    // becomes a sample. Reaching this line already means no handle and no panel claimed
+    // the gesture, since both stop the event.
+    if (eyedropper) {
+      pickRef.current = { pointer: e.pointerId, x: e.clientX, y: e.clientY, moved: false }
+      setAim(surfacePoint(e.clientX, e.clientY))
+    }
     panRef.current = { pointer: e.pointerId, x: e.clientX, y: e.clientY }
     e.currentTarget.setPointerCapture(e.pointerId)
   }
 
+  /**
+   * The end of a gesture on the surface, which is where a tap of the eyedropper becomes a
+   * sample.
+   *
+   * On the surface and not on `window` because the pointer is captured by it, so the lift
+   * is retargeted here even when the finger leaves. Four things disqualify a tap, and each
+   * of them is a different intent: the pointer travelled (that was a pan), a second finger
+   * landed (that was a pinch, and the pinch has precedence over everything), or the
+   * eyedropper is not armed at all.
+   */
+  function onSurfacePointerUp(e: React.PointerEvent) {
+    const pick = pickRef.current
+    pickRef.current = null
+    setAim(null)
+    if (!pick || pick.pointer !== e.pointerId) return
+    if (!eyedropper || pick.moved || pinchRef.current || touchesRef.current.size > 1) return
+    const point = surfacePoint(e.clientX, e.clientY)
+    if (point) pickAt(point)
+  }
+
   function onSurfacePointerMove(e: React.PointerEvent) {
+    // The loupe follows the finger while the eyedropper is armed, showing the RAW pixels:
+    // the finger covers exactly the pixel being aimed at, and a grey that is already
+    // corrected measures the correction and not the light of the room.
+    const pick = pickRef.current
+    if (pick && pick.pointer === e.pointerId) {
+      if (Math.hypot(e.clientX - pick.x, e.clientY - pick.y) > PICK_SLOP) pick.moved = true
+      setAim(surfacePoint(e.clientX, e.clientY))
+    }
     const pan = panRef.current
     if (pan && e.pointerId === pan.pointer) {
       // Read from the event before handing anything to `setView`: the update runs
@@ -1067,7 +1502,7 @@ export function PhotoEditor({
   useEffect(() => {
     const canvas = loupeRef.current
     const image = imageRef.current
-    if (!magnified || !aimed || !canvas || !image) return
+    if (!aimed || !canvas || !image) return
     if (natural.width === 0 || fit.width === 0) return
     // One paint per frame at most: a pointer fires far more often than the screen
     // refreshes, and every move already re-renders the rectangle.
@@ -1083,6 +1518,11 @@ export function PhotoEditor({
         // Divided by the zoom as well: what is on screen is already magnified by it,
         // and the loupe promises three times WHAT IS ON SCREEN.
         sourceSide: (LOUPE_SIDE / LOUPE_ZOOM) * (rotated.width / (fit.width * view.zoom)),
+        // The same tables the surface is showing through its SVG filter, so the magnifier
+        // and the photograph are the same photograph — except with the eyedropper, where
+        // `loupeTables` refuses them on purpose.
+        luts,
+        mode: loupeMode,
       })
     })
     return () => cancelAnimationFrame(handle)
@@ -1091,7 +1531,7 @@ export function PhotoEditor({
     // to trigger a repaint is the point changing, which in perspective mode is the
     // only thing that changes — the crop stays still, and depending on IT was the
     // bug.
-  }, [magnified, aimed?.x, aimed?.y, rotation, natural, rotated.width, fit.width, view.zoom])
+  }, [aimed?.x, aimed?.y, rotation, natural, rotated.width, fit.width, view.zoom, luts, loupeMode])
 
   return createPortal(
     <div
@@ -1100,20 +1540,102 @@ export function PhotoEditor({
       aria-label={`Girar y recortar la fotografía ${title}`}
       className="fixed inset-0 z-50 flex flex-col bg-black"
     >
-      <div className="flex items-center justify-between gap-2 p-3 text-white">
+      {/* The header: the close, the title, the summary and the two ways into the panels.
+          Two round 44 px targets where a 44 px target already lives, so they cost no
+          vertical room at all — which is the whole reason they are here and not in the
+          footer, where the row of tools already fills 308 of the 336 usable pixels of a
+          360 px phone. Everything textual truncates instead of wrapping: a header that
+          grows a second line is exactly the space this arrangement was chosen to save. */}
+      <div className="flex items-center gap-2 p-3 text-white">
         <button
           type="button"
           aria-label="Cerrar sin aplicar"
           onClick={() => close(false)}
-          className="flex min-h-touch min-w-[2.75rem] items-center justify-center rounded-full bg-white/10"
+          className="flex min-h-touch min-w-[2.75rem] shrink-0 items-center justify-center rounded-full bg-white/10"
         >
           <NoIcon className="h-5 w-5" />
         </button>
         <p className="min-w-0 flex-1 truncate text-sm text-stone-300">{title}</p>
-        <p aria-live="polite" className="shrink-0 text-xs text-stone-400">
+        <p aria-live="polite" className="min-w-0 max-w-[8rem] shrink truncate text-xs text-stone-400">
           {summary ?? 'Sin cambios'}
         </p>
+        <button
+          type="button"
+          aria-pressed={panel === 'COLOR'}
+          aria-label="Ajuste de color"
+          title="Ajuste de color"
+          onClick={() => {
+            // Opening the panel is what «revisar el color» means, and it is recorded even
+            // if nothing is touched: «sin revisar» no es «no». Only when the adjustment is
+            // actually on offer — a reproduction from another catalog was not reviewed by
+            // reading why it cannot be.
+            if (availability.available) reviewedRef.current = true
+            setPanel((current) => (current === 'COLOR' ? 'TOOLS' : 'COLOR'))
+          }}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+            panel === 'COLOR' ? 'bg-white text-stone-900' : 'bg-white/10'
+          } ${isNoColor(color) ? '' : 'ring-2 ring-amber-300'}`}
+        >
+          <ColorIcon className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          aria-pressed={panel === 'DATA'}
+          aria-label="Datos de la fotografía"
+          title="Datos de la fotografía"
+          onClick={() => setPanel((current) => (current === 'DATA' ? 'TOOLS' : 'DATA'))}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+            panel === 'DATA' ? 'bg-white text-stone-900' : 'bg-white/10'
+          }`}
+        >
+          <DataIcon className="h-5 w-5" />
+        </button>
       </div>
+
+      {/* The preview of the colour: an inline `<filter>` with the 256 entries of the same
+          lookup table the export applies, and NOT `ctx.filter`, which is a silent no-op on
+          old WebKit while the declared target is phones from 2020 on.
+          `color-interpolation-filters="sRGB"` is mandatory and its absence is the silent
+          failure number one of this feature — by default a filter interpolates in linear
+          light, and a table indexed by 8-bit sRGB codes applied to linearized values is a
+          different curve, wrong precisely in the shadows, precisely where the black point
+          works. The value comes from `colorSvgTables` so that it cannot be forgotten here.
+          It lives OUTSIDE `frameRef`: that element carries a non-passive wheel listener and
+          counts pointers in the capture phase. */}
+      <svg
+        aria-hidden
+        focusable="false"
+        className="pointer-events-none absolute h-0 w-0 overflow-hidden"
+      >
+        <filter
+          id={filterId}
+          colorInterpolationFilters={svgTables.colorInterpolationFilters}
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+        >
+          <feComponentTransfer>
+            <feFuncR ref={funcR} type="table" tableValues={svgTables.r} />
+            <feFuncG ref={funcG} type="table" tableValues={svgTables.g} />
+            <feFuncB ref={funcB} type="table" tableValues={svgTables.b} />
+          </feComponentTransfer>
+          {/* Black and white is the one step that is not per channel, so it cannot live in
+              the tables: it comes after them, and it carries the OPPOSITE interpolation
+              space on purpose — in `linearRGB` the browser linearizes, applies the matrix
+              and encodes back, which is exactly Rec. 709 luminance in linear light, the
+              same thing `grayFromRgb` computes by hand. It is a switch and not a strip, so
+              it is committed at once and React renders it; the hand-written preview only
+              ever touches the three tables. */}
+          {svgTables.grayMatrix && (
+            <feColorMatrix
+              type="matrix"
+              values={svgTables.grayMatrix.values}
+              colorInterpolationFilters={svgTables.grayMatrix.colorInterpolationFilters}
+            />
+          )}
+        </filter>
+      </svg>
 
       {/* Working surface. `touch-none` on the whole area: the editor covers the
           screen and nothing here should scroll or zoom the page underneath.
@@ -1126,6 +1648,8 @@ export function PhotoEditor({
         onPointerDownCapture={trackPointer}
         onPointerDown={startPan}
         onPointerMove={onSurfacePointerMove}
+        onPointerUp={onSurfacePointerUp}
+        onPointerCancel={onSurfacePointerCancel}
         onDoubleClick={resetView}
         className="relative min-h-0 flex-1 cursor-grab touch-none select-none overflow-hidden active:cursor-grabbing"
       >
@@ -1177,6 +1701,11 @@ export function PhotoEditor({
                 maxWidth: 'none',
                 maxHeight: 'none',
                 transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                // On the image and NEVER on the area the handles live in: there it would
+                // tint the handles and the polygon, and `filter` creates a stacking
+                // context that would break the z-10/z-20 arbitration between the loupe,
+                // the preview panel and the handles.
+                filter: colorFilter ? `url(#${filterId})` : undefined,
               }}
             />
 
@@ -1347,6 +1876,48 @@ export function PhotoEditor({
                 })}
               </>
             )}
+
+            {/* The grey targets that were found, drawn and nothing more: the detection
+                never applies anything by itself (RF-418), it points and offers, and what
+                accepts one is a button in the panel. Drawn LAST inside the area so it
+                paints over the dimming of the crop, and `pointer-events-none` so it cannot
+                take a gesture from a handle or from the pan. The boxes are measured on the
+                unrotated raster and travel here through `rotateCrop`, the same function
+                that turns the crop with its photograph. */}
+            {ready &&
+              candidates.map((candidate, index) => {
+                const box = rotateCrop(candidate.box, rotation)
+                return (
+                  <div
+                    key={`target-${candidate.axis}-${index}`}
+                    aria-hidden
+                    className="pointer-events-none absolute border-2 border-amber-300"
+                    style={{
+                      left: `${box.x * 100}%`,
+                      top: `${box.y * 100}%`,
+                      width: `${box.width * 100}%`,
+                      height: `${box.height * 100}%`,
+                      // In surface pixels and not scaled, for the same reason as the crop
+                      // rectangle: a two-pixel line at 8× would be a sixteen-pixel band
+                      // hiding the patch it marks.
+                      borderWidth: `${2 / view.zoom}px`,
+                      boxShadow: '0 0 0 1px rgba(0,0,0,0.6)',
+                    }}
+                  >
+                    <span
+                      className="absolute left-0 top-0 rounded bg-amber-300 px-1 text-[0.625rem] font-medium text-stone-900"
+                      // Counter-scaled and pushed above the box, so the number keeps its
+                      // size on screen while the photograph grows under it.
+                      style={{
+                        transform: `translateY(-110%) scale(${1 / view.zoom})`,
+                        transformOrigin: 'bottom left',
+                      }}
+                    >
+                      {index + 1}
+                    </span>
+                  </div>
+                )
+              })}
           </div>
         )}
 
@@ -1389,6 +1960,10 @@ export function PhotoEditor({
                 maxWidth: 'none',
                 maxHeight: 'none',
                 transform: preview.transform,
+                // The straightened preview gets the same filter as the surface: it is the
+                // same photograph, and the incident where it did not turn with the
+                // photograph is the precedent for keeping the two in step.
+                filter: colorFilter ? `url(#${filterId})` : undefined,
               }}
             />
           </div>
@@ -1398,7 +1973,7 @@ export function PhotoEditor({
             `aria-hidden` because it says nothing new: it is the same corner,
             bigger. It lives outside the image area, anchored to the working
             surface, so its placement does not depend on where the photo fits. */}
-        {magnified && aimed && ready && (
+        {aimed && ready && (
           <canvas
             ref={loupeRef}
             aria-hidden
@@ -1436,165 +2011,221 @@ export function PhotoEditor({
           <p className="rounded-lg bg-amber-100 p-2 text-xs text-amber-900">{note}</p>
         )}
 
-        {/* Every tool in one row of 44 px targets, and not a label in sight.
-            Drawings instead of words is what makes it fit: as labelled buttons the two
-            turns alone took a row of three lines each on a phone. What names them is
-            the help line underneath, which always starts with the framing that is
-            selected — an icon that is never spelled out anywhere is a guess. */}
-        <div className="flex items-center justify-center gap-2">
-          {/* The two turns share a box, like the framing does: they are one pair —
-              the same thing in two directions— and grouped they read as a pair
-              instead of as two unrelated icons. */}
-          <div role="group" aria-label="Girar" className="flex shrink-0 gap-1 rounded-lg bg-white/10 p-1">
-            <button
-              type="button"
-              aria-label="Rotar a la izquierda"
-              title="Rotar a la izquierda"
-              onClick={() => rotate(-90)}
-              className="btn h-11 w-11 rounded-md p-0 text-white active:bg-white/20"
-            >
-              <RotateLeftIcon className="h-6 w-6" />
-            </button>
-            <button
-              type="button"
-              aria-label="Rotar a la derecha"
-              title="Rotar a la derecha"
-              onClick={() => rotate(90)}
-              className="btn h-11 w-11 rounded-md p-0 text-white active:bg-white/20"
-            >
-              <RotateRightIcon className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* A track with a thumb, and not three buttons in a row: the white fill
-              inside the track reads as «this one is selected», while the same fill
-              standing alone would read as «this is the main action» — which is what
-              made three white buttons compete on one screen. */}
-          <div
-            role="group"
-            aria-label="Encuadre"
-            className="flex shrink-0 gap-1 rounded-lg bg-white/10 p-1"
-          >
-            {FRAMINGS.map(({ value, label, Icon }) => (
+        {/* The three states of the foot (§7). The colour controls and the data of the
+            photograph EXCHANGE places with the row of tools instead of floating over the
+            artwork: a balance of whites is judged looking at the whole surface, and a panel
+            on top of it would collide with the loupe, which lands in the corner opposite
+            the finger. «Cancelar» and «Aplicar» stay put in all three, because leaving is
+            never a mode. */}
+        {panel === 'COLOR' ? (
+          <ColorControls
+            edit={editRef.current}
+            shotType={shotType}
+            availability={availability}
+            raster={rasterRef.current}
+            rasterState={rasterState}
+            generalColor={generalColor}
+            isGeneralShot={shotType === 'GENERAL'}
+            eyedropper={eyedropper}
+            pickNotice={pickNotice}
+            candidates={candidates}
+            onCandidates={setCandidates}
+            onEyedropper={(armed) => {
+              setEyedropper(armed)
+              if (!armed) setAim(null)
+              setPickNotice(null)
+            }}
+            onClearPickNotice={() => setPickNotice(null)}
+            onPreview={previewColor}
+            onColorChange={commitColor}
+            onClose={() => setPanel('TOOLS')}
+          />
+        ) : panel === 'DATA' ? (
+          <PhotoDataPanel
+            exif={exif ?? null}
+            loading={exif === undefined}
+            canRestoreOriginal={canRestoreOriginal}
+            // The size from the decoder, which is the only source that has already been
+            // through the EXIF orientation, and the weight of the very Blob in hand.
+            original={{ width: natural.width, height: natural.height, bytes: source.size }}
+            recordPhotoDate={recordPhotoDate}
+            onClose={() => setPanel('TOOLS')}
+          />
+        ) : (
+          <>
+          {/* Every tool in one row of 44 px targets, and not a label in sight.
+              Drawings instead of words is what makes it fit: as labelled buttons the two
+              turns alone took a row of three lines each on a phone. What names them is
+              the help line underneath, which always starts with the framing that is
+              selected — an icon that is never spelled out anywhere is a guess. */}
+          <div className="flex items-center justify-center gap-2">
+            {/* The two turns share a box, like the framing does: they are one pair —
+                the same thing in two directions— and grouped they read as a pair
+                instead of as two unrelated icons. */}
+            <div role="group" aria-label="Girar" className="flex shrink-0 gap-1 rounded-lg bg-white/10 p-1">
               <button
-                key={value}
                 type="button"
-                // Straightening cannot be expressed over the consultation copy, so the
-                // segment is disabled there with the reason underneath.
-                disabled={!ready || (value === 'PERSPECTIVE' && !canRestoreOriginal)}
-                aria-pressed={framing === value}
-                aria-label={label}
-                title={label}
-                aria-describedby="editor-help"
-                onClick={() => setFraming(value)}
-                className={`btn h-11 w-11 rounded-md p-0 disabled:opacity-40 ${
-                  framing === value ? 'bg-white text-stone-900' : 'text-stone-300'
-                }`}
+                aria-label="Rotar a la izquierda"
+                title="Rotar a la izquierda"
+                onClick={() => rotate(-90)}
+                className="btn h-11 w-11 rounded-md p-0 text-white active:bg-white/20"
               >
-                <Icon className="h-6 w-6" />
+                <RotateLeftIcon className="h-6 w-6" />
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                aria-label="Rotar a la derecha"
+                title="Rotar a la derecha"
+                onClick={() => rotate(90)}
+                className="btn h-11 w-11 rounded-md p-0 text-white active:bg-white/20"
+              >
+                <RotateRightIcon className="h-6 w-6" />
+              </button>
+            </div>
 
-          <button
-            type="button"
-            disabled={!ready || analysis.status === 'working' || !suggestionMakesSense}
-            aria-label={analysis.status === 'working' ? 'Analizando la fotografía…' : 'Sugerir recorte'}
-            title={analysis.status === 'working' ? 'Analizando la fotografía…' : 'Sugerir recorte'}
-            aria-describedby="editor-help"
-            onClick={() => void suggest()}
-            className={`btn h-11 w-11 shrink-0 bg-white/10 p-0 text-white disabled:opacity-40 ${
-              analysis.status === 'working' ? 'animate-pulse' : ''
-            }`}
-          >
-            <WandIcon className="h-6 w-6" />
-          </button>
-        </div>
-
-        <div className="space-y-2">
-
-          {/* With two candidates the cataloger picks: in a catalogue raisonné the
-              work is usually the canvas, but the frame can be part of the piece
-              and only she can tell. */}
-          {/* The same track and thumb as the framing, because it is the same kind of
-              thing: a state being chosen, not an action being fired. */}
-          {analysis.status === 'found' && analysis.suggestion.inner && (
+            {/* A track with a thumb, and not three buttons in a row: the white fill
+                inside the track reads as «this one is selected», while the same fill
+                standing alone would read as «this is the main action» — which is what
+                made three white buttons compete on one screen. */}
             <div
               role="group"
-              aria-label="Hasta dónde recortar"
-              className="grid grid-cols-2 gap-1 rounded-lg bg-white/10 p-1"
+              aria-label="Encuadre"
+              className="flex shrink-0 gap-1 rounded-lg bg-white/10 p-1"
             >
-              {([
-                { value: 'outer', label: 'Hasta el marco' },
-                { value: 'inner', label: 'Solo la obra' },
-              ] as const).map(({ value, label }) => (
+              {FRAMINGS.map(({ value, label, Icon }) => (
                 <button
                   key={value}
                   type="button"
-                  aria-pressed={analysis.choice === value}
-                  onClick={() => choose(value)}
-                  className={`btn min-h-touch rounded-md px-1 text-sm ${
-                    analysis.choice === value ? 'bg-white text-stone-900' : 'text-stone-300'
+                  // Straightening cannot be expressed over the consultation copy, so the
+                  // segment is disabled there with the reason underneath.
+                  disabled={!ready || (value === 'PERSPECTIVE' && !canRestoreOriginal)}
+                  aria-pressed={framing === value}
+                  aria-label={label}
+                  title={label}
+                  aria-describedby="editor-help"
+                  onClick={() => setFraming(value)}
+                  className={`btn h-11 w-11 rounded-md p-0 disabled:opacity-40 ${
+                    framing === value ? 'bg-white text-stone-900' : 'text-stone-300'
                   }`}
                 >
-                  {label}
+                  <Icon className="h-6 w-6" />
                 </button>
               ))}
             </div>
-          )}
 
-          {/* Putting back what a suggestion replaced: inline and only while there is
-              something to put back. As a permanent button it sat disabled almost
-              always, spending half a row on an action that belongs to the seconds
-              right after a suggestion lands. */}
-          {replaced && (
             <button
               type="button"
-              onClick={discardSuggestion}
-              className="btn min-h-touch w-full text-sm text-stone-300 underline underline-offset-4"
+              disabled={!ready || analysis.status === 'working' || !suggestionMakesSense}
+              aria-label={analysis.status === 'working' ? 'Analizando la fotografía…' : 'Sugerir recorte'}
+              title={analysis.status === 'working' ? 'Analizando la fotografía…' : 'Sugerir recorte'}
+              aria-describedby="editor-help"
+              onClick={() => void suggest()}
+              className={`btn h-11 w-11 shrink-0 bg-white/10 p-0 text-white disabled:opacity-40 ${
+                analysis.status === 'working' ? 'animate-pulse' : ''
+              }`}
             >
-              Deshacer la sugerencia
+              <WandIcon className="h-6 w-6" />
+            </button>
+          </div>
+
+          <div className="space-y-2">
+
+            {/* With two candidates the cataloger picks: in a catalogue raisonné the
+                work is usually the canvas, but the frame can be part of the piece
+                and only she can tell. */}
+            {/* The same track and thumb as the framing, because it is the same kind of
+                thing: a state being chosen, not an action being fired. */}
+            {analysis.status === 'found' && analysis.suggestion.inner && (
+              <div
+                role="group"
+                aria-label="Hasta dónde recortar"
+                className="grid grid-cols-2 gap-1 rounded-lg bg-white/10 p-1"
+              >
+                {([
+                  { value: 'outer', label: 'Hasta el marco' },
+                  { value: 'inner', label: 'Solo la obra' },
+                ] as const).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={analysis.choice === value}
+                    onClick={() => choose(value)}
+                    className={`btn min-h-touch rounded-md px-1 text-sm ${
+                      analysis.choice === value ? 'bg-white text-stone-900' : 'text-stone-300'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Putting back what a suggestion replaced: inline and only while there is
+                something to put back. As a permanent button it sat disabled almost
+                always, spending half a row on an action that belongs to the seconds
+                right after a suggestion lands. */}
+            {replaced && (
+              <button
+                type="button"
+                onClick={discardSuggestion}
+                className="btn min-h-touch w-full text-sm text-stone-300 underline underline-offset-4"
+              >
+                Deshacer la sugerencia
+              </button>
+            )}
+
+            <p id="editor-help" role="status" aria-live="polite" className="text-center text-xs text-stone-400">
+              {helpText()}
+            </p>
+          </div>
+
+          {/* Back to square one: the framing is data, not a cut, so the original frame
+              can be recovered whenever — today or in a year — and the crop redone from
+              scratch. That is what makes cropping a safe decision, and why it gets a row
+              of its own instead of the ghost button it used to be, squeezed between two
+              paragraphs of help. Amber and not white: it weighs like a main action, but
+              white is «Aplicar», the only thing that confirms and closes.
+
+              It only appears when there IS a turn to undo, and that is the whole point:
+              it clears the turn and the framing, while «Sin recorte» clears the framing,
+              so with no turn applied the two did letter for letter the same thing —
+              `setCrop(null); setCorners(null)`— and the loudest control in the footer
+              was a duplicate of a segment sitting right above it. With no turn, the way
+              back to the original IS the first segment of the selector.
+
+              The exception is the consultation copy, where it shows disabled: there it
+              is not an action but an explanation, and the reason is in the help line.
+              An action that is simply missing leaves the cataloger wondering whether
+              the crop is final.
+
+              The colour joins it, and that widens both halves of the rule: the button now
+              appears when there is a turn OR an adjustment of colour to undo, and it clears
+              the colour along with the two. The framing and the colour are the same kind of
+              thing — parameters absolute over an untouched master — so one control puts the
+              photograph back as it came out of the camera, and there is no way to end up
+              with a rectangle undone and a temperature nobody remembers setting.
+
+              What it does NOT clear is the trace: a colour that had been looked at keeps
+              `REVIEWED_UNCHANGED`, because going back to the original undoes the numbers and
+              not the fact that she looked. «Sin revisar» no es «no». */}
+          {(rotation !== 0 || !isNoColor(color) || !canRestoreOriginal) && (
+            <button
+              type="button"
+              disabled={!canRestoreOriginal}
+              aria-describedby="editor-help"
+              onClick={() => {
+                setRotation(0)
+                setCrop(null)
+                setCorners(null)
+                commitColor(reviewedColor(null, color.source != null))
+              }}
+              className="btn min-h-touch w-full border border-amber-400/70 bg-amber-400/10 text-sm text-amber-200 disabled:opacity-40"
+            >
+              <RevertIcon className="h-5 w-5" />
+              Volver al original
             </button>
           )}
-
-          <p id="editor-help" role="status" aria-live="polite" className="text-center text-xs text-stone-400">
-            {helpText()}
-          </p>
-        </div>
-
-        {/* Back to square one: the framing is data, not a cut, so the original frame
-            can be recovered whenever — today or in a year — and the crop redone from
-            scratch. That is what makes cropping a safe decision, and why it gets a row
-            of its own instead of the ghost button it used to be, squeezed between two
-            paragraphs of help. Amber and not white: it weighs like a main action, but
-            white is «Aplicar», the only thing that confirms and closes.
-
-            It only appears when there IS a turn to undo, and that is the whole point:
-            it clears the turn and the framing, while «Sin recorte» clears the framing,
-            so with no turn applied the two did letter for letter the same thing —
-            `setCrop(null); setCorners(null)`— and the loudest control in the footer
-            was a duplicate of a segment sitting right above it. With no turn, the way
-            back to the original IS the first segment of the selector.
-
-            The exception is the consultation copy, where it shows disabled: there it
-            is not an action but an explanation, and the reason is in the help line.
-            An action that is simply missing leaves the cataloger wondering whether
-            the crop is final. */}
-        {(rotation !== 0 || !canRestoreOriginal) && (
-          <button
-            type="button"
-            disabled={!canRestoreOriginal}
-            aria-describedby="editor-help"
-            onClick={() => {
-              setRotation(0)
-              setCrop(null)
-              setCorners(null)
-            }}
-            className="btn min-h-touch w-full border border-amber-400/70 bg-amber-400/10 text-sm text-amber-200 disabled:opacity-40"
-          >
-            <RevertIcon className="h-5 w-5" />
-            Volver al original
-          </button>
+          </>
         )}
 
         <div className="grid grid-cols-2 gap-2">

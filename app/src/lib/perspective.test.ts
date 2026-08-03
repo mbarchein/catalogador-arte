@@ -34,6 +34,44 @@ const keystone = (): Corners => ({
   sw: { x: 0.15, y: 0.9 },
 })
 
+/** A 16:9 frame in pixels, which is what a phone shoots. */
+const FRAME_16_9 = { width: 1600, height: 900 }
+
+/**
+ * A real rectangle of `width` × `height` PIXELS, tilted `degrees` clockwise inside
+ * `frame`, expressed —as the corners always are— in fractions of that frame.
+ *
+ * Tilt in the plane and not convergence: it is the case the three older tests miss,
+ * because they only use sides that are exactly horizontal or exactly vertical, where
+ * a fraction of the width and a fraction of the height never get added together.
+ */
+const tiltedRectangle = (
+  degrees: number,
+  width: number,
+  height: number,
+  frame = FRAME_16_9,
+): Corners => {
+  const angle = (degrees * Math.PI) / 180
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+  const centre = { x: frame.width / 2, y: frame.height / 2 }
+  const local = [
+    [-width / 2, -height / 2],
+    [width / 2, -height / 2],
+    [width / 2, height / 2],
+    [-width / 2, height / 2],
+  ] as const
+  const corners = {} as Record<'nw' | 'ne' | 'se' | 'sw', { x: number; y: number }>
+  ;(['nw', 'ne', 'se', 'sw'] as const).forEach((key, i) => {
+    const [x, y] = local[i]!
+    corners[key] = {
+      x: (centre.x + x * cos - y * sin) / frame.width,
+      y: (centre.y + x * sin + y * cos) / frame.height,
+    }
+  })
+  return corners
+}
+
 describe('signedArea and the simple quadrilateral (RF-410)', () => {
   /**
    * The sign is the thing worth pinning down: with Y pointing down, clockwise on
@@ -178,13 +216,13 @@ describe('straightenedSize (RF-410)', () => {
    * keystone photographs carry no EXIF at all.
    */
   it('a rectangle keeps its own size', () => {
-    const size = straightenedSize(cornersOfRect({ x: 0.1, y: 0.2, width: 0.5, height: 0.3 }))
+    const size = straightenedSize(cornersOfRect({ x: 0.1, y: 0.2, width: 0.5, height: 0.3 }), FRAME_16_9)
     expect(size.width).toBeCloseTo(0.5, 10)
     expect(size.height).toBeCloseTo(0.3, 10)
   })
 
   it('a keystone averages its two unequal sides', () => {
-    const size = straightenedSize(keystone())
+    const size = straightenedSize(keystone(), FRAME_16_9)
     // Top side 0.4 wide, bottom 0.7: the average is 0.55.
     expect(size.width).toBeCloseTo(0.55, 10)
   })
@@ -198,7 +236,66 @@ describe('straightenedSize (RF-410)', () => {
       se: { x: 0.7, y: 0.15 },
       sw: { x: 0.3, y: 0.15 },
     }
-    expect(straightenedSize(turned).width).toBeCloseTo(straightenedSize(keystone()).width, 10)
+    expect(straightenedSize(turned, FRAME_16_9).width).toBeCloseTo(
+      straightenedSize(keystone(), FRAME_16_9).width,
+      10,
+    )
+  })
+
+  /**
+   * The regression of the anisotropic measurement.
+   *
+   * A side is measured in fractions, and a fraction of the width and a fraction of
+   * the height are not the same length unless the frame is square. Adding them
+   * inside one `hypot` —which is what this did— makes the answer depend on the TILT
+   * in the plane and on the frame's proportion, not on the convergence: a rectangle
+   * that is genuinely 800 × 500 px, merely turned 5° on a 16:9 frame, came out as
+   * 806,54 × 498,70 px, a proportion 1,08 % too wide. The three tests above never
+   * saw it because their sides are exactly horizontal or exactly vertical.
+   */
+  it('a rectangle tilted 5° on a 16:9 frame keeps its proportion', () => {
+    const corners = tiltedRectangle(5, 800, 500)
+    const size = straightenedSize(corners, FRAME_16_9)
+    // What the consumers do with the answer: width × the frame's width, height ×
+    // the frame's height. Asserted in pixels because that is the unit that has a
+    // right answer.
+    expect(size.width * FRAME_16_9.width).toBeCloseTo(800, 6)
+    expect(size.height * FRAME_16_9.height).toBeCloseTo(500, 6)
+    expect((size.width * FRAME_16_9.width) / (size.height * FRAME_16_9.height)).toBeCloseTo(1.6, 9)
+  })
+
+  it('and so does one tilted the other way, on a portrait frame', () => {
+    const frame = { width: 900, height: 1600 }
+    const size = straightenedSize(tiltedRectangle(-8, 500, 900, frame), frame)
+    expect(size.width * frame.width).toBeCloseTo(500, 6)
+    expect(size.height * frame.height).toBeCloseTo(900, 6)
+  })
+
+  /**
+   * Regression of «la vista previa del enderezado no giraba con la foto»: at 90° and
+   * 270° the straightening was computed with the sides swapped. The frame passed here
+   * has to be the ROTATED one, and turning the photograph a quarter turn has to swap
+   * which side of the artwork is the wide one — not leave it where it was.
+   */
+  it('does not swap width and height at 90° and 270°', () => {
+    const corners = tiltedRectangle(5, 800, 500)
+    const upright = straightenedSize(corners, FRAME_16_9)
+    expect(upright.width * FRAME_16_9.width).toBeCloseTo(800, 6)
+
+    const turnedFrame = { width: FRAME_16_9.height, height: FRAME_16_9.width }
+    for (const rotation of [90, 270]) {
+      const size = straightenedSize(rotateCorners(corners, rotation), turnedFrame)
+      // The 800 px side is now the vertical one and the 500 px side the horizontal.
+      expect(size.width * turnedFrame.width).toBeCloseTo(500, 6)
+      expect(size.height * turnedFrame.height).toBeCloseTo(800, 6)
+    }
+  })
+
+  it('half a turn changes nothing, because nothing about the frame changes', () => {
+    const corners = tiltedRectangle(5, 800, 500)
+    const size = straightenedSize(rotateCorners(corners, 180), FRAME_16_9)
+    expect(size.width * FRAME_16_9.width).toBeCloseTo(800, 6)
+    expect(size.height * FRAME_16_9.height).toBeCloseTo(500, 6)
   })
 })
 

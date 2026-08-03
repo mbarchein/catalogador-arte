@@ -1,5 +1,6 @@
 /**
- * Geometry of a photo edit: a quarter-turn rotation plus a normalized crop.
+ * A photo edit: a quarter-turn rotation, a normalized crop, the four corners of a
+ * straightened framing, and the colour adjustment that travels with them.
  *
  * The canonical form, the one that is stored and the one the Python pipeline of
  * the printed catalog will reproduce, is always the same and in this order:
@@ -28,11 +29,45 @@
  * that case the crop can only shrink, and the row keeps telling the truth about
  * the master.
  *
+ * **The colour rides along, and it is not geometry** (RF-414). Its arithmetic —the
+ * closed set of parameters, the chain that turns them into three tables of 256
+ * entries, the presets and the automatic— is the whole of imageColor.ts and none of
+ * it is repeated here. What lives here is the *pairing*: an edit is a framing AND a
+ * colour, because that pair is what the editor applies at once, what one row of
+ * `images` stores, and what decides whether the derivative files have to be written
+ * again. Keeping the colour outside the edit was tried on paper and the first thing
+ * it produces is a `sameEdit` that says «nothing changed» while the cataloger is
+ * looking at a photograph she just corrected: the files stay as they were and the
+ * correction is lost without a word.
+ *
+ * The colour obeys the same invariant as the framing, for the same reason: it is
+ * absolute over the master, re-editing REPLACES it and never composes onto it, and
+ * the master is never touched (ADR-002, ADR-009). And it breaks `composeEdits` in the
+ * same place the corners break it — the degraded path, where the source is the
+ * consultation copy and already carries a colour baked into pixels that went through
+ * a lossy WebP. Correcting that again would correct the artefacts of the compression
+ * as if they were the artwork, so it is refused rather than composed.
+ *
  * There is no DOM here on purpose. This module is the arithmetic, which is the
  * part that can be tested for real: the test environment has neither canvas nor
  * `createImageBitmap`, so what draws pixels lives in imageRender.ts.
  */
 
+import {
+  COLOR_RANGES,
+  NO_COLOR,
+  colorFromColumns,
+  colorSummary,
+  colorToColumns,
+  isNoColor,
+  normalizeColor,
+  sameColor,
+  type ColorColumns,
+  type ColorEdit,
+  type ColorInput,
+  type ColorParam,
+} from './imageColor'
+import type { PhotoProvenance, ShotTypeValue } from './types'
 import {
   CORNER_KEYS,
   cornersBoundingBox,
@@ -92,9 +127,45 @@ export interface PhotoEdit {
    * edit can rely on it.
    */
   corners?: Corners | null
+  /**
+   * The colour adjustment of the photograph (RF-414). Its definition, its ranges and
+   * its arithmetic are imageColor.ts; here it is one more field of the edit.
+   *
+   * Optional and permissive for the same reason `corners` is: an edit is built in a
+   * dozen places that have nothing to say about colour —the photo queue, the capture
+   * flow, every test of the framing— and its absence means «no adjustment», which is
+   * exactly what those mean. `ColorInput` and not `ColorEdit` so that a caller can
+   * hand over the two values it touched; whatever comes out of `normalizeEdit` always
+   * carries a canonical `ColorEdit`, so whoever reads a normalized edit can rely on
+   * every parameter being there.
+   */
+  color?: ColorInput
 }
 
-export const NO_EDIT: PhotoEdit = { rotation: 0, crop: null, corners: null }
+/**
+ * The shape `normalizeEdit`, `composeEdits` and `editFromColumns` return: the three
+ * framing fields always present, and the colour always a canonical `ColorEdit`.
+ *
+ * It exists so that the panel, the renderer and the uploader do not each normalize
+ * the colour again on the way in. It promises presence and canonical colour, not that
+ * the fractions were quantized — that is what `normalizeEdit` alone adds.
+ */
+export interface NormalizedPhotoEdit extends PhotoEdit {
+  crop: Crop | null
+  corners: Corners | null
+  color: ColorEdit
+}
+
+export const NO_EDIT: NormalizedPhotoEdit = {
+  rotation: 0,
+  crop: null,
+  corners: null,
+  // The neutral adjustment, and not a missing one: an edit with no colour and an edit
+  // whose colour does nothing are the same thing for the pixels, and having one shape
+  // for both is what keeps `sameEdit` from rewriting files over a difference nobody
+  // can see.
+  color: NO_COLOR,
+}
 
 /**
  * Smallest side the editor lets a crop have, as a fraction. Below this the
@@ -229,12 +300,37 @@ export function rotateCrop(crop: Crop, rotation: number): Crop {
  * the sides of the image, the shape came out transposed over a painting that had
  * moved. Three sibling lines are three chances to forget one; one function is none.
  */
-export function rotateEdit(edit: PhotoEdit, rotation: number): PhotoEdit {
+export function rotateEdit(edit: PhotoEdit, rotation: number): NormalizedPhotoEdit {
   return {
     rotation: addRotation(edit.rotation, rotation),
     crop: edit.crop ? rotateCrop(edit.crop, rotation) : null,
     corners: edit.corners ? rotateCorners(edit.corners, rotation) : null,
+    // The colour does not turn — a table of 256 entries has no orientation — but the
+    // place where the grey was sampled does, and it is the fourth sibling of that list
+    // of three. See `rotateNeutralPoint`.
+    color: rotateNeutralPoint(edit.color, rotation),
   }
+}
+
+/**
+ * The colour adjustment with its neutral reference turned along with the photograph.
+ *
+ * `color_neutral_x/y` are «fractions of the ALREADY ROTATED image», the same system as
+ * the crop and the corners, so a quarter turn moves them exactly as it moves those.
+ * Nothing visible depends on it —the correction is in `temperature` and `tint`— and
+ * that is precisely why it is easy to forget: what breaks is the one thing the field
+ * exists for, which is being able to see, in a year, that the grey was taken off the
+ * cardboard under the label and not off the painting. A point left in the previous
+ * frame points at a pixel nobody sampled.
+ */
+function rotateNeutralPoint(color: ColorInput, rotation: number): ColorEdit {
+  const c = normalizeColor(color)
+  if (!c.neutral) return c
+  // A point is a rectangle with no sides: `rotateCrop` is already the arithmetic of
+  // turning a normalized region, and going through it is what keeps a second copy of
+  // the same four cases from drifting away from the first.
+  const turned = rotateCrop({ x: c.neutral.x, y: c.neutral.y, width: 0, height: 0 }, rotation)
+  return normalizeColor({ ...c, neutral: { x: turned.x, y: turned.y } })
 }
 
 /**
@@ -261,7 +357,7 @@ export function composeCrop(outer: Crop, inner: Crop): Crop {
  * through that rotation before the new one is composed inside it — otherwise a
  * photo cropped and then turned would come out framed somewhere else.
  */
-export function composeEdits(base: PhotoEdit, extra: PhotoEdit): PhotoEdit {
+export function composeEdits(base: PhotoEdit, extra: PhotoEdit): NormalizedPhotoEdit {
   // What cannot be composed is perspective ON TOP OF something already baked in.
   //
   // This is called on every save, also from the master — where `base` is NO_EDIT and
@@ -273,22 +369,53 @@ export function composeEdits(base: PhotoEdit, extra: PhotoEdit): PhotoEdit {
   // would go over pixels that were already interpolated — the row would stop telling
   // the truth about the master. Same if the BASE is straightened, whatever comes on
   // top. The editor refuses to open there, and this is the backstop.
+  //
+  // Note `isNoEdit` now also counts the colour, and that widening is deliberate: a
+  // source that already shows a colour adjustment is a source with something baked in,
+  // so straightening it is refused for the same reason.
   if (base.corners || (extra.corners && !isNoEdit(base))) {
     throw new Error(
       'No se puede corregir la perspectiva sobre una imagen que ya lleva un encuadre aplicado',
     )
   }
-  if (extra.corners) return normalizeEdit(extra)
+
+  // And the colour, refused in the same one place and for a reason of its own: the
+  // degraded path works on the consultation copy, whose pixels went through a lossy
+  // WebP and already carry the previous colour. A second adjustment there would
+  // correct the artefacts of the compression as if they were the artwork, and the row
+  // would stop telling the truth about the master.
+  //
+  // What is NOT refused is composing a framing over a source that carries a colour:
+  // the crop arithmetic does not care, and the stored adjustment travels through
+  // untouched (see `color` below). Dropping it instead would leave the row claiming no
+  // colour over a file that plainly shows one.
+  //
+  // Like the corners, the guard is the backstop and not the rule: the rule is the
+  // editor, which does not offer the panel when the master could not be downloaded
+  // (`canRestoreOriginal`) nor when the photograph is not our own (RF-417).
+  const addsColor = !isNoColor(extra.color)
+  if (addsColor && !isNoEdit(base)) {
+    throw new Error(
+      'No se puede ajustar el color sobre una imagen que ya lleva aplicado un ajuste anterior',
+    )
+  }
+  // Absolute over the master and never composed: from the master —which is where a new
+  // adjustment can come from at all— the colour is REPLACED by what the editor
+  // returns, which is what lets it be loosened, changed or dropped in a year. Anywhere
+  // else there is nothing new to write, and what the source already carries is kept.
+  const color = isNoEdit(base) ? normalizeColor(extra.color) : normalizeColor(base.color)
+
+  if (extra.corners) return { ...normalizeEdit(extra), color }
   const rotation = addRotation(base.rotation, extra.rotation)
   const carried = base.crop ? rotateCrop(base.crop, extra.rotation) : null
   // `corners: null` explicitly, and not omitted: what comes out of here is the
   // canonical form, the same shape `normalizeEdit` returns, so whoever compares two
   // edits is comparing the same fields.
   if (!extra.crop) {
-    return { rotation, crop: carried ? clampCrop(carried) : null, corners: null }
+    return { rotation, crop: carried ? clampCrop(carried) : null, corners: null, color }
   }
   const composed = composeCrop(carried ?? fullCrop(), extra.crop)
-  return { rotation, crop: clampCrop(composed), corners: null }
+  return { rotation, crop: clampCrop(composed), corners: null, color }
 }
 
 /** Rounds the fractions so that float noise does not reach the database. */
@@ -302,8 +429,14 @@ export function quantizeCrop(crop: Crop, decimals = 6): Crop {
  * Canonical form for storing and comparing: rotation reduced and a crop that
  * keeps everything turned into "no crop", because that is what it is.
  */
-export function normalizeEdit(edit: PhotoEdit): PhotoEdit {
+export function normalizeEdit(edit: PhotoEdit): NormalizedPhotoEdit {
   const rotation = normalizeRotation(edit.rotation)
+  // The colour is canonicalized by imageColor.ts and, unlike a rectangle that keeps
+  // everything, **it is never collapsed to null**. A neutral colour is not the absence
+  // of a colour: it can be carrying `source: 'REVIEWED_UNCHANGED'`, which is «se miró
+  // con la obra delante y se dejó como estaba» — work done, as opposed to work
+  // pending. «Sin revisar» no es «no», and null here would erase exactly that.
+  const color = normalizeColor(edit.color)
 
   // Corners that are, within tolerance, an axis-aligned rectangle get stored as a
   // crop. Not cosmetic: straightening resamples every pixel, so doing it for a
@@ -312,11 +445,11 @@ export function normalizeEdit(edit: PhotoEdit): PhotoEdit {
   // as «straightened».
   const corners = edit.corners
   if (corners && isConvexQuadrilateral(corners) && !isRectangle(corners, RECTANGLE_TOLERANCE)) {
-    return { rotation, crop: null, corners: quantizeCorners(corners) }
+    return { rotation, crop: null, corners: quantizeCorners(corners), color }
   }
   const rect = corners ? cornersBoundingBox(corners) : edit.crop
-  if (!rect || isFullCrop(rect)) return { rotation, crop: null, corners: null }
-  return { rotation, crop: quantizeCrop(clampCrop(rect)), corners: null }
+  if (!rect || isFullCrop(rect)) return { rotation, crop: null, corners: null, color }
+  return { rotation, crop: quantizeCrop(clampCrop(rect)), corners: null, color }
 }
 
 /**
@@ -341,21 +474,46 @@ function quantizeCorners(corners: Corners, decimals = 6): Corners {
   }
 }
 
-/** True when the edit changes nothing: neither turned nor trimmed. */
+/**
+ * True when the edit changes nothing: neither turned, nor trimmed, nor corrected.
+ *
+ * The colour counts, and it counts by its LOOK and not by its provenance: an
+ * adjustment that says «revisado y dejado como estaba» is, for the pixels, nothing at
+ * all, and the derivatives must not be written again for it.
+ */
 export function isNoEdit(edit: PhotoEdit): boolean {
   const normalized = normalizeEdit(edit)
-  return normalized.rotation === 0 && normalized.crop === null && normalized.corners === null
+  return (
+    normalized.rotation === 0 &&
+    normalized.crop === null &&
+    normalized.corners === null &&
+    isNoColor(normalized.color)
+  )
 }
 
 /**
- * True when two edits mean the same framing. Used to avoid rewriting files —
- * and therefore new paths in the bucket — when the cataloger opened the editor,
- * looked, and applied without changing anything.
+ * True when two edits produce the same picture: the same framing and the same colour.
+ * Used to avoid rewriting files — and therefore new paths in the bucket — when the
+ * cataloger opened the editor, looked, and applied without changing anything.
+ *
+ * **The colour is part of the comparison, and forgetting it is a silent data loss**:
+ * two edits that differ only in the colour would compare equal, «Aplicar» would decide
+ * there is nothing to regenerate, and the correction the cataloger just made would
+ * disappear without a message — with the row possibly saying it is there. That is why
+ * it has a test of its own.
+ *
+ * What it compares of the colour is what changes pixels (`sameColor`), so two
+ * adjustments that differ only in where their grey was measured, or in which preset
+ * they started from, are the same picture and a different ROW. Whoever needs to know
+ * whether the row changed —to keep the eyedropper's traceability, or a
+ * `REVIEWED_UNCHANGED` that has just been earned— compares `editToColumns`, which is
+ * exported for that.
  */
 export function sameEdit(a: PhotoEdit, b: PhotoEdit): boolean {
   const x = normalizeEdit(a)
   const y = normalizeEdit(b)
   if (x.rotation !== y.rotation) return false
+  if (!sameColor(x.color, y.color)) return false
   if (x.corners || y.corners) {
     if (!x.corners || !y.corners) return false
     return CORNER_KEYS.every(
@@ -396,9 +554,10 @@ export function editedSize(size: Size, edit: PhotoEdit): Size {
   const rotated = rotatedSize(size, edit.rotation)
   // With corners the output is the straightened rectangle, whose proportions come
   // from the average of the opposite sides (see straightenedSize for why not from
-  // the focal length or from the artwork's measurements).
+  // the focal length or from the artwork's measurements). Measured against
+  // `rotated`, because the sides are only comparable once they are in pixels.
   if (edit.corners) {
-    const straightened = straightenedSize(edit.corners)
+    const straightened = straightenedSize(edit.corners, rotated)
     return {
       width: Math.max(1, Math.round(straightened.width * rotated.width)),
       height: Math.max(1, Math.round(straightened.height * rotated.height)),
@@ -535,7 +694,13 @@ export function moveCrop(crop: Crop, deltaX: number, deltaY: number): Crop {
   })
 }
 
-/** What the edit did, for the cataloger to read. Null when it did nothing. */
+/**
+ * What the edit did, for the cataloger to read. Null when it did nothing.
+ *
+ * One line for the framing and the colour together, because the header of the dialog
+ * is one line: `colorSummary` already returns its parameters joined with the same
+ * separator, so the two halves read as a single list.
+ */
 export function editSummary(edit: PhotoEdit): string | null {
   const normalized = normalizeEdit(edit)
   const parts: string[] = []
@@ -549,11 +714,30 @@ export function editSummary(edit: PhotoEdit): string | null {
     const percent = Math.round(normalized.crop.width * normalized.crop.height * 100)
     parts.push(`Recortada al ${percent} % del original`)
   }
+  const color = colorSummary(normalized.color)
+  if (color) {
+    parts.push(color)
+    // §7: the screen has to say when an adjustment was not decided for this shot but
+    // came from the general one. Said here, where the cataloger is already reading what
+    // was done, and only when the colour does something — «heredado» on top of a
+    // neutral adjustment would announce an inheritance of nothing.
+    if (normalized.color.inherited === true) parts.push('Color heredado de la toma general')
+  }
   return parts.length === 0 ? null : parts.join(' · ')
 }
 
-/** Columns of the `images` row that hold the edit. */
-export interface EditColumns {
+/**
+ * Columns of the `images` row that hold the edit: the framing and, through
+ * `ColorColumns`, the fourteen of the colour (§5, migration 20260803120000).
+ *
+ * **The two clipping percentages are deliberately not here.** `color_clipped_low` and
+ * `color_clipped_high` are not part of the adjustment but a measurement of what
+ * applying it did to the pixels — «se anota al aplicar», says the migration — so they
+ * are written by whoever has the pixels in hand, with `clippingToColumns` of
+ * imageHistogram.ts. There are no pixels in this module, and a column filled in from
+ * here would be a count nobody made.
+ */
+export interface EditColumns extends ColorColumns {
   rotation: number
   crop_x: number | null
   crop_y: number | null
@@ -594,6 +778,10 @@ const NO_CORNER_COLUMNS = {
  */
 export function editToColumns(edit: PhotoEdit): EditColumns {
   const normalized = normalizeEdit(edit)
+  // The colour writes itself: `colorToColumns` is the one place that knows that null is
+  // the identity in the row (and that `color_source` is the exception, where null is
+  // «nobody has looked at it yet»).
+  const color = colorToColumns(normalized.color)
 
   if (normalized.corners) {
     const { nw, ne, se, sw } = normalized.corners
@@ -611,6 +799,7 @@ export function editToColumns(edit: PhotoEdit): EditColumns {
       corner_se_y: se.y,
       corner_sw_x: sw.x,
       corner_sw_y: sw.y,
+      ...color,
     }
   }
 
@@ -622,6 +811,7 @@ export function editToColumns(edit: PhotoEdit): EditColumns {
       crop_width: null,
       crop_height: null,
       ...NO_CORNER_COLUMNS,
+      ...color,
     }
   }
   return {
@@ -631,6 +821,7 @@ export function editToColumns(edit: PhotoEdit): EditColumns {
     crop_width: normalized.crop.width,
     crop_height: normalized.crop.height,
     ...NO_CORNER_COLUMNS,
+    ...color,
   }
 }
 
@@ -638,10 +829,17 @@ export function editToColumns(edit: PhotoEdit): EditColumns {
  * The edit a row carries. A row written before this feature existed — or one
  * with a crop the database could not have accepted — reads as no edit: showing
  * the photo unframed is always better than not showing it.
+ *
+ * The same forgiveness applies to the colour, and there it is the whole deployment
+ * plan: **null is the identity**, so the 39 rows that predate the colour columns read
+ * as a neutral adjustment without anybody rewriting them. The one column where null is
+ * not the identity is `color_source`, which reads as «nobody has looked at the colour
+ * of this photograph yet» — not as «looked at and left alone».
  */
-export function editFromColumns(row: Partial<EditColumns> | null | undefined): PhotoEdit {
+export function editFromColumns(row: Partial<EditColumns> | null | undefined): NormalizedPhotoEdit {
   if (!row) return NO_EDIT
   const rotation = normalizeRotation(row.rotation ?? 0)
+  const color = colorFromColumns(row)
 
   // Corners first, because they take precedence in the row too. Eight numbers or
   // nothing: a row with some of them is one the database could not have accepted,
@@ -657,7 +855,9 @@ export function editFromColumns(row: Partial<EditColumns> | null | undefined): P
     // And it still has to be a quadrilateral that can be straightened: a row that
     // somehow held a crossed one would produce an image folded over itself, and
     // showing the photograph unstraightened is always better than that.
-    if (isConvexQuadrilateral(corners)) return normalizeEdit({ rotation, crop: null, corners })
+    if (isConvexQuadrilateral(corners)) {
+      return normalizeEdit({ rotation, crop: null, corners, color })
+    }
   }
 
   const { crop_x: x, crop_y: y, crop_width: width, crop_height: height } = row
@@ -667,7 +867,267 @@ export function editFromColumns(row: Partial<EditColumns> | null | undefined): P
     typeof width !== 'number' ||
     typeof height !== 'number'
   ) {
-    return { rotation, crop: null, corners: null }
+    return { rotation, crop: null, corners: null, color }
   }
-  return normalizeEdit({ rotation, crop: { x, y, width, height } })
+  return normalizeEdit({ rotation, crop: { x, y, width, height }, color })
+}
+
+/* ------------------------------------------------- when the colour is on offer */
+
+/**
+ * Whether the colour panel is offered at all, and the reason in Spanish when it is
+ * not.
+ *
+ * The two reasons it can be refused are not of the same kind, and that is why the
+ * provenance is answered first: a reproduction taken from someone else's catalog will
+ * never be adjustable here, while a master that did not download may download on the
+ * next attempt. Telling the cataloger to retry a connection when the answer is «this
+ * photograph is not ours» would send her to fix the wrong thing.
+ *
+ * **Never a blank**: whenever this says no, it says why, because a control that is
+ * simply not there is indistinguishable from one that is broken.
+ */
+export interface ColorAvailability {
+  available: boolean
+  /** Spanish, ready to be shown in the help line. Null when it is available. */
+  reason: string | null
+}
+
+/**
+ * `canRestoreOriginal` is the editor's own switch: true when the master of record is
+ * in hand, false when the source is the consultation copy — which already carries the
+ * colour baked into pixels that went through a lossy WebP (see `composeEdits`, which
+ * throws as the backstop).
+ */
+export function colorAvailability(
+  canRestoreOriginal: boolean,
+  provenance?: PhotoProvenance | null,
+): ColorAvailability {
+  // RF-417. Four of the 44 masters are reproductions taken from catalogs online: not a
+  // cataloguing mistake, the only thing that exists of those artworks. Correcting the
+  // cast of one of them is amending somebody else's development of a photograph of an
+  // artwork this cataloger never saw under that light.
+  if (provenance === 'OTHER_CATALOG') {
+    return {
+      available: false,
+      reason:
+        'El ajuste de color no se ofrece en una fotografía tomada de otro catálogo: sería ' +
+        'enmendar el revelado de otra persona sobre una obra que no se ha visto con esa luz.',
+    }
+  }
+  if (provenance === 'THIRD_PARTY') {
+    return {
+      available: false,
+      reason:
+        'El ajuste de color no se ofrece en una fotografía recibida de un tercero: sería ' +
+        'enmendar el revelado de otra persona sobre una obra que no se ha visto con esa luz.',
+    }
+  }
+  if (!canRestoreOriginal) {
+    return {
+      available: false,
+      reason:
+        'El ajuste de color no se ofrece porque no se ha podido descargar el máster de ' +
+        'archivo: se está trabajando sobre la copia de consulta, que ya lleva el color ' +
+        'aplicado, y volver a ajustarlo corregiría los defectos de la compresión como si ' +
+        'fueran la obra.',
+    }
+  }
+  return { available: true, reason: null }
+}
+
+/**
+ * The seven parameters in the order of the table of §3.1, which is the order of the
+ * strips in the panel.
+ *
+ * `COLOR_RANGES` is the definition of each one and this is only their order; the test
+ * checks that this list covers exactly its keys, so a parameter added there without
+ * being placed here fails instead of quietly disappearing from the panel.
+ */
+export const COLOR_PARAM_ORDER: readonly ColorParam[] = [
+  'temperature',
+  'tint',
+  'exposure',
+  'blackPoint',
+  'whitePoint',
+  'gamma',
+  'shoulder',
+]
+
+/** A parameter that is shown but cannot be moved, with the reason the panel prints. */
+export interface DisabledColorParam {
+  param: ColorParam
+  /** Spanish, for the help line. Never empty: a disabled control with no reason reads as a bug. */
+  reason: string
+}
+
+/** Which parameters a shot type offers, and which it shows disabled and why (§3.1). */
+export interface ShotTypeColorParams {
+  /** Parameters with a working strip, in the order of §3.1. */
+  offered: readonly ColorParam[]
+  /**
+   * Parameters that are shown and cannot be moved. **Shown and not hidden**: hiding
+   * them would make a photograph that inherited a tonal adjustment look as if it had
+   * none, and the cataloger could neither see it nor understand why her strip is gone.
+   */
+  disabled: readonly DisabledColorParam[]
+  /** The black-and-white switch, which is not a strip and has its own rule. */
+  gray: { offered: boolean; reason: string | null }
+}
+
+/** The white balance and the exposure: what undoes the light of the room and nothing else. */
+const LIGHT_ONLY: readonly ColorParam[] = ['temperature', 'tint', 'exposure']
+
+/** The four that move the tonal range, which in a detail shot IS the subject. */
+const TONAL_PARAMS: readonly ColorParam[] = ['blackPoint', 'whitePoint', 'gamma', 'shoulder']
+
+/**
+ * What each shot type offers of the closed set of §3.1.
+ *
+ * Two rules, and both come from the same place: in a photograph of a detail the colour
+ * is not the light of the room, it is the datum.
+ *
+ *  - **Black and white only on the back and on the signature detail**, where what
+ *    matters is reading a stamp or a stroke and not the colour of the support.
+ *  - **On a damage detail and on a frame, only the cast and the exposure.** The
+ *    yellowing of a varnish, the ring left by damp, rust, the patina of a gilt frame:
+ *    that is what the photograph has to testify to, and the tonal range is what would
+ *    change its look. They travel visible and disabled with the reason in the help
+ *    line, because a control that vanishes explains nothing.
+ *
+ * An unknown or missing shot type gets the general treatment — everything except the
+ * switch — which is the safe reading: it offers what a general shot offers and never
+ * silently enables what a detail shot forbids.
+ */
+export function colorParamsForShotType(
+  shotType?: ShotTypeValue | null,
+): ShotTypeColorParams {
+  const grayOffered = shotType === 'BACK' || shotType === 'SIGNATURE_DETAIL'
+
+  if (shotType === 'DAMAGE_DETAIL' || shotType === 'FRAME') {
+    const subject =
+      shotType === 'DAMAGE_DETAIL'
+        ? 'el amarilleo del barniz, el cerco de humedad, el óxido'
+        : 'la pátina del dorado, el óxido, la madera'
+    const kind = shotType === 'DAMAGE_DETAIL' ? 'un detalle de daño' : 'un detalle de marco'
+    return {
+      offered: LIGHT_ONLY,
+      disabled: TONAL_PARAMS.map((param) => ({
+        param,
+        reason:
+          `En ${kind} el color es el dato —${subject}—, así que aquí solo se corrige la luz de ` +
+          'la sala: la dominante y la exposición. Mover el rango tonal cambiaría el aspecto de ' +
+          'lo que hay que documentar.',
+      })),
+      gray: {
+        offered: false,
+        reason: `El blanco y negro no se ofrece en ${kind}: el color es justo el dato.`,
+      },
+    }
+  }
+
+  return {
+    offered: COLOR_PARAM_ORDER,
+    disabled: [],
+    gray: {
+      offered: grayOffered,
+      reason: grayOffered
+        ? null
+        : 'El blanco y negro solo se ofrece en el reverso y en el detalle de firma, donde lo ' +
+          'que importa es leer un sello o un trazo y no el color del soporte.',
+    },
+  }
+}
+
+/**
+ * The adjustment with everything the shot type does not offer back at its identity.
+ *
+ * It exists for the three things that write several parameters at once and do not know
+ * where they are landing: the automatic, a light preset and an inherited adjustment.
+ * Without it, an automatic run on a damage detail would set the black point through a
+ * strip that is disabled there — a tonal change the cataloger can see and cannot undo,
+ * which is worse than not offering it at all.
+ *
+ * The provenance of the adjustment is kept whole: what was restricted is the look, and
+ * where the numbers came from is still true.
+ */
+export function restrictColorToShotType(
+  color: ColorInput,
+  shotType?: ShotTypeValue | null,
+): ColorEdit {
+  const c = normalizeColor(color)
+  const params = colorParamsForShotType(shotType)
+  const offered = new Set(params.offered)
+  const value = (key: ColorParam) => (offered.has(key) ? c[key] : COLOR_RANGES[key].default)
+  return normalizeColor({
+    ...c,
+    temperature: value('temperature'),
+    tint: value('tint'),
+    exposure: value('exposure'),
+    blackPoint: value('blackPoint'),
+    whitePoint: value('whitePoint'),
+    gamma: value('gamma'),
+    shoulder: value('shoulder'),
+    gray: params.gray.offered ? c.gray : false,
+  })
+}
+
+/* --------------------------------------------------------- inherited adjustment */
+
+/**
+ * The edit of a secondary shot after inheriting the colour of the general shot (§7).
+ *
+ * «La toma general manda»: the back, the signature, the damage and the frame start from
+ * her adjustment, are changed one by one from there, and can be brought back to it —
+ * and **bringing them back is calling this again**, which is why there is no second
+ * function for it. Two names for one piece of arithmetic is how the two of them drift.
+ *
+ * Three decisions, all of them visible in what comes out:
+ *
+ *  - `inherited: true` is the fact, and it is a fact about **how the adjustment
+ *    arrived** and not about its numbers. That is why it is a column and not a
+ *    comparison: an adjustment made by hand that happens to coincide with the general
+ *    one is not inherited, and saying it is would be inventing the answer to «who
+ *    decided this?».
+ *  - **The neutral point is dropped.** It is a place in fractions of the general shot's
+ *    image, and there is nothing at those coordinates in the photograph of a signature.
+ *    A point pointing at a pixel nobody sampled is worse than no point. What is kept is
+ *    `source`, `reference` and `light`, which do describe how the numbers were decided.
+ *  - The look arrives **restricted to what this shot type offers** (§3.1): a damage
+ *    detail does not get a midtone correction through the back door of inheritance,
+ *    because there the tonal range is the subject. Pass `shotType` null only when it is
+ *    genuinely unknown, and then the whole look is inherited.
+ */
+export function inheritColor(
+  edit: PhotoEdit,
+  general: ColorInput,
+  shotType?: ShotTypeValue | null,
+): NormalizedPhotoEdit {
+  const inheritedLook = restrictColorToShotType(general, shotType)
+  return {
+    ...normalizeEdit(edit),
+    color: normalizeColor({ ...inheritedLook, neutral: null, inherited: true }),
+  }
+}
+
+/**
+ * The edit with a colour this shot decided for itself, which is what touching a strip
+ * means.
+ *
+ * It clears `inherited` **even when the numbers do not change**, and that is the point:
+ * the column says how the adjustment arrived, so an adjustment the cataloger set by
+ * hand stops being inherited the moment she sets it — otherwise the screen would keep
+ * saying «heredado de la toma general» over numbers the general shot never had, and
+ * «restablecer a lo heredado» would look like it does nothing.
+ */
+export function withOwnColor(edit: PhotoEdit, color: ColorInput): NormalizedPhotoEdit {
+  return {
+    ...normalizeEdit(edit),
+    color: normalizeColor({ ...normalizeColor(color), inherited: false }),
+  }
+}
+
+/** True when the colour of this edit was not decided for this shot (`color_inherited`). */
+export function isInheritedColor(edit: PhotoEdit): boolean {
+  return normalizeColor(edit.color).inherited === true
 }

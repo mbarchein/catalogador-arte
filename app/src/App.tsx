@@ -6,6 +6,7 @@ import { CapturePage } from './features/artworks/CapturePage'
 import { ArtworkPage } from './features/artworks/ArtworkPage'
 import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
+import { GrayTargetPage } from './features/help/GrayTargetPage'
 import { PlacesPage } from './features/places/PlacesPage'
 import { ArtworkTypesPage } from './features/tables/ArtworkTypesPage'
 import { SeriesPage } from './features/tables/SeriesPage'
@@ -40,6 +41,11 @@ export function App() {
       <Route path="/artwork/:id/photos" element={<ArtworkPhotosPage />} />
       <Route path="/artwork/:id/photos/:imageId" element={<ArtworkPhotosPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      {/* RF-418: qué es el testigo de gris, dónde se coloca y de dónde se baja la
+          hoja imprimible. Es una ruta y no un panel del editor porque se lee antes
+          de fotografiar, con la obra delante y sin ninguna foto abierta, y porque
+          así se puede enviar el enlace a quien va a hacer las tomas. */}
+      <Route path="/gray-target" element={<GrayTargetPage />} />
       {/* RF-1106: la sección «Tablas» y el mantenimiento de cada tabla maestra.
           Solo Catalogador, comprobado dentro de cada una: la pestaña oculta del
           pie no es una protección. */}
