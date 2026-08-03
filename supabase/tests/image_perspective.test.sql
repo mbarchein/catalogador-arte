@@ -148,7 +148,7 @@ end $$;
 -- 'MANUAL' por omisión sería inventar el dato, y es justo el dato que hizo falta
 -- inferir para medir el detector.
 do $$
-declare v_id text; v_fuente public.crop_source; v_viejas int;
+declare v_id text; v_fuente public.crop_source; v_sin_encuadre int;
 begin
   select image_id into v_id from public.images where master_path = 'p/master.jpg';
 
@@ -170,16 +170,32 @@ begin
     raise notice 'OK: la procedencia es un enumerado cerrado';
   end;
 
-  -- Y sobre una base cargada con el volcado: ninguna fila anterior se ha
-  -- rellenado sola. Sobre una base recién migrada esto no dice nada, y es
-  -- correcto que no lo diga.
-  select count(*) into v_viejas
+  -- Y sobre una base cargada con el volcado: la procedencia no se inventa sola.
+  --
+  -- Esta comprobación se escribió como «ninguna fila con recorte tiene además
+  -- procedencia», y **caducó por uso legítimo**: las once filas que hoy llevan
+  -- procedencia se crearon entre el 27 y el 31 de julio de 2026 usando la
+  -- herramienta, no rellenadas por ninguna migración. Un test que se pone rojo
+  -- porque la función que verifica se ha usado no verifica nada, y dejarlo rojo
+  -- «porque es anterior» hace que la batería deje de avisar del fallo nuevo.
+  --
+  -- Lo que sí es una invariante y sí importa: **una procedencia sin encuadre no
+  -- significa nada**. `crop_source` describe de dónde salió el encuadre —dibujado a
+  -- mano, sugerido, o sugerido y ajustado—, así que una fila con procedencia y sin
+  -- recorte ni esquinas es exactamente el dato inventado que aquella redacción
+  -- quería cazar, y esta lo caza sin depender de cuánto se haya usado el editor.
+  select count(*) into v_sin_encuadre
     from public.images
-   where crop_width is not null and crop_source is not null and image_id <> v_id;
-  if v_viejas > 0 then
-    raise exception 'FAIL: % filas antiguas tienen una procedencia inventada', v_viejas;
+   where crop_source is not null
+     and crop_width is null
+     and corner_nw_x is null
+     and image_id <> v_id;
+  if v_sin_encuadre > 0 then
+    raise exception
+      'FAIL: % filas tienen procedencia del encuadre sin encuadre ninguno',
+      v_sin_encuadre;
   end if;
-  raise notice 'OK: la procedencia queda desconocida en lo que ya existía';
+  raise notice 'OK: ninguna procedencia del encuadre existe sin su encuadre';
 end $$;
 
 rollback;
