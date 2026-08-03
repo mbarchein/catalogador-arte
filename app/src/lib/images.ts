@@ -552,9 +552,16 @@ async function signStoredFile(
   return data as { url: string; contentType: string | null }
 }
 
-/** Signed download URL for the archive master (RF-411). */
+/**
+ * Signed download URL for the archive master (RF-411).
+ *
+ * The label says «el original de archivo» and not «el máster» because it ends up
+ * inside a sentence the cataloger reads, and that word is ours, not hers. On the
+ * upload side it stays «el máster»: there the message accompanies a technical failure
+ * during a capture, and the screen around it already talks about masters.
+ */
 export async function masterDownloadUrl(masterPath: string): Promise<string> {
-  const { url } = await signStoredFile(masterPath, 'download', undefined, 'el máster')
+  const { url } = await signStoredFile(masterPath, 'download', undefined, 'el original de archivo')
   return url
 }
 

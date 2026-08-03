@@ -432,8 +432,7 @@ export function ArtworkPage() {
           <p className="font-medium text-stone-700">Pendiente en esta entrega</p>
           <p className="mt-1">
             Procedencia, historial expositivo, bibliografía, documentación relacionada, series y obras
-            relacionadas. También la descarga del máster de archivo. Ver el orden de construcción en la
-            documentación.
+            relacionadas. Ver el orden de construcción en la documentación.
           </p>
         </section>
 

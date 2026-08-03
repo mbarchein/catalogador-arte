@@ -51,6 +51,12 @@ export interface PhotoDetailRow extends ColorColumns {
   file_photo_date_exact: boolean | null
   original_width: number | null
   original_height: number | null
+  /**
+   * The size of the archive original, so the button that offers it can say what it
+   * costs before it is tapped (RF-411): up to 19 MB over mobile data, in a warehouse.
+   * Nullable because it was born without a check — a row can carry a path and no size.
+   */
+  master_bytes: number | null
   provenance: PhotoProvenance
   /** The full-resolution corrected copy (RF-420): a path, or nothing and why. */
   corrected_path: string | null
@@ -69,7 +75,7 @@ export interface PhotoDetailRow extends ColorColumns {
  */
 export const PHOTO_DETAIL_COLUMNS =
   'image_id, file_photo_date, file_photo_date_exact, original_width, original_height, ' +
-  'provenance, corrected_path, corrected_bytes, corrected_pending, ' +
+  'master_bytes, provenance, corrected_path, corrected_bytes, corrected_pending, ' +
   'color_temperature, color_tint, color_exposure, color_black, color_white, color_gamma, ' +
   'color_shoulder, color_gray, color_neutral_x, color_neutral_y, ' +
   'color_source, color_reference, color_light, color_inherited'

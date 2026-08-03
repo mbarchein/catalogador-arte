@@ -1,3 +1,42 @@
+## 4 de agosto de 2026
+
+### Interfaz
+
+**Descargar una fotografía: el original y la copia lista para imprimir**
+En la ficha, debajo de la galería, hay ahora un apartado «Descargar esta fotografía» que se despliega y
+ofrece los dos ficheros que tiene sentido sacar de la aplicación, con una línea que explica la
+diferencia: el **original** es lo que salió de la cámara —sin girar, sin recortar y con la luz que
+hubiera en la sala—, y la **copia corregida** es del mismo tamaño con el giro, el recorte, la perspectiva
+y el color ya aplicados. Es esta segunda la que hay que mandar a una imprenta o a un comisario, y hasta
+ahora no se podía descargar desde ninguna pantalla: se preparaba, se guardaba y no había forma de
+pedirla.
+
+Va plegado y no descarga nada hasta que se toca, porque un original puede pesar veinte megas y se
+cataloga con datos del móvil. Cada botón dice **cuánto pesa** antes de tocarlo.
+
+**La copia corregida solo se ofrece cuando está, y cuando no está se explica por qué**
+Un botón que desaparece no distingue «no hace falta» de «falta». Así que si la copia quedó pendiente
+porque el móvil no pudo prepararla, se dice y se dice que se hará después desde un ordenador; si la
+fotografía se corrigió antes de que existieran estas copias, también se dice; y si la fotografía no
+tiene ninguna corrección, no falta nada: para una imprenta el original ya es lo que hay que mandar, y así
+está escrito. Mientras se comprueba, lo dice también, en vez de acusar de una falta que quizá no exista.
+
+**El fichero llega con un nombre que se entiende fuera de la aplicación**
+`AR-0001_general_original.jpg`, `AR-0001_firma_corregida.jpg`: el código de la obra, el tipo de toma y
+qué fichero es. Antes se guardaba con el nombre interno del almacén, con ocho caracteres al azar en
+medio, y quien lo recibía por correo no sabía de qué obra era. Cuando una obra tiene dos tomas del mismo
+tipo, se numeran para que no lleguen dos ficheros llamados igual.
+
+**Y ahora se descarga de verdad, o se dice qué ha pasado**
+El botón anterior abría el fichero en otra pestaña en vez de guardarlo, y en el móvil muchas veces no
+hacía nada en absoluto, sin ningún aviso. Ahora el fichero se guarda donde el navegador guarde las
+descargas, el botón dice en qué va mientras tanto y, si algo falla —no hay cobertura, el permiso de
+descarga caducó, el fichero ya no está en el almacén—, aparece escrito qué ha pasado y qué hacer. Un
+error deja de verse en cuanto el siguiente intento funciona.
+
+Esto lo puede hacer también quien solo tiene permiso de lectura: mandar el original a una imprenta o a un
+comisario es justamente para lo que se guarda.
+
 ## 3 de agosto de 2026
 
 ### Interfaz

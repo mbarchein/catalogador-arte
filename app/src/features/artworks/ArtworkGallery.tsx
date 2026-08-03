@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { masterDownloadUrl } from '../../lib/images'
 import { SHOT_TYPE_LABEL } from '../../lib/types'
 import { ExpandIcon, YesIcon } from '../../components/ui'
+import { shotOrdinal } from './archiveDownloads'
 import { useArtworkImages } from './artworkImages'
 import { PhotoCarousel } from './PhotoCarousel'
+import { PhotoDownloads } from './PhotoDownloads'
 import { PhotoViewer } from './PhotoViewer'
+import { usePhotoDetails } from './usePhotoDetails'
 
 /**
  * Gallery of the record page — a view, nothing else. Everything that changes
@@ -14,9 +16,12 @@ import { PhotoViewer } from './PhotoViewer'
  */
 export function ArtworkGallery({ catalogId }: { catalogId: string }) {
   const { images, thumbUrls, mainId, loading } = useArtworkImages(catalogId)
+  // The state of the full-resolution corrected copy (RF-420) is not in the gallery's
+  // query, and without it the record could not tell «no hay copia» from «no lo sé».
+  // Short columns, one extra select over rows already loaded.
+  const { details, detailsFailed } = usePhotoDetails(catalogId, images, loading)
   const [viewId, setViewId] = useState<string | null>(null)
   const [viewerOpen, setViewerOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   // Start on the main image; if the viewed one disappears (someone retired it
   // from the management page), fall back to the current main.
@@ -162,36 +167,26 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
         />
       )}
 
-      {error && (
-        <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">
-          {error}
-        </p>
-      )}
+      <p className="mt-1 text-xs text-stone-500">
+        {viewing ? `${viewIndex + 1} de ` : ''}
+        {images.length} {images.length === 1 ? 'fotografía' : 'fotografías'}
+        {viewing ? ` · ${SHOT_TYPE_LABEL[viewing.shot_type]}` : ''}
+      </p>
 
-      <div className="mt-1 flex items-baseline justify-between gap-2 text-xs text-stone-500">
-        <span>
-          {viewing ? `${viewIndex + 1} de ` : ''}
-          {images.length} {images.length === 1 ? 'fotografía' : 'fotografías'}
-          {viewing ? ` · ${SHOT_TYPE_LABEL[viewing.shot_type]}` : ''}
-        </span>
-        {/* RF-411: the master is never shown in a view; it gets downloaded
-            deliberately, with the function's signed URL. Also available to the
-            Reader: downloading an original for a print shop or a curator is
-            exactly their use case. */}
-        {viewing?.master_path && (
-          <button
-            type="button"
-            className="min-h-touch shrink-0 underline"
-            onClick={() => {
-              void masterDownloadUrl(viewing.master_path as string)
-                .then((u) => window.open(u, '_blank', 'noopener'))
-                .catch((e) => setError(e instanceof Error ? e.message : String(e)))
-            }}
-          >
-            Descargar máster
-          </button>
-        )}
-      </div>
+      {/* RF-411 and RF-420: neither file is ever SHOWN in a view — both get
+          downloaded deliberately, each with its own signed URL, and the panel
+          says in one line what the difference is. It is offered to the Reader
+          too: handing an original or a print copy to a print shop or a curator
+          is exactly their use case. */}
+      {viewing && (
+        <PhotoDownloads
+          catalogId={catalogId}
+          row={viewing}
+          detail={details[viewing.image_id]}
+          detailsFailed={detailsFailed}
+          ordinal={shotOrdinal(images, viewing.image_id)}
+        />
+      )}
     </div>
   )
 }
