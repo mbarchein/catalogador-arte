@@ -129,6 +129,14 @@ delante, no de la aplicación.
 
 ### Correcciones
 
+**El cuentagotas no dejaba apuntar: la foto se movía con el dedo**
+Al tomar un gris de la fotografía, arrastrar el dedo para llegar al punto que se quiere movía la
+fotografía en lugar de mover la muestra, así que había que acertar de un toque y a ciegas, y corregir
+la puntería obligaba a levantar, mirar y volver a intentarlo. Ahora, con el cuentagotas activado, el
+dedo apunta: se arrastra hasta el gris que interesa —la pared, el cartón, el testigo—, la lupa va
+delante enseñando el color de verdad sin corregir, y al levantar el dedo se toma la medida. Para mover
+o acercar la fotografía sin salir del modo, dos dedos.
+
 **La corrección de perspectiva se perdía al recargar la pestaña**
 Una fotografía tomada en ángulo y enderezada antes de subirla perdía **las cuatro esquinas** si la
 pestaña se recargaba con la foto todavía en la cola: la corrección seguía viéndose, porque estaba cocida

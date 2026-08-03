@@ -64,6 +64,7 @@ import {
   showsColorFilter,
 } from './ColorControls'
 import { DataIcon, PhotoDataPanel } from './PhotoDataPanel'
+import { liftTakesSample, pointerIntent } from './pickGesture'
 import {
   CropIcon,
   ImageIcon,
@@ -146,16 +147,6 @@ const FRAMINGS: { value: Framing; label: string; Icon: typeof ImageIcon }[] = [
  * already live and a 44 px target costs no vertical room at all.
  */
 type Panel = 'TOOLS' | 'COLOR' | 'DATA'
-
-/**
- * How far a finger may travel and still be a tap, in CSS pixels of the surface.
- *
- * The eyedropper is an ARMED MODE that does not take the gesture away from the pan or
- * from the pinch: while it is armed a drag still slides the photograph and two fingers
- * still zoom it, and what takes the sample is a tap. Twelve pixels is the slack a thumb
- * leaves on a phone held in one hand with an artwork in the other.
- */
-const PICK_SLOP = 12
 
 const CORNERS: { corner: Corner; label: string }[] = [
   { corner: 'nw', label: 'esquina superior izquierda' },
@@ -386,7 +377,12 @@ export function PhotoEditor({
    */
   const rasterTicket = useRef(0)
   const [rasterState, setRasterState] = useState<'idle' | 'working' | 'ready' | 'failed'>('idle')
-  /** The eyedropper as an armed mode: it takes no gesture away, it interprets a tap. */
+  /**
+   * The eyedropper as an armed mode in which **one finger aims**: the sample follows the
+   * finger and the lift commits it. It does take the one-finger pan away while armed, and
+   * that is the correction of a first design where a drag did both and aiming was therefore
+   * impossible. The pinch keeps zooming and repositioning. See `pickGesture.ts`.
+   */
   const [eyedropper, setEyedropper] = useState(false)
   /** Where the finger is while the eyedropper is armed, so the loupe can show the raw pixels. */
   const [aim, setAim] = useState<{ x: number; y: number } | null>(null)
@@ -430,7 +426,7 @@ export function PhotoEditor({
   const eyedropperRef = useRef(eyedropper)
   eyedropperRef.current = eyedropper
   /** The pointer that may still turn out to be a tap of the eyedropper. */
-  const pickRef = useRef<{ pointer: number; x: number; y: number; moved: boolean } | null>(null)
+  const pickRef = useRef<{ pointer: number } | null>(null)
   // Number of the border detection in flight. Asking again, or closing the
   // editor, invalidates the previous answer instead of letting it arrive late
   // and move a rectangle the cataloger is already dragging.
@@ -1336,21 +1332,29 @@ export function PhotoEditor({
    * claimed the gesture, so the surface is free to take it.
    */
   function startPan(e: React.PointerEvent) {
-    // Left button only: the right one opens the menu and the middle one pastes on some
-    // systems, and neither should slide the photograph.
-    if (e.pointerType === 'mouse' && e.button !== 0) return
-    // A second pointer means a pinch is being made, and the pinch has its own pan.
-    if (touchesRef.current.size !== 1) return
-    // The eyedropper rides ALONG with the pan and does not replace it (§7): what is
-    // recorded here is where the pointer landed, and only a lift that never travelled
-    // becomes a sample. Reaching this line already means no handle and no panel claimed
-    // the gesture, since both stop the event.
-    if (eyedropper) {
-      pickRef.current = { pointer: e.pointerId, x: e.clientX, y: e.clientY, moved: false }
+    // Which button counts and what a second finger means are decided in `pickGesture.ts`
+    // too, and not repeated here: two copies of a rule about pointers is how they drift.
+    //
+    // Aiming the eyedropper and sliding the photograph are MUTUALLY EXCLUSIVE, and that
+    // exclusivity is a correction: the first design let a drag do both, which made aiming
+    // impossible because moving towards the grey you want drags the picture out from under
+    // the finger. Zooming and repositioning stay available through the pinch, so the mode
+    // never has to be left to frame the shot. The rule itself lives in `pickGesture.ts`,
+    // where it can be tested.
+    const intent = pointerIntent({
+      eyedropper,
+      touches: touchesRef.current.size,
+      pointerType: e.pointerType,
+      button: e.button,
+    })
+    if (intent.aims) {
+      pickRef.current = { pointer: e.pointerId }
       setAim(surfacePoint(e.clientX, e.clientY))
     }
-    panRef.current = { pointer: e.pointerId, x: e.clientX, y: e.clientY }
-    e.currentTarget.setPointerCapture(e.pointerId)
+    if (intent.pans) {
+      panRef.current = { pointer: e.pointerId, x: e.clientX, y: e.clientY }
+    }
+    if (intent.aims || intent.pans) e.currentTarget.setPointerCapture(e.pointerId)
   }
 
   /**
@@ -1358,17 +1362,22 @@ export function PhotoEditor({
    * sample.
    *
    * On the surface and not on `window` because the pointer is captured by it, so the lift
-   * is retargeted here even when the finger leaves. Four things disqualify a tap, and each
-   * of them is a different intent: the pointer travelled (that was a pan), a second finger
-   * landed (that was a pinch, and the pinch has precedence over everything), or the
-   * eyedropper is not armed at all.
+   * is retargeted here even when the finger leaves. What disqualifies a sample is a change
+   * of intent — a second finger landed, so this was a pinch — or the mode being disarmed
+   * mid-gesture. **How far the finger travelled does not disqualify anything**: sliding to
+   * the grey you mean is the normal way to use this.
    */
   function onSurfacePointerUp(e: React.PointerEvent) {
     const pick = pickRef.current
     pickRef.current = null
     setAim(null)
-    if (!pick || pick.pointer !== e.pointerId) return
-    if (!eyedropper || pick.moved || pinchRef.current || touchesRef.current.size > 1) return
+    const takes = liftTakesSample({
+      eyedropper,
+      aiming: pick?.pointer === e.pointerId,
+      pinching: pinchRef.current !== null,
+      touches: touchesRef.current.size,
+    })
+    if (!takes) return
     const point = surfacePoint(e.clientX, e.clientY)
     if (point) pickAt(point)
   }
@@ -1379,7 +1388,6 @@ export function PhotoEditor({
     // corrected measures the correction and not the light of the room.
     const pick = pickRef.current
     if (pick && pick.pointer === e.pointerId) {
-      if (Math.hypot(e.clientX - pick.x, e.clientY - pick.y) > PICK_SLOP) pick.moved = true
       setAim(surfacePoint(e.clientX, e.clientY))
     }
     const pan = panRef.current

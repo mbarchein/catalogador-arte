@@ -1042,7 +1042,7 @@ export function ColorControls({
     const clip = clippingNotice(clipping)
     if (clip) return clip
     if (eyedropper)
-      return 'Cuentagotas armado: toca un gris de la fotografía —una pared, el cartón, el testigo— sin arrastrar. La lupa te muestra el color de verdad, sin corregir.'
+      return 'Cuentagotas armado: arrastra el dedo hasta un gris de la fotografía —una pared, el cartón, el testigo— y levántalo ahí. La lupa te muestra el color de verdad, sin corregir. Con dos dedos mueves y acercas la foto.'
     const provenance = colorProvenanceText(color)
     if (provenance) return provenance
     return `${selectedRange.label}: arrastra, usa las flechas para una muesca, Inicio y Fin para los topes, y toca dos veces para volver al valor de origen.`
