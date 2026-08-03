@@ -180,6 +180,13 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
           is exactly their use case. */}
       {viewing && (
         <PhotoDownloads
+          // The key is the photograph, so passing to the next one resets the panel.
+          // Without it React keeps the same instance and its state travels: «Descargado
+          // AR-0001_general_original.jpg» stays on screen while the signature detail is
+          // the one being looked at, and so does a red strip about a file that is no
+          // longer the one on offer. A message that talks about another photograph is
+          // worse than no message.
+          key={viewing.image_id}
           catalogId={catalogId}
           row={viewing}
           detail={details[viewing.image_id]}

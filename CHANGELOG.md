@@ -806,14 +806,11 @@ librerías que tenían avisos de seguridad abiertos.
 
 ## En marcha
 
-**La copia a tamaño completo se prepara, pero todavía no se puede guardar**
-Y hay que decirlo claro, porque es lo único de la entrega del color que no está terminado: la aplicación
-ya construye la copia a resolución completa y ya comprueba que ha salido bien, pero **el permiso de
-subida solo admite hoy los originales de archivo**, así que la copia se rechaza al guardarla y toda
-fotografía corregida queda con su copia **pendiente**. La corrección no se pierde —está guardada como
-valores, que es lo que importa— y la pantalla lo dice con su motivo en vez de callarse. Lo que falta es
-abrir ese permiso a las copias, y entonces la cola se vacía sola con lo que ya está hecho: desde el
-móvil al corregir, y desde un ordenador para lo que el móvil no pueda.
+**La copia a tamaño completo, sin comprobar todavía de punta a punta**
+El permiso que bloqueaba guardarla ya está abierto, y descargarla ya se puede: eso está contado arriba.
+Lo que falta es haber visto el circuito entero con una fotografía de verdad —corregir en el móvil,
+guardar la copia y bajarla— porque hoy no hay ninguna copia guardada en el catálogo con la que
+comprobarlo. Mientras tanto, cada fotografía dice en qué estado está la suya en vez de callarse.
 
 **El color, todavía sin abrir en un teléfono de verdad**
 Todo lo del color está comprobado con pruebas automáticas —ochocientas sesenta y ocho, y las cuentas del
