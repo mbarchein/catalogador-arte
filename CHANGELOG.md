@@ -6,9 +6,17 @@
 Hasta hoy la ficha llevaba un recuadro que decía que todo esto estaba pendiente, y no había dónde apuntar
 nada de ello. Ahora, debajo de la conservación y la ubicación, hay cinco apartados nuevos en el orden en
 que se investiga una obra: por qué manos ha pasado, dónde se ha expuesto, dónde está publicada, qué
-papeles del archivo hablan de ella y con qué otras obras del catálogo va. Desde ahí se registra, se
-corrige y se retira cada cosa sin salir de la obra, y todo lo retirado sigue guardado con quién lo hizo y
-cuándo.
+papeles del archivo hablan de ella y con qué otras obras del catálogo va.
+
+La ficha **se lee**: los cinco apartados muestran lo que hay y no ofrecen cambiar nada. Para registrar,
+corregir o retirar algo se entra a editar la obra, y ahí están los cinco otra vez, esta vez con sus
+botones. Es la misma regla que ya seguía el resto de la ficha —o se está leyendo, o se está editando— y
+evita el descuido de tocar un dato creyendo que solo se estaba consultando. Todo lo retirado sigue
+guardado con quién lo hizo y cuándo.
+
+Un aviso que la propia pantalla da al editar: estos cinco apartados **guardan al momento**, cada uno por
+su cuenta. No hace falta pulsar «Guardar», y «Cancelar» no los deshace — a diferencia del resto del
+formulario, que sí funciona así.
 
 **Cada apartado distingue «no hay nada» de «nadie ha mirado todavía»**
 Es la distinción por la que existe toda esta parte del catálogo. Una obra sin exposiciones apuntadas no

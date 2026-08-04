@@ -200,3 +200,25 @@ export function statusOf(
   if (spec.statusField === null || !documentary) return null
   return documentary[spec.statusField]
 }
+
+/**
+ * Whether a documentary block may offer to change data.
+ *
+ * **Two conditions, not one, and that is the whole point of this function
+ * existing instead of an inline `&&`.** The blocks were first written gated on the
+ * permission alone, so a cataloger reading a record found buttons that wrote to the
+ * catalogue in the middle of a page meant for reading. RF-308 says the record
+ * enters edit mode as a whole; reading it changes nothing.
+ *
+ * - `writable` is the MODE: true only inside the edit zone.
+ * - `canEdit` is the PERMISSION: someone who only consults never writes, and that
+ *   is not negotiable by any mode.
+ *
+ * Neither implies the other, and a block that checks only one is a block that
+ * either leaks a write button into the view or offers one to a Reader. Both have
+ * happened, which is why the rule is named, tested, and imported instead of
+ * retyped in five files.
+ */
+export function canWriteBlock(writable: boolean, canEdit: boolean): boolean {
+  return writable && canEdit
+}

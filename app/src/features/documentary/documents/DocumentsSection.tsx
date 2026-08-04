@@ -3,7 +3,7 @@ import { useAuth } from '../../../auth/AuthContext'
 import { DownloadFailure } from '../../../lib/download'
 import { DocumentarySection } from '../DocumentarySection'
 import { blockState } from '../researchState'
-import { sectionSpec } from '../sections'
+import { sectionSpec, canWriteBlock } from '../sections'
 import { useArtworkDocuments, type ArtworkDocumentaryQuery } from '../useDocumentary'
 import {
   DOCUMENT_STEP_TEXT,
@@ -39,6 +39,7 @@ export function DocumentsSection({
   catalogId,
   documentary,
   placeText,
+  writable = false,
 }: {
   catalogId: string
   /**
@@ -54,9 +55,20 @@ export function DocumentsSection({
    * spend a sixth query of its own on one crumb.
    */
   placeText?: (placeId: string) => string | null | undefined
+  /**
+   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
+   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
+   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   */
+  writable?: boolean
 }) {
   const spec = sectionSpec('documents')
   const { canEdit } = useAuth()
+  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
+  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
+  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
+  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  const canWrite = canWriteBlock(writable, canEdit)
   const { rows, loading, error } = useArtworkDocuments(catalogId)
 
   const status = documentary.documentary?.documentation_status ?? null
@@ -81,7 +93,7 @@ export function DocumentsSection({
       loading={loading || documentary.loading}
       error={error}
       actions={
-        canEdit ? (
+        canWrite ? (
           <div className="space-y-2">
             <ResearchStatusPicker
               spec={spec}

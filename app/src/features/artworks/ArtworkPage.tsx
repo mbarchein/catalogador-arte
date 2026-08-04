@@ -258,6 +258,31 @@ export function ArtworkPage() {
           }}
           onCancel={() => navigate(recordPath(id), { replace: true })}
         />
+        {/* Los cinco bloques documentales, y aquí es donde se pueden escribir: la
+            ficha que se lee no ofrece cambiar nada (RF-308).
+
+            Van DESPUÉS de la botonera de guardar y con su propio aviso, y eso no es
+            maquetación: estos bloques guardan cada cambio en el momento, mientras que
+            el formulario de arriba guarda al pulsar «Guardar» y se descarta al
+            cancelar. Dos formas de guardar en la misma pantalla se confunden si nada
+            lo dice, y quien cancele esperando deshacer un eslabón de procedencia se
+            va a llevar una sorpresa. Se dice. */}
+        <div className="mt-8 border-t border-stone-200 pt-6">
+          <h2 className="text-base font-semibold text-stone-800">Documentación de la obra</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            La procedencia, las exposiciones, la bibliografía, los documentos del archivo y
+            las obras relacionadas <strong>se guardan al momento</strong>, cada una por su
+            cuenta. No hace falta pulsar «Guardar», y «Cancelar» no las deshace.
+          </p>
+          <div className="mt-4">
+            <DocumentaryBlocks
+              artwork={artwork}
+              placeTree={placeTree}
+              search={query}
+              writable
+            />
+          </div>
+        </div>
       </Layout>
     )
   }
@@ -516,11 +541,18 @@ function DocumentaryBlocks({
   artwork,
   placeTree,
   search,
+  writable = false,
 }: {
   artwork: Artwork
   placeTree: PlaceTree
   /** The list's view as it travels in the URL, so a related artwork keeps the queue (RF-311). */
   search: string
+  /**
+   * Si los cinco bloques pueden escribir. Verdadero solo en la zona de edición
+   * (RF-308): la ficha que se lee no ofrece cambiar ningún dato. Por omisión falso,
+   * que es el lado seguro del olvido.
+   */
+  writable?: boolean
 }) {
   const documentary = useArtworkDocumentary(artwork.catalog_id)
   // The tree the record already has loaded, so the archive block can say where the
@@ -530,6 +562,7 @@ function DocumentaryBlocks({
   return (
     <>
       <ProvenanceSection
+        writable={writable}
         catalogId={artwork.catalog_id}
         documentary={documentary.documentary}
         documentaryLoading={documentary.loading}
@@ -540,19 +573,25 @@ function DocumentaryBlocks({
         originYear={artwork.start_year}
       />
       <ExhibitionHistorySection
+        writable={writable}
         catalogId={artwork.catalog_id}
         documentary={documentary.documentary}
         documentaryLoading={documentary.loading}
         documentaryError={documentary.error}
         setResearchStatus={documentary.setResearchStatus}
       />
-      <BibliographySection catalogId={artwork.catalog_id} documentary={documentary} />
+      <BibliographySection
+        catalogId={artwork.catalog_id}
+        documentary={documentary}
+        writable={writable}
+      />
       <DocumentsSection
+        writable={writable}
         catalogId={artwork.catalog_id}
         documentary={documentary}
         placeText={placeText}
       />
-      <RelationshipsSection catalogId={artwork.catalog_id} search={search} />
+      <RelationshipsSection catalogId={artwork.catalog_id} search={search} writable={writable} />
     </>
   )
 }

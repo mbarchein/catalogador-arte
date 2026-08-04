@@ -4,7 +4,7 @@ import type { ArtworkDocumentary, ResearchStatus } from '../../../lib/types'
 import { DocumentarySection } from '../DocumentarySection'
 import type { ParticipationRow } from '../documentaryRows'
 import { blockState } from '../researchState'
-import { sectionSpec, statusOf, type ResearchStatusField } from '../sections'
+import { sectionSpec, statusOf, type ResearchStatusField, canWriteBlock } from '../sections'
 import { useArtworkExhibitions } from '../useDocumentary'
 import {
   catalogueNumberText,
@@ -48,6 +48,7 @@ export function ExhibitionHistorySection({
   documentaryLoading = false,
   documentaryError = null,
   setResearchStatus,
+  writable = false,
 }: {
   catalogId: string
   /** The four research statuses of the artwork. Null while unread or unreadable. */
@@ -56,10 +57,21 @@ export function ExhibitionHistorySection({
   documentaryError?: string | null
   /** From `useArtworkDocumentary`: answers null when it worked, the database's message when not. */
   setResearchStatus: (field: ResearchStatusField, value: ResearchStatus) => Promise<string | null>
+  /**
+   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
+   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
+   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   */
+  writable?: boolean
 }) {
   const spec = sectionSpec('exhibitions')
   const { rows, loading, error, reload } = useArtworkExhibitions(catalogId)
   const { canEdit } = useAuth()
+  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
+  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
+  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
+  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  const canWrite = canWriteBlock(writable, canEdit)
   const actions = useParticipationActions(catalogId)
 
   const status = statusOf(spec, documentary)
@@ -83,7 +95,7 @@ export function ExhibitionHistorySection({
       loading={load.loading}
       error={load.error}
       actions={
-        canEdit && !load.loading && load.error === null ? (
+        canWrite && !load.loading && load.error === null ? (
           <div className="space-y-2">
             <ExhibitionPicker
               taken={taken}
@@ -115,7 +127,7 @@ export function ExhibitionHistorySection({
           <ParticipationItem
             key={row.id}
             row={row}
-            canEdit={canEdit}
+            canEdit={canWrite}
             saving={actions.saving}
             onRetire={async () => {
               const failure = await actions.retire(row.id)

@@ -4,7 +4,7 @@ import { PenIcon, PlusIcon } from '../../../components/ui'
 import type { ResearchStatus } from '../../../lib/types'
 import { DocumentarySection } from '../DocumentarySection'
 import { blockState } from '../researchState'
-import { sectionSpec } from '../sections'
+import { sectionSpec, canWriteBlock } from '../sections'
 import { useArtworkBibliography, type ArtworkDocumentaryQuery } from '../useDocumentary'
 import {
   bibliographyBlockState,
@@ -41,6 +41,7 @@ import { useBibliographyEdits } from './useBibliographyEdits'
 export function BibliographySection({
   catalogId,
   documentary,
+  writable = false,
 }: {
   catalogId: string
   /**
@@ -50,11 +51,22 @@ export function BibliographySection({
    * read by every heading.
    */
   documentary: ArtworkDocumentaryQuery
+  /**
+   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
+   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
+   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   */
+  writable?: boolean
 }) {
   const spec = sectionSpec('bibliography')
   const { canEdit } = useAuth()
+  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
+  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
+  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
+  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  const canWrite = canWriteBlock(writable, canEdit)
   const { rows, loading, error, reload } = useArtworkBibliography(catalogId)
-  const edits = useBibliographyEdits(catalogId, canEdit)
+  const edits = useBibliographyEdits(catalogId, canWrite)
 
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<CitationEdit | null>(null)
@@ -151,7 +163,7 @@ export function BibliographySection({
       loading={load.loading}
       error={load.error}
       actions={
-        canEdit ? (
+        canWrite ? (
           <div className="space-y-2">
             {actionError !== null && (
               <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
@@ -218,7 +230,7 @@ export function BibliographySection({
                 key={view.id}
                 view={view}
                 showType={!list.grouped}
-                canEdit={canEdit}
+                canEdit={canWrite}
                 confirming={removing === view.id}
                 onEdit={() => {
                   setActionError(null)

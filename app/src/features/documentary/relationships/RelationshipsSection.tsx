@@ -4,7 +4,7 @@ import { useAuth } from '../../../auth/AuthContext'
 import { ChevronRightIcon, ImageIcon, PlusIcon } from '../../../components/ui'
 import { DocumentarySection } from '../DocumentarySection'
 import { blockState } from '../researchState'
-import { sectionSpec } from '../sections'
+import { sectionSpec, canWriteBlock } from '../sections'
 import { useArtworkRelationships } from '../useDocumentary'
 import { RelateArtworkForm } from './RelateArtworkForm'
 import { editRelationshipNote, setRelationshipActive } from './relateActions'
@@ -42,6 +42,7 @@ import { useRelatedThumbnails } from './useRelatedThumbnails'
 export function RelationshipsSection({
   catalogId,
   search = '',
+  writable = false,
 }: {
   catalogId: string
   /**
@@ -50,8 +51,19 @@ export function RelationshipsSection({
    * queue the cataloger was walking.
    */
   search?: string
+  /**
+   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
+   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
+   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   */
+  writable?: boolean
 }) {
   const { canEdit } = useAuth()
+  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
+  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
+  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
+  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  const canWrite = canWriteBlock(writable, canEdit)
   const { rows, loading, error, reload } = useArtworkRelationships(catalogId)
   const [adding, setAdding] = useState(false)
 
@@ -71,7 +83,7 @@ export function RelationshipsSection({
       loading={loading}
       error={error}
       actions={
-        canEdit ? (
+        canWrite ? (
           adding ? (
             <RelateArtworkForm
               catalogId={catalogId}
@@ -115,7 +127,7 @@ export function RelationshipsSection({
                   search={search}
                   thumbnail={thumbnails[row.catalogId]}
                 />
-                {canEdit && <RowActions row={row} onDone={reload} />}
+                {canWrite && <RowActions row={row} onDone={reload} />}
               </li>
             ))}
           </ul>

@@ -5,7 +5,7 @@ import type { ArtworkDocumentary, ResearchStatus } from '../../../lib/types'
 import { DocumentarySection } from '../DocumentarySection'
 import type { ProvenanceEventRow } from '../documentaryRows'
 import { blockState } from '../researchState'
-import { sectionSpec, statusOf, type ResearchStatusField } from '../sections'
+import { sectionSpec, statusOf, type ResearchStatusField, canWriteBlock } from '../sections'
 import { useArtworkDocumentary, useProvenanceEvents } from '../useDocumentary'
 import {
   chainBlockState,
@@ -74,6 +74,7 @@ export function ProvenanceSection({
   documentaryError = null,
   setResearchStatus,
   originYear = null,
+  writable = false,
 }: {
   catalogId: string
   /**
@@ -91,10 +92,21 @@ export function ProvenanceSection({
    * documented link cannot be told, and nothing is invented in its place.
    */
   originYear?: number | null
+  /**
+   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
+   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
+   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   */
+  writable?: boolean
 }) {
   const spec = sectionSpec('provenance')
   const { rows, loading, error, reload } = useProvenanceEvents(catalogId)
   const { canEdit } = useAuth()
+  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
+  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
+  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
+  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  const canWrite = canWriteBlock(writable, canEdit)
   const edits = useProvenanceEdits(catalogId, reload)
 
   // The chain is being written: only then is the register of people and
@@ -136,7 +148,7 @@ export function ProvenanceSection({
         loading={load.loading}
         error={load.error}
         actions={
-          canEdit && !load.loading && load.error === null ? (
+          canWrite && !load.loading && load.error === null ? (
             <div className="space-y-2">
               {blocked !== null && (
                 <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">{blocked}</p>
@@ -185,7 +197,7 @@ export function ProvenanceSection({
               <ChainLinkItem
                 key={entry.key}
                 link={entry.link}
-                canEdit={canEdit}
+                canEdit={canWrite}
                 saving={edits.saving}
                 hint={hint}
                 up={stepTarget(rows, entry.link.ordinal - 1, -1)}
