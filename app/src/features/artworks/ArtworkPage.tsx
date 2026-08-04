@@ -490,18 +490,41 @@ export function ArtworkPage() {
             and a record that says a thing is pending while showing it eighty
             lines earlier is worse than one that says nothing.
 
-            What is left is the OTHER SIDE of those blocks: an exhibition, a
-            reference, an archive document, a series or an owner has no record of
-            its own yet (RF-309), so those rows are read here and cannot be opened
-            or corrected from here. */}
+            Y hay que distinguir DOS COSAS que la redacción anterior metía en el
+            mismo saco, y por eso envejeció mal en un día:
+
+            - Los VOCABULARIOS de los que estos bloques eligen —serie, sede, tipo de
+              publicación, tipo de documento, tipo de relación, y las personas e
+              instituciones— ya tienen su pantalla en «Tablas». Decir que no la
+              tienen era falso incluso antes de construirlas, porque las series la
+              han tenido siempre.
+            - El CONTENIDO —una exposición con su nombre y sus fechas, una
+              referencia con su autor y su año, un documento del archivo con su
+              fichero— sigue sin ficha propia (RF-309). Esa es la parte que falta de
+              verdad, y una pantalla de tabla maestra no la resuelve.
+
+            Se nombra lo segundo y no lo primero, y se dice DÓNDE está lo que sí se
+            puede hacer, que es lo que evita que alguien lo busque donde no está. */}
         <section className="card text-sm text-stone-500">
-          <p className="font-medium text-stone-700">Pendiente en esta entrega</p>
+          <p className="font-medium text-stone-700">Lo que aún no se puede hacer aquí</p>
           <p className="mt-1">
-            Las exposiciones, las referencias bibliográficas, los documentos de archivo, las series y
-            los propietarios se leen desde esta ficha y se enlazan con ella, pero no tienen ficha
-            propia todavía: corregir el nombre o las fechas de una exposición, o los datos de una
-            referencia, se hará desde una pantalla que aún no existe. Enlazar un documento del
-            archivo con esta obra tampoco se hace aún desde aquí.
+            Una <strong>exposición</strong> se puede enlazar con esta obra si ya está en el catálogo,
+            pero darla de alta o corregir su nombre y sus fechas todavía no se hace desde ninguna
+            pantalla. Con una <strong>referencia bibliográfica</strong> pasa a medias: se puede crear
+            desde aquí, y corregir después su autor, su título o su año, no. Y un{' '}
+            <strong>documento del archivo</strong> se lee y se descarga, pero subirlo y enlazarlo con
+            una obra tampoco se hace aún.
+          </p>
+          <p className="mt-2">
+            El <strong>historial de cambios</strong> de esta obra y de sus fotografías{' '}
+            <strong>se está guardando</strong> desde hoy —quién cambió qué y cuándo, sin poder
+            alterarlo después—, pero todavía no hay pantalla desde la que leerlo.
+          </p>
+          <p className="mt-2">
+            Lo que sí se corrige, y no es aquí: las <strong>series</strong>, las{' '}
+            <strong>sedes de exposición</strong>, los <strong>tipos</strong> de publicación, de
+            documento y de relación, y las <strong>personas e instituciones</strong> viven en la
+            sección <strong>Tablas</strong>. Renombrar algo ahí lo ven todas las obras que lo usan.
           </p>
         </section>
 
