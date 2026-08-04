@@ -3,6 +3,11 @@
 -- Verified by truly authenticating as a user of each role and running real
 -- queries. Checking that the policy exists verifies nothing: what matters is
 -- what the database returns when the request comes from whoever it comes from.
+--
+-- Since 20260804150000 the matrix no longer covers artworks and images alone:
+-- the last section runs the same three cells over the fifteen tables of the
+-- documentary catalogue, and refuses to pass if a sixteenth appears without
+-- being added here.
 \set ON_ERROR_STOP on
 begin;
 
@@ -19,6 +24,15 @@ values ('AR-9001', 'ROTILI', 'Obra activa de prueba', 'UNCONFIRMED');
 
 insert into public.artworks (catalog_id, artist, title, attributed_title, active)
 values ('AR-9002', 'ROTILI', 'Obra de baja de prueba', 'UNCONFIRMED', false);
+
+-- A third ACTIVE artwork, and it is not decoration. Since 20260805130000 a
+-- documentary row is only visible if its anchors are, so a fixture that hangs
+-- from AR-9002 is hidden for TWO reasons at once and no longer isolates what its
+-- own `active` decides. The trashed rows of the bridges below hang from here, so
+-- that the only thing being asserted is the row's own state; the cell about the
+-- artwork in the trash has its own section at the foot of this file.
+insert into public.artworks (catalog_id, artist, title, attributed_title)
+values ('AR-9003', 'ROTILI', 'Segunda obra activa de prueba', 'UNCONFIRMED');
 
 -- ── Cataloger ────────────────────────────────────────────────
 
@@ -220,6 +234,1182 @@ begin
 exception
   when insufficient_privilege then
     raise notice 'OK: the reader cannot add a photo, with or without colour';
+end $$;
+
+reset role;
+
+-- ── El catálogo razonado documental: quince tablas más ────────
+--
+-- RF-109. Hasta aquí esta matriz cubría dos tablas, `artworks` e `images`. Los
+-- seis grupos de 20260804 añadieron quince —personas e instituciones, la cadena
+-- de procedencia, bibliografía, exposiciones, archivo y las relaciones entre
+-- obras— y sus políticas están en 20260804150000. Una matriz de roles que se
+-- quede en dos tablas deja de ser una matriz.
+--
+-- Se recorren las quince y no una muestra, porque el fallo que hay que cazar es
+-- exactamente el de la tabla que se quedó fuera. El perímetro tabla a tabla
+-- —privilegios medidos, altas, bajas, funciones de vínculo— está en
+-- `documentary_policies.test.sql`; aquí van las tres celdas de la matriz: qué
+-- lee cada papel, qué escribe y qué ve de la papelera.
+
+insert into public.parties (id, party_type, name, contact) values
+  ('ac000001-0000-4000-8000-000000000001', 'INSTITUTION',
+   'Museo de la matriz de prueba', 'contacto-matriz@test.local'),
+  ('ac000001-0000-4000-8000-000000000002', 'PERSON',
+   'Coleccionista de la matriz, retirado', 'privado-matriz@test.local');
+
+insert into public.provenance_events (id, catalog_id, party_note) values
+  ('ac000002-0000-4000-8000-000000000001', 'AR-9001', 'Colección privada, España'),
+  ('ac000002-0000-4000-8000-000000000002', 'AR-9001', 'Eslabón retirado de la matriz');
+
+insert into public.publication_types (id, name) values
+  ('ac000003-0000-4000-8000-000000000001', 'Tipo de publicación de la matriz'),
+  ('ac000003-0000-4000-8000-000000000002', 'Tipo de publicación de la matriz, retirado');
+
+insert into public.bibliography (id, title) values
+  ('ac000004-0000-4000-8000-000000000001', 'Referencia de la matriz'),
+  ('ac000004-0000-4000-8000-000000000002', 'Referencia de la matriz, retirada');
+
+insert into public.artwork_bibliography (id, catalog_id, bibliography_id, pages) values
+  ('ac000005-0000-4000-8000-000000000001', 'AR-9001',
+   'ac000004-0000-4000-8000-000000000001', 'pp. 7-9'),
+  ('ac000005-0000-4000-8000-000000000002', 'AR-9003',
+   'ac000004-0000-4000-8000-000000000001', 'p. 40');
+
+insert into public.exhibition_venues (id, name, locality) values
+  ('ac000006-0000-4000-8000-000000000001', 'Sala de la matriz', 'Badajoz'),
+  ('ac000006-0000-4000-8000-000000000002', 'Sala de la matriz, cerrada', 'Badajoz');
+
+insert into public.exhibitions (id, title, year) values
+  ('ac000007-0000-4000-8000-000000000001', 'Muestra de la matriz', 1985),
+  ('ac000007-0000-4000-8000-000000000002', 'Muestra de la matriz, retirada', 1986);
+
+insert into public.artwork_exhibitions (id, catalog_id, exhibition_id, catalogue_number) values
+  ('ac000008-0000-4000-8000-000000000001', 'AR-9001',
+   'ac000007-0000-4000-8000-000000000001', 'cat. 4'),
+  ('ac000008-0000-4000-8000-000000000002', 'AR-9003',
+   'ac000007-0000-4000-8000-000000000001', 'cat. 5');
+
+insert into public.document_types (id, name) values
+  ('ac000009-0000-4000-8000-000000000001', 'Tipo de documento de la matriz'),
+  ('ac000009-0000-4000-8000-000000000002', 'Tipo de documento de la matriz, retirado');
+
+insert into public.archive_series (id, name) values
+  ('ac00000a-0000-4000-8000-000000000001', 'Fondo de la matriz'),
+  ('ac00000a-0000-4000-8000-000000000002', 'Fondo de la matriz, retirado');
+
+insert into public.archive_documents (id, title) values
+  ('ac00000b-0000-4000-8000-000000000001', 'Recorte de la matriz'),
+  ('ac00000b-0000-4000-8000-000000000002', 'Recorte de la matriz, retirado');
+
+insert into public.artwork_documents (id, catalog_id, document_id) values
+  ('ac00000c-0000-4000-8000-000000000001', 'AR-9001', 'ac00000b-0000-4000-8000-000000000001'),
+  ('ac00000c-0000-4000-8000-000000000002', 'AR-9003', 'ac00000b-0000-4000-8000-000000000001');
+
+insert into public.exhibition_documents (id, exhibition_id, document_id) values
+  ('ac00000d-0000-4000-8000-000000000001', 'ac000007-0000-4000-8000-000000000001',
+   'ac00000b-0000-4000-8000-000000000001'),
+  ('ac00000d-0000-4000-8000-000000000002', 'ac000007-0000-4000-8000-000000000002',
+   'ac00000b-0000-4000-8000-000000000001');
+
+insert into public.artwork_relationship_types (id, name, inverse_name, is_symmetric) values
+  ('ac00000e-0000-4000-8000-000000000001', 'Matriz simétrica de', '', true),
+  ('ac00000e-0000-4000-8000-000000000002', 'Matriz retirada de', '', true);
+
+insert into public.artwork_relationships (id, from_catalog_id, to_catalog_id, relationship_type_id) values
+  ('ac00000f-0000-4000-8000-000000000001', 'AR-9001', 'AR-9003',
+   'ac00000e-0000-4000-8000-000000000001'),
+  ('ac00000f-0000-4000-8000-000000000002', 'AR-9001', 'AR-9003',
+   'ac00000e-0000-4000-8000-000000000002');
+
+-- La segunda fila de cada tabla se manda a la papelera, que es la única forma
+-- de retirar algo en este catálogo (RF-901).
+update public.parties                    set active = false where id = 'ac000001-0000-4000-8000-000000000002';
+update public.provenance_events          set active = false where id = 'ac000002-0000-4000-8000-000000000002';
+update public.publication_types          set active = false where id = 'ac000003-0000-4000-8000-000000000002';
+update public.bibliography               set active = false where id = 'ac000004-0000-4000-8000-000000000002';
+update public.artwork_bibliography       set active = false where id = 'ac000005-0000-4000-8000-000000000002';
+update public.exhibition_venues          set active = false where id = 'ac000006-0000-4000-8000-000000000002';
+update public.exhibitions                set active = false where id = 'ac000007-0000-4000-8000-000000000002';
+update public.artwork_exhibitions        set active = false where id = 'ac000008-0000-4000-8000-000000000002';
+update public.document_types             set active = false where id = 'ac000009-0000-4000-8000-000000000002';
+update public.archive_series             set active = false where id = 'ac00000a-0000-4000-8000-000000000002';
+update public.archive_documents          set active = false where id = 'ac00000b-0000-4000-8000-000000000002';
+update public.artwork_documents          set active = false where id = 'ac00000c-0000-4000-8000-000000000002';
+update public.exhibition_documents       set active = false where id = 'ac00000d-0000-4000-8000-000000000002';
+-- El orden importa: un tipo de relación en uso no se retira mientras la
+-- relación siga activa, y ese guardarraíl es de la migración del grupo 6.
+update public.artwork_relationships      set active = false where id = 'ac00000f-0000-4000-8000-000000000002';
+update public.artwork_relationship_types set active = false where id = 'ac00000e-0000-4000-8000-000000000002';
+
+-- ── The cataloger: reads everything, trash included, and writes ──
+--
+-- RF-103, RF-906. The list of the fifteen is contrasted against the system
+-- catalog first, so that the day somebody adds table number sixteen without a
+-- policy this matrix says so instead of ignoring it.
+do $$
+declare
+  v_tables constant text[] := array[
+    'parties', 'provenance_events',
+    'publication_types', 'bibliography', 'artwork_bibliography',
+    'exhibition_venues', 'exhibitions', 'artwork_exhibitions',
+    'document_types', 'archive_series', 'archive_documents',
+    'artwork_documents', 'exhibition_documents',
+    'artwork_relationship_types', 'artwork_relationships'
+  ];
+  v_prefixes constant text[] := array[
+    'ac000001', 'ac000002', 'ac000003', 'ac000004', 'ac000005',
+    'ac000006', 'ac000007', 'ac000008', 'ac000009', 'ac00000a',
+    'ac00000b', 'ac00000c', 'ac00000d', 'ac00000e', 'ac00000f'
+  ];
+  v_missing text[];
+  i integer;
+  v_n integer;
+begin
+  select coalesce(array_agg(c.relname order by c.relname), '{}')
+    into v_missing
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public'
+     and c.relkind = 'r'
+     and c.relname <> all (v_tables)
+     and c.relname not in ('artworks', 'images', 'profiles',
+                           'artwork_types', 'series', 'physical_places',
+                           '_migraciones',
+                           -- Covered by its own section at the foot of this
+                           -- file: `external_links` is not one of the fifteen
+                           -- and its rows hang from an anchor, so it does not
+                           -- fit the `id`-only walk these loops do.
+                           'external_links',
+                           -- Also covered at the foot, and it is the one table
+                           -- of the schema whose row of this matrix is almost
+                           -- all zeros: nobody writes the change log, so the
+                           -- loops below —which insert, update and expect the
+                           -- cataloger to succeed— would assert the opposite of
+                           -- what this table needs.
+                           'change_log');
+  if array_length(v_missing, 1) > 0 then
+    raise exception 'FAIL: this matrix does not cover these public tables: %',
+      array_to_string(v_missing, ', ');
+  end if;
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+  set local role authenticated;
+
+  for i in 1 .. array_length(v_tables, 1) loop
+    execute format(
+      'select count(*) from public.%I where id in (%L, %L)',
+      v_tables[i],
+      v_prefixes[i] || '-0000-4000-8000-000000000001',
+      v_prefixes[i] || '-0000-4000-8000-000000000002')
+      into v_n;
+    if v_n <> 2 then
+      raise exception 'FAIL: the cataloger should see the active row and the trashed one of public.%, sees %',
+        v_tables[i], v_n;
+    end if;
+  end loop;
+
+  raise notice 'OK: the cataloger reads the fifteen documentary tables, trash included';
+end $$;
+
+reset role;
+
+
+-- ── The reader: reads what is active, and only that ──────────
+--
+-- RF-105, RF-906.
+do $$
+declare
+  v_tables constant text[] := array[
+    'parties', 'provenance_events',
+    'publication_types', 'bibliography', 'artwork_bibliography',
+    'exhibition_venues', 'exhibitions', 'artwork_exhibitions',
+    'document_types', 'archive_series', 'archive_documents',
+    'artwork_documents', 'exhibition_documents',
+    'artwork_relationship_types', 'artwork_relationships'
+  ];
+  v_prefixes constant text[] := array[
+    'ac000001', 'ac000002', 'ac000003', 'ac000004', 'ac000005',
+    'ac000006', 'ac000007', 'ac000008', 'ac000009', 'ac00000a',
+    'ac00000b', 'ac00000c', 'ac00000d', 'ac00000e', 'ac00000f'
+  ];
+  i integer;
+  v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+
+  for i in 1 .. array_length(v_tables, 1) loop
+    execute format('select count(*) from public.%I where id = %L',
+                   v_tables[i], v_prefixes[i] || '-0000-4000-8000-000000000001')
+      into v_n;
+    if v_n <> 1 then
+      raise exception 'FAIL: the reader does not see the active row of public.%', v_tables[i];
+    end if;
+
+    execute format('select count(*) from public.%I where id = %L',
+                   v_tables[i], v_prefixes[i] || '-0000-4000-8000-000000000002')
+      into v_n;
+    if v_n <> 0 then
+      raise exception 'FAIL: the reader sees the trashed row of public.%', v_tables[i];
+    end if;
+  end loop;
+
+  raise notice 'OK: the reader reads the fifteen documentary tables and none of their trash';
+end $$;
+
+reset role;
+
+
+-- ── The reader writes nothing, in any of the fifteen ─────────
+--
+-- RF-106, attacked straight at the database. Two things are asserted and both
+-- are needed: that the INSERT is refused, and that the UPDATE affects no row —
+-- an UPDATE the USING clause hides does not fail, it is silent, and that
+-- silence is the whole behavior. Whether anything was left written is checked
+-- OUTSIDE the reader's session, right below: row_count alone would not catch a
+-- policy that let the write through and hid the row afterwards.
+do $$
+declare
+  v_tables constant text[] := array[
+    'parties', 'provenance_events',
+    'publication_types', 'bibliography', 'artwork_bibliography',
+    'exhibition_venues', 'exhibitions', 'artwork_exhibitions',
+    'document_types', 'archive_series', 'archive_documents',
+    'artwork_documents', 'exhibition_documents',
+    'artwork_relationship_types', 'artwork_relationships'
+  ];
+  v_prefixes constant text[] := array[
+    'ac000001', 'ac000002', 'ac000003', 'ac000004', 'ac000005',
+    'ac000006', 'ac000007', 'ac000008', 'ac000009', 'ac00000a',
+    'ac00000b', 'ac00000c', 'ac00000d', 'ac00000e', 'ac00000f'
+  ];
+  i integer;
+  v_affected integer;
+begin
+  for i in 1 .. array_length(v_tables, 1) loop
+    set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+    set local role authenticated;
+    execute format('update public.%I set active = false where id = %L',
+                   v_tables[i], v_prefixes[i] || '-0000-4000-8000-000000000001');
+    get diagnostics v_affected = row_count;
+    reset role;
+
+    if v_affected <> 0 then
+      raise exception 'FAIL: the reader modified % row(s) of public.%', v_affected, v_tables[i];
+    end if;
+  end loop;
+  raise notice 'OK: the reader''s update affects no rows in any of the fifteen';
+end $$;
+
+reset role;
+
+do $$
+declare
+  v_tables constant text[] := array[
+    'parties', 'provenance_events',
+    'publication_types', 'bibliography', 'artwork_bibliography',
+    'exhibition_venues', 'exhibitions', 'artwork_exhibitions',
+    'document_types', 'archive_series', 'archive_documents',
+    'artwork_documents', 'exhibition_documents',
+    'artwork_relationship_types', 'artwork_relationships'
+  ];
+  v_prefixes constant text[] := array[
+    'ac000001', 'ac000002', 'ac000003', 'ac000004', 'ac000005',
+    'ac000006', 'ac000007', 'ac000008', 'ac000009', 'ac00000a',
+    'ac00000b', 'ac00000c', 'ac00000d', 'ac00000e', 'ac00000f'
+  ];
+  i integer;
+  v_active boolean;
+begin
+  for i in 1 .. array_length(v_tables, 1) loop
+    execute format('select active from public.%I where id = %L',
+                   v_tables[i], v_prefixes[i] || '-0000-4000-8000-000000000001')
+      into v_active;
+    if not v_active then
+      raise exception 'FAIL: the reader''s update left something written in public.%', v_tables[i];
+    end if;
+  end loop;
+  raise notice 'OK: nothing the reader tried was written, checked outside their session';
+end $$;
+
+-- And the reader creates nothing either. One insert per table, minimal and
+-- legal, so that what refuses it is the policy and not a check constraint.
+do $$
+declare
+  v_inserts constant text[] := array[
+    $q$insert into public.parties (party_type, name) values ('PERSON', 'Alta indebida del lector')$q$,
+    $q$insert into public.provenance_events (catalog_id, party_note) values ('AR-9001', 'Eslabón indebido')$q$,
+    $q$insert into public.publication_types (name) values ('Tipo indebido del lector')$q$,
+    $q$insert into public.bibliography (title) values ('Referencia indebida del lector')$q$,
+    $q$insert into public.artwork_bibliography (catalog_id, bibliography_id)
+       values ('AR-9001', 'ac000004-0000-4000-8000-000000000002')$q$,
+    $q$insert into public.exhibition_venues (name, locality) values ('Sede indebida', 'Mérida')$q$,
+    $q$insert into public.exhibitions (title, year) values ('Muestra indebida', 1988)$q$,
+    $q$insert into public.artwork_exhibitions (catalog_id, exhibition_id)
+       values ('AR-9001', 'ac000007-0000-4000-8000-000000000002')$q$,
+    $q$insert into public.document_types (name) values ('Tipo de documento indebido')$q$,
+    $q$insert into public.archive_series (name) values ('Fondo indebido del lector')$q$,
+    $q$insert into public.archive_documents (title) values ('Documento indebido del lector')$q$,
+    $q$insert into public.artwork_documents (catalog_id, document_id)
+       values ('AR-9001', 'ac00000b-0000-4000-8000-000000000002')$q$,
+    $q$insert into public.exhibition_documents (exhibition_id, document_id)
+       values ('ac000007-0000-4000-8000-000000000001', 'ac00000b-0000-4000-8000-000000000002')$q$,
+    $q$insert into public.artwork_relationship_types (name, inverse_name, is_symmetric)
+       values ('Matriz indebida de', '', true)$q$,
+    $q$insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id)
+       values ('AR-9002', 'AR-9001', 'ac00000e-0000-4000-8000-000000000001')$q$
+  ];
+  i integer;
+begin
+  for i in 1 .. array_length(v_inserts, 1) loop
+    begin
+      set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+      set local role authenticated;
+      execute v_inserts[i];
+      reset role;
+      raise exception 'FAIL: the reader could insert: %', v_inserts[i];
+    exception
+      when insufficient_privilege then
+        reset role;
+    end;
+  end loop;
+  raise notice 'OK: the reader creates nothing in any of the fifteen (RF-106)';
+end $$;
+
+reset role;
+
+
+-- ── The one row of this matrix that is about a third party ───
+--
+-- RF-105 decides in writing that the Reader sees `parties.contact`, and that is
+-- the phone number or the email of a private collector: somebody who is not the
+-- studio and never agreed to anything. If a policy is written wrong here, what
+-- leaks is not the catalog, it is a stranger's contact details. So it is
+-- exercised in both directions and the writing is verified from outside.
+do $$
+declare v_contact text; v_affected integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+
+  select contact into v_contact from public.parties
+   where id = 'ac000001-0000-4000-8000-000000000001';
+  if v_contact is distinct from 'contacto-matriz@test.local' then
+    raise exception 'FAIL: the reader should read the contact of an active party (RF-105), reads [%]',
+      coalesce(v_contact, '(nothing)');
+  end if;
+
+  -- And of a party in the trash, nothing at all, not even by searching for it.
+  select count(*) into v_affected from public.parties
+   where contact = 'privado-matriz@test.local';
+  if v_affected <> 0 then
+    raise exception 'FAIL: the reader sees the contact of a trashed party';
+  end if;
+
+  update public.parties set contact = 'secuestrado@test.local'
+   where id = 'ac000001-0000-4000-8000-000000000001';
+  get diagnostics v_affected = row_count;
+  reset role;
+
+  if v_affected <> 0 then
+    raise exception 'FAIL: the reader wrote the contact of % party row(s)', v_affected;
+  end if;
+
+  select contact into v_contact from public.parties
+   where id = 'ac000001-0000-4000-8000-000000000001';
+  if v_contact <> 'contacto-matriz@test.local' then
+    raise exception 'FAIL: the reader''s update left the contact written as [%]', v_contact;
+  end if;
+
+  raise notice 'OK: the reader reads the contact of an active party and cannot write it (RF-105, RF-106)';
+end $$;
+
+reset role;
+
+
+-- ── The cataloger does what is theirs to do ──────────────────
+--
+-- RF-103. Without this the three blocks above would pass on fifteen tables with
+-- no policy at all, which is exactly the state these tables were in before
+-- 20260804150000: closed for everyone, useless for everyone.
+do $$
+declare v_row public.parties;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+  set local role authenticated;
+
+  insert into public.parties (party_type, name, contact)
+  values ('INSTITUTION', 'Alta del catalogador en la matriz', 'alta@test.local')
+  returning * into v_row;
+
+  update public.parties set contact = 'corregido@test.local' where id = v_row.id;
+
+  -- Retiring is an UPDATE of `active`, and it must leave a trace of who and when.
+  update public.parties set active = false where id = v_row.id;
+
+  reset role;
+
+  select * into v_row from public.parties where id = v_row.id;
+  if v_row.contact <> 'corregido@test.local' or v_row.active
+     or v_row.deactivated_by <> '00000000-0000-0000-0000-0000000000c1'::uuid
+     or v_row.created_by <> '00000000-0000-0000-0000-0000000000c1'::uuid then
+    raise exception 'FAIL: the cataloger could not create, edit and retire a party';
+  end if;
+
+  raise notice 'OK: the cataloger creates, edits and retires, with authorship sealed by the database';
+end $$;
+
+reset role;
+
+
+-- ── And the anonymous role reaches none of the fifteen ───────
+--
+-- RF-101. There is no public area, and the anonymous key travels inside
+-- everybody's browser.
+do $$
+declare
+  v_tables constant text[] := array[
+    'parties', 'provenance_events',
+    'publication_types', 'bibliography', 'artwork_bibliography',
+    'exhibition_venues', 'exhibitions', 'artwork_exhibitions',
+    'document_types', 'archive_series', 'archive_documents',
+    'artwork_documents', 'exhibition_documents',
+    'artwork_relationship_types', 'artwork_relationships'
+  ];
+  i integer;
+begin
+  for i in 1 .. array_length(v_tables, 1) loop
+    begin
+      set local role anon;
+      execute format('select 1 from public.%I limit 1', v_tables[i]);
+      reset role;
+      raise exception 'FAIL: the anonymous role could query public.%', v_tables[i];
+    exception
+      when insufficient_privilege then
+        reset role;
+    end;
+  end loop;
+  raise notice 'OK: the anonymous role has no access to any of the fifteen';
+end $$;
+
+reset role;
+
+
+-- ── Los enlaces externos: la misma matriz, con una vuelta más ──
+--
+-- RF-105, RF-106, RF-109, RF-609, RF-1401. `external_links` no es una de las
+-- quince y no cabe en los bucles de arriba: sus filas no se identifican solas,
+-- cuelgan de una ficha, y de ahí sale la celda que esta tabla añade a la matriz
+-- y que ninguna otra tiene — QUÉ VE CADA PAPEL DEPENDE DE LO QUE VEA DE LA FICHA
+-- ANCLA. El perímetro completo está en `external_links.test.sql`; aquí van las
+-- tres celdas de siempre más esa cuarta.
+
+insert into public.external_links (id, artwork_id, url, title) values
+  ('ac000010-0000-4000-8000-000000000001', 'AR-9001',
+   'https://www.macvac.es/obra/matriz-activa/', 'Enlace activo de la matriz'),
+  ('ac000010-0000-4000-8000-000000000002', 'AR-9001',
+   'https://www.macvac.es/obra/matriz-retirada/', 'Enlace retirado de la matriz'),
+  -- El de una obra que está en la papelera: el lector no debe enterarse ni de
+  -- que existe (RF-609).
+  ('ac000010-0000-4000-8000-000000000003', 'AR-9002',
+   'https://www.macvac.es/obra/matriz-de-obra-retirada/', 'Enlace de una obra retirada');
+
+insert into public.external_links (id, image_id, url, title) values
+  ('ac000010-0000-4000-8000-000000000004', 'AR-9001_v1',
+   'https://www.macvac.es/foto/matriz/', 'De dónde salió esta reproducción');
+
+update public.external_links set active = false
+ where id = 'ac000010-0000-4000-8000-000000000002';
+
+-- The cataloger reads all four, trash included (RF-906).
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.external_links
+   where id::text like 'ac000010-%';
+  reset role;
+
+  if v_n <> 4 then
+    raise exception 'FAIL: the cataloger should see the four external links, sees %', v_n;
+  end if;
+  raise notice 'OK: the cataloger reads every external link, trash and hidden anchors included';
+end $$;
+
+reset role;
+
+-- The reader reads the active one of an active anchor, and only that: not the
+-- trashed link, and not the link of an artwork in the trash. That last one is
+-- the cell this table adds — the visibility is inherited from the anchor's own
+-- policy, so it is not a copy of the rule but the rule itself.
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.external_links
+   where id = 'ac000010-0000-4000-8000-000000000001';
+  if v_n <> 1 then
+    raise exception 'FAIL: the reader does not see the active link of an active artwork (RF-105)';
+  end if;
+
+  select count(*) into v_n from public.external_links
+   where id = 'ac000010-0000-4000-8000-000000000004';
+  if v_n <> 1 then
+    raise exception 'FAIL: the reader does not see the link of an active photograph (RF-105)';
+  end if;
+
+  select count(*) into v_n from public.external_links
+   where id = 'ac000010-0000-4000-8000-000000000002';
+  if v_n <> 0 then
+    raise exception 'FAIL: the reader sees a trashed external link (RF-906)';
+  end if;
+
+  select count(*) into v_n from public.external_links
+   where id = 'ac000010-0000-4000-8000-000000000003';
+  if v_n <> 0 then
+    raise exception 'FAIL: the reader sees the link of an artwork in the trash (RF-609)';
+  end if;
+
+  reset role;
+  raise notice 'OK: the reader reads the active links of what they may see, and nothing else (RF-105, RF-609, RF-906)';
+end $$;
+
+reset role;
+
+-- The reader writes nothing: no insert, and an update that affects no row. What
+-- was left written is checked OUTSIDE their session, because row_count alone
+-- does not tell «did not write» from «wrote and then had it hidden».
+do $$
+declare v_affected integer; v_title text; v_url text;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+  update public.external_links
+     set title = 'Secuestrado por el lector', url = 'https://evil.example/obra'
+   where id = 'ac000010-0000-4000-8000-000000000001';
+  get diagnostics v_affected = row_count;
+  reset role;
+
+  if v_affected <> 0 then
+    raise exception 'FAIL: the reader modified % external link row(s)', v_affected;
+  end if;
+
+  select title, url into v_title, v_url from public.external_links
+   where id = 'ac000010-0000-4000-8000-000000000001';
+  if v_title <> 'Enlace activo de la matriz'
+     or v_url <> 'https://www.macvac.es/obra/matriz-activa/' then
+    raise exception 'FAIL: the reader''s update left something written on an external link';
+  end if;
+
+  raise notice 'OK: the reader writes nothing on an external link, checked outside their session (RF-106)';
+end $$;
+
+reset role;
+
+do $$
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+  insert into public.external_links (artwork_id, url)
+  values ('AR-9001', 'https://alta.example/indebida-de-la-matriz');
+  reset role;
+  raise exception 'FAIL: the reader could insert an external link (RF-106)';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'OK: the reader creates no external link (RF-106)';
+end $$;
+
+reset role;
+
+-- And the cataloger does what is theirs: creates, classifies, retires and
+-- restores. Without this the three blocks above would pass on a table closed to
+-- everyone.
+do $$
+declare v_row public.external_links;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+  set local role authenticated;
+
+  insert into public.external_links (artwork_id, url)
+  values ('AR-9001', 'https://prensa.example/matriz-del-catalogador')
+  returning * into v_row;
+
+  update public.external_links set link_type = 'PRESS', title = 'Recorte de prensa'
+   where id = v_row.id;
+  update public.external_links set active = false where id = v_row.id;
+
+  reset role;
+
+  select * into v_row from public.external_links where id = v_row.id;
+  if v_row.link_type <> 'PRESS' or v_row.active
+     or v_row.deactivated_by <> '00000000-0000-0000-0000-0000000000c1'::uuid
+     or v_row.created_by <> '00000000-0000-0000-0000-0000000000c1'::uuid then
+    raise exception 'FAIL: the cataloger could not create, classify and retire an external link';
+  end if;
+
+  raise notice 'OK: the cataloger creates, classifies and retires external links, authorship sealed by the database';
+end $$;
+
+reset role;
+
+-- And the anonymous role does not reach them either (RF-101).
+do $$
+begin
+  set local role anon;
+  perform 1 from public.external_links limit 1;
+  reset role;
+  raise exception 'FAIL: the anonymous role could query public.external_links';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'OK: the anonymous role has no access to the external links';
+end $$;
+
+reset role;
+
+
+-- ── El enlace que no creó nadie, y la reproducción ajena ──────
+--
+-- RF-105, RF-106, RF-417, RF-1401, RF-1407. La celda que añade el traslado de
+-- 20260805110000 no es un permiso nuevo: es UNA FORMA DE FILA QUE ANTES NO
+-- EXISTÍA. Los cuatro enlaces que la migración sacó de dentro de dos notas de
+-- inventario tienen `created_by` a NULO, porque `tg_row_audit` firma con
+-- `auth.uid()` y dentro de una migración `auth.uid()` no es nadie. Nulo es la
+-- verdad: esa fila no la creó ninguna persona.
+--
+-- Y esa forma de fila es exactamente la que rompería una política escrita con la
+-- tentación de siempre —«ves lo que tú creaste»—: en producción hay cuatro filas
+-- que nadie creó, así que una política así las escondería para todo el mundo y el
+-- traslado habría sacado las direcciones de la nota para meterlas en un cajón
+-- cerrado. Se comprueba autenticándose de verdad, no leyendo la política.
+--
+-- La segunda mitad es el par de RF-1407: una fotografía dicha ajena MÁS su enlace
+-- de origen. Las dos mitades las escribió la misma migración y las dos las tiene
+-- que poder leer el Lector, porque la pantalla de la fotografía las muestra
+-- juntas; y ninguna de las dos la puede tocar.
+
+-- Sin sesión, como la migración, y hay que pedirlo EXPLÍCITAMENTE: `reset role`
+-- devuelve el rol pero no borra el `request.jwt.claims` que dejó puesto el último
+-- `set local`, así que a estas alturas del fichero `auth.uid()` todavía devuelve
+-- al lector. Vaciar la reclamación es lo que reproduce de verdad la situación de
+-- una migración —nadie ha iniciado sesión— y sin esta línea la fila nacería
+-- firmada y este bloque no estaría probando nada.
+set local request.jwt.claims = '';
+
+insert into public.external_links (id, image_id, url, title, link_type, note) values
+  ('ac000020-0000-4000-8000-000000000001', 'AR-9001_v1',
+   'https://www.macvac.es/obra/origen-de-la-matriz/',
+   'De dónde salió esta reproducción', 'PHOTO_SOURCE',
+   'De aquí salen todos los datos catalográficos de la ficha, incluida la fotografía.');
+
+do $$
+declare v_row public.external_links;
+begin
+  select * into v_row from public.external_links
+   where id = 'ac000020-0000-4000-8000-000000000001';
+
+  if v_row.created_by is not null then
+    raise exception 'FAIL: a link inserted without a session got an author invented for it';
+  end if;
+  if v_row.check_status is not null or v_row.checked_at is not null then
+    raise exception 'FAIL: a migrated link was born already checked (RF-1405)';
+  end if;
+  raise notice 'OK: a link written without a session is unsigned and unchecked, which is the truth (RF-1405)';
+end $$;
+
+-- The reader reads the unsigned link and the provenance of the photograph it
+-- documents. `AR-9001_v1` was marked OTHER_CATALOG by the cataloger further up in
+-- this file, so this is the complete RF-1407 pair: «not mine, and here is where it
+-- came from».
+do $$
+declare v_n integer; v_proc public.photo_provenance; v_title text;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.external_links
+   where id = 'ac000020-0000-4000-8000-000000000001';
+  if v_n <> 1 then
+    raise exception 'FAIL: the reader does not see a link that nobody created — a migrated row is invisible (RF-105)';
+  end if;
+
+  select title into v_title from public.external_links
+   where id = 'ac000020-0000-4000-8000-000000000001';
+  select provenance into v_proc from public.images where image_id = 'AR-9001_v1';
+  reset role;
+
+  if v_proc <> 'OTHER_CATALOG' or v_title is null then
+    raise exception 'FAIL: the reader cannot read both halves of the RF-1407 pair';
+  end if;
+
+  raise notice 'OK: the reader reads the unsigned link and the provenance it documents, both halves of the pair (RF-1407)';
+end $$;
+
+reset role;
+
+-- The reader cannot retire it: the origin of a reproduction is not theirs to
+-- withdraw. Checked outside their session, because an update the USING policy
+-- hides affects no row and does not fail.
+do $$
+declare v_affected integer; v_active boolean;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+  update public.external_links set active = false
+   where id = 'ac000020-0000-4000-8000-000000000001';
+  get diagnostics v_affected = row_count;
+  reset role;
+
+  select active into v_active from public.external_links
+   where id = 'ac000020-0000-4000-8000-000000000001';
+
+  if v_affected <> 0 or not v_active then
+    raise exception 'FAIL: the reader retired the origin link of a reproduction (RF-106, RF-1406)';
+  end if;
+  raise notice 'OK: the reader does not retire the origin of a reproduction (RF-106, RF-1406)';
+end $$;
+
+reset role;
+
+-- And the cataloger completes it: they may classify and re-title a row nobody
+-- created, and doing so does NOT invent an author for its creation. `created_by`
+-- stays null —nobody created it— while `updated_by` becomes theirs, which is the
+-- only one of the two that is true.
+do $$
+declare v_row public.external_links;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+  set local role authenticated;
+
+  update public.external_links
+     set title = 'Ficha en el MACVA', note = 'Origen confirmado con la obra delante'
+   where id = 'ac000020-0000-4000-8000-000000000001';
+
+  reset role;
+
+  select * into v_row from public.external_links
+   where id = 'ac000020-0000-4000-8000-000000000001';
+
+  if v_row.title <> 'Ficha en el MACVA' then
+    raise exception 'FAIL: the cataloger could not edit a link that nobody created';
+  end if;
+  if v_row.created_by is not null then
+    raise exception 'FAIL: editing a migrated link invented an author for its creation (RF-801)';
+  end if;
+  if v_row.updated_by <> '00000000-0000-0000-0000-0000000000c1'::uuid then
+    raise exception 'FAIL: editing a link did not record who edited it (RF-801)';
+  end if;
+
+  raise notice 'OK: the cataloger completes a migrated link; nobody becomes its creator and the editor is recorded (RF-801)';
+end $$;
+
+reset role;
+
+
+-- ── El registro de cambios: la fila de la matriz que es casi toda ceros ──
+--
+-- RF-105, RF-106, RF-109, RF-609, RF-1504, RF-1506. `change_log` no cabe en los
+-- bucles de arriba y no por su forma, sino porque su fila de esta matriz dice lo
+-- contrario que la de todas las demás: el Catalogador TAMPOCO escribe. En el
+-- resto del esquema la matriz es «el que edita, edita»; aquí el que edita es el
+-- AUDITADO, y un registro que el auditado puede tocar no es un registro.
+--
+-- El perímetro completo —los dos candados, los cuatro verbos, el rol del panel—
+-- está en `change_log.test.sql`. Aquí van las celdas de la matriz: qué lee cada
+-- papel y qué escribe, que en esta tabla es nada.
+
+insert into public.images (catalog_id, thumbnail_path, derivative_path, master_path, shot_type)
+values ('AR-9001', 'm/min-hist.webp', 'm/der-hist.webp', 'm/master-hist.jpg', 'BACK');
+update public.images set active = false where image_id = 'AR-9001_v2';
+
+-- Writing a fixture here costs a disabled trigger, and that IS the result this
+-- table was built for. It goes back on immediately.
+alter table public.change_log disable trigger change_log_insert_guard;
+
+insert into public.change_log
+  (change_id, entity, row_key, catalog_id, operation, column_name, old_value, new_value, changed_by)
+values
+  ('ac000030-0000-4000-8000-000000000001', 'ARTWORK', 'AR-9001', 'AR-9001',
+   'UPDATE', 'title', 'Antes', 'Después', '00000000-0000-0000-0000-0000000000c1'),
+  -- The history of an artwork in the trash: the reader must not even learn it
+  -- exists (RF-609).
+  ('ac000030-0000-4000-8000-000000000002', 'ARTWORK', 'AR-9002', 'AR-9002',
+   'DEACTIVATE', 'active', 'true', 'false', '00000000-0000-0000-0000-0000000000c1'),
+  ('ac000030-0000-4000-8000-000000000003', 'IMAGE', 'AR-9001_v1', 'AR-9001',
+   'CREATE', null, null, null, '00000000-0000-0000-0000-0000000000c1'),
+  -- And the history of a RETIRED photograph of an artwork that is active: the
+  -- cell that a policy written «per artwork» would have leaked.
+  ('ac000030-0000-4000-8000-000000000004', 'IMAGE', 'AR-9001_v2', 'AR-9001',
+   'DEACTIVATE', 'active', 'true', 'false', '00000000-0000-0000-0000-0000000000c1');
+
+alter table public.change_log enable trigger change_log_insert_guard;
+
+-- The cataloger reads all four, trash included (RF-906).
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.change_log
+   where change_id::text like 'ac000030-%';
+  reset role;
+
+  if v_n <> 4 then
+    raise exception 'FAIL: the cataloger should see the four change log rows, sees %', v_n;
+  end if;
+  raise notice 'OK: the cataloger reads the whole history, trash included (RF-906, RF-1506)';
+end $$;
+
+reset role;
+
+-- The reader reads the history of what they may see, and only that. The
+-- visibility is inherited from the audited row''s own policy, so it is not a copy
+-- of the rule but the rule itself.
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.change_log
+   where change_id = 'ac000030-0000-4000-8000-000000000001';
+  if v_n <> 1 then
+    raise exception 'FAIL: the reader does not see the history of an active artwork (RF-105, RF-1506)';
+  end if;
+
+  select count(*) into v_n from public.change_log
+   where change_id = 'ac000030-0000-4000-8000-000000000003';
+  if v_n <> 1 then
+    raise exception 'FAIL: the reader does not see the history of an active photograph (RF-105, RF-1506)';
+  end if;
+
+  select count(*) into v_n from public.change_log
+   where change_id = 'ac000030-0000-4000-8000-000000000002';
+  if v_n <> 0 then
+    raise exception 'FAIL: the reader sees the history of an artwork in the trash (RF-609)';
+  end if;
+
+  select count(*) into v_n from public.change_log
+   where change_id = 'ac000030-0000-4000-8000-000000000004';
+  if v_n <> 0 then
+    raise exception 'FAIL: the reader sees the history of a retired photograph of an active artwork (RF-609)';
+  end if;
+
+  reset role;
+  raise notice 'OK: the reader reads the history of what they may see, and nothing else (RF-105, RF-609, RF-1506)';
+end $$;
+
+reset role;
+
+-- And neither of them writes: not the reader, and NOT THE CATALOGER EITHER,
+-- which is the cell that makes this table different from every other one in this
+-- file. Failing by insufficient_privilege and not by an empty row count is the
+-- point: PostgREST answers 403 to a POST, a PATCH or a DELETE before it looks at
+-- any policy (RF-113, RF-1504).
+do $$
+declare
+  v_usuarios constant text[] := array[
+    '00000000-0000-0000-0000-0000000000c1',  -- cataloger
+    '00000000-0000-0000-0000-0000000000d1'   -- reader
+  ];
+  v_sentencias constant text[] := array[
+    $q$insert into public.change_log (change_id, entity, row_key, catalog_id, operation)
+       values (gen_random_uuid(), 'ARTWORK', 'AR-9001', 'AR-9001', 'CREATE')$q$,
+    $q$update public.change_log set new_value = 'reescrito a mano'$q$,
+    $q$delete from public.change_log$q$
+  ];
+  u integer;
+  i integer;
+begin
+  for u in 1 .. array_length(v_usuarios, 1) loop
+    for i in 1 .. array_length(v_sentencias, 1) loop
+      begin
+        execute format('set local request.jwt.claims = %L',
+                       '{"sub":"' || v_usuarios[u] || '","role":"authenticated"}');
+        set local role authenticated;
+        execute v_sentencias[i];
+        reset role;
+        raise exception 'FAIL: % could write the change log: %', v_usuarios[u], v_sentencias[i];
+      exception
+        when insufficient_privilege then
+          reset role;
+      end;
+    end loop;
+  end loop;
+  raise notice 'OK: nobody writes the change log — not the reader and not the cataloger, who is the audited one (RF-1504)';
+end $$;
+
+reset role;
+
+-- The anonymous role does not even reach it.
+do $$
+begin
+  set local role anon;
+  perform 1 from public.change_log limit 1;
+  reset role;
+  raise exception 'FAIL: the anonymous role could query the change log (RF-101)';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'OK: the anonymous role has no access to the change log (RF-101)';
+end $$;
+
+reset role;
+
+
+-- ── El Superusuario: la celda que no cubría nadie ─────────────
+--
+-- RF-109, RF-1504. Añadida al auditar el registro de cambios, y el hueco era de
+-- este fichero entero y no solo del registro: la matriz de roles NO TENÍA UN
+-- USUARIO SUPERUSER. Se daba por hecho que su fila es la del Catalogador porque
+-- `can_edit()` devuelve verdadero para los dos, y eso es cierto para la LECTURA y
+-- la ESCRITURA del catálogo — pero en el registro de cambios la conclusión que se
+-- estaba dando por hecha es la contraria a la que hay que demostrar: que quien más
+-- privilegio tiene en la aplicación TAMPOCO escribe en la auditoría.
+--
+-- El Superusuario es además el papel de RF-1105, el del panel de Supabase. Que su
+-- sesión de aplicación no pueda tocar el registro es justamente lo que hace que la
+-- diferencia entre «entrar por la aplicación» y «entrar por el panel» sea la
+-- decisión deliberada que describe change_log.sql, y no un descuido.
+-- La reclamación del JWT se vacía A MANO antes de tocar el perfil, y no es
+-- ceremonia: `reset role` devuelve el rol de base de datos pero NO borra
+-- `request.jwt.claims`, así que a esta altura del fichero la sesión todavía lleva
+-- el `sub` del último bloque. Con un usuario dentro, `tg_role_superuser_only()`
+-- rechaza el cambio de papel —«Solo el superusuario puede cambiar el rol»
+-- (RF-108)—, que es exactamente lo que debe hacer. La promoción del primer
+-- superusuario ocurre por necesidad fuera de la aplicación, y este `set_config`
+-- es la forma de decir «esto es acceso administrativo» en un test.
+select set_config('request.jwt.claims', '', true);
+
+insert into auth.users (id, email)
+values ('00000000-0000-0000-0000-0000000000e9', 'sup-matriz@test.local');
+update public.profiles set role = 'SUPERUSER'
+ where id = '00000000-0000-0000-0000-0000000000e9';
+
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e9","role":"authenticated"}';
+  set local role authenticated;
+
+  -- Lee como el Catalogador, papelera incluida: `can_edit()` lo incluye, así que
+  -- la visibilidad heredada del ancla se la enseña toda.
+  select count(*) into v_n from public.change_log
+   where change_id::text like 'ac000030-%';
+  reset role;
+
+  if v_n <> 4 then
+    raise exception 'FAIL: the superuser should see the four change log rows, trash included, sees % (RF-109, RF-1506)', v_n;
+  end if;
+  raise notice 'OK: the superuser reads the whole history, trash included (RF-109, RF-1506)';
+end $$;
+
+reset role;
+
+-- Y no escribe: los tres verbos, y fallando por PRIVILEGIO igual que los demás.
+-- El papel más alto de la aplicación es, en esta tabla, exactamente igual de
+-- impotente que el Lector.
+do $$
+declare
+  v_sentencias constant text[] := array[
+    $q$insert into public.change_log (change_id, entity, row_key, catalog_id, operation)
+       values (gen_random_uuid(), 'ARTWORK', 'AR-9001', 'AR-9001', 'CREATE')$q$,
+    $q$update public.change_log set new_value = 'reescrito por el superusuario'$q$,
+    $q$delete from public.change_log$q$
+  ];
+  i integer;
+begin
+  for i in 1 .. array_length(v_sentencias, 1) loop
+    begin
+      set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e9","role":"authenticated"}';
+      set local role authenticated;
+      execute v_sentencias[i];
+      reset role;
+      raise exception 'FAIL: the superuser could write the change log: %', v_sentencias[i];
+    exception
+      when insufficient_privilege then
+        reset role;
+    end;
+  end loop;
+  raise notice 'OK: not even the superuser writes the change log, and it fails by privilege (RF-109, RF-1504)';
+end $$;
+
+reset role;
+
+-- Y el Superusuario sí escribe en el CATÁLOGO, que es lo que cierra la celda: si
+-- no, «no puede tocar el registro» podría estar diciendo simplemente que su sesión
+-- no funciona. Su cambio deja además su propia línea en el registro, escrita por
+-- el trigger y con él como autor — la otra mitad de la pareja, comprobada desde la
+-- matriz.
+do $$
+declare v_autor uuid; v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e9","role":"authenticated"}';
+  set local role authenticated;
+  update public.artworks set technique = 'Editada por el superusuario'
+   where catalog_id = 'AR-9001';
+  reset role;
+
+  select count(*), min(changed_by::text)::uuid into v_n, v_autor
+    from public.change_log
+   where row_key = 'AR-9001' and column_name = 'technique'
+     and new_value = 'Editada por el superusuario';
+  if v_n <> 1 then
+    raise exception 'FAIL: the superuser''s edit left % change log rows, expected 1 (RF-109)', v_n;
+  end if;
+  if v_autor is distinct from '00000000-0000-0000-0000-0000000000e9'::uuid then
+    raise exception 'FAIL: the superuser''s edit was recorded under % instead of themselves',
+      coalesce(v_autor::text, '(null)');
+  end if;
+  raise notice 'OK: the superuser edits the catalogue and the trigger records it under their name (RF-109, RF-1503)';
+end $$;
+
+reset role;
+
+
+-- ── La papelera de una obra no enseña su expediente ──────────
+--
+-- RF-105, RF-106, RF-109, RF-511, RF-609, RF-905, RF-910, RF-913, RF-906. The
+-- cell this matrix was
+-- missing, and it was a personal-data leak, not a presentation detail: with the
+-- policies as 20260804150000 left them, the reader saw 0 rows of AR-9002 and 1
+-- row of its provenance link, its citation, its exhibition entry, its document
+-- and its relationship — and, following the link into `parties`, the name and the
+-- CONTACT of the private collector who owned it. The record was hidden and the
+-- chain of owners of that hidden record was not.
+--
+-- The whole cascade, both ends of every bridge and the criterion for a document
+-- shared with an active exhibition, are in `documentary_visibility.test.sql`.
+-- What belongs in this file is the matrix cell: reader nothing, cataloger
+-- everything.
+
+insert into public.parties (id, party_type, name, contact) values
+  ('ac000040-0000-4000-8000-000000000001', 'PERSON',
+   'Coleccionista particular del expediente', 'telefono-privado@expediente.test');
+insert into public.bibliography (id, title) values
+  ('ac000040-0000-4000-8000-000000000002', 'Referencia del expediente de la matriz');
+insert into public.exhibitions (id, title, year) values
+  ('ac000040-0000-4000-8000-000000000003', 'Muestra del expediente de la matriz', 1991);
+insert into public.archive_documents (id, title) values
+  ('ac000040-0000-4000-8000-000000000004', 'Documento del expediente de la matriz');
+insert into public.artwork_relationship_types (id, name, inverse_name, is_symmetric) values
+  ('ac000040-0000-4000-8000-000000000005', 'Expediente de la matriz, simétrica de', '', true);
+
+-- The same five documentary rows on both artworks: AR-9001 is active and AR-9002
+-- is in the trash. Nothing else differs, so what the reader sees can only come
+-- from the state of the anchor.
+insert into public.provenance_events (catalog_id, party_id, capacity) values
+  ('AR-9001', 'ac000040-0000-4000-8000-000000000001', 'OWNER'),
+  ('AR-9002', 'ac000040-0000-4000-8000-000000000001', 'OWNER');
+insert into public.artwork_bibliography (catalog_id, bibliography_id, pages) values
+  ('AR-9001', 'ac000040-0000-4000-8000-000000000002', 'p. 1'),
+  ('AR-9002', 'ac000040-0000-4000-8000-000000000002', 'p. 2');
+insert into public.artwork_exhibitions (catalog_id, exhibition_id, catalogue_number) values
+  ('AR-9001', 'ac000040-0000-4000-8000-000000000003', 'cat. 1'),
+  ('AR-9002', 'ac000040-0000-4000-8000-000000000003', 'cat. 2');
+insert into public.artwork_documents (catalog_id, document_id) values
+  ('AR-9001', 'ac000040-0000-4000-8000-000000000004'),
+  ('AR-9002', 'ac000040-0000-4000-8000-000000000004');
+insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id) values
+  ('AR-9001', 'AR-9002', 'ac000040-0000-4000-8000-000000000005');
+
+do $$
+declare
+  -- Table and the column that anchors it to the artwork. The relationship is
+  -- reached by either end on purpose: the reader must not see it from the active
+  -- side either, because seeing it is learning that AR-9002 exists.
+  v_cells constant text[][] := array[
+    ['provenance_events',     'catalog_id = ''AR-9002'''],
+    ['artwork_bibliography',  'catalog_id = ''AR-9002'''],
+    ['artwork_exhibitions',   'catalog_id = ''AR-9002'''],
+    ['artwork_documents',     'catalog_id = ''AR-9002'''],
+    ['artwork_relationships', 'from_catalog_id = ''AR-9002'' or to_catalog_id = ''AR-9002''']
+  ];
+  v_i integer;
+  v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+
+  for v_i in 1 .. array_length(v_cells, 1) loop
+    execute format('select count(*) from public.%I where %s', v_cells[v_i][1], v_cells[v_i][2])
+       into v_n;
+    if v_n <> 0 then
+      raise exception
+        'FAIL: the reader sees % row(s) of public.% belonging to an artwork in the trash (RF-609)',
+        v_n, v_cells[v_i][1];
+    end if;
+
+    -- And the same row of the ACTIVE artwork IS visible: without this the cell
+    -- would pass on a policy that hides everything (RF-105).
+    execute format('select count(*) from public.%I where %s',
+                   v_cells[v_i][1], replace(v_cells[v_i][2], 'AR-9002', 'AR-9001'))
+       into v_n;
+    if v_n < 1 then
+      raise exception 'FAIL: the reader does not see public.% of an active artwork (RF-105)',
+        v_cells[v_i][1];
+    end if;
+  end loop;
+
+  raise notice 'OK: the reader sees the documentary record of an active artwork and none of one in the trash (RF-609)';
+end $$;
+
+reset role;
+
+-- The contact of a third party, read with the very query that leaked it. This is
+-- the assertion this file exists for: priority 1 of the test plan is the only
+-- category whose failure affects people outside the project (RF-511).
+do $$
+declare v_contact text;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+  set local role authenticated;
+
+  select p.contact into v_contact
+    from public.parties p
+    join public.provenance_events e on e.party_id = p.id
+   where e.catalog_id = 'AR-9002';
+  reset role;
+
+  if v_contact is not null then
+    raise exception
+      'FAIL: the reader read a third party''s contact through the provenance of an artwork in the trash: %',
+      v_contact;
+  end if;
+  raise notice 'OK: the provenance of an artwork in the trash leads to nobody''s contact (RF-511)';
+end $$;
+
+reset role;
+
+-- And the cataloger keeps the whole trash: it is how the record is restored, and
+-- it is the one thing inherited visibility must not break (RF-906).
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
+  set local role authenticated;
+
+  select (select count(*) from public.provenance_events where catalog_id = 'AR-9002')
+       + (select count(*) from public.artwork_bibliography where catalog_id = 'AR-9002')
+       + (select count(*) from public.artwork_exhibitions where catalog_id = 'AR-9002')
+       + (select count(*) from public.artwork_documents where catalog_id = 'AR-9002')
+       + (select count(*) from public.artwork_relationships
+           where from_catalog_id = 'AR-9002' or to_catalog_id = 'AR-9002')
+    into v_n;
+  reset role;
+
+  if v_n <> 5 then
+    raise exception
+      'FAIL: the cataloger should see the five documentary rows of the artwork in the trash, sees %', v_n;
+  end if;
+  raise notice 'OK: the cataloger keeps the whole documentary record of the trash (RF-906)';
 end $$;
 
 reset role;
