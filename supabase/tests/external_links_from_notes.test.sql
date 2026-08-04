@@ -147,10 +147,21 @@ end $$;
 -- persona. Se compara contra la cadena literal, byte a byte, y no contra un
 -- patrón: un patrón dejaría pasar justamente el recorte que se teme.
 --
--- Escrito como «si la obra existe, su nota es esta» para que sobre una base recién
--- migrada no diga nada en vez de fallar.
+-- Se salta cuando esta base NO tiene el volcado, y el discriminante importa. La
+-- primera versión miraba si la nota era nula, y estaba mal por dos motivos:
+-- `inventory_process_notes` es `not null default ''`, así que nunca es nula
+-- mientras la obra exista, y la obra existe también en una base recién migrada
+-- porque la siembra la crea. Resultado: integración continua en rojo comparando la
+-- nota de producción contra una cadena vacía.
+--
+-- Y el discriminante NO puede ser «la nota está vacía», que es lo primero que uno
+-- escribe: vaciar la nota es exactamente el fallo que este bloque vigila, así que
+-- saltárselo por eso lo escondería. El discriminante es **el enlace que la
+-- migración creó**: si no existe, este catálogo no pasó por el traslado y no hay
+-- nada que comparar; si existe y la nota ya no está, el bloque falla, que es lo que
+-- se quiere.
 do $$
-declare v_texto text; v_esperado record;
+declare v_texto text; v_esperado record; v_trasladada boolean;
 begin
   for v_esperado in
     select * from (values
@@ -158,11 +169,20 @@ begin
       ('RC-0005', 'Todos los datos catalográficos, incluida la imagen, han sido tomados de la web del MACVA: https://www.macvac.es/obra/saliente-en-el-espacio/')
     ) as v (catalog_id, nota)
   loop
+    select exists (
+      select 1 from public.external_links
+       where artwork_id = v_esperado.catalog_id
+    ) into v_trasladada;
+
+    if not v_trasladada then
+      continue;  -- Este catálogo no pasó por el traslado: no hay nota que preservar.
+    end if;
+
     select inventory_process_notes into v_texto
       from public.artworks where catalog_id = v_esperado.catalog_id;
 
     if v_texto is null then
-      continue;  -- Base sin volcado: esa obra no existe y no hay nada que comparar.
+      continue;  -- La obra no existe en esta base.
     end if;
 
     if v_texto <> v_esperado.nota then
