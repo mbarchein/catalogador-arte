@@ -2,6 +2,24 @@
 
 ### Interfaz
 
+**El historial de una obra ya se puede leer**
+Cada cambio en una ficha y en sus fotografías se venía guardando desde ayer, pero no había dónde verlo.
+Ahora la ficha tiene al final un apartado que lo cuenta en frases: «Marta cambió el alto, el ancho y la
+técnica, hoy a las 11:40». Un guardado es **una línea**, aunque haya tocado ocho campos, porque si no un
+día de trabajo son doscientas líneas y no las lee nadie. Cuando el cambio fue de un solo dato, se ve
+además el valor de antes y el de después.
+
+Llega plegado y no consulta nada hasta que se abre: es la parte más pesada de la ficha y la ficha es la
+pantalla que más se abre.
+
+Dos cosas que dice con cuidado. Un cambio hecho por una migración o por mantenimiento se firma como
+**«El sistema»**, y no como «alguien», porque el dato no se ha perdido: nunca lo hubo. Y cuando una obra
+no tiene ningún cambio apuntado, se dice que **el historial empieza el 5 de agosto de 2026** y que lo
+anterior no consta — que no es lo mismo que decir que no ocurrió.
+
+El historial **no se puede deshacer, ni tocar**. Es informativo: nadie, tampoco quien cataloga, puede
+corregir ni borrar una línea.
+
 **Quitar los filtros, arriba y diciendo cuántos son**
 El botón de quitar los filtros estaba al final del panel, debajo de las cinco secciones de opciones: para
 llegar a él había que recorrer justo lo que se quería deshacer. Ahora está en la cabecera del panel, y

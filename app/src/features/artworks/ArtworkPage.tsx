@@ -56,6 +56,7 @@ import { ExhibitionHistorySection } from '../documentary/exhibitions'
 import { BibliographySection } from '../documentary/bibliography'
 import { DocumentsSection } from '../documentary/documents'
 import { RelationshipsSection } from '../documentary/relationships'
+import { ChangeHistorySection } from '../history/ChangeHistorySection'
 import { ArtworkGallery } from './ArtworkGallery'
 import { parseView } from './listView'
 import { decideSwipe, dragOffset, swipeAxis } from './sequence'
@@ -505,7 +506,12 @@ export function ArtworkPage() {
 
             Se nombra lo segundo y no lo primero, y se dice DÓNDE está lo que sí se
             puede hacer, que es lo que evita que alguien lo busque donde no está. */}
-        <section className="card text-sm text-stone-500">
+        {/* El historial, antes del aviso de lo que falta: es un dato de la obra y
+            no una carencia. Solo lectura, así que su sitio es la ficha que se lee
+            —es donde se hace la pregunta que contesta— y no la zona de edición. */}
+        <ChangeHistorySection catalogId={artwork.catalog_id} />
+
+        <section className="card mt-3 text-sm text-stone-500">
           <p className="font-medium text-stone-700">Lo que aún no se puede hacer aquí</p>
           <p className="mt-1">
             Una <strong>exposición</strong> se puede enlazar con esta obra si ya está en el catálogo,
@@ -514,11 +520,6 @@ export function ArtworkPage() {
             desde aquí, y corregir después su autor, su título o su año, no. Y un{' '}
             <strong>documento del archivo</strong> se lee y se descarga, pero subirlo y enlazarlo con
             una obra tampoco se hace aún.
-          </p>
-          <p className="mt-2">
-            El <strong>historial de cambios</strong> de esta obra y de sus fotografías{' '}
-            <strong>se está guardando</strong> desde hoy —quién cambió qué y cuándo, sin poder
-            alterarlo después—, pero todavía no hay pantalla desde la que leerlo.
           </p>
           <p className="mt-2">
             Lo que sí se corrige, y no es aquí: las <strong>series</strong>, las{' '}
