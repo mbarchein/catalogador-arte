@@ -322,18 +322,18 @@ export function ArtworkPage() {
              else. Down here the thumb cannot miss them. */
           <div className="mb-3 grid grid-cols-2 gap-2">
             <button
-              onClick={() => navigate({ pathname: `/artwork/${id}/photos`, search: query })}
-              className="btn-secondary"
-            >
-              <CameraIcon className="h-5 w-5" />
-              Editar fotos
-            </button>
-            <button
               onClick={() => navigate({ pathname: `/artwork/${id}/edit`, search: query })}
               className="btn-primary"
             >
               <PenIcon className="h-5 w-5" />
               Editar ficha
+            </button>
+            <button
+              onClick={() => navigate({ pathname: `/artwork/${id}/photos`, search: query })}
+              className="btn-secondary"
+            >
+              <CameraIcon className="h-5 w-5" />
+              Editar fotos
             </button>
           </div>
         )}

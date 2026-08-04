@@ -296,7 +296,31 @@ export function ArtworksPage() {
       {/* One sheet with every section: with a single entry button there is
           nothing to choose before opening, and adjusting several filters in
           one visit needs no round trips. */}
-      <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Filtros y orden">
+      <BottomSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        title="Filtros y orden"
+        // Quitar los filtros, arriba y con la cuenta dentro. Antes vivía al pie de
+        // la hoja, debajo de cinco secciones de opciones: para encontrarlo había que
+        // recorrer justo lo que se quería deshacer. Y el número no es adorno — es lo
+        // que hace falta para decidir si se pulsa, porque con la hoja abierta las
+        // secciones que tienen algo puesto no se ven todas a la vez.
+        headerAction={
+          activeCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => updateView({ ...NO_FILTERS, order: 'RECENT' })}
+              aria-label={`Quitar los ${activeCount} filtros aplicados`}
+              className="min-h-11 rounded-lg px-3 text-sm font-medium text-stone-700 active:bg-stone-100"
+            >
+              Quitar filtros
+              <span className="ml-1.5 inline-flex min-w-5 justify-center rounded-full bg-stone-700 px-1.5 py-0.5 text-xs font-semibold text-white">
+                {activeCount}
+              </span>
+            </button>
+          ) : undefined
+        }
+      >
         <div className="space-y-4">
           <section>
             <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
@@ -389,19 +413,16 @@ export function ArtworksPage() {
             />
           </section>
 
-          <div className="grid grid-cols-2 gap-2 pb-1">
-            <button
-              type="button"
-              disabled={activeCount === 0}
-              onClick={() => updateView({ ...NO_FILTERS, order: 'RECENT' })}
-              className="btn-secondary disabled:opacity-40"
-            >
-              Quitar todo
-            </button>
+          {/* Solo «Hecho», y a todo el ancho. «Quitar todo» estaba aquí y ahora está
+              en la cabecera con su cuenta: dejarlo en los dos sitios sería el mismo
+              error que el editor de fotografías ya corrigió una vez —dos controles
+              para una sola decisión— y además el de arriba dice cuántos filtros
+              quita, que es información que este no tenía. */}
+          <div className="pb-1">
             <button
               type="button"
               onClick={() => setSheetOpen(false)}
-              className="btn min-h-touch bg-stone-900 text-white"
+              className="btn min-h-touch w-full bg-stone-900 text-white"
             >
               Hecho
             </button>

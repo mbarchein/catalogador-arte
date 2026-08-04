@@ -2,6 +2,51 @@
 
 ### Interfaz
 
+**Quitar los filtros, arriba y diciendo cuántos son**
+El botón de quitar los filtros estaba al final del panel, debajo de las cinco secciones de opciones: para
+llegar a él había que recorrer justo lo que se quería deshacer. Ahora está en la cabecera del panel, y
+**lleva dentro el número de filtros puestos**, que es lo que hace falta saber para decidir si se pulsa —con
+el panel abierto no se ven a la vez todas las secciones que tienen algo marcado. Cuando no hay ningún
+filtro, el botón no está.
+
+**«Editar ficha» pasa a la izquierda**
+En la ficha de una obra, los dos botones de arriba cambian de sitio: primero editar la ficha y después
+editar las fotos.
+
+**Las nueve listas del catálogo ya se mantienen desde la aplicación**
+Eran tres —ubicaciones, tipos de obra y series—. Las otras seis se leían desde la ficha de una obra, pero solo se
+podían rellenar por dentro, pidiéndolo: se podía leer por qué manos había pasado un cuadro y no dar de alta el
+museo que lo sostiene. Ahora las seis se crean, se corrigen y se retiran desde la aplicación:
+
+- **Personas e instituciones.** Quién ha tenido cada obra, quién presta, quién es titular de los derechos y qué
+  institución hay detrás de una sede. Corregir el nombre de un museo se hace una vez y lo ven todas las obras que
+  pasaron por él. El teléfono y el correo **no se pintan en la lista** —son datos de un tercero, y esta pantalla se
+  abre en un almacén con gente delante—: se piden ficha a ficha, y un aviso arriba dice quién más puede verlos.
+  Cuando una ficha no se puede retirar porque el catálogo la usa, la pantalla dice **en qué obras y en qué sedes**,
+  en vez de dejar que se busquen a mano.
+- **Sedes de exposición.** Los sitios donde ocurrieron las muestras, cada uno con su localidad, que es lo que
+  distingue una Casa de Cultura de otra. No son las ubicaciones del almacén: aquellas dicen dónde está la obra hoy,
+  y una sede dice dónde estuvo expuesta en 1985.
+- **La clasificación del archivo.** Los papeles ya se pueden ordenar en fondos, series y subseries: crear una,
+  corregirle el nombre —y lo ven todos sus documentos—, mover una serie entera dentro de otra y retirar las que
+  sobren. Cuando una serie no se deja retirar, la pantalla dice cuántos documentos tiene dentro y cuáles son.
+- **Tipos de documento** y **tipos de publicación**: lo que ofrecen los campos «Tipo» de un documento del archivo y
+  de cada referencia de la bibliografía. Vienen con diez y con seis puestos, y ampliarlos ya no espera a nadie.
+- **Tipos de relación.** Las clases de parentesco entre dos obras, cada una con sus **dos lecturas** —lo que dirá la
+  ficha de una obra y lo que dirá la de la otra—, que la pantalla enseña mientras se escriben: la segunda es la que
+  no se ve desde la obra en la que se trabaja, y es la que se queda al revés si se escribe mal.
+
+En las nueve, lo mismo de siempre: **nada se borra**. Lo que deja de usarse se retira, se queda en gris y vuelve
+escribiendo su nombre otra vez. Y ninguna deja retirar algo que el catálogo todavía usa: cuando no se puede, se
+cuenta por qué y qué hay que hacer antes. Si se cae la conexión, lo dicen en español y avisan de que el cambio no
+se ha mandado, en vez de dar por guardado lo que no se guardó.
+
+**La sección «Tablas» va por grupos, no en una lista de nueve nombres**
+Nueve enlaces uno debajo de otro son un muro: para llegar a «Sedes de exposición» hay que leer ocho nombres que
+empiezan casi todos por «Tipos de». Así que el índice se agrupa por para qué sirve cada lista —la ficha de la obra;
+dónde y quién; los papeles—, con una línea en cada grupo que dice qué hay dentro. Tres grupos de tres, para
+recorrerlos con el pulgar sin volver a subir.
+
 **La ficha de obra ya tiene su mitad documental: procedencia, exposiciones, bibliografía, archivo y obras hermanas**
 Hasta hoy la ficha llevaba un recuadro que decía que todo esto estaba pendiente, y no había dónde apuntar
 nada de ello. Ahora, debajo de la conservación y la ubicación, hay cinco apartados nuevos en el orden en
@@ -52,9 +97,10 @@ un botón que los carga en el sitio.
 **El recuadro de «pendiente» ya no nombra lo que la ficha muestra**
 Decía que la procedencia, las exposiciones, la bibliografía y la documentación estaban por hacer
 mientras, ochenta líneas más abajo, se van a ver. Ahora nombra solo lo que falta de verdad: una
-exposición, una referencia, un documento de archivo, una serie o un propietario se leen y se enlazan
-desde la obra, pero no tienen todavía pantalla propia donde corregir sus datos, y enlazar un documento
-del archivo con una obra tampoco se hace aún desde aquí.
+exposición, una referencia o un documento de archivo se leen y se enlazan desde la obra, pero no tienen
+todavía pantalla propia donde corregir sus datos, y enlazar un documento del archivo con una obra
+tampoco se hace aún desde aquí. (Ese recuadro sigue nombrando también las series y los propietarios,
+que ya tienen la suya; queda por quitarlos de ahí.)
 
 **Descargar una fotografía: el original y la copia lista para imprimir**
 En la ficha, debajo de la galería, hay ahora un apartado «Descargar esta fotografía» que se despliega y
@@ -875,8 +921,7 @@ confunde con mover la foto, que los mandos caben en una pantalla estrecha y que 
 en pantalla es exactamente la que se guarda. Es la siguiente tarea y no es opcional.
 
 **Los fondos, como lista y no como valores fijos**
-Los tipos de obra, las series y las ubicaciones ya son listas que se pueden corregir y ampliar desde la
-aplicación. Los dos fondos —Rotili y Ruiz Campins— siguen siendo valores fijos escritos en el programa,
+Las nueve listas del catálogo ya se pueden corregir y ampliar desde la aplicación. Los dos fondos —Rotili y Ruiz Campins— siguen siendo valores fijos escritos en el programa,
 porque de ellos depende el prefijo del código de catalogación que va pegado a cada obra. Convertirlos es
 lo siguiente, y hay que hacerlo con cuidado por eso mismo.
 
@@ -885,12 +930,23 @@ Nada se borra nunca de verdad, y eso ya está garantizado por la base: retirar u
 un lugar o una serie deja la fila con quién y cuándo. Lo que falta es la pantalla desde la que ver lo
 retirado y restaurarlo.
 
-**Las pantallas propias de exposiciones, bibliografía, propietarios y documentos**
-La mitad documental ya se lee y se escribe desde la ficha de obra: eso está contado arriba. Lo que falta
-es que cada una de esas cosas tenga su propia pantalla. Hoy, desde la obra, se puede crear al paso una
-referencia bibliográfica o un propietario, pero luego no hay dónde volver a ellos para corregir un
-título, unas fechas o un nombre mal escrito; una exposición hay que tenerla ya en el catálogo para poder
-enlazarla; y un documento del archivo todavía no se puede enlazar con una obra desde ninguna parte.
+**Las pantallas propias de las exposiciones, de la bibliografía y de los documentos**
+Los propietarios, las sedes de exposición, la clasificación del archivo y los vocabularios ya tienen la
+suya: eso está contado arriba, y corregir el nombre de un museo o de un propietario ya se hace una vez
+para todo el catálogo. Lo que falta es la ficha de lo que se registra obra por obra. Una referencia
+bibliográfica se crea al paso desde la obra, pero luego no hay dónde volver a ella para corregir un
+título o una autoría mal escritos; una exposición hay que tenerla ya en el catálogo para poder
+enlazarla, aunque su sede ya se pueda dar de alta; y un documento del archivo todavía no se puede dar de
+alta ni enlazar con una obra desde ninguna parte, aunque ya exista la clasificación en la que se
+ordenará.
+
+**Las seis listas nuevas, sin abrirse todavía en un teléfono**
+Todo lo que decide algo en ellas está comprobado con pruebas automáticas —cuál es el nombre repetido, qué
+se recupera en vez de crearse dos veces, qué frase corresponde a cada negativa del catálogo— y las
+negativas se provocaron una a una contra la base de verdad. Lo que nadie ha hecho aún es abrirlas con un
+móvil en la mano: ver que un nombre largo no se parte en columnas de dos palabras, que el aviso de «no se
+puede retirar» se sube a la vista al pulsar el botón de abajo, y que la lista de personas se recorre con
+el pulgar cuando tenga cien fichas.
 
 **La mitad documental, sin haberse usado aún con un móvil en la mano**
 Todo lo que decide qué se muestra en esos cinco apartados —cada frase, cada recuento, cada hueco de una

@@ -1043,11 +1043,22 @@ export function BottomSheet({
   open,
   onClose,
   title,
+  headerAction,
   children,
 }: {
   open: boolean
   onClose: () => void
   title: string
+  /**
+   * Un control opcional junto al título, a la izquierda del cierre.
+   *
+   * Existe porque la acción que deshace lo que la hoja acumula —quitar los filtros
+   * puestos— tiene que estar donde se ve sin desplazarse: al pie queda por debajo de
+   * cinco secciones de opciones, y con la hoja a tres cuartos de pantalla eso son
+   * dos gestos para encontrarla. Y arriba puede además decir CUÁNTOS filtros va a
+   * quitar, que es la información que hace falta para decidir si se pulsa.
+   */
+  headerAction?: ReactNode
   children: ReactNode
 }) {
   // Escape closes, like any dialog. Registered only while open.
@@ -1078,14 +1089,20 @@ export function BottomSheet({
         <div className="mx-auto max-w-3xl">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-semibold">{title}</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar"
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-stone-600 active:bg-stone-100"
-            >
-              <NoIcon className="h-5 w-5" />
-            </button>
+            {/* El cierre se queda pegado al borde y lo que se añada va a su
+                izquierda: el pulgar aprende dónde está la salida y no conviene
+                moverla porque una hoja tenga una acción y otra no. */}
+            <div className="flex items-center gap-1">
+              {headerAction}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Cerrar"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-stone-600 active:bg-stone-100"
+              >
+                <NoIcon className="h-5 w-5" />
+              </button>
+            </div>
           </div>
           {children}
         </div>
