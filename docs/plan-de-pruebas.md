@@ -134,7 +134,9 @@ interfaz que promete lo que no cumple.
 | RF-103 | Un Catalogador puede editar una ficha creada por otro Catalogador | Pendiente |
 | RF-106 | La interfaz de un Lector no contiene ningún control de escritura ni el enlace a la papelera | Pendiente |
 | RF-106 | Un Lector que ataca la API directamente, saltándose la interfaz, recibe 403 al intentar dar de alta | **Hecho** |
-| RF-107 | Un Superusuario conserva acceso completo al contenido sin necesidad de tener el rol de Catalogador | Pendiente |
+| RF-107 | Un Superusuario conserva acceso completo al contenido sin necesidad de tener el rol de Catalogador. Desde el 4 de agosto de 2026 **existe por fin un usuario con ese papel en `rls_role_matrix.test.sql`** —la matriz no tenía ninguno en sus más de mil líneas, y su fila se estaba dando por hecha porque `can_edit()` vale para los dos—: con el papel de Superusuario y **sin** el de Catalogador, edita una obra de verdad y su cambio queda anotado a su nombre. Sigue **Parcial** porque eso demuestra el acceso al contenido sobre las obras y no sobre las 23 tablas: la matriz completa por rol y por operación es la fila de RF-109 | Parcial |
+| RF-114 | Lo que pesa un fichero se dice **en el control que lo ofrece**, en es-ES con su coma decimal, con el KB por debajo del mega y el MB por encima; un fichero diminuto no se anuncia como 0 KB; y **sin tamaño registrado se dice que no consta**, que no es un fichero de tamaño cero. Cubierto en `documentaryFormat.test.ts` y `archiveDownloads.test.ts` | **Hecho** |
+| RF-114 | Que el peso se **vea** antes de pulsar, en el botón y no en una nota al pie, en la pantalla de un móvil. Es JSX | Pendiente en navegador |
 
 ### Modelo de datos (RF-200)
 
@@ -205,17 +207,22 @@ comprueba. El resto es lo de siempre: que la base rechaza lo que el cliente no d
 comprobar, que un Lector no escribe ninguna de las columnas nuevas, y que lo que el dispositivo no
 puede hacer consta en vez de callarse.
 
-La verificación completa de este bloque se pasó el 3 de agosto de 2026: comprobación de tipos limpia,
-868 casos del frontend en verde, los 21 ficheros de tests SQL en verde y los 28 casos de la herramienta
-local en Python. Las filas que estaban «En curso» pasan a **Hecho** con esa fecha. Tres de ellas se
-comprobaron además al revés, deshaciendo a mano lo que verifican para ver el test rojo: el fichero de
-casos compartido, la copia que sale en blanco y el color dentro de la comparación de dos ediciones. Un
-test que pasa hagas lo que hagas no verifica nada, y estos tres son los que sostienen la entrega.
+La verificación completa de este bloque se pasó el 3 de agosto de 2026, y va con los números **que se
+midieron ese día y no los de hoy**: comprobación de tipos limpia, 868 casos del frontend en verde, los
+21 ficheros de tests SQL que existían entonces en verde y los 28 casos de la herramienta local en
+Python. Las filas que estaban «En curso» pasan a **Hecho** con esa fecha. (Hoy los ficheros de SQL son
+33 y los casos del frontend 1395: la cifra de la cabecera es la vigente, y esta se deja como la
+constancia de con qué se cerró este bloque.) Tres de sus filas se comprobaron además al revés,
+deshaciendo a mano lo que verifican para ver el test rojo: el fichero de casos compartido, la copia que
+sale en blanco y el color dentro de la comparación de dos ediciones. Un test que pasa hagas lo que hagas
+no verifica nada, y estos tres son los que sostienen la entrega.
 
 **«Pendiente en navegador»** es lo que Vitest no puede afirmar —píxeles, gestos y el techo de área del
 lienzo, que solo existe en el dispositivo—: se cierra como las filas de esquinas de más abajo, con una
 sesión fechada y el navegador dicho, no con un aserto. Nada de este bloque se ha abierto todavía en un
-navegador, así que esas tres filas siguen enteras.
+navegador, así que esas tres filas siguen enteras. El alcance completo de esa etiqueta está arriba, en
+«Lo que "Pendiente en navegador" significa exactamente»: no hay entorno de DOM en absoluto, así que
+ningún componente de la aplicación tiene un test de renderizado.
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
