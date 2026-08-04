@@ -2,13 +2,13 @@
 
 Correspondencia entre los requisitos de [`requisitos.md`](requisitos.md) y los tests que los verifican.
 
-**Estado medido el 4 de agosto de 2026, todo en verde:**
+**Estado medido el 4 de agosto de 2026: todo en verde, con un aviso sobre cómo se ejecuta que está justo debajo de la tabla y conviene leer.**
 
 | Qué | Cuánto | Cómo se midió |
 |---|---|---|
 | Tests SQL | **33 ficheros**, 0 rojos | Uno a uno, porque `make db-test` aborta en el primero que falle y esconde el resto |
 | Tests del frontend | **1395 casos en 59 ficheros** | `vitest run` con el repositorio entero delante. Dentro del contenedor son 1387 en 58: ver el aviso de abajo |
-| Herramienta local en Python | **28 casos** | `make copias-corregidas-test` |
+| Herramienta local en Python | **28 casos** | `python3 scripts/copias-corregidas/test_corrected_copies.py`, que es el segundo paso de `make casos-color` |
 | Comprobación de tipos | limpia | `tsc -b --noEmit` con el repositorio entero delante. Ver el aviso |
 
 Cada número lleva su fecha a propósito: un recuento de tests envejece en cuanto se escribe, y un número
@@ -37,7 +37,8 @@ Todo se ejecuta con `make verificar`, y en cada *push* con el mismo orden de pri
 | Lógica del frontend | Vitest | En uso · `make test` |
 | Tipos | `tsc --noEmit` | En uso · `make typecheck` |
 | Infraestructura | `terraform fmt -check` y `terraform validate` | En uso · `make infra-check` |
-| Recorridos completos, con perfil de móvil | Playwright | **Sin montar** |
+| Renderizado de componentes | **Ninguna.** No hay `jsdom`, ni `happy-dom`, ni `@testing-library`, ni modo navegador de Vitest | **Sin montar** · ver el apartado de abajo |
+| Recorridos completos, con perfil de móvil | Playwright | **Sin montar en el repositorio.** Las filas que dicen «Comprobado a mano» con Playwright y Chromium se dirigieron con un andamio que vive fuera del repositorio, así que no se pueden volver a ejecutar desde aquí ni en integración continua: son una medición fechada, no una batería |
 
 Los tests de SQL son SQL corriente, sin pgTAP: cada fichero abre una transacción,
 crea sus propios datos, comprueba con bloques `do` que lanzan excepción al fallar, y termina en
@@ -87,8 +88,9 @@ Por orden, según la consecuencia de un fallo silencioso:
    personales de coleccionistas particulares en `contacto`. Es la única categoría cuyo fallo afecta a
    terceros ajenos al proyecto.
 2. **Reglas con consecuencia sobre los datos** — cascada de la baja lógica, campos calculados,
-   inmutabilidad de claves primarias, unicidad de la imagen índice, *trigger* del bloqueo. Un fallo aquí
-   corrompe el catálogo sin avisar.
+   inmutabilidad de claves primarias, unicidad de la imagen índice, coherencia entre el estado de un
+   bloque documental y las filas que tiene debajo. Un fallo aquí corrompe el catálogo sin avisar. (Esta
+   lista decía «*trigger* del bloqueo», que se retiró con el grupo RF-700.)
 3. **Captura en móvil** — es el caso de uso principal; si falla, no hay inventario.
 4. **Validación y convenciones de captura.**
 5. **Renderizado de vistas.**
@@ -109,17 +111,19 @@ reales contra la base, no comprobando que el fichero de política existe.
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-109 | Matriz completa: para cada una de las nueve tablas y cada operación (`select`, `insert`, `update`, `delete`), qué puede hacer cada rol. Son 9 × 4 × 3 casos y se generan, no se escriben a mano | Pendiente |
+| RF-109 | Matriz completa: para cada tabla del esquema y cada operación (`select`, `insert`, `update`, `delete`), qué puede hacer cada rol. La cifra de esta fila decía «9 × 4 × 3 casos»; con **23 tablas** medidas el 4 de agosto de 2026 son 276, y por eso sigue diciendo lo mismo que decía: **se generan, no se escriben a mano**. Lo que hoy existe es la parte escrita a mano —`rls_role_matrix.test.sql` cubre las tablas del catálogo rol por rol, y `documentary_policies.test.sql` las quince documentales con las tres políticas y los privilegios medidos—, que es mucho pero no es la matriz | Parcial |
 | RF-111 | Test de cierre por omisión: **toda** tabla del esquema tiene RLS activado, y ninguna política permite DELETE. Falla automáticamente cuando alguien añade una tabla sin RLS — es la red que impide el olvido | **Hecho** |
 | RF-111, RF-113 | Un cliente con la clave anónima y **sin sesión** no lee ni una fila de ninguna tabla. Este aserto destapó que la plataforma concede las tablas nuevas al rol anónimo por privilegios por omisión | **Hecho** |
 | RF-111 | Ninguna función del esquema público es ejecutable por PUBLIC ni deja su `search_path` al azar; las de trigger no son invocables desde la API y aun así disparan; el esquema está cerrado a PUBLIC y abierto a quien la API necesita; y un usuario con sesión sigue evaluando las políticas. Cubierto en `function_privileges.test.sql` | **Hecho** |
 | RF-105 | Un Lector lee las obras activas y no puede modificarlas, y lee `contact` de las partes que sí puede ver —RF-105 lo decide expresamente y por eso se ejerce en vez de suponerse—, pero **no** el de las partes a las que solo llegaba por la procedencia de una obra retirada. Cubierto en `rls_role_matrix.test.sql` y `documentary_visibility.test.sql` | **Hecho** |
 | RF-108 | Un Catalogador no puede modificar su propio rol en la tabla de perfiles, ni el de otro usuario. Y el acceso administrativo directo sí puede: sin eso no habría forma de promover al primer superusuario | **Hecho** |
+| RF-104 | Un Catalogador no llega a la gestión de usuarios ni a la configuración de permisos. Lo que hoy está cubierto es el borde más afilado de ese requisito, en `change_log.test.sql`: **una sesión autenticada sin perfil no ve ni una línea** del historial, o sea que un usuario a quien todavía no se le ha dado papel no hereda nada. Falta la mitad de interfaz | Parcial |
 | RF-112 | El registro está deshabilitado: un intento de alta de cuenta desde el cliente es rechazado | Pendiente |
 | RF-609 | Las políticas o las vistas excluyen las fichas de baja para el Lector, de modo que la exclusión no dependa solo de que el frontend recuerde filtrar | **Hecho** para la obra y su expediente documental |
 | RF-609, RF-905, RF-910, RF-911, RF-912, RF-913, RF-511 | **La fuga que este bloque existía para cazar, y que estuvo abierta.** Medido el 4 de agosto de 2026 con la sesión de un Lector: de una obra dada de baja veía 0 filas de la obra y **1 fila de su eslabón de procedencia, de su cita, de su participación, de su documento y de su relación** — y, siguiendo el eslabón, el nombre y el **contacto** del coleccionista particular que la tuvo. La baja de una obra no cae en cascada sobre sus filas documentales, y la política no exigía que el ancla se viera. Cerrado en `20260805130000_documentary_visibility.sql`: seis políticas de select que heredan la visibilidad de sus anclas, los dos extremos de cada puente incluidos. Cubierto en `documentary_visibility.test.sql` —la fuga, el control con todo activo, los dos extremos uno por uno, el documento compartido con una exposición activa y la papelera del Catalogador intacta— y en `rls_role_matrix.test.sql`, que añade la celda. Comprobado al revés el 4 de agosto de 2026, deshaciendo las seis políticas a mano y devolviéndolas: 12 asertos funcionales y 21 estructurales en rojo, y los tres bloques de control en verde. Y otra vez mirando un solo extremo de la relación: exactamente dos asertos en rojo, los dos que hablan de `to_catalog_id` | **Hecho** |
 | RF-905 | **Sigue abierto, medido y no escondido:** el Lector ve la fila —y con ella la ruta del fichero— de la **fotografía** de una obra retirada. Es el mismo hueco de la cascada y le toca su propia migración: la política de `images` es de la primera migración, está en producción y la tocan las pantallas de fotografía, y no lleva dato personal de tercero, que es lo que hacía del expediente documental una urgencia. Medido en 1 fila y **fijado con un aserto al revés** en `documentary_visibility.test.sql`, que afirma que el hueco sigue ahí y se pondrá rojo el día que se cierre, para que nadie tenga que acordarse de venir a borrar el comentario | Pendiente |
 | RF-110 | Una URL firmada caducada deja de dar acceso al fichero; una ruta de bucket sin firmar no responde | Pendiente |
+| DP-11 | **La discrepancia entre dos formas de política de lectura, escrita para no volver a descubrirla.** Medido el 4 de agosto de 2026 con la sesión de un Lector de verdad: las tablas nuevas responden «está activa y puede leer, o puede editar» y las tres maestras más antiguas —tipos de obra, series y lugares— solo «puede leer», así que el Lector ve los **22** lugares del árbol, **2 de ellos retirados**, además de los 6 tipos de obra y las 9 series, hoy ninguno retirado. **No se toca el comportamiento de las tres viejas**, que llevan meses desplegadas; lo que hay es una decisión pendiente con su argumento y su riesgo en DP-11 de requisitos.md. Lo que verificaría esta fila el día que se unifique: que el Lector deja de ver las entradas retiradas de las tres, y que una obra que usa una entrada retirada **sigue mostrando su nombre**, que es el fallo que un cambio a ciegas introduce | Pendiente · decisión antes que test |
 
 ### Interfaz según rol (RF-100)
 
@@ -130,7 +134,7 @@ interfaz que promete lo que no cumple.
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
 | RF-101 | Un visitante sin sesión acaba en la pantalla de acceso desde cualquier ruta, recorridas de forma exhaustiva y no por muestreo | Pendiente |
-| RF-103 | Un Catalogador puede crear, editar y dar de baja en las nueve tablas | Pendiente |
+| RF-103 | Un Catalogador puede crear, editar y dar de baja **desde la interfaz** en todas las tablas del catálogo. Contra la base ya está: `documentary_policies.test.sql` le hace escribir las quince documentales de verdad y `rls_role_matrix.test.sql` las del catálogo. Lo que falta es que lo pueda hacer desde la pantalla, y para las cuatro fichas que no tienen pantalla no hay nada que probar (ver RF-309 en el grupo RF-500). El requisito dice «las nueve tablas», que era el modelo de los documentos originales; hoy son 23 | Parcial |
 | RF-103 | Un Catalogador puede editar una ficha creada por otro Catalogador | Pendiente |
 | RF-106 | La interfaz de un Lector no contiene ningún control de escritura ni el enlace a la papelera | Pendiente |
 | RF-106 | Un Lector que ataca la API directamente, saltándose la interfaz, recibe 403 al intentar dar de alta | **Hecho** |
@@ -148,6 +152,7 @@ interfaz que promete lo que no cumple.
 | RF-205 | Cada campo de selección afectado tiene «Sin revisar» como valor inicial | Pendiente |
 | RF-207 | La columna generada compone los ocho formatos; no se puede escribir directamente; la nota manda en la ficha conservando el año de búsqueda; rango invertido, año implausible y bandera sin año se rechazan; la consulta de época funciona por solapamiento | **Hecho** |
 | RF-207 | La fecha escrita a mano se estructura si es canónica (con variantes de catálogo) y solo lo imparseable queda como nota, con el año rescatado | **Hecho** |
+| RF-208 | Las dimensiones son números sin unidades y en campos separados, y **una medida negativa es una errata de teclado y se rechaza** contra la base, no solo en el formulario. Cubierto en `schema_rules.test.sql` | **Hecho** |
 | RF-209 | Obra con `titulo` vacío se representa como «[Sin título]» sin guardar el dato; obra titulada literalmente «Sin título» se muestra sin corchetes | **Hecho** |
 | RF-210 | `fotografiada` es No sin imágenes, Sí con una imagen activa, y **No cuando su única imagen está de baja** (INC-14) | Pendiente |
 | RF-211 | `medidas_verificadas` sigue en No aunque `alto_cm` y `ancho_cm` tengan valor | Pendiente |
@@ -156,6 +161,7 @@ interfaz que promete lo que no cumple.
 | RF-213, RF-901 | Los tipos de obra y las series tienen clave sustituta (ADR-007): la clave primaria es `id`, el nombre sigue siendo único —por fondo en las series—, renombrar es un `update` de una fila que el catálogo ve sin mover las fechas de ninguna obra, cambiar el tipo de una obra mueve la fecha básica y cambiar su serie no, una serie de otro fondo se rechaza al insertar y al mover, no se retira lo que tiene obras activas dentro, una obra en la papelera no lo impide, la baja se sella y se deshace, nadie tiene DELETE y renombrar es del Catalogador. Cubierto en `master_table_keys.test.sql` | **Hecho** |
 | RF-213, RF-901 | Lo que decide el alta de un nombre en el vocabulario: un nombre nuevo se inserta recortado, uno equivalente salvo mayúsculas o tildes se reutiliza en vez de duplicarse, y **uno retirado se recupera** en vez de fallar con una violación de unicidad que la interfaz llamaba «añadido». Con el orden `es-ES` de las dos listas y la agrupación de las series por fondo. Cubierto en `masterTables.test.ts` | **Hecho** |
 | RF-215 | La obra apunta a un nodo, o a ninguno, que también es legítimo; renombrar el lugar lo ve el catálogo entero sin mover las fechas de la obra; un lugar con obras activas dentro no se retira, y una obra en la papelera no lo impide; la clave ajena rechaza apuntar a un lugar inexistente; y el traslado de los textos no dejó obras sin nodo ni la auditoría apagada. Cubierto en `artwork_physical_place.test.sql` | **Hecho** |
+| RF-216 | La clave de una tabla maestra no es su nombre, y renombrar una entrada es un `update` de una fila que el catálogo entero ve sin mover ninguna fecha. Cubierto para las cinco maestras que lo ejercen: `master_table_keys.test.sql` (tipos de obra y series), `physical_places.test.sql`, `bibliography.test.sql` (tipos de publicación), `archive_documents.test.sql` (tipos de documento y serie archivística) y `artwork_relationships.test.sql` (tipos de relación) | **Hecho** |
 | RF-212, RF-217 | Contra la base: los seis tipos de relación nacen sembrados con su inversa y su simetría, un tipo asimétrico sin inversa se rechaza, un tipo en uso no cambia de simetría ni se retira, una relación simétrica se guarda **una sola vez** en el orden canónico —da igual el orden en que se nombren las dos obras—, la pareja inversa de una asimétrica se rechaza, y una obra no se relaciona consigo misma. Cubierto en `artwork_relationships.test.sql` | **Hecho** |
 | RF-217 | Lo que la ficha decide sobre las relaciones sin píxeles: qué etiqueta se lee en cada extremo —la directa o la inversa, según de qué lado se mire— , la obra sin título representada como «[Sin título]», el enlace a la ficha de la otra obra y la miniatura que la acompaña, y el formulario que relaciona: qué obras ofrece, cuál excluye y qué hace con una relación que estaba retirada. Cubierto en `relatedArtworks.test.ts`, `relatedThumbnails.test.ts` y `relateForm.test.ts` | **Hecho** |
 | RF-218 | Contra la base, y en las cuatro migraciones que van añadiendo un bloque: no se declara un bloque «investigado sin resultado» cuando ya tiene filas debajo, y no se añade **ni se restaura** una fila en un bloque ya declarado sin resultado. Las dos puertas, para los cuatro bloques: procedencia, bibliografía, historial expositivo y documentación. Cubierto en `provenance.test.sql`, `bibliography.test.sql`, `exhibitions.test.sql` y `archive_documents.test.sql` | **Hecho** |
@@ -179,6 +185,7 @@ interfaz que promete lo que no cumple.
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
+| RF-401 | Una obra tiene cero, una o varias fotografías, cada una con su tipo de toma, su fecha y su autor, y **el orden lo pone la mano**: reordenar es explícito y no se deriva de la fecha de subida. Cubierto en `images.test.sql`, `image_order.test.sql` y `reorder.test.ts` | **Hecho** |
 | RF-402 | Marcar una segunda imagen como índice desmarca la primera; nunca hay dos activas marcadas (INC-15) | Pendiente |
 | RF-403 | Sin ninguna marcada, se elige la más reciente de tipo «general»; se comprueba también el caso de que no haya ninguna «general» | Pendiente |
 | RF-404 | Una obra sin imágenes muestra el marcador «Imagen no disponible» | Pendiente |
@@ -303,7 +310,8 @@ página de la exposición.
 | RF-502 | El historial expositivo se ordena de forma ascendente contra la base, y el formato de la línea —año, fechas, título en cursiva, institución y lugar— se compone en `exhibitionHistory.test.ts` y `documentaryFormat.test.ts`, con la fecha incompleta y la sede sin localidad resueltas sin dejar hueco | **Hecho** |
 | RF-503 | El catálogo de la muestra vive en la bibliografía y no en una tabla propia: la clave ajena existe, apunta a una referencia y rechaza una inexistente. Cubierto en `exhibitions.test.sql`. **Falta** que la navegación en ambos sentidos exista: no hay ficha de exposición ni de referencia adonde ir | Parcial |
 | RF-504 | `pages` y `note` son dos columnas y no una, consultables sin analizar prosa; una obra se cita una vez en cada referencia; volver a añadir una cita retirada la restaura **con sus páginas**. Cubierto en `bibliography.test.sql`, y la composición de la cita en `citationFormat.test.ts` y `citationGroups.test.ts` | **Hecho** |
-| RF-507 | La exportación produce un `.bib` procesable, con todas las entradas y claves únicas | ~~Retirado~~ (9.1): es del catálogo impreso, fuera de alcance |
+| RF-505, RF-506 | Los bloques «Obras participantes» y «Obras citadas» de las fichas de exposición y de referencia. El **dato** está: la puente se consulta en los dos sentidos y `bibliography.test.sql` lo ejerce. Lo que no existe es la ficha donde pintarlos (RF-309) | Parcial |
+| ~~RF-507~~ | La exportación produce un `.bib` procesable, con todas las entradas y claves únicas. **No se va a cubrir:** el requisito está retirado (9.1 de requisitos.md) porque es del catálogo impreso, que está fuera de alcance | ~~Retirado~~ |
 | RF-508 | Una ficha mínima de persona o institución entra; el tipo y el estado de contacto son enumerados cerrados que no admiten texto libre; **el tipo no ofrece «Sin revisar»**, que es la excepción consciente a RF-205; un nombre en blanco no identifica a nadie; la traza de autoría la sella la base; la papelera sella y se deshace; y nadie borra de verdad. Cubierto en `parties.test.sql`, y la elección de parte y su línea publicable en `partyChoice.test.ts` y `documentaryFormat.test.ts` | **Hecho** |
 | RF-509 | La cadena: un eslabón dice de quién habla; **el orden lo pone la catalogadora y no las fechas**; rehacer el orden es todo o nada; un Lector no reordena; los tres enumerados son cerrados; la fecha tiene la forma de ADR-004 y el caso de comprada y vendida el mismo año entra. Cubierto en `provenance.test.sql`, y lo que la pantalla decide en `provenanceChain.test.ts` (73 casos) y `provenanceDraft.test.ts` | **Hecho** |
 | RF-510 | El relato narrativo y la cadena conviven: con texto, el relato es lo que se imprime; vacío, la ficha compone la línea con los eslabones. Cubierto en `provenance.test.sql` y `provenanceChain.test.ts` | **Hecho** |
@@ -332,23 +340,30 @@ página de la exposición.
 | RF-608 | Volver al listado conserva filtros y número de página | Pendiente |
 | RF-608 | La fotografía abierta viaja en la ruta (`/artwork/:id/photos/:imageId`): sobrevive a la recarga, se comparte como enlace, cambiar de miniatura no apila entradas de historial, y un identificador que la obra no tiene se corrige a la principal. Comprobado a mano en el navegador el 1 de agosto de 2026 | Comprobado a mano |
 | RF-608 | Un enlace compartido con la ubicación en texto (`?location=…`, anterior a ADR-006) se resuelve contra el árbol y se reescribe a identificadores; lo que ya no existe se descarta sin romper el enlace. Cubierto en `listView.test.ts` | **Hecho** |
-| RF-609 | Una ficha dada de baja desaparece de índices y de resultados de búsqueda | Pendiente |
+| RF-609 | Una ficha dada de baja desaparece de índices y de resultados de búsqueda. La base ya lo garantiza para el Lector (ver el bloque de RLS), así que lo que falta aquí es la otra mitad: que **el listado que ve el Catalogador**, que sí puede leer la papelera, no la mezcle con el catálogo | Pendiente |
 | RF-610 | El texto buscado va y vuelve de la URL, y la vista recordada del dispositivo no lo guarda. Cubierto en `listView.test.ts` | **Hecho** |
 | RF-602 | El filtro de serie ofrece «Sin serie» siempre y en primer lugar, selecciona las obras sin serie asignada y solo esas, se combina con nombres como un «o», y va y vuelve de la URL como `series=`. Cubierto en `listView.test.ts` | **Hecho** |
 
-### Bloqueo de edición (RF-700)
+### Bloqueo de edición (RF-700) — grupo retirado
 
-| Requisito | Qué debe verificar el test | Estado |
+**Ninguna de estas nueve filas se va a cubrir, y ninguna es un hueco de cobertura.** El grupo entero
+está retirado por sobreingeniería (9.1 de requisitos.md) y la aplicación no tiene bloqueo de edición:
+ocho requisitos, una tabla, un *trigger* y una pantalla para un catálogo que edita una persona. Estaban
+aquí marcados «Pendiente», que es lo que hace que un requisito retirado parezca trabajo por hacer y
+falsee la cuenta de lo que falta. Se conservan escritas por lo mismo que los requisitos: son la única
+constancia de qué habría que probar si algún día editan dos manos.
+
+| Requisito | Qué debía verificar el test | Estado |
 |---|---|---|
-| RF-701 | Un segundo Catalogador no puede entrar en edición de una ficha ya bloqueada | Pendiente |
-| RF-702 | Abrir la ficha en consulta no crea bloqueo | Pendiente |
-| RF-703 | Guardar libera el bloqueo; cancelar también | Pendiente |
-| RF-704 | Un bloqueo con la marca de tiempo caducada deja de impedir la edición, sin intervención manual | Pendiente |
-| RF-705 | El aviso identifica al usuario que tiene la ficha y desde cuándo | Pendiente |
-| RF-706 | El desbloqueo forzado por otro Catalogador libera el bloqueo | Pendiente |
-| RF-707 | La respuesta para un Lector no incluye el aviso de bloqueo (INC-21) | Pendiente |
-| RF-708 | **El *trigger* rechaza la escritura de un segundo usuario aunque la petición no venga de la interfaz.** Se verifica atacando la API directamente con la sesión del segundo catalogador, saltándose el frontend: es el único test que demuestra que el bloqueo es un bloqueo y no una advertencia | Pendiente |
-| RF-708 | El *trigger* permite la escritura al usuario que sí tiene el bloqueo, y también cuando no hay ningún bloqueo activo | Pendiente |
+| ~~RF-701~~ | Un segundo Catalogador no puede entrar en edición de una ficha ya bloqueada | ~~Retirado~~ |
+| ~~RF-702~~ | Abrir la ficha en consulta no crea bloqueo | ~~Retirado~~ |
+| ~~RF-703~~ | Guardar libera el bloqueo; cancelar también | ~~Retirado~~ |
+| ~~RF-704~~ | Un bloqueo con la marca de tiempo caducada deja de impedir la edición, sin intervención manual | ~~Retirado~~ |
+| ~~RF-705~~ | El aviso identifica al usuario que tiene la ficha y desde cuándo | ~~Retirado~~ |
+| ~~RF-706~~ | El desbloqueo forzado por otro Catalogador libera el bloqueo | ~~Retirado~~ |
+| ~~RF-707~~ | La respuesta para un Lector no incluye el aviso de bloqueo (INC-21) | ~~Retirado~~ |
+| ~~RF-708~~ | **El *trigger* rechaza la escritura de un segundo usuario aunque la petición no venga de la interfaz.** Se verificaría atacando la API directamente con la sesión del segundo catalogador, saltándose el frontend: era el único test que habría demostrado que el bloqueo es un bloqueo y no una advertencia, y el criterio que dejó escrito sigue vigente para cualquier regla nueva | ~~Retirado~~ |
+| ~~RF-708~~ | El *trigger* permite la escritura al usuario que sí tiene el bloqueo, y también cuando no hay ningún bloqueo activo | ~~Retirado~~ |
 
 ### Trazabilidad (RF-800)
 
@@ -365,30 +380,32 @@ página de la exposición.
 |---|---|---|
 | RF-901 | Dar de baja no borra la fila, y el borrado real está negado a todos los roles por ausencia de política y de privilegio | **Hecho** |
 | RF-902 | La baja rellena fecha y usuario; la restauración rellena los suyos y no borra la traza de la baja | **Hecho** |
-| RF-903 | Eliminar una fila puente la borra realmente, y volver a crearla no deja rastro | Pendiente |
+| ~~RF-903~~ | Eliminar una fila puente la borra realmente, y volver a crearla no deja rastro. **Esta fila no se va a cubrir nunca, y no es un hueco: es un requisito revisado.** RF-517 lo sustituye, y construir RF-903 tal como está escrito exigiría una política de `delete` que pondría en rojo `rls_default_deny.test.sql`, que lanza excepción ante *cualquiera* del esquema. Lo que sí se verifica —que la fila puente se retira, sigue existiendo y se restaura al volver a añadirla— está en la fila de RF-517 del grupo RF-500 | **Revisado por RF-517** |
 | RF-904 | Dar de baja una imagen no afecta a su obra; dar de baja una participación no afecta a obra ni exposición | Pendiente |
-| RF-905, RF-910 | Un test por cada fila de la tabla de cascada: obra, exposición, referencia, serie y propietario. Hechas la obra —sus cinco filas documentales—, la exposición y la referencia, en `documentary_visibility.test.sql`, y con el criterio escrito en RF-910 a RF-913: lo que se propaga es la visibilidad y no el dato, así que restaurar devuelve el expediente entero. Faltan serie y propietario, que no ocultan filas sino que dejan el campo vacío, y falta la fotografía | Parcial |
+| RF-905, RF-910 | Un test por cada fila de la tabla de cascada: obra, exposición, referencia, serie y propietario. **Hechas** la obra —sus cinco filas documentales—, la exposición y la referencia, en `documentary_visibility.test.sql`, con el criterio escrito en RF-910 a RF-913: lo que se propaga es la visibilidad y no el dato, así que restaurar devuelve el expediente entero. **Falta una y las otras dos han cambiado de naturaleza.** Falta la fotografía de una obra retirada, que es la fuga que sigue abierta y tiene fila propia arriba. Y en serie y propietario, el esquema **resolvió la cuestión de otra manera y RF-905 se ha quedado atrás**: no se retira una serie con obras activas dentro ni una parte que sostiene una cadena, es titular de derechos o está detrás de una sede activa, así que «dejar el campo vacío en las obras que lo tenían» ya no puede llegar a ocurrir por esas vías. Las tres negativas sí están cubiertas. Lo que queda es el caso residual y la revisión del requisito, con fila propia en la tabla de huecos del grupo RF-1500 | Parcial |
 | RF-911 | Una fila que une dos fichas se ve si se ven las dos: una cita cuya referencia está en la papelera, una participación cuya exposición lo está, un documento retirado y el expediente de una exposición retirada no se enseñan aunque la obra siga activa. Y una relación entre obras se comprueba por **los dos extremos**, con la obra retirada una vez en cada columna, porque el disparador de canonicalización puede dejarla en cualquiera de las dos. Cubierto en `documentary_visibility.test.sql` | **Hecho** |
 | RF-912 | El documento compartido: con la obra de baja y la exposición activa, el Lector deja de ver que ese documento documenta la obra y sigue viendo su ficha y su sitio en el expediente de la exposición. Cubierto en `documentary_visibility.test.sql` | **Hecho** |
 | RF-913 | **El aserto que el arreglo no puede romper:** el Catalogador sigue viendo la papelera entera —la obra, sus cinco filas documentales, las puentes con un extremo retirado y la parte de la procedencia—, porque es su forma de restaurar. Sin él, un arreglo de visibilidad que escondiera la papelera a todo el mundo pasaría por bueno y el trabajo se perdería en silencio. Cubierto en `documentary_visibility.test.sql` y `rls_role_matrix.test.sql` | **Hecho** |
 | RF-906 | Los filtros de la papelera funcionan por tabla de origen, fecha y usuario; «Restaurar» devuelve la ficha a los índices | Pendiente |
 | RF-906 | Un Lector recibe 403 en la papelera | Pendiente |
 | RF-908 | Una ficha restaurada conserva su clave primaria original | Pendiente |
+| RF-909 | **Requisito negativo, y por eso tiene test:** dos referencias, dos exposiciones y dos documentos pueden llamarse o describirse igual, y se comprueba que la base **no** lo impide. Un catálogo de 1985 y una monografía de 2003 se titulan los dos «Alberto Rotili» y son dos entradas legítimas: la unicidad del título habría convertido un dato real en un error, y los duplicados de verdad se resuelven por revisión con las herramientas de búsqueda. Cubierto en `bibliography.test.sql`, `exhibitions.test.sql` y `archive_documents.test.sql` | **Hecho** |
 
 ### Ficha imprimible (RF-1000)
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-1002 | La vista incluye los campos especificados, y el marcador cuando no hay imagen. Cubiertos en `recordPdf.test.ts` los campos, la imagen representativa incrustada, su colocación en la banda del pie y el marcador «Imagen no disponible», también cuando falla la descarga. La ubicación se imprime como la rama del árbol («Castelar 4, mesa de Mario») y la obra sin lugar se declara en vez de dejar hueco. Falta la serie, cuya tabla aún no existe | Parcial |
+| RF-1002 | La vista incluye los campos especificados, y el marcador cuando no hay imagen. Cubiertos en `recordPdf.test.ts` los campos, la imagen representativa incrustada, su colocación en la banda del pie y el marcador «Imagen no disponible», también cuando falla la descarga. La ubicación se imprime como la rama del árbol («Castelar 4, mesa de Mario») y la obra sin lugar se declara en vez de dejar hueco. **Y la serie también**, con su aserto propio: esta fila decía «falta la serie, cuya tabla aún no existe» y las dos mitades de la frase eran falsas — la tabla existe desde julio de 2026 y la serie se imprime y está cubierta | **Hecho** |
 | RF-1003 | El QR se genera y su contenido es la URL absoluta de la ficha completa. Cubiertos en `recordPdf.test.ts` la composición de la URL, la presencia del QR en el documento y su colocación en la cabecera, por encima de la fotografía y sin encoger nunca. Falta descodificar el QR impreso para comprobar que lo que codifica es esa URL | Parcial |
 
 ### Navegación (RF-1100)
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-1102 | Las migas de pan reflejan la jerarquía correcta en cada tipo de página | Pendiente |
+| ~~RF-1102~~ | Las migas de pan reflejan la jerarquía correcta en cada tipo de página. **No se va a cubrir: el requisito está retirado** (9.1 de requisitos.md). En una pantalla de móvil tres niveles de migas gastan la línea que necesita el título de la obra, y se navega con «atrás», que además vuelve al listado con sus filtros (RF-608) | ~~Retirado~~ |
 | RF-1103 | Los indicadores de la página de inicio coinciden con el contenido real de la base de datos | Pendiente |
 | RF-1104 | El botón de alta no aparece para un Lector | Pendiente |
+| RF-1105 | La gestión de usuarios se hace desde el panel de Supabase y la aplicación no tiene pantallas de administración. Lo que se verifica —y es la parte que importa— es que el papel de Superusuario **existe de verdad en la matriz de roles** y que su frontera está donde dice: edita el catálogo y no escribe la auditoría, así que «entrar por el panel» sigue siendo una decisión deliberada y no un descuido. Cubierto en `rls_role_matrix.test.sql` y `change_log.test.sql`. Que no haya pantalla de usuarios no lo comprueba nada, y es fácil de ver: no hay ruta | Parcial |
 | RF-1106 | La pantalla de ubicaciones crea, renombra, mueve y retira, y no aparece para un Lector. Sin cubrir: es interfaz y necesita un recorrido de navegador. Las reglas que protege —hermanos homónimos, ciclos, lugar con obras dentro— sí están cubiertas en `physical_places.test.sql` y `artwork_physical_place.test.sql` | Parcial |
 | RF-1106 | Las pantallas de tipos de obra y de series crean, renombran y retiran, muestran el fondo de cada serie y lo eligen al crearla, y ninguna se alcanza siendo Lector. Sin cubrir por test automático: es interfaz y necesita un recorrido de navegador. La lógica que sí se puede probar sin red está en `masterTables.test.ts`, y las reglas que la pantalla no repite —nombre único, no retirar lo que tiene obras dentro, quién puede renombrar— en `master_table_keys.test.sql` | Parcial |
 | RF-1106 | **Sin cubrir, y es lo que más lo necesita:** al renombrar un tipo o una serie, la interfaz arrastra además la copia en texto de `artworks.artwork_type` / `artworks.series`, porque el disparador de vocabulario exige que ese texto esté en el catálogo y sin arrastrarlo las obras afectadas no se pueden volver a guardar. Son dos peticiones sin transacción: si falla la segunda, el mensaje lo dice, pero nada lo prueba. La cobertura real llega cuando esas dos columnas de texto desaparezcan; hasta entonces, una función en la base haría atómico el renombrado y sería la forma de poder probarlo | Pendiente |
@@ -406,6 +423,29 @@ estrechada: lo que se verifica es un gesto táctil de una sola mano, no un ancho
 | RF-1204 | El recorrido completo de captura rápida crea una ficha válida con solo los campos mínimos, y la ficha queda correctamente marcada como incompleta | Pendiente |
 | RF-1205 | Los campos numéricos abren teclado numérico; ningún control depende de pasar el cursor por encima; los objetivos táctiles alcanzan el tamaño mínimo | Pendiente |
 | RF-1207 | Una subida interrumpida se puede reintentar sin volver a rellenar los campos, y no deja una fila a medias en la tabla Imágenes | Pendiente |
+
+### Enlaces a sitios externos (RF-1400)
+
+Este grupo está **cerrado por el lado de la base y vacío por el lado de la interfaz**, y las dos cosas
+hay que decirlas juntas. El esquema tiene 36 asertos en `external_links.test.sql` y 10 en
+`external_links_from_notes.test.sql`; en la aplicación, comprobado el 4 de agosto de 2026, `external_links`
+aparece **únicamente en `app/src/lib/types.ts`**: no hay ni una pantalla que lea la tabla, ni un test de
+frontend que cite un requisito de este grupo. Así que un enlace hoy se puede guardar y no se puede ver.
+
+| Requisito | Qué debe verificar el test | Estado |
+|---|---|---|
+| RF-1401 | **El arco exclusivo:** ni cero anclas ni dos, exactamente una; un enlace de obra y uno de fotografía entran; las dos claves ajenas rechazan un identificador que no existe. Y la tabla nace cerrada, con RLS, sus privilegios revocados y sin política de `delete`. Cubierto en `external_links.test.sql` | **Hecho** |
+| RF-1402 | El tipo es un enumerado cerrado que no admite texto libre, y **nulo no es «otro»**: se comprueban los dos como valores distintos. Una fila con solo el ancla y la dirección es válida, sin título y sin tipo. Cubierto en `external_links.test.sql` | **Hecho** |
+| RF-1403 | **La lista hostil entera**, y esto es lo que sostiene el grupo: cada dirección peligrosa se rechaza **y por el nombre de la restricción que la rechaza**, en `url` y otra vez en `archive_url`; las direcciones legítimas entran por las dos columnas; y la misma lista se pasa contra la función suelta, que es la que la interfaz debe usar para explicar el rechazo. Cubierto en `external_links.test.sql` | **Hecho** |
+| RF-1403 | **La otra mitad, sin empezar:** la interfaz no tiene todavía el espejo de esa función. Hoy no existe: el comentario de `types.ts` lo anuncia y no hay ninguna implementación ni ningún test que la cite. Cuando llegue, lo que hay que verificar es que rechaza **exactamente** la misma lista, o el cliente estará prometiendo lo que la base no cumple, o al contrario | Pendiente |
+| RF-1404 | **Requisito negativo, y hoy sin ningún test.** Lo que habría que verificar es de la clase de RF-415: que ningún nombre exportado ni ninguna clave de configuración hable de rastreador, icono, previsualización, instantánea ni acortador, y que ninguna petición salga hacia el sitio enlazado. La ausencia se sostiene hoy solo en que nadie lo ha escrito, no en que un test lo impida — y esta es justamente la clase de línea que se añade en seis meses «porque total es una llamada» | Pendiente |
+| RF-1405 | La comprobación se sella con fecha y autor, **y nulo no es «roto»**; los tres resultados se distinguen; un `update` directo **no** mueve las tres columnas de comprobación, y no lo hace en silencio para que un formulario que reenvía la fila entera no falle; volver a confirmar el mismo estado sí mueve la fecha; volver a «sin comprobar» limpia las tres a la vez; el resultado y su fecha van o las dos o ninguna; editar la nota mueve la actualización y **no** la comprobación; y un Lector no comprueba enlaces y su llamada no deja rastro. Cubierto en `external_links.test.sql` | **Hecho** |
+| RF-1406 | La misma dirección no se repite dos veces activa en la misma ficha, sí entra en otra ficha, y **sí se vuelve a añadir después de retirarla**; la baja lógica sella quién y cuándo y se deshace; nadie tiene `delete`; y un Lector no retira el enlace de origen de una reproducción. Cubierto en `external_links.test.sql` y `rls_role_matrix.test.sql` | **Hecho** |
+| RF-1407 | **El par completo, medido sobre las filas reales del catálogo:** cada reproducción trasladada dice de dónde salió *y* consta como tomada de otro catálogo (RF-417), no se marcó ninguna de más —que es tan grave como marcar de menos—, y el Lector lee las dos mitades. Cubierto en `external_links_from_notes.test.sql` y `rls_role_matrix.test.sql` | **Hecho** |
+| RF-1408 | Que una fila sin título es válida está cubierto en `external_links.test.sql`. **Lo que el requisito decide de verdad —que en su lugar se muestre el dominio y nunca la dirección entera— no lo verifica nada**, porque no hay pantalla que lo muestre. Es una función pura y se podrá probar sin navegador el día que exista | Pendiente |
+| RF-609, RF-1401 | La visibilidad heredada: el Lector no ve el enlace de una obra retirada. Cubierto en `external_links.test.sql` y `rls_role_matrix.test.sql` | **Hecho** |
+| RF-801, RF-802 | El traslado de las dos direcciones que vivían dentro de una nota **no cambió ni una letra de las notas** ni movió la traza de ninguna obra, y es idempotente: el cuerpo del traslado se ejecuta otra vez y no duplica nada. Cubierto en `external_links_from_notes.test.sql` | **Hecho** |
+| RF-1500 | **Hueco conocido:** los enlaces **no se auditan**. El registro de cambios solo cubre obras y fotografías, así que la dirección que alguien corrigió o el estado de comprobación que alguien cambió no dejan historia. Tiene fila propia en la tabla de huecos del grupo siguiente | Pendiente |
 
 ### Registro de cambios (RF-1500)
 
@@ -437,7 +477,8 @@ Fila propia para lo que **no** cubre ningún test y hay que saber que no cubre:
 |---|---|---|
 | El escritor enganchado como BEFORE en vez de AFTER | Medido: la obra **no se crea** y el registro **sí anota** su alta, sin ningún error. La causa es que el escritor termina devolviendo nulo, que en un BEFORE significa «descarta esta fila en silencio». Sería la peor combinación de las dos mitades: altas que se pierden y un registro que certifica creaciones que no ocurrieron. Cubierto con un aserto estructural en la migración y otro en `change_log_writer.test.sql`, no con un caso funcional | **Hecho** · como aserto de forma |
 | Un cambio de rol de usuario | Es probablemente el cambio más sensible del sistema y no deja rastro: el registro no audita la tabla de perfiles, y es una decisión del propietario que sigue fuera de alcance | **Fuera de alcance**, escrito |
-| El expediente documental y los enlaces externos | El registro solo audita obras y fotografías. La decisión sobre el historial del contacto de un tercero (RF-105) está pendiente y tiene que tomarse con esa columna delante | Pendiente |
+| El expediente documental y los enlaces externos | El registro solo audita obras y fotografías, y desde el 4 de agosto de 2026 hay **quince tablas documentales más los enlaces** sin una línea de historia: quién movió un eslabón de procedencia, quién cambió las páginas de una cita o quién corrigió una dirección web no consta en ninguna parte. Y arrastra una decisión que hay que tomar aparte: el historial del **contacto de un tercero** (RF-105) es dato personal, así que se decide con esa columna delante y en su propia migración, no se hereda por descuido al extender el registro | Pendiente |
+| La última frase de RF-905 | «Serie y Propietario dados de baja dejan el campo vacío en las obras que los tenían asignados.» **Hoy no puede ocurrir por ninguna de las dos vías, y no porque falte código, sino porque el esquema decidió otra cosa mejor:** no se retira una serie que tiene obras activas dentro, ni un tipo de obra que usan obras activas, ni una persona o institución que sostiene una cadena de procedencia activa, que es titular de derechos o que está detrás de una sede activa. Las tres negativas están cubiertas —`master_table_keys.test.sql`, `provenance.test.sql`, `exhibitions.test.sql`—. **Lo que queda de verdad sin cubrir es el resto, medido el 4 de agosto de 2026 en una transacción que se deshace**: con una obra activa dentro, retirar la serie falla con «No se puede retirar una serie que todavía tiene obras dentro»; con esa misma obra en la papelera, la serie **sí** se retira y la obra **sigue apuntando a ella**. Ese caso residual no tiene test, y el requisito tampoco describe ya lo construido | Pendiente · **decisión antes que test** |
 
 ### Infraestructura
 
@@ -457,7 +498,7 @@ aquí para que su ausencia del listado anterior no se lea como un hueco de cober
 | Requisito | Cómo se verifica |
 |---|---|
 | RF-405, RF-407 | Interacción de ratón y táctil sobre las miniaturas: revisión manual en navegador |
-| RF-1004 | Resultado real de impresión: revisión manual del PDF y del papel |
+| ~~RF-1004~~ | Resultado real de impresión: revisión manual del PDF y del papel. El requisito está retirado —era `@media print` y se sustituyó por un PDF generado en el navegador (8.2)— pero **la comprobación sigue teniendo sentido y sigue siendo a mano**: que el A5 salga legible y quepa la etiqueta al lado de la obra no lo dice ningún aserto |
 | RF-409, RF-410 | Los píxeles del giro y del recorte: el entorno de test no tiene `canvas` ni `createImageBitmap`, así que la geometría se prueba sola y el dibujo se comprueba en el navegador. Con ella, que reeditar una foto escriba rutas nuevas y no reutilice ninguna |
 | RF-410 | El dibujo de la lupa (`imageLoupe.ts`): necesita `canvas`. Que amplía la esquina que se está ajustando, que con giro activo se ve como en pantalla y que no rompe el arrastre cuando no hay contexto de dibujo, se comprueba en el navegador |
 | RF-410 | La sugerencia de recorte sobre fotografías reales de cuadros: el detector se prueba con imágenes sintéticas, pero lo que acierta o falla con un marco dorado, un reflejo o una pared con rodapié se comprueba en el navegador. Por el mismo motivo, la extracción de luminancia (`imageEdges.ts`) no tiene test: necesita `canvas` |
@@ -467,3 +508,25 @@ aquí para que su ausencia del listado anterior no se lea como un hueco de cober
 | RNF-108, RNF-110 | Volumen almacenado y umbral de los 100 GB: seguimiento en explotación, no test |
 | RNF-112 | Regla 3-2-1 de los másters: revisión periódica de que las tres copias existen y están al día |
 | DP-09 | Formato del máster: decisión archivística, no verificable con código |
+
+---
+
+## Requisitos vigentes sin ninguna fila en este documento
+
+Este documento existe para detectar requisitos sin verificar, y la forma de fallar en eso no es marcar
+mal una fila: es **no tener fila**. Un requisito que no se nombra en ningún sitio no está pendiente ni
+hecho ni fuera de alcance — está invisible, y ninguna revisión lo va a encontrar.
+
+Cruzado el 4 de agosto de 2026 requisito a requisito: de los **156 requisitos vigentes** de
+`requisitos.md` —los que no están tachados—, **19 no aparecían en este documento ni una vez**. Aquí
+están, agrupados por lo que hay que hacer con cada uno. No se les inventa un estado: se dice qué son.
+
+| Requisitos | Qué son, y qué hay que hacer con ellos |
+|---|---|
+| RNF-101, RNF-102, RNF-103, RNF-109 | **Decisiones de arquitectura, no afirmaciones verificables con un aserto**: que no hay servidor de aplicación propio, que el frontend es Vite con React y TypeScript, dónde se aloja y en qué región viven los datos. Lo que las verifica es que el repositorio sea como dicen, y se comprueba leyéndolo. Van aquí para que su ausencia no se lea como un hueco |
+| RNF-115 | La rama `main` protegida y `terraform apply` fuera de integración continua. **Está verificado, pero por inspección de `infra/github.tf` y no por un test**, y así consta en la columna «Estado» de requisitos.md. Podría tenerlo: una comprobación contra la API de GitHub de que el *check* obligatorio sigue exigido |
+| RF-102, RF-201 | Enunciados de estructura —hay tres roles, el modelo consta de tantas tablas— que otras filas ejercen de rebote en cada test de rol y de esquema. **Un test propio los cerraría de verdad**: los tres papeles existen y no hay un cuarto; el catálogo tiene las tablas que el esquema dice y ninguna suelta |
+| RF-206, RF-214 | Las convenciones de captura que valen para **todos** los campos de texto: vacío mientras el dato esté pendiente, `N/D` cuando se investigó y no hay, y `[?]` para el dato dudoso. Hoy se aplican campo a campo y ningún test las comprueba **como convención**. Es el hueco más barato de cerrar y el que más se degrada con el tiempo: un campo nuevo que se salte la regla no rompe nada, solo hace el catálogo un poco menos legible |
+| RF-301, RF-302, RF-310, RF-1001, RF-1005, RF-1101 | **Todo JSX**: la estructura de la ficha, su cabecera, la ficha de Documento, para qué sirve la ficha imprimible y desde dónde se llega, y la barra de navegación. Sin entorno de DOM no hay aserto posible; lo que valdría es un recorrido de navegador. RF-310 además necesita antes la pantalla, que no existe. Son «Pendiente en navegador» en el sentido estricto del apartado del principio: verificadas por el compilador y por nada más |
+| RF-1301, RF-1302, RF-1303 | **Las vistas en vivo, y esta ausencia es la que más incomoda de la lista.** Están construidas para obras e imágenes y **no hay un solo test de las tres**, ni de que el listado se actualice, ni de que un formulario en edición no se pise, ni —y es el que importa— de que **la entrega en vivo respete RLS** (RF-1302): que nadie reciba por el canal una fila que no podría leer con una consulta. Eso último es un requisito de seguridad, la misma categoría que el bloque de RLS de arriba, y se puede verificar autenticándose de verdad y suscribiéndose como Lector a una obra que está en la papelera. **Es lo primero que hay que escribir de esta tabla** |
+| RF-907 | No hay purga automática ni periodo de gracia. Está en «Fuera de alcance» de requisitos.md y lo que lo sostiene es que no existe ningún código que borre, que es lo que ya comprueba `rls_default_deny.test.sql` por las dos puertas. Es la única de las 19 que se puede considerar cubierta por su ausencia |
