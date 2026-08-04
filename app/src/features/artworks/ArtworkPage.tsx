@@ -9,6 +9,7 @@ import {
 } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
+import { WhenNearby } from '../../components/WhenNearby'
 import { supabase } from '../../lib/supabase'
 import { displayDate } from '../../lib/dates'
 import { existenceNotice, attributedTitleNotice, displayMeasurements, displayTitle } from '../../lib/title'
@@ -49,6 +50,12 @@ import {
   YearStepper,
 } from '../../components/ui'
 import { useLiveChanges } from '../../lib/live'
+import { useArtworkDocumentary } from '../documentary/useDocumentary'
+import { ProvenanceSection } from '../documentary/provenance'
+import { ExhibitionHistorySection } from '../documentary/exhibitions'
+import { BibliographySection } from '../documentary/bibliography'
+import { DocumentsSection } from '../documentary/documents'
+import { RelationshipsSection } from '../documentary/relationships'
 import { ArtworkGallery } from './ArtworkGallery'
 import { parseView } from './listView'
 import { decideSwipe, dragOffset, swipeAxis } from './sequence'
@@ -56,7 +63,7 @@ import { useArtwork } from './useArtworks'
 import { useArtworkSequence, type ArtworkSequence } from './useArtworkSequence'
 import { useArtworkTypes } from './useArtworkTypes'
 import { useSeries } from './useSeries'
-import { placePathText, placesInside } from '../../lib/places'
+import { placePathText, placesInside, type PlaceTree } from '../../lib/places'
 import { usePhysicalPlaces } from './usePhysicalPlaces'
 import { PlacePicker } from './PlacePicker'
 
@@ -379,6 +386,33 @@ export function ArtworkPage() {
           </dl>
         </section>
 
+        {/* The documentary half of the record (RF-303): by whose hands it has
+            passed, where it has been shown, where it is published, what paper
+            speaks about it, and which artworks it belongs with.
+
+            After the two blocks that are read with the artwork in front and
+            before the internal ones, in the order RF-303 stacks them. They arrive
+            when the scroll gets near — see WhenNearby: five tables read on every
+            record of a session over mobile data, for blocks nobody may open, is
+            not a cost this earns. */}
+        <WhenNearby
+          placeholder={(reveal) => (
+            <section className="card mb-3">
+              <h2 className="font-medium">Documentación de la obra</h2>
+              <p className="mt-1 text-sm text-stone-600">
+                Procedencia, historial expositivo, bibliografía, documentación de archivo y obras
+                relacionadas. Se cargan al bajar hasta aquí, para no gastar datos en las fichas que
+                solo se hojean.
+              </p>
+              <button type="button" onClick={reveal} className="btn-secondary mt-3 w-full text-sm">
+                Cargar la documentación ahora
+              </button>
+            </section>
+          )}
+        >
+          <DocumentaryBlocks artwork={artwork} placeTree={placeTree} search={query} />
+        </WhenNearby>
+
         <section className="card mb-3">
           <h2 className="mb-2 font-medium">Estado del proceso</h2>
           <dl className="divide-y divide-stone-100">
@@ -425,14 +459,24 @@ export function ArtworkPage() {
           </button>
         </section>
 
-        {/* The blocks the field schema defines but this delivery does not cover
-            are declared instead of omitted: this way what is missing shows and
-            the record does not look complete. */}
+        {/* What is still missing is declared instead of omitted, so the record
+            does not look complete — but ONLY what is really missing: this card
+            used to name the five documentary blocks, which are now right above,
+            and a record that says a thing is pending while showing it eighty
+            lines earlier is worse than one that says nothing.
+
+            What is left is the OTHER SIDE of those blocks: an exhibition, a
+            reference, an archive document, a series or an owner has no record of
+            its own yet (RF-309), so those rows are read here and cannot be opened
+            or corrected from here. */}
         <section className="card text-sm text-stone-500">
           <p className="font-medium text-stone-700">Pendiente en esta entrega</p>
           <p className="mt-1">
-            Procedencia, historial expositivo, bibliografía, documentación relacionada, series y obras
-            relacionadas. Ver el orden de construcción en la documentación.
+            Las exposiciones, las referencias bibliográficas, los documentos de archivo, las series y
+            los propietarios se leen desde esta ficha y se enlazan con ella, pero no tienen ficha
+            propia todavía: corregir el nombre o las fechas de una exposición, o los datos de una
+            referencia, se hará desde una pantalla que aún no existe. Enlazar un documento del
+            archivo con esta obra tampoco se hace aún desde aquí.
           </p>
         </section>
 
@@ -447,6 +491,69 @@ export function ArtworkPage() {
         )}
       </SwipeArea>
     </Layout>
+  )
+}
+
+/**
+ * The five documentary blocks of the record, stacked (RF-303).
+ *
+ * **One query for the four research statuses, not five.** They live in a single
+ * row of the artwork, and it is read here and handed down: a block asking for it
+ * on its own would be four requests for the same row, and every heading reads it —
+ * it is what keeps «Sin revisar» from being read as «no».
+ *
+ * The order is the one RF-303 fixes, and it is also the order the research is done
+ * in: where the piece came from, where it has been shown, where it has been
+ * published, what paper the archive keeps about it, and last the block that talks
+ * about the catalogue itself instead of about the world.
+ *
+ * Each block is COLLAPSED, decided by the foundations (`opensByDefault`) and not
+ * repeated here: the exception — a block whose declared state contradicts what it
+ * holds — arrives open, which is the one case where reading the heading alone
+ * would mislead.
+ */
+function DocumentaryBlocks({
+  artwork,
+  placeTree,
+  search,
+}: {
+  artwork: Artwork
+  placeTree: PlaceTree
+  /** The list's view as it travels in the URL, so a related artwork keeps the queue (RF-311). */
+  search: string
+}) {
+  const documentary = useArtworkDocumentary(artwork.catalog_id)
+  // The tree the record already has loaded, so the archive block can say where the
+  // paper is without a sixth query of its own for one crumb.
+  const placeText = useCallback((placeId: string) => placePathText(placeTree, placeId), [placeTree])
+
+  return (
+    <>
+      <ProvenanceSection
+        catalogId={artwork.catalog_id}
+        documentary={documentary.documentary}
+        documentaryLoading={documentary.loading}
+        documentaryError={documentary.error}
+        setResearchStatus={documentary.setResearchStatus}
+        // Where a provenance starts. Without it the stretch between the artist and
+        // the first documented owner cannot be counted, and nothing is invented.
+        originYear={artwork.start_year}
+      />
+      <ExhibitionHistorySection
+        catalogId={artwork.catalog_id}
+        documentary={documentary.documentary}
+        documentaryLoading={documentary.loading}
+        documentaryError={documentary.error}
+        setResearchStatus={documentary.setResearchStatus}
+      />
+      <BibliographySection catalogId={artwork.catalog_id} documentary={documentary} />
+      <DocumentsSection
+        catalogId={artwork.catalog_id}
+        documentary={documentary}
+        placeText={placeText}
+      />
+      <RelationshipsSection catalogId={artwork.catalog_id} search={search} />
+    </>
   )
 }
 

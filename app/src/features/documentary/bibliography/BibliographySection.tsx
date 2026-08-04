@@ -1,0 +1,343 @@
+import { useMemo, useState } from 'react'
+import { useAuth } from '../../../auth/AuthContext'
+import { PenIcon, PlusIcon } from '../../../components/ui'
+import type { ResearchStatus } from '../../../lib/types'
+import { DocumentarySection } from '../DocumentarySection'
+import { blockState } from '../researchState'
+import { sectionSpec } from '../sections'
+import { useArtworkBibliography, type ArtworkDocumentaryQuery } from '../useDocumentary'
+import {
+  bibliographyBlockState,
+  bibliographyLoadState,
+  citeBlockedReason,
+} from './bibliographyBlock'
+import { citationEdit, type CitationEdit, type CitationView } from './citationFormat'
+import { citationList } from './citationGroups'
+import { CitationSheet } from './CitationSheet'
+import { ResearchStatusSheet } from './ResearchStatusSheet'
+import { useBibliographyEdits } from './useBibliographyEdits'
+
+/**
+ * «Bibliografía» on the artwork record (RF-303, RF-504): where this artwork is
+ * published, and on which page.
+ *
+ * The block answers one question — «¿esto está publicado en algún sitio?» — and
+ * it has to answer it with a thumb, standing up, with the artwork in front. So
+ * every row leads with the title, carries who and when underneath, and ends in
+ * the page, which is the part that gets used; and the list splits by kind of
+ * publication only when splitting earns its headings (`citationList`).
+ *
+ * What an EMPTY block says is decided in the foundations and not here
+ * (`blockState`), because it is the same rule in five blocks and the one that
+ * must never be written twice: an artwork with no bibliography recorded is not an
+ * unpublished artwork, and only the research status of RF-218 tells the two
+ * apart.
+ *
+ * Nothing on this file decides any wording. Order, grouping, abbreviations,
+ * duplicates and what is missing before saving all live in the pure modules
+ * beside it, which is where the battery reaches them — it runs in node and cannot
+ * open a component.
+ */
+export function BibliographySection({
+  catalogId,
+  documentary,
+}: {
+  catalogId: string
+  /**
+   * The documentary columns of the artwork, loaded ONCE for the five blocks by
+   * `useArtworkDocumentary` and handed down. They are one row: a query per block
+   * would be five requests for the same row, and the four research statuses are
+   * read by every heading.
+   */
+  documentary: ArtworkDocumentaryQuery
+}) {
+  const spec = sectionSpec('bibliography')
+  const { canEdit } = useAuth()
+  const { rows, loading, error, reload } = useArtworkBibliography(catalogId)
+  const edits = useBibliographyEdits(catalogId, canEdit)
+
+  const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState<CitationEdit | null>(null)
+  const [statusOpen, setStatusOpen] = useState(false)
+  const [removing, setRemoving] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const status = documentary.documentary?.bibliography_status ?? null
+  // TWO queries, and the combination that matters is «citations yes, research
+  // state no»: an empty block would then read as «esta obra es inédita», which is
+  // the one sentence this feature exists to prevent. Decided in
+  // `bibliographyBlock.ts`, where the battery reaches it.
+  const load = bibliographyLoadState({
+    rowsLoading: loading,
+    rowsError: error,
+    status,
+    statusLoading: documentary.loading,
+    statusError: documentary.error,
+  })
+  const state = bibliographyBlockState(
+    blockState(spec, status, rows.length),
+    load.statusUnknownNotice,
+  )
+  const blockedReason = citeBlockedReason(status)
+  const list = useMemo(() => citationList(rows), [rows])
+
+  async function afterWrite(failure: string | null) {
+    setActionError(failure)
+    // These rows are not live (`useLiveChanges` knows `artworks` and `images`
+    // only), so every write ends here: what is on screen has to come back from
+    // the database and not from what this component believes it just did.
+    if (failure === null) await reload()
+  }
+
+  async function remove(id: string) {
+    setRemoving(null)
+    // Logical deletion (RF-901): the citation leaves the record, the reference
+    // stays — it is shared with every other artwork that cites it.
+    await afterWrite(await edits.setCitationActive(id, false))
+  }
+
+  /** Declaring the state of the research (RF-218). The shared hook reloads the row itself. */
+  const setStatus = (value: ResearchStatus) =>
+    documentary.setResearchStatus('bibliography_status', value)
+
+  /**
+   * The two panels hang from `actions` and NOT from the rows, and that is not
+   * cosmetic: `DocumentarySection` paints its children only when the block holds
+   * something, and the empty block is exactly when the first citation gets added.
+   */
+  const sheets = (
+    <>
+      {(adding || editing !== null) && (
+        <CitationSheet
+          // Remounted per opening: the draft of a panel closed halfway must not
+          // come back when the next one opens.
+          key={editing?.id ?? 'add'}
+          open
+          onClose={() => {
+            setAdding(false)
+            setEditing(null)
+            // Also on «Cancelar»: the panel can create a REFERENCE and then be
+            // abandoned before citing, and the sheet closes itself only after a
+            // write that succeeded.
+            void afterWrite(null)
+          }}
+          catalogId={catalogId}
+          citations={rows}
+          references={edits.references}
+          publicationTypes={edits.publicationTypes}
+          editing={editing}
+          onCite={edits.cite}
+          onUpdate={edits.updateCitation}
+          onCreateReference={edits.createReference}
+        />
+      )}
+
+      {statusOpen && status !== null && (
+        <ResearchStatusSheet
+          open
+          onClose={() => setStatusOpen(false)}
+          current={status}
+          count={rows.length}
+          onChoose={setStatus}
+        />
+      )}
+    </>
+  )
+
+  return (
+    <DocumentarySection
+      spec={spec}
+      state={state}
+      loading={load.loading}
+      error={load.error}
+      actions={
+        canEdit ? (
+          <div className="space-y-2">
+            {actionError !== null && (
+              <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+                {actionError}
+              </p>
+            )}
+            {blockedReason !== null ? (
+              /* La base rechazaría la cita (RF-218), así que se dice aquí y no
+                 después de un viaje de ida y vuelta: el botón de debajo cambia el
+                 estado, que es lo que hay que hacer primero. */
+              <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{blockedReason}</p>
+            ) : edits.error !== null ? (
+              /* Citar queda desactivado y se dice por qué: sin el catálogo de
+                 referencias no hay manera de saber si la que se va a escribir ya
+                 existe, y dos filas para el mismo libro parten en dos las citas
+                 del catálogo para siempre. */
+              <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                No se ha podido cargar el catálogo de referencias, así que no se puede citar desde
+                aquí: sin la lista no hay forma de comprobar si la referencia ya está. Vuelve a
+                intentarlo donde haya cobertura. ({edits.error})
+              </p>
+            ) : (
+              <button
+                type="button"
+                disabled={edits.loading}
+                onClick={() => {
+                  setActionError(null)
+                  setAdding(true)
+                }}
+                className="btn-secondary flex w-full items-center justify-center gap-2"
+              >
+                <PlusIcon className="h-5 w-5" />
+                <span>
+                  {edits.loading
+                    ? 'Cargando el catálogo de referencias…'
+                    : 'Citar esta obra en una referencia'}
+                </span>
+              </button>
+            )}
+            {status !== null && (
+              <button
+                type="button"
+                onClick={() => setStatusOpen(true)}
+                className="min-h-touch w-full text-left text-sm text-stone-600 underline"
+              >
+                Investigación bibliográfica: {state.statusLabel}
+              </button>
+            )}
+            {sheets}
+          </div>
+        ) : null
+      }
+    >
+      {list.groups.map((group) => (
+        <div key={group.key} className={list.grouped ? 'mb-3 last:mb-0' : ''}>
+          {group.title !== null && (
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+              {group.title}
+            </h3>
+          )}
+          <ul>
+            {group.views.map((view) => (
+              <CitationItem
+                key={view.id}
+                view={view}
+                showType={!list.grouped}
+                canEdit={canEdit}
+                confirming={removing === view.id}
+                onEdit={() => {
+                  setActionError(null)
+                  const row = rows.find((r) => r.id === view.id)
+                  if (row !== undefined) setEditing(citationEdit(row))
+                }}
+                onAskRemove={() => setRemoving(view.id)}
+                onCancelRemove={() => setRemoving(null)}
+                onRemove={() => void remove(view.id)}
+              />
+            ))}
+          </ul>
+        </div>
+      ))}
+    </DocumentarySection>
+  )
+}
+
+/**
+ * One citation: the reference read at a glance and the page underneath.
+ *
+ * The title leads because it is what identifies a publication in a list of four;
+ * the page is a chip and not another grey line because it is the only part of the
+ * row that gets copied into somebody else's text, and it is dimmed — never
+ * omitted — when nobody has written it down (RF-304).
+ */
+function CitationItem({
+  view,
+  showType,
+  canEdit,
+  confirming,
+  onEdit,
+  onAskRemove,
+  onCancelRemove,
+  onRemove,
+}: {
+  view: CitationView
+  /** The kind of publication as a chip, for the list that carries no headings. */
+  showType: boolean
+  canEdit: boolean
+  confirming: boolean
+  onEdit: () => void
+  onAskRemove: () => void
+  onCancelRemove: () => void
+  onRemove: () => void
+}) {
+  return (
+    <li className="border-t border-stone-100 py-2 first:border-t-0 first:pt-0">
+      <p className={`text-sm font-medium ${view.unavailable ? 'text-stone-500' : ''}`}>
+        {view.title}
+      </p>
+      {view.byline !== '' && <p className="text-xs text-stone-500">{view.byline}</p>}
+      {view.sourceText !== null && <p className="text-xs text-stone-500">{view.sourceText}</p>}
+
+      <div className="mt-1 flex flex-wrap items-center gap-1">
+        <span
+          className={`rounded px-2 py-0.5 text-[11px] ${
+            view.pagesMissing ? 'bg-stone-100 text-stone-500' : 'bg-stone-200 text-stone-800'
+          }`}
+        >
+          {view.pagesText}
+        </span>
+        {showType && view.typeName !== null && (
+          <span className="rounded px-2 py-0.5 text-[11px] text-stone-500">{view.typeName}</span>
+        )}
+        {view.bibtexKey !== null && (
+          <span className="rounded px-2 py-0.5 font-mono text-[11px] text-stone-400">
+            {view.bibtexKey}
+          </span>
+        )}
+      </div>
+
+      {view.note !== '' && <p className="mt-1 text-xs text-stone-600">{view.note}</p>}
+      {view.retiredText !== null && (
+        <p className="mt-1 rounded bg-amber-50 p-1.5 text-xs text-amber-900">{view.retiredText}</p>
+      )}
+      {view.unavailableText !== null && (
+        <p className="mt-1 rounded bg-amber-50 p-1.5 text-xs text-amber-900">
+          {view.unavailableText}
+        </p>
+      )}
+
+      {canEdit &&
+        (confirming ? (
+          /* Two taps to remove, the same as removing a photograph: on a touch
+             screen, one tap and the citation somebody researched is gone. */
+          <div className="mt-2 rounded-lg bg-stone-100 p-2">
+            <p className="text-xs text-stone-700">
+              La cita sale de la ficha y va a la papelera. La referencia no se toca: la comparten
+              las demás obras que la citan.
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button type="button" onClick={onRemove} className="btn min-h-touch bg-red-700 text-white">
+                Sí, quitar
+              </button>
+              <button type="button" onClick={onCancelRemove} className="btn-secondary">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1 flex gap-3">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="flex min-h-touch items-center gap-1 text-xs text-stone-600 underline"
+            >
+              <PenIcon className="h-4 w-4" />
+              <span>Página y nota</span>
+            </button>
+            <button
+              type="button"
+              onClick={onAskRemove}
+              className="min-h-touch text-xs text-stone-600 underline"
+            >
+              Quitar de la ficha
+            </button>
+          </div>
+        ))}
+    </li>
+  )
+}
