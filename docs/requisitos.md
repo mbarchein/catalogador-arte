@@ -94,6 +94,7 @@ tachar y sin mención en el 8 sigue vigente tal como está escrito.
 | RF-111 | **No existe ningún camino a los datos que no atraviese RLS.** Al no haber servidor propio, las políticas son el único perímetro de seguridad: una tabla sin política de una operación se considera abierta, no cerrada. La clave `service_role`, que ignora las políticas, no aparece nunca en el cliente ni en el repositorio. |
 | RF-112 | No hay registro abierto de usuarios: las cuentas las crea el Superusuario. La aplicación no tiene zona pública ni formulario de alta. |
 | RF-113 | Los privilegios de tabla se **revocan primero y se conceden después**, uno a uno. La plataforma concede por omisión todos los privilegios de cada tabla nueva a los roles anónimo y autenticado, de modo que sin revocar explícitamente las políticas RLS quedan como única barrera. Con la revocación, exponer o destruir datos exige dos errores en vez de uno. |
+| RF-114 | **Ningún fichero se trae al dispositivo sin que alguien lo pida, y lo que se pide dice de antemano lo que cuesta.** El peso va en el propio control que ofrece el fichero, no en una nota al pie: un máster llega a 19 MB y se descarga de pie en un almacén con datos móviles, así que «nada se descarga sin pedirlo» solo significa algo si al pedirlo se sabe cuánto se va a gastar. Cuando el tamaño no consta se dice que no consta, nunca cero — un fichero de tamaño desconocido y un fichero vacío no son lo mismo. Este requisito se escribió al auditar: el criterio ya lo aplican la descarga de fotografías y la de documentos, y el número lo puso el código antes que este documento, que es de dónde sale que caiga en este grupo y no junto a RF-411. |
 
 ### RF-200 · Modelo de datos y convenciones de captura
 
@@ -115,6 +116,8 @@ tachar y sin mención en el 8 sigue vigente tal como está escrito.
 | RF-214 | Un dato dudoso o sin confirmar se marca con `[?]` junto al dato en campos de texto libre; en campos de selección se usa la opción «Desconocido». |
 | RF-215 | La ubicación física es un **árbol de lugares** con clave propia, no un texto con convención de notación ([ADR-006](decisiones/ADR-006-ubicacion-como-arbol-de-lugares.md)). El nombre se guarda tal cual se escribe, con mayúsculas y tildes; la comparación se hace normalizada. Dos hermanos no pueden llamarse igual, la jerarquía no admite ciclos, un lugar con contenido no se retira, y `parent_id` es mutable: reorganizar el árbol —incluido colgar de otro sitio lo que hoy es raíz— es una operación normal que no toca ninguna obra. Una obra puede no tener ubicación. |
 | RF-216 | La clave primaria de una tabla maestra no es su nombre. Renombrar una entrada del vocabulario es un `update` de una fila y nunca una migración de datos. |
+| RF-217 | **Extiende RF-212.** Una relación entre dos obras lleva **de qué clase es** —pareja, políptico, estudio previo, versión, reverso catalogado aparte, copia de una obra destruida—, porque «AR-0012 relacionada con AR-0013» no se lee igual ni se cita igual en esos seis casos. La clase es vocabulario que la investigación amplía (RF-216), y cada entrada lleva además **su etiqueta inversa y si es simétrica**, que es lo que permite que la ficha de la segunda obra diga «obra final de AR-0012» sin que nadie haya escrito una segunda fila. Una relación simétrica es una sola fila y da igual el orden en que se nombren las dos obras; una asimétrica no admite su pareja al revés, porque «A es estudio previo de B» y «B es estudio previo de A» no pueden ser ciertas a la vez. Ninguna clase en uso cambia de simetría: las simétricas están guardadas en un solo sentido y las asimétricas no, y mezclar las dos convenciones dejaría entrar la misma pareja dos veces. |
+| RF-218 | **«Sin revisar» no es «no hay», y de un bloque documental entero tampoco.** Cada bloque que se investiga como bloque —procedencia, bibliografía, historial expositivo y documentación— dice si está pendiente, si se investigó y no hay nada, o si tiene contenido. Una obra sin exposiciones registradas no es una obra que no se expuso: es una obra cuyo archivo nadie ha mirado todavía, y la ficha no puede presentar las dos como el mismo hueco (RF-304). El estado y las filas **no pueden contradecirse**: no se declara un bloque investigado sin resultado cuando ya tiene filas debajo, ni se añade —ni se restaura— una fila en un bloque declarado sin resultado. Las relaciones entre obras **no** son uno de esos bloques y no tienen estado: no se investigan, aparecen mientras se cataloga la pieza de al lado, y «esta obra no tiene relaciones» es algo que ninguna búsqueda cierra nunca. |
 
 ### RF-300 · Ficha de obra
 
@@ -158,17 +161,34 @@ tachar y sin mención en el 8 sigue vigente tal como está escrito.
 | RF-420 | Al aplicar una corrección se genera y se almacena una **copia a resolución completa con todas las correcciones aplicadas** —giro, recorte, perspectiva y color—, en una ruta propia que nunca es la del máster. Es el cuarto nivel por toma ([ADR-010](decisiones/ADR-010-copia-corregida-a-resolucion-completa.md)). Su caso de uso es el de RF-411, mandar el original a una imprenta o a un comisario, y una copia con el color arreglado y la perspectiva torcida no le sirve a ninguno de los dos. Se regenera al reeditar y reemplaza a la anterior; si no hay ninguna corrección, no hay copia. Cuando el dispositivo no puede generarla queda **pendiente y consta, con su razón**: nunca se sube un fichero en blanco ni se reduce la resolución en silencio. |
 | RF-421 | La cola de copias pendientes se vacía con una **herramienta local por lotes**, sin servidor de aplicación (RNF-101, [ADR-010](decisiones/ADR-010-copia-corregida-a-resolucion-completa.md)). Produce **exactamente el mismo resultado** que el navegador, y esa igualdad se verifica con un fichero de casos versionado en el repositorio —parámetros de color contra la tabla de color que producen— que generan los tests del frontend y comprueban los de la herramienta. Sin esa comprobación, la divergencia entre las dos implementaciones se descubre porque la miniatura y la copia a resolución completa de la misma obra salen de distinto color. |
 
-### RF-500 · Exposiciones, bibliografía y tablas puente
+### RF-500 · Catálogo razonado documental: procedencia, exposiciones, bibliografía y archivo
+
+RF-501 a RF-507 son la capa histórica: lo que los documentos originales pedían de las dos tablas de
+exposiciones y bibliografía. **RF-508 a RF-517 se escribieron después del código, al auditarlo**, por
+lo mismo que RF-1500: las migraciones `20260804090000` a `20260804140000` y sus seis tests los citaban
+y en este documento no existía ninguno. Son el catálogo razonado documental completo —personas e
+instituciones, procedencia, exposiciones, bibliografía y archivo—, que es la mitad del propósito del
+proyecto (apartado 1) y que hasta el 4 de agosto de 2026 no existía en absoluto.
 
 | Id | Requisito |
 |---|---|
-| RF-501 | La participación de una obra en una exposición se registra en la tabla puente Obra_Exposicion, con `nota_obra_en_expo` para el número histórico en catálogo y las circunstancias de esa participación concreta. |
+| RF-501 | La participación de una obra en una exposición se registra en la tabla puente Obra_Exposicion, con `nota_obra_en_expo` para el número histórico en catálogo y las circunstancias de esa participación concreta. **Revisado por RF-513**: el número de catálogo sale de la nota y pasa a columna propia. |
 | RF-502 | El historial expositivo se presenta en orden cronológico ascendente con el formato `[año], [fecha_inicio–fecha_fin], [titulo_exposicion en cursiva], [institucion], [lugar]`, idéntico en la ficha de obra y en el listado de exposiciones. |
 | RF-503 | El catálogo de una exposición no tiene tabla propia: se da de alta en Bibliografía y se enlaza desde `referencia_catalogo` de la exposición. |
 | RF-504 | La cita de una obra en una referencia se registra en Obra_Bibliografia, manteniendo `paginas` como campo estructurado independiente de `notas`, por ser dato citable de forma exacta. |
 | RF-505 | La ficha de exposición incluye un bloque «Obras participantes» con miniatura, `id_catalogacion` enlazado y `nota_obra_en_expo` de cada fila. |
 | RF-506 | La ficha bibliográfica incluye un bloque «Obras citadas» con `id_catalogacion` enlazado y `paginas`/`notas`, sin miniatura. |
 | ~~RF-507~~ | La tabla Bibliografía debe poder exportarse a un archivo `.bib` reutilizable por biblatex, con `clave_bibtex`, `autor`, `editor`, `titulo` y `año` como campos independientes. |
+| RF-508 | Personas e instituciones son **una sola ficha y no dos tablas**. La mitad de los datos son los mismos —contacto, estado del contacto, localidad, país— y partirlos obligaría a consultar dos sitios para componer una línea de procedencia; y una colección familiar se convierte en fundación sin dejar de ser el mismo eslabón de la cadena, mientras que con dos tablas ese cambio sería dar de baja una ficha y crear otra, que es justo lo que este proyecto no hace nunca (RF-901). La distinción entre persona e institución **no admite «Sin revisar»**, y es una excepción consciente a RF-205 con el argumento de RF-203: de ese valor depende cómo se redacta la línea publicable —«Colección privada, España» frente a los créditos de una institución pública—, y un dato del que depende la redacción no puede quedar pendiente. La misma ficha es propietaria de unas obras, depositaria de otras, sede de una exposición y titular de derechos de una tercera, así que su nombre se corrige en un sitio y lo ve el catálogo entero (RF-216, [ADR-007](decisiones/ADR-007-claves-sustitutas-en-las-tablas-maestras.md)). |
+| RF-509 | **La procedencia es una cadena de eslabones fechados y ordenados, no un campo.** Cada eslabón dice quién tuvo la obra, en qué calidad la tuvo, cómo llegó a sus manos y entre qué años, y el orden de la cadena lo fija la catalogadora y no las fechas: una procedencia real tiene tramos sin fecha que aun así se saben anteriores a otros. Reordenar la cadena es una operación de todo o nada, para que no quede a medias. No se guarda además un campo de «situación legal» al lado: en qué calidad se tiene la obra es la calidad del último eslabón y cómo llegó es su forma de adquisición, y un campo suelto que puede contradecir a la cadena que tiene al lado sobra. |
+| RF-510 | La procedencia tiene además un **relato narrativo que es la redacción publicable**. Cuando tiene texto, es lo que la ficha imprime; cuando está vacío, la ficha compone la línea con los eslabones. Es la misma jerarquía que [ADR-004](decisiones/ADR-004-fecha-estructurada.md) fijó para la fecha: la estructura alimenta la búsqueda y la prosa manda al publicar, porque la prosa de un catálogo razonado no se puede generar. |
+| RF-511 | El **titular de los derechos de reproducción** de una obra es una relación con una persona o institución, no un texto, y puede no ser quien posee la obra. Una persona o institución que sostiene una cadena de procedencia activa, que es titular de derechos o que está detrás de una sede de exposición activa **no se retira**: retirarla dejaría eslabones apuntando a un nombre que la aplicación ya no enseña. |
+| RF-512 | La **sede de una exposición** es una entrada de vocabulario con clave propia, no los dos textos sueltos —lugar e institución— de los documentos originales: con dos textos, corregir el nombre de un museo es tocar todas sus exposiciones. Y **no es el árbol de lugares** de [ADR-006](decisiones/ADR-006-ubicacion-como-arbol-de-lugares.md), aunque las dos contesten «dónde»: aquel contesta dónde está la obra hoy y sus nodos contienen cosas; una sede contesta dónde ocurrió una muestra en 1985, es histórica —una sala que cerró en 1988 tiene que seguir existiendo para siempre— y no contiene nada. Fundirlas pondría «Balda 2» en el selector de sedes y el Museo del Prado en el árbol del almacén. Tampoco se crea un código visible de exposición: a diferencia de `catalog_id` no está impreso en nada ni pegado a ningún objeto del mundo. |
+| RF-513 | El **número con el que la obra apareció en el catálogo o las cartelas de esa muestra** («12 bis», «s/n») es columna aparte de la nota de la participación, con el mismo criterio por el que `paginas` no se fundió en RF-504: es dato citable de forma exacta y de uso recurrente —«cat. 12 bis» se cita en el ensayo del catálogo razonado— y dentro de la prosa no se puede buscar ni filtrar. Revisa RF-501. |
+| RF-514 | Los **tipos de publicación son vocabulario abierto** que la usuaria amplía sin desplegar nada, no una lista cerrada de cuatro valores: libro, artículo, catálogo y prensa no aguantan el primer mes de investigación real —tesis doctoral, catálogo de subasta, entrada de blog, programa de radio, folleto—. Es el caso de los tipos de obra sin adaptación ninguna (RF-216, ADR-007). Y la referencia lleva el **nombre de la publicación que contiene el artículo** como dato aparte del título: sin él, el nombre de la revista acaba dentro del título y la cita no se puede componer. |
+| RF-515 | Los **tipos de documento son vocabulario abierto** por lo mismo que los de publicación, y la **clasificación archivística es un árbol** —fondo, serie, subserie— y no una jerarquía metida dentro de un texto con una convención que hay que recordar. Es el error que este proyecto ya pagó una vez con la ubicación física y que ADR-006 resolvió; aquí cuesta cero evitarlo porque no hay ni un documento catalogado. Nace opcional: si la clasificación archivística no se adopta nunca, se queda vacía y no estorba. La **ubicación física de un documento es el mismo árbol de lugares que la de las obras**: una caja de cartas está en el mismo edificio que los cuadros y un segundo árbol para lo mismo sería la duplicación que ADR-006 vino a quitar. El artista de un documento **no es obligatorio**: un recorte sobre una colectiva de los dos, o un documento de contexto que no es de ninguno, no puede elegir. |
+| RF-516 | La relación de un documento del archivo con las obras y con las exposiciones es **de muchos a muchos**, no una referencia única: un recorte de prensa que menciona tres obras no puede obligar a triplicar la ficha y con ella el PDF subido, que es el caso normal y no el raro. Y no se guarda una marca de «digitalizado» al lado del fichero: digitalizado es que el fichero esté, y una bandera que puede contradecir al fichero que tiene al lado es una bandera que un día miente. |
+| RF-517 | **Revisa RF-903.** Nada se borra tampoco en las tablas puente: una participación, una cita, un vínculo de documento y una relación entre obras **se retiran**, y volver a crear la que estuviera retirada la restaura con lo que llevaba dentro en vez de fallar. La premisa de RF-903 —«no tienen etiqueta física ni número citable y basta con volver a crearlas»— deja de sostenerse en cuanto la participación lleva el número de catálogo de RF-513 y la cita lleva sus páginas: volver a crearla no es gratis, es volver a investigarla. Estas filas **no entran en la papelera** de RF-906, que es de las fichas con identificador propio: se restauran desde la ficha de la que cuelgan, y por eso guardan quién y cuándo retiró pero no el último ciclo completo. |
 
 ### RF-600 · Índices y búsqueda
 
@@ -216,13 +236,17 @@ la aplicación no lo tiene y de qué habría que rehacer si algún día hicieran
 |---|---|
 | RF-901 | La eliminación de una ficha nunca es un borrado real de la base de datos, sino una baja lógica. Aplica a Obras, Exposiciones, Bibliografía, Archivo/Documentación, Series y Propietarios/Instituciones. |
 | RF-902 | La baja registra `activo`, `fecha_baja`, `dado_de_baja_por`, `fecha_restauracion` y `restaurado_por`. Se guarda el último evento de baja o restauración, no el historial completo de ciclos. |
-| RF-903 | Las tablas puente (Obra_Exposicion, Obra_Bibliografia) no tienen papelera: se borran directamente, ya que no tienen etiqueta física ni número citable y basta con volver a crearlas. |
+| RF-903 | **Revisado por RF-517, y hoy dice lo contrario de lo que se construyó.** Pedía que las tablas puente (Obra_Exposicion, Obra_Bibliografia) no tuvieran papelera y se borraran directamente, «ya que no tienen etiqueta física ni número citable y basta con volver a crearlas». Las cinco tablas puente del esquema se retiran como todo lo demás, y **no puede ser de otra manera**: «nunca un borrado real» es criterio de diseño del proyecto, ninguna tabla tiene política ni privilegio de `delete`, y el test de cierre por omisión lanza excepción ante *cualquier* política de `delete` en el esquema — de modo que construir RF-903 tal como está escrito pondría un fichero en rojo. El argumento está en RF-517. |
 | RF-904 | La baja no se propaga hacia arriba: dar de baja una imagen no afecta a la obra, y dar de baja una participación no afecta ni a la obra ni a la exposición. |
 | RF-905 | La baja se propaga hacia abajo, a lo que solo existe en función de la ficha dada de baja: al dar de baja una obra dejan de mostrarse sus imágenes y sus filas de participación y de cita; al dar de baja una exposición o una referencia dejan de mostrarse sus filas puente. Serie y Propietario dados de baja dejan el campo vacío en las obras que los tenían asignados, sin darlas de baja. |
 | RF-906 | La página «Papelera» sigue el patrón del resto de índices: filtrable por tabla de origen, por fecha de baja y por usuario que la ejecutó, con buscador de texto libre. Cada fila muestra identificador, resumen mínimo, fecha y usuario de baja, y un botón «Restaurar». Acceso reservado al Catalogador. |
 | RF-907 | No hay periodo de gracia ni purga automática: las fichas de baja permanecen indefinidamente hasta que el equipo decida restaurarlas. |
 | RF-908 | La reutilización de un identificador retirado se resuelve restaurando la ficha y editando después sus campos, salvo la clave primaria. El sistema no distingue si la restauración corrige un error o recicla el número. |
 | RF-909 | La aplicación no detecta altas duplicadas de forma automática: los duplicados se resuelven por revisión del equipo apoyada en las herramientas de búsqueda. |
+| RF-910 | Lo que RF-905 propaga es la **visibilidad**, no el dato: la fila que cuelga de la ficha dada de baja no se retira, deja de verse mientras su ficha no se vea. Así, restaurar la ficha devuelve su expediente entero y en el estado en que estaba, y sigue distinguiéndose lo que alguien retiró a mano de lo que se dejó de ver con su ficha. La ocultación no puede depender de que la consulta recuerde filtrar, porque no hay servidor propio: se decide en la base y vale para cualquier forma de preguntar. |
+| RF-911 | Una fila que une dos fichas se ve si se ven **las dos**, no una: sin el otro extremo no es un dato, es un hueco —una página sin la referencia a la que pertenece—, y en el caso de dos obras relacionadas enseñarla delata la existencia de la obra oculta. Las dos obras de una relación son extremos intercambiables y ninguno es el principal. |
+| RF-912 | Un documento del archivo, que puede documentar varias obras y varias exposiciones a la vez, **conserva su propia ficha visible**: lo que desaparece es su vínculo con la obra dada de baja. Con la obra de baja y la exposición activa, el documento sigue en el expediente de la exposición y deja de nombrar la obra. Lo contrario vaciaría el expediente de una muestra ajena al retirar una obra, y haría depender el estado de una ficha compartida del de su vecina. |
+| RF-913 | Nada de lo anterior alcanza al Catalogador: en la papelera ve la ficha y su expediente completo, que es la única forma de restaurar con lo que había dentro (RF-906). |
 
 ### RF-1000 · Ficha imprimible
 
@@ -268,6 +292,56 @@ aplicación, no un añadido.
 | RF-1302 | La entrega en vivo respeta RLS: nadie recibe por el canal una fila que no podría leer con una consulta. |
 | RF-1303 | Un formulario en edición no se refresca por eventos ajenos: el borrador del operador no se pisa. El conflicto de edición concurrente se resuelve con el bloqueo de edición (RF-700), no con el canal. |
 
+### RF-1400 · Enlaces a sitios externos
+
+Hoy una dirección web que documenta una obra solo tiene un sitio donde caber: dentro de una nota. Ahí
+no se puede pulsar, no se puede buscar, no se puede comprobar y no se puede atribuir a la fotografía
+que salió de ella. Y no es hipotético: **dos notas de inventario del catálogo real llevan dentro la
+dirección de la ficha de museo de la que se tomaron todos los datos, imagen incluida.**
+
+Estos requisitos también se escribieron **después** del código, al auditarlo: las migraciones
+`20260805100000` y `20260805110000` y sus dos tests citaban RF-1401 a RF-1408 y este documento no
+tenía el grupo.
+
+| Id | Requisito |
+|---|---|
+| RF-1401 | Una dirección web que documenta una ficha es **un dato propio y no un trozo de prosa**: se pulsa, se busca, se clasifica, se comenta y se comprueba. Cada enlace cuelga de **exactamente una** ficha —hoy una obra o una fotografía—, ni de ninguna ni de dos: un enlace sin ficha no es un enlace pendiente de colocar, es basura invisible que nadie volverá a ver. Y no es un documento del archivo: de un documento somos custodios —vive en el almacén privado, se sirve firmado (RF-110) y se le aplica la regla 3-2-1 (RNF-112)—, mientras que un enlace es contenido de un tercero que puede cambiar, mudarse o desaparecer sin avisar, del que no se puede hacer copia de seguridad y cuyo ciclo de vida es la caducidad. |
+| RF-1402 | Un enlace lleva **la clase de sitio al que apunta** —museo, catálogo en línea, base de datos de arte, prensa, vídeo, sitio del artista, de dónde salió una reproducción, u otro— y **«sin clasificar» no es «se miró y no encaja»**: es la misma distinción de RF-205 aplicada aquí. El título es opcional: exigirlo al pegar una dirección rompe la captura de una mano (RNF-106). |
+| RF-1403 | La dirección **se valida**, y con una lista de lo permitido y no de lo prohibido: los esquemas admitidos y la forma del nombre del sitio. La regla vive **en un solo lugar, la base de datos**, y la interfaz la usa para explicar el rechazo en español en vez de escribir su propia copia — una segunda copia de la regla en el cliente es una regla que se queda atrás. Validar no es comprobar que el sitio exista: eso no se puede hacer desde una restricción. |
+| RF-1404 | **Requisito negativo.** La aplicación no trae nada del sitio enlazado: ni rastreador que compruebe enlaces por su cuenta, ni icono, ni título, ni previsualización, ni instantánea propia guardada en el almacén, ni acortadores generados ni resueltos. Cada una de esas cosas le contaría a un tercero qué obra se está catalogando y desde qué dirección, y convertiría un enlace en contenido incrustado. Un acortador además esconde a dónde lleva el enlace, que es lo contrario de RF-1408. Si de verdad hace falta conservar una página, la respuesta del esquema ya existe: imprimirla a PDF y darla de alta como documento de archivo. Sí se puede anotar la dirección de una copia que **una persona** guardó en un archivo público. |
+| RF-1405 | **La comprobación de un enlace la hace una persona, y la sella la base de datos.** Tres resultados y no dos: funciona, **ha cambiado** —la página carga pero ya no muestra lo que documentaba, que es justo lo que ningún rastreador detectaría— y ya no está. El cuarto estado es la ausencia: **sin comprobar no es roto.** La fecha y el autor de la comprobación los pone la base y no el cliente: una fecha que llegara del teléfono valdría lo que su reloj. El resultado y su fecha van juntos o no van —una fecha sin resultado no dice nada y un resultado sin fecha no se puede envejecer en pantalla—, y volver a «sin comprobar» limpia las tres cosas a la vez. Un formulario que reenvía la fila entera no mueve la comprobación por accidente. |
+| RF-1406 | Un enlace **se retira, no se borra** (RF-901), y volver a añadir el mismo que se retiró es una operación legítima que lo devuelve. La misma dirección no se repite dos veces activa en la misma ficha, y sí puede estar en otra ficha: dos obras documentadas por la misma página son dos enlaces, cada uno con su nota. No entra en la papelera de RF-906: es una fila subordinada, como una fotografía, y se restaura desde la ficha de la que cuelga. |
+| RF-1407 | **Una reproducción dice de dónde salió.** El enlace puede colgar de una fotografía y no solo de una obra, que es lo que cierra el par con RF-417: una toma registrada como tomada de otro catálogo *y* la dirección de la página de la que se tomó. Sin las dos mitades, «esta fotografía no es nuestra» es una advertencia sin destino. |
+| RF-1408 | Cuando un enlace no tiene título, la interfaz muestra **el dominio y nunca la dirección entera**: en la pantalla de un móvil una dirección larga ocupa tres líneas y no dice nada, y el dominio dice a dónde lleva, que es la única pregunta que se hace antes de pulsar. Nunca un hueco (RF-304). |
+
+### RF-1500 · Registro de cambios de obras y fotografías
+
+Hoy una ficha dice **cuándo** se tocó por última vez y **quién** la tocó (RF-800), y nada más. No
+dice qué cambió, ni desde qué valor, ni cuántas veces. Con dos personas catalogando durante años,
+«¿esta obra siempre midió 45 cm o alguien la corrigió?» es una pregunta que hoy no tiene respuesta y
+que dentro de cinco años la va a tener alguien que no estaba.
+
+Estos requisitos se escribieron **después** del código, al auditarlo: las migraciones
+`20260805120000` y `20260805140000` y sus tests citaban RF-1501 a RF-1508 y en este documento no
+existía ninguno de los dos bloques. La numeración arranca en 1500 y no en 1400 porque los
+identificadores no se renumeran y así se conservan las citas ya escritas en el SQL; RF-1509 a
+RF-1512 son los cuatro criterios que estaban implícitos en el código y no tenían requisito.
+
+| Id | Requisito |
+|---|---|
+| RF-1501 | Existe un **registro de cambios** de las obras y de sus fotografías, para auditoría. Es informativo: contesta qué cambió, desde qué valor y quién lo hizo. |
+| RF-1502 | La granularidad es **por campo**: una fila por cada columna que cambia, con su valor anterior y su valor nuevo en la representación **almacenada** (el código del enumerado, no su etiqueta; `54.00`, no «54 cm»). Los campos cambiados en un mismo guardado comparten un identificador de operación, para que la interfaz reconstruya la acción del usuario. Nulo significa que la columna valía nulo, que es un dato y no una ausencia de dato. |
+| RF-1503 | Se anota el **alta** de la ficha (una sola línea, sin campo), el **cambio**, la **retirada** y la **restauración**, cada uno con su verbo. Se anota siempre **quién**, tomado de la sesión y no de lo que manda el cliente; sin sesión de aplicación —una migración, un acceso administrativo— el autor es nulo, que es la verdad. |
+| RF-1504 | **El registro no lo escribe nadie salvo la base de datos, y no se modifica ni se borra nunca.** Ni el Lector, ni el Catalogador, ni el Superusuario, ni la clave de servicio tienen `insert`, `update` o `delete`. Un registro de auditoría que el auditado puede editar no es un registro de auditoría, y uno al que se le pueden **añadir** líneas inventadas está tan roto como uno al que se le pueden quitar las verdaderas. La protección es de dos capas en serie (RF-113): el privilegio revocado y, para los roles que se saltan la RLS, un candado que rechaza `update`, `delete`, `truncate` y toda inserción que no venga del propio mecanismo de la base. |
+| RF-1505 | **El registro no es reversible y no se construye ningún «deshacer».** Ni función, ni pantalla, ni botón, ni nada que sea el sustrato cómodo de una: nada que lea el registro y escriba en el catálogo. La copia de seguridad es el volcado periódico (RNF-113), no el registro — que por diseño no guarda las columnas derivadas ni los ficheros del almacén, así que una restauración a partir de él dejaría la ficha a medias. Si algún día aparece un camino de vuelta, es un error y no una mejora. |
+| RF-1506 | La lectura del registro **hereda la visibilidad de la ficha auditada**, y no la copia: el Lector ve la historia de las obras y las fotografías activas, y no sabe siquiera que existe la de una ficha retirada (RF-609); el Catalogador ve la de todo, papelera incluida (RF-913). |
+| RF-1507 | **No se purga ni caduca nada**, y no hay ningún interruptor para silenciar el registro, ni siquiera durante una migración. Si algún día el volumen lo exigiera, la respuesta prevista no es borrar, sino trasladar lo más antiguo a un archivo con exactamente los mismos privilegios y los mismos candados. |
+| RF-1508 | La traducción al español de los nombres de campo y de los valores es tarea de la **interfaz**. El registro guarda el nombre de la columna tal como está en el esquema. |
+| RF-1509 | El registro anota **lo que cambió una persona**, no las consecuencias automáticas de que algo cambiara: quedan fuera las marcas de traza de RF-800 y RF-902 —fecha y autor de actualización, fecha básica, y el sello de retirada y restauración— y las columnas derivadas de otras. Anotarlas convertiría cada corrección de una errata en varias líneas, la mayoría sin información, y el historial de una ficha con doscientos cambios tendría más ruido que contenido. **La retirada y la restauración sí se anotan**: lo que se descarta es el sello redundante que las acompaña, no el cambio. |
+| RF-1510 | **Un guardado que no cambia nada no escribe ninguna línea.** Es el caso normal de un formulario que se guarda sin haber tocado nada, y del envío del objeto entero desde el cliente. Un registro lleno de cambios vacíos es un registro que nadie lee, y uno que nadie lee no sirve para auditar. |
+| RF-1511 | El registro **empieza donde empieza el registro**: las fichas anteriores no reciben líneas retroactivas. Lo único que se podría escribir con verdad sería un autor desconocido y la fecha de hoy, o sea una línea que afirma algo falso. Inventar historia para que un historial no empiece vacío es la clase de falsificación que este registro existe para impedir, y da igual que la escriba una migración de buena fe. |
+| RF-1512 | El registro captura **todos los caminos de escritura**, no solo el de la aplicación: da igual que el cambio venga de la PWA, de un cliente que se salte la interfaz, de un acceso administrativo, de una función que se salte las políticas o **de otro mecanismo automático de la base**. Un cambio que la base se hace a sí misma sobre una ficha —recalcular si una obra tiene fotografías, por ejemplo— es un cambio de la ficha para quien lea la historia, y se anota con el autor de la sesión que lo provocó. Por eso el registro no lo escribe el cliente: si lo escribiera, la historia sería «lo que el cliente quiso contar» y no habría forma de distinguirla de la verdad. |
+
 ---
 
 ## 6. Requisitos no funcionales
@@ -310,21 +384,31 @@ construían. Lo que sigue es el estado, no un plan.
 |---|---|
 | Plataforma como código (Terraform), dominio, alojamiento y almacén de másters | Construido |
 | Verificación automática y despliegue en integración continua | Construido, con filtros de rutas por bloque de trabajo |
-| Políticas RLS, privilegios y su batería de tests | Construido: dieciocho ficheros de test de SQL en verde, y el cierre por omisión avisa si alguien añade una tabla sin política |
+| Políticas RLS, privilegios y su batería de tests | Construido: **33 ficheros de test de SQL en verde**, medidos uno a uno el 4 de agosto de 2026, y el cierre por omisión avisa si alguien añade una tabla sin política |
 | Esquema: Obras, Imágenes y las tres tablas maestras (tipos de obra, series, lugares) | Construido |
-| Esquema: Exposiciones, Bibliografía, sus dos tablas puente, Propietarios/Instituciones y Archivo/Documentación | **No construido.** Son cuatro de las nueve tablas y las dos puente; nada del catálogo razonado documental existe todavía |
+| Esquema: el catálogo razonado documental — personas e instituciones, procedencia, exposiciones y sus sedes, bibliografía, archivo y su clasificación, y las cinco tablas puente | **Construido** el 4 de agosto de 2026 (RF-508 a RF-517). Deja de ser el hueco grande de este documento: las nueve tablas de los originales son hoy **23 tablas y una vista** en el esquema del catálogo |
+| Esquema: enlaces a sitios externos | Construido (RF-1400), con las dos direcciones que vivían dentro de una nota ya trasladadas |
+| Esquema: registro de cambios de obras y fotografías | Construido (RF-1500), las dos mitades — la tabla inviolable y el mecanismo que la escribe |
 | Frontend: acceso, listado con filtros y búsqueda, ficha, edición, captura rápida en móvil | Construido |
-| Fotografías: tres niveles generados en el navegador, orden, imagen índice, giro y recorte como dato | Construido |
+| Frontend: los bloques documentales dentro de la ficha de obra (procedencia, bibliografía, historial expositivo, documentación y obras relacionadas) | Construido, con su estado de investigación (RF-218) |
+| Frontend: fichas propias de Exposición, Bibliografía, Documento y Propietario (RF-309), y sus búsquedas dedicadas (RF-606) | **No construido.** Las tablas existen y se leen desde la ficha de obra; lo que falta es la ficha de cada una y su índice |
+| Frontend: enlaces a sitios externos | **No construido.** El esquema está cerrado y probado, y en la aplicación solo existen sus tipos: no hay ni una pantalla que lea la tabla |
+| Frontend: pantalla del historial de cambios (RF-1508) | **No construida.** El registro es correcto y no lo lee nadie |
+| Fotografías: tres niveles generados en el navegador, orden, imagen índice, giro, recorte, perspectiva y color como dato, y la copia corregida a resolución completa | Construido |
 | Ficha imprimible en PDF con QR | Construido |
-| Vistas en vivo por WebSocket | Construido para obras e imágenes |
-| Sección «Tablas»: ubicaciones | Construido. Tipos de obra y series, pendientes de pantalla |
-| Papelera | **No construida.** La baja lógica sí está en el esquema y en los *triggers*; lo que falta es la pantalla desde la que ver y restaurar |
+| Vistas en vivo por WebSocket | Construido para obras e imágenes. Las tablas documentales, los enlaces y el registro no se publican |
+| Sección «Tablas»: ubicaciones, tipos de obra y series | Construido, las tres con pantalla propia. Los vocabularios documentales nuevos —tipos de publicación, tipos de documento, tipos de relación, sedes y clasificación archivística— no tienen pantalla |
+| Papelera | **No construida.** La baja lógica está en el esquema, en los *triggers* y en las políticas, y desde el 4 de agosto de 2026 también la visibilidad heredada del expediente (RF-910 a RF-913); lo que falta es la pantalla desde la que ver y restaurar |
 | Bloqueo de edición | **Retirado** (9.1) |
 | Volcados automáticos de la base de datos | Pendiente. Hoy se lanzan a mano |
 
-Un aviso sobre las cifras de este documento y del plan de pruebas: la cabecera del plan sigue diciendo
-«44 asertos en verde» y hoy son cientos. Esa clase de número se queda atrás en cuanto se escribe, y lo
-que vale es la salida de `make verificar`.
+Un aviso sobre las cifras de este documento y del plan de pruebas: cualquier número de tests se queda
+atrás en cuanto se escribe, así que en el plan van **con la fecha en que se midieron** y lo que vale es
+la salida de `make verificar`. Y una trampa medida el 4 de agosto de 2026 que conviene conocer antes de
+fiarse de esa salida: `make test` y `make typecheck` se ejecutan **dentro del contenedor de la
+aplicación, que solo tiene montado `app/`**, así que el único test que cubre el perímetro de firma de la
+función Edge no se puede ni cargar desde ahí y `make typecheck` da error. En integración continua y en
+la máquina, con el repositorio entero delante, los dos pasan.
 
 ## 8. Decisiones tomadas al construir
 
@@ -359,7 +443,21 @@ donde se leen.
 | RF-1002 · la ficha imprimible lleva `ubicacion_fisica` | Lleva la rama del árbol de lugares, que es lo que ese campo ha pasado a ser (ADR-006) |
 | RF-311 | No estaba en los originales: la ficha se recorre como cola del listado del que se llegó. Salió de usar la aplicación, no de especificarla |
 
-### 8.3 Decisiones que los originales no contemplaban
+### 8.3 Decisiones de esquema que revisan un requisito
+
+Todas del 4 y 5 de agosto de 2026, al construir el catálogo razonado documental. Van aquí y no en el
+apartado 9 porque no retiran nada: cambian lo que el requisito decía.
+
+| Requisito histórico | Lo que se construyó, y por qué |
+|---|---|
+| RF-201 · el modelo consta de nueve tablas | **23 tablas y una vista.** Las nueve de los originales fusionaban en una sola entidad cosas que son varias: la procedencia era un campo y es una cadena de eslabones (RF-509), los vocabularios que la usuaria amplía son tablas maestras con clave propia y no listas cerradas (RF-514, RF-515, RF-217), la sede de una exposición no son dos textos (RF-512) y las dos claves ajenas del documento son dos tablas puente (RF-516). Ninguna tabla nueva es una entidad nueva: son las mismas nueve dichas de forma que se pueda consultar |
+| RF-903 · las tablas puente se borran directamente | **Se retiran, como todo lo demás** (RF-517). El argumento completo está en RF-517 y en RF-903; en corto: en cuanto la participación lleva su número de catálogo y la cita sus páginas, «basta con volver a crearlas» deja de ser verdad, y «nunca un borrado real» no admite excepciones que un test tenga que aprender |
+| RF-501 · la nota de la participación lleva el número de catálogo | **Columna aparte** (RF-513). Es la fusión que el propio esquema de campos hizo en una versión y deshizo en la siguiente para las páginas, con el mismo argumento: un dato citable de forma exacta no se busca dentro de la prosa |
+| RF-205 · todo campo de selección ofrece «Sin revisar» | **Dos excepciones más, con el argumento de RF-203**: la distinción entre persona e institución (RF-508) y la clase de un sitio enlazado, donde «sin clasificar» y «se miró y no encaja» son dos valores distintos y ninguno es «sin revisar» (RF-1402). La regla general no se toca; lo que se añade es que un dato del que depende una redacción no puede quedar pendiente |
+| RF-212 · `obras_relacionadas` es una relación múltiple autorreferencial | **Lleva de qué clase es la relación** (RF-217), con su etiqueta inversa y su simetría. Las propias notas de implementación de los originales anticipaban el caso por escrito; aparecieron los seis tipos que decían que podrían aparecer |
+| RF-105, RF-103 · el acceso es a las nueve tablas | Sigue valiendo tal cual, y hoy son 23. La frase se lee como «a todo el catálogo», que es lo que decidía |
+
+### 8.4 Decisiones que los originales no contemplaban
 
 - **El catálogo se copia al dispositivo** y el listado se pinta desde esa copia, así que filtrar,
   ordenar y buscar son inmediatos y el listado abre sin esperar. La copia se borra al cerrar sesión:
@@ -411,10 +509,21 @@ qué la aplicación no lo tiene es el propio requisito.
 
 ### 9.3 Lo que NO se retira, aunque no esté construido
 
-Para que la distinción quede clara: las cuatro tablas que faltan —Exposiciones, Bibliografía,
-Propietarios/Instituciones, Archivo/Documentación— y la papelera **no son sobreingeniería**. Son el
-catálogo razonado, que es la mitad del propósito del proyecto (apartado 1), y la papelera es la
-contrapartida de que nada se borre nunca. Están sin construir, que es distinto de estar de más.
+Para que la distinción quede clara: lo que falta **no es sobreingeniería**. Está sin construir, que es
+distinto de estar de más.
+
+Las cuatro tablas que este apartado defendía —Exposiciones, Bibliografía, Propietarios/Instituciones y
+Archivo/Documentación— **ya están construidas** desde el 4 de agosto de 2026, con su procedencia, sus
+vocabularios y sus cinco tablas puente (RF-508 a RF-517), y sus bloques ya se ven y se editan dentro de
+la ficha de obra. Lo que sigue sin construir de ese frente es la **ficha propia** de cada una y su
+índice (RF-309, RF-606): hoy una exposición o una referencia se leen desde la obra y no tienen página
+adonde llegar.
+
+Y sigue en pie lo que este apartado decía de la **papelera**: es la contrapartida de que nada se borre
+nunca, la baja lógica está entera en el esquema —incluida desde el 4 de agosto de 2026 la visibilidad
+heredada del expediente documental (RF-910 a RF-913)— y lo único que falta es la pantalla desde la que
+ver y restaurar. Igual con la **pantalla del historial de cambios** (RF-1508): el registro se escribe
+bien y no lo lee nadie.
 
 ## 10. Fuera de alcance
 
@@ -441,6 +550,10 @@ han quedado sin objeto porque lo que condicionaban se ha retirado. Se dejan tach
 borradas, por lo mismo que los requisitos. El detalle del razonamiento original está en
 [`revision/incidencias-detectadas.md`](revision/incidencias-detectadas.md).
 
+Desde DP-11 la lista recoge también **discrepancias descubiertas al construir**: un sitio donde el
+esquema hace dos cosas distintas con la misma pregunta es una decisión pendiente aunque nadie la
+plantease, y escribirla aquí es más barato que volver a encontrarla.
+
 | Id | Decisión | Estado |
 |---|---|---|
 | ~~DP-01~~ | Quién asigna `id_catalogacion` | **Resuelta** en [ADR-003](decisiones/ADR-003-asignacion-del-identificador.md): la base, con un *trigger* y un cerrojo por fondo |
@@ -450,6 +563,7 @@ borradas, por lo mismo que los requisitos. El detalle del razonamiento original 
 | ~~DP-10~~ | Licencia | **Resuelta**: MIT (`LICENSE`), la misma que la otra aplicación del equipo. Las obras del catálogo quedan explícitamente fuera, y la distinción está escrita en el README |
 | DP-08 | Si los campos Sí/No de fase 1 (`tiene_marco`, `requiere_restauracion`, `requiere_reenmarcacion`) necesitan un tercer valor «Sin revisar», por coherencia con RF-205 | Abierta, y **decidible cuando esos campos se construyan**: hoy no existen |
 | DP-09 | **Formato del máster fotográfico**: JPEG a máxima calidad, RAW o TIFF. Criterio archivístico, no de infraestructura. Debe decidirse **antes de fotografiar en serie**: reconvertir miles de archivos después no recupera lo que el JPEG ya descartó | Abierta, y es la única que bloquea trabajo de campo |
-| DP-03 | Si `clave_bibtex` sigue siendo clave primaria o pasa a campo único con clave técnica detrás | **Ya decidida por ADR-007** en lo esencial: toda tabla maestra lleva clave sustituta. Queda por decidir solo cuando exista Bibliografía |
+| ~~DP-03~~ | Si `clave_bibtex` sigue siendo clave primaria o pasa a campo único con clave técnica detrás | **Resuelta al construir Bibliografía** el 4 de agosto de 2026, ejecutando lo que ADR-007 ya había decidido: la clave es sustituta y la clave BibTeX es una columna única, **opcional y editable**. Opcional porque una referencia se da de alta mientras se investiga y la clave de cita se inventa al publicar, y editable porque una clave de cita se corrige |
+| DP-11 | **Conviven dos formas de política de lectura, y hay que decidir si se unifican.** Las tablas construidas desde agosto de 2026 esconden al Lector lo retirado —«está activa y puede leer, o puede editar»— y las tres maestras más antiguas (tipos de obra, series y lugares) solo preguntan si puede leer, así que el Lector ve también sus entradas retiradas. No es una fuga de datos de nadie: son nombres de vocabulario del propio estudio, no el dato personal de un tercero de RF-105. Lo que sí hace es **contradecir RF-609** y, sobre todo, responder la misma pregunta de dos maneras según la antigüedad de la tabla, que es exactamente cómo esto se vuelve a descubrir desde cero dentro de un año | Abierta, y **no urgente: no se cambia el comportamiento de las tres viejas**, que llevan meses desplegadas y funcionando. Medido el 4 de agosto de 2026 con la sesión de un Lector de verdad: ve los **22** lugares, **2 de ellos retirados**, y los 6 tipos de obra y las 9 series, hoy ninguno retirado. Si se decide unificar, hace falta una migración propia que reescriba las tres políticas y sus tests, y **antes de nada** mirar qué pantallas leen esos vocabularios al editar una obra que sí usa una entrada retirada: cambiarlo a ciegas puede dejar sin nombre el tipo de obra de una ficha vieja, que es un fallo peor que el que arregla |
 | DP-04 | Taxonomía cerrada de `agrupacion` y de `etapa` | Abierta y sin prisa: texto libre hasta que haya volumen. Los campos todavía no existen |
 | DP-05 | Si el catálogo online será una web por autor o conjunta | **Retirada de esta lista**: es una decisión de un producto fuera de alcance, y no bloquea nada de la aplicación |

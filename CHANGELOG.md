@@ -2,6 +2,52 @@
 
 ### Interfaz
 
+**La ficha de obra ya tiene su mitad documental: procedencia, exposiciones, bibliografía, archivo y obras hermanas**
+Hasta hoy la ficha llevaba un recuadro que decía que todo esto estaba pendiente, y no había dónde apuntar
+nada de ello. Ahora, debajo de la conservación y la ubicación, hay cinco apartados nuevos en el orden en
+que se investiga una obra: por qué manos ha pasado, dónde se ha expuesto, dónde está publicada, qué
+papeles del archivo hablan de ella y con qué otras obras del catálogo va. Desde ahí se registra, se
+corrige y se retira cada cosa sin salir de la obra, y todo lo retirado sigue guardado con quién lo hizo y
+cuándo.
+
+**Cada apartado distingue «no hay nada» de «nadie ha mirado todavía»**
+Es la distinción por la que existe toda esta parte del catálogo. Una obra sin exposiciones apuntadas no
+es una obra que no se haya expuesto: es una obra que nadie ha buscado. Así que cada apartado lleva en su
+cabecera cuántas cosas tiene y en qué punto va su investigación —sin revisar, en curso, investigado sin
+resultados, cerrada— y, al abrirlo, lo explica con una frase entera en vez de dejar el hueco. Declarar
+«se ha investigado y no consta nada» es una respuesta, se guarda como tal y ya no se confunde con el
+silencio; y mientras eso no se sepa, el apartado lo dice también, en vez de dar a entender que la obra
+no tiene procedencia o que es inédita.
+
+**Un hueco en la procedencia se lee como un hueco, y no como una nota al margen**
+La cadena de manos se lee de arriba abajo como una sola historia, y los años que nadie cubre aparecen
+intercalados entre los dos propietarios que separan, ocupando tanto sitio como ellos: en una procedencia
+lo que no consta pesa igual que lo que consta. Arriba se dice de un tirón si la cadena tiene huecos, si
+no se puede medir por falta de fechas o si va seguida y fechada, y al final se dice dónde está la obra
+hoy —solo cuando de verdad se puede afirmar—. La procedencia redactada para publicar se muestra tal cual
+si está escrita, y si no, se compone un borrador a partir de la cadena y se avisa de que lo es.
+
+**La bibliografía, con la página que se copia y sin duplicar libros**
+Cada cita lleva el título de la publicación primero y la página después, que es la parte que se acaba
+copiando en otro texto. Al citar se busca por título, autoría, revista o clave de la publicación, y si lo
+que se está escribiendo ya existe en el catálogo se avisa antes de guardar y se ofrece usar la que ya
+hay: dos fichas del mismo libro parten en dos las citas del catálogo para siempre. Con pocas citas van
+en una sola lista; cuando hay bastantes y de clases distintas, se agrupan por tipo de publicación.
+
+**Llegan plegados y no gastan datos hasta que se baja hasta ellos**
+Cinco apartados abiertos debajo de las fotografías serían un rollo de papel en un móvil, así que llegan
+cerrados, con lo justo en la cabecera para decidir si abrirlos. Y no consultan nada hasta que se llega a
+esa altura de la ficha: recorrer treinta obras buscando una no cuesta cinco consultas por obra, que es
+justo lo que importa cuando se cataloga con datos del móvil en un almacén. Si hace falta tenerlos ya, hay
+un botón que los carga en el sitio.
+
+**El recuadro de «pendiente» ya no nombra lo que la ficha muestra**
+Decía que la procedencia, las exposiciones, la bibliografía y la documentación estaban por hacer
+mientras, ochenta líneas más abajo, se van a ver. Ahora nombra solo lo que falta de verdad: una
+exposición, una referencia, un documento de archivo, una serie o un propietario se leen y se enlazan
+desde la obra, pero no tienen todavía pantalla propia donde corregir sus datos, y enlazar un documento
+del archivo con una obra tampoco se hace aún desde aquí.
+
 **Descargar una fotografía: el original y la copia lista para imprimir**
 En la ficha, debajo de la galería, hay ahora un apartado «Descargar esta fotografía» que se despliega y
 ofrece los dos ficheros que tiene sentido sacar de la aplicación, con una línea que explica la
@@ -831,9 +877,19 @@ Nada se borra nunca de verdad, y eso ya está garantizado por la base: retirar u
 un lugar o una serie deja la fila con quién y cuándo. Lo que falta es la pantalla desde la que ver lo
 retirado y restaurarlo.
 
-**Las fichas de exposiciones, bibliografía, propietarios y documentación**
-La mitad documental del catálogo razonado —el historial expositivo, las referencias bibliográficas, quién
-tiene cada obra y el archivo digitalizado— todavía no existe. Es lo que queda más grande.
+**Las pantallas propias de exposiciones, bibliografía, propietarios y documentos**
+La mitad documental ya se lee y se escribe desde la ficha de obra: eso está contado arriba. Lo que falta
+es que cada una de esas cosas tenga su propia pantalla. Hoy, desde la obra, se puede crear al paso una
+referencia bibliográfica o un propietario, pero luego no hay dónde volver a ellos para corregir un
+título, unas fechas o un nombre mal escrito; una exposición hay que tenerla ya en el catálogo para poder
+enlazarla; y un documento del archivo todavía no se puede enlazar con una obra desde ninguna parte.
+
+**La mitad documental, sin haberse usado aún con un móvil en la mano**
+Todo lo que decide qué se muestra en esos cinco apartados —cada frase, cada recuento, cada hueco de una
+procedencia— está comprobado con pruebas automáticas, pero **nadie los ha abierto todavía con un teléfono
+y una obra delante**. Lo que solo se comprueba así: que las flechas para ordenar la cadena se alcanzan con
+el pulgar, que los paneles para citar y para elegir un propietario no tapan el teclado, y que ningún
+apartado se queda diciendo «cargando» donde debería haber una frase.
 
 **Tres fotografías donde la sugerencia de recorte sigue callando**
 De las cuarenta y cuatro, en tres reconoce mal por dónde va el borde: no por la inclinación, que ya está
