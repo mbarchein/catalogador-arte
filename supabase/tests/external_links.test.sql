@@ -1,0 +1,1091 @@
+-- Enlaces a sitios externos: RF-1401 a RF-1408.
+-- Y, por delante de todo, el perímetro: RF-101, RF-105, RF-106, RF-109, RF-111,
+-- RF-113, RF-609, RF-901, RF-902.
+--
+-- Lo que este fichero defiende de verdad es UNA LÍNEA: la validación de la
+-- dirección. Todo lo que entre en `url` acabará dentro de un `href` en la ficha
+-- que ve todo el equipo, no hay backend que se interponga y la clave anónima
+-- viaja en el cliente. Por eso la lista hostil está entera y escrita caso a caso
+-- —incluidos los tres que la primera versión del patrón dejaba pasar: la barra
+-- invertida, el espacio de ancho cero y las credenciales antes del anfitrión— y
+-- por eso se pasa DOS VECES, contra `url` y contra `archive_url`. Si alguien
+-- afloja el patrón, esto se pone rojo.
+--
+-- Los caracteres invisibles y de control se escriben con `chr()` a propósito: un
+-- byte invisible pegado dentro del fichero no se ve al revisarlo y se pierde en
+-- el primer copiar y pegar, que es justo el fallo que se está probando.
+\set ON_ERROR_STOP on
+begin;
+
+-- ── Fixtures ─────────────────────────────────────────────────
+--
+-- Un catalogador y un lector de verdad; los perfiles los crea el trigger de
+-- auth.users. Dos obras —una activa y otra retirada— y dos fotografías de la
+-- activa —una activa y otra retirada—, que es el mínimo para ejercer la
+-- visibilidad heredada en las dos anclas.
+
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000b1', 'cat-enlaces@test.local'),
+  ('00000000-0000-0000-0000-0000000000b2', 'lec-enlaces@test.local');
+update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000b1';
+update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000b2';
+
+insert into public.artworks (catalog_id, artist, title, attributed_title) values
+  ('AR-9700', 'ROTILI', 'Obra con enlaces', 'UNCONFIRMED'),
+  ('AR-9701', 'ROTILI', 'Obra retirada con enlaces', 'UNCONFIRMED'),
+  ('AR-9702', 'ROTILI', 'Obra sin nada colgando', 'UNCONFIRMED');
+
+insert into public.images (catalog_id, thumbnail_path, derivative_path, master_path, shot_type) values
+  ('AR-9700', 'e/min1.webp', 'e/der1.webp', 'e/master1.jpg', 'GENERAL'),
+  ('AR-9700', 'e/min2.webp', 'e/der2.webp', 'e/master2.jpg', 'BACK');
+
+update public.images  set active = false where image_id  = 'AR-9700_v2';
+update public.artworks set active = false where catalog_id = 'AR-9701';
+
+
+-- ── 1. La tabla nace cerrada (RF-111, RF-113, RF-901) ────────
+--
+-- Prioridad absoluta y antes que nada: sin backend, estas políticas son el único
+-- perímetro. Se mide el catálogo del sistema, que es donde se ve la tabla a la
+-- que se le olvidó un `revoke`.
+do $$
+declare v_privilegios text[];
+begin
+  if not (select relrowsecurity from pg_class where oid = 'public.external_links'::regclass) then
+    raise exception 'FAIL: external_links no tiene RLS activado (RF-111)';
+  end if;
+
+  if exists (select 1 from pg_policies
+              where schemaname = 'public' and tablename = 'external_links'
+                and cmd in ('DELETE', 'ALL')) then
+    raise exception 'FAIL: hay una política que permite DELETE sobre los enlaces (RF-901)';
+  end if;
+
+  if has_table_privilege('authenticated', 'public.external_links', 'delete')
+     or has_table_privilege('anon', 'public.external_links', 'delete') then
+    raise exception 'FAIL: alguien tiene privilegio de DELETE sobre los enlaces (RF-901)';
+  end if;
+
+  -- El rol anónimo, ni un privilegio: ni de tabla ni de columna. Revocar de
+  -- `anon` no deshace lo que PUBLIC concede, así que lo que se mira es el
+  -- resultado.
+  select coalesce(array_agg(distinct table_name || ' (' || privilege_type || ')'), '{}')
+    into v_privilegios
+    from information_schema.table_privileges
+   where table_schema = 'public' and table_name = 'external_links' and grantee = 'anon';
+  if array_length(v_privilegios, 1) > 0 then
+    raise exception 'FAIL: el rol anónimo tiene privilegios sobre los enlaces: %',
+      array_to_string(v_privilegios, ', ');
+  end if;
+
+  -- Y el autenticado, exactamente tres y no cuatro.
+  select coalesce(array_agg(distinct privilege_type order by privilege_type), '{}')
+    into v_privilegios
+    from information_schema.table_privileges
+   where table_schema = 'public' and table_name = 'external_links' and grantee = 'authenticated';
+  if v_privilegios <> array['INSERT', 'SELECT', 'UPDATE'] then
+    raise exception 'FAIL: el rol autenticado debería tener INSERT, SELECT y UPDATE sobre los enlaces, tiene [%]',
+      array_to_string(v_privilegios, ', ');
+  end if;
+
+  raise notice 'OK: RLS activado, sin DELETE por ninguna de las dos puertas, y el anónimo sin nada (RF-111, RF-113, RF-901)';
+end $$;
+
+-- El anónimo, atacando de verdad.
+do $$
+begin
+  set local role anon;
+  perform 1 from public.external_links limit 1;
+  reset role;
+  raise exception 'FAIL: el rol anónimo ha podido consultar los enlaces (RF-101)';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'OK: el rol anónimo no llega a los enlaces (RF-101)';
+end $$;
+
+reset role;
+
+-- Y un DELETE autenticado tiene que fallar por FALTA DE PRIVILEGIO y no por
+-- falta de filas: si fallara por falta de filas, el día que alguien concediera
+-- el privilegio esto seguiría pasando.
+do $$
+begin
+  set local role authenticated;
+  delete from public.external_links;
+  reset role;
+  raise exception 'FAIL: un usuario autenticado ha podido ejecutar un DELETE sobre los enlaces';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'OK: el DELETE está denegado por privilegio, no por ausencia de filas (RF-901)';
+end $$;
+
+reset role;
+
+
+-- ── 2. El arco exclusivo (RF-1401) ───────────────────────────
+--
+-- Se comprueba el NOMBRE de la restricción y no solo que falle: lo que
+-- PostgreSQL devuelve al rechazar es el nombre, y es lo que la interfaz traduce
+-- al español.
+do $$
+declare v_restriccion text;
+begin
+  begin
+    insert into public.external_links (url) values ('https://ejemplo.es/sin-ancla');
+    raise exception 'FAIL: ha entrado un enlace sin ancla ninguna';
+  exception when check_violation then
+    get stacked diagnostics v_restriccion = constraint_name;
+    if v_restriccion <> 'external_links_exactly_one_owner' then
+      raise exception 'FAIL: un enlace sin ancla lo rechaza [%] y no el arco exclusivo', v_restriccion;
+    end if;
+  end;
+
+  begin
+    insert into public.external_links (artwork_id, image_id, url)
+    values ('AR-9700', 'AR-9700_v1', 'https://ejemplo.es/dos-anclas');
+    raise exception 'FAIL: ha entrado un enlace colgando de una obra y de una fotografía a la vez';
+  exception when check_violation then
+    get stacked diagnostics v_restriccion = constraint_name;
+    if v_restriccion <> 'external_links_exactly_one_owner' then
+      raise exception 'FAIL: un enlace con dos anclas lo rechaza [%] y no el arco exclusivo', v_restriccion;
+    end if;
+  end;
+
+  raise notice 'OK: ni cero anclas ni dos: exactamente una (RF-1401)';
+end $$;
+
+-- Y las dos formas con una sola ancla entran.
+do $$
+begin
+  insert into public.external_links (artwork_id, url) values
+    ('AR-9700', 'https://www.macvac.es/obra/saliente-en-el-espacio/');
+  insert into public.external_links (image_id, url) values
+    ('AR-9700_v1', 'https://www.macvac.es/artista/rotili-zampanoli-alberto/');
+  raise notice 'OK: un enlace de obra y un enlace de fotografía entran (RF-1401)';
+end $$;
+
+-- La clave ajena es declarada, no polimórfica: un identificador inventado no
+-- entra, y eso es exactamente lo que una columna de texto con el tipo al lado no
+-- podría impedir.
+do $$
+begin
+  begin
+    insert into public.external_links (artwork_id, url) values ('AR-0000', 'https://ejemplo.es/obra-fantasma');
+    raise exception 'FAIL: ha entrado un enlace colgando de una obra inexistente';
+  exception when foreign_key_violation then
+    null;
+  end;
+
+  begin
+    insert into public.external_links (image_id, url) values ('AR-9700_v9', 'https://ejemplo.es/foto-fantasma');
+    raise exception 'FAIL: ha entrado un enlace colgando de una fotografía inexistente';
+  exception when foreign_key_violation then
+    null;
+  end;
+
+  raise notice 'OK: las dos claves ajenas rechazan un identificador inexistente (RF-1401)';
+end $$;
+
+-- `on delete restrict`: nadie tiene DELETE, pero si algún día se borrara una
+-- fila a mano desde acceso administrativo, esto avisa en vez de dejar enlaces
+-- colgando del vacío.
+-- El bloque anidado es la única forma de deshacer un intento dentro de PL/pgSQL:
+-- cada `begin ... exception` es una subtransacción, y `savepoint` a mano no se
+-- admite aquí.
+do $$
+begin
+  begin
+    delete from public.artworks where catalog_id = 'AR-9700';
+    raise exception 'FAIL: se ha podido borrar a mano una obra con enlaces colgando';
+  exception when foreign_key_violation then
+    raise notice 'OK: borrar a mano la obra choca con el restrict de los enlaces';
+  end;
+end $$;
+
+
+-- ── 3. La dirección: la lista hostil entera (RF-1403) ────────
+--
+-- Cada cadena con el ataque que representa. La lista se pasa contra `url` y
+-- después, sin quitar ni una, contra `archive_url`.
+--
+-- El caso del byte NUL del diseño original no está: PostgreSQL no admite \x00
+-- dentro de un `text` y la propia cadena literal falla antes de llegar al
+-- `check`, así que probarlo sería probar el analizador léxico.
+create temporary table hostiles (n integer generated always as identity, u text, porque text);
+
+insert into hostiles (u, porque) values
+  ('javascript:alert(1)',                'esquema ejecutable, el ataque de manual'),
+  ('JavaScript:alert(1)',                'el mismo, con mayúsculas'),
+  (' javascript:alert(1)',               'espacio delante: el navegador recorta y lo ejecuta'),
+  (e'java\tscript:alert(1)',             'tabulador dentro del esquema, ejecutado por navegadores reales'),
+  (e'java\nscript:alert(1)',             'salto de línea dentro del esquema'),
+  ('data:text/html;base64,PHNjcmlwdD4=', 'documento incrustado'),
+  ('vbscript:msgbox(1)',                 'esquema ejecutable de otra época'),
+  ('file:///etc/passwd',                 'fichero local'),
+  ('blob:https://ejemplo.es/x',          'blob, que empieza por algo que parece https'),
+  ('//evil.example/obra',                'relativa al protocolo'),
+  ('evil.example/obra',                  'sin esquema'),
+  ('http://',                            'esquema sin nada detrás'),
+  ('https://localhost/obra',             'nombre sin punto: no es una fuente citable'),
+  ('https://macvac.es@evil.example/obra','CREDENCIALES antes del anfitrión: se lee como del MACVA y va a otro sitio'),
+  ('https://user:pass@ejemplo.es/x',     'usuario y contraseña antes del anfitrión'),
+  ('https://eje mplo.es',                'espacio dentro del nombre del sitio'),
+  ('https://ejemplo.es/a' || chr(1) || 'b', 'carácter de control (U+0001) en la ruta'),
+  ('https://ejemplo.es/a' || chr(127),   'carácter de control (DEL) al final'),
+  ('https://evil.example\.ejemplo.es/',  'BARRA INVERTIDA: el navegador la lee como barra y el anfitrión real es evil.example'),
+  ('https://ejemplo' || chr(8203) || '.es/x', 'ESPACIO DE ANCHO CERO (U+200B) dentro del anfitrión'),
+  ('https://ejemplo.es' || chr(8203) || '/x', 'espacio de ancho cero al final del anfitrión'),
+  ('https://ejemplo' || chr(173) || '.es/x', 'guion suave (U+00AD) dentro del anfitrión'),
+  ('https://192.168.1.7/obra',           'dirección IP'),
+  ('https://[::1]/obra',                 'dirección IP versión 6'),
+  ('https://ejemplo.es./obra',           'punto final en el nombre del sitio'),
+  ('https://.ejemplo.es/obra',           'punto inicial'),
+  ('https://ejemplo..es/obra',           'etiqueta vacía en medio'),
+  ('https://ejemplo_a.es/x',             'guion bajo, que no es carácter de dominio'),
+  ('https://-ejemplo.es/x',              'etiqueta que empieza por guion'),
+  ('https://ejemplo-.es/x',              'etiqueta que termina en guion'),
+  ('https://ejemplo.e/x',                'dominio de primer nivel de una letra'),
+  ('https://ejemplo.es:123456/x',        'puerto de seis cifras'),
+  ('',                                   'la cadena vacía'),
+  ('https://ejemplo.es/' || repeat('a', 3000), 'tres mil caracteres: un pegado accidental'),
+  ('https://ejemplo.es/obra ',           'espacio al final'),
+  ('https://münchen.example/obra',       'dominio internacionalizado en Unicode: COSTE ACEPTADO, se guarda en punycode');
+
+create temporary table buenas (n integer generated always as identity, u text, porque text);
+
+insert into buenas (u, porque) values
+  ('https://www.macvac.es/obra/saliente-en-el-espacio/', 'la del caso real'),
+  ('HTTPS://WWW.MACVAC.ES/OBRA/',                        'el esquema y el anfitrión en mayúsculas'),
+  ('http://museo-regional.example/ficha?id=12#foto',     'http sin cifrar, con parámetros y ancla'),
+  ('https://ejemplo.es/obra/españa',                     'ruta no ASCII: lo que se restringe es el anfitrión'),
+  ('https://x.example/@usuaria',                         'arroba en la RUTA, que no es la autoridad'),
+  ('https://ejemplo.es:8443/obra',                       'puerto explícito'),
+  ('http://a.bc',                                        'la más corta admisible, once caracteres'),
+  ('https://xn--muenchen-9db.example/obra',              'punycode, que es como se guarda un dominio internacionalizado'),
+  ('https://sub.dominio.ejemplo.es/a?b=1&c=2#d',         'tres etiquetas y una consulta con dos parámetros');
+
+-- 3a. Contra `url`.
+do $$
+declare r record; v_restriccion text;
+begin
+  for r in select * from hostiles order by n loop
+    begin
+      insert into public.external_links (artwork_id, url) values ('AR-9700', r.u);
+      raise exception 'FAIL: ha entrado una dirección que no debía [%] — %', left(r.u, 70), r.porque;
+    exception when check_violation then
+      get stacked diagnostics v_restriccion = constraint_name;
+      if v_restriccion <> 'external_links_url_is_web' then
+        raise exception 'FAIL: [%] la rechaza [%] y no la validación de la dirección',
+          left(r.u, 70), v_restriccion;
+      end if;
+    end;
+  end loop;
+  raise notice 'OK: las % direcciones hostiles se rechazan en `url`, todas por external_links_url_is_web (RF-1403)',
+    (select count(*) from hostiles);
+end $$;
+
+-- 3b. Contra `archive_url`, la lista entera otra vez. La copia archivada acaba
+-- en un `href` igual que la original, así que la regla es exactamente la misma y
+-- no una versión relajada.
+do $$
+declare r record; v_restriccion text;
+begin
+  for r in select * from hostiles order by n loop
+    begin
+      insert into public.external_links (artwork_id, url, archive_url)
+      values ('AR-9700', 'https://ejemplo.es/original-' || r.n, r.u);
+      raise exception 'FAIL: ha entrado una copia archivada que no debía [%] — %', left(r.u, 70), r.porque;
+    exception when check_violation then
+      get stacked diagnostics v_restriccion = constraint_name;
+      if v_restriccion <> 'external_links_archive_url_is_web' then
+        raise exception 'FAIL: la copia archivada [%] la rechaza [%] y no su validación',
+          left(r.u, 70), v_restriccion;
+      end if;
+    end;
+  end loop;
+  raise notice 'OK: las mismas % direcciones hostiles se rechazan en `archive_url` (RF-1403)',
+    (select count(*) from hostiles);
+end $$;
+
+-- 3c. Y las buenas entran, por las dos columnas. Sin este bloque el patrón
+-- podría endurecerse hasta no admitir nada y los dos anteriores seguirían
+-- pasando.
+do $$
+declare r record;
+begin
+  for r in select * from buenas order by n loop
+    begin
+      insert into public.external_links (artwork_id, url, archive_url)
+      values ('AR-9702', r.u, r.u);
+    exception when check_violation then
+      raise exception 'FAIL: se ha rechazado una dirección legítima [%] — %', r.u, r.porque;
+    end;
+  end loop;
+  raise notice 'OK: las % direcciones legítimas entran por `url` y por `archive_url` (RF-1403)',
+    (select count(*) from buenas);
+end $$;
+
+delete from public.external_links where artwork_id = 'AR-9702';
+
+-- 3d. El título se guarda recortado y no con espacios alrededor: un título con
+-- espacios rompe la comparación sin que se vea en pantalla.
+do $$
+declare v_restriccion text;
+begin
+  begin
+    insert into public.external_links (artwork_id, url, title)
+    values ('AR-9702', 'https://ejemplo.es/con-titulo-sucio', '  Ficha en el MACVA  ');
+    raise exception 'FAIL: ha entrado un título sin recortar';
+  exception when check_violation then
+    get stacked diagnostics v_restriccion = constraint_name;
+    if v_restriccion <> 'external_links_title_trimmed' then
+      raise exception 'FAIL: el título sin recortar lo rechaza [%]', v_restriccion;
+    end if;
+  end;
+  raise notice 'OK: el título se guarda recortado';
+end $$;
+
+
+-- ── 4. La forma de la fila, y el despliegue en una fase ──────
+--
+-- Una fila con solo el ancla y la dirección es válida: nace sin título, sin
+-- tipo, sin nota, sin comprobar y activa. Nada obliga a que exista la columna del
+-- tipo, así que un cliente que no la conozca sigue funcionando.
+do $$
+declare v_fila public.external_links%rowtype;
+begin
+  insert into public.external_links (artwork_id, url)
+  values ('AR-9702', 'https://museo-regional.example/ficha?id=12')
+  returning * into v_fila;
+
+  if v_fila.title <> '' or v_fila.note <> '' then
+    raise exception 'FAIL: el título o la nota no nacen vacíos';
+  end if;
+  if v_fila.link_type is not null then
+    raise exception 'FAIL: el tipo no nace «sin clasificar»';
+  end if;
+  if v_fila.check_status is not null or v_fila.checked_at is not null
+     or v_fila.checked_by is not null then
+    raise exception 'FAIL: un enlace nace comprobado, y nadie ha abierto esa página (RF-1405)';
+  end if;
+  if not v_fila.active or v_fila.deactivated_at is not null then
+    raise exception 'FAIL: un enlace nuevo no nace activo';
+  end if;
+  if v_fila.archive_url is not null then
+    raise exception 'FAIL: la copia archivada no nace vacía';
+  end if;
+
+  raise notice 'OK: una fila con solo el ancla y la dirección es válida y nace sin comprobar (RF-1402, RF-1405, RF-1408)';
+end $$;
+
+-- «Sin clasificar» y OTHER no son lo mismo, y el enumerado no admite texto libre.
+do $$
+begin
+  update public.external_links set link_type = 'OTHER'
+   where artwork_id = 'AR-9702' and url = 'https://museo-regional.example/ficha?id=12';
+
+  if (select count(*) from public.external_links
+       where artwork_id = 'AR-9702' and link_type is null) <> 0 then
+    raise exception 'FAIL: no se distingue «sin clasificar» de OTHER';
+  end if;
+
+  begin
+    update public.external_links set link_type = 'PRENSA' where artwork_id = 'AR-9702';
+    raise exception 'FAIL: el tipo de enlace ha admitido texto libre';
+  exception when invalid_text_representation then
+    null;
+  end;
+
+  raise notice 'OK: el tipo es un enumerado cerrado y nulo no es OTHER (RF-1402)';
+end $$;
+
+delete from public.external_links where artwork_id = 'AR-9702';
+
+
+-- ── 5. Un enlace no se añade dos veces, y sí se vuelve a añadir ──
+--
+-- Los dos únicos son PARCIALES sobre `active` a propósito: pegar dos veces lo
+-- mismo en la misma ficha es el accidente real, y volver a añadir lo que se
+-- retiró es una operación legítima (RF-1406).
+do $$
+declare v_id uuid;
+begin
+  insert into public.external_links (artwork_id, url)
+  values ('AR-9702', 'https://prensa.example/critica-1985')
+  returning id into v_id;
+
+  begin
+    insert into public.external_links (artwork_id, url)
+    values ('AR-9702', 'https://prensa.example/critica-1985');
+    raise exception 'FAIL: la misma dirección ha entrado dos veces en la misma obra';
+  exception when unique_violation then
+    null;
+  end;
+
+  -- La misma dirección en OTRA obra sí: el mismo artículo puede documentar dos
+  -- obras, y cada copia gana su propia nota.
+  insert into public.external_links (artwork_id, url)
+  values ('AR-9700', 'https://prensa.example/critica-1985');
+
+  -- Y retirada, se puede volver a añadir.
+  update public.external_links set active = false where id = v_id;
+  insert into public.external_links (artwork_id, url)
+  values ('AR-9702', 'https://prensa.example/critica-1985');
+
+  raise notice 'OK: no dos veces activa en la misma ficha; sí en otra ficha y sí después de retirarla (RF-1406)';
+end $$;
+
+delete from public.external_links where artwork_id in ('AR-9702');
+delete from public.external_links where url = 'https://prensa.example/critica-1985';
+
+
+-- ── 6. La baja lógica (RF-901, RF-902, RF-1406) ──────────────
+--
+-- Un enlace no se borra nunca: se retira, con traza de quién y cuándo, y se
+-- restaura desde la propia ficha. Sin `restored_at`, que `tg_row_audit` detecta:
+-- al restaurar devuelve a nulo las dos columnas de baja, como en los lugares.
+do $$
+declare v_id uuid; v_fila public.external_links%rowtype;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+
+  insert into public.external_links (artwork_id, url, title)
+  values ('AR-9700', 'https://ejemplo.es/para-retirar', 'Para retirar')
+  returning id into v_id;
+
+  update public.external_links set active = false where id = v_id;
+  reset role;
+
+  select * into v_fila from public.external_links where id = v_id;
+  if v_fila.active then
+    raise exception 'FAIL: el enlace sigue activo después de retirarlo';
+  end if;
+  if v_fila.deactivated_at is null
+     or v_fila.deactivated_by is distinct from '00000000-0000-0000-0000-0000000000b1'::uuid then
+    raise exception 'FAIL: retirar no ha sellado quién y cuándo (RF-902)';
+  end if;
+  if v_fila.created_by is distinct from '00000000-0000-0000-0000-0000000000b1'::uuid then
+    raise exception 'FAIL: el alta no ha sellado el autor (RF-804)';
+  end if;
+
+  -- Y restaurar.
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+  update public.external_links set active = true where id = v_id;
+  reset role;
+
+  select * into v_fila from public.external_links where id = v_id;
+  if not v_fila.active or v_fila.deactivated_at is not null or v_fila.deactivated_by is not null then
+    raise exception 'FAIL: restaurar no ha devuelto a nulo la traza de la baja';
+  end if;
+
+  raise notice 'OK: retirar sella quién y cuándo, restaurar lo limpia, y la fila sigue ahí (RF-901, RF-902)';
+end $$;
+
+reset role;
+
+
+-- ── 7. La comprobación (RF-1405) ─────────────────────────────
+--
+-- Las tres columnas afirman un hecho sobre el mundo exterior, así que solo las
+-- escribe `record_link_check`. Nulo es «sin comprobar» y NO es «roto».
+do $$
+declare
+  v_sin uuid; v_roto uuid; v_cuando timestamptz; v_fila public.external_links%rowtype;
+begin
+  insert into public.external_links (artwork_id, url, title)
+  values ('AR-9700', 'https://ejemplo.es/sin-comprobar', 'Sin comprobar')
+  returning id into v_sin;
+
+  insert into public.external_links (artwork_id, url, title)
+  values ('AR-9700', 'https://ejemplo.es/roto', 'Roto')
+  returning id into v_roto;
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+  v_cuando := public.record_link_check(v_roto, 'BROKEN');
+  reset role;
+
+  if v_cuando is null then
+    raise exception 'FAIL: record_link_check no devuelve la marca de tiempo que la pantalla necesita';
+  end if;
+
+  select * into v_fila from public.external_links where id = v_roto;
+  if v_fila.check_status <> 'BROKEN' or v_fila.checked_at is distinct from v_cuando
+     or v_fila.checked_by is distinct from '00000000-0000-0000-0000-0000000000b1'::uuid then
+    raise exception 'FAIL: la comprobación no ha quedado sellada con su fecha y su autor';
+  end if;
+
+  select * into v_fila from public.external_links where id = v_sin;
+  if v_fila.check_status is not null then
+    raise exception 'FAIL: un enlace sin comprobar no está a nulo';
+  end if;
+
+  -- Y la distinción, que es el requisito entero: el que nadie ha mirado no se
+  -- puede confundir con el que se miró y estaba roto.
+  if (select count(*) from public.external_links
+       where id in (v_sin, v_roto) and check_status is null) <> 1 then
+    raise exception 'FAIL: «sin comprobar» y «roto» no se distinguen (RF-1405)';
+  end if;
+
+  raise notice 'OK: la comprobación se sella con fecha y autor, y nulo no es BROKEN (RF-1405)';
+end $$;
+
+reset role;
+
+-- 7b. Un `update` directo que intenta escribir las tres columnas las deja como
+-- estaban, y NO lanza: un formulario que reenvía la fila entera no debe fallar
+-- por reenviar lo que ya había.
+do $$
+declare v_id uuid; v_antes public.external_links%rowtype; v_despues public.external_links%rowtype;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://ejemplo.es/roto';
+  select * into v_antes from public.external_links where id = v_id;
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+  update public.external_links
+     set title = 'Roto, con la fila entera reenviada',
+         check_status = 'WORKING',
+         checked_at = '2001-01-01T00:00:00Z',
+         checked_by = '00000000-0000-0000-0000-0000000000b2'
+   where id = v_id;
+  reset role;
+
+  select * into v_despues from public.external_links where id = v_id;
+  if v_despues.title <> 'Roto, con la fila entera reenviada' then
+    raise exception 'FAIL: el update ha fallado en lugar de ignorar las tres columnas congeladas';
+  end if;
+  if v_despues.check_status <> v_antes.check_status
+     or v_despues.checked_at is distinct from v_antes.checked_at
+     or v_despues.checked_by is distinct from v_antes.checked_by then
+    raise exception 'FAIL: un update directo ha movido el estado de comprobación (RF-1405)';
+  end if;
+
+  raise notice 'OK: un update directo no mueve la comprobación, y tampoco falla por intentarlo';
+end $$;
+
+reset role;
+
+-- 7c. Volver a confirmar el mismo estado un año después SÍ mueve la fecha: es el
+-- caso más frecuente, «sigue funcionando». Como `now()` es la hora de la
+-- transacción, la fecha se atrasa a mano —con el ajuste puesto, que es el único
+-- camino— para poder ver que la RPC la adelanta.
+do $$
+declare v_id uuid; v_antigua timestamptz; v_nueva timestamptz;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://ejemplo.es/roto';
+
+  perform set_config('app.link_check', v_id::text, true);
+  update public.external_links
+     set check_status = 'WORKING', checked_at = now() - interval '1 year',
+         checked_by = '00000000-0000-0000-0000-0000000000b1'
+   where id = v_id;
+  perform set_config('app.link_check', '', true);
+
+  select checked_at into v_antigua from public.external_links where id = v_id;
+  if v_antigua > now() - interval '300 days' then
+    raise exception 'FAIL: no se ha podido atrasar la fecha para montar el caso';
+  end if;
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+  v_nueva := public.record_link_check(v_id, 'WORKING');
+  reset role;
+
+  if v_nueva <= v_antigua then
+    raise exception 'FAIL: volver a confirmar el mismo estado no ha movido la fecha (RF-1405)';
+  end if;
+
+  raise notice 'OK: reconfirmar «sigue funcionando» mueve la fecha, que es para lo que existe';
+end $$;
+
+reset role;
+
+-- 7d. Editar la nota no mueve la fecha de comprobación, pero sí la de
+-- actualización y su autor: son dos hechos distintos y no se pisan.
+do $$
+declare v_id uuid; v_comprobada timestamptz; v_fila public.external_links%rowtype;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://ejemplo.es/roto';
+
+  -- Se atrasa la comprobación para que un cambio se note.
+  perform set_config('app.link_check', v_id::text, true);
+  update public.external_links set checked_at = now() - interval '30 days' where id = v_id;
+  perform set_config('app.link_check', '', true);
+  select checked_at into v_comprobada from public.external_links where id = v_id;
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
+  set local role authenticated;
+  reset role;
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+  update public.external_links set note = 'Guardada la copia del periódico en papel' where id = v_id;
+  reset role;
+
+  select * into v_fila from public.external_links where id = v_id;
+  if v_fila.checked_at is distinct from v_comprobada then
+    raise exception 'FAIL: editar la nota ha movido la fecha de comprobación';
+  end if;
+  if v_fila.updated_at is distinct from now()
+     or v_fila.updated_by is distinct from '00000000-0000-0000-0000-0000000000b1'::uuid then
+    raise exception 'FAIL: editar la nota no ha movido la fecha de actualización ni su autor (RF-801)';
+  end if;
+
+  raise notice 'OK: editar la nota mueve la actualización y no la comprobación (RF-801, RF-1405)';
+end $$;
+
+reset role;
+
+-- 7e. Poner el estado a nulo por la RPC devuelve las TRES columnas a nulo:
+-- «vuelve a estar sin comprobar» es una corrección legítima y no una pérdida de
+-- datos.
+do $$
+declare v_id uuid; v_fila public.external_links%rowtype; v_cuando timestamptz;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://ejemplo.es/roto';
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+  v_cuando := public.record_link_check(v_id, null);
+  reset role;
+
+  select * into v_fila from public.external_links where id = v_id;
+  if v_cuando is not null or v_fila.check_status is not null
+     or v_fila.checked_at is not null or v_fila.checked_by is not null then
+    raise exception 'FAIL: volver a «sin comprobar» no ha limpiado las tres columnas (RF-1405)';
+  end if;
+
+  raise notice 'OK: volver a «sin comprobar» limpia las tres columnas';
+end $$;
+
+reset role;
+
+-- 7f. El ajuste se limpia SIEMPRE: después de llamar a la RPC, un segundo update
+-- directo sobre la misma fila y dentro de la misma transacción tampoco mueve las
+-- tres columnas. Sin la limpieza, esa ventana existiría.
+do $$
+declare v_id uuid; v_fila public.external_links%rowtype;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://ejemplo.es/roto';
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+  perform public.record_link_check(v_id, 'CHANGED');
+  update public.external_links
+     set check_status = 'WORKING', checked_by = '00000000-0000-0000-0000-0000000000b2'
+   where id = v_id;
+  reset role;
+
+  select * into v_fila from public.external_links where id = v_id;
+  if v_fila.check_status <> 'CHANGED'
+     or v_fila.checked_by is distinct from '00000000-0000-0000-0000-0000000000b1'::uuid then
+    raise exception 'FAIL: el ajuste app.link_check ha quedado abierto tras la RPC';
+  end if;
+
+  raise notice 'OK: el ajuste se limpia y la ventana de después de la RPC no existe';
+end $$;
+
+reset role;
+
+-- 7g. Una fecha sin estado no se guarda. Solo se puede intentar con el ajuste
+-- puesto, que es el único camino que llega a la restricción.
+do $$
+declare v_id uuid; v_restriccion text;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://ejemplo.es/roto';
+
+  begin
+    perform set_config('app.link_check', v_id::text, true);
+    update public.external_links set check_status = null, checked_at = now() where id = v_id;
+    raise exception 'FAIL: ha entrado una fecha de comprobación sin estado';
+  exception when check_violation then
+    get stacked diagnostics v_restriccion = constraint_name;
+    if v_restriccion <> 'external_links_check_pair' then
+      raise exception 'FAIL: la fecha sin estado la rechaza [%]', v_restriccion;
+    end if;
+  end;
+  perform set_config('app.link_check', '', true);
+
+  raise notice 'OK: o las dos o ninguna: external_links_check_pair (RF-1405)';
+end $$;
+
+-- 7h. Y el estado tampoco admite texto libre.
+do $$
+declare v_id uuid;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://ejemplo.es/roto';
+  begin
+    perform public.record_link_check(v_id, 'ROTO');
+    raise exception 'FAIL: el estado de comprobación ha admitido texto libre';
+  exception when invalid_text_representation then
+    raise notice 'OK: el estado de comprobación es un enumerado cerrado';
+  end;
+end $$;
+
+-- 7i. Un enlace que no existe no se comprueba en silencio.
+do $$
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+  begin
+    perform public.record_link_check('11111111-1111-4111-8111-111111111111', 'WORKING');
+    reset role;
+    raise exception 'FAIL: comprobar un enlace inexistente no ha protestado';
+  exception when raise_exception then
+    reset role;
+    raise notice 'OK: comprobar un enlace inexistente lanza en español y no devuelve nulo en silencio';
+  end;
+end $$;
+
+reset role;
+
+
+-- ── 8. La matriz de roles, autenticándose de verdad ──────────
+--
+-- RF-105, RF-106, RF-109. Comprobar que la política existe no verifica nada: lo
+-- que importa es lo que la base contesta cuando la petición viene de quien
+-- viene.
+
+-- 8a. El Catalogador hace lo suyo: crea, clasifica, anota, archiva una copia,
+-- retira y restaura.
+do $$
+declare v_id uuid; v_fila public.external_links%rowtype;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+
+  insert into public.external_links (artwork_id, url)
+  values ('AR-9700', 'https://catalogo.example/obra/9700')
+  returning id into v_id;
+
+  update public.external_links
+     set title = 'Ficha en el catálogo en línea',
+         link_type = 'ONLINE_CATALOG',
+         note = 'De aquí sale la medida del bastidor',
+         archive_url = 'https://archivo.example/copia/9700'
+   where id = v_id;
+
+  update public.external_links set active = false where id = v_id;
+  update public.external_links set active = true  where id = v_id;
+
+  reset role;
+
+  select * into v_fila from public.external_links where id = v_id;
+  if v_fila.title <> 'Ficha en el catálogo en línea' or v_fila.link_type <> 'ONLINE_CATALOG'
+     or v_fila.note = '' or v_fila.archive_url is null or not v_fila.active then
+    raise exception 'FAIL: el catalogador no ha podido crear, clasificar, anotar y archivar un enlace (RF-103)';
+  end if;
+
+  raise notice 'OK: el catalogador crea, clasifica, anota, archiva, retira y restaura (RF-103)';
+end $$;
+
+reset role;
+
+-- 8b. El Lector lee lo activo de una ficha que puede ver.
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://catalogo.example/obra/9700';
+  reset role;
+
+  if v_n <> 1 then
+    raise exception 'FAIL: el lector no ve un enlace activo de una obra activa (RF-105)';
+  end if;
+  raise notice 'OK: el lector lee los enlaces activos de lo que puede ver (RF-105)';
+end $$;
+
+reset role;
+
+-- 8c. Y NO escribe ni una columna. Lo que hay que afirmar es el SILENCIO: un
+-- update que la cláusula USING esconde no falla, no afecta a ninguna fila. Se
+-- comprueba el contenido FUERA de su sesión, porque `row_count` a cero no
+-- distingue «no escribió» de «escribió y luego se lo escondieron».
+do $$
+declare v_id uuid; v_afectadas integer; v_fila public.external_links%rowtype;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://catalogo.example/obra/9700';
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
+  set local role authenticated;
+
+  update public.external_links
+     set title = 'Secuestrado por el lector',
+         url = 'https://evil.example/obra',
+         note = 'Nota indebida',
+         link_type = 'PRESS',
+         archive_url = 'https://evil.example/copia',
+         active = false
+   where id = v_id;
+  get diagnostics v_afectadas = row_count;
+  reset role;
+
+  if v_afectadas <> 0 then
+    raise exception 'FAIL: el lector ha modificado % fila(s) de enlaces (RF-106)', v_afectadas;
+  end if;
+
+  select * into v_fila from public.external_links where id = v_id;
+  if v_fila.title <> 'Ficha en el catálogo en línea'
+     or v_fila.url <> 'https://catalogo.example/obra/9700'
+     or v_fila.note = 'Nota indebida' or v_fila.link_type <> 'ONLINE_CATALOG'
+     or v_fila.archive_url <> 'https://archivo.example/copia/9700'
+     or not v_fila.active then
+    raise exception 'FAIL: el update del lector ha dejado algo escrito (RF-106)';
+  end if;
+
+  raise notice 'OK: el update del lector no afecta a ninguna fila y no deja nada escrito (RF-106)';
+end $$;
+
+reset role;
+
+-- 8d. Ni da de alta.
+do $$
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
+  set local role authenticated;
+  insert into public.external_links (artwork_id, url) values ('AR-9700', 'https://alta.example/indebida');
+  reset role;
+  raise exception 'FAIL: el lector ha podido dar de alta un enlace (RF-106)';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'OK: el lector no da de alta ningún enlace (RF-106)';
+end $$;
+
+reset role;
+
+-- 8e. Ni comprueba: la RPC es `security invoker` y encima pregunta por
+-- `can_edit()`, así que el lector se queda fuera por las dos puertas. Y el
+-- estado no se ha movido, comprobado desde fuera de su sesión.
+do $$
+declare v_id uuid; v_estado public.link_check_status;
+begin
+  select id into v_id from public.external_links
+   where artwork_id = 'AR-9700' and url = 'https://catalogo.example/obra/9700';
+  select check_status into v_estado from public.external_links where id = v_id;
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
+  set local role authenticated;
+  begin
+    perform public.record_link_check(v_id, 'WORKING');
+    reset role;
+    raise exception 'FAIL: el lector ha podido comprobar un enlace (RF-106)';
+  exception when raise_exception then
+    reset role;
+  end;
+
+  if (select check_status from public.external_links where id = v_id) is distinct from v_estado then
+    raise exception 'FAIL: la llamada del lector ha movido el estado de comprobación';
+  end if;
+
+  raise notice 'OK: el lector no comprueba enlaces y su llamada no deja rastro (RF-106, RF-1405)';
+end $$;
+
+reset role;
+
+
+-- ── 9. La visibilidad heredada (RF-609, RF-1401) ─────────────
+--
+-- Las subconsultas de la política se evalúan bajo la política de SU PROPIA
+-- tabla, así que el Lector no se entera de que existe el enlace de una ficha o de
+-- una fotografía que no puede ver. No es una copia de la regla: es la regla
+-- misma, y si mañana cambia la de las obras, esta la sigue sola.
+insert into public.external_links (artwork_id, url, title) values
+  ('AR-9701', 'https://ejemplo.es/de-obra-retirada', 'De una obra retirada');
+insert into public.external_links (image_id, url, title) values
+  ('AR-9700_v2', 'https://ejemplo.es/de-foto-retirada', 'De una fotografía retirada');
+insert into public.external_links (image_id, url, title) values
+  ('AR-9700_v1', 'https://ejemplo.es/de-foto-activa', 'De una fotografía activa');
+
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.external_links
+   where url = 'https://ejemplo.es/de-obra-retirada';
+  if v_n <> 0 then
+    raise exception 'FAIL: el lector ve el enlace de una obra retirada (RF-609)';
+  end if;
+
+  select count(*) into v_n from public.external_links
+   where url = 'https://ejemplo.es/de-foto-retirada';
+  if v_n <> 0 then
+    raise exception 'FAIL: el lector ve el enlace de una fotografía retirada (RF-609)';
+  end if;
+
+  select count(*) into v_n from public.external_links
+   where url = 'https://ejemplo.es/de-foto-activa';
+  if v_n <> 1 then
+    raise exception 'FAIL: el lector no ve el enlace de una fotografía activa (RF-105)';
+  end if;
+
+  reset role;
+  raise notice 'OK: el lector no ve los enlaces de lo que la ficha le esconde (RF-609)';
+end $$;
+
+reset role;
+
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.external_links
+   where url in ('https://ejemplo.es/de-obra-retirada', 'https://ejemplo.es/de-foto-retirada',
+                 'https://ejemplo.es/de-foto-activa');
+  reset role;
+
+  if v_n <> 3 then
+    raise exception 'FAIL: el catalogador debería ver los tres enlaces, ve % (RF-906)', v_n;
+  end if;
+  raise notice 'OK: el catalogador sí ve los enlaces de la papelera (RF-906)';
+end $$;
+
+reset role;
+
+-- Y el enlace RETIRADO de una obra activa: el lector tampoco.
+do $$
+declare v_id uuid; v_n integer;
+begin
+  insert into public.external_links (artwork_id, url, title)
+  values ('AR-9700', 'https://ejemplo.es/enlace-retirado', 'Enlace retirado')
+  returning id into v_id;
+  update public.external_links set active = false where id = v_id;
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
+  set local role authenticated;
+  select count(*) into v_n from public.external_links where id = v_id;
+  reset role;
+
+  if v_n <> 0 then
+    raise exception 'FAIL: el lector ve un enlace retirado de una obra activa (RF-906)';
+  end if;
+  raise notice 'OK: el lector no ve los enlaces retirados (RF-906)';
+end $$;
+
+reset role;
+
+-- Y la política nombra las dos anclas: el día que se añada una tercera sin
+-- ampliarla, sus enlaces serían invisibles para todo el mundo y nadie sabría por
+-- qué.
+do $$
+declare v_expresion text;
+begin
+  select qual into v_expresion from pg_policies
+   where schemaname = 'public' and tablename = 'external_links'
+     and policyname = 'external_links_select';
+  if v_expresion is null then
+    raise exception 'FAIL: no existe la política de SELECT de los enlaces';
+  end if;
+  if v_expresion not like '%artworks%' or v_expresion not like '%images%' then
+    raise exception 'FAIL: la política de SELECT no consulta las tablas de las dos anclas: %', v_expresion;
+  end if;
+  raise notice 'OK: la política de SELECT pregunta por la ficha ancla y hereda su visibilidad';
+end $$;
+
+
+-- ── 10. Las funciones (RF-111) ───────────────────────────────
+do $$
+declare v_volatilidad char; v_config text[];
+begin
+  select provolatile, proconfig into v_volatilidad, v_config
+    from pg_proc where oid = 'public.is_web_url(text)'::regprocedure;
+
+  -- Inmutable: si no lo fuera no podría usarse en un `check`, que es donde vive.
+  if v_volatilidad <> 'i' then
+    raise exception 'FAIL: is_web_url no es inmutable (%)', v_volatilidad;
+  end if;
+  if not exists (select 1 from unnest(coalesce(v_config, '{}')) c where c like 'search\_path=%') then
+    raise exception 'FAIL: is_web_url no fija su search_path';
+  end if;
+  if has_function_privilege('public', 'public.is_web_url(text)', 'execute') then
+    raise exception 'FAIL: is_web_url es ejecutable por PUBLIC';
+  end if;
+  if not has_function_privilege('authenticated', 'public.is_web_url(text)', 'execute') then
+    raise exception 'FAIL: la aplicación no puede ejecutar is_web_url, y la necesita para no duplicar la regla';
+  end if;
+
+  if has_function_privilege('public', 'public.record_link_check(uuid, public.link_check_status)', 'execute')
+     or has_function_privilege('anon', 'public.record_link_check(uuid, public.link_check_status)', 'execute') then
+    raise exception 'FAIL: record_link_check es ejecutable por PUBLIC o por el anónimo';
+  end if;
+  if has_function_privilege('public', 'public.tg_external_link_check_freeze()', 'execute') then
+    raise exception 'FAIL: la función de trigger del congelado es ejecutable por PUBLIC';
+  end if;
+
+  -- `security invoker`, como set_main_image: así sigue pasando por RLS y un
+  -- lector no cambia nada aunque la llame.
+  if (select prosecdef from pg_proc
+       where oid = 'public.record_link_check(uuid, public.link_check_status)'::regprocedure) then
+    raise exception 'FAIL: record_link_check es SECURITY DEFINER y se saltaría la RLS';
+  end if;
+
+  raise notice 'OK: is_web_url es inmutable, con search_path fijo y no de PUBLIC; la RPC no se salta la RLS (RF-111)';
+end $$;
+
+-- La autoría la sella la función COMÚN de RF-804 y no una copia propia. Seis
+-- copias de veinte líneas es la divergencia garantizada.
+do $$
+declare v_funcion text;
+begin
+  if exists (select 1 from pg_proc
+              where pronamespace = 'public'::regnamespace
+                and proname = 'tg_external_link_authorship') then
+    raise exception 'FAIL: existe una función de autoría propia de los enlaces; la común es tg_row_audit (RF-804)';
+  end if;
+
+  select p.proname into v_funcion
+    from pg_trigger t join pg_proc p on p.oid = t.tgfoid
+   where t.tgrelid = 'public.external_links'::regclass
+     and t.tgname = 'external_link_row_audit';
+
+  if v_funcion is distinct from 'tg_row_audit' then
+    raise exception 'FAIL: el trigger de autoría de los enlaces llama a [%] y no a tg_row_audit', v_funcion;
+  end if;
+  raise notice 'OK: la autoría la sella tg_row_audit, la función común (RF-804)';
+end $$;
+
+-- Y `is_web_url` es la misma regla para las dos columnas y para quien la llame
+-- directamente: la aplicación la usa para dar el mensaje en español antes de
+-- guardar. El espejo en TypeScript vive en el frontend y su lista hostil es
+-- ESTA misma; la fuente de verdad es esta función, y la deriva solo puede hacer
+-- al cliente más estricto y nunca a la base más permisiva.
+do $$
+declare r record;
+begin
+  for r in select * from hostiles order by n loop
+    if public.is_web_url(r.u) then
+      raise exception 'FAIL: is_web_url acepta [%] llamada directamente — %', left(r.u, 70), r.porque;
+    end if;
+  end loop;
+  for r in select * from buenas order by n loop
+    if not public.is_web_url(r.u) then
+      raise exception 'FAIL: is_web_url rechaza [%] llamada directamente — %', r.u, r.porque;
+    end if;
+  end loop;
+  if public.is_web_url(null) is not null then
+    raise exception 'FAIL: is_web_url no es STRICT y devuelve algo para nulo';
+  end if;
+  raise notice 'OK: la misma lista hostil contra la función suelta, que es la que espeja el cliente (RF-1403)';
+end $$;
+
+rollback;
