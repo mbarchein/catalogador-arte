@@ -8,7 +8,13 @@ import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
 import { GrayTargetPage } from './features/help/GrayTargetPage'
 import { PlacesPage } from './features/places/PlacesPage'
+import { ArchiveSeriesPage } from './features/tables/ArchiveSeriesPage'
 import { ArtworkTypesPage } from './features/tables/ArtworkTypesPage'
+import { DocumentTypesPage } from './features/tables/DocumentTypesPage'
+import { ExhibitionVenuesPage } from './features/tables/ExhibitionVenuesPage'
+import { PartiesPage } from './features/tables/PartiesPage'
+import { PublicationTypesPage } from './features/tables/PublicationTypesPage'
+import { RelationshipTypesPage } from './features/tables/RelationshipTypesPage'
 import { SeriesPage } from './features/tables/SeriesPage'
 import { TablesPage } from './features/tables/TablesPage'
 import { ProfilePage } from './features/profile/ProfilePage'
@@ -53,6 +59,12 @@ export function App() {
       <Route path="/places" element={<PlacesPage />} />
       <Route path="/artwork-types" element={<ArtworkTypesPage />} />
       <Route path="/series" element={<SeriesPage />} />
+      <Route path="/relationship-types" element={<RelationshipTypesPage />} />
+      <Route path="/exhibition-venues" element={<ExhibitionVenuesPage />} />
+      <Route path="/parties" element={<PartiesPage />} />
+      <Route path="/archive-series" element={<ArchiveSeriesPage />} />
+      <Route path="/document-types" element={<DocumentTypesPage />} />
+      <Route path="/publication-types" element={<PublicationTypesPage />} />
       {/* The recovery email link opens a temporary session and lands here; it
           also serves as the password change from Mi perfil. */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
