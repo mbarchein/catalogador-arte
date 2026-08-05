@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../../auth/AuthContext'
 import { PlusIcon } from '../../../components/ui'
-import { DownloadFailure } from '../../../lib/download'
 import { DocumentarySection } from '../DocumentarySection'
 import { blockState } from '../researchState'
 import { sectionSpec, canWriteBlock } from '../sections'
@@ -16,12 +15,7 @@ import {
   updateArchiveDocument,
   uploadDocumentFile,
 } from './documentActions'
-import {
-  DOCUMENT_STEP_TEXT,
-  runDocumentDownload,
-  type DocumentDownloadStep,
-  type DocumentFileOffer,
-} from './documentFile'
+import { DocumentFileActions } from './DocumentFileActions'
 import {
   linkBlockedReason,
   linkedDocumentIds,
@@ -418,7 +412,7 @@ function DocumentRow({
       )}
 
       {view.file ? (
-        <DocumentDownload offer={view.file} />
+        <DocumentFileActions offer={view.file} title={view.title} />
       ) : (
         /* RF-304: where the button would be, why there is none. */
         <p className="mt-1 text-xs text-stone-500">{view.fileNote}</p>
@@ -488,61 +482,3 @@ function DocumentRow({
   )
 }
 
-/**
- * The button that takes the file out, with its two silent waits and its answer.
- *
- * Its own state per row, so five documents in a block do not share one spinner and
- * one error strip. Nothing is signed or downloaded until it is tapped.
- */
-function DocumentDownload({ offer }: { offer: DocumentFileOffer }) {
-  const [busy, setBusy] = useState<DocumentDownloadStep | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
-
-  async function start() {
-    // Both cleared before starting: a red strip left over from a previous attempt
-    // on top of a download that has just worked is the screen contradicting itself.
-    setError(null)
-    setNotice(null)
-    setBusy('signing')
-    try {
-      setNotice(await runDocumentDownload(offer, { onStep: setBusy }))
-    } catch (cause) {
-      // `DownloadFailure` already carries the sentence to show; anything else is a
-      // bug and is shown as it is rather than swallowed, because a mute button is
-      // worse.
-      setError(cause instanceof DownloadFailure || cause instanceof Error ? cause.message : String(cause))
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  return (
-    <div className="mt-1.5">
-      <button
-        type="button"
-        disabled={busy !== null}
-        onClick={() => void start()}
-        className="btn-secondary w-full text-sm disabled:opacity-60"
-      >
-        {busy === null ? offer.label : DOCUMENT_STEP_TEXT[busy]}
-      </button>
-      <p className="mt-1 text-xs text-stone-500">{offer.kindText}</p>
-      {/* Nothing is downloaded without asking, and what is being asked for says
-          what it costs before the tap and not after it. */}
-      {offer.weightWarning && (
-        <p className="mt-1 text-xs text-amber-900">{offer.weightWarning}</p>
-      )}
-      {error && (
-        <p role="alert" className="mt-1 rounded-lg bg-red-50 p-2 text-xs text-red-800">
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="mt-1 text-xs text-stone-700">
-          {notice}
-        </p>
-      )}
-    </div>
-  )
-}

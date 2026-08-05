@@ -171,6 +171,33 @@ describe('lo que la ficha ofrece de un documento (RF-408, RF-411)', () => {
     expect(offer.weightWarning).toBeNull()
   })
 
+  it('la oferta trae también cómo se puede VER, no solo cómo se descarga', () => {
+    // Un PDF se abre aparte y un JPEG se pinta dentro de la aplicación; la frontera
+    // entera está en `documentPreview.test.ts`. Lo que se fija aquí es que la oferta la
+    // lleva, que si no la fila se quedaría con el botón de descargar y nada más.
+    const pdf = documentFileOffer(document())!
+    expect(pdf.preview).toBe('newTab')
+    expect(pdf.previewLabel).toBe('Abrir el PDF (3,2 MB)')
+    expect(pdf.previewHint).toContain('fuera de la aplicación')
+
+    const jpeg = documentFileOffer(
+      document({ file_path: 'archivo/recorte.jpg', mime_type: 'image/jpeg' }),
+    )!
+    expect(jpeg.preview).toBe('image')
+    expect(jpeg.previewLabel).toBe('Ver el documento (3,2 MB)')
+    expect(jpeg.previewHint).toBeNull()
+  })
+
+  it('y lo que no se puede ver no ofrece verlo, en vez de un botón roto', () => {
+    const tiff = documentFileOffer(
+      document({ file_path: 'archivo/x.tif', mime_type: 'image/tiff' }),
+    )!
+    expect(tiff.preview).toBeNull()
+    expect(tiff.previewLabel).toBeNull()
+    // Descargarlo sigue estando: es lo que siempre funciona.
+    expect(tiff.label).toContain('Descargar')
+  })
+
   /** No hay bandera «digitalizado»: es `file_path !== null`, y sin ruta no hay botón. */
   it('sin fichero no hay oferta, y no un botón que no puede funcionar', () => {
     expect(documentFileOffer(document({ file_path: null }))).toBeNull()
@@ -221,7 +248,9 @@ describe('el camino de la descarga (RF-411, RF-110)', () => {
     }).catch((cause: unknown) => cause)
     expect(failure).toBeInstanceOf(DownloadFailure)
     expect((failure as DownloadFailure).kind).toBe('sign')
-    expect((failure as DownloadFailure).message).toContain('el documento «Carta de la galería»')
+    // «al documento» y no «a el documento»: el aviso de la firma es el único que lleva
+    // preposición delante del nombre, y lo contrae `contracted`.
+    expect((failure as DownloadFailure).message).toContain('al documento «Carta de la galería»')
     // La miga técnica, entre paréntesis: inútil para ella, decisiva por teléfono.
     expect((failure as DownloadFailure).message).toContain('Failed to fetch')
   })
@@ -235,7 +264,9 @@ describe('el camino de la descarga (RF-411, RF-110)', () => {
       (cause: unknown) => cause,
     )
     expect(failure).toBeInstanceOf(DownloadFailure)
-    expect((failure as DownloadFailure).message).toContain('No se ha podido preparar la descarga')
+    // «acceder» y no «preparar la descarga»: firmar es el paso previo de bajárselo y
+    // también de VERLO, y nadie había pedido descargar nada.
+    expect((failure as DownloadFailure).message).toContain('No se ha podido acceder al documento')
   })
 
   it('lo que falle al guardar viaja tal cual: download.ts ya lo escribió en español', async () => {

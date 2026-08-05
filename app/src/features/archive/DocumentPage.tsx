@@ -3,15 +3,10 @@ import { Link, useParams } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { LoadingNotice } from '../../components/ui'
-import { DownloadFailure } from '../../lib/download'
 import { placePathText } from '../../lib/places'
-import { displayStructuredDate, fileSizeText } from '../documentary/documentaryFormat'
-import {
-  DOCUMENT_STEP_TEXT,
-  documentFileOffer,
-  runDocumentDownload,
-  type DocumentDownloadStep,
-} from '../documentary/documents/documentFile'
+import { displayStructuredDate } from '../documentary/documentaryFormat'
+import { DocumentFileActions } from '../documentary/documents/DocumentFileActions'
+import { documentFileOffer } from '../documentary/documents/documentFile'
 import { fundText, missingFileNote } from '../documentary/documents/documentView'
 import { usePhysicalPlaces } from '../artworks/usePhysicalPlaces'
 import { useExhibitions } from '../exhibitions/useExhibitions'
@@ -133,7 +128,7 @@ export function DocumentPage() {
       {/* El fichero: la salida de la aplicación, o por qué no la hay. */}
       <section className="mt-3">
         {file !== null ? (
-          <DocumentDownload label={file.label} offer={file} />
+          <DocumentFileActions offer={file} title={document.title} className="" />
         ) : (
           <p className="card text-sm text-stone-600">{missingFileNote({ code, placeText: place })}</p>
         )}
@@ -401,66 +396,5 @@ function LinkedBlock({
       {notice && <p className="card text-sm text-stone-600">{notice}</p>}
       <ul className="space-y-2">{children}</ul>
     </section>
-  )
-}
-
-/**
- * El botón que saca el fichero, con sus dos esperas silenciosas y su respuesta.
- *
- * Es el mismo camino que el bloque de la ficha de obra: `runDocumentDownload` firma y
- * descarga, y nada se pide ni se paga hasta que alguien toca.
- */
-function DocumentDownload({
-  offer,
-  label,
-}: {
-  offer: Parameters<typeof runDocumentDownload>[0]
-  label: string
-}) {
-  const [busy, setBusy] = useState<DocumentDownloadStep | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
-
-  async function start() {
-    setError(null)
-    setNotice(null)
-    setBusy('signing')
-    try {
-      setNotice(await runDocumentDownload(offer, { onStep: setBusy }))
-    } catch (cause) {
-      setError(
-        cause instanceof DownloadFailure || cause instanceof Error ? cause.message : String(cause),
-      )
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  return (
-    <div>
-      <button
-        type="button"
-        disabled={busy !== null}
-        onClick={() => void start()}
-        className="btn-secondary w-full text-sm disabled:opacity-60"
-      >
-        {busy === null ? label : DOCUMENT_STEP_TEXT[busy]}
-      </button>
-      {offer.weightWarning && <p className="mt-1 text-xs text-amber-900">{offer.weightWarning}</p>}
-      {error && (
-        <p role="alert" className="mt-1 rounded-lg bg-red-50 p-2 text-xs text-red-800">
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="mt-1 text-xs text-stone-700">
-          {notice}
-        </p>
-      )}
-      <p className="mt-1 text-xs text-stone-500">
-        {offer.kindText}
-        {offer.bytes !== null && ` · ${fileSizeText(offer.bytes) ?? ''}`}
-      </p>
-    </div>
   )
 }

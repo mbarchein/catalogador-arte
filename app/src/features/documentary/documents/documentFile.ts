@@ -38,6 +38,12 @@ import {
 import { signedUrl } from '../../../lib/images'
 import { fileNameSlug, storedExtension } from '../../artworks/archiveDownloads'
 import { fileSizeText } from '../documentaryFormat'
+import {
+  documentPreviewKind,
+  previewHint,
+  previewLabel,
+  type DocumentPreviewKind,
+} from './documentPreview'
 
 /**
  * What this module needs of an `archive_documents` row, and no more.
@@ -64,6 +70,19 @@ export interface DocumentFileOffer {
   path: string
   /** The name the file lands with, chosen here and not by the store. */
   fileName: string
+  /**
+   * Cómo se puede ver sin bajárselo, o null cuando la única salida es descargarlo.
+   *
+   * Lo decide `documentPreview.ts`, que es donde está la frontera de qué pinta un
+   * navegador y qué no. Con esto, descargar deja de ser la acción principal de un JPEG
+   * o de un PDF: sigue estando, porque sacar el fichero del catálogo es un requisito
+   * (RF-411), pero un paso por detrás.
+   */
+  preview: DocumentPreviewKind | null
+  /** Lo que dice el botón de ver, con el peso dentro. Null cuando no hay botón. */
+  previewLabel: string | null
+  /** Lo que se lee debajo de ese botón, o null. */
+  previewHint: string | null
   /** The text of the button, weight included. */
   label: string
   /** What the file is, in one line: «PDF · 3,2 MB». Never a gap (RF-304). */
@@ -216,9 +235,13 @@ export function documentFileOffer(
   if (!document || !path) return null
   const size = fileSizeText(document.file_size_bytes)
   const kind = mimeText(document.mime_type)
+  const preview = documentPreviewKind(document)
   return {
     path,
     fileName: documentFileName(document),
+    preview,
+    previewLabel: preview === null ? null : previewLabel(preview, size),
+    previewHint: preview === null ? null : previewHint(preview),
     // The weight is ON the button. What it costs has to be readable in the same
     // glance as what it does, or «nada se descarga sin pedirlo» is only half true.
     label: size === null ? 'Descargar el documento' : `Descargar el documento (${size})`,
@@ -238,6 +261,35 @@ export type DocumentDownloadStep = 'signing' | 'downloading'
 export const DOCUMENT_STEP_TEXT: Record<DocumentDownloadStep, string> = {
   signing: 'Pidiendo permiso…',
   downloading: 'Descargando…',
+}
+
+/**
+ * Firma el fichero del bucket privado, y traduce la negativa (RF-110).
+ *
+ * Sacado del cuerpo de `runDocumentDownload` cuando **ver** un documento se convirtió en
+ * la segunda cosa que hace falta firmar. Es una sola puerta a propósito: dos caminos que
+ * firman lo mismo terminan diciendo dos frases distintas de la misma negativa, y la
+ * negativa de un permiso es justo la que no se puede permitir el lujo de ser ambigua.
+ *
+ * Lanza `DownloadFailure` con la frase ya en español. Que `signedUrl` conteste null sin
+ * el mensaje del almacén es una pérdida conocida y aceptada; ver el comentario de
+ * `runDocumentDownload`.
+ */
+export async function signDocumentFile(
+  offer: Pick<DocumentFileOffer, 'path' | 'noun'>,
+  sign: ((path: string) => Promise<string | null>) | undefined = undefined,
+): Promise<string> {
+  const signer = sign ?? ((path: string) => signedUrl(path))
+  let url: string | null
+  try {
+    url = await signer(offer.path)
+  } catch (cause) {
+    throw new DownloadFailure('sign', downloadFailureText(offer.noun, 'sign', messageOf(cause)))
+  }
+  if (url === null || url === '') {
+    throw new DownloadFailure('sign', downloadFailureText(offer.noun, 'sign'))
+  }
+  return url
 }
 
 /** The two impure edges, injectable so the flow itself is verified without a browser. */
@@ -266,21 +318,12 @@ export async function runDocumentDownload(
   offer: DocumentFileOffer,
   deps: DocumentDownloadDeps = {},
 ): Promise<string> {
-  const sign = deps.sign ?? ((path: string) => signedUrl(path))
   const save =
     deps.save ??
     ((url: string, fileName: string, noun: string) => downloadSignedFile(url, fileName, noun))
 
   deps.onStep?.('signing')
-  let url: string | null
-  try {
-    url = await sign(offer.path)
-  } catch (cause) {
-    throw new DownloadFailure('sign', downloadFailureText(offer.noun, 'sign', messageOf(cause)))
-  }
-  if (url === null || url === '') {
-    throw new DownloadFailure('sign', downloadFailureText(offer.noun, 'sign'))
-  }
+  const url = await signDocumentFile(offer, deps.sign)
 
   deps.onStep?.('downloading')
   await save(url, offer.fileName, offer.noun)
