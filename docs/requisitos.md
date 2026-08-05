@@ -391,13 +391,15 @@ construían. Lo que sigue es el estado, no un plan.
 | Esquema: registro de cambios de obras y fotografías | Construido (RF-1500), las dos mitades — la tabla inviolable y el mecanismo que la escribe |
 | Frontend: acceso, listado con filtros y búsqueda, ficha, edición, captura rápida en móvil | Construido |
 | Frontend: los bloques documentales dentro de la ficha de obra (procedencia, bibliografía, historial expositivo, documentación y obras relacionadas) | Construido, con su estado de investigación (RF-218) |
-| Frontend: fichas propias de Exposición, Bibliografía, Documento y Propietario (RF-309), y sus búsquedas dedicadas (RF-606) | **No construido.** Las tablas existen y se leen desde la ficha de obra; lo que falta es la ficha de cada una y su índice |
-| Frontend: enlaces a sitios externos | **No construido.** El esquema está cerrado y probado, y en la aplicación solo existen sus tipos: no hay ni una pantalla que lea la tabla |
-| Frontend: pantalla del historial de cambios (RF-1508) | **No construida.** El registro es correcto y no lo lee nadie |
+| Frontend: ficha propia de Exposición y su búsqueda (RF-309, RF-606) | **Construida** el 4 de agosto de 2026: listado con buscador, alta, ficha y zona de edición, en la quinta pestaña del menú de abajo. Es la primera de las cuatro fichas propias que existe |
+| Frontend: fichas propias de Bibliografía, Documento y Propietario (RF-309), y sus búsquedas dedicadas (RF-606) | **No construido.** Las tablas existen y se leen desde la ficha de obra; lo que falta es la ficha de cada una y su índice. Un documento del archivo, además, no tiene forma de corregir sus datos desde ninguna pantalla |
+| Frontend: enlaces a sitios externos | **Construido** (RF-1400): es el sexto bloque de la ficha de obra, se lee en la vista y se escribe en la zona de edición, con la comprobación sellada a mano |
+| Frontend: la papelera (RF-901, RF-902) | **Construida** el 4 de agosto de 2026, con su puerta al final de «Tablas». Ver y restaurar; no hay ni habrá borrado definitivo |
+| Frontend: pantalla del historial de cambios (RF-1508) | **Construida** como bloque de la ficha de obra: el historial de una obra se lee desde su propia ficha. Lo que no hay es una pantalla del registro entero |
 | Fotografías: tres niveles generados en el navegador, orden, imagen índice, giro, recorte, perspectiva y color como dato, y la copia corregida a resolución completa | Construido |
 | Ficha imprimible en PDF con QR | Construido |
 | Vistas en vivo por WebSocket | Construido para obras e imágenes. Las tablas documentales, los enlaces y el registro no se publican |
-| Sección «Tablas»: ubicaciones, tipos de obra y series | Construido, las tres con pantalla propia. Los vocabularios documentales nuevos —tipos de publicación, tipos de documento, tipos de relación, sedes y clasificación archivística— no tienen pantalla |
+| Sección «Tablas»: ubicaciones, tipos de obra, series y los vocabularios documentales | Construido. A las tres primeras se sumaron las seis pantallas de los vocabularios nuevos —personas e instituciones, sedes de exposición, tipos de publicación, tipos de documento, tipos de relación y clasificación archivística—, y al final la puerta de la papelera |
 | Papelera | **No construida.** La baja lógica está en el esquema, en los *triggers* y en las políticas, y desde el 4 de agosto de 2026 también la visibilidad heredada del expediente (RF-910 a RF-913); lo que falta es la pantalla desde la que ver y restaurar |
 | Bloqueo de edición | **Retirado** (9.1) |
 | Volcados automáticos de la base de datos | Pendiente. Hoy se lanzan a mano |
@@ -516,15 +518,17 @@ distinto de estar de más.
 Las cuatro tablas que este apartado defendía —Exposiciones, Bibliografía, Propietarios/Instituciones y
 Archivo/Documentación— **ya están construidas** desde el 4 de agosto de 2026, con su procedencia, sus
 vocabularios y sus cinco tablas puente (RF-508 a RF-517), y sus bloques ya se ven y se editan dentro de
-la ficha de obra. Lo que sigue sin construir de ese frente es la **ficha propia** de cada una y su
-índice (RF-309, RF-606): hoy una exposición o una referencia se leen desde la obra y no tienen página
-adonde llegar.
+la ficha de obra. De las **fichas propias** (RF-309, RF-606), la de **Exposición ya está** desde el 4 de
+agosto de 2026, con su índice y su buscador. Lo que sigue sin construir de ese frente son las de
+Bibliografía, Documento y Propietario: hoy una referencia se lee desde la obra y no tiene página adonde
+llegar, y un documento del archivo no tiene ninguna pantalla que corrija sus datos.
 
-Y sigue en pie lo que este apartado decía de la **papelera**: es la contrapartida de que nada se borre
-nunca, la baja lógica está entera en el esquema —incluida desde el 4 de agosto de 2026 la visibilidad
-heredada del expediente documental (RF-910 a RF-913)— y lo único que falta es la pantalla desde la que
-ver y restaurar. Igual con la **pantalla del historial de cambios** (RF-1508): el registro se escribe
-bien y no lo lee nadie.
+Y de la **papelera**, que era la contrapartida de que nada se borre nunca y el pendiente más viejo de
+este documento, **ya está la pantalla**: se abre desde «Tablas», enseña lo retirado con la traza de
+quién y cuándo, y lo devuelve a su sitio. Sigue sin haber borrado definitivo, y eso no es un hueco sino
+la decisión. De la **pantalla del historial de cambios** (RF-1508) está la mitad que se usa a diario: el
+historial de una obra se lee desde su ficha. Lo que no hay es una pantalla del registro completo, que
+sería por dónde mirar «qué se ha tocado hoy en el catálogo» sin partir de una obra concreta.
 
 ## 10. Fuera de alcance
 

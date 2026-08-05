@@ -248,12 +248,18 @@ describe('las nueve maestras enlazan a su propia pantalla, y las demás no', () 
   })
 
   it('lo que solo se recupera aquí NO finge tener otra puerta', () => {
-    // Estas son las clases cuyo único camino de vuelta es la papelera: una obra, una
-    // fotografía, una referencia, una exposición o un documento retirados no tenían
-    // hasta ahora ninguna pantalla que los mostrara.
-    for (const id of ['artworks', 'images', 'bibliography', 'exhibitions', 'archive_documents'] as const) {
+    // Las clases cuyo único camino de vuelta sigue siendo la papelera: una obra, una
+    // fotografía, una referencia o un documento retirados no tienen ninguna otra
+    // pantalla que los muestre. Las exposiciones SALIERON de esta lista el 5 de
+    // agosto de 2026, cuando se construyó su ficha: dejar el aserto habría fijado
+    // como verdad que no la tienen.
+    for (const id of ['artworks', 'images', 'bibliography', 'archive_documents'] as const) {
       expect(kindSpec(id).ownScreen).toBeUndefined()
     }
+  })
+
+  it('una exposición retirada enlaza a su ficha, que existe desde el 5 de agosto', () => {
+    expect(kindSpec('exhibitions').ownScreen).toBe('/exhibitions')
   })
 
   it('solo los enlaces externos explican el choque de duplicado a su manera', () => {

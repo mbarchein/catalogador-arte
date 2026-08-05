@@ -35,6 +35,10 @@ import { ChevronRightIcon, LoadingNotice } from '../../components/ui'
  *
  * Cataloger only (RF-1106), which is also why the tab is not painted for a
  * Reader — but the check is here too: a hidden button is not a protection.
+ *
+ * Al final, y fuera de los tres grupos, la puerta de la papelera (RF-901): no es
+ * una maestra y no se disfraza de una, pero es mantenimiento del catálogo y este es
+ * el único índice del Catalogador. El razonamiento completo está junto a ella.
  */
 export function TablesPage() {
   const access = useEditingAccess()
@@ -121,6 +125,39 @@ export function TablesPage() {
         dentro del identificador de catalogación de cada obra, la etiqueta pegada al cuadro, y
         tocarlos es otra decisión.
       </p>
+
+      {/* ── LA PAPELERA, Y POR QUÉ ESTÁ AQUÍ SIN SER UNA MAESTRA ──────
+          Dentro de la papelera hay obras, fotografías y fichas, no solo listas: no
+          es una de las nueve, así que va FUERA de los tres grupos, con su propio
+          título y su propia frase. Ponerla como una fila más entre «Series» y
+          «Tipos de obra» habría dicho que es una lista de la que eligen las
+          fichas, y no lo es.
+
+          Y está en esta pantalla porque es el único índice del Catalogador que
+          existe, porque es donde ya se viene a hacer mantenimiento —de aquí sale
+          además el «Volver» de la papelera— y porque una sexta pestaña en el menú
+          de abajo estrecharía las cinco de todos los días por algo que se abre
+          unas pocas veces al año. Solo Catalogador, y no por esconderla: tres
+          maestras dejan ver sus filas retiradas a quien solo consulta, pero
+          recuperar cualquier cosa exige permiso de edición, así que para un lector
+          sería una lista incompleta con un botón que la base rechaza. La propia
+          pantalla lo vuelve a comprobar. */}
+      <section className="mt-6">
+        <h2 className="px-1 text-sm font-medium uppercase tracking-wide text-stone-500">
+          Lo retirado
+        </h2>
+        <p className="mb-2 px-1 text-xs text-stone-500">
+          No es una lista de las que eligen las fichas: es todo lo que se sacó del catálogo,
+          reunido en un sitio.
+        </p>
+        <ul className="space-y-2">
+          <TableRow
+            to="/trash"
+            name="Papelera"
+            hint="Obras, fotografías, fichas y entradas de las listas que se retiraron. Nada se borra nunca, así que todo se puede devolver a su sitio."
+          />
+        </ul>
+      </section>
     </Layout>
   )
 }

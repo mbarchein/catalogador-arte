@@ -145,7 +145,11 @@ export function ExternalLinksSection({
 
             {nothing ? (
               <p className="p-2 text-sm text-stone-600">
-                {EMPTY_TEXT} {!canWrite && EMPTY_HINT_READONLY}
+                {/* El «dónde se añade» solo a quien puede añadirlo, igual que el
+                    aviso equivalente del final del bloque: a quien solo consulta,
+                    mandarla a una zona de edición que no va a tener nunca es
+                    mandarla a un sitio que para ella no existe. */}
+                {EMPTY_TEXT} {!canWrite && canEdit && EMPTY_HINT_READONLY}
               </p>
             ) : (
               <div className="space-y-3">

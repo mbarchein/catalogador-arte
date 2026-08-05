@@ -100,20 +100,25 @@ export function rankExhibitionOptions(
  * second one also has to say where a new show is created, because otherwise the
  * cataloger types the title of a show she is holding a catalogue of, finds
  * nothing, and concludes the search is broken.
+ *
+ * Both sentences said «pendiente en esta entrega» until that screen was mounted;
+ * now they say its NAME and where the door is, which is the whole difference between
+ * a dead end and a detour. Neither uses guillemets: the third case of this chooser
+ * is a search with nothing typed, and there the quotation marks would be empty.
  */
 export function noOptionsText(total: number, query: string): string {
   if (total === 0) {
     return (
-      'Todavía no hay ninguna exposición registrada en el catálogo. Las exposiciones se dan de ' +
-      'alta en su propia pantalla, pendiente en esta entrega.'
+      'Todavía no hay ninguna exposición registrada en el catálogo. Se dan de alta en la pantalla ' +
+      'Exposiciones, en el menú de abajo.'
     )
   }
   const typed = query.trim()
   const about = typed === '' ? '' : ` con «${typed}»`
   return (
     `Ninguna de las exposiciones registradas coincide${about}. Aquí solo se enlaza con ` +
-    'exposiciones que ya están en el catálogo: dar de alta una exposición nueva es otra pantalla, ' +
-    'pendiente en esta entrega.'
+    'exposiciones que ya están en el catálogo: dar de alta una exposición nueva se hace en la ' +
+    'pantalla Exposiciones, en el menú de abajo.'
   )
 }
 

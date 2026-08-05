@@ -1,0 +1,324 @@
+import { describe, expect, it } from 'vitest'
+import type { ExhibitionRow, VenueRow } from '../documentary/documentaryRows'
+import { EXHIBITION_OPTION_COLUMNS } from '../documentary/exhibitions/participationEdits'
+import {
+  EXHIBITION_COLUMNS,
+  exhibitionSearchText,
+  rankExhibitions,
+  retiredCount,
+  similarExhibitions,
+  similarTitleNotice,
+  sortExhibitions,
+} from './exhibitionIndex'
+
+/**
+ * El listado de exposiciones: qué se pide, en qué orden se lee, qué caza la
+ * búsqueda y qué dice cada fila (RF-502, RF-606, RF-609, RF-909).
+ *
+ * La batería corre en node y no abre ningún JSX, así que el orden de una lista y
+ * las palabras de una fila se verifican aquí o no se verifican en ninguna parte.
+ * `ExhibitionsPage` no decide nada: pinta lo que estas funciones devuelven.
+ */
+
+function venue(over: Partial<VenueRow> = {}): VenueRow {
+  return {
+    id: 'v-1',
+    name: 'Museo de Bellas Artes',
+    locality: 'Badajoz',
+    country: 'España',
+    party_id: null,
+    note: '',
+    active: true,
+    party: null,
+    ...over,
+  }
+}
+
+function row(over: Partial<ExhibitionRow> = {}): ExhibitionRow {
+  return {
+    id: 'ex-1',
+    title: 'Rotili. Obra reciente',
+    exhibition_type: 'INDIVIDUAL',
+    venue_id: 'v-1',
+    venue_note: '',
+    year: 1985,
+    start_date: '1985-03-12',
+    end_date: '1985-05-04',
+    date_note: '',
+    catalogue_published: 'YES',
+    catalogue_reference_id: null,
+    note: '',
+    active: true,
+    venue: venue(),
+    ...over,
+  }
+}
+
+describe('lo que se le pide a la base', () => {
+  /**
+   * La copia de una lista de columnas es el fallo que las esquinas de una
+   * fotografía ya costaron una vez: un campo que la consulta olvida llega como
+   * `undefined` mientras el tipo promete un valor. Este aserto es el que impide
+   * que las dos listas se separen.
+   */
+  it('el listado pide exactamente las columnas del selector de la ficha, sin una segunda copia', () => {
+    expect(EXHIBITION_COLUMNS).toBe(EXHIBITION_OPTION_COLUMNS)
+  })
+
+  /** RF-105: el contacto de un tercero no se pide donde no hace falta. */
+  it('RF-105: no pide el contacto de la institución que hay detrás de la sede', () => {
+    expect(EXHIBITION_COLUMNS).not.toContain('contact')
+  })
+
+  /**
+   * La búsqueda caza lo que la fila enseña. Una lista que responde a un texto que
+   * no muestra parece arbitraria.
+   */
+  it('RF-606: la búsqueda caza el título, el año y la sede, que es lo que se ve', () => {
+    const text = exhibitionSearchText(row())
+    expect(text).toContain('Rotili. Obra reciente')
+    expect(text).toContain('1985')
+    expect(text).toContain('Museo de Bellas Artes')
+  })
+})
+
+describe('RF-502: el orden del listado es el más reciente primero', () => {
+  /**
+   * Al revés que el historial de una obra, y las dos cosas son verdad a la vez: el
+   * historial de una obra se lee como una carrera y sube por los años; un listado
+   * se abre para ENCONTRAR la muestra cuyo catálogo está encima de la mesa, y esa
+   * es mucho más probable que sea de esta década que de 1978.
+   */
+  it('ordena por la fecha de apertura, descendente', () => {
+    const ordered = sortExhibitions([
+      row({ id: 'a', year: 1978, start_date: '1978-04-01' }),
+      row({ id: 'b', year: 2019, start_date: '2019-10-05' }),
+      row({ id: 'c', year: 1995, start_date: '1995-01-20' }),
+    ])
+    expect(ordered.map((item) => item.id)).toEqual(['b', 'c', 'a'])
+  })
+
+  /** El año desnudo se ordena como su 1 de enero, igual que lo indexa la base. */
+  it('un año sin fecha de apertura se ordena como su 1 de enero', () => {
+    const ordered = sortExhibitions([
+      row({ id: 'enero', year: 1985, start_date: '1985-01-05' }),
+      row({ id: 'desnudo', year: 1985, start_date: null }),
+      row({ id: 'marzo', year: 1985, start_date: '1985-03-12' }),
+    ])
+    expect(ordered.map((item) => item.id)).toEqual(['marzo', 'enero', 'desnudo'])
+  })
+
+  /**
+   * LA FILA QUE NO PUEDE ENCABEZAR EL LISTADO. `exhibitions_dated` prohíbe una
+   * exposición sin ninguna fecha, pero si una llegara igual, una clave vacía la
+   * pondría en el primer puesto y se leería como la muestra más reciente del
+   * catálogo. Va última.
+   */
+  it('una exposición sin ninguna fecha va al final y no al principio', () => {
+    const ordered = sortExhibitions([
+      row({ id: 'sin-fecha', year: null, start_date: null }),
+      row({ id: 'antigua', year: 1978, start_date: '1978-04-01' }),
+    ])
+    expect(ordered.map((item) => item.id)).toEqual(['antigua', 'sin-fecha'])
+  })
+
+  /** Dos cargas de la misma pantalla no pueden intercambiar dos filas. */
+  it('el empate se rompe por título y luego por identificador, así que el orden es estable', () => {
+    const same = { year: 1985, start_date: '1985-03-12' }
+    const ordered = sortExhibitions([
+      row({ id: 'z', title: 'Zafra', ...same }),
+      row({ id: 'b', title: 'Antológica', ...same }),
+      row({ id: 'a', title: 'Antológica', ...same }),
+    ])
+    expect(ordered.map((item) => item.id)).toEqual(['a', 'b', 'z'])
+  })
+
+  /** Ordenar no puede modificar lo que le dan: la lista viene de un `useState`. */
+  it('no toca el array que recibe', () => {
+    const rows = [row({ id: 'a', year: 1978 }), row({ id: 'b', year: 2019 })]
+    sortExhibitions(rows)
+    expect(rows.map((item) => item.id)).toEqual(['a', 'b'])
+  })
+})
+
+describe('RF-609: las retiradas no están en el listado salvo que se pidan', () => {
+  const rows = [
+    row({ id: 'viva', title: 'Viva', year: 1985, start_date: '1985-03-12' }),
+    row({ id: 'retirada', title: 'Retirada', year: 1990, start_date: '1990-03-12', active: false }),
+  ]
+
+  it('por omisión solo salen las activas', () => {
+    expect(rankExhibitions(rows, '').map((entry) => entry.row.id)).toEqual(['viva'])
+  })
+
+  /**
+   * Y se pueden pedir, porque esconderlas siempre esconde la única salida: el
+   * listado es el único sitio desde el que se llega a una exposición retirada
+   * para recuperarla.
+   */
+  it('pidiéndolas salen, y la fila lo DICE en vez de solo pintarse en gris', () => {
+    const entries = rankExhibitions(rows, '', { includeRetired: true })
+    expect(entries.map((entry) => entry.row.id)).toEqual(['retirada', 'viva'])
+    expect(entries[0]?.retired).toBe(true)
+    expect(entries[1]?.retired).toBe(false)
+  })
+
+  it('cuenta las retiradas para que el interruptor diga cuántas hay antes de pulsarlo', () => {
+    expect(retiredCount(rows)).toBe(1)
+    expect(retiredCount([])).toBe(0)
+  })
+})
+
+describe('cada fila del listado, y ni un hueco (RF-304, RF-502)', () => {
+  it('dice fechas, título, sede y carácter', () => {
+    const entry = rankExhibitions([row()], '')[0]
+    expect(entry?.title).toBe('Rotili. Obra reciente')
+    expect(entry?.dates).not.toBe('')
+    expect(entry?.venue).toContain('Museo de Bellas Artes')
+    expect(entry?.kind).toBe('Individual')
+    expect(entry?.kindPending).toBe(false)
+  })
+
+  /** «Sin revisar» no es «no»: el carácter pendiente se marca como aviso. */
+  it('RF-218: el carácter sin revisar se declara y se marca como pendiente', () => {
+    const entry = rankExhibitions([row({ exhibition_type: 'UNREVIEWED' })], '')[0]
+    expect(entry?.kind).toBe('Sin revisar si fue individual o colectiva')
+    expect(entry?.kindPending).toBe(true)
+  })
+
+  /** Nunca un hueco donde iba una fecha. */
+  it('sin ninguna fecha la fila dice «Sin fechar» y no deja el sitio vacío', () => {
+    const entry = rankExhibitions([row({ year: null, start_date: null, end_date: null })], '')[0]
+    expect(entry?.dates).toBe('Sin fechar')
+  })
+
+  /** Ni donde iba la sede: un blanco ahí se lee como «esta muestra no tuvo sede». */
+  it('sin sede identificada y sin nota, la fila dice «Sede sin identificar»', () => {
+    const entry = rankExhibitions([row({ venue: null, venue_id: null, venue_note: '' })], '')[0]
+    expect(entry?.venue).toBe('Sede sin identificar')
+  })
+
+  /**
+   * Y cuando la fuente solo dijo «una galería de Madrid», eso ES el dato: se
+   * imprime tal cual en vez de tacharlo de sede desconocida.
+   */
+  it('la sede que solo consta como texto libre se imprime tal cual', () => {
+    const entry = rankExhibitions(
+      [row({ venue: null, venue_id: null, venue_note: 'Una galería de Madrid' })],
+      '',
+    )[0]
+    expect(entry?.venue).toBe('Una galería de Madrid')
+  })
+})
+
+describe('RF-606: la búsqueda del listado', () => {
+  const rows = [
+    row({ id: 'badajoz', title: 'Antológica', year: 1985, start_date: '1985-03-12' }),
+    row({
+      id: 'caceres',
+      title: 'Obra reciente',
+      year: 2001,
+      start_date: '2001-03-12',
+      venue: venue({ id: 'v-2', name: 'Casa de Cultura', locality: 'Cáceres' }),
+    }),
+  ]
+
+  it('filtra por la sede, que es la mitad de la identidad de una muestra', () => {
+    expect(rankExhibitions(rows, 'Cáceres').map((entry) => entry.row.id)).toEqual(['caceres'])
+  })
+
+  it('filtra por el año', () => {
+    expect(rankExhibitions(rows, '1985').map((entry) => entry.row.id)).toEqual(['badajoz'])
+  })
+
+  /**
+   * Sin nada teclado todo empata, y entonces el listado es puramente cronológico,
+   * que es exactamente lo que parece que es. Este aserto es el que fija que
+   * ordenar ANTES de puntuar no fue casual.
+   */
+  it('sin nada teclado el listado queda cronológico y no en el orden en que llegó', () => {
+    expect(rankExhibitions(rows, '').map((entry) => entry.row.id)).toEqual(['caceres', 'badajoz'])
+  })
+
+  it('una búsqueda sin coincidencias devuelve una lista vacía para que la pantalla lo explique', () => {
+    expect(rankExhibitions(rows, 'zzzz')).toEqual([])
+  })
+
+  /** Los índices son los que resaltan las letras encontradas. */
+  it('devuelve dónde cayeron las letras buscadas, dentro del texto que la fila muestra', () => {
+    const entry = rankExhibitions(rows, 'Antológica')[0]
+    expect(entry?.indices.length).toBeGreaterThan(0)
+    expect(entry?.text).toBe(exhibitionSearchText(rows[0]!))
+  })
+})
+
+describe('RF-909: un título repetido se avisa, nunca se rechaza', () => {
+  /**
+   * `exhibitions` NO tiene índice único por título, y es una decisión escrita en su
+   * migración: dos itinerantes de años distintos se llaman igual. Así que esto solo
+   * puede avisar.
+   */
+  it('encuentra el homónimo ignorando mayúsculas, tildes y espacios de sobra', () => {
+    const rows = [row({ id: 'ex-1', title: 'Alberto Rotili. Antológica' })]
+    expect(similarExhibitions(rows, '  alberto rotili. antologica  ').map((r) => r.id)).toEqual([
+      'ex-1',
+    ])
+  })
+
+  /**
+   * Y NO ignora la puntuación, a diferencia de `normalizeForSearch`: un título está
+   * puntuado a propósito, y dos que solo difieren en un punto son dos títulos que
+   * se teclearon distinto.
+   */
+  it('no confunde dos títulos que solo difieren en la puntuación', () => {
+    const rows = [row({ id: 'ex-1', title: 'Rotili. Obra reciente' })]
+    expect(similarExhibitions(rows, 'Rotili Obra reciente')).toEqual([])
+  })
+
+  it('un título en blanco no señala a todo el catálogo', () => {
+    expect(similarExhibitions([row()], '   ')).toEqual([])
+  })
+
+  /**
+   * Las retiradas cuentan: un duplicado de algo que está en la papelera sigue
+   * siendo un duplicado, y saber que está ahí es lo que hace que alguien lo
+   * recupere en vez de crearlo otra vez.
+   */
+  it('una homónima retirada cuenta, y la frase manda a recuperarla', () => {
+    const rows = [row({ id: 'ex-1', title: 'Antológica', active: false })]
+    const matches = similarExhibitions(rows, 'Antológica')
+    expect(matches.map((r) => r.id)).toEqual(['ex-1'])
+    expect(similarTitleNotice(matches)).toContain('Está retirada')
+  })
+
+  it('sin homónimas no hay aviso, y null no es una frase vacía', () => {
+    expect(similarTitleNotice([])).toBeNull()
+  })
+
+  /** La frase nombra la que ya existe, para poder decidir si es la misma. */
+  it('el aviso nombra la exposición que ya existe, con sus fechas y su sede', () => {
+    const text = similarTitleNotice([row()]) ?? ''
+    expect(text).toContain('«Rotili. Obra reciente»')
+    expect(text).toContain('Museo de Bellas Artes')
+    // Y no prohíbe: pulsar «Crear» de todas formas es un acto legítimo.
+    expect(text).toContain('Puede ser correcto')
+  })
+
+  it('con varias homónimas dice cuántas más hay', () => {
+    const rows = [
+      row({ id: 'a', title: 'Antológica', year: 1985, start_date: '1985-03-12' }),
+      row({ id: 'b', title: 'Antológica', year: 1990, start_date: '1990-03-12' }),
+      row({ id: 'c', title: 'Antológica', year: 1995, start_date: '1995-03-12' }),
+    ]
+    expect(similarTitleNotice(similarExhibitions(rows, 'Antológica'))).toContain('y 2 más')
+  })
+
+  /** Y la que nombra es la más reciente, no la que llegó primera en el array. */
+  it('nombra la más reciente de las homónimas', () => {
+    const rows = [
+      row({ id: 'vieja', title: 'Antológica', year: 1985, start_date: '1985-03-12' }),
+      row({ id: 'nueva', title: 'Antológica', year: 2019, start_date: '2019-03-12' }),
+    ]
+    expect(similarExhibitions(rows, 'Antológica')[0]?.id).toBe('nueva')
+  })
+})

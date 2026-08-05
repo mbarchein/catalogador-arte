@@ -206,8 +206,14 @@ export function UploadDocumentSheet({
           autoCapitalize="characters"
         />
         <p className="mt-1 text-xs text-stone-500">
+          {/* Decía «y esta se puede corregir después», y no era verdad: hoy no hay
+              ninguna pantalla que corrija los datos de un documento del archivo, así
+              que la signatura que se guarde aquí se queda. Lo dice, igual que cuatro
+              líneas más arriba se dice del escaneo: prometer una corrección que no
+              existe es cómo alguien deja un campo a medias para «arreglarlo luego». */}
           La que está escrita en la carpeta. Si el documento todavía no está archivado, déjala
-          vacía: no hace falta inventar un código, y esta se puede corregir después.
+          vacía: no hace falta inventar un código. Pero piénsalo antes de guardar, porque de
+          momento no hay dónde corregirla después.
         </p>
         <Problems problems={problemsOf(problems, 'code')} />
       </div>

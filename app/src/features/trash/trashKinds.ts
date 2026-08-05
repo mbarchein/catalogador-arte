@@ -605,6 +605,12 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     one: 'exposición',
     many: 'exposiciones',
     retired: 'retirada',
+    // Desde el 5 de agosto de 2026 una exposición SÍ tiene ficha propia, y la
+    // papelera enlaza a ella. Es la única de las cinco clases que solo se
+    // recuperaban aquí que ha dejado de estarlo, y por eso este campo se anota
+    // ahora: sin él, la papelera sería el único sitio donde ver una exposición
+    // retirada aunque exista una pantalla que la muestra mejor.
+    ownScreen: '/exhibitions',
     columns:
       'id, title, exhibition_type, year, deactivated_at, deactivated_by, ' +
       'exhibition_venues(name, active)',

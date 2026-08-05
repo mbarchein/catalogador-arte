@@ -77,6 +77,14 @@ export interface DocumentarySectionSpec {
  * Provenance heads the list because it is the block a catalogue raisonné is
  * judged by, and related artworks close it because it is the only one that talks
  * about the catalogue instead of about the world.
+ *
+ * **The record stacks a SIXTH block that is not in this list**: «Enlaces a sitios
+ * externos» (RF-1400), which the record mounts between the archive documents and the
+ * related artworks — same question as bibliography and the archive, answered with
+ * what is not paper. It is not here because this list's contract is the
+ * research-status column, and that block has none and is not going to have one. So
+ * do not read a five here as «the record shows five blocks»; read it as «five of
+ * them carry a state of research».
  */
 export const DOCUMENTARY_SECTIONS: readonly DocumentarySectionSpec[] = [
   {

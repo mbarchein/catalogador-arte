@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useMatch, useNavigate, useParams } from 'react-router'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { ActionBar, LoadingNotice } from '../../components/ui'
 import { displayExhibitionDates } from '../documentary/documentaryFormat'
@@ -42,6 +42,13 @@ import { useExhibitionArtworks } from './useExhibitionArtworks'
 export function ExhibitionPage() {
   const { id = '' } = useParams()
   const { canEdit } = useAuth()
+  // El permiso para la ZONA DE EDICIÓN se pregunta con su tercera respuesta, no con
+  // `canEdit` a secas: el rol llega DESPUÉS de la sesión, así que decidir en el
+  // primer render echa de aquí a la catalogadora a la que esta pantalla pertenece —
+  // y solo al recargar su dirección, que es por lo que este fallo sobrevive a las
+  // revisiones. Es el mismo que la ficha de obra ya pagó dos veces. La ficha que se
+  // LEE no usa esto y no espera a nada: no depende del rol.
+  const editAccess = useEditingAccess()
   const navigate = useNavigate()
   // La edición vive en la ruta, no en un estado local. Ver la cabecera.
   const editing = useMatch('/exhibitions/:id/edit') !== null
@@ -65,7 +72,10 @@ export function ExhibitionPage() {
 
   // Llegar a /edit por dirección sin permiso vuelve a la vista, como en la ficha
   // de obra: no es un error de la usuaria, es una dirección que no le corresponde.
-  if (editing && !canEdit) {
+  // Pero primero hay que SABERLO: mientras el rol no ha llegado no se decide, porque
+  // «todavía no se sabe» no es «no».
+  if (editing && editAccess === 'loading') return <LoadingNotice />
+  if (editing && editAccess === 'denied') {
     return <Navigate to={`/exhibitions/${id}`} replace />
   }
 

@@ -7,7 +7,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { WhenNearby } from '../../components/WhenNearby'
 import { supabase } from '../../lib/supabase'
@@ -55,6 +55,7 @@ import { ProvenanceSection } from '../documentary/provenance'
 import { ExhibitionHistorySection } from '../documentary/exhibitions'
 import { BibliographySection } from '../documentary/bibliography'
 import { DocumentsSection } from '../documentary/documents'
+import { ExternalLinksSection } from '../documentary/links'
 import { RelationshipsSection } from '../documentary/relationships'
 import { ChangeHistorySection } from '../history/ChangeHistorySection'
 import { ArtworkGallery } from './ArtworkGallery'
@@ -114,6 +115,9 @@ export function ArtworkPage() {
   const sequence = useArtworkSequence(view, id, placeScope)
   const { artwork, loading, error, reload } = useArtwork(id, sequence.rows)
   const { canEdit } = useAuth()
+  // La zona de edición necesita la tercera respuesta —«todavía no se sabe»— y la
+  // vista no: ver el guardián de más abajo.
+  const editAccess = useEditingAccess()
   const navigate = useNavigate()
   // Editing lives in the URL (/artwork/:id/edit), not in local state (see the
   // route comment in App.tsx).
@@ -244,7 +248,22 @@ export function ArtworkPage() {
 
   // Reaching /edit by URL without permission falls back to the view: the
   // Reader must never see an editable form, even a doomed one (RF-109).
-  if (editing && !canEdit) {
+  //
+  // Y hay TRES respuestas, no dos. El rol llega después de la sesión, así que
+  // preguntar por `canEdit` en el primer render contestaba «no» a la catalogadora a
+  // la que la zona de edición pertenece: recargar /artwork/:id/edit —o abrir esa
+  // dirección en frío— devolvía a la vista, y con ella se perdían los seis bloques
+  // documentales, que solo se escriben ahí. Es el fallo que `useEditingAccess`
+  // documenta y que aquí seguía sin corregir. Solo espera la zona de edición: la
+  // ficha que se lee no depende del rol y no debe retrasarse por él.
+  if (editing && editAccess === 'loading') {
+    return (
+      <Layout title={`Editando ${artwork.catalog_id}`} back={`/artwork/${id}`}>
+        <p className="text-sm text-stone-600">Cargando…</p>
+      </Layout>
+    )
+  }
+  if (editing && editAccess === 'denied') {
     return <Navigate to={recordPath(id)} replace />
   }
 
@@ -259,7 +278,7 @@ export function ArtworkPage() {
           }}
           onCancel={() => navigate(recordPath(id), { replace: true })}
         />
-        {/* Los cinco bloques documentales, y aquí es donde se pueden escribir: la
+        {/* Los bloques documentales, y aquí es donde se pueden escribir: la
             ficha que se lee no ofrece cambiar nada (RF-308).
 
             Van DESPUÉS de la botonera de guardar y con su propio aviso, y eso no es
@@ -271,9 +290,10 @@ export function ArtworkPage() {
         <div className="mt-8 border-t border-stone-200 pt-6">
           <h2 className="text-base font-semibold text-stone-800">Documentación de la obra</h2>
           <p className="mt-1 text-sm text-stone-600">
-            La procedencia, las exposiciones, la bibliografía, los documentos del archivo y
-            las obras relacionadas <strong>se guardan al momento</strong>, cada una por su
-            cuenta. No hace falta pulsar «Guardar», y «Cancelar» no las deshace.
+            La procedencia, las exposiciones, la bibliografía, los documentos del archivo, los
+            enlaces a sitios externos y las obras relacionadas{' '}
+            <strong>se guardan al momento</strong>, cada una por su cuenta. No hace falta pulsar
+            «Guardar», y «Cancelar» no las deshace.
           </p>
           <div className="mt-4">
             <DocumentaryBlocks
@@ -414,11 +434,12 @@ export function ArtworkPage() {
 
         {/* The documentary half of the record (RF-303): by whose hands it has
             passed, where it has been shown, where it is published, what paper
-            speaks about it, and which artworks it belongs with.
+            speaks about it, where else on the web it is documented, and which
+            artworks it belongs with.
 
             After the two blocks that are read with the artwork in front and
             before the internal ones, in the order RF-303 stacks them. They arrive
-            when the scroll gets near — see WhenNearby: five tables read on every
+            when the scroll gets near — see WhenNearby: six tables read on every
             record of a session over mobile data, for blocks nobody may open, is
             not a cost this earns. */}
         <WhenNearby
@@ -426,9 +447,9 @@ export function ArtworkPage() {
             <section className="card mb-3">
               <h2 className="font-medium">Documentación de la obra</h2>
               <p className="mt-1 text-sm text-stone-600">
-                Procedencia, historial expositivo, bibliografía, documentación de archivo y obras
-                relacionadas. Se cargan al bajar hasta aquí, para no gastar datos en las fichas que
-                solo se hojean.
+                Procedencia, historial expositivo, bibliografía, documentación de archivo, enlaces a
+                sitios externos y obras relacionadas. Se cargan al bajar hasta aquí, para no gastar
+                datos en las fichas que solo se hojean.
               </p>
               <button type="button" onClick={reveal} className="btn-secondary mt-3 w-full text-sm">
                 Cargar la documentación ahora
@@ -486,26 +507,30 @@ export function ArtworkPage() {
         </section>
 
         {/* What is still missing is declared instead of omitted, so the record
-            does not look complete — but ONLY what is really missing: this card
-            used to name the five documentary blocks, which are now right above,
-            and a record that says a thing is pending while showing it eighty
-            lines earlier is worse than one that says nothing.
+            does not look complete — but ONLY what is really missing.
 
-            Y hay que distinguir DOS COSAS que la redacción anterior metía en el
-            mismo saco, y por eso envejeció mal en un día:
+            ESTA TARJETA HA ENVEJECIDO MAL TRES VECES, y siempre por lo mismo: se
+            escribió una lista de carencias en vez de comprobar una por una las
+            afirmaciones que contiene. Nombró los cinco bloques documentales cuando
+            ya estaban justo encima; después dijo que los vocabularios no tenían
+            pantalla cuando las series la han tenido siempre; y hasta hoy decía que
+            una exposición no se podía dar de alta, que una referencia no se podía
+            corregir y que un documento no se podía subir ni enlazar. Las tres cosas
+            se hacen ya, así que las tres frases se han ido.
 
-            - Los VOCABULARIOS de los que estos bloques eligen —serie, sede, tipo de
-              publicación, tipo de documento, tipo de relación, y las personas e
-              instituciones— ya tienen su pantalla en «Tablas». Decir que no la
-              tienen era falso incluso antes de construirlas, porque las series la
-              han tenido siempre.
-            - El CONTENIDO —una exposición con su nombre y sus fechas, una
-              referencia con su autor y su año, un documento del archivo con su
-              fichero— sigue sin ficha propia (RF-309). Esa es la parte que falta de
-              verdad, y una pantalla de tabla maestra no la resuelve.
+            Lo comprobado ahora, afirmación por afirmación, y lo único que queda:
 
-            Se nombra lo segundo y no lo primero, y se dice DÓNDE está lo que sí se
-            puede hacer, que es lo que evita que alguien lo busque donde no está. */}
+            - Un DOCUMENTO DEL ARCHIVO se sube, se enlaza y se descarga desde el
+              bloque de arriba, pero no hay ninguna acción que corrija sus datos ni
+              que le añada el escaneo más tarde (`documentActions` solo escribe la
+              nota del vínculo). El propio panel de subida ya lo advierte antes de
+              guardar; aquí se dice una vez para la ficha entera.
+            - Una REFERENCIA BIBLIOGRÁFICA se crea y se corrige, pero solo desde una
+              obra que la cite (`referenceEdit`): no tiene ficha ni listado propios
+              (RF-309).
+            - Los VOCABULARIOS tienen todos su pantalla en «Tablas», y una
+              EXPOSICIÓN tiene ya la suya. Eso no es una carencia: es una dirección,
+              y decirla es lo que evita que se busque donde no está. */}
         {/* El historial, antes del aviso de lo que falta: es un dato de la obra y
             no una carencia. Solo lectura, así que su sitio es la ficha que se lee
             —es donde se hace la pregunta que contesta— y no la zona de edición. */}
@@ -514,18 +539,19 @@ export function ArtworkPage() {
         <section className="card mt-3 text-sm text-stone-500">
           <p className="font-medium text-stone-700">Lo que aún no se puede hacer aquí</p>
           <p className="mt-1">
-            Una <strong>exposición</strong> se puede enlazar con esta obra si ya está en el catálogo,
-            pero darla de alta o corregir su nombre y sus fechas todavía no se hace desde ninguna
-            pantalla. Con una <strong>referencia bibliográfica</strong> pasa a medias: se puede crear
-            desde aquí, y corregir después su autor, su título o su año, no. Y un{' '}
-            <strong>documento del archivo</strong> se lee y se descarga, pero subirlo y enlazarlo con
-            una obra tampoco se hace aún.
+            Un <strong>documento del archivo</strong> se sube, se enlaza con esta obra y se
+            descarga, pero luego no se pueden corregir sus datos ni añadirle el escaneo que le
+            falte: el documento todavía no tiene ficha propia. Una{' '}
+            <strong>referencia bibliográfica</strong> se crea y se corrige desde aquí, pero solo
+            desde una obra que la cite: tampoco tiene ficha ni listado propios.
           </p>
           <p className="mt-2">
-            Lo que sí se corrige, y no es aquí: las <strong>series</strong>, las{' '}
-            <strong>sedes de exposición</strong>, los <strong>tipos</strong> de publicación, de
-            documento y de relación, y las <strong>personas e instituciones</strong> viven en la
-            sección <strong>Tablas</strong>. Renombrar algo ahí lo ven todas las obras que lo usan.
+            Lo que sí se hace, y no es aquí: una <strong>exposición</strong> se da de alta y se
+            corrige en su propia ficha, en <strong>Exposiciones</strong>. Y las{' '}
+            <strong>series</strong>, las <strong>sedes de exposición</strong>, los{' '}
+            <strong>tipos</strong> de publicación, de documento y de relación, y las{' '}
+            <strong>personas e instituciones</strong> viven en la sección <strong>Tablas</strong>.
+            Renombrar algo ahí lo ven todas las obras que lo usan.
           </p>
         </section>
 
@@ -544,7 +570,13 @@ export function ArtworkPage() {
 }
 
 /**
- * The five documentary blocks of the record, stacked (RF-303).
+ * The documentary blocks of the record, stacked (RF-303).
+ *
+ * Six blocks and only FIVE of them are documentary sections: «Enlaces a sitios
+ * externos» (RF-1400) hangs here with the same shape and the same `writable`, but it
+ * has no research-status column in `artworks` and is not going to have one, so it is
+ * not in `DOCUMENTARY_SECTIONS` and brings its own folding. The change-history block
+ * did the same, for the same reason.
  *
  * **One query for the four research statuses, not five.** They live in a single
  * row of the artwork, and it is read here and handed down: a block asking for it
@@ -553,8 +585,9 @@ export function ArtworkPage() {
  *
  * The order is the one RF-303 fixes, and it is also the order the research is done
  * in: where the piece came from, where it has been shown, where it has been
- * published, what paper the archive keeps about it, and last the block that talks
- * about the catalogue itself instead of about the world.
+ * published, what paper the archive keeps about it, where else on the web it is
+ * documented, and last the block that talks about the catalogue itself instead of
+ * about the world.
  *
  * Each block is COLLAPSED, decided by the foundations (`opensByDefault`) and not
  * repeated here: the exception — a block whose declared state contradicts what it
@@ -572,7 +605,7 @@ function DocumentaryBlocks({
   /** The list's view as it travels in the URL, so a related artwork keeps the queue (RF-311). */
   search: string
   /**
-   * Si los cinco bloques pueden escribir. Verdadero solo en la zona de edición
+   * Si los bloques pueden escribir. Verdadero solo en la zona de edición
    * (RF-308): la ficha que se lee no ofrece cambiar ningún dato. Por omisión falso,
    * que es el lado seguro del olvido.
    */
@@ -615,6 +648,20 @@ function DocumentaryBlocks({
         documentary={documentary}
         placeText={placeText}
       />
+      {/* Los enlaces externos, QUINTO y no último: son la misma pregunta que la
+          bibliografía y el archivo —dónde está documentada esta obra— contestada
+          con lo que no es papel, así que van detrás de esos dos y no antes. Y van
+          delante de las obras relacionadas porque ese bloque cierra la pila por un
+          motivo que sigue valiendo: es el único que habla del catálogo en vez de
+          hablar del mundo.
+
+          No recibe `documentary`, y no es un olvido: este bloque no tiene columna de
+          estado de investigación en `artworks` ni la va a tener, que es justo por lo
+          que no es uno de los cinco de DOCUMENTARY_SECTIONS y trae su propio
+          plegado. Sí recibe `writable`, como sus cinco hermanos: abrir un enlace es
+          leer y se queda en la vista, pero anotar que se ha comprobado escribe en la
+          base y vive en la zona de edición (RF-308). */}
+      <ExternalLinksSection catalogId={artwork.catalog_id} writable={writable} />
       <RelationshipsSection catalogId={artwork.catalog_id} search={search} writable={writable} />
     </>
   )

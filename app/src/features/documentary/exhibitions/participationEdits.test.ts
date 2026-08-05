@@ -191,14 +191,19 @@ describe('RF-304: el selector nunca se queda en blanco', () => {
   it('sin ninguna exposición en el catálogo, dice que no hay y dónde se dan de alta', () => {
     const text = noOptionsText(0, 'rotili')
     expect(text).toContain('Todavía no hay ninguna exposición registrada')
-    expect(text).toContain('pendiente en esta entrega')
+    // Y desde que la pantalla existe y está montada, se la nombra en vez de
+    // llamarla «pendiente en esta entrega»: un aviso que manda a ningún sitio es
+    // peor que no darlo.
+    expect(text).toContain('en la pantalla Exposiciones')
+    expect(text).not.toContain('pendiente')
   })
 
   /** Si no, se teclea el título del catálogo que se tiene en la mano, no sale nada y se concluye que la búsqueda está rota. */
-  it('sin coincidencias, repite lo buscado y dice que aquí no se crean exposiciones', () => {
+  it('sin coincidencias, repite lo buscado y dice dónde se crean las exposiciones', () => {
     const text = noOptionsText(12, ' Antológica ')
     expect(text).toContain('«Antológica»')
-    expect(text).toContain('dar de alta una exposición nueva es otra pantalla')
+    expect(text).toContain('dar de alta una exposición nueva se hace en la pantalla Exposiciones')
+    expect(text).not.toContain('pendiente')
   })
 
   it('sin nada tecleado no inventa unas comillas vacías', () => {

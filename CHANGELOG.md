@@ -2,6 +2,80 @@
 
 ### Interfaz
 
+**Las exposiciones ya son una pantalla, y están en el menú de abajo**
+Hasta ahora una exposición se podía enlazar con una obra pero no se podía crear: había que tenerla ya en
+el catálogo, y no había ningún sitio donde ponerla. Ahora hay una **quinta pestaña, «Exposiciones»**,
+entre «Obras» y «Añadir», y desde ella se hace todo: buscar por título, año o sede; dar una de alta;
+abrir la suya y leerla como se lee una ficha de obra; corregirla; retirarla y recuperarla.
+
+Cada exposición dice **qué obras del catálogo estuvieron en ella**, ordenadas por el número que llevaban
+en el catálogo de la muestra —que es el orden de las paredes, el de la página que se tiene delante— y no
+por el código del catálogo razonado. Las que no tienen número apuntado van al final y no encabezando la
+muestra, para que ninguna parezca la pieza número uno sin serlo.
+
+Lo que **no** se hace desde aquí es decir que una obra estuvo en la muestra: eso sigue haciéndose desde
+la ficha de cada obra, donde está su historial expositivo y el estado de investigación que hay que
+mantener coherente. Escribir esa misma cosa desde dos sitios con dos reglas distintas es como se cuela
+una participación en un historial que consta cerrado.
+
+Y una exposición **puede guardarse sin sede**: si la fuente solo dice «una galería de Madrid», eso es lo
+que se escribe, tal cual. Inventarse una sede para poder guardar es como un catálogo acaba con dos Casas
+de Cultura.
+
+La quinta pestaña ha costado un punto de tamaño en las etiquetas de las cinco: «Exposiciones» no cabía
+entera a 360 píxeles de ancho y salía cortada con puntos suspensivos. Se han bajado todas a la vez, no
+solo la larga, para que no queden de dos tamaños distintos.
+
+**La papelera: ya se puede ver lo retirado, y devolverlo a su sitio**
+Era el pendiente más viejo del proyecto. Nada se ha borrado nunca de verdad —retirar una obra, una
+fotografía, un lugar o una serie deja siempre la fila con quién y cuándo—, pero no había ninguna pantalla
+desde la que mirar dentro: lo retirado desaparecía de la aplicación aunque siguiera entero en el
+catálogo. Una traza que nadie puede leer no protege a nadie.
+
+Se abre desde **«Tablas», al final, en un apartado propio llamado «Lo retirado»**. Enseña lo que se sacó
+del catálogo agrupado por clase de cosa, cada línea con **quién lo retiró y cuándo** —«Retirada por Marta
+el 28 de julio de 2026 a las 22:42»— y un botón «Recuperar». Los grupos que están vacíos se dicen en vez
+de esconderse, para no dejar dudando si falta algo o si no hay nada. Cuando el catálogo se niega a
+recuperar algo porque otra cosa lo impide, la pantalla dice **qué hay que hacer antes**, no solo que no
+puede.
+
+No hay, y no va a haber, «vaciar la papelera» ni «borrar para siempre». Su ausencia es la decisión: en
+este catálogo nada se borra, y un botón así sería la única forma de perder una obra.
+
+Está solo para quien cataloga. No es por esconderla: recuperar cualquier cosa necesita permiso de
+edición, así que para quien solo consulta sería una lista incompleta con un botón que el catálogo
+rechaza.
+
+**Cada obra puede decir dónde más está documentada en internet**
+Un apartado nuevo al final de la ficha, **«Enlaces a sitios externos»**: la ficha de la obra en la web de
+un museo, la noticia de una subasta, la entrada de una base de datos, la reproducción de una fotografía
+en otro catálogo. Cada enlace se llama por su título o, si no lleva ninguno, por el nombre del sitio, y
+debajo se ve **a dónde lleva de verdad** —el dominio, nunca la dirección entera— porque una dirección
+larga se puede disfrazar de otra.
+
+Cada uno lleva **cuándo se comprobó por última vez y qué se vio**: que seguía ahí, que lleva a otra cosa
+o que ya no está. Lo sella una persona a mano, y a propósito: la aplicación **no le pide nada al sitio
+enlazado**, ni un icono ni una previsualización, porque cada una de esas peticiones le cuenta a un
+tercero qué obra se está catalogando y cuándo. Cuando una comprobación se queda vieja, se avisa.
+
+Y cierra un cabo que quedaba suelto: una fotografía que no es del archivo propio sino tomada de otro
+catálogo ahora puede **decir de dónde salió**, y mientras no lo diga el apartado lo avisa desde su
+cabecera aunque esté plegado.
+
+Abrir un enlace se hace desde la ficha, que es lo que se hace con un enlace casi siempre. Añadirlo,
+corregirlo, retirarlo o anotar una comprobación se hace en la zona de edición de la ficha, como el resto
+de los apartados: la ficha que se lee no cambia nada.
+
+**Un documento del archivo ya se sube y se enlaza desde la obra**
+La clasificación del archivo existía y estaba vacía por dentro: no había forma de meter un papel en ella.
+Ahora, desde el apartado de documentación de una ficha, se **sube el escaneo** de un expediente, una
+carta o un recorte, se le pone su signatura y su serie, y se **enlaza con la obra** que documenta. El
+mismo documento se cuelga de varias obras sin duplicar el fichero, que es lo que pasa de verdad con un
+expediente que habla de cinco cuadros.
+
+El escaneo hay que adjuntarlo al darlo de alta: **después no se puede añadir**, y la pantalla lo advierte
+antes de guardar en vez de dejarlo descubrir luego.
+
 **El historial de una obra ya se puede leer**
 Cada cambio en una ficha y en sus fotografías se venía guardando desde ayer, pero no había dónde verlo.
 Ahora la ficha tiene al final un apartado que lo cuenta en frases: «Marta cambió el alto, el ancho y la
@@ -114,11 +188,13 @@ un botón que los carga en el sitio.
 
 **El recuadro de «pendiente» ya no nombra lo que la ficha muestra**
 Decía que la procedencia, las exposiciones, la bibliografía y la documentación estaban por hacer
-mientras, ochenta líneas más abajo, se van a ver. Ahora nombra solo lo que falta de verdad: una
-exposición, una referencia o un documento de archivo se leen y se enlazan desde la obra, pero no tienen
-todavía pantalla propia donde corregir sus datos, y enlazar un documento del archivo con una obra
-tampoco se hace aún desde aquí. (Ese recuadro sigue nombrando también las series y los propietarios,
-que ya tienen la suya; queda por quitarlos de ahí.)
+mientras, ochenta líneas más abajo, se van a ver. Se ha repasado afirmación por afirmación, dos veces a lo
+largo del día, y ahora **solo queda lo que sigue siendo verdad**: que un documento del archivo no tiene
+ficha propia donde corregir sus datos, y que una referencia bibliográfica solo se corrige desde una obra
+que la cite. Se han ido las que ya eran falsas —dar de alta una exposición, corregir el autor o el título
+de una referencia, y subir y enlazar un documento—, y también las series y los propietarios, que ya
+tienen su pantalla. El párrafo que dice dónde **sí** se hacen las cosas nombra ahora también
+«Exposiciones».
 
 **Descargar una fotografía: el original y la copia lista para imprimir**
 En la ficha, debajo de la galería, hay ahora un apartado «Descargar esta fotografía» que se despliega y
@@ -154,6 +230,24 @@ error deja de verse en cuanto el siguiente intento funciona.
 
 Esto lo puede hacer también quien solo tiene permiso de lectura: mandar el original a una imprenta o a un
 comisario es justamente para lo que se guarda.
+
+### Correcciones
+
+**Recargar una pantalla de edición ya no echa fuera**
+Estando en la zona de edición de una ficha, recargar la página —o abrir su dirección directamente, o
+volver a ella desde un enlace guardado— devolvía a la versión de solo lectura, sin decir nada. La pantalla
+decidía si se tenía permiso antes de que el permiso hubiera llegado, y en ese instante la respuesta era
+«no». Pasaba en la **ficha de una obra**, donde con ello se perdía de vista todo lo que solo se puede
+escribir ahí —los seis apartados de documentación—, y en la **ficha de una exposición**, donde además es
+el único sitio desde el que se la retira y se la recupera. Ahora las dos esperan a saberlo. Lo que se lee
+no espera a nada, porque no depende del permiso.
+
+**Al subir un documento ya no se promete una corrección que no existe**
+El panel decía de la signatura del archivo que «se puede corregir después», y cuatro líneas más arriba
+advertía —con razón— de que el escaneo no se puede añadir más tarde. Lo segundo era verdad y lo primero
+no: un documento del archivo todavía no tiene ninguna pantalla donde cambiar sus datos, así que la
+signatura que se guarde se queda. Ahora lo dice, para que nadie deje el campo a medias contando con
+volver.
 
 ## 3 de agosto de 2026
 
@@ -943,20 +1037,31 @@ Las nueve listas del catálogo ya se pueden corregir y ampliar desde la aplicaci
 porque de ellos depende el prefijo del código de catalogación que va pegado a cada obra. Convertirlos es
 lo siguiente, y hay que hacerlo con cuidado por eso mismo.
 
-**La papelera**
-Nada se borra nunca de verdad, y eso ya está garantizado por la base: retirar una obra, una fotografía,
-un lugar o una serie deja la fila con quién y cuándo. Lo que falta es la pantalla desde la que ver lo
-retirado y restaurarlo.
+**La ficha de una referencia bibliográfica y la de un documento del archivo**
+De este frente ya está lo demás, y está contado arriba: las exposiciones tienen su pantalla, los
+propietarios y las sedes la suya, y un documento del archivo ya se sube y se enlaza con una obra. Lo que
+falta son las dos fichas que quedan. Una **referencia bibliográfica** solo se corrige desde una obra que
+la cite: si el autor o el año se escribieron mal y la referencia está citada en cinco obras, hay que
+entrar por una de ellas, y no hay ninguna pantalla donde ver la referencia con las cinco. Y un
+**documento del archivo** no tiene ficha ninguna: se le pone signatura, serie y escaneo al darlo de alta,
+y a partir de ahí esos datos no se pueden corregir desde ningún sitio —tampoco añadirle el escaneo si se
+subió sin él—. Lo único que hoy se puede cambiar de un documento ya guardado es la nota del vínculo con
+una obra.
 
-**Las pantallas propias de las exposiciones, de la bibliografía y de los documentos**
-Los propietarios, las sedes de exposición, la clasificación del archivo y los vocabularios ya tienen la
-suya: eso está contado arriba, y corregir el nombre de un museo o de un propietario ya se hace una vez
-para todo el catálogo. Lo que falta es la ficha de lo que se registra obra por obra. Una referencia
-bibliográfica se crea al paso desde la obra, pero luego no hay dónde volver a ella para corregir un
-título o una autoría mal escritos; una exposición hay que tenerla ya en el catálogo para poder
-enlazarla, aunque su sede ya se pueda dar de alta; y un documento del archivo todavía no se puede dar de
-alta ni enlazar con una obra desde ninguna parte, aunque ya exista la clasificación en la que se
-ordenará.
+**Las exposiciones y la papelera, sin abrirse todavía con datos de verdad**
+Las dos pantallas están comprobadas con un navegador y con las dos cuentas, pero el recorrido completo con
+**una exposición real** —darla de alta, abrirla, corregirla, retirarla, recuperarla y enlazarla luego desde
+el historial expositivo de una obra— no se ha hecho: la base local lleva los datos de verdad del catálogo,
+y una exposición de prueba se quedaría dentro. Y de la papelera falta verla con más de las siete cosas que
+hay retiradas hoy, que es cuando se notará si hace falta poder filtrar por fecha o por quién retiró: hoy
+agrupa por clase de cosa y no filtra.
+
+**La quinta pestaña, sin haberse tocado con el pulgar**
+El menú de abajo tiene ahora cinco pestañas en vez de cuatro, y las etiquetas han bajado un punto de
+tamaño para que «Exposiciones» quepa entera. Está medido en pantalla, pero no en la mano: que la quinta se
+acierte sin darle a la vecina, que las etiquetas más pequeñas se lean con sol y con guantes, y que el
+icono de los dos cuadros colgados se distinga de un vistazo del de la cuadrícula de obras, se sabrá con un
+teléfono de verdad.
 
 **Las seis listas nuevas, sin abrirse todavía en un teléfono**
 Todo lo que decide algo en ellas está comprobado con pruebas automáticas —cuál es el nombre repetido, qué
@@ -967,11 +1072,11 @@ puede retirar» se sube a la vista al pulsar el botón de abajo, y que la lista 
 el pulgar cuando tenga cien fichas.
 
 **La mitad documental, sin haberse usado aún con un móvil en la mano**
-Todo lo que decide qué se muestra en esos cinco apartados —cada frase, cada recuento, cada hueco de una
-procedencia— está comprobado con pruebas automáticas, pero **nadie los ha abierto todavía con un teléfono
-y una obra delante**. Lo que solo se comprueba así: que las flechas para ordenar la cadena se alcanzan con
-el pulgar, que los paneles para citar y para elegir un propietario no tapan el teclado, y que ningún
-apartado se queda diciendo «cargando» donde debería haber una frase.
+Todo lo que decide qué se muestra en esos apartados —ya son seis, con los enlaces a sitios externos— está
+comprobado con pruebas automáticas: cada frase, cada recuento, cada hueco de una procedencia. Pero **nadie
+los ha abierto todavía con un teléfono y una obra delante**. Lo que solo se comprueba así: que las flechas
+para ordenar la cadena se alcanzan con el pulgar, que los paneles para citar y para elegir un propietario
+no tapan el teclado, y que ningún apartado se queda diciendo «cargando» donde debería haber una frase.
 
 **Tres fotografías donde la sugerencia de recorte sigue callando**
 De las cuarenta y cuatro, en tres reconoce mal por dónde va el borde: no por la inclinación, que ya está
