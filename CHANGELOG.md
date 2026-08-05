@@ -21,6 +21,19 @@ Y cuando el panel se niega a cerrarse porque está en medio de algo —la subida
 fichero va en camino— el atrás no hace nada, en vez de dejar que el siguiente saque de la pantalla con la
 subida a medias.
 
+### Correcciones
+
+**En el editor de fotografías, el atrás ya no se lleva el trabajo sin aplicar**
+Con el panel de color o el de datos de cámara abierto, el botón de atrás del teléfono cerraba el editor
+entero y perdía el encuadre y el color que aún no se habían aplicado. Con el teclado no pasaba: Escape ya
+cerraba el panel y hacía falta pulsarlo otra vez para salir. Ahora el atrás hace lo mismo, un toque por
+capa: desarma el cuentagotas, luego cierra el panel, y solo con la botonera a la vista sale del editor.
+
+En un teléfono esto era la única salida que había y era la que estaba mal.
+
+«Aplicar», «Cancelar» y la ✕ siguen saliendo de una vez, también con un panel abierto: son la salida del
+editor y no un peldaño.
+
 ## 4 de agosto de 2026
 
 ### Interfaz

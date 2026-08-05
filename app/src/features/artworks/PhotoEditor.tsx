@@ -77,6 +77,7 @@ import {
   WandIcon,
 } from '../../components/ui'
 import { useCloseOnBack } from '../../components/useCloseOnBack'
+import { editorExit } from './editorExit'
 import { SHOT_TYPE_LABEL, type PhotoProvenance, type ShotTypeValue } from '../../lib/types'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
@@ -434,6 +435,8 @@ export function PhotoEditor({
   // and move a rectangle the cataloger is already dragging.
   const analysisTicket = useRef(0)
   const appliedRef = useRef(false)
+  /** Puesta por `close`: se sale del editor, sin pelar ninguna capa antes. */
+  const leavingRef = useRef(false)
   const onApplyRef = useRef(onApply)
   onApplyRef.current = onApply
   // In a ref for the same reason as the edit: the history listener that closes the
@@ -476,12 +479,39 @@ export function PhotoEditor({
     }
   }, [source])
 
+  /**
+   * Undoes the innermost layer that is up, and answers whether there was one. The
+   * ladder itself — which layer goes first, and when leaving skips it altogether —
+   * is `editorExit` and has its own tests; here it is only carried out.
+   */
+  function peelLayer(): 'PEELED' | 'LEAVE' {
+    const exit = editorExit({
+      eyedropper: eyedropperRef.current,
+      panelOpen: panelRef.current !== 'TOOLS',
+      leaving: leavingRef.current,
+    })
+    if (exit === 'DISARM_EYEDROPPER') {
+      setEyedropper(false)
+      setAim(null)
+      return 'PEELED'
+    }
+    if (exit === 'CLOSE_PANEL') {
+      setPanel('TOOLS')
+      return 'PEELED'
+    }
+    return 'LEAVE'
+  }
+
   // One exit for the three ways of leaving — ✕, Escape and the phone's back
   // button — so the entry pushed on opening is always consumed exactly once. The
   // pushing and the arbitration live in `useCloseOnBack`, shared with the viewer
   // and the sheets: while each modal listened for itself, one back with two of
   // them open closed both.
   useCloseOnBack(() => {
+    // Peeling a layer leaves the editor mounted, and `useCloseOnBack` reads that
+    // as a close it was refused: it hands the history entry back, so the next
+    // back peels the next layer instead of walking out of the record.
+    if (peelLayer() === 'PEELED') return
     if (appliedRef.current) {
       const edit = normalizeEdit(editRef.current)
       // The one place `REVIEWED_UNCHANGED` is stamped: on the way out, and only when the
@@ -496,20 +526,9 @@ export function PhotoEditor({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      // Escape peels one layer at a time and never throws the work away: with the
-      // eyedropper armed it disarms it, with a panel open it closes the panel, and only
-      // with the tools on screen does it leave the editor. Going straight to
-      // `history.back()` from an open panel would discard the framing and the colour she
-      // has not applied yet.
-      if (eyedropperRef.current) {
-        setEyedropper(false)
-        setAim(null)
-        return
-      }
-      if (panelRef.current !== 'TOOLS') {
-        setPanel('TOOLS')
-        return
-      }
+      // The last rung goes out through the same door as everything else:
+      // consuming the history entry, so no exit keeps its own count.
+      if (peelLayer() === 'PEELED') return
       window.history.back()
     }
     window.addEventListener('keydown', onKey)
@@ -596,6 +615,10 @@ export function PhotoEditor({
   function close(applied: boolean) {
     if (applied) cropSourceRef.current = currentCropSource()
     appliedRef.current = applied
+    // La ✕, «Cancelar» y «Aplicar» son la salida del editor y no un peldaño de la
+    // escalera: se ven también con un panel abierto, y desde ahí «Aplicar» tiene
+    // que aplicar. Sin esta marca cerraría el panel y se quedaría dentro.
+    leavingRef.current = true
     window.history.back()
   }
 
