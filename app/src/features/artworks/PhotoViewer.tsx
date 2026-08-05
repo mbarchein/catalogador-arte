@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { SHOT_TYPE_LABEL } from '../../lib/types'
 import { NoIcon } from '../../components/ui'
+import { useCloseOnBack } from '../../components/useCloseOnBack'
 import type { ImageRow } from './artworkImages'
 import { PhotoCarousel } from './PhotoCarousel'
 
@@ -11,11 +12,10 @@ import { PhotoCarousel } from './PhotoCarousel'
  * elements, and the phone is the primary device). Inside, the same carousel.
  *
  * Closing works with the ✕, with Escape and — the important one on a phone —
- * with the BACK button: opening pushes one history entry without leaving the
- * page, and back consumes it instead of leaving the record. In the installed
- * PWA, with no browser bar, that is the difference between a viewer and a
- * trap. The derivative is what is shown: the master never appears in a view
- * (RF-411).
+ * with the BACK button, which is `useCloseOnBack` and the same exit every modal
+ * of the application has. In the installed PWA, with no browser bar, that is the
+ * difference between a viewer and a trap. The derivative is what is shown: the
+ * master never appears in a view (RF-411).
  */
 export function PhotoViewer({
   images,
@@ -32,20 +32,19 @@ export function PhotoViewer({
   catalogId: string
   onClose: () => void
 }) {
-  // Los callbacks viven en un ref para que los listeners de historia y teclado
-  // se registren una sola vez: volver a registrarlos en cada render podría
-  // perderse el pop del cierre.
-  const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
-  // Lo que las flechas necesitan saber, también por referencia y por lo mismo.
+  // El botón de atrás cierra el visor, con la entrada de historia que empuja al
+  // abrirse. Vive en `useCloseOnBack` y no aquí porque es la misma salida que
+  // tienen las hojas y el editor: teniéndola cada uno por su lado, un «atrás» con
+  // dos modales abiertos cerraba los dos.
+  useCloseOnBack(onClose)
+
+  // Lo que las flechas necesitan saber vive en un ref para que el listener de
+  // teclado se registre una sola vez: volver a registrarlo en cada render podría
+  // perderse una pulsación.
   const paso = useRef({ images, viewId, onView })
   paso.current = { images, viewId, onView }
 
   useEffect(() => {
-    // One history entry for the viewer. Pushing state does not notify the
-    // router (same URL); popping it fires our listener and closes.
-    window.history.pushState({ photoViewer: true }, '')
-    const onPop = () => onCloseRef.current()
     const onKey = (e: KeyboardEvent) => {
       // «f» cierra igual que Escape: la misma tecla que abre es la que sale, sin
       // tener que recordar otra. Y sale por el mismo camino que todo lo demás
@@ -74,7 +73,6 @@ export function PhotoViewer({
       e.preventDefault()
       ver(destino.image_id)
     }
-    window.addEventListener('popstate', onPop)
     window.addEventListener('keydown', onKey)
 
     // The page under the viewer must not scroll along with the swipes.
@@ -82,7 +80,6 @@ export function PhotoViewer({
     document.body.style.overflow = 'hidden'
 
     return () => {
-      window.removeEventListener('popstate', onPop)
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = previousOverflow
     }

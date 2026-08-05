@@ -76,6 +76,7 @@ import {
   RotateRightIcon,
   WandIcon,
 } from '../../components/ui'
+import { useCloseOnBack } from '../../components/useCloseOnBack'
 import { SHOT_TYPE_LABEL, type PhotoProvenance, type ShotTypeValue } from '../../lib/types'
 
 /** Nudge of a corner with the arrow keys, as a fraction of the side. */
@@ -182,9 +183,10 @@ const CORNERS: { corner: Corner; label: string }[] = [
  *     pixel being aimed at, and without magnification adjusting the border of a
  *     painting to the millimetre on a phone is not possible. It disappears when
  *     the finger lifts, and it never intercepts anything.
- *  6. Closing pushes a history entry, like PhotoViewer: on a phone the back
- *     button must close the editor, not leave the record. Applying consumes the
- *     same entry, so back never lands on a stale editor.
+ *  6. Closing goes through `useCloseOnBack`, like the viewer and every sheet: on a
+ *     phone the back button must close the editor and not leave the record.
+ *     Applying consumes the same history entry, so back never lands on a stale
+ *     editor.
  *  7. «Sugerir recorte» detects the borders of the painting on demand, never on
  *     opening: it costs a decode of the master plus a pass over the pixels, and
  *     spending that on every editor that opens — most of which only rotate —
@@ -474,21 +476,24 @@ export function PhotoEditor({
     }
   }, [source])
 
+  // One exit for the three ways of leaving — ✕, Escape and the phone's back
+  // button — so the entry pushed on opening is always consumed exactly once. The
+  // pushing and the arbitration live in `useCloseOnBack`, shared with the viewer
+  // and the sheets: while each modal listened for itself, one back with two of
+  // them open closed both.
+  useCloseOnBack(() => {
+    if (appliedRef.current) {
+      const edit = normalizeEdit(editRef.current)
+      // The one place `REVIEWED_UNCHANGED` is stamped: on the way out, and only when the
+      // panel was opened and the look was left alone.
+      onApplyRef.current(
+        { ...edit, color: reviewedColor(edit.color, reviewedRef.current) },
+        cropSourceRef.current,
+      )
+    } else onCancelRef.current()
+  })
+
   useEffect(() => {
-    window.history.pushState({ photoEditor: true }, '')
-    // One exit for the three ways of leaving — ✕, Escape and the phone's back
-    // button — so the pushed entry is always consumed exactly once.
-    const onPop = () => {
-      if (appliedRef.current) {
-        const edit = normalizeEdit(editRef.current)
-        // The one place `REVIEWED_UNCHANGED` is stamped: on the way out, and only when the
-        // panel was opened and the look was left alone.
-        onApplyRef.current(
-          { ...edit, color: reviewedColor(edit.color, reviewedRef.current) },
-          cropSourceRef.current,
-        )
-      } else onCancelRef.current()
-    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       // Escape peels one layer at a time and never throws the work away: with the
@@ -507,14 +512,12 @@ export function PhotoEditor({
       }
       window.history.back()
     }
-    window.addEventListener('popstate', onPop)
     window.addEventListener('keydown', onKey)
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
     return () => {
-      window.removeEventListener('popstate', onPop)
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = previousOverflow
       analysisTicket.current += 1
