@@ -188,6 +188,28 @@ obra tiene que devolverla con sus fotografías dentro.
 
 ### Correcciones
 
+**Un formulario a medio rellenar ya no se pierde por tocar fuera sin querer**
+Pasó dos veces, con datos dentro. Un panel de edición se cerraba por cuatro caminos —el fondo oscuro,
+la ✕, Escape y el botón de atrás del móvil— y los cuatro eran inmediatos, sin preguntar nada. Con el
+panel ocupando tres cuartos de la pantalla, ese fondo cae justo donde se apoya el pulgar al bajar por
+un formulario largo.
+
+Ahora, **en los paneles que son un formulario, el fondo ya no cierra**: la salida está siempre en el
+mismo sitio, la ✕ de arriba a la derecha, y no se mueve. En los paneles que son elegir algo —un sitio,
+una sede, un estado de investigación— tocar fuera sigue cerrando, porque ahí no hay nada que perder.
+
+Y las demás salidas **preguntan antes cuando hay algo escrito**: la ✕, Escape, el botón de atrás y el
+«Cancelar» del pie. La pregunta dice lo que no pasa —del catálogo no se cambia nada, porque el panel
+todavía no ha guardado— y ofrece «Seguir rellenando» primero, que es donde cae el pulgar sin apuntar.
+Al subir un documento o añadirle un escaneo añade además que el fichero elegido habría que volver a
+buscarlo, que es lo más engorroso de repetir.
+
+Dos cosas que **no** hace, a propósito. No pregunta sobre un formulario en blanco, ni cuando lo único
+escrito es un espacio: un cartel que sale siempre se aprende a despachar sin leerlo, y entonces el día
+que importa tampoco se lee. Y con la pregunta en pantalla, ni el atrás ni Escape salen — la retiran y
+devuelven al formulario. Un atrás de más, justo con un cartel delante que avisa de que se van a perder
+los datos, no puede ser la pulsación que los pierde.
+
 **El aviso de un permiso denegado hablaba de una descarga que nadie había pedido, y estaba mal escrito**
 Cuando el almacén no da permiso para abrir un fichero, el aviso decía «no se ha podido preparar la
 descarga de el documento…»: hablaba de descargar aunque se hubiera pulsado «Ver», y le faltaba la

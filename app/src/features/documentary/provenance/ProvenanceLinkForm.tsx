@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { draftDirty } from '../../../components/formDirty'
 import { BottomSheet, Chips, ToggleChip, YearStepper } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import {
   PROVENANCE_ACQUISITION_LABEL,
   PROVENANCE_CAPACITY_LABEL,
@@ -80,8 +82,13 @@ export function ProvenanceLinkForm({
     if (failure !== null) setError(failure)
   }
 
+  // Contra el punto de partida, que sirve igual para el eslabón nuevo —el borrador llega
+  // vacío— y para el que se está corrigiendo.
+  const guard = useSheetGuard({ onClose: onCancel, dirty: draftDirty(draft, initial) })
+
   return (
     <BottomSheet
+      guard={guard}
       open
       onClose={onCancel}
       title={initial.id === null ? 'Añadir un eslabón' : 'Corregir el eslabón'}

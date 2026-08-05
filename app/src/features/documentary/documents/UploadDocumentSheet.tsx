@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
+import { draftDirty } from '../../../components/formDirty'
 import { BottomSheet } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import type { PlaceTree } from '../../../lib/places'
 import type { DocumentTypeEntry } from '../../../lib/types'
 import type { SeriesTree } from '../../tables/archiveSeries'
@@ -107,9 +109,24 @@ export function UploadDocumentSheet({
 
   const busy = step !== null
   const blocked = problems.length > 0 || fileProblem !== null
+  // Lo que se perdería al cerrar: el formulario entero y, sobre todo, el fichero — que
+  // es lo único de aquí que hay que volver a buscar en el teléfono.
+  const dirty = draftDirty(draft, emptyNewDocumentDraft()) || file !== null
+
+  // El formulario más largo del proyecto y el más caro de repetir.
+  const guard = useSheetGuard({
+    onClose: busy ? () => {} : onClose,
+    dirty,
+    discardNotice: file === null ? null : 'El fichero que has elegido habría que volver a buscarlo.',
+  })
 
   return (
-    <BottomSheet open onClose={busy ? () => {} : onClose} title="Subir un documento del archivo">
+    <BottomSheet
+      open
+      onClose={busy ? () => {} : onClose}
+      title="Subir un documento del archivo"
+      guard={guard}
+    >
       {/* 1 · EL FICHERO. Lo primero, porque es lo único que hay que elegir mientras
           el teléfono todavía lo tiene en la mano. Y es OPCIONAL: un documento sin
           digitalizar es un estado legítimo del archivo (RF-408). */}
@@ -220,7 +237,7 @@ export function UploadDocumentSheet({
         >
           {step === null ? 'Subir y enlazar' : UPLOAD_STEP_TEXT[step]}
         </button>
-        <button type="button" disabled={busy} onClick={onClose} className="btn-secondary">
+        <button type="button" disabled={busy} onClick={guard.cancel} className="btn-secondary">
           Cancelar
         </button>
       </div>

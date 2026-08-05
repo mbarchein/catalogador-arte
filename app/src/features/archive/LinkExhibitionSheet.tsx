@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { anyWritten } from '../../components/formDirty'
 import { BottomSheet } from '../../components/ui'
+import { useSheetGuard } from '../../components/useSheetGuard'
 import { Marked } from '../exhibitions/Marked'
 import type { ExhibitionRow } from '../documentary/documentaryRows'
 import {
@@ -70,8 +72,17 @@ export function LinkExhibitionSheet({
     onClose()
   }
 
+  // La nota del vínculo se escribe antes de elegir la muestra, así que es justo lo que se
+  // perdería al cerrar sin querer. La búsqueda no cuenta.
+  const guard = useSheetGuard({ onClose: busy ? () => {} : onClose, dirty: anyWritten(note) })
+
   return (
-    <BottomSheet open onClose={busy ? () => {} : onClose} title="Enlazar con una exposición">
+    <BottomSheet
+      open
+      onClose={busy ? () => {} : onClose}
+      title="Enlazar con una exposición"
+      guard={guard}
+    >
       <p className="text-xs text-stone-500">
         Para el cartel, el díptico o la nota de prensa de una muestra: documentos que hablan de la
         exposición y no de una pieza en concreto. El fichero se guarda una sola vez y cuelga de
@@ -152,7 +163,7 @@ export function LinkExhibitionSheet({
       <button
         type="button"
         disabled={busy}
-        onClick={onClose}
+        onClick={guard.cancel}
         className="btn-secondary mt-3 w-full"
       >
         {busy ? 'Enlazando…' : 'Cancelar'}

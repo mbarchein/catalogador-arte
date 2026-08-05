@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { anyWritten } from '../../../components/formDirty'
 import { BottomSheet } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import {
   allLinkedText,
   documentLinkArgs,
@@ -68,8 +70,17 @@ export function LinkDocumentSheet({
     onClose()
   }
 
+  // La nota del vínculo es lo único que se teclea aquí, y lo único que se perdería. La
+  // búsqueda no cuenta.
+  const guard = useSheetGuard({ onClose, dirty: anyWritten(note) })
+
   return (
-    <BottomSheet open onClose={onClose} title="Enlazar un documento del archivo">
+    <BottomSheet
+      open
+      onClose={onClose}
+      title="Enlazar un documento del archivo"
+      guard={guard}
+    >
       {chosen === null ? (
         <>
           <input
@@ -181,7 +192,7 @@ export function LinkDocumentSheet({
             >
               {saving ? 'Enlazando…' : 'Enlazar con esta obra'}
             </button>
-            <button type="button" disabled={saving} onClick={onClose} className="btn-secondary">
+            <button type="button" disabled={saving} onClick={guard.cancel} className="btn-secondary">
               Cancelar
             </button>
           </div>

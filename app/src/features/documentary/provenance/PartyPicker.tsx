@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { draftDirty } from '../../../components/formDirty'
 import { BottomSheet, Chips, YesIcon } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import { PARTY_TYPE_LABEL, type PartyType } from '../../../lib/types'
 import { partyText, type PartyRef } from '../documentaryFormat'
 import {
@@ -91,6 +93,16 @@ export function PartyPicker({
     close()
   }
 
+  // Esta hoja tiene dos modos y el cambio se ve entero —la lista desaparece y sale un
+  // formulario—, así que el fondo cierra mientras se elige y deja de cerrar mientras se da
+  // de alta una ficha nueva. Es la excepción a «una superficie no puede cerrar unas veces
+  // y otras no»: aquí no es la misma pantalla.
+  const guard = useSheetGuard({
+    onClose: close,
+    backdropCloses: !creating,
+    dirty: creating && draftDirty(draft, emptyNewParty()),
+  })
+
   return (
     <div>
       <span className="label">De quién habla el eslabón</span>
@@ -141,7 +153,12 @@ export function PartyPicker({
         placeholder={chosen ? 'propiedad de la tía de Almudena' : 'Colección particular, España'}
       />
 
-      <BottomSheet open={open} onClose={close} title="Persona o institución">
+      <BottomSheet
+        open={open}
+        onClose={close}
+        title="Persona o institución"
+        guard={guard}
+      >
         {creating ? (
           <div className="space-y-3">
             <div>

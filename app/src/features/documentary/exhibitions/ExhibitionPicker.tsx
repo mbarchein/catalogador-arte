@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { anyWritten } from '../../../components/formDirty'
 import { BottomSheet } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import { displayExhibitionDates } from '../documentaryFormat'
 import type { ExhibitionRow } from '../documentaryRows'
 import { exhibitionKindText, exhibitionVenueLine } from './exhibitionHistory'
@@ -75,13 +77,26 @@ export function ExhibitionPicker({
     return <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">{blockedReason}</p>
   }
 
+  // Igual que el selector de personas: lista mientras se busca la muestra, formulario en
+  // cuanto hay una elegida.
+  const guard = useSheetGuard({
+    onClose: close,
+    backdropCloses: chosen === null,
+    dirty: anyWritten(catalogueNumber, note),
+  })
+
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className="btn-secondary min-h-touch w-full text-sm">
         Añadir a una exposición
       </button>
 
-      <BottomSheet open={open} onClose={close} title="Añadir a una exposición">
+      <BottomSheet
+        open={open}
+        onClose={close}
+        title="Añadir a una exposición"
+        guard={guard}
+      >
         {chosen === null ? (
           <>
             <input

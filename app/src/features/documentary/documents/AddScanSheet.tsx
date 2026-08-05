@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { BottomSheet } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import { fileSizeText } from '../documentaryFormat'
 import { scanAddedNotice, scanTargetProblem, type EditableDocument } from './documentEdit'
 import {
@@ -75,8 +76,21 @@ export function AddScanSheet({
     onClose()
   }
 
+  // Aquí lo que se pierde no es tecleo: es haber encontrado el fichero en el teléfono,
+  // que es lo más engorroso de repetir de toda la hoja.
+  const guard = useSheetGuard({
+    onClose: busy ? () => {} : onClose,
+    dirty: file !== null,
+    discardNotice: 'El fichero que has elegido habría que volver a buscarlo.',
+  })
+
   return (
-    <BottomSheet open onClose={busy ? () => {} : onClose} title="Añadir el escaneo">
+    <BottomSheet
+      open
+      onClose={busy ? () => {} : onClose}
+      title="Añadir el escaneo"
+      guard={guard}
+    >
       <p className="text-sm text-stone-700">
         {document.title.trim() === '' ? 'Este documento' : `«${document.title.trim()}»`} consta sin
         digitalizar. El fichero se guarda una sola vez en el archivo y se puede descargar desde
@@ -150,7 +164,7 @@ export function AddScanSheet({
             >
               {step === null ? 'Añadir el escaneo' : SCAN_STEP_TEXT[step]}
             </button>
-            <button type="button" disabled={busy} onClick={onClose} className="btn-secondary">
+            <button type="button" disabled={busy} onClick={guard.cancel} className="btn-secondary">
               Cancelar
             </button>
           </div>

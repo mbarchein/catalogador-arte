@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { draftDirty } from '../../../components/formDirty'
 import { BottomSheet } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import type { PlaceTree } from '../../../lib/places'
 import type { DocumentTypeEntry } from '../../../lib/types'
 import type { SeriesTree } from '../../tables/archiveSeries'
@@ -135,11 +137,19 @@ export function EditDocumentSheet({
     onClose()
   }
 
+  // La corrección sin guardar, por los dos lados que esta hoja escribe: los campos del
+  // documento —contra la fila guardada, que es de donde salió el borrador— y la nota del
+  // vínculo con esta obra.
+  const dirty = draftDirty(draft, documentEditDraft(document)) || note.trim() !== linkNote.trim()
+
+  const guard = useSheetGuard({ onClose: saving ? () => {} : onClose, dirty })
+
   return (
     <BottomSheet
       open
       onClose={saving ? () => {} : onClose}
       title="Corregir los datos del documento"
+      guard={guard}
     >
       {/* Lo primero y antes de cualquier campo: esto es del archivo y no de esta obra. */}
       <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
@@ -207,7 +217,7 @@ export function EditDocumentSheet({
         >
           {saving ? 'Guardando…' : 'Guardar la corrección'}
         </button>
-        <button type="button" disabled={saving} onClick={onClose} className="btn-secondary">
+        <button type="button" disabled={saving} onClick={guard.cancel} className="btn-secondary">
           Cancelar
         </button>
       </div>

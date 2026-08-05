@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { draftDirty } from '../../../components/formDirty'
 import { BottomSheet, Chips, PlusIcon, YearStepper } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import { maxYear } from '../../../lib/structuredDate'
 import type { MasterRef, ReferenceRow } from '../documentaryRows'
 import { MIN_REFERENCE_YEAR, displayCitationPages, type CitationEdit } from './citationFormat'
@@ -142,8 +144,24 @@ export function CitationSheet({
     [publicationTypes],
   )
 
+  // No perder lo escrito por un roce: la página y la nota de ESTA cita, y los campos de
+  // la referencia nueva cuando se está dando de alta una. La búsqueda no cuenta —teclear
+  // en el buscador no es trabajo que se pierda—, y el fondo no cierra.
+  const guard = useSheetGuard({
+    onClose,
+    dirty:
+      pages.trim() !== (editing?.pages ?? '').trim() ||
+      note.trim() !== (editing?.note ?? '').trim() ||
+      (creating && draftDirty(draft, EMPTY_REFERENCE_DRAFT)),
+  })
+
   return (
-    <BottomSheet open={open} onClose={onClose} title={title}>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={title}
+      guard={guard}
+    >
       {step === 'reference' ? (
         <div className="space-y-3">
           <p className="text-sm text-stone-600">
@@ -380,7 +398,7 @@ export function CitationSheet({
             >
               {busy ? 'Guardando…' : target !== null ? 'Guardar' : 'Añadir la cita'}
             </button>
-            <button type="button" disabled={busy} onClick={onClose} className="btn-secondary">
+            <button type="button" disabled={busy} onClick={guard.cancel} className="btn-secondary">
               Cancelar
             </button>
           </div>

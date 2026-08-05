@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BottomSheet } from './ui'
+import { useSheetGuard } from './useSheetGuard'
 
 /**
  * El primer test de pantalla del proyecto, y está aquí a propósito.
@@ -176,3 +177,185 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
     expect(screen.getAllByRole('button')).toHaveLength(2)
   })
 })
+
+/**
+ * El guardián de la hoja: no perder lo escrito por un roce (RNF-106).
+ *
+ * Esta batería existe por una incidencia contada dos veces: un toque involuntario en el
+ * fondo oscuro —que con la hoja a tres cuartos de pantalla cae justo donde se apoya el
+ * pulgar al desplazarse por un formulario largo— cerraba el panel y se perdían diez
+ * minutos de tecleo, sin preguntar.
+ *
+ * Lo que decide qué hacer con cada salida es puro y está en `sheetExit.test.ts`. Aquí se
+ * comprueba lo que ningún test de lógica alcanza: que las CUATRO salidas de la hoja pasan
+ * de verdad por ese guardián, incluido el botón de atrás del móvil, que es el que lleva
+ * historia detrás y el que ya se ha roto dos veces en este proyecto.
+ */
+describe('BottomSheet, no perder lo escrito por un roce', () => {
+  it('en un formulario, el fondo deja de ser un botón: ni cierra ni se anuncia', () => {
+    const onClose = vi.fn()
+    render(<Guarded onClose={onClose} />)
+    // Un solo «Cerrar», el de la cabecera: el fondo no se anuncia como salida a un
+    // lector de pantalla porque ya no lo es.
+    expect(screen.getAllByRole('button', { name: 'Cerrar' })).toHaveLength(1)
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('con algo escrito, la ✕ pregunta en vez de cerrar', async () => {
+    const onClose = vi.fn()
+    render(<Guarded onClose={onClose} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(onClose).not.toHaveBeenCalled()
+    // Y lo escrito sigue ahí detrás: preguntar no desmonta el formulario.
+    expect(screen.getByText('contenido')).not.toBeNull()
+    expect(screen.getByRole('alertdialog')).not.toBeNull()
+  })
+
+  it('«Seguir rellenando» devuelve al formulario, y «Salir y perderlo» cierra', async () => {
+    const onClose = vi.fn()
+    render(<Guarded onClose={onClose} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Seguir rellenando' }))
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Salir y perderlo' }))
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('en blanco no pregunta: una pregunta que sale siempre se despacha sin leerla', async () => {
+    const onClose = vi.fn()
+    render(<Guarded onClose={onClose} dirty={false} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+  })
+
+  it('Escape pregunta, y con la pregunta delante Escape la retira sin salir', async () => {
+    const onClose = vi.fn()
+    render(<Guarded onClose={onClose} />)
+    await userEvent.keyboard('{Escape}')
+    expect(screen.getByRole('alertdialog')).not.toBeNull()
+    expect(onClose).not.toHaveBeenCalled()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    // Lo importante: el segundo Escape NO ha salido. Un atrás de más con el cartel
+    // delante no puede ser la pulsación que pierde los datos.
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('el botón de atrás pregunta, y su entrada de historia se vuelve a empujar', async () => {
+    // El caso que de verdad importa en un móvil, y el que tiene historia detrás: si la
+    // entrada no se repusiera, el siguiente atrás se saldría de la ficha con los datos
+    // dentro. `useCloseOnBack` sabe volver a empujarla cuando el cierre se niega.
+    const onClose = vi.fn()
+    window.history.pushState({ screen: 'ficha' }, '')
+    render(<Guarded onClose={onClose} />)
+    await waitFor(() => expect(window.history.state?.modalKey).toBeTruthy())
+
+    window.history.back()
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeNull())
+    expect(onClose).not.toHaveBeenCalled()
+    // Repuesta: la hoja sigue tapando una entrada propia, así que el atrás siguiente
+    // vuelve aquí y no a la pantalla anterior.
+    await waitFor(() => expect(window.history.state?.modalKey).toBeTruthy())
+
+    window.history.back()
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('el «Cancelar» del pie es la quinta salida, y también pregunta', async () => {
+    // Es la que no controla `BottomSheet`: la pinta el formulario, en el mismo componente
+    // que pinta la hoja. Dejarla fuera del guardián sería dejar un camino que pierde los
+    // datos, y encima el más fácil de pulsar — está pegado a «Guardar».
+    const onClose = vi.fn()
+    render(<Guarded onClose={onClose} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('alertdialog')).not.toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Salir y perderlo' }))
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('si lo escrito desaparece, la pregunta no se queda hablando de nada', async () => {
+    // Pasa cuando el guardado termina y limpia el borrador con la pregunta en pantalla:
+    // un cartel que dice «vas a perder lo escrito» sobre un formulario vacío es ruido.
+    function Caso() {
+      const [dirty, setDirty] = useState(true)
+      return (
+        <>
+          <button type="button" onClick={() => setDirty(false)}>
+            Vaciar
+          </button>
+          <Guarded onClose={() => {}} dirty={dirty} />
+        </>
+      )
+    }
+    render(<Caso />)
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(screen.getByRole('alertdialog')).not.toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Vaciar' }))
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+  })
+
+  it('la hoja puede añadir a la pregunta lo que la frase general no sabe', async () => {
+    render(
+      <Guarded
+        onClose={() => {}}
+        discardNotice="El fichero elegido habría que volver a elegirlo."
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(screen.getByRole('alertdialog').textContent).toContain('volver a elegirlo')
+  })
+
+  it('cerrada la hoja, la pregunta no espera a la siguiente que se abra', async () => {
+    function Caso() {
+      const [open, setOpen] = useState(true)
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Abrir
+          </button>
+          <Guarded open={open} onClose={() => setOpen(false)} />
+        </>
+      )
+    }
+    render(<Caso />)
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Salir y perderlo' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir' }))
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+  })
+})
+
+/**
+ * Una hoja con guardián, como la monta cualquier formulario de la aplicación: el hook lo
+ * llama el componente que pinta la hoja, que es donde vive el «Cancelar» del pie.
+ */
+function Guarded({
+  onClose,
+  dirty = true,
+  backdropCloses = false,
+  discardNotice,
+  open = true,
+}: {
+  onClose: () => void
+  dirty?: boolean
+  backdropCloses?: boolean
+  discardNotice?: string | null
+  open?: boolean
+}) {
+  const guard = useSheetGuard({ onClose, dirty, backdropCloses, discardNotice })
+  return (
+    <BottomSheet open={open} onClose={onClose} title="Corregir" guard={guard}>
+      <p>contenido</p>
+      <button type="button" onClick={guard.cancel}>
+        Cancelar
+      </button>
+    </BottomSheet>
+  )
+}

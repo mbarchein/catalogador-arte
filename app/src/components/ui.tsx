@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TriState } from '../lib/types'
 import { filterVocabulary, findEquivalent, fuzzyRank, searchableOptions } from '../lib/vocabulary'
+import {
+  discardText,
+  DISCARD_KEEP_LABEL,
+  DISCARD_LEAVE_LABEL,
+  DISCARD_TITLE,
+} from './sheetExit'
 import { useCloseOnBack } from './useCloseOnBack'
+import type { SheetGuard } from './useSheetGuard'
 
 // ── Icons ────────────────────────────────────────────────────
 // Inline SVG, no library: these are five icons and pulling a whole dependency
@@ -1047,6 +1054,7 @@ export function BottomSheet({
   title,
   headerAction,
   children,
+  guard,
 }: {
   open: boolean
   onClose: () => void
@@ -1062,33 +1070,68 @@ export function BottomSheet({
    */
   headerAction?: ReactNode
   children: ReactNode
+  /**
+   * El guardián de lo escrito, para las hojas que son un formulario: `useSheetGuard`.
+   *
+   * Sin él la hoja se comporta como siempre —las cuatro salidas cierran en el acto—, que
+   * es lo que necesita una hoja de ELEGIR algo: ahí no hay nada que perder y pedir
+   * confirmación sería molestar sin proteger nada.
+   *
+   * Va entero y no como tres props porque el «Cancelar» del pie lo pinta el formulario, en
+   * el mismo componente que pinta la hoja: el estado tiene que vivir arriba para que las
+   * CINCO salidas entren por la misma puerta. Ver `useSheetGuard.ts`.
+   */
+  guard?: SheetGuard
 }) {
-  // The back button closes the sheet instead of leaving the screen. It is the
-  // exit the thumb reaches without aiming, and on a phone the sheet is what
-  // covers the record: see useCloseOnBack.
-  useCloseOnBack(onClose, open)
+  // Sin guardián, cerrar es cerrar: es lo que ha sido siempre y lo que necesita una hoja
+  // de elegir.
+  const requestClose = useCallback(
+    (exit: 'backdrop' | 'close' | 'escape' | 'back') => {
+      if (guard === undefined) {
+        onClose()
+        return
+      }
+      guard.request(exit)
+    },
+    [guard, onClose],
+  )
+  const backdropCloses = guard === undefined ? true : guard.backdropCloses
+  const confirming = guard?.confirming ?? false
 
-  // Escape closes, like any dialog. Registered only while open.
+  // El botón de atrás cierra la hoja en vez de salir de la pantalla: es la salida que el
+  // pulgar alcanza sin apuntar, y en el móvil la hoja es lo que tapa la ficha. Ver
+  // `useCloseOnBack`, que ya sabe volver a empujar su entrada de historia cuando el
+  // cierre se niega — que es exactamente lo que pasa cuando esto pregunta.
+  const onBack = useCallback(() => requestClose('back'), [requestClose])
+  useCloseOnBack(onBack, open)
+
+  // Escape cierra, como cualquier diálogo. Registrado solo con la hoja abierta.
   useEffect(() => {
     if (!open) return
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') requestClose('escape')
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
+  }, [open, requestClose])
 
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-30" role="dialog" aria-modal="true" aria-label={title}>
-      {/* The backdrop is the "tap outside to close" surface. */}
-      <button
-        type="button"
-        aria-label="Cerrar"
-        onClick={onClose}
-        className="absolute inset-0 h-full w-full cursor-default bg-black/40"
-      />
+      {/* El fondo es la superficie de «tocar fuera para cerrar», y solo lo es cuando de
+          verdad cierra: en un formulario se queda como un fondo y punto, sin anunciarse
+          como «Cerrar» a un lector de pantalla. */}
+      {backdropCloses ? (
+        <button
+          type="button"
+          aria-label="Cerrar"
+          onClick={() => requestClose('backdrop')}
+          className="absolute inset-0 h-full w-full cursor-default bg-black/40"
+        />
+      ) : (
+        <div aria-hidden="true" className="absolute inset-0 h-full w-full bg-black/40" />
+      )}
       <div
         className="absolute inset-x-0 bottom-0 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl"
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
@@ -1103,7 +1146,7 @@ export function BottomSheet({
               {headerAction}
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => requestClose('close')}
                 aria-label="Cerrar"
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-stone-600 active:bg-stone-100"
               >
@@ -1111,12 +1154,43 @@ export function BottomSheet({
               </button>
             </div>
           </div>
+
+          {/* La pregunta va ARRIBA y no al pie: la hoja puede estar desplazada por la
+              mitad de un formulario largo, y un cartel al final es un cartel que hay que
+              ir a buscar. Y no es una segunda hoja encima — anidar modales es donde este
+              proyecto se ha llevado sus dos regresiones del botón de atrás. */}
+          {confirming && (
+            <div role="alertdialog" aria-label={DISCARD_TITLE} className="mb-3 rounded-lg bg-amber-50 p-3">
+              <p className="text-sm font-medium text-amber-900">{DISCARD_TITLE}</p>
+              <p className="mt-1 text-sm text-amber-900">{discardText(guard?.discardNotice)}</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {/* El que no destruye, primero: es donde cae el pulgar sin apuntar. */}
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => guard?.dismiss()}
+                  className="btn min-h-touch bg-stone-800 text-white"
+                >
+                  {DISCARD_KEEP_LABEL}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => guard?.leave()}
+                  className="btn-secondary min-h-touch"
+                >
+                  {DISCARD_LEAVE_LABEL}
+                </button>
+              </div>
+            </div>
+          )}
+
           {children}
         </div>
       </div>
     </div>
   )
 }
+
 
 /**
  * Vertical radio list for a bottom sheet: full-width rows, the active one

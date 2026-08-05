@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { draftDirty } from '../../../components/formDirty'
 import { BottomSheet, Chips, YearStepper } from '../../../components/ui'
+import { useSheetGuard } from '../../../components/useSheetGuard'
 import { maxYear } from '../../../lib/structuredDate'
 import type { MasterRef, ReferenceRow } from '../documentaryRows'
 import { MIN_REFERENCE_YEAR } from './citationFormat'
@@ -84,8 +86,17 @@ export function ReferenceSheet({
     onClose()
   }
 
+  // No perder la corrección por un roce. Contra la fila guardada, que es de donde salió
+  // el borrador: esta referencia la leen todas las obras que la citan.
+  const guard = useSheetGuard({ onClose, dirty: draftDirty(draft, referenceEdit(reference)) })
+
   return (
-    <BottomSheet open={open} onClose={onClose} title="Corregir la referencia">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title="Corregir la referencia"
+      guard={guard}
+    >
       <div className="space-y-3">
         {/* Lo primero que se lee, antes de cualquier campo: lo que se corrige no
             es un dato de esta obra. Con el número de obras afectadas cuando se ha
@@ -233,7 +244,7 @@ export function ReferenceSheet({
           >
             {busy ? 'Guardando…' : 'Guardar la referencia'}
           </button>
-          <button type="button" disabled={busy} onClick={onClose} className="btn-secondary">
+          <button type="button" disabled={busy} onClick={guard.cancel} className="btn-secondary">
             Cancelar
           </button>
         </div>
