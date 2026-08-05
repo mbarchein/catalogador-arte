@@ -30,6 +30,17 @@ export interface ExhibitionQuery {
   save: (draft: ExhibitionDraft) => Promise<string | null>
   /** Retires it or brings it back (RF-901). Never a delete: there is no privilege for one. */
   setActive: (active: boolean) => Promise<string | null>
+  /**
+   * Dice cuál de las referencias de la bibliografía es el catálogo de esta muestra, o
+   * deja de decirlo con `null` (RF-503).
+   *
+   * **Su propia operación y no un campo del formulario**, y el motivo está en
+   * `catalogueReference.ts`: la base la ata a `catalogue_published`, se elige en vez de
+   * escribirse, y quitarla tiene sentido propio. Manda esta columna y ninguna otra, así
+   * que el guardado del formulario sigue sin poder borrarla por descuido — que es la
+   * garantía escrita más abajo, en `save`.
+   */
+  setCatalogueReference: (referenceId: string | null) => Promise<string | null>
 }
 
 export function useExhibition(id: string): ExhibitionQuery {
@@ -146,5 +157,25 @@ export function useExhibition(id: string): ExhibitionQuery {
     [id, reload],
   )
 
-  return { exhibition, loading, error, saving, reload, save, setActive }
+  const setCatalogueReference = useCallback(
+    async (referenceId: string | null): Promise<string | null> => {
+      if (id === '') return null
+      setSaving(true)
+      const { data, error: failure } = await supabase
+        .from('exhibitions')
+        .update({ catalogue_reference_id: referenceId })
+        .eq('id', id)
+        .select('id')
+      const message = exhibitionWriteResult('catalogue', {
+        failure,
+        rows: (data ?? []).length,
+      })
+      await reload()
+      if (alive.current) setSaving(false)
+      return message
+    },
+    [id, reload],
+  )
+
+  return { exhibition, loading, error, saving, reload, save, setActive, setCatalogueReference }
 }

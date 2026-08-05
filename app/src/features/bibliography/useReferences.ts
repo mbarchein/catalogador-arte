@@ -51,7 +51,13 @@ export interface ReferencesQuery {
   updateReference: (id: string, draft: ReferenceEdit) => Promise<string | null>
 }
 
-export function useReferences(): ReferencesQuery {
+/**
+ * @param enabled Falso pide NADA. La ficha de una exposición carga la bibliografía entera
+ *   solo cuando va a nombrar o a elegir su catálogo (RF-503): esa pantalla se abre muchas
+ *   veces para leer una muestra, y quien solo lee no tiene por qué pagar el catálogo de
+ *   referencias. Por omisión verdadero, que es lo que necesitan el listado y la ficha.
+ */
+export function useReferences(enabled = true): ReferencesQuery {
   const [references, setReferences] = useState<ReferenceRow[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -67,6 +73,15 @@ export function useReferences(): ReferencesQuery {
   }, [])
 
   const reload = useCallback(async () => {
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
+    // Se vuelve a pedir al pasar de apagado a encendido, y esa espera tiene que verse:
+    // si no, el selector leería «todavía no hay ninguna referencia» mientras la primera
+    // consulta está en el aire. Al listado no le cuesta nada, que solo enseña la espera
+    // cuando no hay ninguna fila pintada.
+    setLoading(true)
     const { data, error: failure } = await supabase.from('bibliography').select(REFERENCE_COLUMNS)
     if (!alive.current) return
     setLoading(false)
@@ -82,7 +97,7 @@ export function useReferences(): ReferencesQuery {
     // colación es-ES, y la de la base ordenaría «Álvarez» después de la z. Se decide
     // en `sortReferences`, donde es puro y está probado.
     setReferences((data ?? []) as unknown as ReferenceRow[])
-  }, [])
+  }, [enabled])
 
   useEffect(() => {
     void reload()

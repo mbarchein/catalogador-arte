@@ -47,6 +47,8 @@ export type ExhibitionOperation =
   | 'save'
   | 'retire'
   | 'restore'
+  /** Decir cuál de las referencias de la bibliografía es su catálogo, o dejar de decirlo (RF-503). */
+  | 'catalogue'
 
 const OPERATION_TEXT: Record<ExhibitionOperation, string> = {
   load: 'No se han podido cargar las exposiciones',
@@ -56,6 +58,7 @@ const OPERATION_TEXT: Record<ExhibitionOperation, string> = {
   save: 'No se ha podido guardar la exposición',
   retire: 'No se ha podido retirar la exposición',
   restore: 'No se ha podido recuperar la exposición',
+  catalogue: 'No se ha podido guardar cuál es el catálogo de esta exposición',
 }
 
 /**

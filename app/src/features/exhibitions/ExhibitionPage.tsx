@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useMatch, useNavigate, useParams } from 'react-router'
+import { Link, Navigate, useMatch, useNavigate, useParams } from 'react-router'
 import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { ActionBar, LoadingNotice } from '../../components/ui'
@@ -20,6 +20,13 @@ import { retireConfirmText } from './exhibitionMessages'
 import { activeParticipantCount } from './participatingArtworks'
 import { useExhibition } from './useExhibition'
 import { useExhibitionArtworks } from './useExhibitionArtworks'
+import { useReferences } from '../bibliography/useReferences'
+import { CatalogueReferenceSheet } from './CatalogueReferenceSheet'
+import {
+  catalogueReferenceHint,
+  catalogueReferenceLine,
+  catalogueReferenceNotice,
+} from './catalogueReference'
 
 /**
  * The record of one exhibition (RF-309, RF-501, RF-502, RF-505).
@@ -53,7 +60,8 @@ export function ExhibitionPage() {
   // La edición vive en la ruta, no en un estado local. Ver la cabecera.
   const editing = useMatch('/exhibitions/:id/edit') !== null
 
-  const { exhibition, loading, error, saving, save, setActive } = useExhibition(id)
+  const { exhibition, loading, error, saving, save, setActive, setCatalogueReference } =
+    useExhibition(id)
   const artworks = useExhibitionArtworks(id)
 
   if (loading && exhibition === null) return <LoadingNotice>Cargando la exposición…</LoadingNotice>
@@ -110,6 +118,13 @@ export function ExhibitionPage() {
         onSetActive={setActive}
         onLeaveEditing={() => navigate(`/exhibitions/${id}`)}
       />
+
+      {/* RF-503: cuál de las referencias de la bibliografía es su catálogo. Va como
+          sección propia y no como campo del formulario, por lo que razona
+          `catalogueReference.ts`: la base la ata a «¿se publicó catálogo?», se elige en
+          vez de escribirse, y quitarla tiene sentido propio. Se LEE siempre —también
+          quien solo consulta— y se toca solo con permiso. */}
+      <CatalogueSection exhibition={exhibition} onSave={setCatalogueReference} />
 
       <ParticipatingArtworks
         rows={artworks.rows}
@@ -347,5 +362,115 @@ function ExhibitionReadOnly({ exhibition }: { exhibition: ExhibitionRow }) {
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * «El catálogo de la muestra», leído y —con permiso— elegido (RF-503, RF-506).
+ *
+ * Las cuatro respuestas las compone `catalogueReferenceLine`, y la que importa es la
+ * cuarta: «publicó catálogo y todavía no consta cuál» no es un error ni un hueco, es lo
+ * que hay que hacer. Cuando consta, la referencia se nombra Y SE ENLAZA a su ficha, que
+ * es la mitad que el plan de pruebas echaba de menos: «la ficha de exposición dice si hubo
+ * catálogo pero no nombra la referencia que lo es ni enlaza con ella».
+ *
+ * La bibliografía entera se carga solo al abrir el panel: esta pantalla se abre muchas
+ * veces para leer una muestra, y el catálogo de referencias solo lo necesita quien va a
+ * elegir. Es la misma decisión que el bloque de documentación de una obra.
+ */
+function CatalogueSection({
+  exhibition,
+  onSave,
+}: {
+  exhibition: ExhibitionRow
+  onSave: (referenceId: string | null) => Promise<string | null>
+}) {
+  const { canEdit } = useAuth()
+  const [open, setOpen] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  // Se pide solo con el panel abierto, y también para LEER el título de la referencia
+  // que consta: sin ella no se puede nombrar. Con `catalogue_reference_id` nulo no hace
+  // falta pedir nada.
+  const needed = open || exhibition.catalogue_reference_id !== null
+  const { references, loading, error } = useReferences(needed)
+
+  const reference =
+    exhibition.catalogue_reference_id === null
+      ? null
+      : (references.find((row) => row.id === exhibition.catalogue_reference_id) ?? null)
+  // La columna apunta a una referencia que no ha llegado: retirada más allá de lo que
+  // esta sesión alcanza, o escondida por una política. Se dice, en vez de leerse como
+  // «no consta cuál es».
+  const unreadable =
+    exhibition.catalogue_reference_id !== null && !loading && error === null && reference === null
+
+  return (
+    <section className="card mt-3">
+      <h2 className="text-sm font-medium uppercase tracking-wide text-stone-500">
+        El catálogo de la muestra
+      </h2>
+      <p className="mt-1 text-sm text-stone-700">
+        {catalogueReferenceLine({
+          cataloguePublished: exhibition.catalogue_published,
+          reference,
+          unreadable,
+        })}
+      </p>
+
+      {reference !== null && (
+        <p className="mt-1">
+          <Link to={`/bibliography/${reference.id}`} className="text-sm underline">
+            Abrir su ficha en la bibliografía
+          </Link>
+          <span className="mt-0.5 block break-words text-xs text-stone-500">
+            {catalogueReferenceHint(reference)}
+          </span>
+        </p>
+      )}
+
+      {notice !== null && (
+        <p role="status" className="mt-2 rounded-lg bg-stone-100 p-2 text-xs text-stone-700">
+          {notice}
+        </p>
+      )}
+
+      {canEdit && (
+        <button
+          type="button"
+          onClick={() => {
+            setNotice(null)
+            setOpen(true)
+          }}
+          className="mt-2 min-h-touch text-sm text-stone-600 underline"
+        >
+          {exhibition.catalogue_reference_id === null
+            ? 'Decir cuál es su catálogo'
+            : 'Cambiar cuál es su catálogo'}
+        </button>
+      )}
+
+      {open && (
+        <CatalogueReferenceSheet
+          cataloguePublished={exhibition.catalogue_published}
+          current={exhibition.catalogue_reference_id}
+          references={references}
+          loading={loading}
+          loadError={error}
+          onSave={async (referenceId) => {
+            const problem = await onSave(referenceId)
+            if (problem === null) {
+              setNotice(
+                catalogueReferenceNotice(
+                  referenceId === null ? { action: 'clear' } : { action: 'set', referenceId },
+                  references.find((row) => row.id === referenceId)?.title ?? '',
+                ),
+              )
+            }
+            return problem
+          }}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </section>
   )
 }
