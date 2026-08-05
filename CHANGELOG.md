@@ -233,6 +233,16 @@ comisario es justamente para lo que se guarda.
 
 ### Correcciones
 
+**Los apartados nuevos de la ficha volvían a decir que no habían podido cargar**
+La procedencia, la bibliografía, las exposiciones, los documentos del archivo, las obras relacionadas y
+los enlaces aparecían todos con el mismo aviso —«No se ha podido cargar este bloque, así que no se
+muestra nada»— por más veces que se recargara y con toda la cobertura del mundo. No era la cobertura ni
+era el móvil: la aplicación publicada ya sabía preguntar por esos datos, pero el catálogo todavía no
+tenía dónde guardarlos, porque la parte que prepara el catálogo se había quedado sin llegar. Ya está
+puesta, y con ella los seis apartados. Que las dos mitades puedan volver a separarse es lo que se ha
+cerrado de raíz: ahora no se publica una versión de la aplicación sin haber preparado antes el catálogo
+que necesita, y si esa preparación no se puede hacer, la versión no sale.
+
 **Recargar una pantalla de edición ya no echa fuera**
 Estando en la zona de edición de una ficha, recargar la página —o abrir su dirección directamente, o
 volver a ella desde un enlace guardado— devolvía a la versión de solo lectura, sin decir nada. La pantalla
