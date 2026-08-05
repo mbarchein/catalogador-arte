@@ -54,6 +54,21 @@ Y cuando el panel se niega a cerrarse porque está en medio de algo —la subida
 fichero va en camino— el atrás no hace nada, en vez de dejar que el siguiente saque de la pantalla con la
 subida a medias.
 
+### La base de datos del catálogo
+
+**Lo que hay en la papelera ya no se asoma por la fotografía**
+Quien solo consulta el catálogo no veía la ficha de una obra retirada —eso ya estaba bien— pero sí veía
+la fila de sus **fotografías**, con la ruta de los ficheros dentro. Y como la ruta lleva el código de
+catalogación en el nombre, eso permitía saber qué obras hay en la papelera y cuántas tomas tiene cada
+una, que es justo lo que retirar una obra pretende que no se sepa. Era el último agujero de este tipo:
+los otros seis se cerraron el 4 de agosto.
+
+Con él se cierran también las dos cosas que cuelgan de una fotografía —los enlaces de «de dónde salió
+esta reproducción» y su historial de cambios— sin que hubiera que tocarlas por separado.
+
+Quien cataloga sigue viéndolo todo, y no es un detalle: la papelera enseña lo retirado y recuperar una
+obra tiene que devolverla con sus fotografías dentro.
+
 ### Correcciones
 
 **Los paneles ya no se cerraban solos, y el atrás no se quedaba corto tras recargar**

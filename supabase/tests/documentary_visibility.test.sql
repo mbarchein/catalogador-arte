@@ -607,18 +607,31 @@ begin
 end $$;
 
 
--- ── 8. Y lo que sigue abierto, escrito y no escondido ───────
+-- ── 8. La fotografía, que era el último hueco ───────────────
 --
--- `images` tiene el mismo hueco y no se cierra en 20260805130000: el Lector ve
--- la fila —y con ella la ruta del fichero— de la fotografía de una obra
--- retirada. Se midió el 4 de agosto de 2026 (1 fila) y le toca su propia
--- migración, como dice 20260805100000.
+-- `images` tenía el mismo hueco y 20260805130000 no lo cerró: el Lector veía la
+-- fila —y con ella las tres rutas del almacén— de la fotografía de una obra
+-- retirada. Se midió el 4 de agosto de 2026 (1 fila) y lo cierra
+-- 20260805150000.
 --
--- El aserto está AL REVÉS a propósito: afirma que el hueco sigue ahí. El día que
--- se cierre, este bloque se pone rojo y obliga a venir aquí a borrarlo, en vez de
--- dejar un comentario obsoleto diciendo que falta algo que ya está hecho.
+-- **Este bloque estuvo escrito AL REVÉS**, afirmando que la fuga seguía ahí para
+-- ponerse rojo el día que se cerrara. Era una mala idea y por eso ya no está: un
+-- rojo tiene que significar siempre «algo se ha roto», y si además puede
+-- significar «alguien ha arreglado algo», el color deja de informar. Lo que está
+-- pendiente se anota en el plan de pruebas, no en un aserto.
+--
+-- Se comprueban las TRES cosas, porque cerrar de más aquí rompe la papelera:
+-- que el Lector no la vea, que el Catalogador sí —restaurar una obra devuelve
+-- sus fotografías dentro (RF-905) y la papelera enseña lo retirado (RF-906)— y
+-- que lo que cuelga de la fotografía hereda el cierre sin que nadie lo repita.
 insert into public.images (image_id, catalog_id, thumbnail_path, derivative_path, master_path, shot_type)
 values ('AR-9805_v1', 'AR-9805', 'r/min.webp', 'r/der.webp', 'r/master.jpg', 'GENERAL');
+
+-- Lo que cuelga de la fotografía: un enlace de «de dónde salió esta
+-- reproducción» y una línea de historia con la fotografía como fila.
+insert into public.external_links (id, image_id, url, title) values
+  ('9a000010-0000-4000-8000-000000000001', 'AR-9805_v1',
+   'https://ejemplo.es/de-donde-salio', 'De dónde salió esta reproducción');
 
 do $$
 declare v_n integer;
@@ -627,12 +640,58 @@ begin
   set local role authenticated;
 
   select count(*) into v_n from public.images where catalog_id = 'AR-9805';
-  if v_n <> 1 then
+  if v_n <> 0 then
     raise exception
-      'El hueco de `images` ya está cerrado (el lector ve % filas de la fotografía de una obra retirada). Bórrese este bloque y anótese en el plan de pruebas.',
+      'FAIL: el lector ve % fila(s) de la fotografía de una obra retirada, y con ellas las rutas del almacén (RF-609)',
       v_n;
   end if;
-  raise notice 'PENDIENTE, medido: el lector sigue viendo la fila de la fotografía de una obra retirada (1 fila)';
+
+  -- La vista lleva `security_invoker = true`, así que era el otro camino a la
+  -- misma fila: si heredara mal, la fuga seguiría abierta por aquí.
+  select count(*) into v_n from public.representative_image where catalog_id = 'AR-9805';
+  if v_n <> 0 then
+    raise exception
+      'FAIL: el lector alcanza la fotografía de una obra retirada por la vista representative_image (% filas)', v_n;
+  end if;
+
+  -- Y lo que cuelga de la fotografía, que hereda de `images` por su propia
+  -- política y no por una copia de la regla.
+  select count(*) into v_n from public.external_links
+   where id = '9a000010-0000-4000-8000-000000000001';
+  if v_n <> 0 then
+    raise exception
+      'FAIL: el lector ve un enlace que cuelga de la fotografía de una obra retirada (% filas)', v_n;
+  end if;
+
+  reset role;
+  raise notice 'OK: el lector no ve la fotografía de una obra retirada, ni por la vista, ni lo que cuelga de ella';
+end $$;
+
+reset role;
+
+-- Y el Catalogador sí, que es la mitad que se rompe si se cierra de más.
+do $$
+declare v_n integer;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
+  set local role authenticated;
+
+  select count(*) into v_n from public.images where catalog_id = 'AR-9805';
+  if v_n <> 1 then
+    raise exception
+      'FAIL: el catalogador no ve la fotografía de la obra que está en la papelera (% filas): restaurarla no la devolvería entera (RF-905, RF-906)',
+      v_n;
+  end if;
+
+  select count(*) into v_n from public.external_links
+   where id = '9a000010-0000-4000-8000-000000000001';
+  if v_n <> 1 then
+    raise exception
+      'FAIL: el catalogador no ve el enlace de la fotografía de una obra retirada (% filas)', v_n;
+  end if;
+
+  reset role;
+  raise notice 'OK: el catalogador sigue viendo la fotografía de la papelera y lo que cuelga de ella (RF-905, RF-906)';
 end $$;
 
 reset role;
