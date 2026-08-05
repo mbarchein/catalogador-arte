@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TriState } from '../lib/types'
 import { filterVocabulary, findEquivalent, fuzzyRank, searchableOptions } from '../lib/vocabulary'
+import { useCloseOnBack } from './useCloseOnBack'
 
 // ── Icons ────────────────────────────────────────────────────
 // Inline SVG, no library: these are five icons and pulling a whole dependency
@@ -1035,9 +1036,10 @@ export function FieldGroup({
 
 /**
  * Panel fixed to the bottom of the screen over a darkened backdrop, closed by
- * tapping outside or with its button. The mobile pattern for choosing among a
- * handful of options: the choices appear under the thumb, where a dropdown
- * near the top of the page would not.
+ * tapping outside, with its button, with Escape and with the phone's BACK
+ * button. The mobile pattern for choosing among a handful of options: the
+ * choices appear under the thumb, where a dropdown near the top of the page
+ * would not.
  */
 export function BottomSheet({
   open,
@@ -1061,6 +1063,11 @@ export function BottomSheet({
   headerAction?: ReactNode
   children: ReactNode
 }) {
+  // The back button closes the sheet instead of leaving the screen. It is the
+  // exit the thumb reaches without aiming, and on a phone the sheet is what
+  // covers the record: see useCloseOnBack.
+  useCloseOnBack(onClose, open)
+
   // Escape closes, like any dialog. Registered only while open.
   useEffect(() => {
     if (!open) return

@@ -1,3 +1,26 @@
+## 5 de agosto de 2026
+
+### Interfaz
+
+**El «atrás» del móvil cierra el panel que esté abierto, no la pantalla**
+Con un panel abierto —los filtros del listado, elegir una ubicación, una sede, una persona, el estado de
+una investigación, subir un documento, añadir un eslabón de procedencia— el botón de atrás del teléfono
+salía de la ficha entera y se llevaba por delante lo que estuviera a medio rellenar. Había que buscar la
+✕ del panel, que en una pantalla pequeña está arriba y con el pulgar abajo. Ahora el atrás hace lo que se
+espera de él: **cierra el panel y deja la pantalla donde estaba**, con su desplazamiento y sus filtros
+intactos.
+
+Con un panel abierto dentro de otro —elegir la persona desde el eslabón de procedencia— cierra solo el de
+encima, uno por toque, y no los dos de golpe.
+
+Esto importa sobre todo en la aplicación instalada, la del icono en la pantalla de inicio: allí no hay
+barra del navegador, así que el atrás del teléfono es la única salida que hay, y un panel del que no se
+sale con él es un panel del que se sale abandonando la obra.
+
+Y cuando el panel se niega a cerrarse porque está en medio de algo —la subida de un documento mientras el
+fichero va en camino— el atrás no hace nada, en vez de dejar que el siguiente saque de la pantalla con la
+subida a medias.
+
 ## 4 de agosto de 2026
 
 ### Interfaz

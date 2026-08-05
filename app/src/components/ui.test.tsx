@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BottomSheet } from './ui'
 
@@ -14,8 +15,9 @@ import { BottomSheet } from './ui'
  * Se empieza por `BottomSheet` porque es el componente compartido por más
  * pantallas —los filtros de la lista, los paneles de la ficha— y porque lo que
  * hace es exactamente lo que un test de lógica pura no puede alcanzar: que Escape
- * cierre, que tocar fuera cierre, y que lo que se le cuelga de la cabecera se
- * pinte donde se espera. Si esto se rompe, se rompe en varias pantallas a la vez.
+ * cierre, que tocar fuera cierre, que el «atrás» del móvil cierre la hoja y no la
+ * pantalla, y que lo que se le cuelga de la cabecera se pinte donde se espera. Si
+ * esto se rompe, se rompe en varias pantallas a la vez.
  *
  * Nota de método para quien añada más: **la marca `@vitest-environment jsdom` de la
  * primera línea es obligatoria**. Sin ella el fichero corre en node y falla con
@@ -69,6 +71,60 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
     )
     await userEvent.keyboard('{Escape}')
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('el «atrás» del móvil la cierra, y no sale de la pantalla', async () => {
+    // La salida que el pulgar encuentra sin apuntar, y la única que hay en la
+    // aplicación instalada, donde no queda barra del navegador. Lo que hace que
+    // funcione está en `useCloseOnBack` y tiene sus propios tests; aquí se
+    // comprueba que la hoja —el modal que comparten catorce pantallas— lo usa.
+    window.history.pushState({ screen: 'ficha' }, '')
+    const onClose = vi.fn()
+    // Con su estado, como la usa cualquier pantalla: cerrar la hoja es dejar de
+    // pasarle `open`, y sin eso el test no probaría el caso real.
+    function Ficha() {
+      const [open, setOpen] = useState(true)
+      return (
+        <BottomSheet
+          open={open}
+          onClose={() => {
+            onClose()
+            setOpen(false)
+          }}
+          title="Filtros"
+        >
+          <p>contenido</p>
+        </BottomSheet>
+      )
+    }
+    render(<Ficha />)
+
+    window.history.back()
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText('contenido')).toBeNull()
+    // Y no se ha salido de la ficha: lo que el «atrás» ha consumido es la entrada
+    // de la hoja.
+    expect(window.history.state).toEqual({ screen: 'ficha' })
+  })
+
+  it('cerrada por otro camino no deja la hoja fuera del historial', async () => {
+    // Escape, la ✕ y tocar fuera pasan por `onClose`, y quien lo recibe cierra la
+    // hoja: la entrada que se empujó al abrir tiene que consumirse ahí, o el
+    // «atrás» siguiente no haría nada y parecería averiado.
+    window.history.pushState({ screen: 'listado' }, '')
+    window.history.pushState({ screen: 'ficha' }, '')
+    const { unmount } = render(
+      <BottomSheet open onClose={() => {}} title="Filtros">
+        <p>contenido</p>
+      </BottomSheet>,
+    )
+
+    unmount()
+
+    await waitFor(() => expect(window.history.state).toEqual({ screen: 'ficha' }))
+    window.history.back()
+    await waitFor(() => expect(window.history.state).toEqual({ screen: 'listado' }))
   })
 
   it('tocar fuera la cierra', async () => {
