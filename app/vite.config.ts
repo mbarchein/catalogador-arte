@@ -122,5 +122,21 @@ export default defineConfig({
       VITE_SUPABASE_URL: 'http://localhost:8321',
       VITE_SUPABASE_ANON_KEY: 'clave-de-tests-sin-uso',
     },
+    // El entorno por omisión sigue siendo `node`, y los tests de pantalla piden
+    // jsdom con una marca en su primera línea:
+    //
+    //     // @vitest-environment jsdom
+    //
+    // Se hace así y no con una regla por extensión porque `environmentMatchGlobs`
+    // se retiró en Vitest 4 —estaba en la versión anterior y ya no se aplica, sin
+    // avisar: los tests salen con «document is not defined»—. La alternativa que
+    // sí existe es partir la batería en dos proyectos, y eso es más máquina de la
+    // que hace falta para lo que se gana.
+    //
+    // Lo importante es POR QUÉ no se pone jsdom para todo: el DOM cuesta por
+    // fichero, y hoy hay más de ochenta de lógica pura que no lo tocan. Pagarlo en
+    // todos alargaría la batería que se ejecuta a cada cambio, que es justo la que
+    // tiene que doler poco para que se siga ejecutando.
+    setupFiles: ['./src/test/setup.ts'],
   },
 })
