@@ -1,25 +1,42 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../../auth/AuthContext'
+import { PlusIcon } from '../../../components/ui'
 import { DownloadFailure } from '../../../lib/download'
 import { DocumentarySection } from '../DocumentarySection'
 import { blockState } from '../researchState'
 import { sectionSpec, canWriteBlock } from '../sections'
 import { useArtworkDocuments, type ArtworkDocumentaryQuery } from '../useDocumentary'
 import {
+  createArchiveDocument,
+  linkDocumentToArtwork,
+  setDocumentLinkActive,
+  uploadDocumentFile,
+} from './documentActions'
+import {
   DOCUMENT_STEP_TEXT,
   runDocumentDownload,
   type DocumentDownloadStep,
   type DocumentFileOffer,
 } from './documentFile'
+import {
+  linkBlockedReason,
+  linkedDocumentIds,
+  retireLinkConfirmText,
+  TWO_ACTS_TEXT,
+} from './documentLink'
 import { documentViews, documentsSummary, type DocumentView } from './documentView'
+import { LinkDocumentSheet } from './LinkDocumentSheet'
 import { ResearchStatusPicker } from './ResearchStatusPicker'
 import { statusUnknownNotice, withStatusUnknown } from './researchStatusChoice'
+import { useArchiveCatalog } from './useArchiveCatalog'
+import { UploadDocumentSheet } from './UploadDocumentSheet'
+import type { PickedFile } from './documentUpload'
 
 /**
  * «Documentación relacionada» on the artwork record (RF-515, RF-516): the letters,
  * press cuttings, posters and archive photographs that speak about this artwork.
  *
- * Two things this block has to get right and the other four do not:
+ * Three things this block has to get right and the other four do not:
  *
  *   · the document carries a FILE, and the file has to leave the application as a
  *     file — saved with a readable name, not opened in a tab (RF-411). The path
@@ -28,12 +45,19 @@ import { statusUnknownNotice, withStatusUnknown } from './researchStatusChoice'
  *   · the file WEIGHS. A scanned expediente is tens of megabytes and this is used
  *     in a warehouse over mobile data, so the size is on the button and the open
  *     block says up front what the whole lot would cost. Nothing is asked for, or
- *     paid for, until somebody taps.
+ *     paid for, until somebody taps;
+ *   · **subir y enlazar son dos actos distintos, y la pantalla lo dice.** One
+ *     document belongs to the archive and hangs off as many artworks as it speaks
+ *     about, through a bridge table (RF-516), which is precisely so that the PDF is
+ *     stored once. Two buttons, and a sentence above them explaining which is
+ *     which: folded into one «Añadir», the second artwork of a press cutting gets a
+ *     second copy of the same scan and the catalogue grows a duplicate nobody can
+ *     reconcile afterwards.
  *
  * What an EMPTY block says is not decided here (`blockState`), and neither is any
- * other sentence: the row, the summary, the file name and every explanation come
- * from the pure modules beside this one, which is where the battery reaches them —
- * it runs in node and cannot open a component.
+ * other sentence: the row, the summary, the file name, the two refusals and every
+ * explanation come from the pure modules beside this one, which is where the battery
+ * reaches them — it runs in node and cannot open a component.
  */
 export function DocumentsSection({
   catalogId,
@@ -69,11 +93,24 @@ export function DocumentsSection({
   // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
   // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
   const canWrite = canWriteBlock(writable, canEdit)
-  const { rows, loading, error } = useArtworkDocuments(catalogId)
+  const { rows, loading, error, reload } = useArtworkDocuments(catalogId)
+
+  const [panel, setPanel] = useState<'link' | 'upload' | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [removing, setRemoving] = useState<string | null>(null)
+
+  // El archivo y sus maestras se piden solo cuando se abre un panel: este bloque
+  // está montado en TODA ficha del catálogo, y cuatro consultas por obra —para un
+  // buscador que se abre con un toque y solo en la zona de edición— serían cuatro
+  // peticiones por cada obra que se pasa con el pulgar.
+  const archive = useArchiveCatalog(canWrite && panel !== null)
 
   const status = documentary.documentary?.documentation_status ?? null
   const views = useMemo(() => documentViews(rows, { placeText }), [rows, placeText])
   const summary = documentsSummary(views)
+  const linked = useMemo(() => linkedDocumentIds(rows), [rows])
+  const blockedReason = linkBlockedReason(status)
   // The warning about an unreadable status goes INTO the state and not among the
   // rows: an empty block paints its sentence instead of the body, and that is
   // precisely the case where nobody must read the emptiness as an answer.
@@ -86,6 +123,72 @@ export function DocumentsSection({
     }),
   )
 
+  /**
+   * Every write ends here. These rows are not live — `useLiveChanges` knows
+   * `artworks` and `images` only — so what is on screen has to come back from the
+   * database and not from what this component believes it just did.
+   */
+  async function afterWrite(failure: string | null, said: string | null = null) {
+    setActionError(failure)
+    setNotice(failure === null ? said : null)
+    if (failure === null) await reload()
+  }
+
+  async function remove(id: string) {
+    setRemoving(null)
+    // Baja lógica del VÍNCULO (RF-517, RF-901): el documento se queda en el
+    // archivo, con su fichero, y lo siguen viendo las demás obras enlazadas.
+    await afterWrite(await setDocumentLinkActive(id, false))
+  }
+
+  const sheets = (
+    <>
+      {panel === 'link' && (
+        <LinkDocumentSheet
+          catalogId={catalogId}
+          documents={archive.documents}
+          linked={linked}
+          loading={archive.loading}
+          error={archive.error}
+          onLink={async (args) => {
+            const failure = await linkDocumentToArtwork(args)
+            if (failure === null) {
+              await afterWrite(null, 'Documento enlazado con esta obra.')
+            }
+            return failure
+          }}
+          onClose={() => setPanel(null)}
+        />
+      )}
+
+      {panel === 'upload' && (
+        <UploadDocumentSheet
+          catalogId={catalogId}
+          documentTypes={archive.documentTypes}
+          seriesTree={archive.seriesTree}
+          placeTree={archive.placeTree}
+          mastersError={archive.mastersError}
+          // Los tres bordes impuros se pasan desde aquí y no se importan dentro del
+          // formulario: así el panel no sabe nada de la red y el flujo entero —el
+          // orden de los tres pasos y lo que se dice cuando falla el de en medio— se
+          // verifica en `documentUpload.test.ts`, sin navegador.
+          deps={{
+            upload: (path, file) => uploadDocumentFile(path, file as Blob & PickedFile),
+            insert: createArchiveDocument,
+            link: (documentId, note) =>
+              linkDocumentToArtwork({
+                p_catalog_id: catalogId,
+                p_document_id: documentId,
+                p_note: note.trim(),
+              }),
+          }}
+          onClose={() => setPanel(null)}
+          onDone={(said) => afterWrite(null, said)}
+        />
+      )}
+    </>
+  )
+
   return (
     <DocumentarySection
       spec={spec}
@@ -95,17 +198,61 @@ export function DocumentsSection({
       actions={
         canWrite ? (
           <div className="space-y-2">
+            {actionError !== null && (
+              <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+                {actionError}
+              </p>
+            )}
+            {notice !== null && (
+              <p role="status" className="rounded-lg bg-stone-100 p-2 text-xs text-stone-700">
+                {notice}
+              </p>
+            )}
+
+            {blockedReason !== null ? (
+              /* La base rechazaría el vínculo (RF-218), así que se dice aquí y no
+                 después de un viaje de ida y vuelta: el selector de debajo cambia el
+                 estado, que es lo que hay que hacer primero. Los dos botones se
+                 explican, no se esconden: un botón que falta se lee como un permiso
+                 que falta, y esto no es ni una cosa ni la otra. */
+              <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{blockedReason}</p>
+            ) : (
+              <>
+                {/* La frase que sostiene toda la pantalla: por qué hay dos botones. */}
+                <p className="text-xs text-stone-500">{TWO_ACTS_TEXT}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionError(null)
+                    setNotice(null)
+                    setPanel('link')
+                  }}
+                  className="btn-secondary flex w-full items-center justify-center gap-2 text-sm"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  <span>Enlazar un documento del archivo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionError(null)
+                    setNotice(null)
+                    setPanel('upload')
+                  }}
+                  className="btn-secondary flex w-full items-center justify-center gap-2 text-sm"
+                >
+                  <span>Subir un documento del archivo</span>
+                </button>
+              </>
+            )}
+
             <ResearchStatusPicker
               spec={spec}
               status={status}
               count={rows.length}
               onChange={(value) => documentary.setResearchStatus('documentation_status', value)}
             />
-            {/* Said instead of left to be looked for: linking a document to an
-                artwork needs the archive screen, which is not built yet. */}
-            <p className="text-xs text-stone-500">
-              Enlazar un documento del archivo con esta obra todavía no se hace desde aquí.
-            </p>
+            {sheets}
           </div>
         ) : undefined
       }
@@ -113,7 +260,18 @@ export function DocumentsSection({
       {summary && <p className="mb-2 px-1 text-xs text-stone-500">{summary}</p>}
       <ul>
         {views.map((view) => (
-          <DocumentRow key={view.id} view={view} />
+          <DocumentRow
+            key={view.id}
+            view={view}
+            canWrite={canWrite}
+            confirming={removing === view.id}
+            onAskRemove={() => {
+              setActionError(null)
+              setRemoving(view.id)
+            }}
+            onCancelRemove={() => setRemoving(null)}
+            onRemove={() => void remove(view.id)}
+          />
         ))}
       </ul>
     </DocumentarySection>
@@ -127,7 +285,21 @@ export function DocumentsSection({
  * kind and the date go underneath in one line, which is what identifies it in the
  * folder; and the button closes the row, under the thumb.
  */
-function DocumentRow({ view }: { view: DocumentView }) {
+function DocumentRow({
+  view,
+  canWrite,
+  confirming,
+  onAskRemove,
+  onCancelRemove,
+  onRemove,
+}: {
+  view: DocumentView
+  canWrite: boolean
+  confirming: boolean
+  onAskRemove: () => void
+  onCancelRemove: () => void
+  onRemove: () => void
+}) {
   return (
     <li className="border-t border-stone-100 py-2 first:border-t-0">
       <p className={`text-sm font-medium ${view.unavailable ? 'text-stone-500' : ''}`}>
@@ -178,6 +350,36 @@ function DocumentRow({ view }: { view: DocumentView }) {
         /* RF-304: where the button would be, why there is none. */
         <p className="mt-1 text-xs text-stone-500">{view.fileNote}</p>
       )}
+
+      {canWrite &&
+        (confirming ? (
+          /* Dos toques para quitarlo, como en las demás fichas: en una pantalla
+             táctil, un toque y el vínculo que alguien investigó desaparece. Y lo que
+             se avisa es lo que NO pasa: el documento se queda en el archivo. */
+          <div className="mt-2 rounded-lg bg-stone-100 p-2">
+            <p className="text-xs text-stone-700">{retireLinkConfirmText(view)}</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={onRemove}
+                className="btn min-h-touch bg-red-700 text-white"
+              >
+                Sí, quitar
+              </button>
+              <button type="button" onClick={onCancelRemove} className="btn-secondary">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onAskRemove}
+            className="mt-1 min-h-touch text-xs text-stone-600 underline"
+          >
+            Quitar de la ficha
+          </button>
+        ))}
     </li>
   )
 }
