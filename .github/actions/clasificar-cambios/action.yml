@@ -24,9 +24,16 @@ outputs:
   app:
     description: Hay que verificar (y publicar) el frontend de app/
     value: ${{ steps.filtro.outputs.app }}
-  esquema:
-    description: Hay algo que se DESPLIEGA a Supabase (migraciones, funciones, config)
-    value: ${{ steps.filtro.outputs.esquema }}
+
+# Aquí hubo una salida `esquema` («hay algo que se DESPLIEGA a Supabase») que
+# condicionaba el job «migrar» de desplegar.yml. Se quitó porque clasificar por
+# el diff de UN push es la pregunta equivocada para lo que se despliega a la
+# base: si ese push no llega a desplegarse, sus migraciones no vuelven a
+# intentarse jamás, y los pushes siguientes —que ya no tocan las migraciones—
+# publican frontend nuevo contra el esquema viejo. Pasó, y la usuaria lo vio como
+# «Could not find the table ... in the schema cache». Ahora «migrar» corre
+# siempre y `supabase db push` aplica lo que falte, que es idempotente y no
+# necesita saber qué cambió. La historia larga está en desplegar.yml.
 
 runs:
   using: composite
@@ -43,8 +50,8 @@ runs:
       run: |
         set -euo pipefail
 
-        infra=false; datos=false; app=false; esquema=false
-        todo() { infra=true; datos=true; app=true; esquema=true; }
+        infra=false; datos=false; app=false
+        todo() { infra=true; datos=true; app=true; }
 
         case "$EVENTO" in
           pull_request)
@@ -69,10 +76,9 @@ runs:
         #    y los runners de GitHub no lo cambian) eso incluye TODO carácter no
         #    ASCII: `docs/ubicación.md` sale como `"docs/ubicaci\303\263n.md"`,
         #    que no coincide ni con `docs/*` ni con `*.md` y caería en el comodín
-        #    «sin clasificar», disparando el pipeline entero — y en un push a
-        #    main, también `esquema`, o sea `supabase db push` en producción por
-        #    un fichero de documentación. En un repositorio cuya documentación
-        #    está en español, ese es el nombre de fichero más probable. Con `-z`
+        #    «sin clasificar», disparando el pipeline entero por un fichero de
+        #    documentación. En un repositorio cuya documentación está en español,
+        #    ese es el nombre de fichero más probable. Con `-z`
         #    git emite la ruta cruda, sin entrecomillar, y de paso deja de ser un
         #    problema el nombre con espacios, comillas o saltos de línea.
         #  - A un fichero y no a `$(...)`: la sustitución de órdenes de bash
@@ -132,20 +138,20 @@ runs:
               # No se aplica desde CI (se aplica a mano, ver infra/README.md).
               infra/*) infra=true ;;
 
-              # Lo que además de verificarse se DESPLIEGA a Supabase:
-              # `supabase db push` aplica las migraciones, `functions deploy`
-              # sube las funciones Edge, y config.toml es lo único que lee la
-              # CLI. De ahí la salida `esquema`, separada de `datos`.
+              # Todo lo de supabase/ activa los tests de SQL, y ya no se
+              # distingue lo que se despliega de lo que solo se verifica: lo que
+              # va a Supabase —migraciones y funciones Edge— se despliega en TODO
+              # push verificado, sin preguntar por el diff (ver «migrar» en
+              # desplegar.yml). Los tests de SQL y seed.sql no se despliegan, pero
+              # tampoco hacía falta una salida para eso.
               #
               # Hueco conocido, anterior a este filtro y sin arreglar aquí:
-              # supabase/functions/ activa `esquema` (se despliega) pero ningún
-              # job la comprueba — no hay `deno check` y el stack de compose no
-              # levanta el servicio `functions`. Cuando lo haya, es un bloque
-              # nuevo con su propia salida, no un remiendo de esta rama.
-              supabase/migrations/*|supabase/functions/*|supabase/config.toml)
-                datos=true; esquema=true ;;
-
-              # Lo que ejecuta o sostiene los tests de SQL sin desplegarse: los
+              # supabase/functions/ se despliega pero ningún job la comprueba —
+              # no hay `deno check` y el stack de compose no levanta el servicio
+              # `functions`. Cuando lo haya, es un bloque nuevo con su propia
+              # salida, no un remiendo de esta rama.
+              #
+              # Lo demás que cae aquí y ejecuta o sostiene los tests de SQL: los
               # propios tests, la semilla, el stack de compose y el Makefile.
               # El Makefile va aquí porque `make db-test` es LO QUE EJECUTA los
               # tests de RLS (el bucle, el ON_ERROR_STOP=1 y el `|| exit 1` que
@@ -179,7 +185,6 @@ runs:
           echo "infra=$infra"
           echo "datos=$datos"
           echo "app=$app"
-          echo "esquema=$esquema"
         } >> "$GITHUB_OUTPUT"
 
-        echo "→ infra=$infra datos=$datos app=$app esquema=$esquema"
+        echo "→ infra=$infra datos=$datos app=$app"

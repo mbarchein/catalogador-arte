@@ -9,6 +9,11 @@ name: desplegar
 # aditivas — renombrar o borrar una columna en uso exige dos despliegues
 # (primero dejar de usarla, después quitarla).
 #
+# Y el orden es una cadena, no una sugerencia: «publicar» exige que «migrar» haya
+# terminado bien, y «migrar» corre en TODOS los despliegues verificados, no solo
+# en los que traen migraciones. Ese «solo los que traen migraciones» fue un fallo
+# real en producción y está contado entero en el comentario del job «migrar».
+#
 # Este workflow queda inerte hasta el primer `terraform apply`: los secretos y
 # variables que consume (SUPABASE_*, VERCEL_*) los crea infra/github.tf a
 # partir de los recursos reales, no se copian a mano al panel.
@@ -76,7 +81,6 @@ jobs:
     outputs:
       datos: ${{ steps.filtro.outputs.datos }}
       app: ${{ steps.filtro.outputs.app }}
-      esquema: ${{ steps.filtro.outputs.esquema }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -97,9 +101,8 @@ jobs:
     needs: cambios
     # Se verifica siempre que haya cambiado algo verificable, aunque no se vaya a
     # desplegar nada: es lo que hace que un cambio en el Makefile o en el stack
-    # de compose no entre en main sin ejecutarse. Todo lo que activa `esquema`
-    # activa también `datos`, así que este job nunca se salta dejando a `migrar`
-    # sin puerta.
+    # de compose no entre en main sin ejecutarse. Y este job es la única puerta de
+    # «migrar», que ahora cuelga solo de él: si se salta, no se toca la base.
     if: needs.cambios.outputs.datos == 'true' || needs.cambios.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -151,13 +154,38 @@ jobs:
         run: docker compose logs --tail=80
 
   migrar:
-    needs: [cambios, verificar]
+    needs: verificar
     # Sin status functions a propósito: si `verificar` falla o se salta, este job
-    # se salta también, porque la dirección segura es no desplegar. `esquema` es
-    # true cuando cambia algo que la CLI de Supabase sube: las migraciones, las
-    # funciones Edge o su config.toml. Los tests de SQL y seed.sql no se
-    # despliegan, así que no bastan para llegar hasta aquí.
-    if: needs.verificar.result == 'success' && needs.cambios.outputs.esquema == 'true'
+    # se salta también, porque la dirección segura es no desplegar.
+    #
+    # Y SIN condición sobre `esquema`: este job corre en TODO despliegue
+    # verificado, aunque el push no traiga ni una migración. La razón es un fallo
+    # que ya ocurrió en producción:
+    #
+    #   1. Un push traía trece migraciones nuevas (la procedencia, la
+    #      bibliografía, las exposiciones, el archivo documental...) y su
+    #      `verificar` falló por un test de SQL. `migrar` se saltó, correctamente.
+    #   2. Los pushes siguientes arreglaron el test y siguieron con el frontend,
+    #      pero ya no tocaban supabase/migrations/, así que `esquema` era false y
+    #      `migrar` se saltaba en cada uno — mientras `publicar` sí corría.
+    #   3. Resultado: frontend nuevo en producción contra el esquema viejo. La
+    #      usuaria veía «Could not find the table 'public.provenance_events' in
+    #      the schema cache» en todos los bloques nuevos de la ficha.
+    #
+    # La asimetría que lo causaba: `publicar` sube el ÁRBOL entero, así que un
+    # push posterior arrastra los cambios de frontend que se quedaron atrás;
+    # `migrar` estaba condicionado al DIFF de un push, así que las migraciones de
+    # un despliegue fallido no volvían a intentarse nunca. Solo salía de ahí un
+    # `workflow_dispatch` a mano, y nadie sabe que hay que lanzarlo hasta que la
+    # usuaria ve el error.
+    #
+    # Correrlo siempre es gratis y correcto: `supabase db push` es idempotente
+    # —lleva su registro en supabase_migrations.schema_migrations y no aplica dos
+    # veces la misma migración—, y sin nada pendiente son segundos. El coste
+    # aceptado es el simétrico: si Supabase no responde, este job falla y
+    # `publicar` no publica, así que un arreglo de solo frontend espera a que la
+    # base esté accesible. Es la dirección segura: la contraria es la de arriba.
+    if: needs.verificar.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -173,16 +201,34 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
+      # Qué hay aplicado en producción y qué falta, ANTES de tocar nada. No
+      # decide ni condiciona: se imprime para que el registro del despliegue diga
+      # con qué esquema se encontró. Cuando el fallo de arriba volvió a
+      # investigarse, esta lista era justo lo que no había en ningún sitio.
+      - name: Migraciones pendientes en producción
+        run: supabase migration list
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
       # Aplica supabase/migrations/*.sql en orden, cada una una sola vez: la CLI
       # lleva su propio registro en supabase_migrations.schema_migrations, igual
       # que docker/migrate.sh lo lleva en _migraciones para el stack local.
       # seed.sql NO se ejecuta aquí: es semilla de desarrollo.
+      #
+      # Al no estar condicionado a que el push traiga migraciones, esto aplica
+      # TODO lo que le falte a producción, venga del push de ahora o de uno
+      # anterior que no llegó a desplegarse. Es la propiedad que faltaba.
       - name: Aplicar migraciones
         run: supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
+      # Tampoco condicionado, y por el mismo motivo: una función Edge cuyo push
+      # se quedó sin desplegar tenía el mismo agujero que las migraciones, y
+      # encima ningún job la comprueba (ver el hueco anotado en la acción que
+      # clasifica los cambios). Redesplegar el mismo código es idempotente.
       - name: Desplegar funciones Edge
         run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
         env:
@@ -194,17 +240,18 @@ jobs:
   # cambie ningún fichero del repositorio: los deriva Terraform del bucket real
   # (infra/github.tf) y se renuevan al rotar la clave de B2. Ese `terraform apply`
   # se hace a mano y su commit solo toca infra/**, que está en el paths-ignore de
-  # arriba: no dispara nada. Si este paso colgara de «migrar» —que ahora solo
-  # corre cuando cambia el esquema o las funciones— una clave rotada no llegaría
-  # a Supabase hasta el siguiente cambio de esquema, y mientras tanto la función
-  # firmaría con la credencial revocada: subir másters fallaría en producción con
-  # todo el CI en verde. Por eso se reempujan en TODO despliegue verificado: es
-  # idempotente y tarda segundos.
+  # arriba: no dispara nada. Si este paso colgara de un job condicionado al diff
+  # del push, una clave rotada no llegaría a Supabase hasta el siguiente cambio
+  # de esquema, y mientras tanto la función firmaría con la credencial revocada:
+  # subir másters fallaría en producción con todo el CI en verde. Por eso se
+  # reempujan en TODO despliegue verificado: es idempotente y tarda segundos.
+  # («migrar» ahora también corre siempre, por una versión más caro de este mismo
+  # razonamiento, pero sigue teniendo su job aparte: son cosas distintas y un
+  # fallo al empujar secretos no debe impedir aplicar migraciones.)
   #
-  # No va delante de «migrar» ni «migrar» detrás de él a propósito: si «migrar»
-  # se saltara por un fallo aquí, «publicar» lo vería como «skipped» y publicaría
-  # el frontend nuevo sin haber aplicado las migraciones, que es exactamente lo
-  # que la cabecera de este fichero prohíbe. Van en paralelo.
+  # No va delante de «migrar» ni «migrar» detrás de él a propósito: encadenarlos
+  # haría que un fallo aquí se llevara por delante el despliegue del esquema, sin
+  # ganar nada. Van en paralelo.
   secretos:
     needs: verificar
     if: needs.verificar.result == 'success'
@@ -233,18 +280,20 @@ jobs:
 
   publicar:
     needs: [cambios, verificar, migrar]
-    # `!cancelled()` es OBLIGATORIO aquí: sin él, un `migrar` SALTADO (un push
-    # que solo toca app/, sin migraciones) arrastraría a este job y el frontend
-    # no se publicaría nunca. Es el fallo clásico del despliegue que cuelga de un
-    # job saltado, y no se ve hasta que alguien pregunta por qué su cambio no
-    # está en producción.
+    # Se exige que `migrar` haya terminado en `success`, y ya no se admite que se
+    # haya SALTADO. Antes se admitía porque `migrar` se saltaba en los pushes que
+    # solo tocaban app/, y sin ese `skipped` el frontend no se habría publicado
+    # nunca; ahora `migrar` corre en todo despliegue verificado, así que solo se
+    # salta cuando `verificar` no ha ido bien — caso que la condición de al lado
+    # ya bloquea. Admitirlo aquí sería dejar abierta la única puerta por la que un
+    # frontend nuevo puede salir a producción contra un esquema viejo.
     #
-    # Lo que no se toca es la promesa de la cabecera —primero el esquema, después
-    # el frontend—: si `migrar` ha FALLADO, aquí no se publica nada.
+    # `!cancelled()` sigue siendo necesario: sin él, cualquier `skipped` en la
+    # cadena de `needs` arrastraría a este job.
     if: >-
       !cancelled()
       && needs.verificar.result == 'success'
-      && (needs.migrar.result == 'success' || needs.migrar.result == 'skipped')
+      && needs.migrar.result == 'success'
       && needs.cambios.outputs.app == 'true'
     runs-on: ubuntu-latest
     env:
