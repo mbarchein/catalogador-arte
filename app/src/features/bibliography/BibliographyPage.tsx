@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { Toggle } from '../../components/ui'
@@ -29,10 +30,11 @@ import { useReferences } from './useReferences'
  * que esta pantalla existe para poder encontrar. Lo dice el aviso del catálogo vacío,
  * en vez de dejar un hueco donde se busca un botón.
  *
- * Lo que sigue faltando, y no se finge: la ficha propia con su bloque «Obras citadas»
- * (RF-506). Desde aquí una referencia se lee pero no se abre, así que la fila no es un
- * enlace: un `card` que no lleva a ningún sitio se toca una vez y se aprende que no
- * responde, y eso es peor que una fila que nunca pareció pulsable.
+ * **La fila entera es el enlace a su ficha** (RF-506), como en el listado de
+ * exposiciones: en un móvil, un trozo de texto pequeño como única zona pulsable es un
+ * objetivo que se falla. Mientras no existió la ficha, la fila no era pulsable a
+ * propósito —un `card` que no lleva a ningún sitio se toca una vez y se aprende que no
+ * responde—; ahora lleva.
  */
 export function BibliographyPage() {
   const { canEdit } = useAuth()
@@ -113,44 +115,43 @@ export function BibliographyPage() {
 
       <ul className="space-y-2">
         {entries.map((entry) => (
-          <li
-            key={entry.row.id}
-            className={`card ${entry.retired ? 'opacity-60' : ''}`}
-          >
-            {/* El año encabeza y en su columna: es lo que se lee en vertical al
-                recorrer una bibliografía, y «s.f.» ocupa el mismo sitio que un año
-                para que la columna no se descuadre con las referencias sin fecha. */}
-            <p className="text-xs tabular-nums text-stone-500">
-              {entry.year}
-              {entry.bibtexKey !== null && (
-                <span className="ml-2 font-mono text-stone-400">{entry.bibtexKey}</span>
-              )}
-            </p>
-            {/* Sin resaltar las letras que encontró la búsqueda, por el mismo motivo
-                escrito en el listado de exposiciones: los índices de `fuzzyRankBy`
-                son posiciones dentro de la línea entera, y esta fila la parte en
-                tres. Un resaltado desplazado una letra es peor que ninguno. */}
-            <p className="mt-0.5 break-words font-medium">{entry.title}</p>
-            <p className="mt-0.5 break-words text-xs text-stone-600">{entry.hint}</p>
-            {entry.retired && (
-              <p className="mt-1">
-                <span className="rounded bg-stone-200 px-1.5 py-0.5 text-xs text-stone-600">
+          <li key={entry.row.id}>
+            <Link
+              to={`/bibliography/${entry.row.id}`}
+              className={`card block active:bg-stone-50 ${entry.retired ? 'opacity-60' : ''}`}
+            >
+              {/* El año encabeza y en su columna: es lo que se lee en vertical al
+                  recorrer una bibliografía, y «s.f.» ocupa el mismo sitio que un año
+                  para que la columna no se descuadre con las referencias sin fecha. */}
+              <span className="block text-xs tabular-nums text-stone-500">
+                {entry.year}
+                {entry.bibtexKey !== null && (
+                  <span className="ml-2 font-mono text-stone-400">{entry.bibtexKey}</span>
+                )}
+              </span>
+              {/* Sin resaltar las letras que encontró la búsqueda, por el mismo motivo
+                  escrito en el listado de exposiciones: los índices de `fuzzyRankBy`
+                  son posiciones dentro de la línea entera, y esta fila la parte en
+                  tres. Un resaltado desplazado una letra es peor que ninguno. */}
+              <span className="mt-0.5 block break-words font-medium">{entry.title}</span>
+              <span className="mt-0.5 block break-words text-xs text-stone-600">{entry.hint}</span>
+              {entry.retired && (
+                <span className="mt-1 inline-block rounded bg-stone-200 px-1.5 py-0.5 text-xs text-stone-600">
                   Retirada del catálogo
                 </span>
-              </p>
-            )}
+              )}
+            </Link>
           </li>
         ))}
       </ul>
 
-      {/* Dicho al pie y una sola vez, no en cada fila: desde aquí se encuentra una
-          referencia y se lee, y corregirla sigue haciéndose desde una obra que la
-          cite. Prometer menos de lo que hay es lo que evita buscar un botón que no
-          está. */}
+      {/* Dicho al pie y una sola vez, no en cada fila: de dónde sale una referencia
+          nueva, que es lo que no se hace desde aquí. Prometer menos de lo que hay es lo
+          que evita buscar un botón que no está. */}
       {entries.length > 0 && (
         <p className="mt-3 text-xs text-stone-500">
-          Una referencia se corrige desde la bibliografía de cualquier obra que la cite. Todavía no
-          tiene ficha propia, así que desde aquí se lee pero no se abre.
+          Una referencia nueva se crea citándola desde la bibliografía de una obra: existe porque
+          algo la cita. Aquí se encuentran todas, incluidas las que ya no cita ninguna.
         </p>
       )}
     </Layout>

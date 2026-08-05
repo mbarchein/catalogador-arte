@@ -529,9 +529,12 @@ export function ArtworkPage() {
               datos no se podían corregir y el escaneo no se podía añadir —, que es la
               CUARTA vez que esta tarjeta envejece. Los dos avisos del panel de subida
               que prometían lo contrario se reescribieron en el mismo commit.
-            - Una REFERENCIA BIBLIOGRÁFICA se crea y se corrige, pero solo desde una
-              obra que la cite (`referenceEdit`): no tiene ficha ni listado propios
-              (RF-309).
+            - Una REFERENCIA BIBLIOGRÁFICA ya tiene **listado y ficha propios**
+              (`/bibliography`, `/bibliography/:id`) con su bloque «Obras citadas»
+              (RF-506), así que esa mitad de la frase se ha ido con la QUINTA revisión
+              de esta tarjeta. Lo que sigue sin hacerse desde ninguna pantalla es
+              elegir qué referencia es el catálogo de una exposición (RF-503) y darla
+              de alta sin citarla.
             - Los VOCABULARIOS tienen todos su pantalla en «Tablas», y una
               EXPOSICIÓN tiene ya la suya. Eso no es una carencia: es una dirección,
               y decirla es lo que evita que se busque donde no está. */}
@@ -543,18 +546,19 @@ export function ArtworkPage() {
         <section className="card mt-3 text-sm text-stone-500">
           <p className="font-medium text-stone-700">Lo que aún no se puede hacer aquí</p>
           <p className="mt-1">
-            Un <strong>documento del archivo</strong> y una{' '}
-            <strong>referencia bibliográfica</strong> se crean y se corrigen desde aquí, pero solo
-            desde una obra que los use: ninguno de los dos tiene todavía <strong>ficha</strong>{' '}
-            propia, así que desde su listado se leen y no se abren. Y el documento tampoco tiene
-            listado: a uno que ninguna obra tenga enlazada no hay forma de llegar.
+            Un <strong>documento del archivo</strong> se sube, se enlaza, se corrige y se
+            digitaliza desde aquí, pero solo desde una obra que lo tenga enlazado: no tiene todavía
+            ficha ni listado propios, así que a un documento que ninguna obra tenga enlazado no hay
+            forma de llegar.
           </p>
           <p className="mt-2">
-            Lo que sí se hace, y no es aquí: la{' '}
+            Lo que sí se hace, y no es aquí: una{' '}
+            <strong>referencia bibliográfica</strong> tiene ya su propia ficha, con las obras que la
+            citan, y se llega a ella desde{' '}
             <Link to="/bibliography" className="underline">
-              <strong>bibliografía</strong> entera del catálogo
+              el listado de la bibliografía
             </Link>{' '}
-            se busca en su listado, incluidas las referencias que ya no cita ninguna obra. Una{' '}
+            —donde están también las que ya no cita ninguna obra—. Una{' '}
             <strong>exposición</strong> se da de alta y se corrige en su propia ficha, en{' '}
             <strong>Exposiciones</strong>. Y las{' '}
             <strong>series</strong>, las <strong>sedes de exposición</strong>, los{' '}

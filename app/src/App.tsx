@@ -6,7 +6,7 @@ import { CapturePage } from './features/artworks/CapturePage'
 import { ArtworkPage } from './features/artworks/ArtworkPage'
 import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
-import { BibliographyPage } from './features/bibliography'
+import { BibliographyPage, ReferencePage } from './features/bibliography'
 import { ExhibitionsPage, NewExhibitionPage, ExhibitionPage } from './features/exhibitions'
 import { GrayTargetPage } from './features/help/GrayTargetPage'
 import { PlacesPage } from './features/places/PlacesPage'
@@ -75,6 +75,12 @@ export function App() {
           se crea desde la bibliografía de una obra. Todavía no hay ficha propia
           —«/bibliography/:id»— y por eso las filas del listado no son enlaces. */}
       <Route path="/bibliography" element={<BibliographyPage />} />
+      {/* RF-506, RF-309: la ficha de una referencia, con las obras que la citan. La
+          corrección es un panel y no una ruta «/edit», al contrario que en la obra y
+          la exposición: aquí el formulario entero cabe en una hoja y el panel ya
+          existía —es el mismo que abre la ficha de obra—, así que una ruta de edición
+          sería una segunda forma de abrir lo mismo. */}
+      <Route path="/bibliography/:id" element={<ReferencePage />} />
       <Route path="/profile" element={<ProfilePage />} />
       {/* RF-418: qué es el testigo de gris, dónde se coloca y de dónde se baja la
           hoja imprimible. Es una ruta y no un panel del editor porque se lee antes

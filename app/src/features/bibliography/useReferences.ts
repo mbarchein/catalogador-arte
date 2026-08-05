@@ -14,15 +14,23 @@
  * puede volver. Filtrarlas aquí esconderría la única salida; el filtro es decisión
  * del índice (`rankReferences`), donde es puro y está probado.
  *
- * No hay ninguna escritura aquí, y es deliberado: una referencia se crea CITÁNDOLA
- * desde una obra —existe porque algo la cita— y se corrige desde la ficha que la
- * cita. Este listado es para encontrarla, que era lo que no se podía hacer.
+ * **Una sola escritura, y ninguna de alta**: corregir. Una referencia se CREA
+ * citándola desde una obra —existe porque algo la cita— y eso sigue igual; lo que su
+ * ficha propia añade es poder corregirla desde ella, con el mismo panel y el mismo
+ * planificador que usa la ficha de obra. Y la corrección necesita justamente la lista
+ * entera que este hook ya carga: el choque de la clave BibTeX se comprueba contra las
+ * demás referencias, y sin ellas no se podría comprobar.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { ReferenceRow } from '../documentary/documentaryRows'
-import { referenceFailureText } from '../documentary/bibliography/referenceEdit'
+import {
+  planReferenceEdit,
+  referenceFailureText,
+  referenceWriteResult,
+  type ReferenceEdit,
+} from '../documentary/bibliography/referenceEdit'
 import { REFERENCE_COLUMNS } from './bibliographyIndex'
 
 export interface ReferencesQuery {
@@ -30,6 +38,17 @@ export interface ReferencesQuery {
   loading: boolean
   error: string | null
   reload: () => Promise<void>
+  /**
+   * Corrige una referencia del catálogo. Responde null cuando entró —también cuando no
+   * había nada que cambiar— y la frase que mostrar cuando no.
+   *
+   * Es la MISMA operación que la ficha de una obra, con el mismo `planReferenceEdit`:
+   * lo que corrige el catálogo compartido no puede depender de por qué pantalla se
+   * entró. Nada que teclear significa ninguna petición y, sobre todo, ninguna traza de
+   * auditoría sobre una corrección que nadie ha hecho en una fila que lee todo el
+   * catálogo.
+   */
+  updateReference: (id: string, draft: ReferenceEdit) => Promise<string | null>
 }
 
 export function useReferences(): ReferencesQuery {
@@ -69,5 +88,23 @@ export function useReferences(): ReferencesQuery {
     void reload()
   }, [reload])
 
-  return { references, loading, error, reload }
+  const updateReference = useCallback(
+    async (id: string, draft: ReferenceEdit): Promise<string | null> => {
+      const plan = planReferenceEdit(references, id, draft)
+      if (plan.action === 'blank' || plan.action === 'duplicate') return plan.message
+      if (plan.action === 'unchanged') return null
+
+      const { data, error: failure } = await supabase
+        .from('bibliography')
+        .update(plan.payload)
+        .eq('id', id)
+        .select('id')
+      const message = referenceWriteResult({ failure, rows: (data ?? []).length })
+      await reload()
+      return message
+    },
+    [references, reload],
+  )
+
+  return { references, loading, error, reload, updateReference }
 }

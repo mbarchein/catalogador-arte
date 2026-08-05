@@ -2,6 +2,24 @@
 
 ### Interfaz
 
+**Y cada referencia tiene su ficha, con las obras que la citan**
+Tocando una referencia del listado se abre su ficha. Lo que trae y no estaba en ningún sitio es la
+referencia **leída por el otro lado**: qué obras del catálogo la citan y **en qué página de ella sale
+cada una** —«págs. 34-36», «lám. XII», «s/p»— con la nota de esa cita en concreto. Cada obra de la lista
+se toca y lleva a su ficha.
+
+Las obras salen por su código de catalogación, que es el orden del catálogo razonado. Y las páginas no
+ordenan nada, aunque en una bibliografía lo parezca: «lám. XII» y «s/p» son respuestas legítimas a «¿en
+qué página?» y ordenar por ellas pondría la lámina antes de la página 9.
+
+Cuando **ninguna obra la cita**, la ficha lo dice con palabras y dice que no es un dato pendiente: la
+referencia sigue en el catálogo y se puede citar cuando toque. Es exactamente la referencia que el
+listado nuevo existe para poder encontrar.
+
+Corregirla es el **mismo panel** que se abre desde la bibliografía de una obra, no una copia: lo que se
+corrige del catálogo compartido no puede depender de por qué pantalla se entró. Retirarla o recuperarla
+sigue siendo cosa de la papelera, y la ficha lo dice en vez de dejar buscar el botón.
+
 **La bibliografía del catálogo ya tiene su propio listado, con búsqueda**
 Una referencia bibliográfica se creaba y se corregía solo desde una obra que la citara, y eso dejaba un
 agujero: **a una referencia que ya no cita ninguna obra no se llegaba desde ningún sitio.** Seguía en el
