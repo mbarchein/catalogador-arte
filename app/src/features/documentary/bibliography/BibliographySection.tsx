@@ -3,6 +3,7 @@ import { useAuth } from '../../../auth/AuthContext'
 import { PenIcon, PlusIcon } from '../../../components/ui'
 import type { ResearchStatus } from '../../../lib/types'
 import { DocumentarySection } from '../DocumentarySection'
+import type { ReferenceRow } from '../documentaryRows'
 import { blockState } from '../researchState'
 import { sectionSpec, canWriteBlock } from '../sections'
 import { useArtworkBibliography, type ArtworkDocumentaryQuery } from '../useDocumentary'
@@ -14,8 +15,10 @@ import {
 import { citationEdit, type CitationEdit, type CitationView } from './citationFormat'
 import { citationList } from './citationGroups'
 import { CitationSheet } from './CitationSheet'
+import { ReferenceSheet } from './ReferenceSheet'
 import { ResearchStatusSheet } from './ResearchStatusSheet'
 import { useBibliographyEdits } from './useBibliographyEdits'
+import { useReferenceUsage } from './useReferenceUsage'
 
 /**
  * «Bibliografía» on the artwork record (RF-303, RF-504): where this artwork is
@@ -32,6 +35,15 @@ import { useBibliographyEdits } from './useBibliographyEdits'
  * must never be written twice: an artwork with no bibliography recorded is not an
  * unpublished artwork, and only the research status of RF-218 tells the two
  * apart.
+ *
+ * **The block writes TWO different scopes and the screen has to keep them
+ * apart.** The page where this artwork appears, the note and the retirement of a
+ * citation are facts about this record. The reference itself — its title, who
+ * wrote it, its year — is a row of the catalogue that every citing artwork reads,
+ * so correcting it from here changes what the other records show: it gets its own
+ * panel, its own label on the row, and a warning above its fields
+ * (`referenceEdit.ts`). Until the reference has a record of its own (RF-309) this
+ * is the only place a mistake in it can be fixed, and it is where it is read.
  *
  * Nothing on this file decides any wording. Order, grouping, abbreviations,
  * duplicates and what is missing before saving all live in the pure modules
@@ -70,9 +82,19 @@ export function BibliographySection({
 
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<CitationEdit | null>(null)
+  // The reference being CORRECTED, which is a different scope from `editing`: that
+  // one is the page of this artwork, this one is the publication the whole
+  // catalogue shares. Kept whole, straight out of the citation row, so opening the
+  // panel costs no query.
+  const [correcting, setCorrecting] = useState<ReferenceRow | null>(null)
   const [statusOpen, setStatusOpen] = useState(false)
   const [removing, setRemoving] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+
+  // How many OTHER artworks read the reference about to be corrected. Asked only
+  // while that panel is open, and only for its reference: it is what turns «lo
+  // verán las demás obras» into a number the cataloger can decide with.
+  const usage = useReferenceUsage(correcting?.id ?? null, catalogId, correcting !== null)
 
   const status = documentary.documentary?.bibliography_status ?? null
   // TWO queries, and the combination that matters is «citations yes, research
@@ -141,6 +163,27 @@ export function BibliographySection({
           onCite={edits.cite}
           onUpdate={edits.updateCitation}
           onCreateReference={edits.createReference}
+        />
+      )}
+
+      {correcting !== null && (
+        <ReferenceSheet
+          // Remounted per opening, for the same reason as the citation panel: a
+          // draft abandoned halfway must not come back on the next reference.
+          key={correcting.id}
+          open
+          onClose={() => setCorrecting(null)}
+          reference={correcting}
+          publicationTypes={edits.publicationTypes}
+          otherArtworks={usage.otherArtworks}
+          onSave={async (draft) => {
+            const failure = await edits.updateReference(correcting.id, draft)
+            // Reloaded on success only, and the refusal is answered to the panel
+            // instead of to the block: the fields the cataloger has typed are in
+            // there, and the sentence has to be read next to them.
+            if (failure === null) await reload()
+            return failure
+          }}
         />
       )}
 
@@ -237,6 +280,15 @@ export function BibliographySection({
                   const row = rows.find((r) => r.id === view.id)
                   if (row !== undefined) setEditing(citationEdit(row))
                 }}
+                onCorrectReference={() => {
+                  setActionError(null)
+                  const reference = rows.find((r) => r.id === view.id)?.reference ?? null
+                  // Null only when the reference cannot be read, which is a
+                  // Reader's record and never this one: the button is not painted
+                  // in that case (see `CitationItem`), and it is checked again
+                  // here rather than asserted.
+                  if (reference !== null) setCorrecting(reference)
+                }}
                 onAskRemove={() => setRemoving(view.id)}
                 onCancelRemove={() => setRemoving(null)}
                 onRemove={() => void remove(view.id)}
@@ -263,6 +315,7 @@ function CitationItem({
   canEdit,
   confirming,
   onEdit,
+  onCorrectReference,
   onAskRemove,
   onCancelRemove,
   onRemove,
@@ -273,6 +326,8 @@ function CitationItem({
   canEdit: boolean
   confirming: boolean
   onEdit: () => void
+  /** Corrects the PUBLICATION, which is shared. Not offered when it cannot be read. */
+  onCorrectReference: () => void
   onAskRemove: () => void
   onCancelRemove: () => void
   onRemove: () => void
@@ -332,7 +387,7 @@ function CitationItem({
             </div>
           </div>
         ) : (
-          <div className="mt-1 flex gap-3">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3">
             <button
               type="button"
               onClick={onEdit}
@@ -341,6 +396,22 @@ function CitationItem({
               <PenIcon className="h-4 w-4" />
               <span>Página y nota</span>
             </button>
+            {/* Dos correcciones y dos alcances, y la etiqueta es lo único que los
+                distingue: la de arriba es la página de ESTA obra, y esta es la
+                publicación, que comparten todas las que la citan. Sin icono, a
+                propósito: dos lápices seguidos se leen como el mismo botón dos
+                veces. Y no se ofrece cuando la referencia no se puede leer, que
+                es la ficha de quien solo consulta: no hay nada que corregir a
+                ciegas. */}
+            {!view.unavailable && (
+              <button
+                type="button"
+                onClick={onCorrectReference}
+                className="min-h-touch text-xs text-stone-600 underline"
+              >
+                Datos de la referencia
+              </button>
+            )}
             <button
               type="button"
               onClick={onAskRemove}

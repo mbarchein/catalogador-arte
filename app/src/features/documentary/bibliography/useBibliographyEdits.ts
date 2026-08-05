@@ -1,6 +1,12 @@
 /**
  * Writing the bibliography of an artwork: the catalogue of references it can be
- * cited in, and the four operations the block offers over them.
+ * cited in, and the five operations the block offers over them.
+ *
+ * Four of the five are about THIS artwork — citing it, correcting the page,
+ * taking the citation out, writing a reference that was not in the catalogue yet
+ * — and one, `updateReference`, is about the catalogue: it corrects a row that
+ * every citing artwork reads. That asymmetry is the reason its panel warns before
+ * saving and this one does not decide the warning (see `referenceEdit.ts`).
  *
  * Reading is not here — that is `useArtworkBibliography` in the foundations, one
  * query per block. This is the other half, and it is a separate hook because the
@@ -20,6 +26,11 @@ import {
   newReferencePayload,
   type ReferenceDraft,
 } from './referenceChoice'
+import {
+  planReferenceEdit,
+  referenceWriteResult,
+  type ReferenceEdit,
+} from './referenceEdit'
 
 const PUBLICATION_TYPE_COLUMNS = 'id, name, active'
 
@@ -49,6 +60,16 @@ export interface BibliographyEdits {
    * reference that gets created and then fails to be cited must still exist.
    */
   createReference: (draft: ReferenceDraft) => Promise<{ id: string } | { error: string }>
+  /**
+   * Corrects the DATA of a reference of the catalogue: its title, who wrote it,
+   * where it came out, its year, its kind and its BibTeX handle. Answers null
+   * when it worked and the sentence to show when it did not.
+   *
+   * It is not a write about this artwork, which is why the panel that offers it
+   * warns first (`referenceReachNotice`): the row is shared with every artwork
+   * that cites it, and one corrected title is read from all of their records.
+   */
+  updateReference: (id: string, draft: ReferenceEdit) => Promise<string | null>
   /** Corrects the page or the note of a citation already recorded. */
   updateCitation: (id: string, pages: string, note: string) => Promise<string | null>
   /**
@@ -60,7 +81,7 @@ export interface BibliographyEdits {
 }
 
 /**
- * The catalogue of references, the publication types, and the four writes.
+ * The catalogue of references, the publication types, and the five writes.
  *
  * The two lists load together on mount, and only when `enabled` — the caller
  * passes `canEdit`, because a Reader never opens either panel and these are two
@@ -148,6 +169,39 @@ export function useBibliographyEdits(catalogId: string, enabled: boolean): Bibli
     [reload],
   )
 
+  /**
+   * Saves a corrected reference. Every decision is in `planReferenceEdit`, which
+   * is pure and tested; what is here is the request.
+   *
+   * `select('id')` is not decoration: without it PostgREST answers 204 and no
+   * error to an update that matched nothing — measured with a Reader's session,
+   * which gets exactly that instead of a refusal — and the panel would close
+   * saying the catalogue was corrected. See `referenceWriteResult`.
+   *
+   * The catalogue is reloaded even when the write failed: a refusal usually means
+   * the loaded copy is stale (somebody else took the BibTeX key), and the stale
+   * copy is what made the cataloger try.
+   */
+  const updateReference = useCallback(
+    async (id: string, draft: ReferenceEdit): Promise<string | null> => {
+      const plan = planReferenceEdit(references, id, draft)
+      if (plan.action === 'blank' || plan.action === 'duplicate') return plan.message
+      // Nothing typed: no request, and above all no audit trail about a
+      // correction that nobody made on a row the whole catalogue reads.
+      if (plan.action === 'unchanged') return null
+
+      const { data, error: failure } = await supabase
+        .from('bibliography')
+        .update(plan.payload)
+        .eq('id', id)
+        .select('id')
+      const message = referenceWriteResult({ failure, rows: (data ?? []).length })
+      await reload()
+      return message
+    },
+    [references, reload],
+  )
+
   const updateCitation = useCallback(
     async (id: string, pages: string, note: string): Promise<string | null> => {
       const { error: failure } = await supabase
@@ -178,6 +232,7 @@ export function useBibliographyEdits(catalogId: string, enabled: boolean): Bibli
     reload,
     cite,
     createReference,
+    updateReference,
     updateCitation,
     setCitationActive,
   }
