@@ -1,18 +1,14 @@
-import { useMemo, useRef, useState } from 'react'
-import { BottomSheet, Toggle, YearStepper } from '../../../components/ui'
-import { flattenPlaces, type PlaceTree } from '../../../lib/places'
-import { ARTIST_FUNDS, ARTIST_LABEL, type ArtistFund, type DocumentTypeEntry } from '../../../lib/types'
-import { sortByName } from '../../../lib/masterTables'
-import { flattenSeries, seriesLevelLabel, type SeriesTree } from '../../tables/archiveSeries'
+import { useRef, useState } from 'react'
+import { BottomSheet } from '../../../components/ui'
+import type { PlaceTree } from '../../../lib/places'
+import type { DocumentTypeEntry } from '../../../lib/types'
+import type { SeriesTree } from '../../tables/archiveSeries'
 import { fileSizeText } from '../documentaryFormat'
+import { DocumentFieldsForm } from './DocumentFieldsForm'
 import {
-  documentDatePreview,
   documentDraftPayload,
   documentDraftProblems,
-  DOCUMENT_MAX_YEAR,
-  DOCUMENT_MIN_YEAR,
   emptyNewDocumentDraft,
-  problemsOf,
   type NewDocumentDraft,
 } from './documentDraft'
 import {
@@ -79,10 +75,6 @@ export function UploadDocumentSheet({
 
   const problems = documentDraftProblems(draft)
   const fileProblem = documentFileProblem(file)
-  const datePreview = documentDatePreview(draft)
-  const types = useMemo(() => sortByName(documentTypes.filter((entry) => entry.active)), [documentTypes])
-  const series = useMemo(() => flattenSeries(seriesTree, (node) => node.active), [seriesTree])
-  const places = useMemo(() => flattenPlaces(placeTree, (place) => place.active), [placeTree])
 
   function change(patch: Partial<NewDocumentDraft>) {
     setFailure(null)
@@ -155,13 +147,15 @@ export function UploadDocumentSheet({
             </button>
           </p>
         ) : (
-          /* Se dice antes de guardar y no después: hoy no hay pantalla del archivo,
-             así que el escaneo no se puede añadir más tarde. Prometer lo contrario
-             sería dejar el documento sin fichero para siempre sin avisar. */
+          /* Esta advertencia existía porque el escaneo no se podía añadir más tarde y
+             prometer lo contrario dejaba documentos sin fichero para siempre. Ya se
+             puede, y lo que se dice ahora es dónde — sin quitarle el «súbelo ahora si
+             lo tienes», que sigue siendo el consejo: el fichero está en la mano una vez. */
           <p className="mt-1 text-xs text-stone-500">
             Un PDF con todas las páginas del expediente, o el escaneo. Puedes registrar el documento
-            sin fichero: constará «sin digitalizar» y solo en papel. Pero añadirle el escaneo más
-            adelante todavía no se hace desde ninguna pantalla, así que si lo tienes, súbelo ahora.
+            sin fichero: constará «sin digitalizar» y solo en papel, y el escaneo se le añade después
+            con «Añadir el escaneo» desde cualquier ficha enlazada. Aun así, si lo tienes a mano,
+            súbelo ahora.
           </p>
         )}
         {fileProblem !== null && (
@@ -174,238 +168,25 @@ export function UploadDocumentSheet({
         </p>
       </div>
 
-      {/* 2 · QUÉ ES. Lo único que la base exige, porque un documento sin nada que lo
-          nombre no se vuelve a encontrar. */}
+      {/* 2 · EL DOCUMENTO. Los mismos campos que corrigen uno ya registrado, en un
+          componente compartido: dos copias de este formulario es cómo el alta acaba
+          ofreciendo un campo que la corrección no tiene. */}
       <div className="mt-3">
-        <label className="label" htmlFor="upload-document-title">
-          Título o descripción corta
-        </label>
-        <input
-          id="upload-document-title"
-          className="field"
-          value={draft.title}
+        <DocumentFieldsForm
+          idPrefix="upload-document"
+          draft={draft}
+          onChange={change}
           disabled={busy}
-          onChange={(event) => change({ title: event.target.value })}
-          placeholder="Carta de la galería sobre la muestra de 1985"
-        />
-        <Problems problems={problemsOf(problems, 'title')} />
-      </div>
-
-      <div className="mt-3">
-        <label className="label" htmlFor="upload-document-code">
-          Signatura del archivo (opcional)
-        </label>
-        <input
-          id="upload-document-code"
-          className="field font-mono"
-          value={draft.archiveCode}
-          disabled={busy}
-          onChange={(event) => change({ archiveCode: event.target.value })}
-          placeholder="AR-ARCH-0001"
-          autoComplete="off"
-          autoCapitalize="characters"
-        />
-        <p className="mt-1 text-xs text-stone-500">
-          {/* Decía «y esta se puede corregir después», y no era verdad: hoy no hay
-              ninguna pantalla que corrija los datos de un documento del archivo, así
-              que la signatura que se guarde aquí se queda. Lo dice, igual que cuatro
-              líneas más arriba se dice del escaneo: prometer una corrección que no
-              existe es cómo alguien deja un campo a medias para «arreglarlo luego». */}
-          La que está escrita en la carpeta. Si el documento todavía no está archivado, déjala
-          vacía: no hace falta inventar un código. Pero piénsalo antes de guardar, porque de
-          momento no hay dónde corregirla después.
-        </p>
-        <Problems problems={problemsOf(problems, 'code')} />
-      </div>
-
-      {/* 3 · CUÁNDO. La forma estructurada de ADR-004, con la nota que gana al
-          imprimirse cuando la estructura no da para tanto. */}
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <YearStepper
-          id="upload-document-start-year"
-          label="Año"
-          compact
-          min={DOCUMENT_MIN_YEAR}
-          max={DOCUMENT_MAX_YEAR}
-          value={draft.startYear}
-          onChange={(year) => change({ startYear: year })}
-        />
-        <YearStepper
-          id="upload-document-end-year"
-          label="Hasta (opcional)"
-          compact
-          min={DOCUMENT_MIN_YEAR}
-          max={DOCUMENT_MAX_YEAR}
-          value={draft.endYear}
-          onChange={(year) => change({ endYear: year })}
+          documentTypes={documentTypes}
+          seriesTree={seriesTree}
+          placeTree={placeTree}
+          mastersError={mastersError}
         />
       </div>
-      <Problems problems={problemsOf(problems, 'years')} />
 
-      <div className="mt-2 space-y-2">
-        <Toggle
-          active={draft.approximate}
-          onChange={(value) => change({ approximate: value })}
-          label="Fecha aproximada"
-          help="Se imprime «c. 1985»"
-        />
-        <Toggle
-          active={draft.unconfirmed}
-          onChange={(value) => change({ unconfirmed: value })}
-          label="Fecha sin confirmar"
-          help="Se imprime «1985 [?]»"
-        />
-      </div>
-      <Problems problems={problemsOf(problems, 'flags')} />
-
-      <div className="mt-3">
-        <label className="label" htmlFor="upload-document-date-note">
-          La fecha en palabras (opcional)
-        </label>
-        <input
-          id="upload-document-date-note"
-          className="field"
-          value={draft.dateNote}
-          disabled={busy}
-          onChange={(event) => change({ dateNote: event.target.value })}
-          placeholder="finales de los setenta"
-        />
-        <p className="mt-1 text-xs text-stone-500">
-          Lo que la estructura no puede guardar. Si la escribes, es esto lo que se imprime en vez
-          del año.
-        </p>
-      </div>
-
-      {datePreview !== '' && (
-        <p className="mt-2 rounded-lg bg-stone-100 p-2 text-sm">
-          La fecha se guardará como <strong>{datePreview}</strong>.
-        </p>
-      )}
-
-      {/* 4 · CÓMO SE CLASIFICA. Las tres maestras, todas opcionales: «sin
-          clasificar» es una respuesta legítima mientras el documento se anota de una
-          fotocopia. Y ninguna se puede crear desde aquí: tienen su pantalla. */}
-      {mastersError !== null && (
-        <p className="mt-3 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
-          {mastersError} El documento se puede registrar igual: sin tipo consta «Tipo sin
-          clasificar», que es un valor legítimo.
-        </p>
-      )}
-
-      <div className="mt-3">
-        <label className="label" htmlFor="upload-document-type">
-          Tipo de documento
-        </label>
-        <select
-          id="upload-document-type"
-          className="field"
-          value={draft.documentTypeId ?? ''}
-          disabled={busy}
-          onChange={(event) => change({ documentTypeId: event.target.value || null })}
-        >
-          <option value="">Sin clasificar</option>
-          {types.map((entry) => (
-            <option key={entry.id} value={entry.id}>
-              {entry.name}
-            </option>
-          ))}
-        </select>
-        <p className="mt-1 text-xs text-stone-500">
-          Carta, recorte de prensa, cartel… La lista se amplía en Tablas, no desde aquí.
-        </p>
-      </div>
-
-      <div className="mt-3">
-        <label className="label" htmlFor="upload-document-series">
-          Fondo o serie del archivo
-        </label>
-        <select
-          id="upload-document-series"
-          className="field"
-          value={draft.archiveSeriesId ?? ''}
-          disabled={busy}
-          onChange={(event) => change({ archiveSeriesId: event.target.value || null })}
-        >
-          <option value="">Sin clasificar en el archivo</option>
-          {series.map(({ series: node, depth, path }) => (
-            <option key={node.id} value={node.id}>
-              {`${'  '.repeat(depth)}${node.name} · ${seriesLevelLabel(depth)}${
-                depth > 0 ? ` de ${path.split(', ').slice(0, -1).join(', ')}` : ''
-              }`}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="mt-3">
-        <label className="label" htmlFor="upload-document-fund">
-          Fondo del artista
-        </label>
-        <select
-          id="upload-document-fund"
-          className="field"
-          value={draft.artistFund ?? ''}
-          disabled={busy}
-          onChange={(event) =>
-            change({ artistFund: (event.target.value || null) as ArtistFund | null })
-          }
-        >
-          {/* Vacío es una respuesta y no un hueco: un recorte sobre una colectiva de
-              los dos artistas —o un documento de contexto que no es de ninguno— no
-              puede elegir, y por eso la columna es nulable. */}
-          <option value="">No es de un solo fondo</option>
-          {ARTIST_FUNDS.map((fund) => (
-            <option key={fund} value={fund}>
-              {ARTIST_LABEL[fund]}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="mt-3">
-        <label className="label" htmlFor="upload-document-place">
-          Dónde está el papel
-        </label>
-        <select
-          id="upload-document-place"
-          className="field"
-          value={draft.physicalPlaceId ?? ''}
-          disabled={busy}
-          onChange={(event) => change({ physicalPlaceId: event.target.value || null })}
-        >
-          <option value="">Todavía sin sitio</option>
-          {places.map(({ place, depth, path }) => (
-            <option key={place.id} value={place.id}>
-              {`${'  '.repeat(depth)}${place.name}`}
-              {depth > 0 ? ` · ${path}` : ''}
-            </option>
-          ))}
-        </select>
-        <p className="mt-1 text-xs text-stone-500">
-          El mismo árbol de sitios que las obras: una caja de cartas está en el mismo edificio que
-          los cuadros.
-        </p>
-      </div>
-
-      {/* 5 · LAS DOS NOTAS, y la diferencia entre ellas dicha en su sitio. */}
-      <div className="mt-3">
-        <label className="label" htmlFor="upload-document-note">
-          Nota del documento (opcional)
-        </label>
-        <textarea
-          id="upload-document-note"
-          className="field"
-          rows={2}
-          value={draft.note}
-          disabled={busy}
-          onChange={(event) => change({ note: event.target.value })}
-          placeholder="tres folios mecanografiados, con firma"
-        />
-        <p className="mt-1 text-xs text-stone-500">
-          Sobre el documento entero. La ven todas las obras enlazadas con él.
-        </p>
-      </div>
-
+      {/* 3 · LA SEGUNDA NOTA. La del documento la pinta el formulario compartido, y
+          esta va aquí porque no es del documento: es del vínculo con ESTA obra. La
+          diferencia se dice debajo de cada una. */}
       <div className="mt-3">
         <label className="label" htmlFor="upload-document-link-note">
           Qué dice de esta obra (opcional)
@@ -444,19 +225,5 @@ export function UploadDocumentSheet({
         </button>
       </div>
     </BottomSheet>
-  )
-}
-
-/** The refusals that belong beside one field, or nothing. Never a silent field. */
-function Problems({ problems }: { problems: readonly { text: string }[] }) {
-  if (problems.length === 0) return null
-  return (
-    <>
-      {problems.map((problem) => (
-        <p key={problem.text} className="mt-1 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
-          {problem.text}
-        </p>
-      ))}
-    </>
   )
 }
