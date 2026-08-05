@@ -101,6 +101,10 @@ db-test: ## Tests de SQL: políticas RLS y reglas del esquema
 test: ## Tests del frontend
 	docker compose exec app npm test
 
+# No necesita el stack levantado: solo lee los ficheros del pipeline.
+pipeline-test: ## Tests de los invariantes del pipeline de despliegue
+	./.github/pipeline.test.sh
+
 # Ata las dos implementaciones de la cadena de color: la del navegador y la de la
 # herramienta local que genera las copias corregidas pendientes (RF-421). Regenera
 # el fichero de casos versionado —parámetros contra las tablas de 256 entradas que
@@ -125,7 +129,8 @@ preview: ## Sirve la compilación de producción en :8080 (para probar la PWA)
 	docker compose --profile preview up --build -d app-preview
 	@echo "Vista previa: http://localhost:8080"
 
-verificar: ## Todo lo que verifica CI: infra, tipos, tests de SQL y de frontend
+verificar: ## Todo lo que verifica CI: pipeline, infra, tipos, tests de SQL y de frontend
+	$(MAKE) pipeline-test
 	$(MAKE) infra-check
 	$(MAKE) typecheck
 	$(MAKE) db-test

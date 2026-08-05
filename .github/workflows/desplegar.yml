@@ -108,6 +108,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Primero y sin dependencias: los invariantes del propio pipeline, que son
+      # lo que impide publicar un frontend contra un esquema sin migrar. Si esto
+      # falla, nada de lo que viene después importa. Ver .github/pipeline.test.sh.
+      - name: Tests del pipeline de despliegue
+        run: ./.github/pipeline.test.sh
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22

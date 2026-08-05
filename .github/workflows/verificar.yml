@@ -137,13 +137,26 @@ jobs:
           VITE_SUPABASE_URL: http://localhost:8321
           VITE_SUPABASE_ANON_KEY: clave-de-compilacion-sin-uso
 
+  # Los invariantes del pipeline de despliegue, que son código como cualquier
+  # otro y ya rompieron producción una vez (ver .github/pipeline.test.sh). Sin
+  # `if`: corre en toda PR, porque lo que comprueba no depende de qué ficheros
+  # se hayan tocado y cuesta segundos. Solo lee ficheros: ni red, ni Docker, ni
+  # credenciales.
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Tests del pipeline de despliegue
+        run: ./.github/pipeline.test.sh
+
   # El contexto que exige la protección de rama (infra/github.tf). No lleva
   # filtro de rutas y lleva `always()`: corre y reporta SIEMPRE, también cuando
   # los tres bloques se saltan. Es lo único que evita que una PR de solo
   # documentación quede bloqueada esperando un check que no va a llegar.
   verificar:
     name: verificar
-    needs: [cambios, infra, datos, frontend]
+    needs: [cambios, infra, datos, frontend, pipeline]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -155,6 +168,7 @@ jobs:
           RESULTADOS: >-
             ${{ needs.cambios.result }} ${{ needs.infra.result }}
             ${{ needs.datos.result }} ${{ needs.frontend.result }}
+            ${{ needs.pipeline.result }}
         run: |
           set -euo pipefail
           echo "Resultados: $RESULTADOS"
