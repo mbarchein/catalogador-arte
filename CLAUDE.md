@@ -72,6 +72,20 @@
 - Los tests de RLS se escriben **autenticándose de verdad** como un usuario de cada rol y consultando
   la base. Comprobar que el fichero de política existe no verifica nada.
 - Toda incidencia corregida deja antes un test que la reproduce.
+- **La batería está siempre verde. Nunca hay un test que falle, ni uno escrito para fallar.**
+  - Ningún commit se hace, y menos se empuja, con la batería roja: `make verificar` en verde es la
+    condición para empujar, no una comprobación posterior. Si algo se queda a medias, lo que se deja
+    fuera es el código, no el test.
+  - **No se escriben asertos «al revés»** que afirmen que una carencia sigue ahí para ponerse rojos el
+    día que se arregle. Un rojo tiene que significar siempre lo mismo: algo se ha roto. Si un rojo
+    puede significar «alguien ha arreglado algo», el color deja de informar y la batería deja de
+    doler, que es lo único que hace que se ejecute. Lo que está pendiente se anota en el plan de
+    pruebas y en el código que lo padece, no en un aserto.
+  - Nada de `it.skip`, `it.todo`, `it.fails` ni tests comentados. Un test que no corre no protege
+    nada y aparenta cobertura, que es peor que el hueco declarado.
+  - Se puede —y a veces hay que— **comprobar que un test nuevo falla con el código anterior**: es lo
+    que demuestra que reproduce la incidencia. Eso se hace en local y sobre un código que no se
+    empuja; lo que se empuja es el par test + arreglo, en verde.
 
 ## Estructura del repositorio
 
