@@ -34,17 +34,17 @@ export const DOCUMENT_MIN_YEAR = 1000
 export const DOCUMENT_MAX_YEAR = 2100
 
 /**
- * A document being written. NOT a row: it has no `id`, no `date_text` — generated
- * — and no file columns, which `documentUpload.ts` builds together from the picked
- * file so that three of the four can never be sent.
+ * The document itself while it is being written. NOT a row: it has no `id`, no
+ * `date_text` — generated — and no file columns, which `documentUpload.ts` builds
+ * together from the picked file so that three of the four can never be sent.
  *
- * `linkNote` is in the same draft and does NOT belong to the document: it travels
- * to the bridge row (RF-516). They are two different notes on purpose — one says
- * what the cutting is, the other says why it matters to THIS artwork — and the
- * form asks them separately because merging them would put words in the
- * cataloger's mouth for every other artwork the document is linked to.
+ * It is split from `NewDocumentDraft` because there are now TWO forms over these
+ * same fields — registering a document and correcting one — and every rule about
+ * them (what is missing, what the database will refuse, what travels) has to be one
+ * copy. What the two forms do NOT share is `linkNote`, which is not a field of the
+ * document at all.
  */
-export interface NewDocumentDraft {
+export interface DocumentFields {
   /** Signature of the folder («AR-ARCH-0001»). Optional, unique, editable later. */
   archiveCode: string
   /** Title or short description. The only thing the database demands. */
@@ -63,7 +63,19 @@ export interface NewDocumentDraft {
   physicalPlaceId: string | null
   /** What the archive says about the document itself. */
   note: string
-  /** What this document says about the artwork the record is open on. */
+}
+
+/**
+ * A document being registered from an artwork's record: its own fields, plus what
+ * it says about THAT artwork.
+ *
+ * `linkNote` travels to the bridge row (RF-516) and not to the document. They are
+ * two different notes on purpose — one says what the cutting is, the other says why
+ * it matters to THIS artwork — and the forms ask them separately because merging
+ * them would put words in the cataloger's mouth for every other artwork the
+ * document is linked to.
+ */
+export interface NewDocumentDraft extends DocumentFields {
   linkNote: string
 }
 
@@ -119,7 +131,7 @@ export interface DocumentDraftProblem {
  *   · `archive_documents_flags_require_year` — «c.» and «[?]» talk about a year.
  *   · `archive_documents_plausible_years` — outside 1000..2100 it is a typo.
  */
-export function documentDraftProblems(draft: NewDocumentDraft): DocumentDraftProblem[] {
+export function documentDraftProblems(draft: DocumentFields): DocumentDraftProblem[] {
   const problems: DocumentDraftProblem[] = []
 
   if (draft.title.trim() === '') {
@@ -183,7 +195,7 @@ export function documentDraftProblems(draft: NewDocumentDraft): DocumentDraftPro
 }
 
 /** Whether the document can be sent. */
-export function documentDraftIsSaveable(draft: NewDocumentDraft): boolean {
+export function documentDraftIsSaveable(draft: DocumentFields): boolean {
   return documentDraftProblems(draft).length === 0
 }
 
@@ -203,7 +215,7 @@ export function problemsOf(
  * equals its start. Here «1985-1985» is what gets stored, and a preview that
  * disagrees with the stored value is worse than no preview.
  */
-export function documentDatePreview(draft: NewDocumentDraft): string {
+export function documentDatePreview(draft: DocumentFields): string {
   return structuredDateText({
     start_year: draft.startYear,
     end_year: draft.endYear,
@@ -230,7 +242,7 @@ export function documentDatePreview(draft: NewDocumentDraft): string {
  * database refuses.
  */
 export function documentDraftPayload(
-  draft: NewDocumentDraft,
+  draft: DocumentFields,
 ): Record<string, unknown> & { title: string; archive_code: string | null } {
   const dated = draft.startYear !== null
   const code = draft.archiveCode.trim()
@@ -253,7 +265,16 @@ export function documentDraftPayload(
 // ── Cuando la base dice no ────────────────────────────────────
 
 /** What this block can be refused for. */
-export type DocumentAction = 'create' | 'link' | 'retire' | 'editNote' | 'load'
+export type DocumentAction =
+  | 'create'
+  | 'link'
+  | 'retire'
+  | 'editNote'
+  | 'load'
+  /** Correcting the document's own data — shared with every artwork linked to it. */
+  | 'edit'
+  /** Giving a document that was registered «sin digitalizar» its scan. */
+  | 'addFile'
 
 /**
  * A refusal as PostgREST sends it: the SQLSTATE, the message and the hint, in
@@ -274,6 +295,8 @@ const VERB: Record<DocumentAction, string> = {
   retire: 'quitar el documento de la ficha',
   editNote: 'guardar lo que este documento dice de la obra',
   load: 'cargar el archivo',
+  edit: 'corregir los datos del documento',
+  addFile: 'añadir el escaneo al documento',
 }
 
 /**
@@ -313,6 +336,19 @@ export function describeDocumentRefusal(
   refusal: DatabaseRefusal | null,
 ): string {
   if (refusal === null) {
+    // El silencio de `addFile` tiene una causa MÁS y es la primera que hay que
+    // nombrar: la actualización solo toca la fila si sigue sin fichero, así que
+    // «cero filas» es sobre todo que alguien se ha adelantado. Sin decirlo, la
+    // catalogadora vuelve a subir el mismo escaneo contra un documento que ya tiene
+    // uno, y lo que consigue son dos ficheros de los que solo uno consta.
+    if (action === 'addFile') {
+      return (
+        'No se ha añadido el escaneo. Lo más probable es que el documento ya tenga uno, subido ' +
+        'desde otra ficha o desde otro teléfono: vuelve a cargar la ficha y míralo antes de ' +
+        'repetirlo. Y si sigue sin fichero, puede que tu sesión ya no tenga permiso para escribir. ' +
+        'El fichero que acabas de subir se queda suelto en el almacén, que no estorba a nadie.'
+      )
+    }
     return (
       'No se ha guardado nada. Puede que tu sesión ya no tenga permiso para escribir en el ' +
       'catálogo, o que el documento ya no esté: vuelve a entrar y comprueba si el cambio está.'

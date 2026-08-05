@@ -1,5 +1,5 @@
 /**
- * The four writes of this block, and nothing else.
+ * The writes of this block, and nothing else.
  *
  * Each one answers null — or the identifier — when it worked, and a sentence in
  * Spanish when it did not, which is the shape the rest of the feature already uses
@@ -70,6 +70,63 @@ export async function createArchiveDocument(
   const row = data as { id: string } | null
   if (row === null) return { error: describeDocumentRefusal('create', null) }
   return { id: row.id }
+}
+
+/**
+ * Corrige los datos del documento en el archivo: signatura, título, tipo, serie,
+ * fondo, fecha, sitio del papel y su nota.
+ *
+ * Toca `archive_documents` y no la tabla puente, así que lo que cambia se lee desde
+ * TODAS las fichas enlazadas con él (RF-516). Quién puede hacerlo lo decide
+ * `archive_documents_update`, que está en el esquema desde el primer día: lo que
+ * faltaba era esta llamada y la pantalla que la usa.
+ *
+ * Las cuatro columnas del fichero no viajan nunca por aquí —`documentDraftPayload`
+ * no las produce— y eso es lo que impide que una corrección de la signatura mande
+ * tres de las cuatro y choque con `archive_documents_file_all_or_nothing`.
+ *
+ * `select('id')` por el motivo que ya aprendieron las pantallas de mantenimiento: una
+ * actualización que las políticas deniegan vuelve 204 sin error, y cero filas
+ * afectadas significa que no se escribió, sea por lo que sea.
+ */
+export async function updateArchiveDocument(
+  id: string,
+  payload: Record<string, unknown>,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('archive_documents')
+    .update(payload)
+    .eq('id', id)
+    .select('id')
+  if (error) return describeDocumentRefusal('edit', error)
+  if ((data ?? []).length === 0) return describeDocumentRefusal('edit', null)
+  return null
+}
+
+/**
+ * Anota el escaneo en un documento que se registró sin él.
+ *
+ * **`.is('file_path', null)` es la mitad de esta función.** Sin esa condición, dos
+ * personas añadiendo el escaneo del mismo expediente a la vez —o la misma persona
+ * desde dos fichas enlazadas— dejarían el primer fichero suelto en el almacén y sin
+ * nadie que lo nombre, con la ficha anunciando un peso que no es el del fichero que
+ * queda. Con ella, el segundo intento no escribe nada y se cuenta como lo que es: ya
+ * estaba hecho. Es la misma disciplina de contar filas afectadas, usada esta vez para
+ * ganar una condición de carrera y no solo para detectar una negativa.
+ */
+export async function attachDocumentFile(
+  id: string,
+  columns: { file_path: string; file_size_bytes: number; mime_type: string; uploaded_at: string },
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('archive_documents')
+    .update(columns)
+    .eq('id', id)
+    .is('file_path', null)
+    .select('id')
+  if (error) return describeDocumentRefusal('addFile', error)
+  if ((data ?? []).length === 0) return describeDocumentRefusal('addFile', null)
+  return null
 }
 
 /**

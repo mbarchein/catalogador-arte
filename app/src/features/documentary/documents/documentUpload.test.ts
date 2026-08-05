@@ -8,10 +8,14 @@ import {
   extensionForFile,
   fileColumns,
   mimeForFile,
+  runAddScan,
   runDocumentUpload,
+  SCAN_STEP_TEXT,
   uploadedNotice,
   UPLOAD_STEP_TEXT,
+  type AddScanDeps,
   type PickedFile,
+  type ScanStep,
   type UploadDocumentDeps,
   type UploadStep,
 } from './documentUpload'
@@ -393,5 +397,118 @@ describe('lo que se dice cuando ha funcionado', () => {
 
   it('sin título no deja unas comillas vacías', () => {
     expect(uploadedNotice({ document: { title: '  ' }, file: null })).toMatch(/^El documento/)
+  })
+})
+
+// ── El escaneo que le faltaba a un documento ya registrado ────
+
+/**
+ * `runAddScan` es la mitad que le faltaba al alta: un documento registrado «sin
+ * digitalizar» era un estado del que no se salía, y el panel de subida lo advertía
+ * antes de guardar precisamente porque no había ninguna pantalla que lo arreglara.
+ *
+ * Lo que estos tests fijan es el ORDEN —los bytes antes de la fila, por el mismo
+ * motivo que en el alta— y el fallo que solo existe aquí: que alguien se haya
+ * adelantado entre que el panel se abrió y el «Añadir».
+ */
+function scanDeps(over: Partial<AddScanDeps> = {}) {
+  const calls: string[] = []
+  const base: AddScanDeps = {
+    upload: async (path) => {
+      calls.push(`upload:${path}`)
+      return null
+    },
+    attach: async (columns) => {
+      calls.push(`attach:${columns.file_path}:${columns.file_size_bytes}:${columns.mime_type}`)
+      return null
+    },
+    now: () => new Date('2026-08-05T10:00:00Z'),
+    suffix: () => 'k3m9p2qz',
+    ...over,
+  }
+  return { calls, base }
+}
+
+const REGISTERED = { id: 'doc-1', archive_code: 'AR-ARCH-0001', title: 'Carta de la galería' }
+
+describe('añadir el escaneo a un documento que ya está en el archivo (RF-408)', () => {
+  it('los bytes primero y la anotación después', async () => {
+    const { calls, base } = scanDeps()
+    const steps: ScanStep[] = []
+    const outcome = await runAddScan(REGISTERED, picked(), {
+      ...base,
+      onStep: (step) => steps.push(step),
+    })
+
+    expect(outcome).toEqual({ ok: true, path: 'archivo/ar-arch-0001_k3m9p2qz.pdf' })
+    expect(calls).toEqual([
+      'upload:archivo/ar-arch-0001_k3m9p2qz.pdf',
+      'attach:archivo/ar-arch-0001_k3m9p2qz.pdf:3355443:application/pdf',
+    ])
+    expect(steps.map((step) => SCAN_STEP_TEXT[step])).toEqual([
+      'Subiendo el escaneo…',
+      'Anotándolo en el documento…',
+    ])
+  })
+
+  it('la ruta no lleva el identificador de la obra desde la que se sube', async () => {
+    // El documento es del archivo: uno enlazado con tres obras no puede tener tres
+    // nombres. Es la misma decisión que tomó la descarga.
+    const { calls, base } = scanDeps()
+    await runAddScan(REGISTERED, picked(), base)
+    expect(calls[0]).not.toContain('AR-0001')
+    expect(calls[0]).toContain(`${ARCHIVE_PREFIX}/`)
+  })
+
+  it('un fichero vacío se rechaza antes de gastar la conexión', async () => {
+    const { calls, base } = scanDeps()
+    const outcome = await runAddScan(REGISTERED, picked({ size: 0 }), base)
+    expect(outcome.ok).toBe(false)
+    if (outcome.ok) return
+    expect(outcome.problem).toContain('0 bytes')
+    // Y no se ha llamado a nada: en un almacén, subir para que le digan que no cuesta
+    // un cuarto de hora y el plan de datos de alguien.
+    expect(calls).toEqual([])
+  })
+
+  it('uno que no cabe tampoco sube', async () => {
+    const { calls, base } = scanDeps()
+    const outcome = await runAddScan(
+      REGISTERED,
+      picked({ size: BUCKET_FILE_LIMIT_BYTES + 1 }),
+      base,
+    )
+    expect(outcome.ok).toBe(false)
+    expect(calls).toEqual([])
+  })
+
+  it('si el fichero no sube, no se anota nada', async () => {
+    const { calls, base } = scanDeps({
+      upload: async () => ({ message: 'Payload too large', statusCode: '413' }),
+    })
+    const outcome = await runAddScan(REGISTERED, picked(), base)
+    expect(outcome.ok).toBe(false)
+    if (outcome.ok) return
+    expect(outcome.problem).toContain('tamaño')
+    expect(calls).toEqual([])
+  })
+
+  it('si la anotación no entra, se dice lo que dijo la base y el fichero queda suelto', async () => {
+    // Es el fallo inofensivo: un fichero en el almacén al que no apunta ninguna fila no
+    // rompe nada. Lo contrario —una fila prometiendo un fichero que no llegó— es un
+    // botón de descarga roto para siempre.
+    const { base } = scanDeps({
+      attach: async () => 'No se ha añadido el escaneo. Lo más probable es que ya tenga uno.',
+    })
+    const outcome = await runAddScan(REGISTERED, picked(), base)
+    expect(outcome.ok).toBe(false)
+    if (outcome.ok) return
+    expect(outcome.problem).toContain('ya tenga uno')
+  })
+
+  it('un documento sin signatura se nombra por el título', async () => {
+    const { calls, base } = scanDeps()
+    await runAddScan({ id: 'doc-2', archive_code: null, title: 'Recorte de prensa' }, picked(), base)
+    expect(calls[0]).toBe('upload:archivo/recorte-de-prensa_k3m9p2qz.pdf')
   })
 })

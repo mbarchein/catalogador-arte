@@ -7,9 +7,12 @@ import { blockState } from '../researchState'
 import { sectionSpec, canWriteBlock } from '../sections'
 import { useArtworkDocuments, type ArtworkDocumentaryQuery } from '../useDocumentary'
 import {
+  attachDocumentFile,
   createArchiveDocument,
+  editDocumentLinkNote,
   linkDocumentToArtwork,
   setDocumentLinkActive,
+  updateArchiveDocument,
   uploadDocumentFile,
 } from './documentActions'
 import {
@@ -25,6 +28,8 @@ import {
   TWO_ACTS_TEXT,
 } from './documentLink'
 import { documentViews, documentsSummary, type DocumentView } from './documentView'
+import { AddScanSheet } from './AddScanSheet'
+import { EditDocumentSheet } from './EditDocumentSheet'
 import { LinkDocumentSheet } from './LinkDocumentSheet'
 import { ResearchStatusPicker } from './ResearchStatusPicker'
 import { statusUnknownNotice, withStatusUnknown } from './researchStatusChoice'
@@ -95,7 +100,15 @@ export function DocumentsSection({
   const canWrite = canWriteBlock(writable, canEdit)
   const { rows, loading, error, reload } = useArtworkDocuments(catalogId)
 
-  const [panel, setPanel] = useState<'link' | 'upload' | null>(null)
+  /**
+   * Qué hoja está abierta. Las dos primeras son del bloque; las dos últimas son de UNA
+   * fila, así que llevan el identificador del vínculo que las abrió: el documento que
+   * se corrige se saca de las filas ya cargadas y no de una consulta nueva, porque
+   * `DOCUMENT_LINK_COLUMNS` ya trae las doce columnas que el formulario escribe.
+   */
+  const [panel, setPanel] = useState<
+    { kind: 'link' | 'upload' } | { kind: 'edit' | 'scan'; linkId: string } | null
+  >(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
@@ -105,6 +118,10 @@ export function DocumentsSection({
   // buscador que se abre con un toque y solo en la zona de edición— serían cuatro
   // peticiones por cada obra que se pasa con el pulgar.
   const archive = useArchiveCatalog(canWrite && panel !== null)
+
+  /** La fila que abrió una hoja de documento, si sigue estando. */
+  const acting = panel !== null && 'linkId' in panel ? rows.find((row) => row.id === panel.linkId) : undefined
+  const actingDocument = acting?.document ?? null
 
   const status = documentary.documentary?.documentation_status ?? null
   const views = useMemo(() => documentViews(rows, { placeText }), [rows, placeText])
@@ -143,7 +160,7 @@ export function DocumentsSection({
 
   const sheets = (
     <>
-      {panel === 'link' && (
+      {panel?.kind === 'link' && (
         <LinkDocumentSheet
           catalogId={catalogId}
           documents={archive.documents}
@@ -161,7 +178,7 @@ export function DocumentsSection({
         />
       )}
 
-      {panel === 'upload' && (
+      {panel?.kind === 'upload' && (
         <UploadDocumentSheet
           catalogId={catalogId}
           documentTypes={archive.documentTypes}
@@ -181,6 +198,37 @@ export function DocumentsSection({
                 p_document_id: documentId,
                 p_note: note.trim(),
               }),
+          }}
+          onClose={() => setPanel(null)}
+          onDone={(said) => afterWrite(null, said)}
+        />
+      )}
+
+      {/* Las dos hojas de una fila. `actingDocument` puede ser null aunque el vínculo
+          esté: es el documento que esta sesión no puede leer, y sobre ese no se abre un
+          formulario que enseñaría campos vacíos como si fueran los suyos. */}
+      {panel?.kind === 'edit' && actingDocument !== null && (
+        <EditDocumentSheet
+          catalogId={catalogId}
+          document={actingDocument}
+          linkNote={acting?.note ?? ''}
+          documentTypes={archive.documentTypes}
+          seriesTree={archive.seriesTree}
+          placeTree={archive.placeTree}
+          mastersError={archive.mastersError}
+          onSave={(payload) => updateArchiveDocument(actingDocument.id, payload)}
+          onSaveLinkNote={(note) => editDocumentLinkNote(panel.linkId, note)}
+          onClose={() => setPanel(null)}
+          onDone={(said) => afterWrite(null, said)}
+        />
+      )}
+
+      {panel?.kind === 'scan' && actingDocument !== null && (
+        <AddScanSheet
+          document={actingDocument}
+          onAdd={{
+            upload: (path, file) => uploadDocumentFile(path, file as Blob & PickedFile),
+            attach: (columns) => attachDocumentFile(actingDocument.id, columns),
           }}
           onClose={() => setPanel(null)}
           onDone={(said) => afterWrite(null, said)}
@@ -225,7 +273,7 @@ export function DocumentsSection({
                   onClick={() => {
                     setActionError(null)
                     setNotice(null)
-                    setPanel('link')
+                    setPanel({ kind: 'link' })
                   }}
                   className="btn-secondary flex w-full items-center justify-center gap-2 text-sm"
                 >
@@ -237,7 +285,7 @@ export function DocumentsSection({
                   onClick={() => {
                     setActionError(null)
                     setNotice(null)
-                    setPanel('upload')
+                    setPanel({ kind: 'upload' })
                   }}
                   className="btn-secondary flex w-full items-center justify-center gap-2 text-sm"
                 >
@@ -271,6 +319,16 @@ export function DocumentsSection({
             }}
             onCancelRemove={() => setRemoving(null)}
             onRemove={() => void remove(view.id)}
+            onEdit={() => {
+              setActionError(null)
+              setNotice(null)
+              setPanel({ kind: 'edit', linkId: view.id })
+            }}
+            onAddScan={() => {
+              setActionError(null)
+              setNotice(null)
+              setPanel({ kind: 'scan', linkId: view.id })
+            }}
           />
         ))}
       </ul>
@@ -292,6 +350,8 @@ function DocumentRow({
   onAskRemove,
   onCancelRemove,
   onRemove,
+  onEdit,
+  onAddScan,
 }: {
   view: DocumentView
   canWrite: boolean
@@ -299,6 +359,8 @@ function DocumentRow({
   onAskRemove: () => void
   onCancelRemove: () => void
   onRemove: () => void
+  onEdit: () => void
+  onAddScan: () => void
 }) {
   return (
     <li className="border-t border-stone-100 py-2 first:border-t-0">
@@ -372,13 +434,44 @@ function DocumentRow({
             </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={onAskRemove}
-            className="mt-1 min-h-touch text-xs text-stone-600 underline"
-          >
-            Quitar de la ficha
-          </button>
+          /* Tres salidas de la fila y en este orden, que es el de lo que se hace más
+             veces: corregir lo que está mal escrito, darle el escaneo que le falta, y
+             solo al final quitarlo de la ficha, que es lo que no se quiere pulsar sin
+             querer. «Añadir el escaneo» solo aparece cuando de verdad falta: un botón
+             que se pinta siempre y a veces contesta que no se puede es un botón que se
+             deja de leer.
+
+             Sobre un documento que esta sesión no puede leer no se ofrece ninguna de
+             las dos primeras: el formulario enseñaría campos vacíos como si fueran los
+             suyos, y guardarlos borraría lo que hay detrás. Quitarlo de la ficha sí,
+             porque eso es del vínculo y el vínculo se ve. */
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+            {!view.unavailable && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="min-h-touch text-xs text-stone-600 underline"
+              >
+                Corregir los datos del documento
+              </button>
+            )}
+            {!view.unavailable && view.file === null && (
+              <button
+                type="button"
+                onClick={onAddScan}
+                className="min-h-touch text-xs text-stone-600 underline"
+              >
+                Añadir el escaneo
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onAskRemove}
+              className="min-h-touch text-xs text-stone-600 underline"
+            >
+              Quitar de la ficha
+            </button>
+          </div>
         ))}
     </li>
   )

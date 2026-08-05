@@ -437,6 +437,68 @@ export async function runDocumentUpload(
   }
 }
 
+// ── El escaneo que le faltaba a un documento ya registrado ────
+
+/** Los dos pasos de añadir un escaneo. El primero es el que dura. */
+export type ScanStep = 'uploading' | 'attaching'
+
+export const SCAN_STEP_TEXT: Record<ScanStep, string> = {
+  uploading: 'Subiendo el escaneo…',
+  attaching: 'Anotándolo en el documento…',
+}
+
+export interface AddScanDeps {
+  upload: (path: string, file: PickedFile) => Promise<StorageRefusal | null>
+  /**
+   * Escribe las cuatro columnas del fichero **solo si el documento sigue sin
+   * ninguno**, y responde null cuando escribió. Cero filas afectadas no es un error
+   * de la base: es que alguien se adelantó, y el que llama lo cuenta como tal.
+   */
+  attach: (
+    columns: { file_path: string; file_size_bytes: number; mime_type: string; uploaded_at: string },
+  ) => Promise<string | null>
+  onStep?: (step: ScanStep) => void
+  now?: () => Date
+  suffix?: () => string
+}
+
+export type AddScanOutcome = { ok: true; path: string } | { ok: false; problem: string }
+
+/**
+ * Sube el escaneo y lo anota en un documento que ya está en el archivo.
+ *
+ * **Los bytes van primero, por el mismo motivo que en el alta:** un fichero en el
+ * almacén al que no apunta ninguna fila no estorba a nadie y se limpia otro día,
+ * mientras que una fila que promete un fichero que no llegó es un botón de descarga
+ * roto para siempre y la ficha no tiene forma de saberlo.
+ *
+ * Y hay un fallo que solo existe aquí y que el alta no puede tener: **el documento
+ * puede haber recibido su escaneo entre que este panel se abrió y el «Añadir»**,
+ * desde otra ficha enlazada o desde otro teléfono. Sobrescribir la ruta dejaría el
+ * primer fichero suelto y sin nadie que lo nombre, así que la escritura solo entra
+ * si el documento sigue sin fichero y el resto se cuenta como lo que es: no una
+ * negativa de la base, sino que ya está hecho.
+ */
+export async function runAddScan(
+  document: { id: string; archive_code?: string | null; title: string },
+  file: PickedFile,
+  deps: AddScanDeps,
+): Promise<AddScanOutcome> {
+  const problem = documentFileProblem(file)
+  if (problem !== null) return { ok: false, problem }
+
+  const path = documentObjectPath(document, file, deps.suffix?.())
+  deps.onStep?.('uploading')
+  const refusal = await deps.upload(path, file)
+  if (refusal !== null) return { ok: false, problem: describeStorageFailure(refusal) }
+
+  deps.onStep?.('attaching')
+  const failure = await deps.attach(fileColumns(path, file, deps.now?.()))
+  if (failure !== null) return { ok: false, problem: failure }
+
+  return { ok: true, path }
+}
+
 /**
  * What is said when it worked.
  *

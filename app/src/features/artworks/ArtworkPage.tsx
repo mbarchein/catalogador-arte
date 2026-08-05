@@ -520,11 +520,14 @@ export function ArtworkPage() {
 
             Lo comprobado ahora, afirmación por afirmación, y lo único que queda:
 
-            - Un DOCUMENTO DEL ARCHIVO se sube, se enlaza y se descarga desde el
-              bloque de arriba, pero no hay ninguna acción que corrija sus datos ni
-              que le añada el escaneo más tarde (`documentActions` solo escribe la
-              nota del vínculo). El propio panel de subida ya lo advierte antes de
-              guardar; aquí se dice una vez para la ficha entera.
+            - Un DOCUMENTO DEL ARCHIVO se sube, se enlaza, se descarga, **se corrige y
+              se digitaliza más tarde** desde el bloque de arriba
+              (`updateArchiveDocument`, `attachDocumentFile`). Lo que le falta ya no es
+              poder tocarlo: es ficha y listado propios, igual que a la referencia. Y
+              con ello se ha ido de aquí media frase que era verdad ayer — la de que sus
+              datos no se podían corregir y el escaneo no se podía añadir —, que es la
+              CUARTA vez que esta tarjeta envejece. Los dos avisos del panel de subida
+              que prometían lo contrario se reescribieron en el mismo commit.
             - Una REFERENCIA BIBLIOGRÁFICA se crea y se corrige, pero solo desde una
               obra que la cite (`referenceEdit`): no tiene ficha ni listado propios
               (RF-309).
@@ -539,11 +542,11 @@ export function ArtworkPage() {
         <section className="card mt-3 text-sm text-stone-500">
           <p className="font-medium text-stone-700">Lo que aún no se puede hacer aquí</p>
           <p className="mt-1">
-            Un <strong>documento del archivo</strong> se sube, se enlaza con esta obra y se
-            descarga, pero luego no se pueden corregir sus datos ni añadirle el escaneo que le
-            falte: el documento todavía no tiene ficha propia. Una{' '}
-            <strong>referencia bibliográfica</strong> se crea y se corrige desde aquí, pero solo
-            desde una obra que la cite: tampoco tiene ficha ni listado propios.
+            Un <strong>documento del archivo</strong> y una{' '}
+            <strong>referencia bibliográfica</strong> se crean y se corrigen desde aquí, pero solo
+            desde una obra que los use: ninguno de los dos tiene todavía ficha ni listado propios,
+            así que a un documento o a una referencia que ninguna obra tenga enlazada no hay forma
+            de llegar.
           </p>
           <p className="mt-2">
             Lo que sí se hace, y no es aquí: una <strong>exposición</strong> se da de alta y se
