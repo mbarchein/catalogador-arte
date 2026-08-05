@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router'
 import { useAuth } from '../../../auth/AuthContext'
 import { PlusIcon } from '../../../components/ui'
 import { DownloadFailure } from '../../../lib/download'
@@ -364,8 +365,18 @@ function DocumentRow({
 }) {
   return (
     <li className="border-t border-stone-100 py-2 first:border-t-0">
+      {/* El título lleva a la ficha del documento en el archivo, que es donde se ve de
+          qué MÁS cuelga: desde aquí solo se ve que cuelga de esta obra, y un recorte que
+          habla de tres piezas se leería tres veces sin saberlo nunca. Un documento que
+          esta sesión no puede leer no se enlaza a una ficha que no va a abrir. */}
       <p className={`text-sm font-medium ${view.unavailable ? 'text-stone-500' : ''}`}>
-        {view.title}
+        {view.unavailable ? (
+          view.title
+        ) : (
+          <Link to={`/archive/${view.documentId}`} className="underline decoration-stone-300">
+            {view.title}
+          </Link>
+        )}
         {view.retired && (
           <span className="ml-2 rounded bg-stone-200 px-1.5 py-0.5 text-[11px] font-normal text-stone-600">
             Retirado del archivo

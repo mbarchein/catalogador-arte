@@ -521,14 +521,14 @@ export function ArtworkPage() {
 
             Lo comprobado ahora, afirmación por afirmación, y lo único que queda:
 
-            - Un DOCUMENTO DEL ARCHIVO se sube, se enlaza, se descarga, **se corrige y
-              se digitaliza más tarde** desde el bloque de arriba
-              (`updateArchiveDocument`, `attachDocumentFile`). Lo que le falta ya no es
-              poder tocarlo: es ficha y listado propios, igual que a la referencia. Y
-              con ello se ha ido de aquí media frase que era verdad ayer — la de que sus
-              datos no se podían corregir y el escaneo no se podía añadir —, que es la
-              CUARTA vez que esta tarjeta envejece. Los dos avisos del panel de subida
-              que prometían lo contrario se reescribieron en el mismo commit.
+            - Un DOCUMENTO DEL ARCHIVO ya tiene **listado y ficha propios**
+              (`/archive`, `/archive/:id`) con sus DOS bloques —obras y exposiciones,
+              porque RF-516 es de muchos a muchos por los dos lados—. La ficha se lee y
+              no se escribe: subir, enlazar, corregir y digitalizar siguen aquí, donde el
+              aviso cuenta a cuántas fichas afecta el cambio. Es la SEXTA vez que esta
+              tarjeta envejece, y lo único que queda de la lista original es enlazar un
+              documento con una exposición: la operación está en la base y concedida
+              (`document_exhibition`), y no la llama ninguna pantalla.
             - Una REFERENCIA BIBLIOGRÁFICA ya tiene **listado y ficha propios**
               (`/bibliography`, `/bibliography/:id`) con su bloque «Obras citadas»
               (RF-506), así que esa mitad de la frase se ha ido con la QUINTA revisión
@@ -547,18 +547,22 @@ export function ArtworkPage() {
           <p className="font-medium text-stone-700">Lo que aún no se puede hacer aquí</p>
           <p className="mt-1">
             Un <strong>documento del archivo</strong> se sube, se enlaza, se corrige y se
-            digitaliza desde aquí, pero solo desde una obra que lo tenga enlazado: no tiene todavía
-            ficha ni listado propios, así que a un documento que ninguna obra tenga enlazado no hay
-            forma de llegar.
+            digitaliza desde aquí, y desde aquí solo: su ficha propia se lee, pero no se escribe en
+            ella. Y enlazar un documento con una <strong>exposición</strong> —el cartel o el díptico
+            de una muestra— todavía no se hace desde ninguna pantalla.
           </p>
           <p className="mt-2">
-            Lo que sí se hace, y no es aquí: una{' '}
-            <strong>referencia bibliográfica</strong> tiene ya su propia ficha, con las obras que la
-            citan, y se llega a ella desde{' '}
+            Lo que sí se hace, y no es aquí: cada{' '}
+            <strong>referencia bibliográfica</strong> y cada <strong>documento del archivo</strong>{' '}
+            tienen su ficha propia, con lo que cuelga de ellos, y se llega desde{' '}
             <Link to="/bibliography" className="underline">
               el listado de la bibliografía
             </Link>{' '}
-            —donde están también las que ya no cita ninguna obra—. Una{' '}
+            y{' '}
+            <Link to="/archive" className="underline">
+              el del archivo
+            </Link>{' '}
+            —donde están también los que ninguna obra tiene enlazados—. Una{' '}
             <strong>exposición</strong> se da de alta y se corrige en su propia ficha, en{' '}
             <strong>Exposiciones</strong>. Y las{' '}
             <strong>series</strong>, las <strong>sedes de exposición</strong>, los{' '}

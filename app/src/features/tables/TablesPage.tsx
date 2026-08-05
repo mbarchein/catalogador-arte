@@ -161,6 +161,11 @@ export function TablesPage() {
             name="Bibliografía"
             hint="Todas las referencias del catálogo, con su búsqueda. Se crean y se corrigen desde la bibliografía de una obra; aquí se encuentran, también las que ya no cita ninguna."
           />
+          <TableRow
+            to="/archive"
+            name="Archivo"
+            hint="Cartas, recortes, carteles y expedientes, con su búsqueda y cuántos quedan sin digitalizar. Se suben desde la documentación de una obra; aquí están todos, también los que no tiene enlazados ninguna."
+          />
         </ul>
       </section>
 

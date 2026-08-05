@@ -2,6 +2,34 @@
 
 ### Interfaz
 
+**El archivo documental tiene listado, búsqueda y ficha: ya se llega a un documento sin pasar por una obra**
+Era el último agujero de este tipo, el mismo que tenía la bibliografía. Un documento del archivo se
+subía, se enlazaba, se descargaba, se corregía y se digitalizaba **siempre desde la ficha de una obra que
+lo tuviera enlazado**, así que a un documento que ninguna obra tuviera enlazado no se llegaba desde
+ningún sitio: el cartel de una muestra que no habla de una pieza concreta, o el documento cuyo vínculo se
+quitó después. Ahora hay **Tablas → Archivo**, y también se llega desde el título de cualquier documento
+en la ficha de una obra.
+
+El listado sale **en orden de estantería**, por la signatura escrita en la carpeta, y los que no tienen
+signatura van al final: un documento sin signatura es uno que **todavía no está archivado**, así que no
+tiene sitio en la estantería. Se busca por signatura, título, tipo o año. Y el recuento dice **cuántos
+quedan sin digitalizar**, que es la lista de trabajo del escaneo: en la ficha de una obra la pregunta es
+«¿puedo leer este papel?», y aquí es «¿cuánto archivo queda por escanear?».
+
+La ficha de cada documento dice, lo primero, **de qué está colgando**: «Enlazado con 3 obras y una
+exposición». Eso no se podía leer en ningún sitio — desde una obra solo se ve que cuelga de ELLA, así que
+un recorte que habla de tres piezas se leía tres veces sin saberlo nunca—. Y cuando no cuelga de nada lo
+dice sin llamarlo error, porque un documento del archivo existe por sí mismo.
+
+Las obras y las exposiciones van en **dos bloques separados**, no en una lista: un recorte habla de
+piezas y un díptico cuelga de la muestra, y mezclarlos pondría códigos de obra y títulos de exposición en
+la misma columna. Cada uno se toca y lleva a su ficha. El fichero se descarga también desde aquí.
+
+Lo que la ficha del archivo **no** hace, y lo dice en vez de dejar buscarlo: corregir los datos y añadir
+el escaneo siguen en la documentación de una obra, donde el aviso cuenta a cuántas fichas afecta el
+cambio; retirar y recuperar, en la papelera. Y enlazar un documento con una exposición sigue sin poder
+hacerse desde ninguna pantalla.
+
 **Y cada referencia tiene su ficha, con las obras que la citan**
 Tocando una referencia del listado se abre su ficha. Lo que trae y no estaba en ningún sitio es la
 referencia **leída por el otro lado**: qué obras del catálogo la citan y **en qué página de ella sale

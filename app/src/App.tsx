@@ -6,6 +6,7 @@ import { CapturePage } from './features/artworks/CapturePage'
 import { ArtworkPage } from './features/artworks/ArtworkPage'
 import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
+import { ArchivePage, DocumentPage } from './features/archive'
 import { BibliographyPage, ReferencePage } from './features/bibliography'
 import { ExhibitionsPage, NewExhibitionPage, ExhibitionPage } from './features/exhibitions'
 import { GrayTargetPage } from './features/help/GrayTargetPage'
@@ -81,6 +82,14 @@ export function App() {
           existía —es el mismo que abre la ficha de obra—, así que una ruta de edición
           sería una segunda forma de abrir lo mismo. */}
       <Route path="/bibliography/:id" element={<ReferencePage />} />
+      {/* RF-515, RF-516, RF-606: el archivo documental y la ficha de un documento, con
+          las obras Y las exposiciones que lo tienen enlazado. `archive` y no
+          `documents` por lo mismo que el prefijo del almacén se llama `archivo`: lo que
+          se nombra es el fondo entero y no una tabla. Sin rutas de escritura: subir,
+          enlazar, corregir y digitalizar se hacen desde la documentación de una obra, y
+          retirar desde la papelera. */}
+      <Route path="/archive" element={<ArchivePage />} />
+      <Route path="/archive/:id" element={<DocumentPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       {/* RF-418: qué es el testigo de gris, dónde se coloca y de dónde se baja la
           hoja imprimible. Es una ruta y no un panel del editor porque se lee antes
