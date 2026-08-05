@@ -188,7 +188,7 @@ function ParticipationItem({
           {/* «Sin revisar» in amber and the two answers in stone: the character of
               a show is a datum, and not having decided it is a pending task. */}
           <span
-            className={`rounded px-2 py-0.5 text-[11px] ${
+            className={`rounded px-2 py-0.5 text-2xs ${
               exhibitionKindPending(exhibition.exhibition_type)
                 ? 'bg-amber-100 text-amber-900'
                 : 'bg-stone-200 text-stone-700'
@@ -196,11 +196,11 @@ function ParticipationItem({
           >
             {exhibitionKindText(exhibition.exhibition_type)}
           </span>
-          <span className="rounded bg-stone-100 px-2 py-0.5 text-[11px] text-stone-600">
+          <span className="rounded bg-stone-100 px-2 py-0.5 text-2xs text-stone-600">
             {catalogueText(exhibition)}
           </span>
           {number !== null && (
-            <span className="rounded bg-stone-100 px-2 py-0.5 text-[11px] text-stone-600">
+            <span className="rounded bg-stone-100 px-2 py-0.5 text-2xs text-stone-600">
               {number}
             </span>
           )}

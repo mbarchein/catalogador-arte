@@ -123,7 +123,7 @@ export function DocumentarySection({
 /** How far the research on this block has got (RF-218), on the heading. */
 function StatusBadge({ tone, label }: { tone: BlockTone; label: string }) {
   return (
-    <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] ${TONE_CLASS[tone]}`}>{label}</span>
+    <span className={`shrink-0 rounded px-2 py-0.5 text-2xs ${TONE_CLASS[tone]}`}>{label}</span>
   )
 }
 

@@ -131,7 +131,7 @@ export function FooterMenu() {
               // `min-w-0` y el `truncate` de la etiqueta son la red por debajo de
               // 340 px: ahí la más larga se recorta en vez de ensanchar su pestaña
               // y empujar a las vecinas.
-              `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] ${
+              `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-2xs ${
                 isActive ? 'font-semibold text-stone-900' : 'text-stone-500'
               }`
             }

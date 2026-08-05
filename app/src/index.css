@@ -19,7 +19,12 @@
   input,
   select,
   textarea {
-    font-size: 16px;
+    /* 16px es el umbral por debajo del cual iOS hace zoom solo al enfocar un campo, y con
+       la obra delante durante la captura ese salto desorienta. Pero clavado en píxeles los
+       campos serían LO ÚNICO que no crece con el tamaño de letra elegido en el perfil — y
+       son justo donde se teclea. Con `max` hace las dos cosas: crece con la raíz y nunca
+       baja del umbral. Ver `src/lib/textScale.ts`. */
+    font-size: max(1rem, 16px);
   }
 }
 

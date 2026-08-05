@@ -342,17 +342,17 @@ function CitationItem({
 
       <div className="mt-1 flex flex-wrap items-center gap-1">
         <span
-          className={`rounded px-2 py-0.5 text-[11px] ${
+          className={`rounded px-2 py-0.5 text-2xs ${
             view.pagesMissing ? 'bg-stone-100 text-stone-500' : 'bg-stone-200 text-stone-800'
           }`}
         >
           {view.pagesText}
         </span>
         {showType && view.typeName !== null && (
-          <span className="rounded px-2 py-0.5 text-[11px] text-stone-500">{view.typeName}</span>
+          <span className="rounded px-2 py-0.5 text-2xs text-stone-500">{view.typeName}</span>
         )}
         {view.bibtexKey !== null && (
-          <span className="rounded px-2 py-0.5 font-mono text-[11px] text-stone-400">
+          <span className="rounded px-2 py-0.5 font-mono text-2xs text-stone-400">
             {view.bibtexKey}
           </span>
         )}

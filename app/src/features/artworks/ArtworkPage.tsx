@@ -711,7 +711,7 @@ function SequenceBar({
     <div className="flex items-center gap-2">
       <div className="min-w-0 flex-1">
         <p className="truncate font-mono text-sm font-semibold leading-tight">{catalogId}</p>
-        <p className="truncate text-[11px] leading-tight text-stone-500">
+        <p className="truncate text-2xs leading-tight text-stone-500">
           {sequence.index} de {sequence.total}
           {/* Said only when the queue is not the list one arrived from, which is
               the one case where the total would be a lie about the listing. */}
@@ -769,7 +769,7 @@ function NeighborButton({
         {back && <ChevronLeftIcon className="h-3.5 w-3.5 shrink-0" />}
         {/* An em dash at the ends: the shape of the control does not change, so
             the thumb finds the other one where it left it. */}
-        <span className="truncate font-mono text-[11px] font-semibold">
+        <span className="truncate font-mono text-2xs font-semibold">
           {row?.catalog_id ?? '—'}
         </span>
         {!back && <ChevronRightIcon className="h-3.5 w-3.5 shrink-0" />}
@@ -799,7 +799,7 @@ function NeighborButton({
     >
       {back && <ChevronLeftIcon className="h-5 w-5 shrink-0 text-stone-400" />}
       <span className={`min-w-0 flex-1 ${back ? '' : 'text-right'}`}>
-        <span className="block text-[11px] uppercase tracking-wide text-stone-500">
+        <span className="block text-2xs uppercase tracking-wide text-stone-500">
           {back ? 'Anterior' : 'Siguiente'}
         </span>
         <span className="block truncate font-mono text-xs font-semibold">{row.catalog_id}</span>

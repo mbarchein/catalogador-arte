@@ -307,7 +307,7 @@ function ChainLinkItem({
         <span
           aria-hidden
           className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full
-                     bg-stone-200 text-[11px] font-medium text-stone-700"
+                     bg-stone-200 text-2xs font-medium text-stone-700"
         >
           {link.ordinal}
         </span>
@@ -332,7 +332,7 @@ function ChainLinkItem({
 
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span
-              className={`rounded px-2 py-0.5 text-[11px] ${
+              className={`rounded px-2 py-0.5 text-2xs ${
                 link.dated ? 'bg-stone-100 text-stone-600' : 'bg-stone-100 text-stone-500'
               }`}
             >
@@ -342,7 +342,7 @@ function ChainLinkItem({
                 «Se desconoce» included, because having looked and found nothing
                 IS an answer (RF-205). */}
             <span
-              className={`rounded px-2 py-0.5 text-[11px] ${
+              className={`rounded px-2 py-0.5 text-2xs ${
                 link.capacityUnreviewed
                   ? 'bg-amber-100 text-amber-900'
                   : 'bg-stone-200 text-stone-700'
@@ -351,7 +351,7 @@ function ChainLinkItem({
               {link.capacityText}
             </span>
             <span
-              className={`rounded px-2 py-0.5 text-[11px] ${
+              className={`rounded px-2 py-0.5 text-2xs ${
                 link.acquisitionUnreviewed
                   ? 'bg-amber-100 text-amber-900'
                   : 'bg-stone-200 text-stone-700'

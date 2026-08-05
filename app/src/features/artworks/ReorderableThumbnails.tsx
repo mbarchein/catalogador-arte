@@ -132,7 +132,7 @@ export function ReorderableThumbnails({
                     className="aspect-square w-full object-cover"
                   />
                 ) : (
-                  <span className="flex aspect-square w-full items-center justify-center bg-stone-100 text-[10px] text-stone-500">
+                  <span className="flex aspect-square w-full items-center justify-center bg-stone-100 text-3xs text-stone-500">
                     sin vista
                   </span>
                 )}
@@ -162,7 +162,7 @@ export function ReorderableThumbnails({
 
               {/* The position is written on the thumbnail: after a drag, the
                   order must be readable without counting tiles. */}
-              <span className="pointer-events-none absolute bottom-1 right-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">
+              <span className="pointer-events-none absolute bottom-1 right-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-3xs font-medium tabular-nums text-white">
                 {position + 1}
               </span>
               {isMain && (
@@ -174,7 +174,7 @@ export function ReorderableThumbnails({
                 </span>
               )}
               {image.shot_type !== 'GENERAL' && (
-                <span className="pointer-events-none absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white">
+                <span className="pointer-events-none absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-3xs text-white">
                   {SHOT_TYPE_LABEL[image.shot_type]}
                 </span>
               )}

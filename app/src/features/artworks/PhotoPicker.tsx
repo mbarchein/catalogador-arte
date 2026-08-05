@@ -298,12 +298,12 @@ export function PhotoPicker({
                   className="aspect-square w-full object-cover"
                 />
                 {s.isIndex && (
-                  <span className="absolute left-1 top-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                  <span className="absolute left-1 top-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-3xs font-medium text-white">
                     Índice
                   </span>
                 )}
                 {s.shotType !== 'GENERAL' && (
-                  <span className="absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white">
+                  <span className="absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-3xs text-white">
                     {SHOT_TYPE_LABEL[s.shotType]}
                   </span>
                 )}

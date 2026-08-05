@@ -372,7 +372,7 @@ function DocumentRow({
           </Link>
         )}
         {view.retired && (
-          <span className="ml-2 rounded bg-stone-200 px-1.5 py-0.5 text-[11px] font-normal text-stone-600">
+          <span className="ml-2 rounded bg-stone-200 px-1.5 py-0.5 text-2xs font-normal text-stone-600">
             Retirado del archivo
           </span>
         )}

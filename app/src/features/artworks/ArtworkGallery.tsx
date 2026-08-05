@@ -106,7 +106,7 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
                       className="h-20 w-20 object-cover"
                     />
                   ) : (
-                    <span className="flex h-20 w-20 items-center justify-center bg-stone-100 text-[10px] text-stone-500">
+                    <span className="flex h-20 w-20 items-center justify-center bg-stone-100 text-3xs text-stone-500">
                       sin vista
                     </span>
                   )}
@@ -122,7 +122,7 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
                       (back, signature detail…) are recognizable without
                       opening each one. */}
                   {r.shot_type !== 'GENERAL' && (
-                    <span className="absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white">
+                    <span className="absolute bottom-1 left-1 rounded bg-stone-900/85 px-1.5 py-0.5 text-3xs text-white">
                       {SHOT_TYPE_LABEL[r.shot_type]}
                     </span>
                   )}

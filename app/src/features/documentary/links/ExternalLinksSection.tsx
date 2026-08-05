@@ -117,7 +117,7 @@ export function ExternalLinksSection({
               origen. Es lo que cierra el par de RF-417 con RF-1407, y estando
               plegado el bloque no se ve de otra forma. */}
           {error === null && !loading && pending.length > 0 && (
-            <span className="shrink-0 rounded bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900">
+            <span className="shrink-0 rounded bg-amber-100 px-2 py-0.5 text-2xs text-amber-900">
               {pending.length === 1 ? '1 sin origen' : `${pending.length} sin origen`}
             </span>
           )}
@@ -386,14 +386,14 @@ function LinkItem({
       </a>
 
       <div className="mt-1 flex flex-wrap gap-1.5">
-        <span className="rounded bg-stone-100 px-2 py-0.5 text-[11px] text-stone-600">
+        <span className="rounded bg-stone-100 px-2 py-0.5 text-2xs text-stone-600">
           {linkTypeText(row.link_type)}
         </span>
-        <span className={`rounded px-2 py-0.5 text-[11px] ${CHECK_TONE_CLASS[badge.tone]}`}>
+        <span className={`rounded px-2 py-0.5 text-2xs ${CHECK_TONE_CLASS[badge.tone]}`}>
           {badge.label}
         </span>
         {badge.stale && (
-          <span className="rounded bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900">
+          <span className="rounded bg-amber-100 px-2 py-0.5 text-2xs text-amber-900">
             Conviene volver a mirarlo
           </span>
         )}

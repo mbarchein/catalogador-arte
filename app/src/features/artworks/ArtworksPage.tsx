@@ -457,7 +457,7 @@ function Thumbnail({ url, photographed }: { url?: string; photographed: boolean 
   }
   return (
     <div
-      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-300 bg-stone-50 p-1 text-center text-[10px] leading-tight text-stone-400"
+      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-300 bg-stone-50 p-1 text-center text-3xs leading-tight text-stone-400"
       aria-hidden={photographed}
     >
       {photographed ? '' : 'Sin foto'}
