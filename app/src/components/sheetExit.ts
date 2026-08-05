@@ -3,11 +3,16 @@
  *
  * ── LO QUE PASÓ ─────────────────────────────────────────────
  *
- * Una hoja se cerraba por cuatro caminos —el fondo oscuro, la ✕, Escape y el botón de
- * atrás del móvil— y los cuatro eran inmediatos. Con la hoja ocupando tres cuartos de la
+ * Una hoja se cerraba por cinco caminos —el fondo oscuro, la ✕, Escape, el botón de atrás
+ * del móvil y el «Cancelar» del pie— y los cinco eran inmediatos. Con la hoja ocupando tres cuartos de la
  * pantalla, el fondo queda justo donde se apoya el pulgar al desplazarse por un
  * formulario largo, y un roce ahí borraba diez minutos de tecleo sin preguntar. Ha pasado
  * dos veces, con datos dentro.
+ *
+ * Y lo que se escribe **se apunta además en el teléfono** y se ofrece a la vuelta
+ * (`useFormDraft`), que es lo único que cubre las salidas que no se pueden preguntar:
+ * recargar, que el móvil mate la pestaña, quedarse sin batería. Eso cambia lo que esta
+ * pregunta significa, y por eso `discardText` tiene dos redacciones.
  *
  * ── LAS DOS DECISIONES, Y POR QUÉ SON DOS ───────────────────
  *
@@ -18,7 +23,7 @@
  * sitio, una sede, un estado de investigación— el fondo sigue cerrando: ahí no hay nada
  * que perder y quitarlo sería quitar comodidad sin ganar nada.
  *
- * **Y las otras tres salidas preguntan cuando hay algo que perder.** Preguntar siempre
+ * **Y las otras cuatro salidas preguntan cuando hay algo que perder.** Preguntar siempre
  * —también sobre un formulario en blanco— es la forma más rápida de que la pregunta se
  * despache sin leerla, y entonces deja de proteger. Así que la condición es «hay algo
  * escrito que se perdería», que la calcula cada hoja porque solo ella sabe qué es un dato
@@ -81,20 +86,35 @@ export const DISCARD_TITLE = 'Tienes datos a medio meter'
  * Es el criterio de todo el proyecto para una pregunta destructiva: lo que hace falta
  * para decidir no es qué se va a borrar, es qué se queda. Aquí lo que se queda es el
  * catálogo entero — nada de lo que hay dentro se ha guardado todavía, así que salir no
- * cambia ninguna ficha —, y lo que se va es el rato de tecleo.
+ * cambia ninguna ficha.
  *
  * @param extra Lo que esta hoja en concreto quiera añadir, ya en español. Sirve para el
  *   dato que la frase general no puede saber: que habría que volver a elegir el fichero,
  *   por ejemplo, que es lo más caro de repetir de todo el formulario.
+ * @param kept La hoja apunta el borrador y lo ofrece a la vuelta (ver `useFormDraft`).
+ *   Entonces salir **no pierde el tecleo**, y decir que sí sería asustar con algo que no
+ *   pasa — que es la forma de que la pregunta deje de creerse. Con esto la frase promete
+ *   lo que la hoja de verdad hace.
  */
-export function discardText(extra?: string | null): string {
-  const base =
-    'Si sales ahora, lo que has escrito aquí no se guarda. Del catálogo no se cambia nada: ' +
-    'esta hoja no ha escrito todavía.'
+export function discardText(extra?: string | null, kept = false): string {
+  const base = kept
+    ? 'Del catálogo no se cambia nada: esta hoja no ha escrito todavía. Y lo que has escrito ' +
+      'se queda apuntado en este teléfono y se ofrece al volver a abrirla.'
+    : 'Si sales ahora, lo que has escrito aquí no se guarda. Del catálogo no se cambia nada: ' +
+      'esta hoja no ha escrito todavía.'
   const clean = (extra ?? '').trim()
   return clean === '' ? base : `${base} ${clean}`
 }
 
 /** El botón que NO destruye va primero, que es donde cae el pulgar sin apuntar. */
 export const DISCARD_KEEP_LABEL = 'Seguir rellenando'
-export const DISCARD_LEAVE_LABEL = 'Salir y perderlo'
+
+/**
+ * «Salir sin guardar» y no «Salir y perderlo».
+ *
+ * Cambió al apuntarse los borradores: con el borrador guardado, salir ya no pierde el
+ * tecleo, y un botón que dice «perderlo» sobre algo que no se pierde es un botón que
+ * enseña a no creerse los avisos. Lo que sí es verdad de las dos formas es que no se
+ * guarda en el catálogo, que es lo que el botón dice ahora.
+ */
+export const DISCARD_LEAVE_LABEL = 'Salir sin guardar'

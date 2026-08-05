@@ -238,6 +238,7 @@ export function ProvenanceSection({
       {editing !== null && (
         <ProvenanceLinkForm
           initial={editing}
+          catalogId={catalogId}
           parties={parties.parties}
           partiesLoading={parties.loading}
           partiesError={parties.error}

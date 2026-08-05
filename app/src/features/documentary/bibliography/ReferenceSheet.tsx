@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
 import { draftDirty } from '../../../components/formDirty'
+import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
+import { draftFingerprint } from '../../../components/draftStore'
+import { useFormDraft } from '../../../components/useFormDraft'
 import { BottomSheet, Chips, YearStepper } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import { maxYear } from '../../../lib/structuredDate'
@@ -83,12 +86,27 @@ export function ReferenceSheet({
       setError(failure)
       return
     }
+    stored.clear()
     onClose()
   }
 
   // No perder la corrección por un roce. Contra la fila guardada, que es de donde salió
   // el borrador: esta referencia la leen todas las obras que la citan.
-  const guard = useSheetGuard({ onClose, dirty: draftDirty(draft, referenceEdit(reference)) })
+  const dirty = draftDirty(draft, referenceEdit(reference))
+
+  // Y apuntada, con huella: esta fila la corrigen desde la ficha de la referencia y desde
+  // la bibliografía de cualquier obra que la cite, así que es de las más expuestas a que
+  // otra sesión la haya tocado mientras el borrador esperaba.
+  const stored = useFormDraft({
+    scope: `referencia-editar:${reference.id}`,
+    draft,
+    dirty,
+    fingerprint: draftFingerprint(
+      Object.values(referenceEdit(reference)) as (string | number | boolean | null)[],
+    ),
+  })
+
+  const guard = useSheetGuard({ onClose, dirty, draftKept: true })
 
   return (
     <BottomSheet
@@ -97,6 +115,15 @@ export function ReferenceSheet({
       title="Corregir la referencia"
       guard={guard}
     >
+      <DraftOfferBanner
+        offer={stored.offer}
+        onAccept={() => {
+          const recovered = stored.accept()
+          if (recovered !== null) setDraft(recovered)
+        }}
+        onDiscard={stored.discard}
+      />
+
       <div className="space-y-3">
         {/* Lo primero que se lee, antes de cualquier campo: lo que se corrige no
             es un dato de esta obra. Con el número de obras afectadas cuando se ha

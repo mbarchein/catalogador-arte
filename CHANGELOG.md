@@ -188,6 +188,29 @@ obra tiene que devolverla con sus fotografías dentro.
 
 ### Correcciones
 
+**Y si el panel se cierra de todas formas, lo escrito se recupera**
+Contra recargar la pantalla, contra que el móvil mate la aplicación por tenerla de fondo y contra
+quedarse sin batería, una confirmación no puede hacer nada. Así que **lo que se está escribiendo se
+apunta en el teléfono**, y al volver a abrir el panel se ofrece: «Dejaste esto a medio rellenar hace 20
+minutos. ¿Lo recuperas?», con «Recuperar lo que escribí» y «Empezar de cero». Está en subir un documento,
+corregir sus datos, corregir una referencia, citar una obra y añadir un eslabón de procedencia.
+
+Eso cambia lo que dice la pregunta de antes: ya no avisa de una pérdida, porque no la hay. Dice que del
+catálogo no se cambia nada y que lo escrito se queda apuntado, y el botón se llama **«Salir sin
+guardar»** en vez de «Salir y perderlo» — un aviso que amenaza con algo que no pasa es un aviso que se
+aprende a no leer.
+
+Tres cosas que hace con cuidado. Un borrador **caduca a la semana**: ofrecer uno de hace tres semanas
+sobre una ficha que se ha tocado cinco veces desde entonces se acepta sin mirar y borra esas cinco
+correcciones. Si **los datos guardados han cambiado** desde que se apuntó —porque se corrigieron desde
+otro sitio— se ofrece igual, pero diciéndolo y avisando de que aceptarlo a ciegas perdería esa
+corrección: esconderlo sería perder el trabajo dos veces, y callarlo sería peor. Y **el fichero escaneado
+no se puede apuntar**, así que cuando el formulario llevaba uno, se dice al ofrecer el borrador en vez de
+dejarlo descubrir con todo lo demás ya relleno.
+
+Al guardar de verdad el apunte se borra, y también al dejar el formulario como estaba: no se ofrece
+recuperar lo que ya está en el catálogo.
+
 **Un formulario a medio rellenar ya no se pierde por tocar fuera sin querer**
 Pasó dos veces, con datos dentro. Un panel de edición se cerraba por cuatro caminos —el fondo oscuro,
 la ✕, Escape y el botón de atrás del móvil— y los cuatro eran inmediatos, sin preguntar nada. Con el

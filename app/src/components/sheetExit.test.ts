@@ -92,8 +92,23 @@ describe('lo que dice la pregunta', () => {
     expect(discardText(null)).toBe(discardText())
   })
 
-  it('el botón que no destruye se lee primero, y el que destruye dice qué destruye', () => {
+  it('el que se queda dice que se queda, y el que sale no promete una pérdida que no hay', () => {
+    // «Salir sin guardar» y no «Salir y perderlo»: con el borrador apuntado el tecleo no se
+    // pierde, y un botón que dice «perderlo» sobre algo que no se pierde enseña a no
+    // creerse los avisos. Lo que es verdad de las dos formas es que no se guarda.
     expect(DISCARD_KEEP_LABEL).toBe('Seguir rellenando')
-    expect(DISCARD_LEAVE_LABEL).toContain('perderlo')
+    expect(DISCARD_LEAVE_LABEL).toBe('Salir sin guardar')
+    expect(DISCARD_LEAVE_LABEL).not.toContain('perder')
+  })
+
+  it('y con el borrador apuntado la frase promete lo que la hoja hace de verdad', () => {
+    const kept = discardText(null, true)
+    expect(kept).toContain('se queda apuntado')
+    expect(kept).toContain('se ofrece al volver a abrirla')
+    // Sin apuntarlo, no se promete: la frase de siempre.
+    expect(discardText()).toContain('no se guarda')
+    expect(discardText()).not.toContain('se queda apuntado')
+    // Y lo que la hoja añada entra en las dos.
+    expect(discardText('El fichero habría que volver a elegirlo.', true)).toContain('fichero')
   })
 })

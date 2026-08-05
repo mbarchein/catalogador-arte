@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
+import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
 import { draftDirty } from '../../../components/formDirty'
 import { BottomSheet } from '../../../components/ui'
+import { useFormDraft } from '../../../components/useFormDraft'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import type { PlaceTree } from '../../../lib/places'
 import type { DocumentTypeEntry } from '../../../lib/types'
@@ -78,6 +80,27 @@ export function UploadDocumentSheet({
   const problems = documentDraftProblems(draft)
   const fileProblem = documentFileProblem(file)
 
+  const busy = step !== null
+  const blocked = problems.length > 0 || fileProblem !== null
+  // Lo que se perdería al cerrar: el formulario entero y, sobre todo, el fichero — que
+  // es lo único de aquí que hay que volver a buscar en el teléfono.
+  const dirty = draftDirty(draft, emptyNewDocumentDraft()) || file !== null
+
+  // Lo escrito se apunta en el teléfono y se ofrece a la vuelta. Aquí es donde más se
+  // nota: es el formulario más largo del proyecto, se rellena de pie en un almacén, y las
+  // salidas que ninguna confirmación puede tapar —recargar, que el móvil mate la pestaña—
+  // son exactamente las que se comen media hora de trabajo.
+  //
+  // El ámbito lleva el código de la obra: dos documentos a medio subir desde dos fichas
+  // son dos borradores, y compartir clave haría que el de una se ofreciera en la otra. Sin
+  // huella, que aquí no hay fila guardada con la que chocar: es un alta.
+  const stored = useFormDraft({
+    scope: `documento-subir:${catalogId}`,
+    draft,
+    dirty,
+    filesLost: file !== null,
+  })
+
   function change(patch: Partial<NewDocumentDraft>) {
     setFailure(null)
     setDraft((was) => ({ ...was, ...patch }))
@@ -103,21 +126,17 @@ export function UploadDocumentSheet({
       // that re-uploading would duplicate it must not vanish with the panel.
       return
     }
+    stored.clear()
     await onDone(outcome.notice)
     onClose()
   }
-
-  const busy = step !== null
-  const blocked = problems.length > 0 || fileProblem !== null
-  // Lo que se perdería al cerrar: el formulario entero y, sobre todo, el fichero — que
-  // es lo único de aquí que hay que volver a buscar en el teléfono.
-  const dirty = draftDirty(draft, emptyNewDocumentDraft()) || file !== null
 
   // El formulario más largo del proyecto y el más caro de repetir.
   const guard = useSheetGuard({
     onClose: busy ? () => {} : onClose,
     dirty,
     discardNotice: file === null ? null : 'El fichero que has elegido habría que volver a buscarlo.',
+    draftKept: true,
   })
 
   return (
@@ -127,6 +146,15 @@ export function UploadDocumentSheet({
       title="Subir un documento del archivo"
       guard={guard}
     >
+      <DraftOfferBanner
+        offer={stored.offer}
+        onAccept={() => {
+          const recovered = stored.accept()
+          if (recovered !== null) setDraft(recovered)
+        }}
+        onDiscard={stored.discard}
+      />
+
       {/* 1 · EL FICHERO. Lo primero, porque es lo único que hay que elegir mientras
           el teléfono todavía lo tiene en la mano. Y es OPCIONAL: un documento sin
           digitalizar es un estado legítimo del archivo (RF-408). */}

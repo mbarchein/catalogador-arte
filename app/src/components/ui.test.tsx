@@ -211,7 +211,7 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
     expect(screen.getByRole('alertdialog')).not.toBeNull()
   })
 
-  it('«Seguir rellenando» devuelve al formulario, y «Salir y perderlo» cierra', async () => {
+  it('«Seguir rellenando» devuelve al formulario, y «Salir sin guardar» cierra', async () => {
     const onClose = vi.fn()
     render(<Guarded onClose={onClose} />)
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
@@ -220,7 +220,7 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
     expect(screen.queryByRole('alertdialog')).toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Salir y perderlo' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Salir sin guardar' }))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -276,7 +276,7 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(onClose).not.toHaveBeenCalled()
     expect(screen.getByRole('alertdialog')).not.toBeNull()
-    await userEvent.click(screen.getByRole('button', { name: 'Salir y perderlo' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Salir sin guardar' }))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -326,7 +326,7 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
     }
     render(<Caso />)
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Salir y perderlo' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Salir sin guardar' }))
     await userEvent.click(screen.getByRole('button', { name: 'Abrir' }))
     expect(screen.queryByRole('alertdialog')).toBeNull()
   })

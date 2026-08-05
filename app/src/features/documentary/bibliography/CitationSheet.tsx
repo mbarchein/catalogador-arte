@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
+import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
+import { draftFingerprint } from '../../../components/draftStore'
 import { draftDirty } from '../../../components/formDirty'
+import { useFormDraft } from '../../../components/useFormDraft'
 import { BottomSheet, Chips, PlusIcon, YearStepper } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import { maxYear } from '../../../lib/structuredDate'
@@ -133,6 +136,7 @@ export function CitationSheet({
       setError(failure)
       return
     }
+    stored.clear()
     onClose()
   }
 
@@ -147,13 +151,21 @@ export function CitationSheet({
   // No perder lo escrito por un roce: la página y la nota de ESTA cita, y los campos de
   // la referencia nueva cuando se está dando de alta una. La búsqueda no cuenta —teclear
   // en el buscador no es trabajo que se pierda—, y el fondo no cierra.
-  const guard = useSheetGuard({
-    onClose,
-    dirty:
-      pages.trim() !== (editing?.pages ?? '').trim() ||
-      note.trim() !== (editing?.note ?? '').trim() ||
-      (creating && draftDirty(draft, EMPTY_REFERENCE_DRAFT)),
+  const dirty =
+    pages.trim() !== (editing?.pages ?? '').trim() ||
+    note.trim() !== (editing?.note ?? '').trim() ||
+    (creating && draftDirty(draft, EMPTY_REFERENCE_DRAFT))
+
+  // Y apuntado. El ámbito distingue corregir una cita de añadir una nueva, y lleva el
+  // código de la obra: una cita a medio escribir en AR-0042 no se ofrece al citar en otra.
+  const stored = useFormDraft({
+    scope: `cita:${catalogId}:${target?.id ?? 'nueva'}`,
+    draft: { pages, note, reference: draft, creating },
+    dirty,
+    fingerprint: target === null ? null : draftFingerprint([target.pages, target.note]),
   })
+
+  const guard = useSheetGuard({ onClose, dirty, draftKept: true })
 
   return (
     <BottomSheet
@@ -162,6 +174,19 @@ export function CitationSheet({
       title={title}
       guard={guard}
     >
+      <DraftOfferBanner
+        offer={stored.offer}
+        onAccept={() => {
+          const recovered = stored.accept()
+          if (recovered === null) return
+          setPages(recovered.pages)
+          setNote(recovered.note)
+          setDraft(recovered.reference)
+          setCreating(recovered.creating)
+        }}
+        onDiscard={stored.discard}
+      />
+
       {step === 'reference' ? (
         <div className="space-y-3">
           <p className="text-sm text-stone-600">

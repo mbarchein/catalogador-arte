@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { draftDirty } from '../../../components/formDirty'
+import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
+import { draftFingerprint } from '../../../components/draftStore'
+import { useFormDraft } from '../../../components/useFormDraft'
 import { BottomSheet } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import type { PlaceTree } from '../../../lib/places'
@@ -129,6 +132,7 @@ export function EditDocumentSheet({
       }
     }
     setSaving(false)
+    stored.clear()
     await onDone(
       plan.action === 'update'
         ? documentEditedNotice(draft.title)
@@ -142,7 +146,26 @@ export function EditDocumentSheet({
   // vínculo con esta obra.
   const dirty = draftDirty(draft, documentEditDraft(document)) || note.trim() !== linkNote.trim()
 
-  const guard = useSheetGuard({ onClose: saving ? () => {} : onClose, dirty })
+  // Lo escrito se apunta y se ofrece a la vuelta. Con huella de la fila guardada: si otra
+  // sesión ha corregido el documento mientras esto esperaba, recuperar el borrador
+  // revertiría esa corrección, y eso se dice antes en vez de dejarlo pasar en silencio.
+  // Solo con los campos que ESTE formulario escribe: si han tocado algo que no toca, el
+  // borrador sigue siendo válido y avisar sería avisar de nada.
+  const stored = useFormDraft({
+    scope: `documento-editar:${document.id}:${catalogId}`,
+    draft: { ...draft, linkNote: note },
+    dirty,
+    fingerprint: draftFingerprint([
+      ...Object.values(documentEditDraft(document)) as (string | number | boolean | null)[],
+      linkNote,
+    ]),
+  })
+
+  const guard = useSheetGuard({
+    onClose: saving ? () => {} : onClose,
+    dirty,
+    draftKept: true,
+  })
 
   return (
     <BottomSheet
@@ -151,6 +174,18 @@ export function EditDocumentSheet({
       title="Corregir los datos del documento"
       guard={guard}
     >
+      <DraftOfferBanner
+        offer={stored.offer}
+        onAccept={() => {
+          const recovered = stored.accept()
+          if (recovered === null) return
+          const { linkNote: recoveredNote, ...fields } = recovered
+          setDraft(fields)
+          setNote(recoveredNote)
+        }}
+        onDiscard={stored.discard}
+      />
+
       {/* Lo primero y antes de cualquier campo: esto es del archivo y no de esta obra. */}
       <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
         {documentReachNotice(reach)}

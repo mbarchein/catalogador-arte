@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
+import { draftFingerprint } from '../../../components/draftStore'
 import { draftDirty } from '../../../components/formDirty'
+import { useFormDraft } from '../../../components/useFormDraft'
 import { BottomSheet, Chips, ToggleChip, YearStepper } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import {
@@ -41,6 +44,7 @@ export function ProvenanceLinkForm({
   initial,
   parties,
   onSave,
+  catalogId,
   onCancel,
   onCreateParty,
   saving = false,
@@ -51,6 +55,14 @@ export function ProvenanceLinkForm({
   parties: readonly PartyRef[]
   /** Answers null when it worked, and the database's own message when it did not. */
   onSave: (draft: ProvenanceDraft) => Promise<string | null>
+  /**
+   * De qué obra es esta cadena, para la clave del borrador apuntado.
+   *
+   * Lo pasa la sección porque este formulario no sabe de qué obra es —recibe el eslabón y
+   * nada más— y la clave tiene que distinguirlas: si no, un eslabón a medio escribir en
+   * una obra se ofrecería al añadir uno en otra.
+   */
+  catalogId: string
   onCancel: () => void
   onCreateParty: (draft: NewPartyDraft) => Promise<{ id: string } | { error: string }>
   saving?: boolean
@@ -79,12 +91,31 @@ export function ProvenanceLinkForm({
     }
     setError(null)
     const failure = await onSave(draft)
-    if (failure !== null) setError(failure)
+    if (failure !== null) {
+      setError(failure)
+      return
+    }
+    stored.clear()
   }
 
   // Contra el punto de partida, que sirve igual para el eslabón nuevo —el borrador llega
   // vacío— y para el que se está corrigiendo.
-  const guard = useSheetGuard({ onClose: onCancel, dirty: draftDirty(draft, initial) })
+  const dirty = draftDirty(draft, initial)
+
+  // Y apuntado. El ámbito distingue el eslabón nuevo del que se corrige: `nuevo` es uno
+  // por obra, que es lo correcto —solo se añade uno a la vez— y así el borrador de un alta
+  // no se ofrece al abrir la corrección de otro eslabón.
+  const stored = useFormDraft({
+    scope: `procedencia:${catalogId}:${initial.id ?? 'nuevo'}`,
+    draft,
+    dirty,
+    fingerprint:
+      initial.id === null
+        ? null
+        : draftFingerprint(Object.values(initial) as (string | number | boolean | null)[]),
+  })
+
+  const guard = useSheetGuard({ onClose: onCancel, dirty, draftKept: true })
 
   return (
     <BottomSheet
@@ -93,6 +124,19 @@ export function ProvenanceLinkForm({
       onClose={onCancel}
       title={initial.id === null ? 'Añadir un eslabón' : 'Corregir el eslabón'}
     >
+      <DraftOfferBanner
+        offer={stored.offer}
+        onAccept={() => {
+          const recovered = stored.accept()
+          if (recovered === null) return
+          setDraft(recovered)
+          // El interruptor de «hasta» se recoloca con lo recuperado: dejarlo apagado sobre
+          // un borrador que traía año de cierre esconderría ese año en un campo invisible.
+          setRanged(recovered.endYear !== null)
+        }}
+        onDiscard={stored.discard}
+      />
+
       <div className="space-y-4">
         <PartyPicker
           parties={parties}

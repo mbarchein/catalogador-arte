@@ -25,13 +25,15 @@ export interface SheetGuard {
   backdropCloses: boolean
   /** Lo que esta hoja añade a la pregunta, para lo que la frase general no sabe. */
   discardNotice: string | null
+  /** La hoja apunta el borrador y lo ofrece a la vuelta: la pregunta lo promete. */
+  draftKept: boolean
   /** La pregunta está en pantalla. */
   confirming: boolean
   /** Un intento de salir por un camino. Lo llaman la hoja y sus cuatro salidas. */
   request: (exit: SheetExit) => void
   /** «Seguir rellenando»: retira la pregunta y deja el formulario como estaba. */
   dismiss: () => void
-  /** «Salir y perderlo»: cierra de verdad. */
+  /** «Salir sin guardar»: cierra de verdad. Lo escrito puede seguir apuntado, ver `draftKept`. */
   leave: () => void
   /**
    * La quinta salida: el «Cancelar» que el formulario pinta al pie.
@@ -61,8 +63,21 @@ export function useSheetGuard(input: {
    */
   backdropCloses?: boolean
   discardNotice?: string | null
+  /**
+   * La hoja apunta lo escrito con `useFormDraft` y lo ofrece a la vuelta.
+   *
+   * Cambia lo que la pregunta puede prometer, y eso importa: decir «vas a perderlo» sobre
+   * algo que no se pierde es la forma de que la pregunta deje de creerse.
+   */
+  draftKept?: boolean
 }): SheetGuard {
-  const { dirty, onClose, backdropCloses = false, discardNotice = null } = input
+  const {
+    dirty,
+    onClose,
+    backdropCloses = false,
+    discardNotice = null,
+    draftKept = false,
+  } = input
   const [confirming, setConfirming] = useState(false)
 
   // Lo que el árbitro necesita saber, en un ref: `request` se registra en el listener del
@@ -105,5 +120,14 @@ export function useSheetGuard(input: {
     if (!dirty) setConfirming(false)
   }, [dirty])
 
-  return { backdropCloses, discardNotice, confirming, request, dismiss, leave, cancel }
+  return {
+    backdropCloses,
+    discardNotice,
+    draftKept,
+    confirming,
+    request,
+    dismiss,
+    leave,
+    cancel,
+  }
 }

@@ -1162,7 +1162,7 @@ export function BottomSheet({
           {confirming && (
             <div role="alertdialog" aria-label={DISCARD_TITLE} className="mb-3 rounded-lg bg-amber-50 p-3">
               <p className="text-sm font-medium text-amber-900">{DISCARD_TITLE}</p>
-              <p className="mt-1 text-sm text-amber-900">{discardText(guard?.discardNotice)}</p>
+              <p className="mt-1 text-sm text-amber-900">{discardText(guard?.discardNotice, guard?.draftKept)}</p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {/* El que no destruye, primero: es donde cae el pulgar sin apuntar. */}
                 <button
