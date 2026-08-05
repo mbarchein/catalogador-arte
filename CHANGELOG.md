@@ -2,6 +2,39 @@
 
 ### Interfaz
 
+**Los datos de un documento del archivo ya se pueden corregir, y el escaneo se puede añadir después**
+Hasta ahora un documento se subía y se quedaba exactamente como se hubiera subido: la signatura mal
+copiada de la carpeta, el tipo sin clasificar porque se anotó de una fotocopia, o el «lo subo sin
+fichero y luego le pongo el escaneo» que no tenía luego. Los dos paneles de subida lo advertían antes
+de guardar, y era verdad. Ya no.
+
+En cada documento de una ficha, en la zona de edición, hay dos salidas nuevas: **«Corregir los datos
+del documento»** y, solo cuando de verdad le falta, **«Añadir el escaneo»**. Se corrige todo: la
+signatura, el título, el tipo, la serie del archivo, el fondo, la fecha, dónde está el papel y su
+nota.
+
+Lo importante de ese panel es lo primero que dice: **un documento es del archivo y no de esta obra**.
+Arriba, antes de cualquier campo, se cuenta con qué más está enlazado —«está enlazado además con otras
+tres obras y una exposición: también cambiará lo que se lee ahí»— porque corregir un recorte que
+nadie más usa y corregir uno que leen cuatro fichas no es la misma decisión. Y cuando la cuenta no se
+puede hacer, por cobertura, lo dice en vez de tranquilizar con un número que no tiene.
+
+Cerrar el panel sin haber cambiado nada **no guarda nada**: el documento no consta corregido hoy si
+nadie lo ha corregido, que es lo que hace que el historial de cambios sirva para algo.
+
+El escaneo se añade en su propia hoja, aparte de la corrección, porque son dos cosas muy distintas:
+una escribe un campo y la otra sube decenas de megas por una línea de móvil. Un fichero ya subido
+**no se sustituye** desde aquí y la hoja explica por qué: los ficheros del almacén no se sobrescriben
+nunca, así que cambiarlo dejaría el anterior perdido y la ficha diciendo un peso que no es. Si el que
+está subido está mal, se registra como documento nuevo.
+
+Y si alguien se ha adelantado —el mismo expediente digitalizado desde otra ficha o desde otro
+teléfono mientras esta hoja estaba abierta— el escaneo no se pisa: se avisa de que ya tiene uno y de
+que hay que recargar antes de repetirlo.
+
+De paso, **lo que un documento dice de esta obra en concreto** («reproducida en la página 3») ya se
+puede corregir también. Se podía escribir al enlazarlo y después no había forma de tocarlo.
+
 **El «atrás» del móvil cierra el panel que esté abierto, no la pantalla**
 Con un panel abierto —los filtros del listado, elegir una ubicación, una sede, una persona, el estado de
 una investigación, subir un documento, añadir un eslabón de procedencia— el botón de atrás del teléfono
@@ -22,6 +55,13 @@ fichero va en camino— el atrás no hace nada, en vez de dejar que el siguiente
 subida a medias.
 
 ### Correcciones
+
+**Los paneles ya no se cerraban solos, y el atrás no se quedaba corto tras recargar**
+Dos fallos del botón de atrás, los dos encontrados probándolo en un navegador de verdad y no leyendo el
+código. El primero solo se veía en el entorno de pruebas de desarrollo: un panel que se abre —los
+filtros, subir un documento, enlazarlo, corregirlo— se cerraba solo en el mismo instante de abrirse. El
+segundo sí llegaba a producción: después de recargar la pantalla con un panel abierto, el atrás
+siguiente no cerraba el panel y había que pulsarlo dos veces.
 
 **En el editor de fotografías, el atrás ya no se lleva el trabajo sin aplicar**
 Con el panel de color o el de datos de cámara abierto, el botón de atrás del teléfono cerraba el editor

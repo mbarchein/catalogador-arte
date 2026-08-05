@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { useState } from 'react'
+import { StrictMode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { render, waitFor } from '@testing-library/react'
 import { useCloseOnBack } from './useCloseOnBack'
@@ -154,6 +154,78 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
     await waitFor(() => expect(ocupada).toHaveBeenCalledTimes(2))
     // Se sigue en la ficha, con la hoja abierta: es lo que la negativa pide.
     expect(window.history.state).toMatchObject({ screen: 'ficha' })
+  })
+
+  it('un modal que nace ya abierto sobrevive al doble montaje de desarrollo', async () => {
+    /**
+     * La incidencia, reproducida. **Todas las hojas de la aplicación nacen abiertas**
+     * —la pantalla las monta cuando hace falta y les pasa `open` a secas—, así que en
+     * desarrollo React montaba el efecto, lo destruía y lo volvía a montar; el
+     * destruido consumía la entrada de historia por el camino, la aplicación se
+     * quedaba en la entrada de la pantalla y el árbitro leía «no hay ningún modal
+     * abierto». Resultado: la hoja se cerraba sola en el mismo instante de abrirse.
+     *
+     * Se descubrió en Chromium y no aquí, porque el primer test de este fichero monta
+     * con `open` cambiando de estado y ese camino no dispara el doble montaje. Por eso
+     * este test monta dentro de `StrictMode`, que es lo que lo dispara.
+     */
+    onScreen('ficha')
+    const onClose = vi.fn()
+    render(
+      <StrictMode>
+        <Modal onClose={onClose} />
+      </StrictMode>,
+    )
+
+    // Un turno para que corran los temporizadores del doble montaje.
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(onClose).not.toHaveBeenCalled()
+    // Y la entrada sigue puesta: es la que el «atrás» tiene que consumir.
+    expect(window.history.state).toMatchObject({ modalKey: expect.any(String) })
+
+    window.history.back()
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(window.history.state).toEqual({ screen: 'ficha' })
+  })
+
+  it('y en el doble montaje no se apila una entrada de más', async () => {
+    // Si el segundo montaje empujara su propia entrada, harían falta dos «atrás» para
+    // salir de una hoja: uno para consumir la entrada huérfana y otro para la de
+    // verdad. Es el otro lado del mismo fallo.
+    onScreen('listado')
+    onScreen('ficha')
+    const onClose = vi.fn()
+    render(
+      <StrictMode>
+        <Modal onClose={onClose} />
+      </StrictMode>,
+    )
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    window.history.back()
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    // Un solo «atrás» ha devuelto a la ficha, no a una entrada intermedia.
+    expect(window.history.state).toEqual({ screen: 'ficha' })
+  })
+
+  it('una entrada de modal de otra carga de la página no confunde al «atrás»', async () => {
+    /**
+     * Recargar con una hoja abierta deja en el historial una entrada marcada como de
+     * un modal, y al recargar el contador del módulo vuelve a empezar. Sin un sello
+     * por carga, la hoja siguiente se marcaba con la MISMA clave: el «atrás» aterrizaba
+     * en la entrada vieja, el árbitro la reconocía como la de la hoja abierta y cerraba
+     * «lo que hubiera por encima», que era nada. La hoja se quedaba abierta y el botón
+     * parecía roto. Medido en Chromium antes de arreglarlo.
+     */
+    onScreen('ficha')
+    // La entrada que dejó la carga anterior, con la forma que tendría.
+    window.history.pushState({ screen: 'ficha', modalKey: 'modal-1' }, '')
+    const onClose = vi.fn()
+    render(<Modal onClose={onClose} />)
+
+    window.history.back()
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
   })
 
   it('si desde el modal se navega a otra pantalla, cerrarlo no la abandona', async () => {

@@ -29,16 +29,44 @@ type OpenModal = {
   key: string
   close: () => void
   /**
-   * False from the moment the component unmounts. It is how a close that was
-   * REFUSED is told from one that happened.
+   * The timer that will take it out of the registry, or null when none is pending.
+   *
+   * The unregistration is DEFERRED by one task instead of running in the cleanup,
+   * and that is not a detail: React's development double-mount tears the effect down
+   * and builds it straight back up, and consuming the history entry in between left
+   * the application on the page's own entry — where the arbitration below reads «no
+   * modal is open» and closes the sheet that had just been opened. Every sheet of the
+   * application mounts already open, so in development they all shut instantly.
+   *
+   * Deferring it makes the double-mount invisible: the second `register` cancels the
+   * pending unregistration and finds itself already registered, so nothing is pushed
+   * and nothing is popped. A real unmount is one task later, which nobody can see.
+   *
+   * It is also how a REFUSED close is told from one that happened: a modal that did
+   * not unmount has no unregistration pending.
    */
-  alive: boolean
+  pendingUnregister: number | null
 }
 
 /** The open modals, outermost first. */
 const openModals: OpenModal[] = []
 let stamps = 0
 let listening = false
+
+/**
+ * Un sello distinto en cada carga de la página, y no un adorno.
+ *
+ * Las entradas de historia sobreviven a una recarga; el contador de arriba no. Sin
+ * este sello, recargar con una hoja abierta dejaba una entrada marcada «modal-1» y la
+ * hoja siguiente se marcaba «modal-1» otra vez: el «atrás» aterrizaba en la entrada
+ * vieja, el árbitro la reconocía como la de la hoja abierta —misma clave— y cerraba
+ * «lo que hubiera por encima», que era nada. La hoja se quedaba abierta y el botón
+ * parecía roto. Medido en Chromium.
+ *
+ * Con el sello, una entrada de otra carga no es de nadie, y eso ya está resuelto:
+ * cierra lo que haya abierto.
+ */
+const session = Math.random().toString(36).slice(2, 8)
 
 function modalKeyOf(state: unknown): string | null {
   if (typeof state !== 'object' || state === null) return null
@@ -57,18 +85,54 @@ function pushEntry(key: string) {
   window.history.pushState({ ...carried, modalKey: key }, '')
 }
 
+/**
+ * Puts the modal in the registry with its history entry, or does nothing when it is
+ * already there — which is the development double-mount arriving for the second time.
+ */
+function register(modal: OpenModal) {
+  if (modal.pendingUnregister !== null) {
+    window.clearTimeout(modal.pendingUnregister)
+    modal.pendingUnregister = null
+  }
+  if (openModals.includes(modal)) return
+  openModals.push(modal)
+  pushEntry(modal.key)
+}
+
+/**
+ * Takes it out and consumes its history entry, one task later.
+ *
+ * Only while that entry is still the current one: if something inside the modal
+ * navigated elsewhere, the entry is buried and going back would leave the screen that
+ * was just opened. And only while the modal is still registered: when the back button
+ * is what closed it, the arbitration already took it out and the entry is spent.
+ */
+function scheduleUnregister(modal: OpenModal) {
+  if (modal.pendingUnregister !== null) return
+  modal.pendingUnregister = window.setTimeout(() => {
+    modal.pendingUnregister = null
+    const at = openModals.indexOf(modal)
+    if (at < 0) return
+    openModals.splice(at, 1)
+    if (modalKeyOf(window.history.state) === modal.key) window.history.back()
+  }, 0)
+}
+
 function onPopState() {
   const landed = modalKeyOf(window.history.state)
+  // Landing on a modal's own entry closes only what was stacked above it. Landing
+  // anywhere else — the page underneath, or an entry stamped by a modal nobody has
+  // open — closes every modal there is.
+  //
+  // A key that no open modal claims is STALE, and reading it as the page underneath
+  // is deliberate: it happens when the page is reloaded with a sheet open, and there
+  // the sheet on screen is a NEW one whose entry sits on top. The alternative —
+  // ignoring the pop — left that sheet needing two back presses. What used to make
+  // ignoring it necessary was React's development double-mount, and that is handled
+  // where it belongs now, by not consuming the entry in the first place.
   const at = landed === null ? -1 : openModals.findIndex((m) => m.key === landed)
-  // An entry with a key no open modal claims is a STALE entry, not the page
-  // underneath: React's development double-mount leaves one behind, and so does
-  // navigating away from an open modal. Reading it as the page would close the
-  // modal that just opened.
-  if (landed !== null && at < 0) return
 
-  // Landing on the page underneath closes every modal; landing on a modal's own
-  // entry closes only what was stacked above it. From the inside out, because an
-  // outer modal closing may unmount the inner one.
+  // From the inside out, because an outer modal closing may unmount the inner one.
   const closing = openModals.splice(at + 1)
   for (const modal of [...closing].reverse()) modal.close()
   if (closing.length === 0) return
@@ -77,9 +141,14 @@ function onPopState() {
   // the file is in flight. If it is still mounted, it gets its entry back — the
   // back button then does nothing at all, which is what the refusal asks for,
   // instead of leaving the NEXT back to walk out of the screen mid-upload.
+  //
+  // One task later, which is what makes «still mounted» answerable: React flushes
+  // the state updates of this event before the task runs, so a modal that really
+  // closed has already had its unregistration scheduled by its own cleanup, and one
+  // that refused has not.
   window.setTimeout(() => {
     for (const modal of closing) {
-      if (!modal.alive || openModals.includes(modal)) continue
+      if (modal.pendingUnregister !== null || openModals.includes(modal)) continue
       openModals.push(modal)
       pushEntry(modal.key)
     }
@@ -98,6 +167,19 @@ export function useCloseOnBack(onClose: () => void, open = true) {
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
 
+  /**
+   * The modal's record, in a ref so it is ONE record for this component however many
+   * times its effect is torn down and rebuilt.
+   *
+   * That is what survives the development double-mount: React remounts the effect,
+   * not the component, so the ref hands the second run the same record, `register`
+   * sees it is already registered and neither pushes a second history entry nor pops
+   * the first. Building the record inside the effect gave the second run a new one,
+   * and the entry of the first was consumed on the way through — which closed every
+   * sheet of the application the instant it opened, in development.
+   */
+  const modalRef = useRef<OpenModal | null>(null)
+
   useEffect(() => {
     if (!open) return
 
@@ -109,27 +191,17 @@ export function useCloseOnBack(onClose: () => void, open = true) {
       listening = true
     }
 
-    stamps += 1
-    const modal: OpenModal = {
-      key: `modal-${stamps}`,
-      alive: true,
-      close: () => onCloseRef.current(),
+    if (modalRef.current === null) {
+      stamps += 1
+      modalRef.current = {
+        key: `modal-${session}-${stamps}`,
+        pendingUnregister: null,
+        close: () => onCloseRef.current(),
+      }
     }
-    openModals.push(modal)
-    pushEntry(modal.key)
+    const modal = modalRef.current
+    register(modal)
 
-    return () => {
-      modal.alive = false
-      const at = openModals.indexOf(modal)
-      // Gone from the registry already: the back button closed it and its entry
-      // is spent.
-      if (at < 0) return
-      openModals.splice(at, 1)
-      // Closed by another route, so the pushed entry has to be consumed here or
-      // the next back would appear to do nothing. Only while it is still the
-      // current entry: if something inside the modal navigated elsewhere, that
-      // entry is buried and going back would leave the screen just opened.
-      if (modalKeyOf(window.history.state) === modal.key) window.history.back()
-    }
+    return () => scheduleUnregister(modal)
   }, [open])
 }
