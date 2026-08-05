@@ -25,13 +25,17 @@
  * Las lee cualquiera que pueda leer, como la bibliografía y las exposiciones: un
  * documento es contenido del catálogo y no una lista de mantenimiento.
  *
- * **Ninguna escritura, y sus ausencias son decisiones.** Subir un documento y enlazarlo
+ * **Una sola escritura, y las ausencias son decisiones.** Subir un documento y enlazarlo
  * se hace desde la documentación de una obra, porque así queda subido y enlazado de una
  * vez; corregirlo y digitalizarlo, desde ahí también, donde el aviso cuenta a cuántas
- * fichas afecta el cambio; retirarlo y recuperarlo, desde la papelera. Y enlazarlo con
- * una exposición **no se hace todavía desde ninguna pantalla**: la operación está en la
- * base y concedida, y lo que falta es quien la llame. Las cuatro cosas las dicen las
- * pantallas en vez de dejar buscar el botón.
+ * fichas afecta el cambio; retirarlo y recuperarlo, desde la papelera. Las tres cosas las
+ * dice la ficha en vez de dejar buscar el botón.
+ *
+ * La excepción razonada es **enlazarlo con una exposición**, y lo es porque no se puede
+ * hacer en ningún otro sitio: una exposición no tiene bloque de documentos, así que la
+ * ficha del documento es el único sitio donde el papel y la muestra están a la vez
+ * (RF-516, RF-517). Lleva su retirada, que un vínculo que se crea y no se quita es una
+ * trampa.
  */
 
 export { ArchivePage } from './ArchivePage'

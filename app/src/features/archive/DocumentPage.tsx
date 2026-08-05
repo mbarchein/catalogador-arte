@@ -14,6 +14,7 @@ import {
 } from '../documentary/documents/documentFile'
 import { fundText, missingFileNote } from '../documentary/documents/documentView'
 import { usePhysicalPlaces } from '../artworks/usePhysicalPlaces'
+import { useExhibitions } from '../exhibitions/useExhibitions'
 import {
   DOCUMENT_MISSING_TEXT,
   documentReachSummary,
@@ -21,8 +22,16 @@ import {
   linkedBlockNotice,
   linkedExhibitionViews,
   NO_LINKED_ARTWORKS,
-  NO_LINKED_EXHIBITIONS,
+  type LinkedExhibitionView,
 } from './documentRecord'
+import {
+  linkedExhibitionIds,
+  NO_LINKED_EXHIBITIONS_READONLY,
+  NO_LINKED_EXHIBITIONS_WRITABLE,
+  retireExhibitionLinkText,
+} from './exhibitionLink'
+import { linkDocumentToExhibition, setExhibitionLinkActive } from './exhibitionLinkActions'
+import { LinkExhibitionSheet } from './LinkExhibitionSheet'
 import { useDocumentRecord } from './useArchiveIndex'
 
 /**
@@ -37,15 +46,18 @@ import { useDocumentRecord } from './useArchiveIndex'
  * relación es de muchos a muchos con las obras y con las exposiciones (RF-516), y
  * fundirlos mezclaría códigos de catalogación con títulos de muestra en la misma
  * columna. Cada bloque dice lo suyo cuando está vacío, y no dicen lo mismo: enlazar con
- * una obra se hace desde la ficha de la obra, y enlazar con una exposición **todavía no
- * se hace desde ninguna pantalla**.
+ * una obra se hace desde la ficha de la obra, y enlazar con una exposición se hace
+ * **aquí**.
  *
- * **Sin corregir desde aquí, y sin retirar.** Corregir los datos y añadir el escaneo se
+ * **La única escritura que esta ficha posee es el vínculo con una exposición**
+ * (RF-516, RF-517), y es la excepción razonada a que el archivo sea de solo lectura: una
+ * exposición no tiene bloque de documentos, así que esta pantalla es el único sitio donde
+ * el documento y la muestra están a la vez. Corregir los datos y añadir el escaneo se
  * hacen desde la documentación de una obra enlazada, donde ya están y donde el aviso de
- * alcance cuenta a cuántas fichas afecta; retirar y recuperar son de la papelera. Traer
- * esos botones aquí sería una segunda forma de hacer lo mismo, y para un documento suelto
- * —el caso que justifica la pantalla— no hay ficha de obra desde la que corregirlo: eso
- * se dice al pie, en vez de dejarlo descubrir.
+ * alcance cuenta a cuántas fichas afecta; retirar el documento entero y recuperarlo son de
+ * la papelera. Traer esos botones aquí sería una segunda forma de hacer lo mismo, y para
+ * un documento suelto —el caso que justifica la pantalla— no hay ficha de obra desde la
+ * que corregirlo: eso se dice al pie, en vez de dejarlo descubrir.
  */
 export function DocumentPage() {
   const { id = '' } = useParams()
@@ -53,9 +65,15 @@ export function DocumentPage() {
   const record = useDocumentRecord(id)
   // El árbol de sitios, para decir dónde está el papel con su rama entera (ADR-006).
   const { tree: placeTree } = usePhysicalPlaces()
+  const [linking, setLinking] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  // El catálogo de exposiciones se pide SOLO con el panel abierto: esta pantalla se abre
+  // muchas veces para leer un documento, y quien solo lee no tiene por qué pagarlo.
+  const catalogue = useExhibitions(linking)
 
   const artworks = useMemo(() => linkedArtworkViews(record.artworks), [record.artworks])
   const exhibitions = useMemo(() => linkedExhibitionViews(record.exhibitions), [record.exhibitions])
+  const linked = useMemo(() => linkedExhibitionIds(record.exhibitions), [record.exhibitions])
 
   if (record.loading && record.document === null) {
     return <LoadingNotice>Cargando el documento…</LoadingNotice>
@@ -150,34 +168,72 @@ export function DocumentPage() {
         })}
       </LinkedBlock>
 
-      <LinkedBlock title="Exposiciones enlazadas" notice={linkedBlockNotice({ loading: record.loading, error: record.linksError, count: exhibitions.length, empty: NO_LINKED_EXHIBITIONS })}>
-        {exhibitions.map((view) => {
-          const body = (
-            <>
-              <span className="block text-xs text-stone-500">{view.dates}</span>
-              <span className="mt-0.5 block break-words font-medium italic">{view.title}</span>
-              {view.note !== null && (
-                <span className="mt-0.5 block break-words text-xs text-stone-500">{view.note}</span>
-              )}
-              {view.retired && <Badge>En la papelera</Badge>}
-            </>
-          )
-          return (
-            <li key={view.id}>
-              {view.linked ? (
-                <Link
-                  to={`/exhibitions/${view.exhibitionId}`}
-                  className={`card block active:bg-stone-50 ${view.retired ? 'opacity-60' : ''}`}
-                >
-                  {body}
-                </Link>
-              ) : (
-                <div className="card text-stone-500">{body}</div>
-              )}
-            </li>
-          )
+      <LinkedBlock
+        title="Exposiciones enlazadas"
+        notice={linkedBlockNotice({
+          loading: record.loading,
+          error: record.linksError,
+          count: exhibitions.length,
+          // La frase del bloque vacío cambia con quien la lee: mandar a enlazar aquí
+          // abajo a quien no tiene el botón sería mandarlo a buscar lo que no está.
+          empty: canEdit ? NO_LINKED_EXHIBITIONS_WRITABLE : NO_LINKED_EXHIBITIONS_READONLY,
         })}
+      >
+        {exhibitions.map((view) => (
+          <ExhibitionLinkRow
+            key={view.id}
+            view={view}
+            canWrite={canEdit && document.active}
+            onDone={async (message) => {
+              setNotice(message)
+              await record.reload()
+            }}
+          />
+        ))}
       </LinkedBlock>
+
+      {notice !== null && (
+        <p role="status" className="mt-2 card text-sm text-stone-700">
+          {notice}
+        </p>
+      )}
+
+      {/* La única escritura de esta pantalla, y solo sobre un documento vivo: enlazar
+          uno retirado lo devolvería a circulación por la puerta de atrás, que es lo
+          mismo que el selector evita al no ofrecer las muestras retiradas. */}
+      {canEdit && document.active && (
+        <button
+          type="button"
+          onClick={() => {
+            setNotice(null)
+            setLinking(true)
+          }}
+          className="btn-secondary mt-2 w-full text-sm"
+        >
+          Enlazar con una exposición
+        </button>
+      )}
+
+      {linking && (
+        <LinkExhibitionSheet
+          exhibitions={catalogue.exhibitions}
+          linked={linked}
+          loading={catalogue.loading}
+          loadError={catalogue.error}
+          onLink={(exhibitionId, note) =>
+            linkDocumentToExhibition({
+              p_exhibition_id: exhibitionId,
+              p_document_id: document.id,
+              p_note: note,
+            })
+          }
+          onClose={() => setLinking(false)}
+          onDone={async (message) => {
+            setNotice(message)
+            await record.reload()
+          }}
+        />
+      )}
 
       {/* Lo que no se hace aquí, dicho una vez y al pie: es lo que evita buscar botones
           que no están, y para un documento suelto es información necesaria — no hay
@@ -191,6 +247,111 @@ export function DocumentPage() {
         </p>
       )}
     </Layout>
+  )
+}
+
+/**
+ * Una exposición enlazada, con la salida del vínculo.
+ *
+ * Dos toques para quitarlo, como en el resto del proyecto: en una pantalla táctil, uno
+ * solo y desaparece lo que alguien investigó. Y lo que se avisa es **lo que NO pasa** —el
+ * documento se queda en el archivo con su fichero—, que es la mitad que hace que se pueda
+ * decidir; lo redacta `retireExhibitionLinkText`, que es puro y está probado.
+ */
+function ExhibitionLinkRow({
+  view,
+  canWrite,
+  onDone,
+}: {
+  view: LinkedExhibitionView
+  canWrite: boolean
+  onDone: (message: string) => Promise<void>
+}) {
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function retire() {
+    setError(null)
+    setBusy(true)
+    const problem = await setExhibitionLinkActive(view.id, false)
+    setBusy(false)
+    if (problem !== null) {
+      setError(problem)
+      return
+    }
+    setConfirming(false)
+    await onDone(`Documento quitado de «${view.title}».`)
+  }
+
+  const body = (
+    <>
+      <span className="block text-xs text-stone-500">{view.dates}</span>
+      <span className="mt-0.5 block break-words font-medium italic">{view.title}</span>
+      {view.note !== null && (
+        <span className="mt-0.5 block break-words text-xs text-stone-500">{view.note}</span>
+      )}
+      {view.retired && <Badge>En la papelera</Badge>}
+    </>
+  )
+
+  return (
+    <li>
+      <div className={`card ${view.retired ? 'opacity-60' : ''}`}>
+        {/* El enlace envuelve solo el cuerpo, no la fila entera: un botón dentro de un
+            enlace navega en cuanto se toca, y el toque que estaba destinado a «Quitar»
+            se convertiría en un salto a la exposición. */}
+        {view.linked ? (
+          <Link to={`/exhibitions/${view.exhibitionId}`} className="block active:opacity-70">
+            {body}
+          </Link>
+        ) : (
+          <div className="text-stone-500">{body}</div>
+        )}
+
+        {error !== null && (
+          <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">
+            {error}
+          </p>
+        )}
+
+        {canWrite &&
+          (confirming ? (
+            <div className="mt-2 rounded-lg bg-stone-100 p-2">
+              <p className="text-xs text-stone-700">{retireExhibitionLinkText(view.title)}</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void retire()}
+                  className="btn min-h-touch bg-red-700 text-white disabled:opacity-60"
+                >
+                  {busy ? 'Quitando…' : 'Sí, quitar'}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setConfirming(false)}
+                  className="btn-secondary"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setError(null)
+                setConfirming(true)
+              }}
+              className="mt-1 min-h-touch text-xs text-stone-600 underline"
+            >
+              Quitar de esta exposición
+            </button>
+          ))}
+      </div>
+    </li>
   )
 }
 

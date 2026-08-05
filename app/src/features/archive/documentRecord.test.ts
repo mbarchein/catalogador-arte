@@ -5,7 +5,6 @@ import {
   linkedBlockNotice,
   linkedExhibitionViews,
   NO_LINKED_ARTWORKS,
-  NO_LINKED_EXHIBITIONS,
   type LinkedArtworkRow,
   type LinkedExhibitionRow,
 } from './documentRecord'
@@ -196,12 +195,12 @@ describe('linkedBlockNotice, nunca un hueco (RF-304)', () => {
     ).toContain('Enlazar un documento del archivo')
   })
 
-  it('y el de exposiciones dice que eso todavía no se hace desde ninguna pantalla', () => {
-    // Lo honrado: la operación existe en la base y está concedida, pero no la llama
-    // ninguna pantalla. Prometer un sitio sería mandar a buscar un botón que no está.
-    expect(NO_LINKED_EXHIBITIONS).toContain('todavía no se hace desde ninguna pantalla')
+  it('la frase del bloque vacío pasa tal cual, que es lo que deja decir dos cosas distintas', () => {
+    // El bloque de exposiciones dice una cosa a quien puede escribir y otra a quien solo
+    // consulta, y las dos las decide la pantalla. Aquí se fija que el aviso no las
+    // reescribe: viven en `exhibitionLink.ts`, con sus propios tests.
     expect(
-      linkedBlockNotice({ loading: false, error: null, count: 0, empty: NO_LINKED_EXHIBITIONS }),
-    ).toBe(NO_LINKED_EXHIBITIONS)
+      linkedBlockNotice({ loading: false, error: null, count: 0, empty: 'Lo que sea' }),
+    ).toBe('Lo que sea')
   })
 })

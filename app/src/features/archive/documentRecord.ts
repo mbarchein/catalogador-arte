@@ -238,17 +238,13 @@ export const NO_LINKED_ARTWORKS =
   'Ninguna obra lo tiene enlazado. Se enlaza desde la documentación de una obra, con «Enlazar un ' +
   'documento del archivo»: el fichero se guarda una sola vez y cuelga de tantas obras como hable.'
 
-/**
- * El bloque vacío de las exposiciones dice algo distinto del de las obras, y es lo
- * honrado: enlazar un documento con una obra se hace desde la ficha de la obra, pero
- * enlazarlo con una exposición **no se hace todavía desde ninguna pantalla**. La
- * operación existe en la base y está concedida —`document_exhibition`, medido— y lo que
- * falta es quien la llame. Prometer un sitio donde hacerlo sería mandar a buscar un
- * botón que no está.
+/*
+ * El bloque vacío de las exposiciones dice algo distinto del de las obras, y vive en
+ * `exhibitionLink.ts` porque ya son dos frases y no una: enlazar con una exposición se
+ * hace en esta misma pantalla, así que quien puede escribir lee que se hace aquí abajo y
+ * quien solo consulta no lee una instrucción que no puede seguir. Están en
+ * `NO_LINKED_EXHIBITIONS_WRITABLE` y `NO_LINKED_EXHIBITIONS_READONLY`.
  */
-export const NO_LINKED_EXHIBITIONS =
-  'Ninguna exposición lo tiene enlazado. Enlazarlo con una exposición —el cartel o el díptico de una ' +
-  'muestra— todavía no se hace desde ninguna pantalla.'
 
 /** Lo que se lee cuando la dirección no corresponde a ningún documento. */
 export const DOCUMENT_MISSING_TEXT =

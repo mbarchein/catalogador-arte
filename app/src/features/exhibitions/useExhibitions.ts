@@ -42,7 +42,14 @@ export interface ExhibitionsQuery {
   addExhibition: (draft: ExhibitionDraft) => Promise<{ id: string } | { message: string }>
 }
 
-export function useExhibitions(): ExhibitionsQuery {
+/**
+ * @param enabled False asks for NOTHING. The record of an archive document loads the
+ *   whole catalogue of exhibitions only when it is about to offer them for linking
+ *   (RF-516): that screen is opened many times just to read a document, and whoever
+ *   only reads has no reason to pay for the exhibition list. True by default, which is
+ *   what the index and the creation screen need.
+ */
+export function useExhibitions(enabled = true): ExhibitionsQuery {
   const [exhibitions, setExhibitions] = useState<ExhibitionRow[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -58,6 +65,15 @@ export function useExhibitions(): ExhibitionsQuery {
   }, [])
 
   const reload = useCallback(async () => {
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
+    // Asked again on the way from disabled to enabled, and the wait has to be visible:
+    // otherwise the chooser would read «there are no exhibitions yet» for as long as the
+    // first query is in the air. Costless for the index, which only shows the wait when
+    // no row is painted.
+    setLoading(true)
     const { data, error: failure } = await supabase.from('exhibitions').select(EXHIBITION_COLUMNS)
     if (!alive.current) return
     setLoading(false)
@@ -74,7 +90,7 @@ export function useExhibitions(): ExhibitionsQuery {
     // and the database's own collation can sort «Álvarez» past the z. It is
     // decided in `sortExhibitions`, where it is pure and tested.
     setExhibitions((data ?? []) as unknown as ExhibitionRow[])
-  }, [])
+  }, [enabled])
 
   useEffect(() => {
     void reload()

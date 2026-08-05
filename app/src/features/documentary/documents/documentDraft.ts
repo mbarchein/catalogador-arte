@@ -275,6 +275,10 @@ export type DocumentAction =
   | 'edit'
   /** Giving a document that was registered «sin digitalizar» its scan. */
   | 'addFile'
+  /** Enlazar el documento con una exposición: el cartel o el díptico de una muestra (RF-516). */
+  | 'linkExhibition'
+  /** Quitarlo de una exposición. Baja lógica del vínculo, como en las obras (RF-517). */
+  | 'retireExhibition'
 
 /**
  * A refusal as PostgREST sends it: the SQLSTATE, the message and the hint, in
@@ -297,6 +301,8 @@ const VERB: Record<DocumentAction, string> = {
   load: 'cargar el archivo',
   edit: 'corregir los datos del documento',
   addFile: 'añadir el escaneo al documento',
+  linkExhibition: 'enlazar el documento con la exposición',
+  retireExhibition: 'quitar el documento de la exposición',
 }
 
 /**
