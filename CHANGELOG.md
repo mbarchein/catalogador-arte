@@ -27,8 +27,36 @@ la misma columna. Cada uno se toca y lleva a su ficha. El fichero se descarga ta
 
 Lo que la ficha del archivo **no** hace, y lo dice en vez de dejar buscarlo: corregir los datos y añadir
 el escaneo siguen en la documentación de una obra, donde el aviso cuenta a cuántas fichas afecta el
-cambio; retirar y recuperar, en la papelera. Y enlazar un documento con una exposición sigue sin poder
-hacerse desde ninguna pantalla.
+cambio; retirar el documento entero y recuperarlo, en la papelera.
+
+**El cartel de una exposición ya se puede enlazar con la exposición**
+Faltaba, y era el único vínculo del catálogo que no se podía hacer desde ninguna pantalla: un cartel, un
+díptico o una nota de prensa hablan de la muestra y no de una pieza en concreto, así que no había ninguna
+obra desde la que enlazarlos. Se hace ahora en la ficha del documento, con **«Enlazar con una
+exposición»**, y con su nota: lo que ese papel dice de la muestra no es lo que diga de una obra suya.
+
+El buscador ofrece las exposiciones del catálogo y trata dos casos al revés, a propósito. Una muestra
+**retirada no se ofrece** —enlazarla la devolvería a circulación por la puerta de atrás—, y una que **ya
+está enlazada sí se sigue viendo**, marcada: esconderla haría teclear el mismo título una y otra vez
+preguntándose dónde se ha metido.
+
+Y se puede quitar, con dos toques y diciendo antes **lo que no pasa**: el documento se queda en el
+archivo con su fichero, y lo siguen viendo las obras y las demás exposiciones que lo tengan enlazado. Un
+vínculo que se crea y no se puede quitar es una trampa.
+
+**La ficha de una exposición ya dice cuál de las referencias es su catálogo**
+El catálogo de una muestra no es una tabla aparte: es una referencia de la bibliografía, y hasta ahora eso
+estaba pensado pero no se podía rellenar. La ficha decía si publicó catálogo y ahí se quedaba. Ahora
+nombra la referencia que lo es y lleva a su ficha, donde se ve el libro entero y qué obras lo citan.
+
+Si todavía no consta que hubiera catálogo, se dice antes de elegir nada y con dos avisos distintos, porque
+llevan a hacer cosas distintas: **«sin revisar» manda a averiguarlo**, y un «No» ya investigado manda a
+corregir el «No» primero — enlazar un catálogo a una muestra que dice no haberlo publicado sería
+contradecir la propia ficha. Y quitar el vínculo se puede siempre, aunque la ficha se haya quedado
+incoherente: si no, no habría forma de arreglarla.
+
+Cuando consta que publicó catálogo pero no cuál es, la ficha lo dice así, como lo que queda por hacer y
+no como un error.
 
 **Y cada referencia tiene su ficha, con las obras que la citan**
 Tocando una referencia del listado se abre su ficha. Lo que trae y no estaba en ningún sitio es la
@@ -1205,16 +1233,13 @@ Las nueve listas del catálogo ya se pueden corregir y ampliar desde la aplicaci
 porque de ellos depende el prefijo del código de catalogación que va pegado a cada obra. Convertirlos es
 lo siguiente, y hay que hacerlo con cuidado por eso mismo.
 
-**La ficha de una referencia bibliográfica y la de un documento del archivo**
-De este frente ya está lo demás, y está contado arriba: las exposiciones tienen su pantalla, los
-propietarios y las sedes la suya, y un documento del archivo ya se sube y se enlaza con una obra. Lo que
-falta son las dos fichas que quedan. Una **referencia bibliográfica** solo se corrige desde una obra que
-la cite: si el autor o el año se escribieron mal y la referencia está citada en cinco obras, hay que
-entrar por una de ellas, y no hay ninguna pantalla donde ver la referencia con las cinco. Y un
-**documento del archivo** no tiene ficha ninguna: se le pone signatura, serie y escaneo al darlo de alta,
-y a partir de ahí esos datos no se pueden corregir desde ningún sitio —tampoco añadirle el escaneo si se
-subió sin él—. Lo único que hoy se puede cambiar de un documento ya guardado es la nota del vínculo con
-una obra.
+**Dar de alta una referencia bibliográfica sin citarla desde una obra**
+Lo único que queda de este frente, y está contado arriba todo lo demás: la bibliografía y el archivo
+tienen ya su listado y su ficha, los datos de un documento se corrigen y se le añade el escaneo que le
+falte, y el catálogo de una exposición se dice desde la ficha de la muestra. Lo que sigue sin poder
+hacerse es **registrar un libro que todavía no cita ninguna obra**: una referencia nace citada, así que
+para meter en el catálogo una publicación que se acaba de encontrar hay que empezar por una obra que
+aparezca en ella.
 
 **Las exposiciones y la papelera, sin abrirse todavía con datos de verdad**
 Las dos pantallas están comprobadas con un navegador y con las dos cuentas, pero el recorrido completo con

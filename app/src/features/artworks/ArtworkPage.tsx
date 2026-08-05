@@ -510,31 +510,31 @@ export function ArtworkPage() {
         {/* What is still missing is declared instead of omitted, so the record
             does not look complete — but ONLY what is really missing.
 
-            ESTA TARJETA HA ENVEJECIDO MAL TRES VECES, y siempre por lo mismo: se
+            ESTA TARJETA HA ENVEJECIDO MAL CUATRO VECES, y siempre por lo mismo: se
             escribió una lista de carencias en vez de comprobar una por una las
             afirmaciones que contiene. Nombró los cinco bloques documentales cuando
             ya estaban justo encima; después dijo que los vocabularios no tenían
-            pantalla cuando las series la han tenido siempre; y hasta hoy decía que
-            una exposición no se podía dar de alta, que una referencia no se podía
-            corregir y que un documento no se podía subir ni enlazar. Las tres cosas
-            se hacen ya, así que las tres frases se han ido.
+            pantalla cuando las series la han tenido siempre; luego que una exposición
+            no se podía dar de alta, que una referencia no se podía corregir y que un
+            documento no se podía subir ni enlazar; y hasta hoy que enlazar un documento
+            con una exposición y decir cuál es el catálogo de una muestra no se hacían
+            desde ninguna pantalla. Todo eso se hace ya, así que todas esas frases se
+            han ido.
 
             Lo comprobado ahora, afirmación por afirmación, y lo único que queda:
 
-            - Un DOCUMENTO DEL ARCHIVO ya tiene **listado y ficha propios**
-              (`/archive`, `/archive/:id`) con sus DOS bloques —obras y exposiciones,
-              porque RF-516 es de muchos a muchos por los dos lados—. La ficha se lee y
-              no se escribe: subir, enlazar, corregir y digitalizar siguen aquí, donde el
-              aviso cuenta a cuántas fichas afecta el cambio. Es la SEXTA vez que esta
-              tarjeta envejece, y lo único que queda de la lista original es enlazar un
-              documento con una exposición: la operación está en la base y concedida
-              (`document_exhibition`), y no la llama ninguna pantalla.
-            - Una REFERENCIA BIBLIOGRÁFICA ya tiene **listado y ficha propios**
+            - Un DOCUMENTO DEL ARCHIVO tiene **listado y ficha propios** (`/archive`,
+              `/archive/:id`) con sus DOS bloques —obras y exposiciones, porque RF-516 es
+              de muchos a muchos por los dos lados—. Subir, corregir y digitalizar siguen
+              aquí, donde el aviso cuenta a cuántas fichas afecta el cambio; enlazarlo con
+              una EXPOSICIÓN se hace en su ficha y solo allí (RF-516, RF-517), porque una
+              exposición no tiene bloque de documentos y esa ficha es el único sitio donde
+              el papel y la muestra están a la vez.
+            - Una REFERENCIA BIBLIOGRÁFICA tiene **listado y ficha propios**
               (`/bibliography`, `/bibliography/:id`) con su bloque «Obras citadas»
-              (RF-506), así que esa mitad de la frase se ha ido con la QUINTA revisión
-              de esta tarjeta. Lo que sigue sin hacerse desde ninguna pantalla es
-              elegir qué referencia es el catálogo de una exposición (RF-503) y darla
-              de alta sin citarla.
+              (RF-506), y decir cuál de ellas es el catálogo de una exposición se hace
+              en la ficha de la muestra (RF-503). Lo ÚNICO que queda de la lista
+              original: darla de alta sin citarla desde una obra.
             - Los VOCABULARIOS tienen todos su pantalla en «Tablas», y una
               EXPOSICIÓN tiene ya la suya. Eso no es una carencia: es una dirección,
               y decirla es lo que evita que se busque donde no está. */}
@@ -546,10 +546,10 @@ export function ArtworkPage() {
         <section className="card mt-3 text-sm text-stone-500">
           <p className="font-medium text-stone-700">Lo que aún no se puede hacer aquí</p>
           <p className="mt-1">
-            Un <strong>documento del archivo</strong> se sube, se enlaza, se corrige y se
-            digitaliza desde aquí, y desde aquí solo: su ficha propia se lee, pero no se escribe en
-            ella. Y enlazar un documento con una <strong>exposición</strong> —el cartel o el díptico
-            de una muestra— todavía no se hace desde ninguna pantalla.
+            Una <strong>referencia bibliográfica</strong> se da de alta citándola desde una obra, y
+            solo así: para registrar un libro que todavía no cita ninguna obra hay que empezar por
+            la obra. Y un <strong>documento del archivo</strong> se sube, se corrige y se digitaliza
+            desde aquí, y desde aquí solo.
           </p>
           <p className="mt-2">
             Lo que sí se hace, y no es aquí: cada{' '}
@@ -562,9 +562,11 @@ export function ArtworkPage() {
             <Link to="/archive" className="underline">
               el del archivo
             </Link>{' '}
-            —donde están también los que ninguna obra tiene enlazados—. Una{' '}
-            <strong>exposición</strong> se da de alta y se corrige en su propia ficha, en{' '}
-            <strong>Exposiciones</strong>. Y las{' '}
+            —donde están también los que ninguna obra tiene enlazados—. Enlazar un documento con una{' '}
+            <strong>exposición</strong> —el cartel o el díptico de una muestra— se hace en la ficha
+            del documento, y decir cuál de las referencias es el catálogo de una muestra, en la
+            ficha de la exposición. Una <strong>exposición</strong> se da de alta y se corrige en su
+            propia ficha, en <strong>Exposiciones</strong>. Y las{' '}
             <strong>series</strong>, las <strong>sedes de exposición</strong>, los{' '}
             <strong>tipos</strong> de publicación, de documento y de relación, y las{' '}
             <strong>personas e instituciones</strong> viven en la sección <strong>Tablas</strong>.
