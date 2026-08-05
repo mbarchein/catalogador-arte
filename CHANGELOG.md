@@ -186,6 +186,30 @@ esta reproducción» y su historial de cambios— sin que hubiera que tocarlas p
 Quien cataloga sigue viéndolo todo, y no es un detalle: la papelera enseña lo retirado y recuperar una
 obra tiene que devolverla con sus fotografías dentro.
 
+**El tamaño de letra se puede agrandar, y con él toda la aplicación**
+En **Mi perfil → Tamaño de letra**, tres opciones: Normal, Grande (115 %) y Más grande (130 %). El cambio
+se ve al tocar, sin ningún botón de guardar, y debajo hay una línea de muestra con un título de obra de
+verdad para comprobar el tamaño sin salir de ahí.
+
+No agranda solo las letras: **crecen también los botones, las tarjetas y los espacios**. Es a propósito,
+porque quien necesita el texto más grande necesita también el botón más grande — agrandar solo la letra
+la sacaría de botones pensados para el tamaño pequeño y dejaría los sitios donde hay que tocar igual de
+pequeños, que es la mitad del problema.
+
+El navegador ya sabía agrandar el texto, y la aplicación estaba preparada para eso. Pero **instalada en
+el móvil no hay barra de navegador donde tocarlo**, y el móvil instalado es como se usa esto de verdad:
+ese era el hueco.
+
+Se guarda **en este dispositivo**, así que cada móvil u ordenador tiene el suyo, y se aplica ya al abrir
+la aplicación —también en la pantalla de entrada— sin el salto de pintarse pequeña y crecer un instante
+después.
+
+Con dos excepciones dichas donde toca. La primera: el **editor de fotografía** se queda al tamaño normal,
+porque sus mandos y su lienzo se miden en píxeles y ahí un par de puntos de desviación se ven; al cerrarlo
+vuelve la letra grande. La segunda es lo que cuesta y se avisa en el propio ajuste: con la letra más
+grande cabe menos en cada pantalla y hay que desplazarse más. De ahí que el tope sea el 130 % y no más —
+por encima, en un móvil estrecho, los pares de botones se quedan sin sitio.
+
 ### Correcciones
 
 **Y si el panel se cierra de todas formas, lo escrito se recupera**
