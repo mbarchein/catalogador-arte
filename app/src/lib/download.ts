@@ -77,6 +77,23 @@ export function downloadFailureKind(status: number): DownloadFailureKind {
  * — an HTTP status, the message of the failed invocation — added in brackets: useless
  * to her, decisive when she reads it out over the phone.
  */
+/**
+ * `a` + `el documento` = `al documento`; `de` + `el original` = `del original`.
+ *
+ * Los dos artículos contractos del español, que aquí no son un detalle de estilo: los
+ * nombres que llegan como `label` son frases —«el original», «la copia corregida», «el
+ * documento «Carta de la galería»»— y una de cada dos empieza por «el». Sin esto, el
+ * único aviso que lleva preposición delante decía «no se ha podido preparar la descarga
+ * de el documento», y una frase mal escrita en un mensaje de error hace dudar del
+ * programa entero justo cuando algo acaba de ir mal.
+ */
+export function contracted(preposition: 'a' | 'de', label: string): string {
+  // Solo el artículo masculino singular se contrae: «de la copia» y «de los originales»
+  // se quedan como están.
+  if (label.startsWith('el ')) return `${preposition === 'a' ? 'al' : 'del'} ${label.slice(3)}`
+  return `${preposition} ${label}`
+}
+
 export function downloadFailureText(
   label: string,
   kind: DownloadFailureKind,
@@ -85,9 +102,13 @@ export function downloadFailureText(
   const aside = detail === undefined || detail === '' ? '' : ` (${detail})`
   switch (kind) {
     case 'sign':
+      // «Acceder» y no «preparar la descarga»: firmar es el paso previo tanto de bajarse
+      // el fichero como de VERLO sin bajárselo, y un documento que se abre en el visor
+      // decía «no se ha podido preparar la descarga» de algo que nadie había pedido
+      // descargar. Lo que ha fallado es el permiso, y eso es lo mismo en los dos casos.
       return (
-        `No se ha podido preparar la descarga de ${label}: no ha llegado el permiso para entrar ` +
-        `en el almacén de originales${aside}. Comprueba la conexión y vuelve a intentarlo.`
+        `No se ha podido acceder ${contracted('a', label)}: no ha llegado el permiso para ` +
+        `entrar en el almacén de originales${aside}. Comprueba la conexión y vuelve a intentarlo.`
       )
     case 'network':
       return (

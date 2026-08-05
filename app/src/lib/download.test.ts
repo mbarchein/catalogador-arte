@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DownloadFailure,
   downloadFailureKind,
+  contracted,
   downloadFailureText,
   downloadSignedFile,
   messageOf,
@@ -134,6 +135,28 @@ describe('cada fallo se cuenta, y se cuenta en español (RF-411)', () => {
     expect(downloadFailureText('el original', 'store')).not.toContain('()')
     expect(downloadFailureText('el original', 'store', '')).not.toContain('()')
     expect(downloadFailureText('el original', 'store', 'HTTP 502')).toContain('(HTTP 502)')
+  })
+
+  it('los artículos contractos, que en un aviso mal escrito se leen y hacen dudar', () => {
+    // El aviso de la firma es el único que lleva preposición delante del nombre del
+    // fichero, y una de cada dos etiquetas del proyecto empieza por «el»: decía «no se
+    // ha podido preparar la descarga DE EL documento».
+    expect(contracted('a', 'el documento «Carta»')).toBe('al documento «Carta»')
+    expect(contracted('de', 'el original')).toBe('del original')
+    // Solo el masculino singular se contrae.
+    expect(contracted('a', 'la copia corregida')).toBe('a la copia corregida')
+    expect(contracted('de', 'los originales')).toBe('de los originales')
+    // Y una etiqueta que empieza por «el» sin ser artículo no se destroza.
+    expect(contracted('a', 'elementos sueltos')).toBe('a elementos sueltos')
+  })
+
+  it('y el aviso de la firma vale igual para ver que para descargar', () => {
+    // Firmar es el paso previo de las dos cosas. Decir «no se ha podido preparar la
+    // descarga» a quien ha tocado «Ver el documento» le cuenta un fallo de algo que no
+    // había pedido.
+    const text = downloadFailureText('el documento «Carta»', 'sign')
+    expect(text).toContain('No se ha podido acceder al documento «Carta»')
+    expect(text).not.toContain('descarga')
   })
 
   it('la miga técnica sale de cualquier cosa que se haya lanzado', () => {
