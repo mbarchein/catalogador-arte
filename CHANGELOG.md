@@ -2,6 +2,28 @@
 
 ### Interfaz
 
+**Un documento escaneado se ve desde la ficha, sin tener que descargarlo**
+Hasta ahora un documento digitalizado tenía una sola salida: bajárselo. Y para leer un recorte con la obra
+delante eso son tres pasos —tocar, esperar y buscar el fichero entre las descargas del teléfono— y un
+fichero suelto en el móvil que nadie va a borrar nunca. Ahora **«Ver el documento» es el botón principal**
+y descargarlo se queda justo debajo, porque poder sacar el fichero del catálogo sigue haciendo falta.
+
+Una imagen escaneada —un JPEG, un PNG— se abre **encima de la ficha, sin salir de la aplicación**, y se
+cierra con el botón de atrás del móvil, con la ✕ o con Escape. Y se puede ampliar, que aquí no es un
+adorno: ajustada a la pantalla de un móvil, la letra de una carta mecanografiada o de un recorte de
+periódico queda por debajo de lo legible, así que un visor sin ampliar sirve para saber qué documento es y
+no para leerlo. Se amplía con el botón de arriba o tocando dos veces sobre el propio documento.
+
+Un **PDF** —que es lo que más hay, porque un expediente de varias hojas se sube como un solo PDF— se abre
+en el visor del propio navegador, que pasa páginas, busca texto y hace zoom. Se avisa antes de que se abre
+fuera de la aplicación, para que la aplicación no parezca desaparecer.
+
+Y lo que **no** se ofrece ver, a propósito: un **TIFF**, que es el formato de un escaneado de archivo de
+verdad y que ningún navegador sabe pintar, y un **HEIC**, que unos teléfonos pintan y otros no. Un botón
+que funciona en un móvil y no en el de al lado se deja de usar en los dos, así que ahí sigue estando solo
+la descarga, que es lo que siempre funciona. El peso se avisa igual antes de tocar: verlo se trae el
+fichero entero y cuesta los mismos datos que bajarlo.
+
 **El archivo documental tiene listado, búsqueda y ficha: ya se llega a un documento sin pasar por una obra**
 Era el último agujero de este tipo, el mismo que tenía la bibliografía. Un documento del archivo se
 subía, se enlazaba, se descargaba, se corregía y se digitalizaba **siempre desde la ficha de una obra que
@@ -165,6 +187,12 @@ Quien cataloga sigue viéndolo todo, y no es un detalle: la papelera enseña lo 
 obra tiene que devolverla con sus fotografías dentro.
 
 ### Correcciones
+
+**El aviso de un permiso denegado hablaba de una descarga que nadie había pedido, y estaba mal escrito**
+Cuando el almacén no da permiso para abrir un fichero, el aviso decía «no se ha podido preparar la
+descarga de el documento…»: hablaba de descargar aunque se hubiera pulsado «Ver», y le faltaba la
+contracción —«del documento», no «de el documento»—. Ahora dice «no se ha podido acceder al documento», que
+vale igual para las dos cosas. Lo mismo pasaba con las fotografías: «de el original».
 
 **Los paneles ya no se cerraban solos, y el atrás no se quedaba corto tras recargar**
 Dos fallos del botón de atrás, los dos encontrados probándolo en un navegador de verdad y no leyendo el
