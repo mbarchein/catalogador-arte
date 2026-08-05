@@ -8,7 +8,14 @@ import {
   canInstall,
   subscribeInstall,
 } from '../../lib/installation'
+import {
+  TEXT_SCALE_SAMPLE,
+  TEXT_SCALES,
+  textScaleNotice,
+  textScaleOptionText,
+} from '../../lib/textScale'
 import { ROLE_LABEL } from '../../lib/types'
+import { setTextScale, useTextScale } from '../../lib/useTextScale'
 import {
   BUILD,
   apiHost,
@@ -132,6 +139,64 @@ function Installation() {
   )
 }
 
+/**
+ * El tamaño de letra de toda la aplicación (RNF-106).
+ *
+ * Está aquí y no en un ajuste del navegador porque **en la PWA instalada no hay barra de
+ * navegador**, y el móvil instalado es el dispositivo principal de este proyecto: el zoom
+ * del sistema, que funcionaría —todo está dimensionado en `rem`—, ahí no se puede tocar.
+ *
+ * Tres botones en una fila y no un desplegable: son tres opciones, y elegir entre tres
+ * cosas visibles es un gesto en vez de tres. Y **el cambio se aplica al tocar, no al
+ * guardar**: lo que se está eligiendo es cómo se ve esta misma pantalla, así que la frase
+ * de muestra y los propios botones ya salen al tamaño elegido. Un ajuste de tamaño con un
+ * botón «Guardar» obliga a salir para ver si acertaste.
+ */
+function TextSize() {
+  const scale = useTextScale()
+  const notice = textScaleNotice(scale)
+
+  return (
+    <section className="card mb-3">
+      <h2 className="mb-1 font-medium">Tamaño de letra</h2>
+      <p className="mb-3 text-sm text-stone-600">
+        Agranda el texto de toda la aplicación, y con él los botones. Se guarda en este
+        dispositivo, así que cada móvil u ordenador tiene el suyo.
+      </p>
+
+      <div role="radiogroup" aria-label="Tamaño de letra" className="grid grid-cols-3 gap-2">
+        {TEXT_SCALES.map((option) => {
+          const active = option === scale
+          return (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => setTextScale(option)}
+              className={`min-h-touch rounded-lg border px-2 py-2 text-sm ${
+                active
+                  ? 'border-stone-800 bg-stone-800 text-white'
+                  : 'border-stone-300 bg-white text-stone-800 active:bg-stone-50'
+              }`}
+            >
+              {textScaleOptionText(option)}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* La muestra, con un dato de verdad y no «Lorem ipsum»: lo que hay que poder leer es
+          un título de obra con su código y su sitio, que es lo que se lee todo el día. */}
+      <p className="mt-3 rounded-lg bg-stone-100 p-3 text-sm text-stone-700">
+        {TEXT_SCALE_SAMPLE}
+      </p>
+
+      {notice !== null && <p className="mt-2 text-xs text-stone-500">{notice}</p>}
+    </section>
+  )
+}
+
 export function ProfilePage() {
   const { profile, session } = useAuth()
 
@@ -151,6 +216,8 @@ export function ProfilePage() {
           Cambiar la contraseña
         </Link>
       </section>
+
+      <TextSize />
 
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Instalar en el móvil</h2>

@@ -55,6 +55,7 @@ import {
 } from '../../lib/imageColor'
 import { readAnalysisPixels, type PixelRaster } from '../../lib/imagePixels'
 import { EXIF_SLICE_BYTES, readPhotoExif, type PhotoExif } from '../../lib/exif'
+import { useBaseTextScaleHere } from '../../lib/useTextScale'
 import type { GrayTargetCandidate } from '../../lib/grayTarget'
 import {
   ColorControls,
@@ -300,6 +301,14 @@ export function PhotoEditor({
   onApply: (edit: PhotoEdit, cropSource: CropSource) => void
   onCancel: () => void
 }) {
+  // El editor se queda al tamaño de letra normal, aunque el perfil haya pedido letra
+  // grande, y es la excepción razonada del ajuste: aquí se mide el lienzo en píxeles y se
+  // calcula la posición de los tiradores de recorte y perspectiva contra el rectángulo real
+  // del elemento, así que escalarlo es pedirle problemas a la única pantalla del proyecto
+  // donde un par de puntos de desviación se ven. Y ocupa la pantalla entera, así que
+  // mientras está abierto no hay ningún otro texto que leer.
+  useBaseTextScaleHere()
+
   const [url, setUrl] = useState<string | null>(null)
   const [rotation, setRotation] = useState<Rotation>(() => normalizeEdit(initialEdit).rotation)
   const [crop, setCrop] = useState<Crop | null>(() => normalizeEdit(initialEdit).crop)

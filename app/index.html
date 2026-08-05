@@ -8,6 +8,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1c1917" />
     <title>Catalogador — Rotili / Ruiz Campins</title>
+
+    <!-- El tamaño de letra elegido, ANTES de que arranque la aplicación.
+
+         Va aquí y no en React a propósito: puesto en un efecto, la primera pantalla se
+         pinta al tamaño normal y salta al elegido a la vista de quien la está mirando —y
+         justo a quien ha pedido la letra grande—. Cinco líneas sin dependencias, que
+         corren antes del primer pintado.
+
+         Lo que decide está en `src/lib/textScale.ts`: los tres escalones, la clave y el
+         tamaño base. Aquí se repiten a mano porque este script no puede importar nada, y
+         `textScaleBoot.test.ts` comprueba que los dos sitios siguen diciendo lo mismo —esa
+         duplicación sin vigilar es exactamente la que se queda vieja. -->
+    <script>
+      try {
+        var s = localStorage.getItem('catalogador.text-scale')
+        var px = s === 'LARGE' ? 18.4 : s === 'LARGER' ? 20.8 : 16
+        if (px !== 16) document.documentElement.style.fontSize = px + 'px'
+      } catch (e) {
+        /* Sin almacenamiento —modo privado, política del navegador— se queda en el tamaño
+           normal. Nada de esto puede impedir que la aplicación se pinte. */
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
