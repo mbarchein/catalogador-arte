@@ -142,6 +142,28 @@ export function TablesPage() {
           recuperar cualquier cosa exige permiso de edición, así que para un lector
           sería una lista incompleta con un botón que la base rechaza. La propia
           pantalla lo vuelve a comprobar. */}
+      {/* La bibliografía del catálogo, que TAMPOCO es una lista de las que eligen
+          las fichas: es contenido, como las exposiciones. Está aquí por lo mismo
+          que la papelera —una sexta pestaña estrecharía las cinco de todos los días
+          por algo que se abre de vez en cuando— y NO es solo del Catalogador: la
+          lee cualquiera que pueda leer, y a esta pantalla llega solo quien edita, así
+          que hay además una puerta desde la ficha de cualquier obra. */}
+      <section className="mt-6">
+        <h2 className="px-1 text-sm font-medium uppercase tracking-wide text-stone-500">
+          Contenido del catálogo
+        </h2>
+        <p className="mb-2 px-1 text-xs text-stone-500">
+          No son listas que eligen las fichas: son fichas.
+        </p>
+        <ul className="space-y-2">
+          <TableRow
+            to="/bibliography"
+            name="Bibliografía"
+            hint="Todas las referencias del catálogo, con su búsqueda. Se crean y se corrigen desde la bibliografía de una obra; aquí se encuentran, también las que ya no cita ninguna."
+          />
+        </ul>
+      </section>
+
       <section className="mt-6">
         <h2 className="px-1 text-sm font-medium uppercase tracking-wide text-stone-500">
           Lo retirado

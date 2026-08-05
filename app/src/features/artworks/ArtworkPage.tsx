@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
+  Link,
   Navigate,
   useLocation,
   useMatch,
@@ -544,13 +545,18 @@ export function ArtworkPage() {
           <p className="mt-1">
             Un <strong>documento del archivo</strong> y una{' '}
             <strong>referencia bibliográfica</strong> se crean y se corrigen desde aquí, pero solo
-            desde una obra que los use: ninguno de los dos tiene todavía ficha ni listado propios,
-            así que a un documento o a una referencia que ninguna obra tenga enlazada no hay forma
-            de llegar.
+            desde una obra que los use: ninguno de los dos tiene todavía <strong>ficha</strong>{' '}
+            propia, así que desde su listado se leen y no se abren. Y el documento tampoco tiene
+            listado: a uno que ninguna obra tenga enlazada no hay forma de llegar.
           </p>
           <p className="mt-2">
-            Lo que sí se hace, y no es aquí: una <strong>exposición</strong> se da de alta y se
-            corrige en su propia ficha, en <strong>Exposiciones</strong>. Y las{' '}
+            Lo que sí se hace, y no es aquí: la{' '}
+            <Link to="/bibliography" className="underline">
+              <strong>bibliografía</strong> entera del catálogo
+            </Link>{' '}
+            se busca en su listado, incluidas las referencias que ya no cita ninguna obra. Una{' '}
+            <strong>exposición</strong> se da de alta y se corrige en su propia ficha, en{' '}
+            <strong>Exposiciones</strong>. Y las{' '}
             <strong>series</strong>, las <strong>sedes de exposición</strong>, los{' '}
             <strong>tipos</strong> de publicación, de documento y de relación, y las{' '}
             <strong>personas e instituciones</strong> viven en la sección <strong>Tablas</strong>.

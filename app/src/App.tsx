@@ -6,6 +6,7 @@ import { CapturePage } from './features/artworks/CapturePage'
 import { ArtworkPage } from './features/artworks/ArtworkPage'
 import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
+import { BibliographyPage } from './features/bibliography'
 import { ExhibitionsPage, NewExhibitionPage, ExhibitionPage } from './features/exhibitions'
 import { GrayTargetPage } from './features/help/GrayTargetPage'
 import { PlacesPage } from './features/places/PlacesPage'
@@ -67,6 +68,13 @@ export function App() {
       <Route path="/exhibitions/new" element={<NewExhibitionPage />} />
       <Route path="/exhibitions/:id" element={<ExhibitionPage />} />
       <Route path="/exhibitions/:id/edit" element={<ExhibitionPage />} />
+      {/* RF-506, RF-606: el listado de la bibliografía con su búsqueda. Lo lee
+          cualquiera que pueda leer, como el de exposiciones: una referencia es
+          contenido del catálogo y no una tabla maestra. NO hay ruta de alta, y su
+          ausencia es la decisión: una referencia existe porque algo la cita, así que
+          se crea desde la bibliografía de una obra. Todavía no hay ficha propia
+          —«/bibliography/:id»— y por eso las filas del listado no son enlaces. */}
+      <Route path="/bibliography" element={<BibliographyPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       {/* RF-418: qué es el testigo de gris, dónde se coloca y de dónde se baja la
           hoja imprimible. Es una ruta y no un panel del editor porque se lee antes

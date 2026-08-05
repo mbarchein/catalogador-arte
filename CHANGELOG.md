@@ -2,6 +2,27 @@
 
 ### Interfaz
 
+**La bibliografía del catálogo ya tiene su propio listado, con búsqueda**
+Una referencia bibliográfica se creaba y se corregía solo desde una obra que la citara, y eso dejaba un
+agujero: **a una referencia que ya no cita ninguna obra no se llegaba desde ningún sitio.** Seguía en el
+catálogo, seguía ocupando su clave de cita, y era invisible. Ahora hay un listado con todas, que se abre
+desde **Tablas → Bibliografía** y también desde el final de la ficha de cualquier obra.
+
+Se busca por **autor, título, año, revista, editorial o lugar**, y por la clave de cita: teclear
+«badajoz» encuentra el libro editado allí aunque el lugar no esté en el título. La lista sale ordenada
+como la bibliografía impresa de un catálogo razonado —alfabética por autor, y dentro de cada autor de lo
+más antiguo a lo más reciente—, y una referencia sin firma se coloca por su título entre las demás, no
+al final: «anónimo» no es un apellido que empiece por z.
+
+Las referencias sin año dicen **«s.f.»** en el sitio donde iría el año, para que la columna se pueda
+recorrer con el ojo sin descuadrarse. Las retiradas no aparecen salvo que se pidan, y cuando se piden se
+ven apagadas **y con la palabra «Retirada»**, porque el gris a secas no dice nada.
+
+No hay botón de «nueva referencia», y su ausencia es la decisión: una referencia existe porque algo la
+cita, así que se sigue creando desde la bibliografía de una obra. Y todavía **no tiene ficha propia**, así
+que desde el listado se lee pero no se abre; la ficha, con su bloque de obras que la citan, es lo
+siguiente.
+
 **Los datos de un documento del archivo ya se pueden corregir, y el escaneo se puede añadir después**
 Hasta ahora un documento se subía y se quedaba exactamente como se hubiera subido: la signatura mal
 copiada de la carpeta, el tipo sin clasificar porque se anotó de una fotocopia, o el «lo subo sin
