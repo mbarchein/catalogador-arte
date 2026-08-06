@@ -154,20 +154,6 @@ export function groupChangelog(blocks: readonly ChangelogBlock[]): ChangelogEntr
   return entries.filter((entry) => entry.blocks.length > 0)
 }
 
-/**
- * De qué versión son estas novedades, dicho arriba.
- *
- * Sin esta frase, «Novedades» se lee como «lo último que han hecho» y no como «lo que
- * trae lo que tienes instalado», que es lo que de verdad es — y la diferencia importa el
- * día que el móvil se queda con una versión vieja porque no se ha recargado.
- */
-export function changelogSourceText(version: string, buildDate: string): string {
-  return (
-    `Lo que traía la versión ${version}, la que está instalada en este dispositivo ` +
-    `(compilada el ${buildDate}). Se lee sin conexión: viene dentro de la propia aplicación.`
-  )
-}
-
 /** Lo que se lee mientras llega, y si no llega. */
 export const CHANGELOG_LOADING = 'Abriendo el registro de cambios…'
 

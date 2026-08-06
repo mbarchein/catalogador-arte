@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BUILD, formatBuildDate } from '../../lib/buildInfo'
 import {
-  changelogSourceText,
   CHANGELOG_FAILED,
   CHANGELOG_LOADING,
   groupChangelog,
@@ -50,10 +48,7 @@ export function ChangelogSection() {
 
   return (
     <section className="card mb-3">
-      <h2 className="mb-1 font-medium">Novedades</h2>
-      <p className="mb-3 text-sm text-stone-600">
-        {changelogSourceText(BUILD.version, formatBuildDate())}
-      </p>
+      <h2 className="mb-3 font-medium">Novedades</h2>
 
       {failed ? (
         <p role="alert" className="text-sm text-stone-700">

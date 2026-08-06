@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
-  changelogSourceText,
   groupChangelog,
   parseChangelog,
   parseSpans,
@@ -200,17 +199,5 @@ describe('el CHANGELOG.md de verdad', () => {
         expect(span.text, span.text.slice(0, 60)).not.toContain('**')
       }
     }
-  })
-})
-
-describe('changelogSourceText, de qué versión son estas novedades', () => {
-  it('lo dice, porque «Novedades» se lee como «lo último que han hecho»', () => {
-    // Y no lo es: es lo que trae lo INSTALADO. La diferencia importa el día que el móvil
-    // se queda con una versión vieja porque no se ha recargado.
-    const text = changelogSourceText('1.4.0', '5 de agosto de 2026')
-    expect(text).toContain('1.4.0')
-    expect(text).toContain('instalada en este dispositivo')
-    expect(text).toContain('5 de agosto de 2026')
-    expect(text).toContain('sin conexión')
   })
 })

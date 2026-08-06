@@ -46,8 +46,10 @@ function Diagnostics() {
       <h2 className="mb-2 font-medium">Versión</h2>
 
       <dl className="divide-y divide-stone-100">
-        <DataRow label="Aplicación" value={BUILD.version} />
-        <DataRow label="Compilada" value={formatBuildDate()} />
+        {/* La versión es la fecha y la hora de la publicación. El número de
+            `package.json` no se sube en cada despliegue, así que no distinguía una
+            versión de la siguiente. */}
+        <DataRow label="Versión" value={formatBuildDate()} />
         {/* In local there is no commit: the environment does not provide one,
             and saying «desarrollo» beats showing an empty datum. */}
         <DataRow label="Revisión" value={BUILD.commit || 'desarrollo'} />
