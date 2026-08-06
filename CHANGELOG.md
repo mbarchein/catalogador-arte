@@ -2,728 +2,653 @@
 
 ### Interfaz
 
-**Un documento escaneado se ve desde la ficha, sin tener que descargarlo**
-Hasta ahora un documento digitalizado tenía una sola salida: bajárselo. Y para leer un recorte con la obra
-delante eso son tres pasos —tocar, esperar y buscar el fichero entre las descargas del teléfono— y un
-fichero suelto en el móvil que nadie va a borrar nunca. Ahora **«Ver el documento» es el botón principal**
-y descargarlo se queda justo debajo, porque poder sacar el fichero del catálogo sigue haciendo falta.
+**Un documento escaneado se puede ver desde la ficha, sin descargarlo**
+Hasta ahora la única salida de un documento digitalizado era descargarlo, lo que obliga a esperar y a
+buscar después el fichero entre las descargas del teléfono. Ahora «Ver el documento» es el botón
+principal y la descarga queda debajo, porque sigue siendo necesaria para sacar el fichero del catálogo.
 
-Una imagen escaneada —un JPEG, un PNG— se abre **encima de la ficha, sin salir de la aplicación**, y se
-cierra con el botón de atrás del móvil, con la ✕ o con Escape. Y se puede ampliar, que aquí no es un
-adorno: ajustada a la pantalla de un móvil, la letra de una carta mecanografiada o de un recorte de
-periódico queda por debajo de lo legible, así que un visor sin ampliar sirve para saber qué documento es y
-no para leerlo. Se amplía con el botón de arriba o tocando dos veces sobre el propio documento.
+Una imagen escaneada —JPEG o PNG— se abre sobre la ficha, sin salir de la aplicación, y se cierra con el
+botón de atrás del móvil, con la ✕ o con Escape. Se puede ampliar con el botón superior o tocando dos
+veces sobre el documento: ajustada a la pantalla de un móvil, la letra de una carta mecanografiada o de
+un recorte de prensa queda por debajo del tamaño legible.
 
-Un **PDF** —que es lo que más hay, porque un expediente de varias hojas se sube como un solo PDF— se abre
-en el visor del propio navegador, que pasa páginas, busca texto y hace zoom. Se avisa antes de que se abre
-fuera de la aplicación, para que la aplicación no parezca desaparecer.
+Un PDF —el formato más frecuente, porque un expediente de varias hojas se sube como un solo fichero— se
+abre en el visor del navegador, que permite pasar páginas, buscar texto y ampliar. Se avisa de que se
+abre fuera de la aplicación.
 
-Y lo que **no** se ofrece ver, a propósito: un **TIFF**, que es el formato de un escaneado de archivo de
-verdad y que ningún navegador sabe pintar, y un **HEIC**, que unos teléfonos pintan y otros no. Un botón
-que funciona en un móvil y no en el de al lado se deja de usar en los dos, así que ahí sigue estando solo
-la descarga, que es lo que siempre funciona. El peso se avisa igual antes de tocar: verlo se trae el
-fichero entero y cuesta los mismos datos que bajarlo.
+No se ofrece ver los formatos TIFF ni HEIC. Ningún navegador muestra el primero, y el segundo funciona en
+unos teléfonos y en otros no. En esos casos solo está la descarga. El peso se sigue avisando antes de
+tocar: ver el documento descarga el fichero completo y consume los mismos datos.
 
-**El archivo documental tiene listado, búsqueda y ficha: ya se llega a un documento sin pasar por una obra**
-Era el último agujero de este tipo, el mismo que tenía la bibliografía. Un documento del archivo se
-subía, se enlazaba, se descargaba, se corregía y se digitalizaba **siempre desde la ficha de una obra que
-lo tuviera enlazado**, así que a un documento que ninguna obra tuviera enlazado no se llegaba desde
-ningún sitio: el cartel de una muestra que no habla de una pieza concreta, o el documento cuyo vínculo se
-quitó después. Ahora hay **Tablas → Archivo**, y también se llega desde el título de cualquier documento
-en la ficha de una obra.
+**El archivo documental tiene listado, búsqueda y ficha propia**
+Un documento del archivo se subía, enlazaba, descargaba, corregía y digitalizaba siempre desde la ficha
+de una obra enlazada. A un documento sin ninguna obra enlazada no se llegaba desde ningún sitio: el
+cartel de una muestra que no trata de una pieza concreta, o un documento cuyo vínculo se retiró después.
+Ahora está disponible en Tablas → Archivo, y también desde el título de cualquier documento en la ficha
+de una obra.
 
-El listado sale **en orden de estantería**, por la signatura escrita en la carpeta, y los que no tienen
-signatura van al final: un documento sin signatura es uno que **todavía no está archivado**, así que no
-tiene sitio en la estantería. Se busca por signatura, título, tipo o año. Y el recuento dice **cuántos
-quedan sin digitalizar**, que es la lista de trabajo del escaneo: en la ficha de una obra la pregunta es
-«¿puedo leer este papel?», y aquí es «¿cuánto archivo queda por escanear?».
+El listado se ordena por la signatura escrita en la carpeta, y los documentos sin signatura van al final,
+porque una signatura vacía indica que el documento todavía no está archivado. Se busca por signatura,
+título, tipo o año. El recuento incluye cuántos quedan sin digitalizar, que es la lista de trabajo del
+escaneo.
 
-La ficha de cada documento dice, lo primero, **de qué está colgando**: «Enlazado con 3 obras y una
-exposición». Eso no se podía leer en ningún sitio — desde una obra solo se ve que cuelga de ELLA, así que
-un recorte que habla de tres piezas se leía tres veces sin saberlo nunca—. Y cuando no cuelga de nada lo
-dice sin llamarlo error, porque un documento del archivo existe por sí mismo.
+La ficha de cada documento indica en primer lugar con qué está enlazado: «Enlazado con 3 obras y una
+exposición». Ese dato no estaba disponible en ninguna pantalla, porque desde la ficha de una obra solo se
+ve el vínculo con esa obra. Cuando no está enlazado con nada también se indica, sin presentarlo como
+error: un documento del archivo existe por sí mismo.
 
-Las obras y las exposiciones van en **dos bloques separados**, no en una lista: un recorte habla de
-piezas y un díptico cuelga de la muestra, y mezclarlos pondría códigos de obra y títulos de exposición en
-la misma columna. Cada uno se toca y lleva a su ficha. El fichero se descarga también desde aquí.
+Las obras y las exposiciones se listan en dos bloques separados, para no mezclar códigos de obra con
+títulos de exposición en la misma columna. Cada entrada lleva a su ficha. El fichero también se descarga
+desde aquí.
 
-Lo que la ficha del archivo **no** hace, y lo dice en vez de dejar buscarlo: corregir los datos y añadir
-el escaneo siguen en la documentación de una obra, donde el aviso cuenta a cuántas fichas afecta el
-cambio; retirar el documento entero y recuperarlo, en la papelera.
+Corregir los datos y añadir el escaneo siguen haciéndose desde la documentación de una obra, donde el
+aviso indica a cuántas fichas afecta el cambio. Retirar el documento y recuperarlo se hacen desde la
+papelera. La ficha lo indica en lugar de dejar buscar el botón.
 
-**El cartel de una exposición ya se puede enlazar con la exposición**
-Faltaba, y era el único vínculo del catálogo que no se podía hacer desde ninguna pantalla: un cartel, un
-díptico o una nota de prensa hablan de la muestra y no de una pieza en concreto, así que no había ninguna
-obra desde la que enlazarlos. Se hace ahora en la ficha del documento, con **«Enlazar con una
-exposición»**, y con su nota: lo que ese papel dice de la muestra no es lo que diga de una obra suya.
+**Un documento del archivo se puede enlazar con una exposición**
+Era el único vínculo del catálogo que no podía crearse desde ninguna pantalla. Un cartel, un díptico o
+una nota de prensa tratan de la muestra y no de una pieza concreta, de modo que no había ninguna obra
+desde la que enlazarlos. Se hace desde la ficha del documento, con «Enlazar con una exposición», y admite
+una nota propia: lo que el documento dice de la muestra no es lo que dice de una obra suya.
 
-El buscador ofrece las exposiciones del catálogo y trata dos casos al revés, a propósito. Una muestra
-**retirada no se ofrece** —enlazarla la devolvería a circulación por la puerta de atrás—, y una que **ya
-está enlazada sí se sigue viendo**, marcada: esconderla haría teclear el mismo título una y otra vez
-preguntándose dónde se ha metido.
+El buscador ofrece las exposiciones del catálogo con dos criterios opuestos. Una muestra retirada no se
+ofrece, porque enlazarla la devolvería a la circulación. Una que ya está enlazada sí sigue apareciendo,
+marcada, para no obligar a teclear el mismo título repetidamente.
 
-Y se puede quitar, con dos toques y diciendo antes **lo que no pasa**: el documento se queda en el
-archivo con su fichero, y lo siguen viendo las obras y las demás exposiciones que lo tengan enlazado. Un
-vínculo que se crea y no se puede quitar es una trampa.
+El vínculo se puede quitar, con dos toques y avisando antes de lo que no cambia: el documento se mantiene
+en el archivo con su fichero, y lo siguen viendo las obras y las demás exposiciones enlazadas.
 
-**La ficha de una exposición ya dice cuál de las referencias es su catálogo**
-El catálogo de una muestra no es una tabla aparte: es una referencia de la bibliografía, y hasta ahora eso
-estaba pensado pero no se podía rellenar. La ficha decía si publicó catálogo y ahí se quedaba. Ahora
-nombra la referencia que lo es y lleva a su ficha, donde se ve el libro entero y qué obras lo citan.
+**La ficha de una exposición indica cuál de las referencias es su catálogo**
+El catálogo de una muestra es una referencia de la bibliografía y no una tabla aparte. Hasta ahora el
+dato estaba previsto pero no podía rellenarse: la ficha indicaba si publicó catálogo y nada más. Ahora
+nombra la referencia correspondiente y enlaza con su ficha, donde constan la publicación completa y las
+obras que la citan.
 
-Si todavía no consta que hubiera catálogo, se dice antes de elegir nada y con dos avisos distintos, porque
-llevan a hacer cosas distintas: **«sin revisar» manda a averiguarlo**, y un «No» ya investigado manda a
-corregir el «No» primero — enlazar un catálogo a una muestra que dice no haberlo publicado sería
-contradecir la propia ficha. Y quitar el vínculo se puede siempre, aunque la ficha se haya quedado
-incoherente: si no, no habría forma de arreglarla.
+Si no consta que hubiera catálogo, se advierte antes de elegir, con dos avisos distintos. «Sin revisar»
+indica que hay que averiguarlo; un «No» ya investigado requiere corregir antes ese «No», porque enlazar
+un catálogo a una muestra que declara no haberlo publicado contradiría la propia ficha. El vínculo se
+puede quitar siempre, incluso sobre una ficha incoherente, para que exista una forma de corregirla.
 
-Cuando consta que publicó catálogo pero no cuál es, la ficha lo dice así, como lo que queda por hacer y
-no como un error.
+Cuando consta que publicó catálogo pero no cuál es, la ficha lo indica como trabajo pendiente y no como
+error.
 
-**Y cada referencia tiene su ficha, con las obras que la citan**
-Tocando una referencia del listado se abre su ficha. Lo que trae y no estaba en ningún sitio es la
-referencia **leída por el otro lado**: qué obras del catálogo la citan y **en qué página de ella sale
-cada una** —«págs. 34-36», «lám. XII», «s/p»— con la nota de esa cita en concreto. Cada obra de la lista
-se toca y lleva a su ficha.
+**Cada referencia bibliográfica tiene ficha propia, con las obras que la citan**
+Al tocar una referencia del listado se abre su ficha. Añade un dato que no estaba en ninguna pantalla: qué
+obras del catálogo la citan y en qué página de la publicación aparece cada una —«págs. 34-36», «lám.
+XII», «s/p»—, con la nota de esa cita. Cada obra de la lista lleva a su ficha.
 
-Las obras salen por su código de catalogación, que es el orden del catálogo razonado. Y las páginas no
-ordenan nada, aunque en una bibliografía lo parezca: «lám. XII» y «s/p» son respuestas legítimas a «¿en
-qué página?» y ordenar por ellas pondría la lámina antes de la página 9.
+Las obras se ordenan por su código de catalogación, que es el orden del catálogo razonado. Las páginas no
+determinan el orden: «lám. XII» y «s/p» son respuestas válidas a «¿en qué página?», y ordenar por ellas
+situaría la lámina antes de la página 9.
 
-Cuando **ninguna obra la cita**, la ficha lo dice con palabras y dice que no es un dato pendiente: la
-referencia sigue en el catálogo y se puede citar cuando toque. Es exactamente la referencia que el
-listado nuevo existe para poder encontrar.
+Cuando ninguna obra la cita, la ficha lo indica y aclara que no es un dato pendiente: la referencia sigue
+en el catálogo y puede citarse cuando corresponda.
 
-Corregirla es el **mismo panel** que se abre desde la bibliografía de una obra, no una copia: lo que se
-corrige del catálogo compartido no puede depender de por qué pantalla se entró. Retirarla o recuperarla
-sigue siendo cosa de la papelera, y la ficha lo dice en vez de dejar buscar el botón.
+Se corrige con el mismo panel que se abre desde la bibliografía de una obra, para que la corrección del
+catálogo compartido no dependa de la pantalla de entrada. Retirarla y recuperarla siguen siendo
+operaciones de la papelera, y la ficha lo indica.
 
-**La bibliografía del catálogo ya tiene su propio listado, con búsqueda**
-Una referencia bibliográfica se creaba y se corregía solo desde una obra que la citara, y eso dejaba un
-agujero: **a una referencia que ya no cita ninguna obra no se llegaba desde ningún sitio.** Seguía en el
-catálogo, seguía ocupando su clave de cita, y era invisible. Ahora hay un listado con todas, que se abre
-desde **Tablas → Bibliografía** y también desde el final de la ficha de cualquier obra.
+**La bibliografía del catálogo tiene listado propio, con búsqueda**
+Una referencia bibliográfica solo se creaba y se corregía desde una obra que la citara, de modo que a una
+referencia sin ninguna obra que la cite no se llegaba desde ningún sitio, pese a seguir en el catálogo y
+ocupar su clave de cita. Ahora hay un listado completo en Tablas → Bibliografía, accesible también desde
+el final de la ficha de cualquier obra.
 
-Se busca por **autor, título, año, revista, editorial o lugar**, y por la clave de cita: teclear
-«badajoz» encuentra el libro editado allí aunque el lugar no esté en el título. La lista sale ordenada
-como la bibliografía impresa de un catálogo razonado —alfabética por autor, y dentro de cada autor de lo
-más antiguo a lo más reciente—, y una referencia sin firma se coloca por su título entre las demás, no
-al final: «anónimo» no es un apellido que empiece por z.
+Se busca por autor, título, año, revista, editorial, lugar y clave de cita: buscar «badajoz» encuentra el
+libro editado allí aunque el lugar no figure en el título. El orden es el de una bibliografía impresa:
+alfabético por autor y, dentro de cada autor, del más antiguo al más reciente. Una referencia sin firma se
+coloca por su título entre las demás y no al final.
 
-Las referencias sin año dicen **«s.f.»** en el sitio donde iría el año, para que la columna se pueda
-recorrer con el ojo sin descuadrarse. Las retiradas no aparecen salvo que se pidan, y cuando se piden se
-ven apagadas **y con la palabra «Retirada»**, porque el gris a secas no dice nada.
+Las referencias sin año muestran «s.f.» en la posición del año, para que la columna se pueda recorrer sin
+descuadres. Las retiradas no aparecen salvo que se pidan, y entonces se muestran atenuadas y con la
+palabra «Retirada».
 
-No hay botón de «nueva referencia», y su ausencia es la decisión: una referencia existe porque algo la
-cita, así que se sigue creando desde la bibliografía de una obra. Y todavía **no tiene ficha propia**, así
-que desde el listado se lee pero no se abre; la ficha, con su bloque de obras que la citan, es lo
-siguiente.
+No hay botón de «nueva referencia»: una referencia se crea al citarla desde una obra.
 
-**Los datos de un documento del archivo ya se pueden corregir, y el escaneo se puede añadir después**
-Hasta ahora un documento se subía y se quedaba exactamente como se hubiera subido: la signatura mal
-copiada de la carpeta, el tipo sin clasificar porque se anotó de una fotocopia, o el «lo subo sin
-fichero y luego le pongo el escaneo» que no tenía luego. Los dos paneles de subida lo advertían antes
-de guardar, y era verdad. Ya no.
+**Los datos de un documento del archivo se pueden corregir, y el escaneo se puede añadir después**
+Hasta ahora un documento quedaba tal como se hubiera subido: con la signatura mal copiada, sin clasificar
+el tipo, o sin el fichero que se pensaba añadir más tarde. Los paneles de subida lo advertían.
 
-En cada documento de una ficha, en la zona de edición, hay dos salidas nuevas: **«Corregir los datos
-del documento»** y, solo cuando de verdad le falta, **«Añadir el escaneo»**. Se corrige todo: la
-signatura, el título, el tipo, la serie del archivo, el fondo, la fecha, dónde está el papel y su
-nota.
+En cada documento de una ficha, dentro de la zona de edición, hay dos operaciones nuevas: «Corregir los
+datos del documento» y, solo cuando falta, «Añadir el escaneo». Se corrigen la signatura, el título, el
+tipo, la serie del archivo, el fondo, la fecha, la ubicación del papel y la nota.
 
-Lo importante de ese panel es lo primero que dice: **un documento es del archivo y no de esta obra**.
-Arriba, antes de cualquier campo, se cuenta con qué más está enlazado —«está enlazado además con otras
-tres obras y una exposición: también cambiará lo que se lee ahí»— porque corregir un recorte que
-nadie más usa y corregir uno que leen cuatro fichas no es la misma decisión. Y cuando la cuenta no se
-puede hacer, por cobertura, lo dice en vez de tranquilizar con un número que no tiene.
+El panel indica en primer lugar que el documento pertenece al archivo y no a esta obra, y con qué más
+está enlazado: «está enlazado además con otras tres obras y una exposición: también cambiará lo que se
+lee ahí». Corregir un documento que solo usa una ficha y corregir uno que leen cuatro no es la misma
+decisión. Si la cuenta no se puede consultar por falta de cobertura, se indica en lugar de mostrar un
+número aproximado.
 
-Cerrar el panel sin haber cambiado nada **no guarda nada**: el documento no consta corregido hoy si
-nadie lo ha corregido, que es lo que hace que el historial de cambios sirva para algo.
+Cerrar el panel sin haber cambiado nada no guarda nada, de modo que el documento no consta corregido si
+nadie lo ha corregido.
 
-El escaneo se añade en su propia hoja, aparte de la corrección, porque son dos cosas muy distintas:
-una escribe un campo y la otra sube decenas de megas por una línea de móvil. Un fichero ya subido
-**no se sustituye** desde aquí y la hoja explica por qué: los ficheros del almacén no se sobrescriben
-nunca, así que cambiarlo dejaría el anterior perdido y la ficha diciendo un peso que no es. Si el que
-está subido está mal, se registra como documento nuevo.
+El escaneo se añade en una hoja aparte, porque escribir un campo y subir varias decenas de megabytes por
+una línea de móvil son operaciones distintas. Un fichero ya subido no se sustituye desde aquí: los
+ficheros del almacén no se sobrescriben, así que reemplazarlo dejaría el anterior sin referencia y la
+ficha indicando un peso incorrecto. Si el fichero subido es erróneo, se registra un documento nuevo.
 
-Y si alguien se ha adelantado —el mismo expediente digitalizado desde otra ficha o desde otro
-teléfono mientras esta hoja estaba abierta— el escaneo no se pisa: se avisa de que ya tiene uno y de
-que hay que recargar antes de repetirlo.
+Si otra sesión ha subido el escaneo mientras la hoja estaba abierta, el fichero no se sobrescribe: se
+avisa de que el documento ya tiene uno y de que hay que recargar antes de repetir la operación.
 
-De paso, **lo que un documento dice de esta obra en concreto** («reproducida en la página 3») ya se
-puede corregir también. Se podía escribir al enlazarlo y después no había forma de tocarlo.
+También se puede corregir lo que un documento dice de una obra concreta («reproducida en la página 3»).
+Antes solo podía escribirse al enlazarlo.
 
-**El «atrás» del móvil cierra el panel que esté abierto, no la pantalla**
-Con un panel abierto —los filtros del listado, elegir una ubicación, una sede, una persona, el estado de
-una investigación, subir un documento, añadir un eslabón de procedencia— el botón de atrás del teléfono
-salía de la ficha entera y se llevaba por delante lo que estuviera a medio rellenar. Había que buscar la
-✕ del panel, que en una pantalla pequeña está arriba y con el pulgar abajo. Ahora el atrás hace lo que se
-espera de él: **cierra el panel y deja la pantalla donde estaba**, con su desplazamiento y sus filtros
-intactos.
+**El botón de atrás del móvil cierra el panel abierto, no la pantalla**
+Con un panel abierto —los filtros del listado, elegir una ubicación, una sede, una persona o el estado de
+una investigación, subir un documento, añadir un eslabón de procedencia— el botón de atrás salía de la
+ficha completa y descartaba lo que estuviera a medio rellenar. Ahora cierra el panel y mantiene la
+pantalla, con su desplazamiento y sus filtros.
 
-Con un panel abierto dentro de otro —elegir la persona desde el eslabón de procedencia— cierra solo el de
-encima, uno por toque, y no los dos de golpe.
+Con un panel abierto dentro de otro —elegir la persona desde el eslabón de procedencia— cierra solo el
+superior, uno por toque.
 
-Esto importa sobre todo en la aplicación instalada, la del icono en la pantalla de inicio: allí no hay
-barra del navegador, así que el atrás del teléfono es la única salida que hay, y un panel del que no se
-sale con él es un panel del que se sale abandonando la obra.
+Esto afecta sobre todo a la aplicación instalada: al no haber barra del navegador, el botón de atrás del
+teléfono es la única salida disponible.
 
-Y cuando el panel se niega a cerrarse porque está en medio de algo —la subida de un documento mientras el
-fichero va en camino— el atrás no hace nada, en vez de dejar que el siguiente saque de la pantalla con la
-subida a medias.
+Cuando el panel no puede cerrarse porque hay una operación en curso —la subida de un documento— el botón
+de atrás no hace nada, en lugar de permitir que la siguiente pulsación salga de la pantalla con la subida
+a medias.
+
+**Se puede ampliar el tamaño de letra de toda la aplicación**
+En Mi perfil → Tamaño de letra hay tres opciones: Normal, Grande (115 %) y Más grande (130 %). El cambio
+se aplica al tocar, sin botón de guardar, y debajo hay una línea de muestra para comprobar el resultado.
+
+No se amplía solo el texto: también crecen los botones, las tarjetas y los espacios. Quien necesita el
+texto más grande necesita también objetivos de toque más grandes; ampliar solo la letra la sacaría de
+botones dimensionados para el tamaño anterior.
+
+El navegador ya permite ampliar el texto, pero la aplicación instalada no tiene barra de navegador donde
+hacerlo, y esa es la forma habitual de uso.
+
+El ajuste se guarda en el dispositivo, de modo que cada móvil u ordenador tiene el suyo, y se aplica al
+abrir la aplicación —también en la pantalla de entrada— sin que el texto cambie de tamaño un instante
+después de cargar.
+
+Con dos excepciones. El editor de fotografía se mantiene al tamaño normal, porque sus controles y su
+lienzo se miden en píxeles; al cerrarlo vuelve el tamaño elegido. Y con la letra más grande cabe menos
+contenido en cada pantalla y hay que desplazarse más, que es el motivo de que el máximo sea el 130 %:
+por encima, en un móvil estrecho, los pares de botones no caben.
+
+**«Sobre la aplicación»: qué versión está instalada, qué trajo y qué falta**
+Una pantalla nueva en Mi perfil → Sobre la aplicación, que reúne tres cosas antes repartidas.
+
+Las novedades: este registro de cambios, dentro de la aplicación. La entrada más reciente aparece abierta
+y las anteriores plegadas. Se lee sin conexión, porque viene incluido en la propia aplicación y no se
+solicita a la red.
+
+Lo que todavía no se puede hacer, y en qué pantalla se hace lo que no corresponde a la ficha de la obra.
+Antes ocupaba media pantalla al pie de cada ficha; ahora allí queda una línea con un enlace.
+
+Y la versión de la aplicación, que estaba en el perfil. El perfil se queda con los datos de la cuenta.
 
 ### La base de datos del catálogo
 
-**Lo que hay en la papelera ya no se asoma por la fotografía**
-Quien solo consulta el catálogo no veía la ficha de una obra retirada —eso ya estaba bien— pero sí veía
-la fila de sus **fotografías**, con la ruta de los ficheros dentro. Y como la ruta lleva el código de
-catalogación en el nombre, eso permitía saber qué obras hay en la papelera y cuántas tomas tiene cada
-una, que es justo lo que retirar una obra pretende que no se sepa. Era el último agujero de este tipo:
-los otros seis se cerraron el 4 de agosto.
+**Las fotografías de una obra retirada dejan de ser visibles para quien solo consulta**
+La ficha de una obra retirada ya no era visible, pero sí lo era la fila de sus fotografías, con la ruta de
+los ficheros. Como la ruta contiene el código de catalogación, permitía deducir qué obras hay en la
+papelera y cuántas tomas tiene cada una. Era el último caso de este tipo; los otros seis se cerraron el 4
+de agosto.
 
-Con él se cierran también las dos cosas que cuelgan de una fotografía —los enlaces de «de dónde salió
-esta reproducción» y su historial de cambios— sin que hubiera que tocarlas por separado.
+Con él se cierran también los dos datos que dependen de una fotografía: los enlaces de procedencia de la
+reproducción y su historial de cambios.
 
-Quien cataloga sigue viéndolo todo, y no es un detalle: la papelera enseña lo retirado y recuperar una
-obra tiene que devolverla con sus fotografías dentro.
-
-**«Sobre la aplicación»: qué versión hay instalada, qué trajo y qué falta**
-Una pantalla nueva, en **Mi perfil → Sobre la aplicación**. Reúne tres cosas que estaban repartidas y
-ninguna donde se buscaría.
-
-Lo primero, **las novedades**: este mismo registro de cambios, dentro de la aplicación. Sale la entrada
-más reciente abierta —lo que trajo la versión que acabas de instalar, que es lo que se viene a mirar— y
-las anteriores plegadas, para poder bajar sin un muro de texto. Y se lee **sin conexión**: viene dentro
-de la propia aplicación, no se pide a la red, así que funciona igual en un almacén sin cobertura. Arriba
-dice de qué versión son, que no es lo mismo que «lo último que se ha hecho»: es lo que trae lo que hay
-instalado en ese teléfono.
-
-Después, **lo que todavía no se puede hacer**, en cuatro líneas, y dónde se hace lo que no es en la ficha
-de la obra. Estaba al pie de cada ficha, ocupando media pantalla, y lo leía cien veces al día quien ya
-sabía lo que decía. Ahora en la ficha queda una línea con un enlace, y el texto se consulta cuando se
-busca.
-
-Y por último **la versión**, que estaba en el perfil: qué versión de la aplicación corre, cuándo se
-compiló y con qué está hablando. El perfil se queda con lo que es de la cuenta.
-
-**El tamaño de letra se puede agrandar, y con él toda la aplicación**
-En **Mi perfil → Tamaño de letra**, tres opciones: Normal, Grande (115 %) y Más grande (130 %). El cambio
-se ve al tocar, sin ningún botón de guardar, y debajo hay una línea de muestra con un título de obra de
-verdad para comprobar el tamaño sin salir de ahí.
-
-No agranda solo las letras: **crecen también los botones, las tarjetas y los espacios**. Es a propósito,
-porque quien necesita el texto más grande necesita también el botón más grande — agrandar solo la letra
-la sacaría de botones pensados para el tamaño pequeño y dejaría los sitios donde hay que tocar igual de
-pequeños, que es la mitad del problema.
-
-El navegador ya sabía agrandar el texto, y la aplicación estaba preparada para eso. Pero **instalada en
-el móvil no hay barra de navegador donde tocarlo**, y el móvil instalado es como se usa esto de verdad:
-ese era el hueco.
-
-Se guarda **en este dispositivo**, así que cada móvil u ordenador tiene el suyo, y se aplica ya al abrir
-la aplicación —también en la pantalla de entrada— sin el salto de pintarse pequeña y crecer un instante
-después.
-
-Con dos excepciones dichas donde toca. La primera: el **editor de fotografía** se queda al tamaño normal,
-porque sus mandos y su lienzo se miden en píxeles y ahí un par de puntos de desviación se ven; al cerrarlo
-vuelve la letra grande. La segunda es lo que cuesta y se avisa en el propio ajuste: con la letra más
-grande cabe menos en cada pantalla y hay que desplazarse más. De ahí que el tope sea el 130 % y no más —
-por encima, en un móvil estrecho, los pares de botones se quedan sin sitio.
+Quien cataloga sigue viéndolo todo, porque la papelera muestra lo retirado y recuperar una obra debe
+devolverla con sus fotografías.
 
 ### Correcciones
 
-**Y si el panel se cierra de todas formas, lo escrito se recupera**
-Contra recargar la pantalla, contra que el móvil mate la aplicación por tenerla de fondo y contra
-quedarse sin batería, una confirmación no puede hacer nada. Así que **lo que se está escribiendo se
-apunta en el teléfono**, y al volver a abrir el panel se ofrece: «Dejaste esto a medio rellenar hace 20
-minutos. ¿Lo recuperas?», con «Recuperar lo que escribí» y «Empezar de cero». Está en subir un documento,
-corregir sus datos, corregir una referencia, citar una obra y añadir un eslabón de procedencia.
+**Un formulario a medio rellenar ya no se pierde al tocar fuera del panel**
+Ocurrió dos veces con datos dentro. Un panel de edición se cerraba por cuatro vías —el fondo oscuro, la
+✕, Escape y el botón de atrás— y las cuatro eran inmediatas. Con el panel ocupando tres cuartos de la
+pantalla, el fondo queda donde se apoya el pulgar al desplazarse por un formulario largo.
 
-Eso cambia lo que dice la pregunta de antes: ya no avisa de una pérdida, porque no la hay. Dice que del
-catálogo no se cambia nada y que lo escrito se queda apuntado, y el botón se llama **«Salir sin
-guardar»** en vez de «Salir y perderlo» — un aviso que amenaza con algo que no pasa es un aviso que se
-aprende a no leer.
+En los paneles que son un formulario, el fondo ya no cierra: la salida está siempre en la ✕ superior
+derecha. En los paneles de selección —una ubicación, una sede, un estado de investigación— tocar fuera
+sigue cerrando, porque no hay nada que perder.
 
-Tres cosas que hace con cuidado. Un borrador **caduca a la semana**: ofrecer uno de hace tres semanas
-sobre una ficha que se ha tocado cinco veces desde entonces se acepta sin mirar y borra esas cinco
-correcciones. Si **los datos guardados han cambiado** desde que se apuntó —porque se corrigieron desde
-otro sitio— se ofrece igual, pero diciéndolo y avisando de que aceptarlo a ciegas perdería esa
-corrección: esconderlo sería perder el trabajo dos veces, y callarlo sería peor. Y **el fichero escaneado
-no se puede apuntar**, así que cuando el formulario llevaba uno, se dice al ofrecer el borrador en vez de
-dejarlo descubrir con todo lo demás ya relleno.
+Las demás salidas piden confirmación cuando hay algo escrito: la ✕, Escape, el botón de atrás y el
+«Cancelar» del pie. El aviso indica que no se modifica nada del catálogo, porque el panel todavía no ha
+guardado, y ofrece «Seguir rellenando» en primer lugar. Al subir un documento o añadirle un escaneo se
+añade que habría que volver a seleccionar el fichero.
 
-Al guardar de verdad el apunte se borra, y también al dejar el formulario como estaba: no se ofrece
-recuperar lo que ya está en el catálogo.
+No se pide confirmación sobre un formulario en blanco ni cuando lo único escrito es un espacio: un aviso
+que aparece siempre se acaba descartando sin leerlo. Y con el aviso en pantalla, ni el botón de atrás ni
+Escape salen del panel: lo retiran y devuelven al formulario.
 
-**Un formulario a medio rellenar ya no se pierde por tocar fuera sin querer**
-Pasó dos veces, con datos dentro. Un panel de edición se cerraba por cuatro caminos —el fondo oscuro,
-la ✕, Escape y el botón de atrás del móvil— y los cuatro eran inmediatos, sin preguntar nada. Con el
-panel ocupando tres cuartos de la pantalla, ese fondo cae justo donde se apoya el pulgar al bajar por
-un formulario largo.
+**Si el panel se cierra de todas formas, lo escrito se recupera**
+Una confirmación no cubre recargar la pantalla, que el sistema cierre la aplicación en segundo plano ni
+quedarse sin batería. Lo que se está escribiendo se guarda en el dispositivo y se ofrece al volver a
+abrir el panel: «Dejaste esto a medio rellenar hace 20 minutos. ¿Lo recuperas?», con las opciones
+«Recuperar lo que escribí» y «Empezar de cero». Está disponible al subir un documento, corregir sus
+datos, corregir una referencia, citar una obra y añadir un eslabón de procedencia.
 
-Ahora, **en los paneles que son un formulario, el fondo ya no cierra**: la salida está siempre en el
-mismo sitio, la ✕ de arriba a la derecha, y no se mueve. En los paneles que son elegir algo —un sitio,
-una sede, un estado de investigación— tocar fuera sigue cerrando, porque ahí no hay nada que perder.
+Por eso el aviso anterior ya no advierte de una pérdida: indica que no se modifica nada del catálogo y
+que lo escrito queda guardado, y el botón se llama «Salir sin guardar».
 
-Y las demás salidas **preguntan antes cuando hay algo escrito**: la ✕, Escape, el botón de atrás y el
-«Cancelar» del pie. La pregunta dice lo que no pasa —del catálogo no se cambia nada, porque el panel
-todavía no ha guardado— y ofrece «Seguir rellenando» primero, que es donde cae el pulgar sin apuntar.
-Al subir un documento o añadirle un escaneo añade además que el fichero elegido habría que volver a
-buscarlo, que es lo más engorroso de repetir.
+El borrador caduca a la semana, para no ofrecer uno antiguo sobre una ficha corregida varias veces desde
+entonces. Si los datos guardados han cambiado desde que se apuntó, el borrador se ofrece igual pero
+advirtiendo de que aceptarlo sin revisar perdería esa corrección. El fichero escaneado no puede
+guardarse, y cuando el formulario llevaba uno se indica al ofrecer el borrador.
 
-Dos cosas que **no** hace, a propósito. No pregunta sobre un formulario en blanco, ni cuando lo único
-escrito es un espacio: un cartel que sale siempre se aprende a despachar sin leerlo, y entonces el día
-que importa tampoco se lee. Y con la pregunta en pantalla, ni el atrás ni Escape salen — la retiran y
-devuelven al formulario. Un atrás de más, justo con un cartel delante que avisa de que se van a perder
-los datos, no puede ser la pulsación que los pierde.
+Al guardar, el borrador se elimina, igual que al dejar el formulario como estaba.
 
-**El aviso de un permiso denegado hablaba de una descarga que nadie había pedido, y estaba mal escrito**
-Cuando el almacén no da permiso para abrir un fichero, el aviso decía «no se ha podido preparar la
-descarga de el documento…»: hablaba de descargar aunque se hubiera pulsado «Ver», y le faltaba la
-contracción —«del documento», no «de el documento»—. Ahora dice «no se ha podido acceder al documento», que
-vale igual para las dos cosas. Lo mismo pasaba con las fotografías: «de el original».
+**El aviso de un permiso denegado hablaba de una descarga no solicitada, y tenía una errata**
+Cuando el almacén deniega el permiso para abrir un fichero, el aviso decía «no se ha podido preparar la
+descarga de el documento…»: mencionaba una descarga aunque se hubiera pulsado «Ver», y le faltaba la
+contracción. Ahora dice «no se ha podido acceder al documento», que sirve para ambos casos. Lo mismo
+ocurría con las fotografías.
 
-**Los paneles ya no se cerraban solos, y el atrás no se quedaba corto tras recargar**
-Dos fallos del botón de atrás, los dos encontrados probándolo en un navegador de verdad y no leyendo el
-código. El primero solo se veía en el entorno de pruebas de desarrollo: un panel que se abre —los
-filtros, subir un documento, enlazarlo, corregirlo— se cerraba solo en el mismo instante de abrirse. El
-segundo sí llegaba a producción: después de recargar la pantalla con un panel abierto, el atrás
-siguiente no cerraba el panel y había que pulsarlo dos veces.
+**Los paneles se cerraban solos, y el botón de atrás no respondía tras recargar**
+Dos fallos del botón de atrás. El primero solo se producía en el entorno de desarrollo: un panel se
+cerraba en el mismo instante de abrirse. El segundo llegaba a producción: después de recargar la pantalla
+con un panel abierto, el botón de atrás no lo cerraba y había que pulsarlo dos veces.
 
-**En el editor de fotografías, el atrás ya no se lleva el trabajo sin aplicar**
-Con el panel de color o el de datos de cámara abierto, el botón de atrás del teléfono cerraba el editor
-entero y perdía el encuadre y el color que aún no se habían aplicado. Con el teclado no pasaba: Escape ya
-cerraba el panel y hacía falta pulsarlo otra vez para salir. Ahora el atrás hace lo mismo, un toque por
-capa: desarma el cuentagotas, luego cierra el panel, y solo con la botonera a la vista sale del editor.
+**En el editor de fotografías, el botón de atrás descartaba el trabajo sin aplicar**
+Con el panel de color o el de datos de cámara abierto, el botón de atrás cerraba el editor completo y
+descartaba el encuadre y el color no aplicados. Con teclado no ocurría: Escape cerraba el panel y hacía
+falta pulsarlo de nuevo para salir. Ahora el botón de atrás actúa por capas: desactiva el cuentagotas,
+después cierra el panel y, con la botonera visible, sale del editor.
 
-En un teléfono esto era la única salida que había y era la que estaba mal.
+«Aplicar», «Cancelar» y la ✕ siguen saliendo directamente, también con un panel abierto.
 
-«Aplicar», «Cancelar» y la ✕ siguen saliendo de una vez, también con un panel abierto: son la salida del
-editor y no un peldaño.
+---
 
 ## 4 de agosto de 2026
 
 ### Interfaz
 
-**Las exposiciones ya son una pantalla, y están en el menú de abajo**
-Hasta ahora una exposición se podía enlazar con una obra pero no se podía crear: había que tenerla ya en
-el catálogo, y no había ningún sitio donde ponerla. Ahora hay una **quinta pestaña, «Exposiciones»**,
-entre «Obras» y «Añadir», y desde ella se hace todo: buscar por título, año o sede; dar una de alta;
-abrir la suya y leerla como se lee una ficha de obra; corregirla; retirarla y recuperarla.
+**Las exposiciones tienen pantalla propia, en el menú inferior**
+Una exposición se podía enlazar con una obra pero no crear, de modo que tenía que estar ya en el
+catálogo. Ahora hay una quinta pestaña, «Exposiciones», entre «Obras» y «Añadir», desde la que se busca
+por título, año o sede, se da de alta una nueva, se abre y se lee como una ficha de obra, se corrige, se
+retira y se recupera.
 
-Cada exposición dice **qué obras del catálogo estuvieron en ella**, ordenadas por el número que llevaban
-en el catálogo de la muestra —que es el orden de las paredes, el de la página que se tiene delante— y no
-por el código del catálogo razonado. Las que no tienen número apuntado van al final y no encabezando la
-muestra, para que ninguna parezca la pieza número uno sin serlo.
+Cada exposición indica qué obras del catálogo estuvieron en ella, ordenadas por el número que llevaban en
+el catálogo de la muestra, que es el orden de las salas y el de la página impresa, y no por el código del
+catálogo razonado. Las obras sin número anotado van al final, para que ninguna aparezca como la primera
+sin serlo.
 
-Lo que **no** se hace desde aquí es decir que una obra estuvo en la muestra: eso sigue haciéndose desde
-la ficha de cada obra, donde está su historial expositivo y el estado de investigación que hay que
-mantener coherente. Escribir esa misma cosa desde dos sitios con dos reglas distintas es como se cuela
-una participación en un historial que consta cerrado.
+Registrar que una obra estuvo en una muestra se sigue haciendo desde la ficha de la obra, donde están su
+historial expositivo y el estado de investigación correspondiente. Escribir el mismo dato desde dos
+pantallas con reglas distintas permitiría añadir una participación a un historial que consta cerrado.
 
-Y una exposición **puede guardarse sin sede**: si la fuente solo dice «una galería de Madrid», eso es lo
-que se escribe, tal cual. Inventarse una sede para poder guardar es como un catálogo acaba con dos Casas
-de Cultura.
+Una exposición puede guardarse sin sede: si la fuente solo dice «una galería de Madrid», eso es lo que se
+registra. Inventar una sede para poder guardar es como acaban duplicándose las Casas de Cultura.
 
-La quinta pestaña ha costado un punto de tamaño en las etiquetas de las cinco: «Exposiciones» no cabía
-entera a 360 píxeles de ancho y salía cortada con puntos suspensivos. Se han bajado todas a la vez, no
-solo la larga, para que no queden de dos tamaños distintos.
+La quinta pestaña ha obligado a reducir un punto el tamaño de las etiquetas: «Exposiciones» no cabía a
+360 píxeles de ancho. Se han reducido las cinco a la vez para que mantengan el mismo tamaño.
 
-**La papelera: ya se puede ver lo retirado, y devolverlo a su sitio**
-Era el pendiente más viejo del proyecto. Nada se ha borrado nunca de verdad —retirar una obra, una
-fotografía, un lugar o una serie deja siempre la fila con quién y cuándo—, pero no había ninguna pantalla
-desde la que mirar dentro: lo retirado desaparecía de la aplicación aunque siguiera entero en el
-catálogo. Una traza que nadie puede leer no protege a nadie.
+**La papelera: lo retirado se puede consultar y recuperar**
+Nada se ha borrado nunca del catálogo: retirar una obra, una fotografía, un lugar o una serie deja la
+fila con la indicación de quién y cuándo. Pero no había ninguna pantalla desde la que consultarlo, de
+modo que lo retirado desaparecía de la aplicación aunque siguiera en el catálogo.
 
-Se abre desde **«Tablas», al final, en un apartado propio llamado «Lo retirado»**. Enseña lo que se sacó
-del catálogo agrupado por clase de cosa, cada línea con **quién lo retiró y cuándo** —«Retirada por Marta
-el 28 de julio de 2026 a las 22:42»— y un botón «Recuperar». Los grupos que están vacíos se dicen en vez
-de esconderse, para no dejar dudando si falta algo o si no hay nada. Cuando el catálogo se niega a
-recuperar algo porque otra cosa lo impide, la pantalla dice **qué hay que hacer antes**, no solo que no
-puede.
+Se abre desde Tablas, al final, en el apartado «Lo retirado». Muestra lo retirado agrupado por tipo, cada
+línea con quién lo retiró y cuándo —«Retirada por Marta el 28 de julio de 2026 a las 22:42»— y un botón
+«Recuperar». Los grupos vacíos se indican en lugar de ocultarse. Cuando el catálogo no permite recuperar
+algo porque otra cosa lo impide, la pantalla indica qué hay que hacer antes.
 
-No hay, y no va a haber, «vaciar la papelera» ni «borrar para siempre». Su ausencia es la decisión: en
-este catálogo nada se borra, y un botón así sería la única forma de perder una obra.
+No existe «vaciar la papelera» ni «borrar para siempre», y esa ausencia es deliberada: en este catálogo
+nada se borra.
 
-Está solo para quien cataloga. No es por esconderla: recuperar cualquier cosa necesita permiso de
-edición, así que para quien solo consulta sería una lista incompleta con un botón que el catálogo
-rechaza.
+Está disponible solo para quien cataloga. Recuperar requiere permiso de edición, así que para quien solo
+consulta sería una lista con un botón que el catálogo rechazaría.
 
-**Cada obra puede decir dónde más está documentada en internet**
-Un apartado nuevo al final de la ficha, **«Enlaces a sitios externos»**: la ficha de la obra en la web de
-un museo, la noticia de una subasta, la entrada de una base de datos, la reproducción de una fotografía
-en otro catálogo. Cada enlace se llama por su título o, si no lleva ninguno, por el nombre del sitio, y
-debajo se ve **a dónde lleva de verdad** —el dominio, nunca la dirección entera— porque una dirección
-larga se puede disfrazar de otra.
+**Cada obra puede registrar dónde más está documentada en internet**
+Un apartado nuevo al final de la ficha, «Enlaces a sitios externos»: la ficha de la obra en la web de un
+museo, la noticia de una subasta, la entrada de una base de datos o la reproducción en otro catálogo.
+Cada enlace se identifica por su título o, si no lo tiene, por el nombre del sitio, y debajo se muestra
+el dominio al que lleva, nunca la dirección completa, porque una dirección larga puede disimular su
+destino.
 
-Cada uno lleva **cuándo se comprobó por última vez y qué se vio**: que seguía ahí, que lleva a otra cosa
-o que ya no está. Lo sella una persona a mano, y a propósito: la aplicación **no le pide nada al sitio
-enlazado**, ni un icono ni una previsualización, porque cada una de esas peticiones le cuenta a un
-tercero qué obra se está catalogando y cuándo. Cuando una comprobación se queda vieja, se avisa.
+Cada enlace registra cuándo se comprobó por última vez y con qué resultado: que seguía disponible, que
+lleva a otro contenido o que ya no existe. La comprobación la registra una persona: la aplicación no
+solicita nada al sitio enlazado, ni un icono ni una previsualización, porque cada petición informaría a
+un tercero de qué obra se está catalogando y cuándo. Cuando una comprobación queda desactualizada, se
+avisa.
 
-Y cierra un cabo que quedaba suelto: una fotografía que no es del archivo propio sino tomada de otro
-catálogo ahora puede **decir de dónde salió**, y mientras no lo diga el apartado lo avisa desde su
-cabecera aunque esté plegado.
+También permite indicar la procedencia de una fotografía tomada de otro catálogo en lugar del archivo
+propio. Mientras no se indique, el apartado lo advierte desde su cabecera aunque esté plegado.
 
-Abrir un enlace se hace desde la ficha, que es lo que se hace con un enlace casi siempre. Añadirlo,
-corregirlo, retirarlo o anotar una comprobación se hace en la zona de edición de la ficha, como el resto
-de los apartados: la ficha que se lee no cambia nada.
+Los enlaces se abren desde la ficha. Añadirlos, corregirlos, retirarlos y anotar una comprobación se
+hacen en la zona de edición, como el resto de apartados.
 
-**Un documento del archivo ya se sube y se enlaza desde la obra**
-La clasificación del archivo existía y estaba vacía por dentro: no había forma de meter un papel en ella.
-Ahora, desde el apartado de documentación de una ficha, se **sube el escaneo** de un expediente, una
-carta o un recorte, se le pone su signatura y su serie, y se **enlaza con la obra** que documenta. El
-mismo documento se cuelga de varias obras sin duplicar el fichero, que es lo que pasa de verdad con un
-expediente que habla de cinco cuadros.
+**Un documento del archivo se sube y se enlaza desde la obra**
+La clasificación del archivo existía pero no había forma de incorporar documentos. Ahora, desde el
+apartado de documentación de una ficha, se sube el escaneo de un expediente, una carta o un recorte, se
+le asigna signatura y serie, y se enlaza con la obra que documenta. El mismo documento se puede enlazar
+con varias obras sin duplicar el fichero.
 
-El escaneo hay que adjuntarlo al darlo de alta: **después no se puede añadir**, y la pantalla lo advierte
-antes de guardar en vez de dejarlo descubrir luego.
+El escaneo hay que adjuntarlo al dar de alta el documento: después no se puede añadir, y la pantalla lo
+advierte antes de guardar.
 
-**El historial de una obra ya se puede leer**
-Cada cambio en una ficha y en sus fotografías se venía guardando desde ayer, pero no había dónde verlo.
-Ahora la ficha tiene al final un apartado que lo cuenta en frases: «Marta cambió el alto, el ancho y la
-técnica, hoy a las 11:40». Un guardado es **una línea**, aunque haya tocado ocho campos, porque si no un
-día de trabajo son doscientas líneas y no las lee nadie. Cuando el cambio fue de un solo dato, se ve
-además el valor de antes y el de después.
+**El historial de una obra se puede consultar**
+Los cambios en una ficha y en sus fotografías se guardaban desde el día anterior, pero no había dónde
+consultarlos. Ahora la ficha incluye al final un apartado que los describe: «Marta cambió el alto, el
+ancho y la técnica, hoy a las 11:40». Cada guardado ocupa una línea aunque haya modificado ocho campos.
+Cuando el cambio afectó a un solo dato, se muestran el valor anterior y el nuevo.
 
-Llega plegado y no consulta nada hasta que se abre: es la parte más pesada de la ficha y la ficha es la
-pantalla que más se abre.
+Llega plegado y no consulta nada hasta que se abre, por ser la parte más costosa de la ficha.
 
-Dos cosas que dice con cuidado. Un cambio hecho por una migración o por mantenimiento se firma como
-**«El sistema»**, y no como «alguien», porque el dato no se ha perdido: nunca lo hubo. Y cuando una obra
-no tiene ningún cambio apuntado, se dice que **el historial empieza el 5 de agosto de 2026** y que lo
-anterior no consta — que no es lo mismo que decir que no ocurrió.
+Un cambio realizado por una migración o por mantenimiento se atribuye a «El sistema» y no a un usuario
+desconocido. Cuando una obra no tiene ningún cambio registrado, se indica que el historial empieza el 5
+de agosto de 2026 y que lo anterior no consta, que no equivale a afirmar que no ocurriera.
 
-El historial **no se puede deshacer, ni tocar**. Es informativo: nadie, tampoco quien cataloga, puede
+El historial no se puede deshacer ni modificar. Es informativo: nadie, tampoco quien cataloga, puede
 corregir ni borrar una línea.
 
-**Quitar los filtros, arriba y diciendo cuántos son**
-El botón de quitar los filtros estaba al final del panel, debajo de las cinco secciones de opciones: para
-llegar a él había que recorrer justo lo que se quería deshacer. Ahora está en la cabecera del panel, y
-**lleva dentro el número de filtros puestos**, que es lo que hace falta saber para decidir si se pulsa —con
-el panel abierto no se ven a la vez todas las secciones que tienen algo marcado. Cuando no hay ningún
-filtro, el botón no está.
+**Quitar los filtros, en la cabecera y con el número de filtros aplicados**
+El botón de quitar los filtros estaba al final del panel, debajo de las cinco secciones de opciones, de
+modo que llegar a él exigía recorrer lo que se quería deshacer. Ahora está en la cabecera e indica
+cuántos filtros hay puestos, porque con el panel abierto no se ven a la vez todas las secciones. Cuando
+no hay ninguno, el botón no aparece.
 
 **«Editar ficha» pasa a la izquierda**
-En la ficha de una obra, los dos botones de arriba cambian de sitio: primero editar la ficha y después
-editar las fotos.
+En la ficha de una obra, los dos botones superiores cambian de posición: primero editar la ficha y
+después editar las fotografías.
 
-**Las nueve listas del catálogo ya se mantienen desde la aplicación**
-Eran tres —ubicaciones, tipos de obra y series—. Las otras seis se leían desde la ficha de una obra, pero solo se
-podían rellenar por dentro, pidiéndolo: se podía leer por qué manos había pasado un cuadro y no dar de alta el
-museo que lo sostiene. Ahora las seis se crean, se corrigen y se retiran desde la aplicación:
+**Las nueve listas del catálogo se mantienen desde la aplicación**
+Eran tres: ubicaciones, tipos de obra y series. Las otras seis se leían desde la ficha de una obra pero
+solo podían rellenarse por solicitud, de modo que se podía consultar por qué manos había pasado un cuadro
+pero no dar de alta el museo correspondiente. Ahora las seis se crean, se corrigen y se retiran desde la
+aplicación:
 
-- **Personas e instituciones.** Quién ha tenido cada obra, quién presta, quién es titular de los derechos y qué
-  institución hay detrás de una sede. Corregir el nombre de un museo se hace una vez y lo ven todas las obras que
-  pasaron por él. El teléfono y el correo **no se pintan en la lista** —son datos de un tercero, y esta pantalla se
-  abre en un almacén con gente delante—: se piden ficha a ficha, y un aviso arriba dice quién más puede verlos.
-  Cuando una ficha no se puede retirar porque el catálogo la usa, la pantalla dice **en qué obras y en qué sedes**,
-  en vez de dejar que se busquen a mano.
-- **Sedes de exposición.** Los sitios donde ocurrieron las muestras, cada uno con su localidad, que es lo que
-  distingue una Casa de Cultura de otra. No son las ubicaciones del almacén: aquellas dicen dónde está la obra hoy,
-  y una sede dice dónde estuvo expuesta en 1985.
-- **La clasificación del archivo.** Los papeles ya se pueden ordenar en fondos, series y subseries: crear una,
-  corregirle el nombre —y lo ven todos sus documentos—, mover una serie entera dentro de otra y retirar las que
-  sobren. Cuando una serie no se deja retirar, la pantalla dice cuántos documentos tiene dentro y cuáles son.
-- **Tipos de documento** y **tipos de publicación**: lo que ofrecen los campos «Tipo» de un documento del archivo y
-  de cada referencia de la bibliografía. Vienen con diez y con seis puestos, y ampliarlos ya no espera a nadie.
-- **Tipos de relación.** Las clases de parentesco entre dos obras, cada una con sus **dos lecturas** —lo que dirá la
-  ficha de una obra y lo que dirá la de la otra—, que la pantalla enseña mientras se escriben: la segunda es la que
-  no se ve desde la obra en la que se trabaja, y es la que se queda al revés si se escribe mal.
+- **Personas e instituciones.** Quién ha tenido cada obra, quién presta, quién es titular de los derechos
+  y qué institución hay detrás de una sede. Corregir el nombre de un museo se hace una vez y lo reflejan
+  todas las obras que pasaron por él. El teléfono y el correo no aparecen en el listado, porque son datos
+  de un tercero y esta pantalla se abre en presencia de otras personas: se consultan ficha a ficha, con
+  un aviso que indica quién más puede verlos. Cuando una ficha no se puede retirar porque el catálogo la
+  usa, la pantalla indica en qué obras y en qué sedes.
+- **Sedes de exposición.** Los lugares donde ocurrieron las muestras, cada uno con su localidad, que es
+  lo que distingue una Casa de Cultura de otra. No son las ubicaciones del almacén: estas indican dónde
+  está la obra hoy, y una sede indica dónde estuvo expuesta.
+- **La clasificación del archivo.** Los documentos se ordenan en fondos, series y subseries. Se puede
+  crear una serie, corregir su nombre —lo reflejan todos sus documentos—, mover una serie completa dentro
+  de otra y retirar las que sobren. Cuando una serie no se puede retirar, la pantalla indica cuántos
+  documentos contiene y cuáles son.
+- **Tipos de documento** y **tipos de publicación**: lo que ofrecen los campos «Tipo» de un documento del
+  archivo y de cada referencia bibliográfica. Vienen con diez y seis valores respectivamente.
+- **Tipos de relación.** Las clases de parentesco entre dos obras, cada una con sus dos lecturas —la que
+  mostrará la ficha de una obra y la que mostrará la de la otra—, que la pantalla muestra mientras se
+  escriben. La segunda no se ve desde la obra en la que se trabaja y es la que queda invertida si se
+  escribe mal.
 
-En las nueve, lo mismo de siempre: **nada se borra**. Lo que deja de usarse se retira, se queda en gris y vuelve
-escribiendo su nombre otra vez. Y ninguna deja retirar algo que el catálogo todavía usa: cuando no se puede, se
-cuenta por qué y qué hay que hacer antes. Si se cae la conexión, lo dicen en español y avisan de que el cambio no
-se ha mandado, en vez de dar por guardado lo que no se guardó.
+En las nueve rige la misma norma: nada se borra. Lo que deja de usarse se retira, se muestra atenuado y
+vuelve al uso escribiendo su nombre de nuevo. Ninguna permite retirar algo que el catálogo todavía usa:
+cuando no se puede, se explica el motivo y qué hay que hacer antes. Si se pierde la conexión, lo indican
+en español y advierten de que el cambio no se ha enviado.
 
-**La sección «Tablas» va por grupos, no en una lista de nueve nombres**
-Nueve enlaces uno debajo de otro son un muro: para llegar a «Sedes de exposición» hay que leer ocho nombres que
-empiezan casi todos por «Tipos de». Así que el índice se agrupa por para qué sirve cada lista —la ficha de la obra;
-dónde y quién; los papeles—, con una línea en cada grupo que dice qué hay dentro. Tres grupos de tres, para
-recorrerlos con el pulgar sin volver a subir.
+**La sección «Tablas» se organiza por grupos**
+Nueve enlaces consecutivos obligan a leer ocho nombres, casi todos iniciados por «Tipos de», para llegar
+al noveno. El índice se agrupa ahora según para qué sirve cada lista —la ficha de la obra; dónde y quién;
+los documentos—, con una línea por grupo que indica su contenido. Tres grupos de tres.
 
-**La ficha de obra ya tiene su mitad documental: procedencia, exposiciones, bibliografía, archivo y obras hermanas**
-Hasta hoy la ficha llevaba un recuadro que decía que todo esto estaba pendiente, y no había dónde apuntar
-nada de ello. Ahora, debajo de la conservación y la ubicación, hay cinco apartados nuevos en el orden en
-que se investiga una obra: por qué manos ha pasado, dónde se ha expuesto, dónde está publicada, qué
-papeles del archivo hablan de ella y con qué otras obras del catálogo va.
+**La ficha de obra incorpora su parte documental: procedencia, exposiciones, bibliografía, archivo y obras
+relacionadas**
+Hasta ahora la ficha incluía un recuadro que indicaba que todo esto estaba pendiente, y no había dónde
+registrarlo. Ahora, debajo de la conservación y la ubicación, hay cinco apartados en el orden en que se
+investiga una obra: por qué manos ha pasado, dónde se ha expuesto, dónde está publicada, qué documentos
+del archivo tratan de ella y con qué otras obras del catálogo se relaciona.
 
-La ficha **se lee**: los cinco apartados muestran lo que hay y no ofrecen cambiar nada. Para registrar,
-corregir o retirar algo se entra a editar la obra, y ahí están los cinco otra vez, esta vez con sus
-botones. Es la misma regla que ya seguía el resto de la ficha —o se está leyendo, o se está editando— y
-evita el descuido de tocar un dato creyendo que solo se estaba consultando. Todo lo retirado sigue
-guardado con quién lo hizo y cuándo.
+La ficha se lee: los cinco apartados muestran el contenido y no permiten modificarlo. Para registrar,
+corregir o retirar algo se entra a editar la obra, donde están los cinco con sus controles. Es la misma
+norma que sigue el resto de la ficha y evita modificar un dato creyendo que solo se estaba consultando.
+Todo lo retirado se conserva con la indicación de quién lo hizo y cuándo.
 
-Un aviso que la propia pantalla da al editar: estos cinco apartados **guardan al momento**, cada uno por
-su cuenta. No hace falta pulsar «Guardar», y «Cancelar» no los deshace — a diferencia del resto del
-formulario, que sí funciona así.
+La propia pantalla lo advierte al editar: estos cinco apartados guardan de inmediato, cada uno por su
+cuenta. No hay que pulsar «Guardar», y «Cancelar» no los deshace, a diferencia del resto del formulario.
 
-**Cada apartado distingue «no hay nada» de «nadie ha mirado todavía»**
-Es la distinción por la que existe toda esta parte del catálogo. Una obra sin exposiciones apuntadas no
-es una obra que no se haya expuesto: es una obra que nadie ha buscado. Así que cada apartado lleva en su
-cabecera cuántas cosas tiene y en qué punto va su investigación —sin revisar, en curso, investigado sin
-resultados, cerrada— y, al abrirlo, lo explica con una frase entera en vez de dejar el hueco. Declarar
-«se ha investigado y no consta nada» es una respuesta, se guarda como tal y ya no se confunde con el
-silencio; y mientras eso no se sepa, el apartado lo dice también, en vez de dar a entender que la obra
-no tiene procedencia o que es inédita.
+**Cada apartado distingue «no hay nada» de «no se ha investigado»**
+Una obra sin exposiciones registradas no es una obra que no se haya expuesto: puede ser una obra que
+nadie ha investigado. Cada apartado indica en su cabecera cuántos registros tiene y en qué estado está su
+investigación —sin revisar, en curso, investigado sin resultados, cerrada— y, al abrirlo, lo explica con
+una frase completa. Declarar «se ha investigado y no consta nada» es una respuesta, se guarda como tal y
+no se confunde con la ausencia de datos.
 
-**Un hueco en la procedencia se lee como un hueco, y no como una nota al margen**
-La cadena de manos se lee de arriba abajo como una sola historia, y los años que nadie cubre aparecen
-intercalados entre los dos propietarios que separan, ocupando tanto sitio como ellos: en una procedencia
-lo que no consta pesa igual que lo que consta. Arriba se dice de un tirón si la cadena tiene huecos, si
-no se puede medir por falta de fechas o si va seguida y fechada, y al final se dice dónde está la obra
-hoy —solo cuando de verdad se puede afirmar—. La procedencia redactada para publicar se muestra tal cual
-si está escrita, y si no, se compone un borrador a partir de la cadena y se avisa de que lo es.
+**Un hueco en la procedencia se presenta como un hueco**
+La cadena de propietarios se lee de arriba abajo como una sola secuencia, y los años que nadie cubre
+aparecen intercalados entre los dos propietarios que separan, con el mismo espacio que ellos. Arriba se
+indica si la cadena tiene huecos, si no se puede medir por falta de fechas o si es continua y está
+fechada; al final se indica dónde está la obra hoy, solo cuando puede afirmarse. La procedencia redactada
+para publicar se muestra tal cual si está escrita; si no, se compone un borrador a partir de la cadena y
+se advierte de que lo es.
 
-**La bibliografía, con la página que se copia y sin duplicar libros**
-Cada cita lleva el título de la publicación primero y la página después, que es la parte que se acaba
-copiando en otro texto. Al citar se busca por título, autoría, revista o clave de la publicación, y si lo
-que se está escribiendo ya existe en el catálogo se avisa antes de guardar y se ofrece usar la que ya
-hay: dos fichas del mismo libro parten en dos las citas del catálogo para siempre. Con pocas citas van
-en una sola lista; cuando hay bastantes y de clases distintas, se agrupan por tipo de publicación.
+**La bibliografía indica la página y evita duplicar publicaciones**
+Cada cita muestra primero el título de la publicación y después la página, que es la parte que se copia
+en otro texto. Al citar se busca por título, autoría, revista o clave de la publicación, y si lo que se
+está escribiendo ya existe en el catálogo se avisa antes de guardar y se ofrece usar la existente: dos
+fichas del mismo libro dividirían las citas del catálogo de forma permanente. Con pocas citas se muestran
+en una sola lista; cuando hay bastantes y de tipos distintos, se agrupan por tipo de publicación.
 
-**Llegan plegados y no gastan datos hasta que se baja hasta ellos**
-Cinco apartados abiertos debajo de las fotografías serían un rollo de papel en un móvil, así que llegan
-cerrados, con lo justo en la cabecera para decidir si abrirlos. Y no consultan nada hasta que se llega a
-esa altura de la ficha: recorrer treinta obras buscando una no cuesta cinco consultas por obra, que es
-justo lo que importa cuando se cataloga con datos del móvil en un almacén. Si hace falta tenerlos ya, hay
-un botón que los carga en el sitio.
+**Los apartados llegan plegados y no consumen datos hasta que se abren**
+Cinco apartados abiertos debajo de las fotografías ocuparían una pantalla entera en un móvil, así que
+llegan cerrados, con lo necesario en la cabecera para decidir si abrirlos. Y no consultan nada hasta que
+se llega a esa altura de la ficha, de modo que recorrer treinta obras no cuesta cinco consultas por obra.
+Hay un botón para cargarlos de inmediato cuando hace falta.
 
-**El recuadro de «pendiente» ya no nombra lo que la ficha muestra**
-Decía que la procedencia, las exposiciones, la bibliografía y la documentación estaban por hacer
-mientras, ochenta líneas más abajo, se van a ver. Se ha repasado afirmación por afirmación, dos veces a lo
-largo del día, y ahora **solo queda lo que sigue siendo verdad**: que un documento del archivo no tiene
-ficha propia donde corregir sus datos, y que una referencia bibliográfica solo se corrige desde una obra
-que la cite. Se han ido las que ya eran falsas —dar de alta una exposición, corregir el autor o el título
-de una referencia, y subir y enlazar un documento—, y también las series y los propietarios, que ya
-tienen su pantalla. El párrafo que dice dónde **sí** se hacen las cosas nombra ahora también
-«Exposiciones».
+**El recuadro de «pendiente» ya no menciona lo que la ficha muestra**
+Indicaba que la procedencia, las exposiciones, la bibliografía y la documentación estaban por hacer
+mientras se mostraban ochenta líneas más abajo. Se ha revisado afirmación por afirmación y ahora solo
+queda lo que sigue siendo cierto: que un documento del archivo no tiene ficha propia donde corregir sus
+datos, y que una referencia bibliográfica solo se corrige desde una obra que la cite. El párrafo que
+indica dónde sí se hacen las cosas menciona ahora también «Exposiciones».
 
 **Descargar una fotografía: el original y la copia lista para imprimir**
-En la ficha, debajo de la galería, hay ahora un apartado «Descargar esta fotografía» que se despliega y
-ofrece los dos ficheros que tiene sentido sacar de la aplicación, con una línea que explica la
-diferencia: el **original** es lo que salió de la cámara —sin girar, sin recortar y con la luz que
-hubiera en la sala—, y la **copia corregida** es del mismo tamaño con el giro, el recorte, la perspectiva
-y el color ya aplicados. Es esta segunda la que hay que mandar a una imprenta o a un comisario, y hasta
-ahora no se podía descargar desde ninguna pantalla: se preparaba, se guardaba y no había forma de
-pedirla.
+En la ficha, debajo de la galería, hay un apartado «Descargar esta fotografía» que ofrece los dos
+ficheros que tiene sentido sacar de la aplicación, con una línea que explica la diferencia: el original
+es lo que salió de la cámara, sin girar, sin recortar y con la luz de la sala; la copia corregida es del
+mismo tamaño con el giro, el recorte, la perspectiva y el color aplicados. La segunda es la que hay que
+enviar a una imprenta o a un comisario, y hasta ahora no se podía descargar desde ninguna pantalla.
 
-Va plegado y no descarga nada hasta que se toca, porque un original puede pesar veinte megas y se
-cataloga con datos del móvil. Cada botón dice **cuánto pesa** antes de tocarlo.
+Va plegado y no descarga nada hasta que se toca, porque un original puede pesar veinte megabytes. Cada
+botón indica el peso antes de pulsarlo.
 
-**La copia corregida solo se ofrece cuando está, y cuando no está se explica por qué**
-Un botón que desaparece no distingue «no hace falta» de «falta». Así que si la copia quedó pendiente
-porque el móvil no pudo prepararla, se dice y se dice que se hará después desde un ordenador; si la
-fotografía se corrigió antes de que existieran estas copias, también se dice; y si la fotografía no
-tiene ninguna corrección, no falta nada: para una imprenta el original ya es lo que hay que mandar, y así
-está escrito. Mientras se comprueba, lo dice también, en vez de acusar de una falta que quizá no exista.
+**La copia corregida solo se ofrece cuando existe, y si no existe se explica**
+Un botón que desaparece no distingue «no hace falta» de «falta». Si la copia quedó pendiente porque el
+móvil no pudo prepararla, se indica, junto con que se generará después desde un ordenador. Si la
+fotografía se corrigió antes de que existieran estas copias, también se indica. Y si la fotografía no
+tiene ninguna corrección, no falta nada: para una imprenta el original es el fichero correcto. Mientras
+se comprueba, también se indica.
 
-**El fichero llega con un nombre que se entiende fuera de la aplicación**
+**El fichero se descarga con un nombre comprensible fuera de la aplicación**
 `AR-0001_general_original.jpg`, `AR-0001_firma_corregida.jpg`: el código de la obra, el tipo de toma y
-qué fichero es. Antes se guardaba con el nombre interno del almacén, con ocho caracteres al azar en
-medio, y quien lo recibía por correo no sabía de qué obra era. Cuando una obra tiene dos tomas del mismo
-tipo, se numeran para que no lleguen dos ficheros llamados igual.
+qué fichero es. Antes se guardaba con el nombre interno del almacén, con ocho caracteres aleatorios, y
+quien lo recibía por correo no podía saber de qué obra era. Cuando una obra tiene dos tomas del mismo
+tipo, se numeran.
 
-**Y ahora se descarga de verdad, o se dice qué ha pasado**
-El botón anterior abría el fichero en otra pestaña en vez de guardarlo, y en el móvil muchas veces no
-hacía nada en absoluto, sin ningún aviso. Ahora el fichero se guarda donde el navegador guarde las
-descargas, el botón dice en qué va mientras tanto y, si algo falla —no hay cobertura, el permiso de
-descarga caducó, el fichero ya no está en el almacén—, aparece escrito qué ha pasado y qué hacer. Un
-error deja de verse en cuanto el siguiente intento funciona.
+**La descarga funciona, y si falla se explica**
+El botón anterior abría el fichero en otra pestaña en lugar de guardarlo, y en el móvil con frecuencia no
+hacía nada. Ahora el fichero se guarda donde el navegador guarde las descargas, el botón indica el
+progreso y, si algo falla —falta de cobertura, permiso de descarga caducado, fichero ausente del
+almacén—, se indica qué ha ocurrido y qué hacer. El error desaparece en cuanto el siguiente intento
+funciona.
 
-Esto lo puede hacer también quien solo tiene permiso de lectura: mandar el original a una imprenta o a un
-comisario es justamente para lo que se guarda.
+Está disponible también para quien solo tiene permiso de lectura: enviar el original a una imprenta o a
+un comisario es una de las razones de conservarlo.
 
 ### Correcciones
 
-**Los apartados nuevos de la ficha volvían a decir que no habían podido cargar**
+**Los apartados nuevos de la ficha indicaban que no habían podido cargar**
 La procedencia, la bibliografía, las exposiciones, los documentos del archivo, las obras relacionadas y
-los enlaces aparecían todos con el mismo aviso —«No se ha podido cargar este bloque, así que no se
-muestra nada»— por más veces que se recargara y con toda la cobertura del mundo. No era la cobertura ni
-era el móvil: la aplicación publicada ya sabía preguntar por esos datos, pero el catálogo todavía no
-tenía dónde guardarlos, porque la parte que prepara el catálogo se había quedado sin llegar. Ya está
-puesta, y con ella los seis apartados. Que las dos mitades puedan volver a separarse es lo que se ha
-cerrado de raíz: ahora no se publica una versión de la aplicación sin haber preparado antes el catálogo
-que necesita, y si esa preparación no se puede hacer, la versión no sale.
+los enlaces mostraban el mismo aviso —«No se ha podido cargar este bloque, así que no se muestra nada»—
+independientemente de la cobertura. La causa no era la conexión: la aplicación publicada solicitaba esos
+datos, pero el catálogo todavía no tenía dónde guardarlos, porque la preparación correspondiente no se
+había desplegado. Ya está aplicada, y con ella los seis apartados. Además se ha impedido que las dos
+partes vuelvan a separarse: no se publica una versión de la aplicación sin haber preparado antes el
+catálogo que necesita, y si esa preparación falla, la versión no se publica.
 
-**Recargar una pantalla de edición ya no echa fuera**
+**Recargar una pantalla de edición ya no devuelve a solo lectura**
 Estando en la zona de edición de una ficha, recargar la página —o abrir su dirección directamente, o
-volver a ella desde un enlace guardado— devolvía a la versión de solo lectura, sin decir nada. La pantalla
-decidía si se tenía permiso antes de que el permiso hubiera llegado, y en ese instante la respuesta era
-«no». Pasaba en la **ficha de una obra**, donde con ello se perdía de vista todo lo que solo se puede
-escribir ahí —los seis apartados de documentación—, y en la **ficha de una exposición**, donde además es
-el único sitio desde el que se la retira y se la recupera. Ahora las dos esperan a saberlo. Lo que se lee
-no espera a nada, porque no depende del permiso.
+volver desde un enlace guardado— devolvía a la versión de solo lectura sin ninguna advertencia. La
+pantalla decidía si había permiso antes de que el permiso hubiera llegado, y en ese momento la respuesta
+era negativa. Ocurría en la ficha de una obra, donde con ello se perdían de vista los seis apartados de
+documentación, y en la ficha de una exposición, que además es el único sitio desde el que se retira y se
+recupera. Ahora ambas esperan a conocer el permiso. La parte de solo lectura no espera, porque no depende
+de él.
 
-**Al subir un documento ya no se promete una corrección que no existe**
-El panel decía de la signatura del archivo que «se puede corregir después», y cuatro líneas más arriba
-advertía —con razón— de que el escaneo no se puede añadir más tarde. Lo segundo era verdad y lo primero
-no: un documento del archivo todavía no tiene ninguna pantalla donde cambiar sus datos, así que la
-signatura que se guarde se queda. Ahora lo dice, para que nadie deje el campo a medias contando con
-volver.
+**Al subir un documento ya no se anuncia una corrección que no existe**
+El panel indicaba que la signatura del archivo «se puede corregir después», y cuatro líneas más arriba
+advertía de que el escaneo no se puede añadir más tarde. Lo segundo era cierto y lo primero no: un
+documento del archivo todavía no tenía ninguna pantalla donde modificar sus datos. Ahora se indica
+correctamente.
+
+---
 
 ## 3 de agosto de 2026
 
 ### Interfaz
 
-**Corregir la luz de la sala sin tocar la fotografía original**
+**Corregir la luz de la sala sin modificar la fotografía original**
 Un almacén no tiene luz de estudio: la misma obra sale amarilla bajo una bombilla, verdosa bajo un
-fluorescente y azulada junto a una ventana, y ese tinte no es de la obra, es de la sala. El editor de
-fotografías tiene ahora un segundo botón en la cabecera que abre los mandos del color, al pie y donde
-estaban las herramientas, porque el balance de blancos se juzga mirando la superficie entera y un panel
-encima de la obra tapa justo lo que hay que ver.
+fluorescente y azulada junto a una ventana, y ese tinte corresponde a la sala y no a la obra. El editor
+de fotografías incorpora un segundo botón en la cabecera que abre los controles de color, situados al
+pie, donde estaban las herramientas, porque el balance de blancos se juzga observando la superficie
+completa y un panel superpuesto ocultaría la obra.
 
-Los mandos son estos y no más: **temperatura**, **matiz**, **exposición**, **negros**, **blancos**,
-**medios tonos** y **altas luces suaves**, y un interruptor de **blanco y negro** para el reverso y el
-detalle de firma. Se mueven con el dedo y también con las flechas del teclado, con dos toques vuelven a
-su valor de partida, y cada uno se deshace por separado sin llevarse los demás. Debajo hay un histograma
-**del encuadre elegido** —no de la pared que rodea la obra— y un aviso en cuanto el ajuste empieza a
-comerse el detalle de las sombras o de las luces.
+Los controles son temperatura, matiz, exposición, negros, blancos, medios tonos y altas luces suaves, más
+un interruptor de blanco y negro para el reverso y el detalle de firma. Se ajustan con el dedo y con las
+flechas del teclado, con dos toques vuelven a su valor de partida, y cada uno se deshace por separado.
+Debajo hay un histograma del encuadre elegido, no de la pared que rodea la obra, y un aviso cuando el
+ajuste empieza a perder detalle en las sombras o en las luces.
 
-Se ve sobre la obra mientras se ajusta, con la fotografía a tamaño de pantalla, y también en el recuadro
-que enseña cómo va a quedar enderezada.
+El resultado se ve sobre la obra mientras se ajusta, a tamaño de pantalla, y también en la vista previa
+de la imagen enderezada.
 
-Hay tres atajos: **tomar un gris de la propia fotografía** tocando una zona que se sabe neutra —un
-cartón gris, una pared blanca, el paspartú—, un **ajuste automático** que propone valores y **calla en
-el balance de blancos cuando no encuentra grises fiables**, porque una sugerencia equivocada es peor que
-ninguna, y una lista de **tipos de luz** de la que partir: luz de ventana, día nublado, fluorescente
-frío o cálido, led neutro, bombilla, mezcla de ventana y techo, flash del móvil. Son un punto de
-partida ajustable, nunca una medición, y así están etiquetados.
+Hay tres atajos. Tomar un gris de la propia fotografía tocando una zona neutra —un cartón gris, una pared
+blanca, el paspartú—. Un ajuste automático que propone valores y no modifica el balance de blancos cuando
+no encuentra grises fiables, porque una sugerencia equivocada es peor que ninguna. Y una lista de tipos
+de luz de la que partir: luz de ventana, día nublado, fluorescente frío o cálido, led neutro, bombilla,
+mezcla de ventana y techo, flash del móvil. Son un punto de partida ajustable y no una medición, y así
+están etiquetados.
 
-Al fotografiar una tanda, la segunda foto se corrige **con un toque**, repitiendo la luz de la anterior,
-y al cerrar el lote esa luz se olvida: otra tarde es otra sala. En una obra ya catalogada, el reverso, la
-firma, el daño y el marco **heredan** el ajuste de la toma general, se pueden cambiar por separado y se
-restablecen a lo heredado, y la pantalla dice cuándo un ajuste viene heredado en vez de decidido ahí.
+Al fotografiar una tanda, la segunda fotografía se corrige con un toque repitiendo la luz de la anterior,
+y al cerrar el lote ese ajuste se descarta. En una obra ya catalogada, el reverso, la firma, el daño y el
+marco heredan el ajuste de la toma general, se pueden modificar por separado y se restablecen al valor
+heredado; la pantalla indica cuándo un ajuste procede de la herencia.
 
-Y lo más importante: **nada de esto toca la fotografía original**. Lo que se guarda son los valores, no
-una imagen aplastada; el original de archivo se sube una vez y no se reescribe nunca. Volver a ajustar
-reemplaza el ajuste anterior, no lo apila encima, así que corregir veinte veces no degrada nada.
-«Volver al original» devuelve la fotografía a como salió de la cámara, giro, recorte, perspectiva y
-color incluidos.
+Nada de esto modifica la fotografía original. Lo que se guarda son los valores y no una imagen aplanada;
+el original de archivo se sube una vez y no se reescribe. Volver a ajustar reemplaza el ajuste anterior
+en lugar de acumularlo, de modo que corregir veinte veces no degrada la imagen. «Volver al original»
+devuelve la fotografía al estado en que salió de la cámara, incluidos giro, recorte, perspectiva y color.
 
-**Lo que este ajuste no va a tener nunca, y por qué**
-No hay saturación, ni vibrancia, ni contraste, ni realce de sombras o de luces, ni enfoque, ni quitar
-niebla, ni quitar reflejos, ni virados. No es que falten: **no se van a poner**. Una fotografía de
-catálogo tiene que testificar el estado de la obra, y un barniz amarilleado, un color apagado, un dorado
-con su pátina o una humedad **son el dato**. Saturar eso no mejora la fotografía: falsea el documento. Lo
-que sí se corrige es la luz que había en la sala, que no es de la obra.
+**Lo que este ajuste no va a incorporar**
+No hay saturación, vibrancia, contraste, realce de sombras o de luces, enfoque, eliminación de niebla o
+de reflejos ni virados, y no está previsto añadirlos. Una fotografía de catálogo debe documentar el
+estado de la obra, y un barniz amarilleado, un color apagado, un dorado con pátina o una humedad son
+parte de ese estado. Lo que sí se corrige es la luz de la sala, que no pertenece a la obra.
 
-Por lo mismo, en el **detalle de daño** y en el **marco** solo se ofrece corregir la dominante, la
-temperatura y la exposición; el resto de mandos se ven en pantalla, apagados y con el motivo escrito al
-lado, porque ahí el amarilleo, el óxido o la pátina son justo lo que hay que conservar. Y el blanco y
-negro solo se ofrece en el reverso y en el detalle de firma, donde lo que importa es leer una etiqueta o
-un trazo.
+Por el mismo motivo, en el detalle de daño y en el marco solo se ofrece corregir la dominante, la
+temperatura y la exposición; el resto de controles aparecen desactivados con el motivo indicado al lado,
+porque ahí el amarilleo, el óxido o la pátina son precisamente lo que hay que conservar. El blanco y
+negro solo se ofrece en el reverso y en el detalle de firma, donde lo relevante es leer una etiqueta o un
+trazo.
 
-**El testigo de gris, y una hoja para imprimirlo en casa**
-Si en la toma se coloca al lado de la obra una tira de grises, la aplicación **la reconoce sobre la
-fotografía**, la señala y ofrece tomar su gris. Nunca aplica nada por su cuenta: propone, y se acepta o
-no.
+**El testigo de gris, y una hoja para imprimirlo**
+Si en la toma se coloca junto a la obra una tira de grises, la aplicación la reconoce sobre la
+fotografía, la señala y ofrece tomar su gris. No aplica nada por su cuenta: propone.
 
-Hay una página nueva que lo explica con dibujos —dónde se pone, cómo no ponerlo (en sombra, con reflejo)
-y que **no ponerlo también vale**, porque todo lo demás funciona igual— y desde la que se descarga una
-hoja lista para imprimir en A5. La hoja lleva por escrito su propia advertencia: el gris de una
-impresora doméstica sirve como patrón para ver la escalera, pero **no** como referencia de dominante,
-porque su tinta no es neutra. Para eso hace falta una carta comprada, y la aplicación distingue las dos:
-la carta mueve el balance de blancos, la hoja impresa solo se anota.
+Hay una página nueva que lo explica con ilustraciones —dónde colocarlo, cómo no colocarlo (en sombra o
+con reflejo) y que no colocarlo también es válido, porque el resto funciona igual— y desde la que se
+descarga una hoja lista para imprimir en A5. La hoja incluye su propia advertencia: el gris de una
+impresora doméstica sirve como patrón para comprobar la escala de grises, pero no como referencia de
+dominante, porque su tinta no es neutra. Para eso hace falta una carta comprada, y la aplicación
+distingue ambas: la carta modifica el balance de blancos, la hoja impresa solo se anota.
 
-**Lo que la fotografía trae dentro**
-El otro botón nuevo de la cabecera muestra los datos del propio fichero: **fecha de la toma**, cámara,
+**Los datos que trae la fotografía**
+El otro botón nuevo de la cabecera muestra los datos del propio fichero: fecha de la toma, cámara,
 aplicación de cámara, tamaño del original, sensibilidad, exposición, diafragma, objetivo y flash. Solo
-los que estén; nunca un hueco con guiones, y nunca un juicio: la aplicación no opina sobre si una toma
-está bien expuesta.
+los disponibles, sin huecos con guiones y sin valoraciones: la aplicación no opina sobre si una toma está
+bien expuesta.
 
-Con las fechas se distinguen dos cosas que antes se confundían. La **fecha del disparo**, cuando la
-cámara la escribió, y la **fecha del fichero, marcada como aproximada**, cuando esa falta — que es el
-caso de las catorce fotografías de 2022, y sin ese respaldo ninguna se podría fechar. Las dos se guardan
-**junto a** la fecha de la ficha, nunca en su lugar: la ficha dice cuándo entró la fotografía en el
-catálogo y el fichero dice cuándo se disparó, y pueden diferir legítimamente. Cuando difieren, se dice
-en voz baja —«la foto dice 9 de octubre de 2022»— sin alarma, porque hoy difieren las treinta y nueve.
-Cuando no hay datos, se explica si es que la fotografía no los trae o que el original de archivo no se
-ha podido descargar: son dos cosas distintas y llevaban el mismo silencio.
+Con las fechas se distinguen dos datos que antes se confundían: la fecha del disparo, cuando la cámara la
+registró, y la fecha del fichero, marcada como aproximada, cuando la primera no existe. Es el caso de las
+catorce fotografías de 2022, que sin ese respaldo no podrían fecharse. Ambas se guardan junto a la fecha
+de la ficha y nunca en su lugar: la ficha indica cuándo entró la fotografía en el catálogo y el fichero
+indica cuándo se disparó, y pueden diferir legítimamente. Cuando difieren, se indica sin alarma —«la foto
+dice 9 de octubre de 2022»—, porque hoy difieren las treinta y nueve. Cuando no hay datos, se distingue
+si la fotografía no los incluye o si el original de archivo no se ha podido descargar.
 
-**Decir de dónde viene cada fotografía**
-De cada fotografía se puede declarar si es **propia**, **tomada de otro catálogo** o **recibida de un
-tercero**. Cuatro de las cuarenta y cuatro son reproducciones de catálogos en línea, y en las que no son
-propias **no se ofrece corregir el color**, con el motivo escrito en la pantalla: corregir la dominante
-de la reproducción de otro es enmendar su revelado sin saber qué luz tenía delante. Se declara, nunca se
-deduce: una fotografía con pinta de captura de pantalla puede ser perfectamente propia.
+**Indicar la procedencia de cada fotografía**
+De cada fotografía se puede declarar si es propia, tomada de otro catálogo o recibida de un tercero.
+Cuatro de las cuarenta y cuatro son reproducciones de catálogos en línea. En las que no son propias no se
+ofrece corregir el color, con el motivo indicado en la pantalla: corregir la dominante de la reproducción
+de otro equivale a modificar su revelado sin conocer la luz original. Se declara y no se deduce: una
+fotografía con aspecto de captura de pantalla puede ser propia.
 
-Tampoco se ofrece cuando el original de archivo no se ha podido descargar y se está trabajando sobre la
-copia de consulta, que ya lleva el color cocido; también ahí lo dice en vez de fallar después.
+Tampoco se ofrece cuando el original de archivo no se ha podido descargar y se trabaja sobre la copia de
+consulta, que ya lleva el color aplicado; también en ese caso se indica en lugar de fallar después.
 
-**Una copia a tamaño completo para mandar a una imprenta**
-Al aplicar una corrección se prepara además, aparte de las copias con las que trabaja la aplicación, una
-**copia a resolución completa con todo aplicado** —giro, recorte, perspectiva y color—, que es la que hay
-que mandar a una imprenta o a un comisario. Se rehace cada vez que se reedita, y si no hay ninguna
-corrección no se hace ninguna copia: para eso ya está el original.
+**Una copia a tamaño completo para enviar a una imprenta**
+Al aplicar una corrección se prepara, además de las copias con las que trabaja la aplicación, una copia a
+resolución completa con todo aplicado —giro, recorte, perspectiva y color—, que es la que hay que enviar
+a una imprenta o a un comisario. Se rehace en cada edición, y si no hay ninguna corrección no se genera:
+para eso está el original.
 
-Un móvil no siempre puede con un fichero de veinte megapíxeles, y cuando no puede **queda anotado y se
-dice**, con el motivo, en vez de guardar una imagen en blanco o reducida en silencio. La ficha de cada
-fotografía muestra ahora si esa copia está, falta o quedó pendiente, y lo pendiente se genera después
-desde un ordenador. Nunca se sube un fichero que no se haya comprobado antes.
+Un móvil no siempre puede procesar un fichero de veinte megapíxeles. Cuando no puede, queda registrado y
+se indica el motivo, en lugar de guardar una imagen en blanco o reducida. La ficha de cada fotografía
+muestra si esa copia existe, falta o quedó pendiente, y lo pendiente se genera después desde un
+ordenador. No se sube ningún fichero sin comprobarlo antes.
 
-De momento **esa copia siempre queda pendiente**, por un permiso que falta abrir. Está explicado en «En
-marcha», al final de este documento: la corrección no se pierde, y lo que falta es el último paso.
+Por ahora esa copia queda siempre pendiente, por un permiso que falta habilitar. Está explicado en «En
+marcha», al final de este documento: la corrección no se pierde y falta el último paso.
 
-**La ficha de cada fotografía cuenta más cosas**
-Además de lo anterior: el tamaño del original, y lo que se hizo con la fotografía en una sola línea
-—girada, recortada, perspectiva corregida y el ajuste de color—. Revisar el color de una foto y dejarlo
-como estaba **queda anotado como revisado** sin reescribir ninguna copia: «sin revisar» no es «no», y
-distinguir «lo miré y estaba bien» de «nadie lo ha mirado» es la mitad del trabajo de catalogar.
+**La ficha de cada fotografía incluye más datos**
+Además de lo anterior: el tamaño del original y lo que se hizo con la fotografía en una sola línea
+—girada, recortada, perspectiva corregida y ajuste de color—. Revisar el color de una fotografía y
+dejarlo como estaba queda registrado como revisado sin reescribir ninguna copia, porque distinguir «se
+revisó y estaba correcto» de «nadie lo ha revisado» forma parte del trabajo de catalogación.
 
 ### La base de datos del catálogo
 
-**El color se guarda como valores, no como una imagen retocada**
-Cada fotografía guarda ahora los valores de su corrección de color, de dónde salieron —a mano, del
-automático, de un gris tomado de la propia foto, de un testigo, o revisada y dejada igual—, y cuánto
-detalle costó el ajuste en las sombras y en las luces. Guardar valores y no una imagen aplastada es lo
-que permite reeditar años después, rehacer las copias cuando cambie el tamaño de pantalla habitual y
-tener la certeza de que el original de archivo sigue siendo el que salió de la cámara.
+**El color se guarda como valores, no como una imagen modificada**
+Cada fotografía guarda los valores de su corrección de color, su origen —manual, automático, gris tomado
+de la propia fotografía, testigo, o revisada sin cambios— y cuánto detalle costó el ajuste en las sombras
+y en las luces. Guardar valores permite reeditar años después, rehacer las copias cuando cambie el tamaño
+de pantalla habitual y garantizar que el original de archivo sigue siendo el que salió de la cámara.
 
 Junto a ello se guardan la fecha que trae el fichero y si es exacta o aproximada, el tamaño del original,
-la procedencia de la fotografía y el estado de la copia a tamaño completo. La base se encarga de que
-esas cosas no puedan quedar a medias: una fecha aproximada sin decir que lo es no entra, media
-descripción de un fichero no entra, «la copia está» y «la copia falta» no pueden ser verdad a la vez, y
-la ruta de una copia no puede ser nunca la del original de archivo.
+la procedencia de la fotografía y el estado de la copia a tamaño completo. La base de datos impide que
+esos datos queden incompletos: una fecha aproximada sin indicarlo no se admite, una descripción parcial
+de un fichero tampoco, «la copia está» y «la copia falta» no pueden ser ciertas a la vez, y la ruta de
+una copia no puede coincidir con la del original de archivo.
 
-**Nada de esto se rellena hacia atrás**
-Las treinta y nueve fotografías que ya estaban se quedan sin fecha del fichero y como propias, que es lo
-correcto para treinta y cinco de ellas. Rellenar las demás es trabajo de una pasada con los originales
-delante, no de la aplicación.
+**Estos datos no se rellenan retroactivamente**
+Las treinta y nueve fotografías existentes se quedan sin fecha del fichero y marcadas como propias, que
+es lo correcto para treinta y cinco de ellas. Completar las demás requiere una revisión con los
+originales delante.
 
 ### Correcciones
 
-**El cuentagotas no dejaba apuntar: la foto se movía con el dedo**
-Al tomar un gris de la fotografía, arrastrar el dedo para llegar al punto que se quiere movía la
-fotografía en lugar de mover la muestra, así que había que acertar de un toque y a ciegas, y corregir
-la puntería obligaba a levantar, mirar y volver a intentarlo. Ahora, con el cuentagotas activado, el
-dedo apunta: se arrastra hasta el gris que interesa —la pared, el cartón, el testigo—, la lupa va
-delante enseñando el color de verdad sin corregir, y al levantar el dedo se toma la medida. Para mover
-o acercar la fotografía sin salir del modo, dos dedos.
+**El cuentagotas no permitía apuntar: la fotografía se movía con el dedo**
+Al tomar un gris de la fotografía, arrastrar el dedo para llegar al punto deseado movía la fotografía en
+lugar de la muestra, de modo que había que acertar de un solo toque. Ahora, con el cuentagotas activado,
+el dedo apunta: se arrastra hasta el gris que interesa —la pared, el cartón, el testigo—, la lupa muestra
+por delante el color sin corregir, y al levantar el dedo se toma la medida. Para mover o ampliar la
+fotografía sin salir del modo se usan dos dedos.
 
 **La corrección de perspectiva se perdía al recargar la pestaña**
-Una fotografía tomada en ángulo y enderezada antes de subirla perdía **las cuatro esquinas** si la
-pestaña se recargaba con la foto todavía en la cola: la corrección seguía viéndose, porque estaba cocida
-en las copias, pero el dato desaparecía y no se podía volver a ajustar. Era pérdida de datos y no una
-molestia. Ahora la cola guarda las esquinas y de dónde salieron, y una cola escrita por la versión
-anterior se lee sin fallar.
+Una fotografía tomada en ángulo y enderezada antes de subirla perdía las cuatro esquinas si la pestaña se
+recargaba con la fotografía todavía en la cola. La corrección seguía viéndose, porque estaba aplicada en
+las copias, pero el dato desaparecía y no se podía volver a ajustar. Ahora la cola guarda las esquinas y
+su origen, y una cola escrita por la versión anterior se lee sin error.
 
-**El editor decía «Sin cambios» con la perspectiva corregida en pantalla**
-El resumen de la cabecera nombraba el giro y el recorte, pero no la corrección de perspectiva, así que
-una fotografía enderezada se anunciaba como intacta mientras el trapecio estaba dibujado encima. Ahora
-el resumen nombra todo lo que se ha hecho, el color incluido, y dice cuándo un ajuste viene heredado.
+**El editor indicaba «Sin cambios» con la perspectiva corregida en pantalla**
+El resumen de la cabecera mencionaba el giro y el recorte pero no la corrección de perspectiva, de modo
+que una fotografía enderezada se presentaba como intacta. Ahora el resumen menciona todo lo aplicado,
+incluido el color, e indica cuándo un ajuste procede de la herencia.
 
-**Un cuadro ligeramente ladeado salía estirado al enderezarlo**
+**Un cuadro ligeramente inclinado salía deformado al enderezarlo**
 Enderezar un rectángulo girado unos pocos grados devolvía una imagen un uno por ciento más ancha o más
-alta de lo que le corresponde. Es poco y se nota: la proporción de una obra es un dato de catálogo. Ya
-sale con su proporción, y el tamaño resultante ya no intercambia el ancho con el alto en las fotografías
-giradas un cuarto de vuelta.
+alta de lo que corresponde. La proporción de una obra es un dato de catálogo. Ya sale con su proporción
+correcta, y el tamaño resultante ya no intercambia el ancho con el alto en las fotografías giradas un
+cuarto de vuelta.
 
 **Se podía subir una imagen con el nombre y el tipo equivocados**
-Algunos navegadores, al pedirles una copia comprimida, devuelven otro formato **sin decirlo**. Las copias
-se subían entonces con la extensión y el tipo de lo que se había pedido, no de lo que de verdad eran, así
-que el catálogo podía contener ficheros que se llaman de una manera y son de otra — y eso rompe en el
-sitio más tonto, meses después, al abrirlos con otro programa. Ahora el formato se comprueba en los bytes
-del fichero antes de subirlo.
+Algunos navegadores, al solicitarles una copia comprimida, devuelven otro formato sin indicarlo. Las
+copias se subían entonces con la extensión y el tipo solicitados y no con los reales, de modo que el
+catálogo podía contener ficheros cuyo nombre no corresponde a su contenido, con el consiguiente fallo al
+abrirlos con otro programa meses después. Ahora el formato se comprueba en los bytes del fichero antes de
+subirlo.
 
 ---
 
@@ -731,237 +656,220 @@ del fichero antes de subirlo.
 
 ### Interfaz
 
-**La fotografía abierta va en la dirección de la página**
+**La fotografía abierta figura en la dirección de la página**
 Al abrir una fotografía para editarla, su código aparece en la dirección
-—`/artwork/TS-0005/photos/TS-0005_v2`—, así que recargar no la pierde y el enlace se puede
-guardar o enviar y abre esa misma foto. Si el enlace nombra una fotografía que ya se retiró, se abre la
-principal en vez de dejar la pantalla a medias.
+—`/artwork/TS-0005/photos/TS-0005_v2`—, de modo que recargar no la pierde y el enlace se puede guardar o
+enviar y abre esa misma fotografía. Si el enlace nombra una fotografía retirada, se abre la principal.
 
-**Acercarse a la foto para colocar las esquinas, y mover la vista previa**
-Ajustar una esquina al milímetro con la foto entera en una pantalla de móvil era pedir mucho. Ahora se
-puede **acercar**: pellizcando con dos dedos, o con la rueda del ratón en el ordenador. Con dos toques
-vuelve completa. Las asas mantienen su tamaño aunque la foto se agrande, así que no tapan la esquina
-que colocan.
+**Ampliar la fotografía para colocar las esquinas, y desplazar la vista previa**
+Ajustar una esquina con precisión con la fotografía completa en una pantalla de móvil resultaba difícil.
+Ahora se puede ampliar: con dos dedos, o con la rueda del ratón en el ordenador. Con dos toques vuelve al
+tamaño completo. Las asas mantienen su tamaño aunque la fotografía se amplíe, de modo que no ocultan la
+esquina que colocan.
 
-Y la foto **se desplaza arrastrándola**, con un dedo o con el ratón, desde cualquier sitio que no sea
-un asa —la propia zona recortada incluida—: acercada a una esquina esa zona ocupa la pantalla entera, y
-esperar a encontrar un hueco libre alrededor sería no poder moverse. Para mover el recuadro del
-recorte, este estrena **un asa en su centro** que lo arrastra entero y que también responde a las
-flechas del teclado.
+La fotografía se desplaza arrastrándola, con un dedo o con el ratón, desde cualquier punto que no sea un
+asa, incluida la zona recortada: ampliada sobre una esquina, esa zona ocupa la pantalla completa. Para
+mover el recuadro del recorte, este incorpora un asa central que lo desplaza entero y que también
+responde a las flechas del teclado.
 
-**La botonera del editor, ordenada**
-Al girar y recortar, los botones de debajo ocupaban más pantalla que la propia fotografía: corrigiendo
-la perspectiva quedaban 304 píxeles de foto contra 472 de botones. Y había **dos interruptores para una
-sola decisión** —«Recortar/Quitar recorte» por un lado, «Corregir perspectiva/Volver al rectángulo» por
-otro, en filas distintas y con otro botón en medio—, cada uno cambiando de texto al pulsarlo, así que la
-etiqueta no decía si describía lo que había puesto o lo que iba a pasar.
+**La botonera del editor, reorganizada**
+Al girar y recortar, los botones inferiores ocupaban más pantalla que la propia fotografía: corrigiendo
+la perspectiva quedaban 304 píxeles de fotografía frente a 472 de botones. Además había dos interruptores
+para una sola decisión —«Recortar/Quitar recorte» y «Corregir perspectiva/Volver al rectángulo», en filas
+distintas y con otro botón intercalado—, cada uno con un texto que cambiaba al pulsarlo, de modo que la
+etiqueta no aclaraba si describía el estado actual o el resultado.
 
-Ahora el encuadre es **un solo selector de tres posiciones: sin recorte, rectángulo o perspectiva**. Se
-ve de un vistazo cuál está puesto y ninguna etiqueta cambia de significado. Las seis herramientas —los
-dos giros, las tres del encuadre y sugerir— caben en **una sola fila de iconos**, la ayuda es **una sola
-línea** que empieza nombrando el encuadre puesto, y «Deshacer la sugerencia», que antes estaba siempre
-ahí apagado, aparece solo cuando hay una sugerencia que deshacer.
+Ahora el encuadre es un único selector de tres posiciones: sin recorte, rectángulo o perspectiva. Se ve
+de un vistazo cuál está aplicado y ninguna etiqueta cambia de significado. Las seis herramientas —los dos
+giros, las tres del encuadre y la sugerencia— ocupan una sola fila de iconos, la ayuda es una sola línea
+que empieza nombrando el encuadre aplicado, y «Deshacer la sugerencia» aparece solo cuando hay una
+sugerencia que deshacer.
 
-La fotografía gana con eso **264 píxeles recortando y 296 corrigiendo perspectiva** —pasa de ocupar un
-tercio de la pantalla a casi tres cuartos—, y la botonera ya no cambia de tamaño al cambiar de modo.
+La fotografía gana con ello 264 píxeles al recortar y 296 al corregir perspectiva, de modo que pasa de
+ocupar un tercio de la pantalla a casi tres cuartos, y la botonera ya no cambia de tamaño al cambiar de
+modo.
 
-Los botones van además **centrados como un bloque**. En el móvil no se nota, pero en el ordenador antes
-los iconos se iban a una esquina de la pantalla mientras «Aplicar» se estiraba hasta la otra; ahora todo
-queda junto debajo del centro de la fotografía.
+Los botones van además centrados como bloque. En el ordenador, antes los iconos quedaban en una esquina
+de la pantalla mientras «Aplicar» se extendía hasta la contraria.
 
-**«Volver al original» ya se ve, y ya no repite a otro botón**
-Estaba en gris, entre dos párrafos de ayuda. Ahora tiene fila propia, color ámbar e icono, justo encima
-de Cancelar y Aplicar — y sigue sin ser blanco, que es el color de «Aplicar», lo único que confirma y
-cierra.
+**«Volver al original» es visible y ya no duplica otro botón**
+Estaba en gris, entre dos párrafos de ayuda. Ahora tiene fila propia, color ámbar e icono, encima de
+Cancelar y Aplicar. No es blanco, que es el color de «Aplicar», el único botón que confirma y cierra.
 
-Y **aparece solo cuando hay un giro que deshacer**, que es lo único que él quita y el selector no:
-sin giro hacía exactamente lo mismo que «sin recorte», o sea que el botón más llamativo de la pantalla
-duplicaba una casilla que estaba justo encima. Sobre la copia de consulta sigue apareciendo apagado,
-porque ahí no es una acción sino la explicación de por qué no se puede.
+Aparece solo cuando hay un giro que deshacer, que es lo único que elimina y el selector no: sin giro
+hacía lo mismo que «sin recorte». Sobre la copia de consulta sigue apareciendo desactivado, porque ahí no
+es una acción sino la explicación de por qué no se puede.
 
-**La pinza manda sobre las asas**
-Al pellizcar para acercarse a una esquina, el dedo que caía encima del asa se la llevaba consigo: la
-foto se acercaba y la esquina se iba con ella, dejándola donde nadie la había puesto. Ahora, en cuanto
-aparece el segundo dedo, el gesto pasa a ser un zoom y el asa se queda quieta — aunque el arrastre ya
-hubiera empezado.
+**El gesto de ampliar tiene prioridad sobre las asas**
+Al ampliar sobre una esquina, el dedo que caía sobre el asa la arrastraba, de modo que la fotografía se
+ampliaba y la esquina se desplazaba. Ahora, en cuanto aparece el segundo dedo, el gesto pasa a ser una
+ampliación y el asa se mantiene, aunque el arrastre ya hubiera empezado.
 
-Y la vista previa del resultado **se arrastra a donde convenga y se queda ahí**: antes se colocaba
-sola y cambiaba de sitio cada vez que se cogía otra esquina, justo cuando se quería mirar.
+La vista previa del resultado se arrastra a la posición deseada y se mantiene ahí: antes se recolocaba
+sola cada vez que se seleccionaba otra esquina.
 
 **Enderezar una fotografía tomada en ángulo**
-Un cuadro fotografiado de lado sale como un trapecio, y recortarlo con un rectángulo deja pared por dos
-esquinas y se come obra por las otras dos. Ocho de cada catorce obras del catálogo están así. Ahora el
-editor tiene «Corregir perspectiva»: se arrastran las cuatro esquinas de la obra y, al lado, se ve en
-todo momento cómo va a quedar enderezada.
+Un cuadro fotografiado de lado sale como un trapecio, y recortarlo con un rectángulo deja pared en dos
+esquinas y recorta obra en las otras dos. Ocho de cada catorce obras del catálogo están en esa
+situación. El editor incorpora «Corregir perspectiva»: se arrastran las cuatro esquinas de la obra y, al
+lado, se muestra en todo momento el resultado enderezado.
 
-Lo que se guarda son **las cuatro esquinas, no la imagen deformada**, así que se pueden volver a mover
-cuando se quiera y el original de archivo no se toca nunca. Si una esquina de la obra se sale de la
-fotografía se puede arrastrar fuera del borde —es la única manera de enderezar esas tomas— y esa zona
-saldrá en blanco, que el editor avisa. Y si se arrastra una esquina por encima de su vecina, el editor no
-lo permite: enderezar eso daría una imagen doblada sobre sí misma.
+Lo que se guarda son las cuatro esquinas y no la imagen transformada, de modo que se pueden volver a
+mover en cualquier momento y el original de archivo no se modifica. Si una esquina de la obra queda fuera
+de la fotografía, el asa se puede arrastrar más allá del borde —es la única forma de enderezar esas
+tomas— y esa zona saldrá en blanco, de lo que el editor avisa. Si se arrastra una esquina por encima de
+su vecina, el editor no lo permite, porque el resultado sería una imagen plegada sobre sí misma.
 
-No se ofrece cuando la fotografía original no se ha podido descargar y se está trabajando sobre la copia
-de consulta: enderezar lo ya enderezado estropearía la imagen, y el botón lo dice en vez de fallar
-después.
+No se ofrece cuando el original no se ha podido descargar y se trabaja sobre la copia de consulta:
+enderezar una imagen ya enderezada la deformaría, y el botón lo indica en lugar de fallar después.
 
-Y una cosa pequeña que iba con esto: pedir la sugerencia ya no pisa sin remedio el recorte que se
-hubiera hecho a mano. Hay un botón para devolverlo.
+Además, pedir la sugerencia ya no sustituye de forma irreversible el recorte hecho a mano: hay un botón
+para recuperarlo.
 
-**La sugerencia de recorte pasa a acertar, y a callar cuando no sabe**
-Antes proponía recorte en 36 de 44 fotografías y solo cuatro propuestas eran buenas: dieciséis
-recortaban por donde no toca —cinco se comían parte de la obra— y otras dieciséis proponían casi la
-foto entera. Ahora propone en dieciséis y **ninguna está mal**.
+**La sugerencia de recorte acierta más y no propone cuando no puede**
+Antes proponía recorte en 36 de 44 fotografías y solo cuatro propuestas eran correctas: dieciséis
+recortaban donde no corresponde —cinco recortaban parte de la obra— y otras dieciséis proponían casi la
+fotografía completa. Ahora propone en dieciséis y ninguna es incorrecta.
 
-Tres cosas la arreglan. Ya no se inventa los lados que no se ven en la foto, que era de donde salían
-los recortes de «toda la fotografía». Comprueba que cada lado sea de verdad una línea y no una banda
-de pintura o el borde de una captura de pantalla, que era lo que le hacía dibujar rectángulos
-perfectos sobre cosas que no son obra. Y **ya no hace falta que el cuadro esté de frente**: cada lado
-se ajusta con su inclinación, así que las fotos tomadas en ángulo —ocho de cada catorce obras— pasan
-de no funcionar a funcionar; en la peor, el recorte propuesto coincide ya en un 97 % con el que se
-haría a mano.
+Tres cambios lo explican. No infiere los lados que no aparecen en la fotografía, que era el origen de los
+recortes que abarcaban toda la imagen. Comprueba que cada lado sea una línea y no una banda de pintura o
+el borde de una captura de pantalla, que era lo que producía rectángulos sobre elementos que no son
+obra. Y no requiere que el cuadro esté de frente: cada lado se ajusta con su inclinación, de modo que las
+fotografías tomadas en ángulo pasan a funcionar; en el peor caso, el recorte propuesto coincide en un
+97 % con el que se haría a mano.
 
-En el reverso de un lienzo, en un detalle de firma o en un detalle de daño no lo ofrece: ahí no hay
-borde de cuadro que reconocer, y el botón lo dice en vez de proponer cualquier cosa. Y cuando calla,
-el mensaje dice qué hacer —«arrastra las esquinas»— en vez de anunciar una avería: de las veces que
-calla, la mayoría son fotos donde no había nada que recortar.
+En el reverso de un lienzo, en un detalle de firma o en un detalle de daño no se ofrece, porque no hay
+borde de cuadro que reconocer, y el botón lo indica. Cuando no propone nada, el mensaje indica qué hacer
+—«arrastra las esquinas»— en lugar de anunciar un error: en la mayoría de esos casos no había nada que
+recortar.
 
 **La ubicación se elige de una lista de sitios, y se puede corregir de una vez**
 El campo de ubicación deja de ser un texto que hay que escribir igual cada vez. Ahora se elige de una
-lista con los sitios sangrados por niveles y un buscador arriba: cada coma que escribes abre un nivel
-dentro del anterior y crea lo que falte, y si el nombre lleva una coma dentro —una dirección postal la
-lleva— hay un botón que se lo traga entero. «Sin ubicación» es una opción más de la lista, porque una
-obra sin sitio registrado es una respuesta legítima cuando la tienes delante y no sabes aún dónde va.
-Los nombres se escriben como se leen, con sus mayúsculas y sus tildes.
+lista con los sitios sangrados por niveles y un buscador en la parte superior: cada coma que se escribe
+abre un nivel dentro del anterior y crea lo que falte, y si el nombre contiene una coma —como una
+dirección postal— hay un botón que la admite como parte del nombre. «Sin ubicación» es una opción más de
+la lista, porque una obra sin sitio registrado es una respuesta válida. Los nombres se escriben con sus
+mayúsculas y sus tildes.
 
-Hay además una pantalla propia de ubicaciones, en la pestaña «Tablas» del menú del pie, para crear,
-renombrar, mover y retirar
-sitios. Ahí es donde se arreglan de una vez los nombres que venían del sistema anterior: corregir
-«museo de bellas artes de badajoz muba» es una edición, y la ven todas sus obras. Mover una estantería
-se lleva consigo todo lo que hay dentro.
+Hay además una pantalla propia de ubicaciones, en la pestaña «Tablas», para crear, renombrar, mover y
+retirar sitios. Ahí se corrigen de una vez los nombres procedentes del sistema anterior: corregir «museo
+de bellas artes de badajoz muba» es una sola edición que reflejan todas sus obras. Mover una estantería
+desplaza todo su contenido.
 
-**El filtro de ubicación busca por sitio y no por cómo se escribió**
-Filtrar por un sitio sigue trayendo todo lo que hay dentro de él, a cualquier profundidad, pero ahora
-se apoya en la lista de sitios y no en comparar textos. Dos consecuencias que se notan: se puede
-filtrar por «Sin ubicación» para ver qué obras están pendientes de colocar, y renombrar un sitio ya no
-rompe un enlace guardado o compartido. Los enlaces de antes siguen funcionando: se traducen solos al
-abrirlos.
+**El filtro de ubicación busca por sitio y no por el texto escrito**
+Filtrar por un sitio sigue incluyendo todo lo que contiene, a cualquier profundidad, pero ahora se apoya
+en la lista de sitios y no en la comparación de textos. Con dos consecuencias: se puede filtrar por «Sin
+ubicación» para localizar las obras pendientes de colocar, y renombrar un sitio ya no invalida un enlace
+guardado o compartido. Los enlaces anteriores siguen funcionando: se traducen al abrirlos.
 
-**Los tipos de obra y las series ya se mantienen desde «Tablas»**
-La sección «Tablas» del menú del pie tiene ahora sus tres listas: ubicaciones, tipos de obra y series.
-En las dos nuevas se puede crear una entrada, corregir su nombre y retirar la que ya no se use. Y
-corregir un nombre es una sola edición: cambiar «Tecnica mixta» por «Técnica mixta» lo ven al momento
-todas las obras que lo llevan y también el filtro del listado, sin repasar ficha por ficha. Los tipos
-y las series se siguen añadiendo desde el propio formulario de la ficha, que es donde hacen falta con
-la obra delante; lo que antes no se podía hacer desde ningún sitio era arreglarlos.
+**Los tipos de obra y las series se mantienen desde «Tablas»**
+La sección «Tablas» incorpora sus tres listas: ubicaciones, tipos de obra y series. En las dos nuevas se
+puede crear una entrada, corregir su nombre y retirar la que ya no se use. Corregir un nombre es una sola
+edición: cambiar «Tecnica mixta» por «Técnica mixta» se refleja de inmediato en todas las obras y en el
+filtro del listado. Los tipos y las series se siguen añadiendo desde el propio formulario de la ficha,
+que es donde hacen falta con la obra delante; lo que no se podía hacer desde ninguna pantalla era
+corregirlos.
 
-Cada serie aparece bajo el fondo al que pertenece, y al crear una hay que elegir el fondo: los dos
-fondos pueden tener una serie con el mismo nombre y son dos series distintas, así que una lista de
-nombres a secas sería una invitación a meter una obra en la serie de otro artista. El fondo de una
-serie ya creada no se cambia, porque cambiarlo dejaría sus obras en un fondo que no es el suyo; para
-eso se mueven las obras. Y los fondos en sí no se tocan desde aquí: su nombre está dentro del
-identificador pegado a cada cuadro.
+Cada serie aparece bajo el fondo al que pertenece, y al crear una hay que elegir el fondo: los dos fondos
+pueden tener una serie con el mismo nombre y son series distintas, de modo que una lista de nombres sin
+más facilitaría asignar una obra a la serie de otro artista. El fondo de una serie ya creada no se
+cambia, porque dejaría sus obras en un fondo que no les corresponde; para eso se mueven las obras. Los
+fondos no se modifican desde aquí: su nombre forma parte del identificador de cada obra.
 
 Nada se borra: se retira. Lo retirado deja de ofrecerse al catalogar y al filtrar, sigue visible en su
-lista en gris y vuelve con un botón. Un tipo o una serie que todavía tenga obras dentro no se puede
-retirar, y la aplicación lo dice con lo que hay que hacer antes —cambiar el tipo de esas obras, o
-sacarlas de la serie—. Escribir en «Añadir» un nombre que ya existe no lo duplica, aunque se escriba
-con otras mayúsculas o tildes, y escribir uno que estaba retirado lo recupera.
+lista atenuado y se recupera con un botón. Un tipo o una serie con obras asignadas no se puede retirar, y
+la aplicación indica qué hay que hacer antes. Escribir en «Añadir» un nombre existente no lo duplica,
+aunque varíen mayúsculas o tildes, y escribir uno retirado lo recupera.
 
-**El teclado manda sobre la galería a pantalla completa**
-Con una fotografía abierta a pantalla completa, las flechas del teclado pasan entre las fotos de la
-obra y ya no entre obras, que era lo que hacían antes; la tecla «f» abre y cierra la pantalla
-completa, y el atajo se anuncia al poner el ratón sobre el icono. En el móvil no cambia nada.
+**El teclado se aplica a la galería a pantalla completa**
+Con una fotografía abierta a pantalla completa, las flechas del teclado pasan entre las fotografías de la
+obra y no entre obras. La tecla «f» abre y cierra la pantalla completa, y el atajo se indica al situar el
+ratón sobre el icono. En el móvil no cambia nada.
 
 ### Diseño lógico de la aplicación y esquema de datos
 
 **La ubicación física pasa a ser un árbol de lugares**
 Hasta ahora la ubicación era un texto copiado en cada obra, con la convención de escribirlo en
-minúsculas, sin tildes y con los niveles separados por comas. Con veintiuna obras catalogadas quedó
-claro que no se sostiene: los nombres de museos y ciudades necesitan sus mayúsculas y sus tildes, la
-coma aparece dentro de los valores —una dirección postal la lleva—, y renombrar un sitio obligaba a
-tocar todas sus obras justo mientras el estudio está en reordenación. Los sitios pasan a ser una
-lista jerárquica con identidad propia: renombrar un lugar, o mover una estantería entera con lo que
-haya dentro, se hace una vez y se refleja en todas las obras. Y la base garantiza lo que antes había
-que recordar: no hay dos sitios hermanos con el mismo nombre, la jerarquía no admite bucles y no se
-puede retirar un lugar que tenga obras o sitios dentro. De aquí sale además un criterio para todo el
-catálogo: el nombre de una lista maestra no es su identidad, así que renombrar una entrada no vuelve
-a ser una conversión de datos. (ADR-006)
+minúsculas, sin tildes y con los niveles separados por comas. Con veintiuna obras catalogadas quedó claro
+que no se sostiene: los nombres de museos y ciudades necesitan sus mayúsculas y sus tildes, la coma
+aparece dentro de los valores, y renombrar un sitio obligaba a modificar todas sus obras. Los sitios
+pasan a ser una lista jerárquica con identidad propia: renombrar un lugar, o mover una estantería con su
+contenido, se hace una vez y se refleja en todas las obras. La base de datos garantiza lo que antes
+dependía de la memoria: no hay dos sitios hermanos con el mismo nombre, la jerarquía no admite ciclos y
+no se puede retirar un lugar que contenga obras u otros sitios. De aquí sale además un criterio general:
+el nombre de una lista maestra no es su identidad, de modo que renombrar una entrada no vuelve a ser una
+conversión de datos. (ADR-006)
 
-**Los sitios que había se han convertido, y ninguna obra se ha quedado sin el suyo**
-Los textos de ubicación de las diecisiete obras que tenían uno se han repartido por sus comas y han
-salido ocho sitios, dos de ellos dentro de otro. Los nombres han entrado tal como estaban guardados,
-en minúsculas y sin tildes, y se corrigen desde la pantalla de ubicaciones una vez por sitio. Un valor
-que era de prueba no se ha convertido: la obra que lo llevaba se ha quedado sin ubicación, que es lo
-que era. La conversión no ha tocado la traza de quién editó cada obra ni la fecha en que se examinó
-por última vez, porque trasladar un dato no es haber tenido la pieza delante; cambiar una obra de
-sitio sí lo es, y esa sí mueve la fecha.
+**Los sitios existentes se han convertido, y ninguna obra se ha quedado sin ubicación**
+Los textos de ubicación de las diecisiete obras que tenían uno se han dividido por sus comas y han
+producido ocho sitios, dos de ellos dentro de otro. Los nombres han entrado tal como estaban guardados,
+en minúsculas y sin tildes, y se corrigen desde la pantalla de ubicaciones una vez por sitio. Un valor de
+prueba no se ha convertido: la obra que lo llevaba se ha quedado sin ubicación. La conversión no ha
+modificado la traza de quién editó cada obra ni la fecha del último examen, porque trasladar un dato no
+equivale a haber tenido la pieza delante; cambiar una obra de sitio sí lo es, y esa operación sí
+actualiza la fecha.
 
 **Los museos y las colecciones son lugares provisionales**
-Seis de las veintiuna obras están en manos de terceros, y hoy eso se escribe dentro del nombre del
-lugar, la propiedad incluida. Entran en el árbol como sitios a sabiendas de que no es su lugar
-definitivo: cuando existan el estatus legal, el titular de derechos y la tabla de Propietarios e
-Instituciones que el esquema ya prevé, dejarán de ser lugares y pasarán a ser lo que son.
+Seis de las veintiuna obras están en manos de terceros, y hoy eso se escribe dentro del nombre del lugar,
+incluida la propiedad. Entran en el árbol como sitios de forma provisional: cuando existan el estatus
+legal, el titular de derechos y la tabla de Propietarios e Instituciones que el esquema prevé, dejarán de
+ser lugares.
 
 **Las tablas que el catálogo todavía no tiene** · *estado a esa fecha*
-Del esquema de campos completo existen hoy las obras con los datos que se rellenan con la pieza
-delante, las fotografías, las cuentas con su rol y las listas de tipos de obra, series y lugares.
-Quedan por construir Exposiciones, Bibliografía, sus dos tablas de enlace, Propietarios e
-Instituciones, y Archivo y Documentación; y con ellas la pantalla de papelera y el bloqueo de edición
-que evitará que dos personas trabajen a la vez sobre la misma ficha.
+Del esquema de campos completo existen las obras con los datos que se rellenan con la pieza delante, las
+fotografías, las cuentas con su rol y las listas de tipos de obra, series y lugares. Quedan por construir
+Exposiciones, Bibliografía, sus dos tablas de enlace, Propietarios e Instituciones, y Archivo y
+Documentación; y con ellas la pantalla de papelera y el bloqueo de edición que evitará que dos personas
+trabajen a la vez sobre la misma ficha.
 
 ---
 
 ### La base de datos del catálogo
 
-**Los tipos de obra y las series se pueden renombrar sin tocar las obras**
-Hasta ahora el nombre de un tipo de obra o de una serie era su identidad, así que corregirlo obligaba
-a reescribir todas las obras que lo usaran, y por eso no se podía hacer desde la aplicación. Ahora
-cada uno tiene su propia identidad y el nombre es un dato más: corregir «Técnica mixta» o el nombre de
-una serie será una edición que verá el catálogo entero. Aparece además la posibilidad de retirar un
-tipo o una serie que ya no se usen —sin borrarlos, como todo aquí—, con la misma regla que los
-lugares: no se retira lo que todavía tiene obras dentro. Las pantallas que lo hacen están en la
-sección «Tablas», más arriba; este cambio es el que lo hace posible.
+**Los tipos de obra y las series se pueden renombrar sin modificar las obras**
+Hasta ahora el nombre de un tipo de obra o de una serie era su identidad, de modo que corregirlo obligaba
+a reescribir todas las obras que lo usaran, y por eso no podía hacerse desde la aplicación. Ahora cada
+uno tiene identidad propia y el nombre es un dato más: corregir «Técnica mixta» o el nombre de una serie
+es una edición que se refleja en todo el catálogo. Se añade también la posibilidad de retirar un tipo o
+una serie en desuso, sin borrarlos, con la misma regla que los lugares: no se retira lo que todavía tiene
+obras asignadas.
 
-**Sin haber entrado no se llega a nada**
-La primera versión del catálogo creyó cerrar las operaciones internas de la base y no las cerró: la
-orden que se escribió retiraba el permiso a quien no ha entrado, pero quien lo tenía era «todo el
-mundo», del que los demás son miembros. No había datos expuestos, pero sí una operación de escritura
-que se podía lanzar sin haber entrado. Ahora los permisos se retiran y se conceden uno a uno, lo que
-se cree en el futuro nace cerrado, y quien impide que vuelva a pasar es una prueba automática y no una
-orden que parecía decirlo.
+**Sin haber iniciado sesión no se accede a nada**
+La primera versión del catálogo no cerró las operaciones internas de la base de datos como se pretendía:
+la instrucción retiraba el permiso a quien no ha iniciado sesión, pero quien lo tenía era el grupo
+general, del que los demás son miembros. No había datos expuestos, pero sí una operación de escritura
+lanzable sin sesión. Ahora los permisos se retiran y se conceden uno a uno, lo que se cree en el futuro
+nace cerrado, y lo verifica una prueba automática.
 
 **Preparado el rechazo de contraseñas de filtraciones conocidas**
-Delante del catálogo no hay más perímetro que la contraseña de cada cuenta, así que queda montado el
-interruptor que rechaza las que aparecen en filtraciones públicas. Está apagado porque es una función
-de pago: el día que se suba de plan se activa cambiando una línea, y hasta entonces el aviso queda
-abierto y explicado en vez de silenciado.
+El único perímetro delante del catálogo es la contraseña de cada cuenta, de modo que queda configurado el
+mecanismo que rechaza las que aparecen en filtraciones públicas. Está desactivado porque requiere un plan
+de pago: al ampliarlo se activa modificando una línea.
 
-**Una copia del catálogo real para investigar problemas**
-Reproducir un fallo con los datos de verdad delante ya no exige consultar el catálogo en producción:
-un comando trae las filas y, si se pide, también las fotografías, y las deja cargadas en el entorno
-de trabajo. Las contraseñas no viajan nunca y la copia no entra en el repositorio, que es público:
-son datos reales y llevan datos personales dentro.
+**Una copia del catálogo real para investigar incidencias**
+Reproducir un fallo con los datos reales ya no exige consultar el catálogo en producción: un comando trae
+las filas y, opcionalmente, las fotografías, y las carga en el entorno de trabajo. Las contraseñas no se
+copian y la copia no entra en el repositorio, que es público y no puede contener datos personales.
 
 ### Correcciones
 
-**La foto girada un cuarto de vuelta salía achatada**
-Al girar una fotografía 90 o 270 grados, el editor la dibujaba deformada: un cuadro de 4:3 se veía casi
-cuadrado, aplastado una cuarta parte. De ahí salían otros dos síntomas que parecían fallos distintos —el
-trapecio que propone la varita no caía sobre el cuadro, y la lupa enseñaba un sitio distinto del que se
-estaba tocando—, pero eran el mismo: las medidas del encuadre estaban bien todo el rato; lo que estaba
-mal era la fotografía de debajo. Ya se dibuja con sus proporciones en los cuatro giros.
+**La fotografía girada un cuarto de vuelta salía deformada**
+Al girar una fotografía 90 o 270 grados, el editor la dibujaba con proporciones incorrectas: un cuadro de
+4:3 se veía casi cuadrado. De ahí procedían otros dos síntomas que parecían fallos distintos —el trapecio
+propuesto no coincidía con el cuadro, y la lupa mostraba un punto distinto del que se estaba tocando—,
+pero tenían el mismo origen: las medidas del encuadre eran correctas y la fotografía de fondo no. Ya se
+dibuja con sus proporciones en los cuatro giros.
 
-**La vista previa del enderezado no giraba con la foto**
-Al girar una fotografía mientras se corrigen sus esquinas, el recuadro que enseña cómo va a quedar
-seguía mostrando la obra en su orientación original, así que dejaba de parecerse a lo que había en
-pantalla. Además, a 90 y 270 grados salía sesgada: el enderezado se calculaba con los lados
-intercambiados. Ahora el recuadro gira con la foto y enseña el resultado recto en los cuatro giros.
+**La vista previa del enderezado no giraba con la fotografía**
+Al girar una fotografía mientras se corrigen sus esquinas, la vista previa seguía mostrando la obra en su
+orientación original. Además, a 90 y 270 grados salía sesgada, porque el enderezado se calculaba con los
+lados intercambiados. Ahora la vista previa gira con la fotografía y muestra el resultado correcto en los
+cuatro giros.
 
-**Girar con la perspectiva puesta dejaba las esquinas donde estaban**
-Girar la fotografía llevaba el recorte consigo, pero no las cuatro esquinas de la corrección de
-perspectiva: se quedaban en su sitio mientras la foto giraba debajo, y había que rehacerlas. Ahora giran
-juntos el giro, el recorte, las esquinas y la sugerencia guardada, así que dar un cuarto de vuelta no
-cuesta el trabajo ya hecho.
+**Girar con la perspectiva aplicada dejaba las esquinas sin girar**
+Girar la fotografía desplazaba el recorte, pero no las cuatro esquinas de la corrección de perspectiva,
+que había que rehacer. Ahora giran conjuntamente el giro, el recorte, las esquinas y la sugerencia
+guardada.
 
 ---
 
@@ -970,17 +878,16 @@ cuesta el trabajo ya hecho.
 ### Interfaz
 
 **Pasar a la obra siguiente sin volver al listado**
-La ficha se convierte en un recorrido sobre el listado del que se ha llegado: las mismas obras, en el
-mismo orden, con los filtros y la búsqueda que hubiera puestos. Se pasa con las flechas de la
-cabecera —que además dicen «12 de 87»—, con los dos enlaces del final de la ficha, que muestran el
-código y el título de la obra anterior y de la siguiente, o arrastrando de lado con el dedo o con el
-ratón. La secuencia se congela al abrir la ficha, para que editar la obra que se tiene delante no la
-mueva de sitio a mitad del recorrido.
+La ficha se convierte en un recorrido sobre el listado desde el que se ha llegado: las mismas obras, en
+el mismo orden, con los filtros y la búsqueda aplicados. Se avanza con las flechas de la cabecera, que
+indican «12 de 87»; con los dos enlaces del final de la ficha, que muestran el código y el título de la
+obra anterior y de la siguiente; o arrastrando de lado con el dedo o con el ratón. La secuencia se fija
+al abrir la ficha, para que editar la obra no altere su posición durante el recorrido.
 
 **Un listado buscado se puede compartir y se recupera con «atrás»**
-El texto buscado pasa a formar parte de la dirección de la página, igual que los filtros y el orden.
-No se recuerda de un día para otro: recuperar mañana lo que alguien buscó una vez sería reducir el
-catálogo por algo que nadie ha pedido.
+El texto buscado pasa a formar parte de la dirección de la página, igual que los filtros y el orden. No
+se conserva de un día para otro: recuperar al día siguiente lo que alguien buscó una vez reduciría el
+catálogo sin que nadie lo haya pedido.
 
 ---
 
@@ -989,60 +896,58 @@ catálogo por algo que nadie ha pedido.
 ### Interfaz
 
 **Girar y recortar una fotografía, con sugerencia de recorte**
-Editor a pantalla completa con asas grandes en las cuatro esquinas y una lupa que amplía la esquina
-que se está ajustando, porque el dedo tapa justo el píxel que se quiere afinar. «Sugerir recorte»
-busca los bordes del cuadro y, cuando distingue el marco de la tela, ofrece elegir entre «Hasta el
-marco» y «Solo la obra»; no aplica nada por su cuenta, y si lo que ve no parece un cuadro no propone
-nada, antes que proponer mal. Funciona con las tomas recién hechas y con las que ya están en una
-ficha, y siempre se puede volver al fotograma original completo.
+Editor a pantalla completa con asas en las cuatro esquinas y una lupa que amplía la esquina que se está
+ajustando, porque el dedo oculta el punto que se quiere precisar. «Sugerir recorte» localiza los bordes
+del cuadro y, cuando distingue el marco de la tela, ofrece elegir entre «Hasta el marco» y «Solo la
+obra». No aplica nada por su cuenta, y si lo que detecta no parece un cuadro no propone nada. Funciona
+con las tomas recién hechas y con las que ya están en una ficha, y siempre se puede volver al fotograma
+original completo.
 
 **Ordenar las fotografías de una obra**
-Las fotos dejan de mostrarse por orden de subida —que es un accidente de cómo se hizo la ficha— y
-pasan a tener el orden que se les dé, arrastrándolas por un asa de la miniatura. El panel de cada
-foto ofrece además moverla antes o después: un gesto no puede ser la única forma de llegar a una
-función.
+Las fotografías dejan de mostrarse por orden de subida y pasan a tener el orden que se les asigne,
+arrastrándolas por un asa de la miniatura. El panel de cada fotografía permite además moverla antes o
+después, para que el gesto no sea la única forma de acceder a la función.
 
 ### Diseño lógico de la aplicación y esquema de datos
 
-**El giro y el recorte de una fotografía son un dato, no un archivo nuevo**
-Lo que se guarda son cuatro números en la fila de la fotografía: el cuarto de vuelta y el rectángulo
-del recorte. El máster no se modifica nunca, así que el fotograma original se puede recuperar hoy o
-dentro de un año, y el catálogo impreso podrá rehacer sus copias con el mismo encuadre sin volver a
-decidirlo; reeditar una foto escribe copias nuevas en lugar de sobrescribir las anteriores.
+**El giro y el recorte de una fotografía son un dato, no un fichero nuevo**
+Lo que se guarda son cuatro números en la fila de la fotografía: el cuarto de vuelta y el rectángulo del
+recorte. El original de archivo no se modifica, de modo que el fotograma completo se puede recuperar en
+cualquier momento y el catálogo impreso podrá rehacer sus copias con el mismo encuadre. Reeditar una
+fotografía escribe copias nuevas en lugar de sobrescribir las anteriores.
 
 **La serie es una lista controlada, y cada fondo tiene la suya**
-Un artista trabaja por series y el catálogo agrupa por ellas, así que el nombre tiene que escribirse
-igual siempre: dos ortografías de una serie son dos series que nadie puede agrupar. Es una lista
-abierta, que se amplía desde la propia captura, y el fondo forma parte de la identidad de la serie
-—ofrecer una serie de Rotili catalogando a Ruiz Campins invita a un dato falso—. Una obra puede no
+Un artista trabaja por series y el catálogo agrupa por ellas, de modo que el nombre debe escribirse
+siempre igual: dos ortografías de una serie son dos series que no se pueden agrupar. Es una lista
+abierta, que se amplía desde la propia captura, y el fondo forma parte de la identidad de la serie:
+ofrecer una serie de Rotili al catalogar a Ruiz Campins facilitaría un dato erróneo. Una obra puede no
 pertenecer a ninguna, y eso no es un dato pendiente.
 
 ### Correcciones
 
-**Cambiar la fotografía principal fallaba a veces**
-La operación marcaba la nueva y desmarcaba la anterior de un solo movimiento, dando por hecho que la
-base comprobaría al final que no hubiera dos; no lo hace, comprueba fila a fila. Que fallara o no
-dependía del orden interno de las filas, lo que hacía parecer que el culpable era el recorte de la
-foto; ahora se desmarca primero, y las dos cosas siguen siendo una sola operación.
+**Cambiar la fotografía principal fallaba en ocasiones**
+La operación marcaba la nueva y desmarcaba la anterior en un solo movimiento, suponiendo que la base de
+datos comprobaría al final que no hubiera dos; la comprobación se hace fila a fila. Que fallara dependía
+del orden interno de las filas, lo que hacía parecer que la causa era el recorte. Ahora se desmarca
+primero, y ambas siguen siendo una sola operación.
 
 **Tras recortar una fotografía seguía viéndose el recorte anterior**
-La galería recordaba las imágenes por su identificador, que no cambia al reencuadrar, así que la
-copia vieja se quedaba en pantalla hasta recargar la página. Ahora las recuerda por su archivo.
+La galería identificaba las imágenes por su identificador, que no cambia al reencuadrar, de modo que la
+copia anterior permanecía en pantalla hasta recargar la página. Ahora las identifica por su fichero.
 
-**La fotografía no salía en la ficha en PDF**
-Lo que el navegador guarda para no volver a descargar las miniaturas estaba interceptando también la
-lectura de los píxeles que la ficha impresa necesita, y devolvía algo que no se podía leer.
+**La fotografía no aparecía en la ficha en PDF**
+La caché del navegador para las miniaturas interceptaba también la lectura de los píxeles que necesita la
+ficha impresa, y devolvía un contenido ilegible.
 
 **Arrastrar las miniaturas no funcionaba con el dedo**
-Recoger la miniatura manteniéndola pulsada no puede funcionar: el navegador decide al empezar el
-toque si el gesto es suyo, y cuando se cumple la espera ya se lo ha quedado como desplazamiento de la
-página. Ahora se arrastra desde un asa en la esquina, y desplazar la página sigue funcionando en todo
-lo demás.
+Recoger la miniatura manteniéndola pulsada no puede funcionar: el navegador decide al iniciarse el toque
+si el gesto le corresponde, y cuando termina la espera ya lo ha interpretado como desplazamiento de la
+página. Ahora se arrastra desde un asa en la esquina, y el desplazamiento de la página sigue funcionando
+en el resto de la superficie.
 
-**Mantener pulsado el selector de años volvió a repetir en el móvil**
-El navegador leía la pulsación sostenida como un gesto propio y cancelaba la repetición antes de que
-arrancara. De paso, ahora acelera a partir de segundo y medio: cruzar una década no debe exigir
-paciencia.
+**Mantener pulsado el selector de años dejó de repetir en el móvil**
+El navegador interpretaba la pulsación sostenida como un gesto propio y cancelaba la repetición. Además,
+ahora acelera a partir de segundo y medio.
 
 ---
 
@@ -1051,54 +956,54 @@ paciencia.
 ### Interfaz
 
 **Las medidas se escriben y se leen en español**
-El decimal se teclea con coma —antes era imposible, la coma se borraba antes de llegar el siguiente
-dígito— y el «cm» va dentro del campo, en la captura y en la ficha.
+El decimal se teclea con coma —antes la coma se borraba antes de llegar el siguiente dígito— y el «cm»
+figura dentro del campo, tanto en la captura como en la ficha.
 
 **Editar la ficha es una pantalla propia**
-La edición tiene su propia dirección, así que sobrevive a una recarga y el botón «atrás» del móvil
-sale del formulario y no de la ficha. Un Lector que llegue a ella por un enlace cae en la vista de
+La edición tiene su propia dirección, de modo que sobrevive a una recarga y el botón «atrás» del móvil
+sale del formulario y no de la ficha. Un Lector que llegue a ella por un enlace accede a la vista de
 consulta.
 
-**El título y la respuesta a quién lo puso se rellenan juntos**
-El formulario ofrece solo los estados que tienen sentido con lo que hay escrito, como tarjetas con su
-icono y su explicación, y avisa al cruzar de un lado a otro: con el campo vacío caben «Sin revisar» y
-«No consta título»; con un título escrito, «Del artista», «Atribuido» y «Sin confirmar».
+**El título y la respuesta sobre su autoría se rellenan juntos**
+El formulario ofrece solo los estados coherentes con lo escrito, en forma de tarjetas con su icono y su
+explicación, y avisa al cambiar de uno a otro: con el campo vacío caben «Sin revisar» y «No consta
+título»; con un título escrito, «Del artista», «Atribuido» y «Sin confirmar».
 
 ### Diseño lógico de la aplicación y esquema de datos
 
 **La autoría del título tiene cinco respuestas, no tres**
-«Sin revisar» estaba cubriendo dos situaciones distintas: el título pendiente de investigar y el
-título ya escrito cuya autoría nadie ha verificado. La segunda pasa a ser un estado propio, «Sin
-confirmar», los datos existentes se convirtieron al nuevo, y la base impide desde entonces que el
-título y la respuesta sobre su autoría se contradigan.
+«Sin revisar» cubría dos situaciones distintas: el título pendiente de investigar y el título ya escrito
+cuya autoría nadie ha verificado. La segunda pasa a ser un estado propio, «Sin confirmar»; los datos
+existentes se convirtieron, y la base de datos impide desde entonces que el título y la respuesta sobre
+su autoría se contradigan.
 
-**El tipo de obra sale de una lista, no de un campo de texto**
-Hay un catálogo de tipos que se amplía desde el propio formulario, y la base comprueba que lo
-guardado esté en él. Puede quedar vacío, que sigue siendo una respuesta válida.
+**El tipo de obra procede de una lista, no de un campo de texto**
+Hay un catálogo de tipos que se amplía desde el propio formulario, y la base de datos comprueba que el
+valor guardado pertenezca a él. Puede quedar vacío, que sigue siendo una respuesta válida.
 
-**El código interno pasa a inglés, y lo que ya está en el mundo se conserva**
-Cambio interno que no altera nada de lo que se ve: los textos de la aplicación siguen en español. Se
-hizo con cuidado de no romper lo que ya existe fuera: los QR ya pegados en las obras siguen
-funcionando para siempre, los identificadores AR-, RC- y TS- no se tocan y un lote de captura abierto
-sobrevive a la actualización. El único precio, asumido y anotado: la cola de fotografías pendientes
-de subir se perdió una vez con el cambio.
+**El código interno pasa a inglés, conservando lo que ya está publicado**
+Cambio interno que no altera lo que se ve: los textos de la aplicación siguen en español. Se hizo
+conservando lo que ya existe fuera de la aplicación: los QR pegados en las obras siguen funcionando, los
+identificadores AR-, RC- y TS- no se modifican y un lote de captura abierto sobrevive a la
+actualización. El único coste, asumido y registrado: la cola de fotografías pendientes de subir se perdió
+una vez con el cambio.
 
 ### Correcciones
 
 **Los códigos QR impresos devolvían un error**
-Al alojamiento le faltaba una regla, y cualquier dirección que no fuera la portada respondía «no
-encontrado» a quien entrara desde fuera de la aplicación instalada — incluidos los QR pegados en las
+Al alojamiento le faltaba una regla, y cualquier dirección distinta de la portada respondía «no
+encontrado» a quien entrara desde fuera de la aplicación instalada, incluidos los QR pegados en las
 obras.
 
 **En el fondo de pruebas no se podía subir ninguna fotografía**
-El fondo de ensayo se añadió con su prefijo TS-, pero el prefijo no llegó a los nombres de las
-imágenes ni al permiso de subida de los másters, así que en una ficha TS- la subida se rechazaba
-entera, tanto al crear como al editar.
+El fondo de ensayo se añadió con su prefijo TS-, pero el prefijo no llegó a los nombres de las imágenes
+ni al permiso de subida de los originales, de modo que en una ficha TS- la subida se rechazaba por
+completo, tanto al crear como al editar.
 
 **Deslizar en la galería dejaba la fotografía oscilando**
 Con la galería y el visor a pantalla completa abiertos sobre la misma selección, cada uno deshacía el
-movimiento del otro en bucle. Ahora cada uno ignora los ecos de su propio desplazamiento, y un toque
-del dedo en medio recupera el mando.
+movimiento del otro de forma indefinida. Ahora cada uno ignora los ecos de su propio desplazamiento, y un
+toque recupera el control.
 
 ---
 
@@ -1107,20 +1012,19 @@ del dedo en medio recupera el mando.
 ### Diseño lógico de la aplicación y esquema de datos
 
 **La fecha de ejecución se guarda estructurada**
-En lugar de un texto, la ficha guarda el año de inicio, el de fin, las dos banderas y una nota; el
-texto que se publica lo compone la base con eso y no se puede escribir a mano, así que el texto y los
-datos no tienen forma de contradecirse. «Obra de los setenta» pasa a ser una consulta de verdad, y lo
-que alguien escribió a mano y no encaja en ningún formato se conserva íntegro: un matiz puesto a
-conciencia vale más que una estructura adivinada. (ADR-004)
+En lugar de un texto, la ficha guarda el año de inicio, el de fin, las dos marcas y una nota. El texto
+que se publica lo compone la base de datos a partir de esos valores y no se puede escribir a mano, de
+modo que el texto y los datos no pueden contradecirse. «Obra de los setenta» pasa a ser una consulta
+efectiva, y lo que alguien escribió a mano y no encaja en ningún formato se conserva íntegro. (ADR-004)
 
-**Un fondo de pruebas para practicar sin ensuciar el catálogo**
-Las fichas de ensayo van a un fondo aparte, con sus propios identificadores de prefijo TS-, de modo
-que probar la aplicación no mete filas falsas entre las obras de Rotili y de Ruiz Campins.
+**Un fondo de pruebas para practicar sin alterar el catálogo**
+Las fichas de ensayo van a un fondo aparte, con identificadores de prefijo TS-, de modo que probar la
+aplicación no introduce filas falsas entre las obras de Rotili y de Ruiz Campins.
 
 ### Correcciones
 
-**El formulario de acceso quedaba tapado por el teclado**
-Estaba centrado en la pantalla; anclado arriba, los campos siguen a la vista mientras se teclea.
+**El formulario de acceso quedaba oculto por el teclado**
+Estaba centrado en la pantalla; anclado arriba, los campos permanecen visibles mientras se teclea.
 
 ---
 
@@ -1129,32 +1033,32 @@ Estaba centrado en la pantalla; anclado arriba, los campos siguen a la vista mie
 ### Interfaz
 
 **Primera entrega: listado, captura rápida y ficha**
-El listado ordena por la fecha de la obra y toda la tarjeta es pulsable, porque apuntar con el pulgar
-a un código de doce caracteres no es razonable; una búsqueda sin resultados devuelve la misma página
-con el mensaje que lo explica, nunca un listado vacío. La captura está pensada para rellenarse de
-pie, con una mano y con la obra delante: teclado numérico en las medidas, las tres dimensiones en una
-fila, y si el guardado falla el formulario no se vacía.
+El listado ordena por la fecha de la obra y toda la tarjeta es pulsable, porque apuntar con el pulgar a
+un código de doce caracteres no es viable. Una búsqueda sin resultados devuelve la misma página con el
+mensaje correspondiente, nunca un listado vacío. La captura está pensada para rellenarse de pie, con una
+mano y con la obra delante: teclado numérico en las medidas, las tres dimensiones en una fila, y si el
+guardado falla el formulario no se vacía.
 
 ---
 
 ### Correcciones
 
-**Subir una foto reventaba desde el móvil y funcionaba desde el ordenador**
-La aplicación usaba una función del navegador que no existe cuando la página se abre sin cifrado, que
-es como se abría en la red local para probar con el teléfono. Todas las pruebas anteriores iban por
-otra dirección, que lo ocultaba por completo.
+**Subir una fotografía fallaba desde el móvil y funcionaba desde el ordenador**
+La aplicación usaba una función del navegador que no está disponible cuando la página se abre sin
+cifrado, que es como se abría en la red local para probar con el teléfono. Las pruebas anteriores se
+hacían por otra dirección, lo que ocultaba el problema.
 
-**Las fotos hechas antes de guardar se perdían al volver a la aplicación**
-Se reprodujo el fallo y no era lo que parecía: la cámara acumulaba bien, pero la cola de fotos vivía
-solo en memoria, y al abrir la cámara el sistema puede descartar la página por falta de memoria.
-Ahora la cola se guarda en el dispositivo en cuanto cambia, porque el descarte no avisa.
+**Las fotografías hechas antes de guardar se perdían al volver a la aplicación**
+La cámara acumulaba las tomas correctamente, pero la cola vivía solo en memoria, y al abrir la cámara el
+sistema puede descartar la página por falta de memoria. Ahora la cola se guarda en el dispositivo en
+cuanto cambia, porque el descarte no se anuncia.
 
-**«No entra» dejó de ser el mismo mensaje para dos cosas distintas**
-Un fallo de red y una contraseña equivocada daban el mismo aviso, y eso hizo indiagnosticable un
-problema real durante un buen rato: la aplicación estaba llamando a una dirección que en el móvil no
-existía. Ahora, cuando el servidor no responde, se dice a qué dirección se estaba llamando. El
-mensaje de credenciales sigue siendo genérico a propósito: separar «no existe esa cuenta» de
-«contraseña incorrecta» permitiría averiguar quién tiene acceso.
+**«No entra» dejó de ser el mismo mensaje para dos situaciones distintas**
+Un fallo de red y una contraseña incorrecta producían el mismo aviso, lo que impidió diagnosticar un
+problema real: la aplicación llamaba a una dirección que en el móvil no existía. Ahora, cuando el
+servidor no responde, se indica a qué dirección se estaba llamando. El mensaje de credenciales sigue
+siendo genérico de forma deliberada: distinguir «no existe esa cuenta» de «contraseña incorrecta»
+permitiría averiguar quién tiene acceso.
 
 ---
 
@@ -1163,231 +1067,199 @@ mensaje de credenciales sigue siendo genérico a propósito: separar «no existe
 ### Interfaz
 
 **Buscar y filtrar el listado desde la cabecera**
-La caja de búsqueda vive en la cabecera fija y a su lado hay un único botón de embudo con el número
-de criterios activos, que abre una sola hoja con todo: orden, fondo, tipo de obra, serie, ubicación y
-estado. Fondo, tipo, serie y ubicación admiten varias marcas a la vez, las listas largas traen su
-propio buscador —encuentra por letras salteadas y subraya las que ha casado—, la ubicación busca por
-niveles, así que elegir «edificio a» alcanza todo lo que hay dentro, y «Sin serie» encabeza el filtro
-de series, porque las obras que todavía no tienen serie son justo las que hace falta encontrar.
+La caja de búsqueda está en la cabecera fija, y a su lado un único botón de filtros con el número de
+criterios activos abre una sola hoja con todo: orden, fondo, tipo de obra, serie, ubicación y estado.
+Fondo, tipo, serie y ubicación admiten varias marcas simultáneas; las listas largas incluyen su propio
+buscador, que encuentra por letras salteadas y subraya las coincidencias; la ubicación busca por niveles,
+de modo que elegir «edificio a» incluye todo su contenido; y «Sin serie» encabeza el filtro de series,
+porque las obras que todavía no tienen serie son las que interesa localizar.
 
-**El listado abre al instante, con sus miniaturas**
-Cada obra se ve con la fotografía que la representa. El catálogo se guarda en el propio dispositivo,
-así que filtrar, ordenar y buscar son inmediatos, al volver al listado se pinta sin esperar y las
-miniaturas ya descargadas no se vuelven a pedir; la búsqueda tampoco distingue tildes. Lo guardado se
-borra al cerrar sesión, porque el móvil puede ser compartido.
+**El listado abre de inmediato, con sus miniaturas**
+Cada obra se muestra con la fotografía que la representa. El catálogo se guarda en el propio dispositivo,
+de modo que filtrar, ordenar y buscar son inmediatos, al volver al listado se muestra sin espera y las
+miniaturas ya descargadas no se vuelven a solicitar. La búsqueda no distingue tildes. Lo guardado se
+borra al cerrar sesión, porque el dispositivo puede ser compartido.
 
 **Las fotografías de una ficha tienen su propia pantalla**
-La ficha queda para leer: foto grande, tira de miniaturas con la etiqueta del tipo de toma —reverso,
-detalle de firma— y descarga del máster de archivo, que también puede hacer un Lector, porque
-enviarlo a una imprenta o a un comisario es exactamente su caso. Todo lo que cambia las fotos vive en
-una pantalla aparte, a la que se llega desde el botón de la cabecera; la foto grande se pasa
-deslizando y se abre a pantalla completa tocándola, y el botón «atrás» del móvil cierra el visor en
-vez de salir de la ficha.
+La ficha queda para la consulta: fotografía grande, tira de miniaturas con la etiqueta del tipo de toma
+—reverso, detalle de firma— y descarga del original de archivo, que también puede realizar un Lector,
+porque enviarlo a una imprenta o a un comisario es una de sus funciones. Todo lo que modifica las
+fotografías está en una pantalla aparte, accesible desde el botón de la cabecera. La fotografía grande se
+pasa deslizando y se abre a pantalla completa al tocarla, y el botón «atrás» del móvil cierra el visor en
+lugar de salir de la ficha.
 
-**Varias fotos por obra, y ninguna se pierde en el camino**
-Se puede hacer foto con la cámara, elegir archivos del dispositivo o arrastrarlos desde el
-escritorio, y el botón «+» reabre la última vía usada para no romper el ritmo mientras se fotografía.
-Cada toma se prepara en el propio móvil en tres tamaños antes de subir y se suben una a una al
-guardar; si alguna falla, la ficha no se pierde ni se duplica y el botón reintenta solo las que
-faltan. Al añadir una foto se abre solo su panel, porque lo siguiente es siempre decir de qué es la
-toma o enderezarla. Se pueden añadir y retirar fotos mucho después del alta, y elegir cuál representa
-a la obra.
+**Varias fotografías por obra, sin pérdidas**
+Se puede hacer una fotografía con la cámara, elegir ficheros del dispositivo o arrastrarlos desde el
+escritorio, y el botón «+» reabre la última vía utilizada. Cada toma se prepara en el propio móvil en
+tres tamaños antes de subirla, y se suben una a una al guardar. Si alguna falla, la ficha no se pierde ni
+se duplica, y el botón reintenta solo las que faltan. Al añadir una fotografía se abre su panel, porque
+el paso siguiente es indicar de qué es la toma o enderezarla. Se pueden añadir y retirar fotografías
+después del alta, y elegir cuál representa a la obra.
 
 **Ficha imprimible en PDF, con fotografía y código QR**
-Una hoja A5 con los datos de la obra, su serie, su fotografía y un QR que lleva a la ficha viva. Sin
-fotografía, o si su descarga falla, la hoja sale igual con el aviso «Imagen no disponible», nunca con
-un hueco.
+Una hoja A5 con los datos de la obra, su serie, su fotografía y un QR que lleva a la ficha en línea. Sin
+fotografía, o si su descarga falla, la hoja se genera igualmente con el aviso «Imagen no disponible».
 
-**Los cambios de los demás aparecen sin recargar**
-Lo que cambia una persona se ve en la pantalla de las otras: el listado, la ficha y la galería se
-actualizan solos. Un formulario que se está rellenando no se refresca nunca — pisar un borrador a
-medio teclear destruye trabajo.
+**Los cambios de otras personas aparecen sin recargar**
+Lo que modifica una persona se refleja en la pantalla de las demás: el listado, la ficha y la galería se
+actualizan solos. Un formulario que se está rellenando no se actualiza nunca, para no sobrescribir un
+borrador a medio escribir.
 
-**Tipo de obra y serie se eligen de una lista, no se teclean**
-Los dos vienen de una lista compartida, con buscador que no distingue tildes y con la posibilidad de
-añadir un valor nuevo desde el propio formulario. Es lo que evita que la misma serie acabe escrita de
-dos maneras y deje de poder agruparse; la serie se fija además para todo un lote de captura, porque
-un lote es normalmente una serie.
+**Tipo de obra y serie se eligen de una lista**
+Ambos proceden de una lista compartida, con buscador que no distingue tildes y con la posibilidad de
+añadir un valor nuevo desde el propio formulario. Es lo que evita que la misma serie acabe escrita de dos
+formas y deje de poder agruparse. La serie se fija además para todo un lote de captura, porque un lote
+suele corresponder a una serie.
 
 **La fecha de ejecución se compone con botones, sin abrir el teclado**
-Los botones de año repiten al mantenerlos pulsados y aceleran a partir de segundo y medio, para
-cruzar una década sin diecisiete toques. Tres interruptores cubren lo que la fecha necesita decir
-—«Aproximada» para un año de alrededor, «Rango» para dos años y «Sin confirmar» para un año que es
-una estimación—, y debajo se ve siempre cómo va a quedar escrita. Quien prefiera teclear puede: lo
-escrito se interpreta, y lo que no encaja en ningún formato, como «finales de los setenta», se
-conserva tal cual.
+Los botones de año repiten al mantenerlos pulsados y aceleran a partir de segundo y medio. Tres
+interruptores cubren lo que la fecha necesita expresar: «Aproximada» para un año aproximado, «Rango» para
+dos años y «Sin confirmar» para un año estimado. Debajo se muestra en todo momento cómo quedará escrita.
+También se puede teclear: lo escrito se interpreta, y lo que no encaja en ningún formato, como «finales
+de los setenta», se conserva tal cual.
 
-**Catalogar una estantería de una vez**
-La captura trabaja por lotes: el fondo, el tipo de obra y la serie quedan fijos bajo candado, y la
-fecha, la técnica y la ubicación se arrastran de una obra a la siguiente y se ajustan cuando cambian;
-el título y las medidas no se heredan nunca, porque sería inventarse datos de una obra a partir de
-otra. El lote sobrevive a que se bloquee la pantalla o entre una llamada, y en los campos de
-ubicación escribir sugiere los sitios ya usados en el catálogo, encontrándolos por letras salteadas.
+**Catalogar una estantería en una sola sesión**
+La captura trabaja por lotes: el fondo, el tipo de obra y la serie quedan fijos, y la fecha, la técnica y
+la ubicación se arrastran de una obra a la siguiente y se ajustan cuando cambian. El título y las medidas
+no se heredan nunca, porque supondría inventar datos de una obra a partir de otra. El lote sobrevive al
+bloqueo de pantalla o a una llamada entrante, y en los campos de ubicación se sugieren los sitios ya
+usados en el catálogo, localizándolos por letras salteadas.
 
-**Todo a un pulgar de distancia**
-La acción principal de cada pantalla vive en la cabecera fija y «Guardar» en una barra fija abajo,
-así que no hay que recorrer un formulario largo para llegar a ellos, y el aviso de resultado sale
-junto al botón que se acaba de pulsar — incluido el «Guardada como AR-XXXX», que es lo que hay que
-escribir en la etiqueta. Los formularios se parten en grupos con nombre que dicen en el borde qué se
-vacía al guardar y qué se hereda, todo selector es una rejilla de botones del mismo tamaño y ninguno
-baja de los 44 píxeles que necesita un dedo; y en el pie hay pestañas fijas de «Obras» y «Mi perfil»,
-más «Añadir» para quien pueda catalogar.
+**Todo al alcance del pulgar**
+La acción principal de cada pantalla está en la cabecera fija y «Guardar» en una barra fija inferior, de
+modo que no hay que recorrer un formulario largo para llegar a ellos, y el aviso de resultado aparece
+junto al botón pulsado, incluido el «Guardada como AR-XXXX» que hay que escribir en la etiqueta. Los
+formularios se dividen en grupos con nombre que indican qué se vacía al guardar y qué se hereda. Todo
+selector es una rejilla de botones del mismo tamaño, ninguno inferior a los 44 píxeles que requiere un
+dedo, y en el pie hay pestañas fijas de «Obras» y «Mi perfil», más «Añadir» para quien pueda catalogar.
 
 **Entrar, recuperar la contraseña e instalar la aplicación**
-Se instala en el móvil desde «Mi perfil», que además permite cambiar la contraseña y dice qué versión
-está corriendo a cada lado. Si se olvida, llega un enlace por correo para ponerla de nuevo; cuando se
-publica una versión nueva la aplicación se recarga sola; y cerrar sesión es un botón con confirmación
-en dos toques, porque hacerlo por accidente cuesta volver a entrar desde un almacén con mala
-cobertura.
+Se instala en el móvil desde «Mi perfil», que además permite cambiar la contraseña e indica qué versión
+está en uso a cada lado. Si se olvida la contraseña, llega un enlace por correo para restablecerla.
+Cuando se publica una versión nueva, la aplicación se recarga sola. Cerrar sesión requiere confirmación
+en dos toques, porque hacerlo por accidente obliga a volver a entrar desde un almacén con mala cobertura.
 
 ### Diseño lógico de la aplicación y esquema de datos
 
 **Qué fotografía representa a cada obra**
-La regla vive en la base y no en la pantalla: la que se haya elegido a mano; si no hay ninguna
-elegida, la general más reciente; y si tampoco hay generales, la más reciente de cualquier tipo,
-porque la foto de un reverso es mejor referencia que un hueco. Está escrita en un solo sitio a
-propósito, porque el catálogo impreso la va a necesitar y dos versiones de la misma regla acabarían
-enseñando fotos distintas de la misma obra. Cuando la ha elegido la regla y no una persona, la ficha
-lo dice y ofrece fijarla.
+La regla está en la base de datos y no en la pantalla: la que se haya elegido manualmente; si no hay
+ninguna, la general más reciente; y si tampoco hay generales, la más reciente de cualquier tipo, porque
+la fotografía de un reverso es mejor referencia que un hueco. Está definida en un solo lugar porque el
+catálogo impreso la necesitará, y dos versiones de la misma regla acabarían mostrando fotografías
+distintas de la misma obra. Cuando la ha elegido la regla y no una persona, la ficha lo indica y ofrece
+fijarla.
 
 **Cada toma se guarda en tres tamaños**
-Miniatura para los listados, copia de consulta para ver la obra en pantalla y máster de archivo, que
-es el documento. Los tres salen de la misma toma y viven en la misma fila, para que una fotografía no
-pueda perder su miniatura sin que nada avise. Las dos copias pequeñas se generan en el móvil antes de
-subir, porque una foto de móvil son entre 4 y 12 MB y subirla tres veces desde un almacén con mala
-cobertura no es viable; el máster va a un almacén de archivo aparte porque, a 2-8 MB por toma, el
-espacio incluido en la plataforma se agotaba en las primeras semanas de trabajo de campo. (ADR-002)
+Miniatura para los listados, copia de consulta para ver la obra en pantalla y original de archivo, que es
+el documento. Los tres proceden de la misma toma y se guardan en la misma fila, de modo que una
+fotografía no pueda perder su miniatura sin aviso. Las dos copias pequeñas se generan en el móvil antes
+de subir, porque una fotografía de móvil ocupa entre 4 y 12 MB y subirla tres veces desde un almacén con
+mala cobertura no es viable. El original va a un almacén de archivo aparte porque, a 2-8 MB por toma, el
+espacio incluido en la plataforma se agotaría en las primeras semanas de trabajo de campo. (ADR-002)
 
 **Cómo se numeran las obras**
-El identificador lo asigna la base, con un cerrojo por fondo, y no una numeración automática. El
-motivo es editorial: una numeración automática deja huecos cuando algo se deshace a medias, y un
-salto sin explicar en un catálogo razonado es una pregunta que alguien hará dentro de veinte años.
+El identificador lo asigna la base de datos, con un bloqueo por fondo, y no una numeración automática. El
+motivo es editorial: una numeración automática deja huecos cuando una operación se deshace a medias, y un
+salto sin explicación en un catálogo razonado genera una pregunta difícil de responder años después.
 (ADR-003)
 
 **«Sin revisar» no es «no»**
-Los campos de sí o no del inventario nacen en «Sin revisar» y no en «No»: hay que poder distinguir el
-dato pendiente de investigar del investigado sin resultado y del dudoso. Es la misma idea que el
-«[?]» de la fecha y que los corchetes de «[Sin título]», que son lo único que separa una obra sin
-titular de una que el artista tituló literalmente «Sin título».
+Los campos de sí o no del inventario nacen en «Sin revisar» y no en «No», para poder distinguir el dato
+pendiente de investigar del investigado sin resultado y del dudoso. Es el mismo criterio que el «[?]» de
+la fecha y que los corchetes de «[Sin título]», que son lo que separa una obra sin titular de una que el
+artista tituló literalmente «Sin título».
 
-**Dónde vive la aplicación, y qué es público**
-Es una web instalable en el móvil, sin servidor propio detrás, y no funciona sin conexión por
-decisión explícita: un dato de catálogo antiguo mostrado como actual es peor que no mostrar nada.
-Tiene dirección propia, `catalogo.ruizcampins.com`, y se cambió el alojamiento previsto al comprobar
-que estaba bloqueado desde España. El código de la herramienta es público y libre; las obras del
-catálogo no forman parte de esa licencia y siguen detrás de la contraseña. (ADR-001 y ADR-005)
+**Dónde está la aplicación, y qué es público**
+Es una web instalable en el móvil, sin servidor propio, y no funciona sin conexión por decisión
+explícita: un dato de catálogo desactualizado mostrado como actual es peor que no mostrar nada. Tiene
+dirección propia, `catalogo.ruizcampins.com`, y se cambió el alojamiento previsto al comprobar que estaba
+bloqueado desde España. El código de la herramienta es público y libre; las obras del catálogo no forman
+parte de esa licencia y siguen protegidas por contraseña. (ADR-001 y ADR-005)
 
-**Cada regla del catálogo tiene un nombre, y un test que la cita**
-Antes de escribir una línea de aplicación se redactaron dos documentos: uno que enumera qué tiene que
-hacer el catalogador, con un identificador por cada requisito, y otro que dice qué prueba verifica
-cada uno. Sirven para lo mismo: que un requisito sin comprobar se pueda detectar, en lugar de darse
-por hecho.
+**Cada regla del catálogo tiene un nombre, y una prueba que la cita**
+Antes de escribir la aplicación se redactaron dos documentos: uno que enumera qué tiene que hacer el
+catalogador, con un identificador por requisito, y otro que indica qué prueba verifica cada uno. Ambos
+permiten detectar un requisito sin comprobar en lugar de darlo por hecho.
 
 ### La base de datos del catálogo
 
-**Reglas que la base impone y la pantalla no puede saltarse**
-El identificador de catalogación y el fondo de una obra no se pueden cambiar una vez creada la ficha.
-Los años de la fecha tienen que ser plausibles y el año final no puede ser anterior al inicial; el
-título y la respuesta
-sobre su autoría no pueden contradecirse; una serie solo se acepta si pertenece al fondo de la obra y
-un tipo de obra solo si está en la lista. Una obra no puede tener dos fotografías principales a la
-vez ni quedarse sin ninguna si el cambio se corta a medias, la marca de «fotografiada» se recalcula
-sola al añadir o retirar fotos, y la fecha de última revisión con la obra delante solo se mueve
-cuando cambia un dato de los que exigen tenerla delante.
+**Reglas que la base de datos impone y la pantalla no puede eludir**
+El identificador de catalogación y el fondo de una obra no se pueden cambiar una vez creada la ficha. Los
+años de la fecha tienen que ser plausibles y el año final no puede ser anterior al inicial. El título y
+la respuesta sobre su autoría no pueden contradecirse. Una serie solo se acepta si pertenece al fondo de
+la obra, y un tipo de obra solo si está en la lista. Una obra no puede tener dos fotografías principales
+ni quedarse sin ninguna si el cambio se interrumpe. La marca de «fotografiada» se recalcula al añadir o
+retirar fotografías, y la fecha de última revisión con la obra delante solo se actualiza cuando cambia un
+dato que exige tenerla delante.
 
-**Nada se borra nunca de verdad**
-No existe permiso de borrado para nadie, ni siquiera para el Superusuario: retirar una obra o una
-fotografía es una baja lógica con la traza de quién y cuándo. El aviso de retirar una foto dice
-explícitamente que el archivo se conserva, porque es cierto y porque cambia la decisión.
+**Nada se borra**
+No existe permiso de borrado para ningún rol, tampoco para el Superusuario: retirar una obra o una
+fotografía es una baja lógica con la traza de quién y cuándo. El aviso de retirar una fotografía indica
+que el fichero se conserva, porque es cierto y porque puede cambiar la decisión.
 
-**El máster de archivo está a salvo por partida doble**
-Los originales de las fotografías viven en un almacén aparte del que sirve la aplicación, con todas
-las versiones conservadas, y las credenciales con las que la aplicación firma las subidas no tienen
-capacidad de borrar: aunque se comprometieran enteras, con ellas no se puede destruir un máster. Para
-una obra destruida o perdida, la fotografía es la única prueba que quedará de que existió.
+**El original de archivo está protegido por partida doble**
+Los originales de las fotografías se guardan en un almacén distinto del que sirve la aplicación, con
+todas las versiones conservadas, y las credenciales con las que la aplicación firma las subidas no tienen
+capacidad de borrado: aunque se vieran comprometidas, con ellas no se puede destruir un original. Para
+una obra destruida o perdida, la fotografía es la única prueba de que existió.
 
-**Tres roles, y el permiso lo comprueba la base**
-Superusuario, Catalogador y Lector. Como no hay servidor propio, quien decide qué puede ver y tocar
-cada uno es la base de datos, así que sus reglas se comprueban entrando de verdad con una cuenta de
-cada rol y consultando el catálogo — no basta con comprobar que la regla está escrita. Esas pruebas
-son la puerta de cada publicación: si una falla, no se publica; y dos de ellas están hechas para
-romperse si alguien crea una tabla sin sus permisos, que es la forma de publicar datos sin querer en
-este montaje.
+**Tres roles, y el permiso lo comprueba la base de datos**
+Superusuario, Catalogador y Lector. Al no haber servidor propio, quien decide qué puede ver y modificar
+cada uno es la base de datos, de modo que sus reglas se comprueban iniciando sesión con una cuenta de
+cada rol y consultando el catálogo; no basta con verificar que la regla está escrita. Esas pruebas son
+condición de cada publicación: si una falla, no se publica. Dos de ellas están diseñadas para fallar si
+alguien crea una tabla sin sus permisos, que es la forma de exponer datos de manera involuntaria en este
+montaje.
 
 ---
 
 ### Correcciones
 
-**Arreglos que no se ven desde la aplicación** · *julio y agosto*
-Se han corregido además fallos del entorno de trabajo y del proceso de publicación: el entorno local
-no concedía los permisos que hacen falta para subir una fotografía, una publicación fallaba y se
-deshacía al intentar renombrar cosas que la plataforma no deja renombrar, y se han actualizado las
-librerías que tenían avisos de seguridad abiertos.
-
----
+**Correcciones que no se aprecian desde la aplicación** · *julio y agosto*
+Se han corregido fallos del entorno de trabajo y del proceso de publicación: el entorno local no concedía
+los permisos necesarios para subir una fotografía, una publicación fallaba y se revertía al intentar
+renombrar elementos que la plataforma no permite renombrar, y se han actualizado las librerías con avisos
+de seguridad abiertos.
 
 ---
 
 ## En marcha
 
-**La copia a tamaño completo, sin comprobar todavía de punta a punta**
-El permiso que bloqueaba guardarla ya está abierto, y descargarla ya se puede: eso está contado arriba.
-Lo que falta es haber visto el circuito entero con una fotografía de verdad —corregir en el móvil,
-guardar la copia y bajarla— porque hoy no hay ninguna copia guardada en el catálogo con la que
-comprobarlo. Mientras tanto, cada fotografía dice en qué estado está la suya en vez de callarse.
+**La copia a tamaño completo, sin comprobar de extremo a extremo**
+El permiso que impedía guardarla ya está habilitado, y la descarga ya funciona. Falta comprobar el
+circuito completo con una fotografía real —corregir en el móvil, guardar la copia y descargarla—, porque
+todavía no hay ninguna copia guardada en el catálogo. Mientras tanto, cada fotografía indica en qué
+estado está la suya.
 
-**El color, todavía sin abrir en un teléfono de verdad**
-Todo lo del color está comprobado con pruebas automáticas —ochocientas sesenta y ocho, y las cuentas del
-color verificadas dos veces, una en la aplicación y otra en la herramienta del ordenador, contra un
-fichero de casos común— pero **nadie lo ha usado aún con un móvil en la mano y una obra delante**. Lo que
-solo se puede comprobar así: que arrastrar un mando va fluido, que el toque del cuentagotas no se
-confunde con mover la foto, que los mandos caben en una pantalla estrecha y que la corrección que se ve
-en pantalla es exactamente la que se guarda. Es la siguiente tarea y no es opcional.
+**El color, sin probar en un teléfono real**
+La corrección de color está verificada con pruebas automáticas —ochocientas sesenta y ocho, con los
+cálculos comprobados dos veces, una en la aplicación y otra en la herramienta de escritorio, contra un
+fichero de casos común—, pero no se ha usado con un móvil en la mano y una obra delante. Solo así se
+puede comprobar que arrastrar un control resulta fluido, que el toque del cuentagotas no se confunde con
+desplazar la fotografía, que los controles caben en una pantalla estrecha y que la corrección que se ve
+en pantalla es la que se guarda.
 
 **Los fondos, como lista y no como valores fijos**
-Las nueve listas del catálogo ya se pueden corregir y ampliar desde la aplicación. Los dos fondos —Rotili y Ruiz Campins— siguen siendo valores fijos escritos en el programa,
-porque de ellos depende el prefijo del código de catalogación que va pegado a cada obra. Convertirlos es
-lo siguiente, y hay que hacerlo con cuidado por eso mismo.
+Las nueve listas del catálogo ya se corrigen y se amplían desde la aplicación. Los dos fondos —Rotili y
+Ruiz Campins— siguen siendo valores fijos escritos en el programa, porque de ellos depende el prefijo del
+código de catalogación adherido a cada obra. Convertirlos requiere especial cuidado por ese motivo.
 
 **Dar de alta una referencia bibliográfica sin citarla desde una obra**
-Lo único que queda de este frente, y está contado arriba todo lo demás: la bibliografía y el archivo
-tienen ya su listado y su ficha, los datos de un documento se corrigen y se le añade el escaneo que le
-falte, y el catálogo de una exposición se dice desde la ficha de la muestra. Lo que sigue sin poder
-hacerse es **registrar un libro que todavía no cita ninguna obra**: una referencia nace citada, así que
-para meter en el catálogo una publicación que se acaba de encontrar hay que empezar por una obra que
-aparezca en ella.
+Es lo único que queda de este frente. La bibliografía y el archivo tienen ya su listado y su ficha, los
+datos de un documento se corrigen y se le añade el escaneo que falte, y el catálogo de una exposición se
+indica desde la ficha de la muestra. Lo que sigue sin poder hacerse es registrar una publicación que
+todavía no cita ninguna obra: una referencia se crea al citarla.
 
-**Las exposiciones y la papelera, sin abrirse todavía con datos de verdad**
-Las dos pantallas están comprobadas con un navegador y con las dos cuentas, pero el recorrido completo con
-**una exposición real** —darla de alta, abrirla, corregirla, retirarla, recuperarla y enlazarla luego desde
-el historial expositivo de una obra— no se ha hecho: la base local lleva los datos de verdad del catálogo,
-y una exposición de prueba se quedaría dentro. Y de la papelera falta verla con más de las siete cosas que
-hay retiradas hoy, que es cuando se notará si hace falta poder filtrar por fecha o por quién retiró: hoy
-agrupa por clase de cosa y no filtra.
+**Las exposiciones y la papelera, sin probar con datos reales**
+Ambas pantallas están comprobadas con un navegador y con las dos cuentas, pero no se ha realizado el
+recorrido completo con una exposición real —darla de alta, abrirla, corregirla, retirarla, recuperarla y
+enlazarla desde el historial expositivo de una obra—, porque la base local contiene los datos reales del
+catálogo y una exposición de prueba quedaría dentro. De la papelera falta comprobarla con más de los
+siete elementos retirados actuales, que es cuando se sabrá si hace falta filtrar por fecha o por quién
+retiró: por ahora agrupa por tipo y no filtra.
 
-**La quinta pestaña, sin haberse tocado con el pulgar**
-El menú de abajo tiene ahora cinco pestañas en vez de cuatro, y las etiquetas han bajado un punto de
-tamaño para que «Exposiciones» quepa entera. Está medido en pantalla, pero no en la mano: que la quinta se
-acierte sin darle a la vecina, que las etiquetas más pequeñas se lean con sol y con guantes, y que el
-icono de los dos cuadros colgados se distinga de un vistazo del de la cuadrícula de obras, se sabrá con un
-teléfono de verdad.
-
-**Las seis listas nuevas, sin abrirse todavía en un teléfono**
-Todo lo que decide algo en ellas está comprobado con pruebas automáticas —cuál es el nombre repetido, qué
-se recupera en vez de crearse dos veces, qué frase corresponde a cada negativa del catálogo— y las
-negativas se provocaron una a una contra la base de verdad. Lo que nadie ha hecho aún es abrirlas con un
-móvil en la mano: ver que un nombre largo no se parte en columnas de dos palabras, que el aviso de «no se
-puede retirar» se sube a la vista al pulsar el botón de abajo, y que la lista de personas se recorre con
-el pulgar cuando tenga cien fichas.
-
-**La mitad documental, sin haberse usado aún con un móvil en la mano**
-Todo lo que decide qué se muestra en esos apartados —ya son seis, con los enlaces a sitios externos— está
-comprobado con pruebas automáticas: cada frase, cada recuento, cada hueco de una procedencia. Pero **nadie
-los ha abierto todavía con un teléfono y una obra delante**. Lo que solo se comprueba así: que las flechas
-para ordenar la cadena se alcanzan con el pulgar, que los paneles para citar y para elegir un propietario
-no tapan el teclado, y que ningún apartado se queda diciendo «cargando» donde debería haber una frase.
-
-**Tres fotografías donde la sugerencia de recorte sigue callando**
-De las cuarenta y cuatro, en tres reconoce mal por dónde va el borde: no por la inclinación, que ya está
-resuelta, sino porque en esas fotos una costura interna del cuadro contrasta más que su propio marco.
-Está identificado y medido; arreglarlo es afinar cómo se elige el borde, no una función nueva.
+**La quinta pestaña, sin probar en la mano**
+El menú inferior tiene ahora cinco pestañas y las etiquetas han reducido un punto de tamaño para que
+«Exposiciones» quepa completa. Está medido en pantalla pero no probado en uso: que la quinta se acierte
+sin pulsar la contigua, que las etiquetas más pequeñas se lean con sol y con guantes, y que el icono de
+los dos cuadros colgados se distinga del de la cuadrícula de obras, se sabrá con un teléfono real.
