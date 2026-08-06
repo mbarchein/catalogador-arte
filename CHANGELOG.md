@@ -186,6 +186,25 @@ esta reproducción» y su historial de cambios— sin que hubiera que tocarlas p
 Quien cataloga sigue viéndolo todo, y no es un detalle: la papelera enseña lo retirado y recuperar una
 obra tiene que devolverla con sus fotografías dentro.
 
+**«Sobre la aplicación»: qué versión hay instalada, qué trajo y qué falta**
+Una pantalla nueva, en **Mi perfil → Sobre la aplicación**. Reúne tres cosas que estaban repartidas y
+ninguna donde se buscaría.
+
+Lo primero, **las novedades**: este mismo registro de cambios, dentro de la aplicación. Sale la entrada
+más reciente abierta —lo que trajo la versión que acabas de instalar, que es lo que se viene a mirar— y
+las anteriores plegadas, para poder bajar sin un muro de texto. Y se lee **sin conexión**: viene dentro
+de la propia aplicación, no se pide a la red, así que funciona igual en un almacén sin cobertura. Arriba
+dice de qué versión son, que no es lo mismo que «lo último que se ha hecho»: es lo que trae lo que hay
+instalado en ese teléfono.
+
+Después, **lo que todavía no se puede hacer**, en cuatro líneas, y dónde se hace lo que no es en la ficha
+de la obra. Estaba al pie de cada ficha, ocupando media pantalla, y lo leía cien veces al día quien ya
+sabía lo que decía. Ahora en la ficha queda una línea con un enlace, y el texto se consulta cuando se
+busca.
+
+Y por último **la versión**, que estaba en el perfil: qué versión de la aplicación corre, cuándo se
+compiló y con qué está hablando. El perfil se queda con lo que es de la cuenta.
+
 **El tamaño de letra se puede agrandar, y con él toda la aplicación**
 En **Mi perfil → Tamaño de letra**, tres opciones: Normal, Grande (115 %) y Más grande (130 %). El cambio
 se ve al tocar, sin ningún botón de guardar, y debajo hay una línea de muestra con un título de obra de
