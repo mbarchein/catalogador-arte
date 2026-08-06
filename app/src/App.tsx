@@ -21,6 +21,7 @@ import { RelationshipTypesPage } from './features/tables/RelationshipTypesPage'
 import { SeriesPage } from './features/tables/SeriesPage'
 import { TablesPage } from './features/tables/TablesPage'
 import { TrashPage } from './features/trash/TrashPage'
+import { AboutPage } from './features/about/AboutPage'
 import { ProfilePage } from './features/profile/ProfilePage'
 
 export function App() {
@@ -91,6 +92,9 @@ export function App() {
       <Route path="/archive" element={<ArchivePage />} />
       <Route path="/archive/:id" element={<DocumentPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      {/* Qué versión corre, qué trajo y qué falta. Se llega desde el perfil, y desde el
+          pie de la ficha de una obra. */}
+      <Route path="/about" element={<AboutPage />} />
       {/* RF-418: qué es el testigo de gris, dónde se coloca y de dónde se baja la
           hoja imprimible. Es una ruta y no un panel del editor porque se lee antes
           de fotografiar, con la obra delante y sin ninguna foto abierta, y porque

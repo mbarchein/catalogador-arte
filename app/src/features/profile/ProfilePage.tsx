@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { SignOut, Layout } from '../../components/Layout'
@@ -16,14 +16,6 @@ import {
 } from '../../lib/textScale'
 import { ROLE_LABEL } from '../../lib/types'
 import { setTextScale, useTextScale } from '../../lib/useTextScale'
-import {
-  BUILD,
-  apiHost,
-  cleanRange,
-  formatBuildDate,
-  platformInfo,
-  type PlatformInfo,
-} from '../../lib/buildInfo'
 
 function DataRow({ label, value }: { label: string; value: string }) {
   return (
@@ -35,68 +27,6 @@ function DataRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-/**
- * Version of what is running, on both sides. It goes last because it is not
- * read daily, and it exists because «it works in local but not in production»
- * gets answered by comparing these lines — without opening any dashboard.
- */
-function Diagnostics() {
-  const [platform, setPlatform] = useState<PlatformInfo | null>(null)
-
-  useEffect(() => {
-    let current = true
-    void platformInfo().then((info) => {
-      if (current) setPlatform(info)
-    })
-    return () => {
-      current = false
-    }
-  }, [])
-
-  return (
-    <section className="card mb-3">
-      <h2 className="mb-2 font-medium">Versión</h2>
-
-      <dl className="divide-y divide-stone-100">
-        <DataRow label="Aplicación" value={BUILD.version} />
-        <DataRow label="Compilada" value={formatBuildDate()} />
-        {/* In local there is no commit: the environment does not provide one,
-            and saying «desarrollo» beats showing an empty datum. */}
-        <DataRow label="Revisión" value={BUILD.commit || 'desarrollo'} />
-      </dl>
-
-      <h3 className="mb-1 mt-3 text-xs font-medium uppercase tracking-wide text-stone-500">
-        Interfaz
-      </h3>
-      <dl className="divide-y divide-stone-100">
-        <DataRow label="React" value={cleanRange(BUILD.deps.react)} />
-        <DataRow label="React Router" value={cleanRange(BUILD.deps['react-router'])} />
-        <DataRow label="Cliente Supabase" value={cleanRange(BUILD.deps['@supabase/supabase-js'])} />
-        <DataRow label="Vite" value={`${cleanRange(BUILD.deps.vite)} (compilación)`} />
-      </dl>
-
-      <h3 className="mb-1 mt-3 text-xs font-medium uppercase tracking-wide text-stone-500">
-        Servicios
-      </h3>
-      <dl className="divide-y divide-stone-100">
-        <DataRow label="API y datos" value={apiHost()} />
-        <DataRow label="PostgreSQL" value={platform?.postgres ?? 'Consultando…'} />
-        <DataRow
-          label="Esquema"
-          value={
-            platform
-              ? `${platform.schema_version ?? 'sin registro'} · ${platform.migrations} migraciones`
-              : 'Consultando…'
-          }
-        />
-        {/* Named, not versioned: the masters' provider is decided by the Edge
-            function's configuration (B2 in production, MinIO in local) and the
-            client legitimately does not know which one answered. */}
-        <DataRow label="Másters de archivo" value="S3 externo vía función sign-file" />
-      </dl>
-    </section>
-  )
-}
 
 /**
  * PWA install button. Three states: already installed, installable with the
@@ -224,7 +154,19 @@ export function ProfilePage() {
         <Installation />
       </section>
 
-      <Diagnostics />
+      {/* La información de la aplicación —qué versión corre, qué se puede hacer y qué
+          no, y las novedades— vive en su propia pantalla: aquí es la CUENTA lo que se
+          consulta, y mezclarlas hacía del perfil una lista de cosas sin relación. */}
+      <section className="card mb-3">
+        <h2 className="mb-2 font-medium">Sobre la aplicación</h2>
+        <p className="text-sm text-stone-600">
+          Qué versión está instalada, las novedades que trajo y lo que todavía no se puede
+          hacer desde aquí.
+        </p>
+        <Link to="/about" className="mt-2 inline-block min-h-touch text-sm underline">
+          Abrir la información de la aplicación
+        </Link>
+      </section>
 
       <SignOut />
     </Layout>

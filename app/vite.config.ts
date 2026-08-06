@@ -112,6 +112,13 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    fs: {
+      // `CHANGELOG.md` vive en la raíz del repositorio, un nivel por encima de esta
+      // aplicación, y la pantalla «Sobre la aplicación» lo incrusta con `?raw` para poder
+      // leerlo sin conexión. Al compilar, Rollup lo resuelve solo; en desarrollo el
+      // servidor no sirve nada de fuera de su raíz si no se le dice.
+      allow: ['..'],
+    },
   },
   test: {
     // Los tests unitarios no hablan con Supabase, pero importar cualquier

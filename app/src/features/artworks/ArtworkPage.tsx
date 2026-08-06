@@ -507,72 +507,25 @@ export function ArtworkPage() {
           </button>
         </section>
 
-        {/* What is still missing is declared instead of omitted, so the record
-            does not look complete — but ONLY what is really missing.
-
-            ESTA TARJETA HA ENVEJECIDO MAL CUATRO VECES, y siempre por lo mismo: se
-            escribió una lista de carencias en vez de comprobar una por una las
-            afirmaciones que contiene. Nombró los cinco bloques documentales cuando
-            ya estaban justo encima; después dijo que los vocabularios no tenían
-            pantalla cuando las series la han tenido siempre; luego que una exposición
-            no se podía dar de alta, que una referencia no se podía corregir y que un
-            documento no se podía subir ni enlazar; y hasta hoy que enlazar un documento
-            con una exposición y decir cuál es el catálogo de una muestra no se hacían
-            desde ninguna pantalla. Todo eso se hace ya, así que todas esas frases se
-            han ido.
-
-            Lo comprobado ahora, afirmación por afirmación, y lo único que queda:
-
-            - Un DOCUMENTO DEL ARCHIVO tiene **listado y ficha propios** (`/archive`,
-              `/archive/:id`) con sus DOS bloques —obras y exposiciones, porque RF-516 es
-              de muchos a muchos por los dos lados—. Subir, corregir y digitalizar siguen
-              aquí, donde el aviso cuenta a cuántas fichas afecta el cambio; enlazarlo con
-              una EXPOSICIÓN se hace en su ficha y solo allí (RF-516, RF-517), porque una
-              exposición no tiene bloque de documentos y esa ficha es el único sitio donde
-              el papel y la muestra están a la vez.
-            - Una REFERENCIA BIBLIOGRÁFICA tiene **listado y ficha propios**
-              (`/bibliography`, `/bibliography/:id`) con su bloque «Obras citadas»
-              (RF-506), y decir cuál de ellas es el catálogo de una exposición se hace
-              en la ficha de la muestra (RF-503). Lo ÚNICO que queda de la lista
-              original: darla de alta sin citarla desde una obra.
-            - Los VOCABULARIOS tienen todos su pantalla en «Tablas», y una
-              EXPOSICIÓN tiene ya la suya. Eso no es una carencia: es una dirección,
-              y decirla es lo que evita que se busque donde no está. */}
-        {/* El historial, antes del aviso de lo que falta: es un dato de la obra y
-            no una carencia. Solo lectura, así que su sitio es la ficha que se lee
-            —es donde se hace la pregunta que contesta— y no la zona de edición. */}
+        {/* El historial: es un dato de la obra. Solo lectura, así que su sitio es la
+            ficha que se lee —es donde se hace la pregunta que contesta— y no la zona de
+            edición. */}
         <ChangeHistorySection catalogId={artwork.catalog_id} />
 
-        <section className="card mt-3 text-sm text-stone-500">
-          <p className="font-medium text-stone-700">Lo que aún no se puede hacer aquí</p>
-          <p className="mt-1">
-            Una <strong>referencia bibliográfica</strong> se da de alta citándola desde una obra, y
-            solo así: para registrar un libro que todavía no cita ninguna obra hay que empezar por
-            la obra. Y un <strong>documento del archivo</strong> se sube, se corrige y se digitaliza
-            desde aquí, y desde aquí solo.
-          </p>
-          <p className="mt-2">
-            Lo que sí se hace, y no es aquí: cada{' '}
-            <strong>referencia bibliográfica</strong> y cada <strong>documento del archivo</strong>{' '}
-            tienen su ficha propia, con lo que cuelga de ellos, y se llega desde{' '}
-            <Link to="/bibliography" className="underline">
-              el listado de la bibliografía
-            </Link>{' '}
-            y{' '}
-            <Link to="/archive" className="underline">
-              el del archivo
-            </Link>{' '}
-            —donde están también los que ninguna obra tiene enlazados—. Enlazar un documento con una{' '}
-            <strong>exposición</strong> —el cartel o el díptico de una muestra— se hace en la ficha
-            del documento, y decir cuál de las referencias es el catálogo de una muestra, en la
-            ficha de la exposición. Una <strong>exposición</strong> se da de alta y se corrige en su
-            propia ficha, en <strong>Exposiciones</strong>. Y las{' '}
-            <strong>series</strong>, las <strong>sedes de exposición</strong>, los{' '}
-            <strong>tipos</strong> de publicación, de documento y de relación, y las{' '}
-            <strong>personas e instituciones</strong> viven en la sección <strong>Tablas</strong>.
-            Renombrar algo ahí lo ven todas las obras que lo usan.
-          </p>
-        </section>
+        {/* Lo que no se puede hacer aquí, en UNA línea y con un enlace.
+            
+            Era media pantalla de advertencias al pie de la ficha que más se usa, leídas
+            cien veces al día por quien ya sabe lo que dicen — y encima envejecida cuatro
+            veces, porque una lista de carencias escrita en la pantalla equivocada nadie la
+            revisa cuando construye una de ellas. El texto entero está en «Sobre la
+            aplicación», donde se consulta cuando se busca: una vez. */}
+        <p className="mt-3 px-1 text-xs text-stone-500">
+          ¿Falta algo en esta ficha?{' '}
+          <Link to="/about" className="underline">
+            Lo que todavía no se puede hacer, y dónde se hace lo que no es aquí
+          </Link>
+          .
+        </p>
 
         {/* And at the end, the two neighbors with their code and title: reading
             a record and continuing with the next one is the whole working day,
