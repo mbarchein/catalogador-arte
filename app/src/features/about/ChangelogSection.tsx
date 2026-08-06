@@ -3,6 +3,7 @@ import {
   CHANGELOG_FAILED,
   CHANGELOG_LOADING,
   groupChangelog,
+  isHeadline,
   parseChangelog,
   type ChangelogBlock,
   type ChangelogEntry,
@@ -112,6 +113,11 @@ function Block({ block }: { block: ChangelogBlock }) {
         ))}
       </ul>
     )
+  }
+  // El titular de cada novedad: un párrafo que es solo negrita. Se pinta como encabezado
+  // para que las viñetas que lo siguen se lean colgando de él y no a su misma altura.
+  if (isHeadline(block)) {
+    return <h4 className="mb-1 mt-3 text-sm font-medium text-stone-900 first:mt-0">{block.spans[0]!.text}</h4>
   }
   return (
     <p className="mb-2 text-sm text-stone-700">

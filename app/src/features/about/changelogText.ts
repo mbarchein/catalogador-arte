@@ -116,12 +116,27 @@ export function parseChangelog(markdown: string): ChangelogBlock[] {
       blocks.push({ kind: 'section', text: line.slice(4).trim() })
       continue
     }
-    // Una viñeta corta el párrafo que hubiera, y una línea normal corta la lista.
+    // La regla horizontal que separa entradas en el fichero no se pinta: aquí cada fecha
+    // ya viene en su propia caja plegable. Sin esto se leía un «---» suelto en pantalla.
+    if (/^-{3,}$/.test(line.trim())) {
+      flush()
+      continue
+    }
+    // Una viñeta corta el párrafo que hubiera.
     if (/^\s*-\s+/.test(line)) {
       flushParagraph()
       items.push(line.replace(/^\s*-\s+/, ''))
       continue
     }
+    // Una línea SANGRADA con una lista abierta continúa la viñeta anterior. El fichero
+    // está ajustado a cien columnas, así que casi toda viñeta ocupa dos o tres líneas;
+    // sin esto, la primera línea era la viñeta y el resto salía como un párrafo suelto
+    // detrás de la lista — el texto no se perdía, pero se leía descolgado.
+    if (items.length > 0 && /^\s+\S/.test(raw)) {
+      items[items.length - 1] += ` ${line.trim()}`
+      continue
+    }
+    // Y una línea normal cierra la lista.
     flushList()
     paragraph.push(line.trim())
   }
@@ -152,6 +167,19 @@ export function groupChangelog(blocks: readonly ChangelogBlock[]): ChangelogEntr
   }
   // Una fecha sin nada debajo no se ofrece para desplegar: sería un botón que no abre nada.
   return entries.filter((entry) => entry.blocks.length > 0)
+}
+
+/**
+ * ¿Es este párrafo el titular de una novedad?
+ *
+ * En el fichero, cada novedad empieza con una línea que es solo `**su título**` y sigue con sus
+ * viñetas. Al leerlo sale un párrafo con un único trozo en negrita, y pintarlo como un párrafo
+ * corriente lo deja al mismo peso que el texto que encabeza. Se detecta aquí, y no en la pantalla,
+ * para poder comprobarlo sin navegador.
+ */
+export function isHeadline(block: ChangelogBlock): boolean {
+  if (block.kind !== 'paragraph') return false
+  return block.spans.length === 1 && block.spans[0]?.strong === true
 }
 
 /** Lo que se lee mientras llega, y si no llega. */

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   groupChangelog,
+  isHeadline,
   parseChangelog,
   parseSpans,
 } from './changelogText'
@@ -95,6 +96,27 @@ describe('parseChangelog, la estructura del fichero', () => {
     expect(blocks[0].items[1]).toEqual([{ text: 'dos' }])
   })
 
+  it('una viñeta de varias líneas se une, y no se parte en viñeta y párrafo', () => {
+    // El fichero está ajustado a cien columnas, así que casi toda viñeta ocupa dos o tres
+    // líneas. Sin esto, la primera era la viñeta y el resto salía como un párrafo suelto
+    // detrás de la lista: el texto no se perdía, pero se leía descolgado.
+    const blocks = parseChangelog('- una viñeta que sigue\n  en la línea de abajo\n- otra')
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0]?.kind).toBe('list')
+    if (blocks[0]?.kind !== 'list') return
+    expect(blocks[0].items).toHaveLength(2)
+    expect(blocks[0].items[0]).toEqual([{ text: 'una viñeta que sigue en la línea de abajo' }])
+  })
+
+  it('pero una línea SIN sangrar cierra la lista', () => {
+    const blocks = parseChangelog('- una viñeta\nUn párrafo.')
+    expect(blocks.map((b) => b.kind)).toEqual(['list', 'paragraph'])
+  })
+
+  it('y sin lista abierta, una línea sangrada es un párrafo', () => {
+    expect(parseChangelog('  texto sangrado')[0]?.kind).toBe('paragraph')
+  })
+
   it('y una lista corta el párrafo de antes, no se lo traga', () => {
     // El fallo típico de un lector mínimo: la viñeta se pega al párrafo anterior y la
     // lista desaparece sin que nadie lo note.
@@ -110,6 +132,16 @@ describe('parseChangelog, la estructura del fichero', () => {
   it('un encabezado corta lo que hubiera abierto', () => {
     const blocks = parseChangelog('Un párrafo.\n### Sección')
     expect(blocks.map((b) => b.kind)).toEqual(['paragraph', 'section'])
+  })
+
+  it('la regla horizontal no se pinta', () => {
+    // El fichero separa entradas con `---`. En pantalla cada fecha ya viene en su caja
+    // plegable, así que la regla no aporta nada y se leía como un «---» suelto.
+    expect(parseChangelog('Uno.\n\n---\n\nDos.').map((b) => b.kind)).toEqual([
+      'paragraph',
+      'paragraph',
+    ])
+    expect(parseChangelog('---')).toEqual([])
   })
 
   it('un fichero vacío no da nada, y no revienta', () => {
@@ -141,6 +173,28 @@ describe('groupChangelog, una entrada por fecha', () => {
   })
 })
 
+describe('isHeadline, el titular de cada novedad', () => {
+  it('un párrafo que es solo negrita es un titular', () => {
+    // En el fichero cada novedad empieza con una línea que es solo `**su título**` y sigue
+    // con sus viñetas. Pintarlo como párrafo corriente lo dejaría al mismo peso que el
+    // texto que encabeza.
+    const [block] = parseChangelog('**El archivo tiene ficha propia**')
+    expect(isHeadline(block!)).toBe(true)
+  })
+
+  it('y con texto alrededor, no', () => {
+    expect(isHeadline(parseChangelog('**Negrita** y más texto')[0]!)).toBe(false)
+    expect(isHeadline(parseChangelog('texto y **negrita**')[0]!)).toBe(false)
+    expect(isHeadline(parseChangelog('un párrafo normal')[0]!)).toBe(false)
+  })
+
+  it('ni un encabezado ni una lista lo son', () => {
+    expect(isHeadline(parseChangelog('## Agosto')[0]!)).toBe(false)
+    expect(isHeadline(parseChangelog('### Interfaz')[0]!)).toBe(false)
+    expect(isHeadline(parseChangelog('- **negrita sola**')[0]!)).toBe(false)
+  })
+})
+
 describe('el CHANGELOG.md de verdad', () => {
   const blocks = parseChangelog(MARKDOWN)
   const entries = groupChangelog(blocks)
@@ -153,6 +207,8 @@ describe('el CHANGELOG.md de verdad', () => {
     // Palabra por palabra y en orden, que es la única comprobación que no se puede
     // aprobar por casualidad: contar bloques dejaría pasar un párrafo entero perdido.
     const delFichero = MARKDOWN.split('\n')
+      // Las reglas horizontales no se pintan, así que tampoco se cuentan.
+      .filter((line) => !/^-{3,}$/.test(line.trim()))
       .map((line) => line.replace(/^#{2,3}\s+/, '').replace(/^\s*-\s+/, ''))
       .join(' ')
       .replace(/\*\*/g, '')
@@ -189,6 +245,23 @@ describe('el CHANGELOG.md de verdad', () => {
     for (const seccion of secciones) {
       expect(seccion.kind === 'section' && seccion.text.trim()).toBeTruthy()
     }
+  })
+
+  it('cada novedad es un titular seguido de viñetas, sin párrafos sueltos', () => {
+    // La forma que se le ha dado al fichero: título en negrita y debajo una lista. Un
+    // párrafo suelto entre medias rompería esa lectura, y es el descuido más fácil al
+    // escribir una entrada nueva.
+    const sueltos = blocks.filter(
+      (block) => block.kind === 'paragraph' && !isHeadline(block),
+    )
+    expect(sueltos).toEqual([])
+  })
+
+  it('y ningún titular se queda sin sus viñetas', () => {
+    const titulares = blocks.filter(isHeadline).length
+    const listas = blocks.filter((block) => block.kind === 'list').length
+    expect(titulares).toBeGreaterThan(100)
+    expect(listas).toBe(titulares)
   })
 
   it('y ningún trozo sale con las marcas de Markdown dentro', () => {
