@@ -71,6 +71,33 @@ concurrency:
   group: despliegue-produccion
   cancel-in-progress: false
 
+# LA VERSIÓN DE LA CLI DE SUPABASE ESTÁ CLAVADA. Se repite en los dos jobs que
+# la instalan —«migrar» y «secretos»— porque un `env:` de la cabecera exigiría
+# interpolarlo en el `with:` del paso, y esto no se puede probar sin desplegar.
+# Que las dos digan lo mismo lo comprueba `.github/pipeline.test.sh`, así que
+# subirla a medias no llega a main.
+#
+# Estaba en `latest`, y eso significa que cada despliegue estrena la versión que
+# se haya publicado desde el anterior. El 7 de agosto de 2026 la 2.112.0 salió a
+# las 10:08 y a las 10:13 el despliegue falló en el primer paso:
+#
+#   failed to get api keys: SchemaError(Expected a string matching the RegExp
+#   ^…T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ at [2]["inserted_at"])
+#
+# No era nada de este repositorio. Esa versión añadió una comprobación en tiempo
+# de ejecución sobre las marcas de tiempo que devuelve la API de gestión de
+# Supabase —hasta la 2.111.0 el campo era una cadena sin validar— y la propia API
+# devuelve una que no la cumple. Con `supabase link` fallando, el job «migrar» no
+# arrancaba, y como «publicar» exige un «migrar» en verde, no se desplegaba nada.
+#
+# El coste de `latest` es este: un despliegue que ha pasado toda la verificación
+# se cae por algo que se publicó fuera del repositorio mientras corría. Subirla
+# es un cambio deliberado y revisable, como cualquier otra dependencia.
+#
+# PARA SUBIRLA: cambiar los DOS `version:` a la vez y comprobar que `supabase
+# link` funciona con la versión nueva. El fallo de arriba se arreglará en la CLI
+# o en la API; mientras no se sepa cuál, la única comprobación es lanzarlo.
+
 jobs:
   # Qué ha cambiado de verdad en este push. Misma acción compuesta que usa
   # verificar.yml, a propósito: si la clasificación estuviera copiada en los dos
@@ -196,9 +223,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Versión clavada, no «latest»: el motivo está en la cabecera del fichero.
       - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 2.111.0
 
       - name: Vincular el proyecto
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
@@ -265,9 +293,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # La misma versión que «migrar», y por el mismo motivo: los dos jobs hablan
+      # con la misma API de gestión, así que la avería de uno es la del otro.
       - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 2.111.0
 
       # Las credenciales de B2 llegan a la función por aquí, desde los secretos
       # que Terraform derivó del bucket real. Nombres S3_* a propósito: cambiar

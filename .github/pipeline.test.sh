@@ -144,6 +144,59 @@ sys.exit(1 if fallos else 0)
 PY
 
 echo
+echo "→ La CLI de Supabase está clavada en una versión concreta"
+
+# Estaba en `latest`, y el 7 de agosto de 2026 un despliegue verificado se cayó
+# en el primer paso —«failed to get api keys: SchemaError(…inserted_at)»— porque
+# la 2.112.0 se había publicado cinco minutos antes. Nada del repositorio había
+# cambiado. Con `link` roto, «migrar» no arrancaba y «publicar» no publicaba.
+#
+# Lo que se comprueba no es qué versión es —esa decisión es del fichero, y su
+# motivo está en la cabecera—, sino que sea UNA y la misma en todos los jobs:
+# `latest` convierte cada despliegue en el estreno de lo que se haya publicado
+# fuera mientras corría, y dos versiones distintas en el mismo despliegue son dos
+# comportamientos distintos contra la misma API.
+python3 - <<'PY' || exit 1
+import sys, yaml
+
+with open('.github/workflows/desplegar.yml') as f:
+    wf = yaml.safe_load(f)
+
+# `latest`, `beta` o una rama son móviles; lo demás se considera una versión.
+MOVILES = {'latest', 'beta', 'canary', 'main', 'master', ''}
+
+usos = []
+for nombre, job in wf['jobs'].items():
+    for paso in job.get('steps', []):
+        if str(paso.get('uses', '')).startswith('supabase/setup-cli@'):
+            usos.append((nombre, str(paso.get('with', {}).get('version', ''))))
+
+fallos = 0
+if not usos:
+    print("  ✗ ningún job instala la CLI de Supabase", file=sys.stderr)
+    fallos += 1
+
+for job, version in usos:
+    if version.lower() in MOVILES:
+        print(f"  ✗ «{job}» instala una versión móvil de la CLI: «{version}»", file=sys.stderr)
+        fallos += 1
+    else:
+        print(f"  ✓ «{job}» instala la {version}")
+
+# La versión va escrita en cada job, así que subirla es tocar dos sitios. Esto
+# es lo que impide subir uno y dejarse el otro: dos versiones distintas contra la
+# misma API es justo el estado que nadie va a mirar hasta que falle.
+distintas = {v for _, v in usos}
+if len(distintas) > 1:
+    print(f"  ✗ los jobs no coinciden en la versión de la CLI: {sorted(distintas)}", file=sys.stderr)
+    fallos += 1
+elif len(usos) > 1:
+    print("  ✓ todos los jobs instalan la misma versión")
+
+sys.exit(1 if fallos else 0)
+PY
+
+echo
 if [ "$fallos" -gt 0 ]; then
   echo "Tests del pipeline: $fallos fallo(s)" >&2
   exit 1
