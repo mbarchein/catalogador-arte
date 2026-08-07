@@ -790,7 +790,7 @@
 - La base de datos garantiza que no haya dos sitios hermanos con el mismo nombre, que la jerarquía no
   admita ciclos y que no se pueda retirar un lugar que contenga obras u otros sitios.
 - De aquí sale un criterio general: el nombre de una lista maestra no es su identidad, de modo que
-  renombrar una entrada no vuelve a ser una conversión de datos. (ADR-006)
+  renombrar una entrada no vuelve a ser una conversión de datos.
 
 **Los sitios existentes se han convertido, y ninguna obra se ha quedado sin ubicación**
 
@@ -1053,7 +1053,7 @@
 - El texto que se publica lo compone la base de datos y no se puede escribir a mano, de modo que el texto
   y los datos no pueden contradecirse.
 - «Obra de los setenta» pasa a ser una consulta efectiva.
-- Lo que alguien escribió a mano y no encaja en ningún formato se conserva íntegro. (ADR-004)
+- Lo que alguien escribió a mano y no encaja en ningún formato se conserva íntegro.
 
 **Un fondo de pruebas para practicar sin alterar el catálogo**
 
@@ -1232,14 +1232,14 @@
 - Las dos copias pequeñas se generan en el móvil antes de subir, porque una fotografía de móvil ocupa
   entre 4 y 12 MB y subirla tres veces desde un almacén con mala cobertura no es viable.
 - El original va a un almacén de archivo aparte porque, a 2-8 MB por toma, el espacio incluido en la
-  plataforma se agotaría en las primeras semanas de trabajo de campo. (ADR-002)
+  plataforma se agotaría en las primeras semanas de trabajo de campo.
 
 **Cómo se numeran las obras**
 
 - El identificador lo asigna la base de datos, con un bloqueo por fondo, y no una numeración automática.
 - El motivo es editorial: una numeración automática deja huecos cuando una operación se deshace a medias,
   y un salto sin explicación en un catálogo razonado genera una pregunta difícil de responder años
-  después. (ADR-003)
+  después.
 
 **«Sin revisar» no es «no»**
 
@@ -1256,7 +1256,7 @@
 - Tiene dirección propia, `catalogo.ruizcampins.com`. Se cambió el alojamiento previsto al comprobar que
   estaba bloqueado desde España.
 - El código de la herramienta es público y libre; las obras del catálogo no forman parte de esa licencia
-  y siguen protegidas por contraseña. (ADR-001 y ADR-005)
+  y siguen protegidas por contraseña.
 
 **Cada regla del catálogo tiene un nombre, y una prueba que la cita**
 
