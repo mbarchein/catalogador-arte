@@ -583,7 +583,7 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     // lo rechacen por firma caducada, que se lee como un problema de permisos y no lo es.
     expect(api.signed.filter((s) => s.path.includes('_master'))).toHaveLength(3)
     // La pantalla se entera de en qué intento va, o el contador baja de 80 % a 0 % solo.
-    expect(api.progress.map((p) => p.attempt)).toEqual([1, 2, 3])
+    expect(api.progress.filter((p) => p.step === 'master').map((p) => p.attempt)).toEqual([1, 2, 3])
   })
 
   it('se rinde con el mensaje del corte cuando no hay manera', async () => {
@@ -732,9 +732,13 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     // Los dos ficheros informan, y por separado: la miniatura y la copia de consulta
     // van por la biblioteca de almacenamiento, que no dice nada, y meterlas en un total
     // único daría una barra que nunca llega a su propio final.
-    expect(api.progress.map((p) => p.step)).toEqual(['master', 'corrected'])
-    expect(api.progress[0]?.total).toBe(master.size)
-    expect(api.progress[1]?.total).toBe(64)
+    // Los cuatro ficheros de una fotografía, y los cuatro dichos: las dos derivadas se
+    // anuncian juntas aunque no puedan contar bytes, porque callárselas es lo que las
+    // hacía parecer no subidas.
+    expect(api.progress.map((p) => p.step)).toEqual(['derivatives', 'master', 'corrected'])
+    expect(api.progress[0]?.total).toBeNull()
+    expect(api.progress[1]?.total).toBe(master.size)
+    expect(api.progress[2]?.total).toBe(64)
   })
 
   it('sube sin informar de nada cuando nadie pregunta', async () => {

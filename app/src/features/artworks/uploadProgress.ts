@@ -24,17 +24,45 @@
  * The two files are named with `ARCHIVE_NOUN`, which is where that decision already
  * lived: the download side says «el original» for the same file, and one file with two
  * names on two screens is how a vocabulary comes apart.
+ *
+ * ── «1 DE 1» ERAN FOTOGRAFÍAS, Y SE LEÍA COMO FICHEROS ──────
+ *
+ * A photograph is four files: the thumbnail and the consultation copy that the record
+ * shows, the untouched original, and the full-resolution corrected copy. The line said
+ * «Subiendo 1 de 1» and it was counting photographs — which reads as «one file, and it is
+ * this one», so a cataloger who had just cropped with perspective quite reasonably asked
+ * where the thumbnail was.
+ *
+ * Now the count only appears when there is more than one photograph, and it says so; and
+ * every step is named, including the two that go through the storage library and cannot
+ * report bytes. Silence over them was what made them look missing.
  */
 
 import { formatFileSize } from '../../lib/exif'
 import { ARCHIVE_NOUN, type ArchiveKind } from '../../lib/images'
 
+/**
+ * Which of a photograph's four files is going.
+ *
+ * `derivatives` is the thumbnail and the consultation copy together: they travel through
+ * the storage library, which reports no bytes, and they are small enough that a count
+ * would be over before it was read. They are named anyway — an unnamed step is a step
+ * that looks like it did not happen.
+ */
+export type UploadStep = ArchiveKind | 'derivatives'
+
+export const UPLOAD_STEP_TEXT: Record<UploadStep, string> = {
+  derivatives: 'las copias que se ven en la ficha',
+  master: ARCHIVE_NOUN.master,
+  corrected: ARCHIVE_NOUN.corrected,
+}
+
 export interface UploadStatus {
   /** Position within the batch, counting from 1. */
   index: number
   count: number
-  /** Absent before the first large transfer starts. */
-  step?: ArchiveKind
+  /** Absent before the first step starts. */
+  step?: UploadStep
   loaded?: number
   /** Null when the browser cannot say how much it is sending. */
   total?: number | null
@@ -62,17 +90,24 @@ function sent(bytes: number): string {
 }
 
 /**
- * The whole line, ready to paint.
+ * `Foto 2 de 3 · ` when there is a batch, and nothing at all when there is one photograph.
  *
- * The batch position stays even for a single photograph, which is what it already said
- * before this: it answers «how much is left of what I asked for», and the bytes answer
- * «is this moving».
+ * The word «foto» is the whole fix: «1 de 1» does not say what it is counting, and the
+ * obvious reading — one file — is wrong four times over.
  */
-export function uploadStatusText(status: UploadStatus): string {
-  const position = `Subiendo ${status.index} de ${status.count}`
-  if (!status.step) return `${position}…`
+function position(status: UploadStatus): string {
+  return status.count > 1 ? `Foto ${status.index} de ${status.count} · ` : ''
+}
 
-  const name = ARCHIVE_NOUN[status.step]
+/** The whole line, ready to paint. */
+export function uploadStatusText(status: UploadStatus): string {
+  if (!status.step) return `${position(status)}Subiendo…`
+
+  const name = UPLOAD_STEP_TEXT[status.step]
+  // The derivatives report nothing: the library that sends them does not say, and a
+  // percentage invented for them would be the only fictional number on the screen.
+  if (status.step === 'derivatives') return `${position(status)}Subiendo ${name}…`
+
   const loaded = status.loaded ?? 0
   const percent = uploadPercent(loaded, status.total)
 
@@ -84,9 +119,56 @@ export function uploadStatusText(status: UploadStatus): string {
   // No total means the browser did not say how much it was sending. What has gone out is
   // still worth showing: it is the difference between a transfer that advances and one
   // that is stuck, which is the question being asked.
-  if (percent === null) return `${position} · ${name}: ${sent(loaded)} enviados${again}`
+  if (percent === null) return `${position(status)}Subiendo ${name}: ${sent(loaded)} enviados${again}`
 
-  return `${position} · ${name}: ${sent(loaded)} de ${sent(status.total ?? 0)} (${percent} %)${again}`
+  return `${position(status)}Subiendo ${name}: ${sent(loaded)} de ${sent(status.total ?? 0)} (${percent} %)${again}`
+}
+
+/**
+ * Why it failed, and **where it got to**.
+ *
+ * «No se han podido subir 1 de 1: La conexión se ha cortado durante el envío» says what
+ * broke and nothing about the shape of the break. The same sentence covers a link that
+ * died on the first kilobyte and one that dies at the same 2 MB of the same file on every
+ * attempt — and those are different problems, one of them a bad connection and the other
+ * something deterministic. Reading it off the screen while it happens is not the same as
+ * having it written down afterwards.
+ */
+export function uploadFailureText(params: {
+  failed: number
+  total: number
+  message: string
+  /** The last thing the counter said before it stopped, when there was one. */
+  at?: { step: UploadStep; loaded: number; total: number | null; attempt: number }
+  /**
+   * Seconds from pressing the button to the failure.
+   *
+   * This is the number that tells the two failures apart. Bad coverage dies at a
+   * different moment every time; something that dies at the same forty seconds on every
+   * attempt is a timeout somewhere in the path, and no amount of retrying fixes it. The
+   * bytes alone do not separate them — a browser hands several megabytes to the socket
+   * before the network has sent any of them, so the counter can stall at the same place
+   * for reasons that have nothing to do with why it ends.
+   */
+  seconds?: number
+}): string {
+  const what =
+    params.total === 1
+      ? 'No se ha podido subir la fotografía'
+      : `No se han podido subir ${params.failed} de ${params.total}`
+  const took =
+    params.seconds === undefined || !Number.isFinite(params.seconds)
+      ? ''
+      : ` Tardó ${Math.round(params.seconds)} s en fallar.`
+
+  const { at } = params
+  if (!at || at.step === 'derivatives') return `${what}: ${params.message}${took}`
+
+  const howFar =
+    at.total === null
+      ? `${sent(at.loaded)} enviados`
+      : `${sent(at.loaded)} de ${sent(at.total)}`
+  return `${what}: ${params.message} Se quedó en ${UPLOAD_STEP_TEXT[at.step]}, ${howFar}, en el intento ${at.attempt}.${took}`
 }
 
 /**

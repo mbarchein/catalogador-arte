@@ -975,7 +975,7 @@ export async function uploadShot(
      * total would mean a bar that never reaches its own end.
      */
     onProgress?: (
-      step: ArchiveKind,
+      step: ArchiveKind | 'derivatives',
       event: UploadProgressEvent,
       /** 1 the first time; 2 or 3 after a cut connection (see `UPLOAD_ATTEMPTS`). */
       attempt: number,
@@ -996,6 +996,10 @@ export async function uploadShot(
     [target.thumbnail, shot.thumbnail],
     [target.derivative, shot.derivative],
   ]
+  // Announced even though they cannot be counted: the storage library reports no bytes,
+  // and staying silent over two of a photograph's four files is what made them look like
+  // they were not being uploaded at all.
+  options.onProgress?.('derivatives', { loaded: 0, total: null }, 1)
   for (const [path, content] of uploads) {
     const { error } = await supabase.storage.from(BUCKET).upload(path, content, {
       contentType: format.type,

@@ -347,6 +347,7 @@ export function CapturePage() {
           correctedCopy,
           onProgress: (step, event, attempt) =>
             setUploading(uploadStatusText({ ...position, step, ...event, attempt })),
+
         })
         if (result.correctedPending) pending.push(result.correctedPending)
         current = current.map((x) => (x.key === s.key ? { ...x, status: 'uploaded' as const } : x))

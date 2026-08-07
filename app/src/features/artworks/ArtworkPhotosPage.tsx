@@ -20,6 +20,7 @@ import {
   pendingUploadNotice,
   pendingUploadText,
   preparingCopyText,
+  uploadFailureText,
   uploadStatusText,
 } from './uploadProgress'
 import {
@@ -221,6 +222,12 @@ export function ArtworkPhotosPage() {
     const failed: QueuedShot[] = []
     const pending: string[] = []
     let done = 0
+    // The last thing the counter said, so a failure can be written down and not merely
+    // watched: «se quedó en el original, 2,1 MB de 3,6 MB» is a different report from the
+    // same sentence with no numbers in it, and it is the difference between a bad
+    // connection and something that stops at the same byte every time.
+    let at: Parameters<typeof uploadFailureText>[0]['at']
+    const startedAt = Date.now()
     for (let i = 0; i < queue.length; i += 1) {
       const shot = queue[i]
       if (!shot) continue
@@ -255,8 +262,10 @@ export function ArtworkPhotosPage() {
           // The bytes as they go out (RNF-106). Straight to state: these arrive a few
           // times a second at most — the browser throttles `upload.onprogress` — so
           // there is nothing here worth debouncing.
-          onProgress: (step, event, attempt) =>
-            setUploading(uploadStatusText({ ...position, step, ...event, attempt })),
+          onProgress: (step, event, attempt) => {
+            at = { step, loaded: event.loaded, total: event.total, attempt }
+            setUploading(uploadStatusText({ ...position, step, ...event, attempt }))
+          },
         })
         if (result.correctedPending) pending.push(result.correctedPending)
         URL.revokeObjectURL(shot.prepared.preview)
@@ -275,7 +284,13 @@ export function ArtworkPhotosPage() {
     await reload()
     if (failed.length > 0) {
       setUploadError(
-        `No se han podido subir ${failed.length} de ${queue.length}: ${failed[0]?.error}`,
+        uploadFailureText({
+          failed: failed.length,
+          total: queue.length,
+          message: failed[0]?.error ?? '',
+          at,
+          seconds: (Date.now() - startedAt) / 1000,
+        }),
       )
     } else {
       // What is missing is said with the photographs that were added, and not instead of

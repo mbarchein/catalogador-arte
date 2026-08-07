@@ -17,6 +17,17 @@
 - El fichero original se llama «el original» en toda la pantalla. En el aviso de fallo se llamaba «el
   máster», que es una palabra de dentro y no dice nada.
 
+**La pantalla dice qué fichero está subiendo, que son cuatro por fotografía**
+
+- Cada fotografía sube cuatro cosas: la miniatura, la copia que se ve en la ficha, el original
+  intacto y la copia a tamaño completo con la corrección. Antes solo se nombraban dos.
+- Decía «Subiendo 1 de 1» contando fotografías, y se leía como si fuera un solo fichero. Ahora solo
+  aparece la cuenta cuando hay más de una, y dice «Foto 2 de 3».
+- Si algo falla, el aviso dice **dónde se quedó y cuánto tardó**: «Se quedó en el original, 2 MB de
+  3,6 MB, en el intento 3. Tardó 47 s en fallar». Sin eso, un enlace que muere en el primer
+  kilobyte y otro que muere siempre en el mismo punto se cuentan con la misma frase, y son
+  problemas distintos.
+
 **Un envío cortado se reintenta solo**
 
 - Hasta tres intentos por fichero, esperando 2 y 6 segundos. Un corte de cobertura a mitad de una
