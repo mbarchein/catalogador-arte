@@ -33,6 +33,7 @@ import { displayDate } from '../../lib/dates'
 import { useEditingAccess } from '../../auth/AuthContext'
 import { ActionBar, Chips, CropIcon, LoadingNotice } from '../../components/ui'
 import { moveItem } from '../../lib/reorder'
+import { useUnloadGuard } from '../../components/useUnloadGuard'
 import { rememberBatchColor } from './batch'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { useArtworkImages, type ImageRow } from './artworkImages'
@@ -166,6 +167,17 @@ export function ArtworkPhotosPage() {
     initial: PhotoEdit
     note: string | null
   } | null>(null)
+
+  /**
+   * Una recarga sin querer aquí se lleva trabajo de verdad (RNF-106).
+   *
+   * Con una subida en marcha se pierde lo enviado y los segundos de generar la copia a
+   * tamaño completo. Y con fotografías preparadas se pierden LAS FOTOGRAFÍAS: al
+   * contrario que la pantalla de captura, que apunta su cola en el teléfono, aquí están
+   * solo en memoria — se eligieron del carrete o se hicieron con la cámara, se les puso
+   * el tipo de toma y quizá se recortaron, y de eso no queda nada.
+   */
+  useUnloadGuard(uploading !== null || staged.length > 0)
 
   // The selection starts on the main image and follows removals; it never
   // jumps on its own while the cataloger is working.

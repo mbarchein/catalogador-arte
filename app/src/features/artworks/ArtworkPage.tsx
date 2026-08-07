@@ -31,6 +31,8 @@ import {
   maxYear,
   composeDate,
 } from '../../lib/structuredDate'
+import { draftDirty } from '../../components/formDirty'
+import { useUnloadGuard } from '../../components/useUnloadGuard'
 import {
   ActionBar,
   BanIcon,
@@ -1017,6 +1019,15 @@ function EditForm({
   const [data, setData] = useState(artwork)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /**
+   * Una recarga con el formulario tocado se lleva las correcciones (RNF-106).
+   *
+   * `draftDirty` y no `data !== artwork`: el estado se reemplaza en cada tecla, así que
+   * comparar por identidad preguntaría también después de escribir y borrar una letra —
+   * y un aviso que sale sobre un formulario intacto es el que se despacha sin leer.
+   * Mientras guarda también, que ahí la recarga corta la escritura a medias.
+   */
+  useUnloadGuard(saving || draftDirty(data, artwork))
   // Controlled vocabulary for "Tipo de obra" (RF-213). Only editors reach
   // this form, so offering the add-to-catalog row is always legitimate here.
   const { types: artworkTypes, addType } = useArtworkTypes()

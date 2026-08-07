@@ -33,6 +33,7 @@ import { useArtworkTypes } from './useArtworkTypes'
 import { useSeries } from './useSeries'
 import { usePhysicalPlaces } from './usePhysicalPlaces'
 import { PlacePicker } from './PlacePicker'
+import { useUnloadGuard } from '../../components/useUnloadGuard'
 import {
   INITIAL_BATCH,
   saveBatch,
@@ -115,6 +116,20 @@ export function CapturePage() {
 
   /** The bytes of the photograph going up right now, or null when nothing is (RNF-106). */
   const [uploading, setUploading] = useState<string | null>(null)
+
+  /**
+   * Aquí se pregunta por la subida, y NO por las fotografías preparadas (RNF-106).
+   *
+   * La cola de esta pantalla se apunta en el teléfono en cuanto cambia, así que una
+   * recarga la devuelve entera: avisar de algo que se recupera solo es la clase de
+   * diálogo que se aprende a despachar sin leer, y entonces tampoco se lee cuando hay
+   * una subida a medias, que es lo que no vuelve.
+   *
+   * Lo que sí se pierde son los campos de la obra que se esté rellenando. Es barato de
+   * volver a teclear al lado de una subida de megabytes, y se acepta a cambio de que el
+   * aviso siga significando algo.
+   */
+  useUnloadGuard(uploading !== null || saving)
 
   useEffect(() => {
     saveBatch(batch)

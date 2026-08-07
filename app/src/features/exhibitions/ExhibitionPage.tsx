@@ -3,6 +3,8 @@ import { Link, Navigate, useMatch, useNavigate, useParams } from 'react-router'
 import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { ActionBar, LoadingNotice } from '../../components/ui'
+import { draftDirty } from '../../components/formDirty'
+import { useUnloadGuard } from '../../components/useUnloadGuard'
 import { displayExhibitionDates } from '../documentary/documentaryFormat'
 import type { ExhibitionRow } from '../documentary/documentaryRows'
 import {
@@ -169,6 +171,8 @@ function ExhibitionRecord({
 
   const [draft, setDraft] = useState<ExhibitionDraft>(() => exhibitionDraft(exhibition))
   const [failure, setFailure] = useState<string | null>(null)
+  // Mismo caso que el formulario de una obra: recargar con algo corregido lo tira.
+  useUnloadGuard(saving || draftDirty(draft, exhibitionDraft(exhibition)))
   const [confirmingRetire, setConfirmingRetire] = useState(false)
 
   // El borrador se rehace cuando cambia la ficha guardada —al entrar en edición,

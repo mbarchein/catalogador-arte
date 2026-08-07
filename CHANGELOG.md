@@ -17,6 +17,19 @@
 - El fichero original se llama «el original» en toda la pantalla. En el aviso de fallo se llamaba «el
   máster», que es una palabra de dentro y no dice nada.
 
+**Recargar la pantalla con trabajo a medias pregunta antes**
+
+- Con una subida en marcha, o con fotografías preparadas y sin subir, el navegador pregunta antes
+  de recargar o de cerrar. Un gesto de más ya no se lleva por delante lo que estaba pasando.
+- El aviso es el del navegador y lo escribe él: no se puede cambiar ese texto ni decir ahí qué hay
+  en juego. Tampoco se puede impedir una recarga, solo hacer que se detenga y pregunte.
+- Solo sale cuando hay algo que perder, y desaparece en cuanto está a salvo. Un aviso que saliera
+  siempre se acabaría descartando sin leer, y entonces no serviría el día que importa.
+- También en el formulario de una obra y en el de una exposición cuando hay correcciones sin
+  guardar. Un espacio de más no cuenta como corrección.
+- En la pantalla de captura pregunta por la subida, no por las fotografías preparadas: esas se
+  apuntan en el teléfono y una recarga las devuelve enteras.
+
 **La pantalla dice qué fichero está subiendo, que son cuatro por fotografía**
 
 - Cada fotografía sube cuatro cosas: la miniatura, la copia que se ve en la ficha, el original
