@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import { EXIF_SLICE_BYTES, readPhotoExif, type PhotoTakenDate } from './exif'
 import { NO_EDIT, editToColumns, isNoEdit, type CropSource, type PhotoEdit } from './imageEdits'
 import type { PhotoProvenance } from './types'
-import { putSignedFile, type UploadProgressEvent } from './signedUpload'
+import { putSignedFile, type SignedPutResult, type UploadProgressEvent } from './signedUpload'
 
 /**
  * Three levels per shot (ADR-002). Derivatives are generated **in the browser
@@ -574,6 +574,63 @@ async function signStoredFile(
 }
 
 /**
+ * How many times a large file is sent before giving up. Three attempts, so two retries.
+ *
+ * It exists because of a real failure, reported twice and finally caught with its own
+ * message: «La conexión se ha cortado durante el envío», halfway through an original of
+ * several megabytes. That is not a fault to report, it is Tuesday in a storeroom — and
+ * the cost of not retrying is that the whole photograph is lost, including the twelve
+ * seconds of rendering the corrected copy, and the cataloger presses the button again by
+ * hand for the same thing the browser could have done itself.
+ *
+ * Three and not more: past that it stops being a blip and starts being no coverage, and a
+ * screen that keeps retrying for ten minutes is worse than one that says so.
+ */
+export const UPLOAD_ATTEMPTS = 3
+
+/** 2 s and then 6 s. Long enough for a cell to reattach, short enough to stay awake. */
+const RETRY_DELAY_MS = [2_000, 6_000]
+
+const wait = (ms: number) => new Promise((done) => setTimeout(done, ms))
+
+/**
+ * Signs and PUTs, retrying a transfer that got no answer.
+ *
+ * **Signed again on every attempt, on purpose.** An upload signature is good for ten
+ * minutes from the moment it is issued, and the attempt that just failed may have spent
+ * three of them before the connection dropped. Reusing the URL would mean the retry with
+ * the best chance of working — the last one — is the one most likely to be refused for a
+ * stale signature, which reads as a permissions error and is not one.
+ *
+ * Only a transfer with **no answer** is retried. A 4xx or 5xx is the store saying
+ * something, and repeating a refused request three times just makes the wait longer
+ * before the same message.
+ */
+async function signAndPut(
+  path: string,
+  body: Blob,
+  contentType: string,
+  label: string,
+  onProgress?: (event: UploadProgressEvent, attempt: number) => void,
+): Promise<SignedPutResult> {
+  let last: unknown
+  for (let attempt = 1; attempt <= UPLOAD_ATTEMPTS; attempt += 1) {
+    const signature = await signStoredFile(path, 'upload', contentType, label)
+    try {
+      return await putSignedFile(signature.url, body, contentType, (event) =>
+        onProgress?.(event, attempt),
+      )
+    } catch (error) {
+      last = error
+      const delay = RETRY_DELAY_MS[attempt - 1]
+      if (delay === undefined) break
+      await wait(delay)
+    }
+  }
+  throw last
+}
+
+/**
  * Signed download URL for the archive master (RF-411).
  *
  * The label says «el original de archivo» and not «el máster» because it ends up
@@ -716,7 +773,7 @@ export async function saveCorrectedCopy(params: {
   /** The path to write, when the caller already has a base (see `paths`). */
   path?: string
   /** How much of the copy has gone out, for the screen (RNF-106). */
-  onProgress?: (event: UploadProgressEvent) => void
+  onProgress?: (event: UploadProgressEvent, attempt: number) => void
 }): Promise<CorrectedCopyOutcome> {
   const { catalogId, copy, masterPath } = params
   if (copy.status === 'NOT_NEEDED') return { columns: NO_CORRECTED_COPY, reason: null }
@@ -733,13 +790,14 @@ export async function saveCorrectedCopy(params: {
   assertNotMaster(path, masterPath)
 
   try {
-    const signature = await signStoredFile(path, 'upload', CORRECTED_CONTENT_TYPE, 'la copia corregida')
     // The PUT repeats exactly the signed Content-Type or the signature does not
-    // validate, the same as for the master.
-    const response = await putSignedFile(
-      signature.url,
+    // validate, the same as for the master, and it gets the same retries: this is the
+    // bigger of the two files, so it is the likelier of the two to be cut.
+    const response = await signAndPut(
+      path,
       copy.blob,
       CORRECTED_CONTENT_TYPE,
+      ARCHIVE_NOUN.corrected,
       params.onProgress,
     )
     if (!response.ok) return pending(CORRECTED_NOT_UPLOADED)
@@ -802,7 +860,12 @@ export async function uploadShot(
      * copy travel through the storage library, which does not say. Counting them into one
      * total would mean a bar that never reaches its own end.
      */
-    onProgress?: (step: 'master' | 'corrected', event: UploadProgressEvent) => void
+    onProgress?: (
+      step: ArchiveKind,
+      event: UploadProgressEvent,
+      /** 1 the first time; 2 or 3 after a cut connection (see `UPLOAD_ATTEMPTS`). */
+      attempt: number,
+    ) => void
   },
 ): Promise<UploadResult> {
   // What the derivatives really are is read from the bytes about to be
@@ -837,9 +900,12 @@ export async function uploadShot(
   // application produces derived files and parameters, and this line is the one that
   // has to stay boring — there is a test that pins the identity of this object.
   const masterType = shot.master.type || 'application/octet-stream'
-  const signature = await signStoredFile(target.master, 'upload', masterType, ARCHIVE_NOUN.master)
-  const response = await putSignedFile(signature.url, shot.master, masterType, (event) =>
-    options.onProgress?.('master', event),
+  const response = await signAndPut(
+    target.master,
+    shot.master,
+    masterType,
+    ARCHIVE_NOUN.master,
+    (event, attempt) => options.onProgress?.('master', event, attempt),
   )
   if (!response.ok) {
     throw new Error(`Subiendo ${ARCHIVE_NOUN.master}: HTTP ${response.status}`)
@@ -854,7 +920,7 @@ export async function uploadShot(
     copy: options.correctedCopy ?? correctedCopyFor(shot.edit),
     masterPath: target.master,
     path: target.corrected,
-    onProgress: (event) => options.onProgress?.('corrected', event),
+    onProgress: (event, attempt) => options.onProgress?.('corrected', event, attempt),
   })
 
   const { data, error } = await supabase

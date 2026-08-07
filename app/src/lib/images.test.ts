@@ -24,6 +24,7 @@ import {
   randomSuffix,
   readShotDate,
   saveCorrectedCopy,
+  UPLOAD_ATTEMPTS,
   uploadShot,
   validateFile,
   type DerivativeType,
@@ -60,7 +61,9 @@ const api = vi.hoisted(() => ({
   /** Set to simulate a PUT the store rejects. */
   putStatus: 200,
   /** Progress reported to the caller, per step (RNF-106). */
-  progress: [] as { step: string; loaded: number; total: number | null }[],
+  progress: [] as { step: string; loaded: number; total: number | null; attempt?: number }[],
+  /** How many PUTs die mid-transfer before one gets through. */
+  cutsBeforeSuccess: 0,
 }))
 
 vi.mock('./supabase', () => ({
@@ -115,6 +118,8 @@ function resetApi() {
   api.signMastersOnly = false
   api.putStatus = 200
   api.progress.length = 0
+  api.cutsBeforeSuccess = 0
+  cuts = 0
   // A fake `XMLHttpRequest`, because that is what the signed PUT uses now: `fetch`
   // cannot report upload progress, and a 12 MB original over the connection of a
   // storeroom was two minutes of a screen that said nothing (see signedUpload.ts).
@@ -143,12 +148,21 @@ function resetApi() {
       // to be exercised by every upload test rather than only by the one that looks.
       const size = (body as Blob | undefined)?.size ?? 0
       this.upload.onprogress?.({ lengthComputable: true, loaded: Math.floor(size / 2), total: size })
+      // A cut connection: no status, no answer, which is what `onerror` means.
+      if (cuts < api.cutsBeforeSuccess) {
+        cuts += 1
+        this.onerror?.()
+        return
+      }
       this.status = api.putStatus
       this.onload?.()
     }
   }
   ;(globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = FakeXhr
 }
+
+/** Cuts already spent in this test, so `cutsBeforeSuccess` counts down. */
+let cuts = 0
 
 interface ProgressEventLike {
   lengthComputable: boolean
@@ -497,6 +511,65 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     // fichero de la cámara: no el de las derivadas.
     expect(puts[0]?.type).toBe('image/jpeg')
     expect(api.signed[0]).toMatchObject({ operation: 'upload', contentType: 'image/jpeg' })
+  })
+
+  it('reintenta un envío que se corta, y vuelve a firmar cada vez', async () => {
+    // La incidencia que esto arregla, con su mensaje: «La conexión se ha cortado durante
+    // el envío», a mitad de un original de varios megas. No es una avería que reportar,
+    // es lo normal en un almacén — y sin reintento se pierde la fotografía entera,
+    // incluidos los doce segundos de generar la copia corregida.
+    api.cutsBeforeSuccess = 2
+    const master = masterOf()
+    // Reloj falso: entre intentos se espera 2 s y luego 6 s, que es lo correcto en un
+    // almacén con cobertura intermitente y una eternidad en una batería de tests.
+    vi.useFakeTimers()
+    const upload = uploadShot('AR-0001', shotOf(master), {
+      shotType: 'GENERAL',
+      isIndex: false,
+      onProgress: (step, event, attempt) => api.progress.push({ step, ...event, attempt }),
+    })
+    await vi.advanceTimersByTimeAsync(30_000)
+    await upload
+    vi.useRealTimers()
+
+    const masterPuts = api.puts.filter((p) => p.url.includes('_master'))
+    expect(masterPuts).toHaveLength(3)
+    // El MISMO objeto en los tres: un reintento no puede recodificar el documento de
+    // archivo por el camino (ADR-002).
+    expect(masterPuts.every((p) => p.body === master)).toBe(true)
+    // Y una firma nueva por intento. La de subida vale diez minutos desde que se emite,
+    // y el intento que acaba de fallar ha podido gastarse tres: reutilizar la URL haría
+    // que el reintento con más posibilidades de funcionar fuera el más propenso a que se
+    // lo rechacen por firma caducada, que se lee como un problema de permisos y no lo es.
+    expect(api.signed.filter((s) => s.path.includes('_master'))).toHaveLength(3)
+    // La pantalla se entera de en qué intento va, o el contador baja de 80 % a 0 % solo.
+    expect(api.progress.map((p) => p.attempt)).toEqual([1, 2, 3])
+  })
+
+  it('se rinde con el mensaje del corte cuando no hay manera', async () => {
+    api.cutsBeforeSuccess = 99
+    vi.useFakeTimers()
+    const upload = uploadShot('AR-0001', shotOf(masterOf()), {
+      shotType: 'GENERAL',
+      isIndex: false,
+    })
+    const settled = expect(upload).rejects.toThrow('La conexión se ha cortado durante el envío.')
+    await vi.advanceTimersByTimeAsync(30_000)
+    await settled
+    vi.useRealTimers()
+    // Tres intentos y ni uno más: pasado eso ya no es un tropiezo, es que no hay
+    // cobertura, y una pantalla reintentando diez minutos es peor que una que lo diga.
+    expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(UPLOAD_ATTEMPTS)
+  })
+
+  it('no reintenta lo que el almacén ha contestado', async () => {
+    // Un 5xx es el almacén diciendo algo. Repetir tres veces una petición rechazada solo
+    // alarga la espera antes del mismo mensaje.
+    api.putStatus = 503
+    await expect(
+      uploadShot('AR-0001', shotOf(masterOf()), { shotType: 'GENERAL', isIndex: false }),
+    ).rejects.toThrow('HTTP 503')
+    expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(1)
   })
 
   it('cuenta lo enviado de cada fichero grande, diciendo de cuál (RNF-106)', async () => {

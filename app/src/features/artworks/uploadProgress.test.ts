@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { ARCHIVE_NOUN } from '../../lib/images'
-import { preparingCopyText, uploadPercent, uploadStatusText } from './uploadProgress'
+import {
+  pendingUploadNotice,
+  pendingUploadText,
+  preparingCopyText,
+  uploadPercent,
+  uploadStatusText,
+} from './uploadProgress'
 
 /**
  * RNF-106: the wait has to be legible.
@@ -67,6 +73,31 @@ describe('uploadStatusText', () => {
     expect(master).not.toBe(corrected)
   })
 
+  it('dice que es un reintento, porque el contador vuelve a cero', () => {
+    // Un PUT interrumpido no reanuda nada: los bytes se mandan otra vez desde el
+    // principio. Sin decirlo, la línea baja de «80 %» a «0 %» sola, que es exactamente
+    // como se lee una avería.
+    expect(
+      uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 0, total: 8_000_000, attempt: 2 }),
+    ).toBe('Subiendo 1 de 1 · el original: 0 kB de 7,6 MB (0 %) · reintento 1')
+    expect(
+      uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 0, total: 8_000_000, attempt: 3 }),
+    ).toBe('Subiendo 1 de 1 · el original: 0 kB de 7,6 MB (0 %) · reintento 2')
+  })
+
+  it('no dice nada del primer intento, que no es un reintento', () => {
+    const first = uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 1, total: 2, attempt: 1 })
+    expect(first).not.toContain('reintento')
+    // Y sin `attempt`, que es como llega desde cualquier sitio que no lo cuente.
+    expect(uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 1, total: 2 })).toBe(first)
+  })
+
+  it('lo dice también cuando el navegador no da el total', () => {
+    expect(
+      uploadStatusText({ index: 1, count: 1, step: 'corrected', loaded: 1024, total: null, attempt: 2 }),
+    ).toBe('Subiendo 1 de 1 · la copia corregida: 1 kB enviados · reintento 1')
+  })
+
   it('uses the same nouns as the download side and does not invent its own', () => {
     // The duplicated vocabulary table this replaced: two screens naming one file two ways
     // is how «el original» and «el máster» end up meaning the same thing to nobody.
@@ -76,6 +107,22 @@ describe('uploadStatusText', () => {
     expect(
       uploadStatusText({ index: 1, count: 1, step: 'corrected', loaded: 1, total: 2 }),
     ).toContain(ARCHIVE_NOUN.corrected)
+  })
+})
+
+describe('lo que queda por subir', () => {
+  it('cuenta, porque la cuenta es lo que se olvida', () => {
+    expect(pendingUploadText(1)).toBe('Subir la foto')
+    expect(pendingUploadText(4)).toBe('Subir 4 fotos')
+    expect(pendingUploadNotice(1)).toBe('Hay una fotografía sin subir.')
+    expect(pendingUploadNotice(4)).toBe('Hay 4 fotografías sin subir.')
+  })
+
+  it('no dice nada cuando no queda nada', () => {
+    // La barra del pie no se pinta, así que no puede tapar el menú ni la ficha cuando
+    // no hay nada que hacer con ella.
+    expect(pendingUploadNotice(0)).toBeNull()
+    expect(pendingUploadNotice(-1)).toBeNull()
   })
 })
 

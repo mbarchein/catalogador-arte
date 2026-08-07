@@ -17,6 +17,25 @@
 - El fichero original se llama «el original» en toda la pantalla. En el aviso de fallo se llamaba «el
   máster», que es una palabra de dentro y no dice nada.
 
+**Un envío cortado se reintenta solo**
+
+- Hasta tres intentos por fichero, esperando 2 y 6 segundos. Un corte de cobertura a mitad de una
+  subida es lo normal en un almacén, y antes tiraba la fotografía entera.
+- La pantalla dice que va por el reintento, porque el contador vuelve a empezar de cero: un envío
+  interrumpido no continúa por donde iba, se manda otra vez.
+- Si los tres fallan, las fotografías se quedan preparadas con su tipo de toma elegido y el botón pasa
+  a decir «Volver a intentarlo».
+
+**El botón de subir se ve siempre, aunque haya que bajar por la pantalla**
+
+- Va en una barra pegada al pie, como el «Guardar» del formulario de la ficha. Estaba dentro de la
+  tarjeta de arriba, así que con cuatro fotografías preparadas se salía de la pantalla.
+- Dice cuántas quedan sin subir. Fotografías preparadas y nunca enviadas es lo único que esta
+  pantalla podía perder en silencio.
+- Si algo falla, el motivo sale ahí mismo, junto al botón que se acaba de pulsar, y no al final de la
+  página.
+- La barra solo aparece cuando hay algo pendiente o algo subiendo.
+
 ## 5 de agosto de 2026
 
 ### Interfaz

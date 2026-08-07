@@ -345,8 +345,8 @@ export function CapturePage() {
           // this is the one moment the master is already in memory: doing it later would
           // mean downloading it again over the connection of a storage room.
           correctedCopy,
-          onProgress: (step, event) =>
-            setUploading(uploadStatusText({ ...position, step, ...event })),
+          onProgress: (step, event, attempt) =>
+            setUploading(uploadStatusText({ ...position, step, ...event, attempt })),
         })
         if (result.correctedPending) pending.push(result.correctedPending)
         current = current.map((x) => (x.key === s.key ? { ...x, status: 'uploaded' as const } : x))

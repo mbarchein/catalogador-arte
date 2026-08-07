@@ -38,6 +38,8 @@ export interface UploadStatus {
   loaded?: number
   /** Null when the browser cannot say how much it is sending. */
   total?: number | null
+  /** 1 the first time. Above that, the connection was cut and it is going again. */
+  attempt?: number
 }
 
 /**
@@ -74,12 +76,17 @@ export function uploadStatusText(status: UploadStatus): string {
   const loaded = status.loaded ?? 0
   const percent = uploadPercent(loaded, status.total)
 
+  // A retry restarts the count from zero — an interrupted PUT resumes nothing, so the
+  // bytes really do go again — and a counter that silently walks backwards from 80 % to
+  // 0 % reads as a fault. Saying it is a retry is what makes the same number honest.
+  const again = (status.attempt ?? 1) > 1 ? ` · reintento ${(status.attempt ?? 1) - 1}` : ''
+
   // No total means the browser did not say how much it was sending. What has gone out is
   // still worth showing: it is the difference between a transfer that advances and one
   // that is stuck, which is the question being asked.
-  if (percent === null) return `${position} · ${name}: ${sent(loaded)} enviados`
+  if (percent === null) return `${position} · ${name}: ${sent(loaded)} enviados${again}`
 
-  return `${position} · ${name}: ${sent(loaded)} de ${sent(status.total ?? 0)} (${percent} %)`
+  return `${position} · ${name}: ${sent(loaded)} de ${sent(status.total ?? 0)} (${percent} %)${again}`
 }
 
 /**
@@ -91,4 +98,34 @@ export function uploadStatusText(status: UploadStatus): string {
  */
 export function preparingCopyText(index: number, count: number): string {
   return `Preparando la copia a tamaño completo de la ${index} de ${count}…`
+}
+
+/**
+ * What the button in the footer bar says while photographs are waiting to go up.
+ *
+ * It lives in a bar stuck to the bottom of the screen, like the record's edit form, and
+ * that is the point: the button used to sit inside the card at the top, so adding four
+ * photographs — each one a thumbnail in a strip, each one with its shot type to choose —
+ * scrolled it off the screen. Photographs staged and never sent is the one failure this
+ * screen can produce silently, and «no lo he subido» does not look any different from
+ * «no lo he hecho».
+ *
+ * It counts, because the count is the thing being forgotten.
+ */
+export function pendingUploadText(count: number): string {
+  return count === 1 ? 'Subir la foto' : `Subir ${count} fotos`
+}
+
+/**
+ * The reminder next to it, or null when there is nothing pending.
+ *
+ * Said as a fact and not as a warning: nothing is wrong yet, and a red alarm over four
+ * photographs waiting fifteen seconds is the kind of thing that gets dismissed by reflex
+ * and then ignored on the day it matters.
+ */
+export function pendingUploadNotice(count: number): string | null {
+  if (count <= 0) return null
+  return count === 1
+    ? 'Hay una fotografía sin subir.'
+    : `Hay ${count} fotografías sin subir.`
 }

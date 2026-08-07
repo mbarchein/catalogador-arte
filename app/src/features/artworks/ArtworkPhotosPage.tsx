@@ -16,7 +16,12 @@ import {
   type PhotoEdit,
 } from '../../lib/imageEdits'
 import { editSource, renderCorrectedCopy, savePhotoEdit } from '../../lib/imageRender'
-import { preparingCopyText, uploadStatusText } from './uploadProgress'
+import {
+  pendingUploadNotice,
+  pendingUploadText,
+  preparingCopyText,
+  uploadStatusText,
+} from './uploadProgress'
 import {
   PHOTO_PROVENANCE_LABEL,
   SHOT_TYPE_LABEL,
@@ -25,7 +30,7 @@ import {
 } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
 import { useEditingAccess } from '../../auth/AuthContext'
-import { Chips, CropIcon, LoadingNotice } from '../../components/ui'
+import { ActionBar, Chips, CropIcon, LoadingNotice } from '../../components/ui'
 import { moveItem } from '../../lib/reorder'
 import { rememberBatchColor } from './batch'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
@@ -121,6 +126,15 @@ export function ArtworkPhotosPage() {
   const [draggedOrder, setDraggedOrder] = useState<string[] | null>(null)
   const [staged, setStaged] = useState<QueuedShot[]>([])
   const [uploading, setUploading] = useState<string | null>(null)
+  /**
+   * Why the last upload failed, kept apart from the page's `error` so it can be shown
+   * IN THE FOOTER BAR, next to the button that was pressed.
+   *
+   * The page's error lives at the end of the photographs section, which after adding
+   * four shots is a long way down: pressing «Subir» and having the reason appear off
+   * screen is how «la conexión se ha cortado» turns into «no ha pasado nada».
+   */
+  const [uploadError, setUploadError] = useState<string | null>(null)
   /** What the reframing is doing right now, so the screen is never half done. */
   const [working, setWorking] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -196,10 +210,12 @@ export function ArtworkPhotosPage() {
   function discardStaged() {
     staged.forEach((s) => URL.revokeObjectURL(s.prepared.preview))
     setStaged([])
+    setUploadError(null)
   }
 
   async function uploadStaged() {
     setError(null)
+    setUploadError(null)
     setNotice(null)
     const queue = staged
     const failed: QueuedShot[] = []
@@ -239,8 +255,8 @@ export function ArtworkPhotosPage() {
           // The bytes as they go out (RNF-106). Straight to state: these arrive a few
           // times a second at most — the browser throttles `upload.onprogress` — so
           // there is nothing here worth debouncing.
-          onProgress: (step, event) =>
-            setUploading(uploadStatusText({ ...position, step, ...event })),
+          onProgress: (step, event, attempt) =>
+            setUploading(uploadStatusText({ ...position, step, ...event, attempt })),
         })
         if (result.correctedPending) pending.push(result.correctedPending)
         URL.revokeObjectURL(shot.prepared.preview)
@@ -258,7 +274,9 @@ export function ArtworkPhotosPage() {
     setUploading(null)
     await reload()
     if (failed.length > 0) {
-      setError(`No se han podido subir ${failed.length} de ${queue.length}: ${failed[0]?.error}`)
+      setUploadError(
+        `No se han podido subir ${failed.length} de ${queue.length}: ${failed[0]?.error}`,
+      )
     } else {
       // What is missing is said with the photographs that were added, and not instead of
       // them: the shot IS registered and its correction IS stored; what is pending is a
@@ -600,24 +618,7 @@ export function ArtworkPhotosPage() {
             {uploading}
           </p>
         ) : (
-          <div className="space-y-2">
-            <PhotoPicker shots={staged} onChange={setStaged} disabled={saving} withIndex={false} />
-            {staged.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => void uploadStaged()}
-                  className="btn min-h-touch bg-stone-900 text-white"
-                >
-                  {staged.length === 1 ? 'Subir la foto' : `Subir ${staged.length} fotos`}
-                </button>
-                <button type="button" onClick={discardStaged} className="btn-secondary">
-                  Descartar
-                </button>
-              </div>
-            )}
-          </div>
+          <PhotoPicker shots={staged} onChange={setStaged} disabled={saving} withIndex={false} />
         )}
       </section>
 
@@ -912,6 +913,55 @@ export function ArtworkPhotosPage() {
           onApply={(edit, cropSource) => void applyEdit(edit, cropSource)}
           onCancel={() => setEditing(null)}
         />
+      )}
+
+      {/* ── Lo que falta por subir, pegado al pie ──
+          Como en el formulario de editar la ficha, y por el mismo motivo. Estos botones
+          vivían dentro de la tarjeta de arriba, así que añadir cuatro fotografías —cada
+          una una miniatura en la tira, cada una con su tipo de toma que elegir— los
+          sacaba de la pantalla. Fotos preparadas y nunca enviadas es el único fallo que
+          esta pantalla produce en silencio, y «no lo he subido» no se distingue de «no lo
+          he hecho». La barra solo existe mientras hay algo pendiente o algo subiendo: sin
+          nada que hacer con ella, no tapa la ficha. */}
+      {(staged.length > 0 || uploading) && (
+        <ActionBar
+          notice={
+            uploading ? (
+              <p role="status" className="rounded-lg bg-stone-50 p-2 text-sm text-stone-700">
+                {uploading}
+              </p>
+            ) : uploadError ? (
+              // El motivo, donde se pulsó el botón. Y las fotos siguen preparadas
+              // debajo, con su tipo de toma elegido, listas para volver a intentarlo.
+              <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-800">
+                {uploadError}
+              </p>
+            ) : (
+              <p className="text-xs text-stone-600">{pendingUploadNotice(staged.length)}</p>
+            )
+          }
+        >
+          <button
+            type="button"
+            disabled={saving || uploading !== null}
+            onClick={() => void uploadStaged()}
+            className="btn min-h-touch flex-1 bg-stone-900 text-white"
+          >
+            {uploading
+              ? 'Subiendo…'
+              : uploadError
+                ? 'Volver a intentarlo'
+                : pendingUploadText(staged.length)}
+          </button>
+          <button
+            type="button"
+            disabled={uploading !== null}
+            onClick={discardStaged}
+            className="btn-secondary"
+          >
+            Descartar
+          </button>
+        </ActionBar>
       )}
     </Layout>
   )
