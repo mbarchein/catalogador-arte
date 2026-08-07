@@ -3,6 +3,7 @@ import { EXIF_SLICE_BYTES, readPhotoExif, type PhotoTakenDate } from './exif'
 import { NO_EDIT, editToColumns, isNoEdit, type CropSource, type PhotoEdit } from './imageEdits'
 import type { PhotoProvenance } from './types'
 import { putSignedFile, type SignedPutResult, type UploadProgressEvent } from './signedUpload'
+import { bytesBefore, planParts, useMultipart } from './multipartUpload'
 
 /**
  * Three levels per shot (ADR-002). Derivatives are generated **in the browser
@@ -565,9 +566,11 @@ async function signStoredFile(
   operation: 'upload' | 'download',
   contentType: string | undefined,
   label: string,
+  /** Set when the URL is for one part of an open multipart upload. */
+  part?: { uploadId: string; partNumber: number },
 ): Promise<{ url: string; contentType: string | null }> {
   const { data, error } = await supabase.functions.invoke('sign-file', {
-    body: { operation, path, contentType },
+    body: { operation, path, contentType, ...part },
   })
   if (error) throw new Error(`Firmando ${label}: ${error.message}`)
   return data as { url: string; contentType: string | null }
@@ -612,10 +615,11 @@ async function signAndPut(
   contentType: string,
   label: string,
   onProgress?: (event: UploadProgressEvent, attempt: number) => void,
+  part?: { uploadId: string; partNumber: number },
 ): Promise<SignedPutResult> {
   let last: unknown
   for (let attempt = 1; attempt <= UPLOAD_ATTEMPTS; attempt += 1) {
-    const signature = await signStoredFile(path, 'upload', contentType, label)
+    const signature = await signStoredFile(path, 'upload', contentType, label, part)
     try {
       return await putSignedFile(signature.url, body, contentType, (event) =>
         onProgress?.(event, attempt),
@@ -628,6 +632,116 @@ async function signAndPut(
     }
   }
   throw last
+}
+
+/** Asks the function for one of the multipart operations it performs server-side. */
+async function multipart(
+  operation: 'multipart-start' | 'multipart-complete' | 'multipart-abort',
+  payload: Record<string, unknown>,
+  label: string,
+): Promise<Record<string, unknown>> {
+  const { data, error } = await supabase.functions.invoke('sign-file', {
+    body: { operation, ...payload },
+  })
+  if (error) throw new Error(`Subiendo ${label}: ${error.message}`)
+  return (data ?? {}) as Record<string, unknown>
+}
+
+/**
+ * Sends a file in parts, so a cut costs the part in flight and not the whole thing.
+ *
+ * **Sequential and not parallel.** Three parts at once over the connection of a storeroom
+ * get in each other's way, and worse, they make the progress line meaningless — «how much
+ * has gone out» stops being a single number the moment two transfers share the link. The
+ * point of this whole change is that the wait is legible.
+ *
+ * Progress is reported over the WHOLE file — the parts already accepted plus what is in
+ * flight — so a retry dips the count by one part instead of resetting it, which is the
+ * visible half of what multipart buys.
+ *
+ * On a part that will not go after its retries, the upload is abandoned: the store is told
+ * to drop it, so the pieces do not sit there costing space, and the error travels up as if
+ * it had been a plain PUT. Nothing partial is ever completed — a completed upload missing
+ * a part is a file shorter than the original, recorded as stored, which for the archive
+ * document is the worst outcome this path has.
+ */
+async function putInParts(
+  path: string,
+  body: Blob,
+  contentType: string,
+  label: string,
+  onProgress?: (event: UploadProgressEvent, attempt: number) => void,
+): Promise<SignedPutResult> {
+  const plan = planParts(body.size)
+  const started = await multipart('multipart-start', { path, contentType }, label)
+  const uploadId = started['uploadId']
+  if (typeof uploadId !== 'string' || uploadId.length === 0) {
+    throw new Error(`Subiendo ${label}: el almacén no ha abierto la subida por partes`)
+  }
+
+  const done: { partNumber: number; etag: string }[] = []
+  try {
+    for (const part of plan) {
+      const before = bytesBefore(plan, part.partNumber)
+      const result = await signAndPut(
+        path,
+        body.slice(part.start, part.end, contentType),
+        contentType,
+        label,
+        (event, attempt) =>
+          // Counted over the whole file, not over this part: `total` is the file and
+          // `loaded` is everything already accepted plus what is going now.
+          onProgress?.({ loaded: before + event.loaded, total: body.size }, attempt),
+        { uploadId, partNumber: part.partNumber },
+      )
+      // A refused part ends the upload like any other refusal — but it still has to
+      // travel through the abandonment below, or the parts already accepted sit in the
+      // bucket costing space with nothing that will ever reference them.
+      if (!result.ok) return { ...(await abandon(path, uploadId, label)), ...result }
+      if (result.etag === null) {
+        // The bucket exposes `etag` (infra/b2.tf). Without it the upload cannot be
+        // closed, and going on would end in a completion refused after every byte.
+        throw new Error(`Subiendo ${label}: el almacén no ha devuelto la marca de una parte`)
+      }
+      done.push({ partNumber: part.partNumber, etag: result.etag })
+    }
+
+    // The size travels with the completion so the function can weigh what it assembled.
+    // See `sizeMatches`: this is the check that stops a truncated master from being
+    // recorded as stored, which is the one failure of this path nobody would notice.
+    await multipart('multipart-complete', { path, uploadId, parts: done, size: body.size }, label)
+  } catch (error) {
+    await abandon(path, uploadId, label)
+    throw error
+  }
+
+  return { ok: true, status: 200, etag: null }
+}
+
+/**
+ * Tells the store to drop an upload that will not finish.
+ *
+ * Best effort and never throwing: it runs on the failure path, and a cleanup that fails
+ * must not replace the message about what actually went wrong. What it leaves behind if
+ * it does fail is parts occupying space until the bucket's own housekeeping removes them
+ * — the same trade as the orphan files the rest of this path already accepts.
+ */
+async function abandon(path: string, uploadId: string, label: string): Promise<SignedPutResult> {
+  await multipart('multipart-abort', { path, uploadId }, label).catch(() => undefined)
+  return { ok: false, status: 0, etag: null }
+}
+
+/** In parts when there is more than one, in a single PUT when there is not. */
+function sendLargeFile(
+  path: string,
+  body: Blob,
+  contentType: string,
+  label: string,
+  onProgress?: (event: UploadProgressEvent, attempt: number) => void,
+): Promise<SignedPutResult> {
+  return useMultipart(body.size)
+    ? putInParts(path, body, contentType, label, onProgress)
+    : signAndPut(path, body, contentType, label, onProgress)
 }
 
 /**
@@ -793,7 +907,7 @@ export async function saveCorrectedCopy(params: {
     // The PUT repeats exactly the signed Content-Type or the signature does not
     // validate, the same as for the master, and it gets the same retries: this is the
     // bigger of the two files, so it is the likelier of the two to be cut.
-    const response = await signAndPut(
+    const response = await sendLargeFile(
       path,
       copy.blob,
       CORRECTED_CONTENT_TYPE,
@@ -900,7 +1014,7 @@ export async function uploadShot(
   // application produces derived files and parameters, and this line is the one that
   // has to stay boring — there is a test that pins the identity of this object.
   const masterType = shot.master.type || 'application/octet-stream'
-  const response = await signAndPut(
+  const response = await sendLargeFile(
     target.master,
     shot.master,
     masterType,

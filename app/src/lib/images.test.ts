@@ -49,6 +49,8 @@ const api = vi.hoisted(() => ({
   signed: [] as { operation: string; path: string; contentType?: string }[],
   /** PUTs to the signed URLs: the master, and the corrected copy when there is one. */
   puts: [] as { url: string; method?: string; type?: string; body?: unknown }[],
+  /** Part number of each PUT, read off the signed URL. Undefined for a whole object. */
+  putParts: [] as (number | undefined)[],
   /** Rows handed to `insert`. */
   rows: [] as Record<string, unknown>[],
   /**
@@ -64,6 +66,8 @@ const api = vi.hoisted(() => ({
   progress: [] as { step: string; loaded: number; total: number | null; attempt?: number }[],
   /** How many PUTs die mid-transfer before one gets through. */
   cutsBeforeSuccess: 0,
+  /** Multipart operations the function was asked to perform, in order. */
+  multipart: [] as { operation: string; path?: string; uploadId?: string; parts?: unknown }[],
 }))
 
 vi.mock('./supabase', () => ({
@@ -83,16 +87,38 @@ vi.mock('./supabase', () => ({
     functions: {
       invoke: async (
         name: string,
-        init: { body: { operation: string; path: string; contentType?: string } },
+        init: {
+        body: {
+          operation: string
+          path: string
+          contentType?: string
+          uploadId?: string
+          partNumber?: number
+        }
+      },
       ) => {
         expect(name).toBe('sign-file')
+        const op = init.body.operation
+        if (op.startsWith('multipart-')) {
+          api.multipart.push({
+            operation: op,
+            path: init.body.path,
+            uploadId: (init.body as { uploadId?: string }).uploadId,
+            parts: (init.body as { parts?: unknown }).parts,
+          })
+          return { data: op === 'multipart-start' ? { uploadId: 'up-1' } : { ok: true }, error: null }
+        }
         api.signed.push(init.body)
         if (api.signMastersOnly && !/_master\.[A-Za-z0-9]+$/.test(init.body.path)) {
           return { data: null, error: { message: 'ruta no válida para un máster' } }
         }
+        const part =
+          init.body.uploadId === undefined
+            ? ''
+            : `&uploadId=${init.body.uploadId}&partNumber=${init.body.partNumber}`
         return {
           data: {
-            url: `https://b2.example/${init.body.path}?X-Amz-Signature=x`,
+            url: `https://b2.example/${init.body.path}?X-Amz-Signature=x${part}`,
             contentType: init.body.contentType ?? null,
           },
           error: null,
@@ -114,7 +140,9 @@ function resetApi() {
   api.uploads.length = 0
   api.signed.length = 0
   api.puts.length = 0
+  api.putParts.length = 0
   api.rows.length = 0
+  api.multipart.length = 0
   api.signMastersOnly = false
   api.putStatus = 200
   api.progress.length = 0
@@ -142,8 +170,14 @@ function resetApi() {
     setRequestHeader(name: string, value: string) {
       this.headers[name] = value
     }
+    getResponseHeader(name: string) {
+      // The store answers each part with its tag, which is what completes the upload.
+      return name === 'ETag' ? `"e${api.puts.length}"` : null
+    }
     send(body: unknown) {
       api.puts.push({ url: this.url, method: this.method, type: this.headers['Content-Type'], body })
+      const part = /[?&]partNumber=(\d+)/.exec(this.url)?.[1]
+      api.putParts.push(part === undefined ? undefined : Number(part))
       // Half of the body, then the answer: enough for a caller wiring progress through
       // to be exercised by every upload test rather than only by the one that looks.
       const size = (body as Blob | undefined)?.size ?? 0
@@ -172,6 +206,12 @@ interface ProgressEventLike {
 
 /** The row `insert` received, for the assertions about columns. */
 const lastRow = () => api.rows[api.rows.length - 1] as Record<string, unknown>
+
+const MiB = 1_048_576
+
+/** A master big enough to be split. The bytes do not matter, only the size does. */
+const bigMaster = (size: number, name = 'IMG_9999.jpg') =>
+  new File([new Uint8Array(size)], name, { type: 'image/jpeg' })
 
 const masterOf = (name = 'IMG_1234.jpg') =>
   new File([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], name, { type: 'image/jpeg' })
@@ -570,6 +610,106 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
       uploadShot('AR-0001', shotOf(masterOf()), { shotType: 'GENERAL', isIndex: false }),
     ).rejects.toThrow('HTTP 503')
     expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(1)
+  })
+
+  it('parte un fichero grande y lo termina con todas sus marcas (RNF-106)', async () => {
+    // Lo que pidió la usuaria: aprovechar lo ya subido cuando la red va mal. Un PUT
+    // único de 12 MB o llega entero o se pierde entero, así que un enlace que se cae
+    // cada pocos megas no termina nunca por muchos reintentos que se le den.
+    const master = bigMaster(12 * MiB)
+    await uploadShot('AR-0001', shotOf(master), {
+      shotType: 'GENERAL',
+      isIndex: false,
+      onProgress: (step, event, attempt) => api.progress.push({ step, ...event, attempt }),
+    })
+
+    // Abre, manda tres partes —5 MiB, 5 MiB y 2 MiB— y cierra.
+    expect(api.multipart.map((m) => m.operation)).toEqual(['multipart-start', 'multipart-complete'])
+    const masterPuts = api.puts.filter((p) => p.url.includes('_master'))
+    expect(masterPuts).toHaveLength(3)
+    expect(api.putParts.filter((n) => n !== undefined)).toEqual([1, 2, 3])
+
+    // Las partes cubren el fichero exactamente una vez. Si no, el almacén junta un
+    // objeto más corto que el original y lo da por bueno, que es lo peor que puede
+    // pasarle al documento de archivo porque no se nota después.
+    const enviado = masterPuts.reduce((n, p) => n + ((p.body as Blob).size ?? 0), 0)
+    expect(enviado).toBe(master.size)
+
+    // Y se cierra con las tres marcas, en orden. Sin ellas no hay fichero.
+    const completed = api.multipart[1]?.parts as { partNumber: number; etag: string }[]
+    expect(completed.map((p) => p.partNumber)).toEqual([1, 2, 3])
+    expect(completed.every((p) => p.etag.length > 0)).toBe(true)
+  })
+
+  it('cuenta el progreso sobre el fichero entero, no sobre la parte', async () => {
+    // La mitad visible de lo que compra partir: al reintentar una parte el contador
+    // baja esa parte y no vuelve a cero, porque lo anterior ya está al otro lado.
+    const master = bigMaster(12 * MiB)
+    await uploadShot('AR-0001', shotOf(master), {
+      shotType: 'GENERAL',
+      isIndex: false,
+      onProgress: (step, event) => api.progress.push({ step, ...event }),
+    })
+    const delMaster = api.progress.filter((p) => p.step === 'master')
+    expect(delMaster.every((p) => p.total === master.size)).toBe(true)
+    // El arnés avisa a mitad de cada parte: 2,5 MiB, 7,5 MiB y 11 MiB del fichero.
+    expect(delMaster.map((p) => p.loaded)).toEqual([2.5 * MiB, 7.5 * MiB, 11 * MiB])
+  })
+
+  it('un fichero pequeño sigue yendo de una vez', async () => {
+    // Con una sola parte, partir es un PUT normal con dos viajes de más y una forma de
+    // fallar que el PUT normal no tiene.
+    await uploadShot('AR-0001', shotOf(masterOf()), { shotType: 'GENERAL', isIndex: false })
+    expect(api.multipart).toEqual([])
+    expect(api.putParts.every((n) => n === undefined)).toBe(true)
+  })
+
+  it('si una parte no hay manera, se abandona y NO se termina nada a medias', async () => {
+    // Terminar sin una parte guarda un fichero más corto que el original y lo registra
+    // como almacenado. Antes que eso, se tira la subida entera y se avisa.
+    api.cutsBeforeSuccess = 99
+    vi.useFakeTimers()
+    const upload = uploadShot('AR-0001', shotOf(bigMaster(12 * MiB)), {
+      shotType: 'GENERAL',
+      isIndex: false,
+    })
+    const settled = expect(upload).rejects.toThrow('La conexión se ha cortado durante el envío.')
+    await vi.advanceTimersByTimeAsync(30_000)
+    await settled
+    vi.useRealTimers()
+
+    expect(api.multipart.map((m) => m.operation)).toEqual(['multipart-start', 'multipart-abort'])
+    // Y se le dice al almacén cuál abandonar, o los trozos se quedan ocupando sitio.
+    expect(api.multipart[1]?.uploadId).toBe('up-1')
+  })
+
+  it('reintenta solo la parte caída, no el fichero entero', async () => {
+    // El motivo de todo esto: lo ya aceptado por el almacén se queda aceptado.
+    api.cutsBeforeSuccess = 1
+    vi.useFakeTimers()
+    const upload = uploadShot('AR-0001', shotOf(bigMaster(12 * MiB)), {
+      shotType: 'GENERAL',
+      isIndex: false,
+    })
+    await vi.advanceTimersByTimeAsync(30_000)
+    await upload
+    vi.useRealTimers()
+
+    // Cuatro PUT para tres partes: la primera se cayó y se repitió. Un PUT único
+    // habría vuelto a mandar los 12 MB desde el principio.
+    expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(4)
+    expect(api.putParts.filter((n) => n !== undefined)).toEqual([1, 1, 2, 3])
+    expect(api.multipart.map((m) => m.operation)).toEqual(['multipart-start', 'multipart-complete'])
+  })
+
+  it('una parte rechazada también abandona la subida', async () => {
+    // Un 5xx no se reintenta —el almacén ha contestado— pero los trozos ya aceptados
+    // siguen ahí. Sin abandonar, se quedan ocupando sitio sin que nada los referencie.
+    api.putStatus = 503
+    await expect(
+      uploadShot('AR-0001', shotOf(bigMaster(12 * MiB)), { shotType: 'GENERAL', isIndex: false }),
+    ).rejects.toThrow('HTTP 503')
+    expect(api.multipart.map((m) => m.operation)).toEqual(['multipart-start', 'multipart-abort'])
   })
 
   it('cuenta lo enviado de cada fichero grande, diciendo de cuál (RNF-106)', async () => {

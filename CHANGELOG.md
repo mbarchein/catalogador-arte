@@ -26,6 +26,23 @@
 - Si los tres fallan, las fotografías se quedan preparadas con su tipo de toma elegido y el botón pasa
   a decir «Volver a intentarlo».
 
+**Un fichero grande se sube por trozos, y lo que ya subió no se vuelve a mandar**
+
+- Los ficheros de más de 5 MB se parten y se envían por partes. Lo que el almacén ya ha
+  aceptado se queda aceptado: un corte cuesta el trozo que iba en ese momento y nada más.
+- Antes, un enlace que se cae cada pocos megas no terminaba nunca una copia de 19 MB por muchas
+  veces que se reintentara, porque cada intento empezaba desde el principio.
+- Los trozos son de 5 MB porque es lo mínimo que admite el almacén. Un original de 12 MB son tres
+  trozos, y uno de 8 MB son dos: la granularidad es la que es, y aun así es la diferencia entre
+  perder 5 MB y perderlo todo.
+- El contador sigue contando sobre el fichero entero, así que al reintentar baja lo de un trozo y
+  no vuelve a cero.
+- Al terminar se comprueba que el fichero guardado pesa lo que se envió. Si no coincide, la subida
+  se da por fallida en lugar de registrar un original incompleto: es la fotografía de archivo y un
+  fichero corto no se nota hasta que alguien lo abre.
+- Si un trozo no hay manera de subirlo, se abandona la subida entera y se avisa. Nunca se cierra
+  un fichero al que le falte un trozo.
+
 **El botón de subir se ve siempre, aunque haya que bajar por la pantalla**
 
 - Va en una barra pegada al pie, como el «Guardar» del formulario de la ficha. Estaba dentro de la

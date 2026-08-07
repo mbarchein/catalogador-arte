@@ -25,6 +25,10 @@ class FakeXhr {
     onprogress: null,
   }
   status = 0
+  responseHeaders: Record<string, string> = {}
+  getResponseHeader(name: string) {
+    return this.responseHeaders[name] ?? null
+  }
   onload: (() => void) | null = null
   onerror: (() => void) | null = null
   onabort: (() => void) | null = null
@@ -80,7 +84,7 @@ describe('putSignedFile', () => {
     // Repeating the signed type exactly is what makes S3 accept the signature.
     expect(sent?.headers['Content-Type']).toBe('image/jpeg')
     xhr().finish(200)
-    await expect(promise).resolves.toEqual({ ok: true, status: 200 })
+    await expect(promise).resolves.toEqual({ ok: true, status: 200, etag: null })
   })
 
   it('reports how much has gone out while it goes (RNF-106)', async () => {
@@ -115,7 +119,18 @@ describe('putSignedFile', () => {
     const xhr = installFake()
     const promise = putSignedFile('https://b2.example/x', blob(), 'image/jpeg')
     xhr().finish(503)
-    await expect(promise).resolves.toEqual({ ok: false, status: 503 })
+    await expect(promise).resolves.toEqual({ ok: false, status: 503, etag: null })
+  })
+
+  it('devuelve la ETag de la respuesta, que es lo que termina una subida por partes', async () => {
+    // Solo se lee de fuera porque el bucket expone la cabecera. Sin ella, cada parte
+    // sube bien y la subida no se puede cerrar: el fichero se queda a medias en el
+    // almacén y nadie tiene con qué juntarlo.
+    const xhr = installFake()
+    const promise = putSignedFile('https://b2.example/x', blob(), 'image/jpeg')
+    xhr().responseHeaders['ETag'] = '"9b2cf5c1"'
+    xhr().finish(200)
+    await expect(promise).resolves.toEqual({ ok: true, status: 200, etag: '"9b2cf5c1"' })
   })
 
   it('rejects when the transfer never got an answer, and says which way it went', async () => {

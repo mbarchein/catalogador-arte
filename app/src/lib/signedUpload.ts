@@ -31,6 +31,16 @@ export interface UploadProgressEvent {
 export interface SignedPutResult {
   ok: boolean
   status: number
+  /**
+   * The `ETag` the store answered with, or null when it did not say.
+   *
+   * Only a multipart part needs it — completing an upload means handing back
+   * every part's tag — and it is readable cross-origin only because the bucket
+   * exposes the header (`expose_headers = ["etag"]` in infra/b2.tf). Null here
+   * is therefore a real answer and not an oversight: a whole-object PUT has no
+   * use for it, and a part that comes back without one cannot be completed.
+   */
+  etag: string | null
 }
 
 /**
@@ -47,6 +57,7 @@ interface MinimalXhrUpload {
 interface MinimalXhr {
   upload: MinimalXhrUpload
   status: number
+  getResponseHeader: (name: string) => string | null
   onload: (() => void) | null
   onerror: (() => void) | null
   onabort: (() => void) | null
@@ -91,7 +102,12 @@ export function putSignedFile(
       }
     }
 
-    xhr.onload = () => resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status })
+    xhr.onload = () =>
+      resolve({
+        ok: xhr.status >= 200 && xhr.status < 300,
+        status: xhr.status,
+        etag: xhr.getResponseHeader?.('ETag') ?? null,
+      })
     // The three ways there is no answer. Distinguished in the message because they are
     // distinguishable from the outside: a cut mid-file and a browser that never got out
     // of the building are different problems for whoever is standing in the storeroom.
