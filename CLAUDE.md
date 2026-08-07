@@ -38,6 +38,12 @@
 - **Identidad de autor:** `mariobarchein@gmail.com`. Configurada en local en este repositorio
   (`git config --local user.email`), lo que prevalece sobre la identidad global de la máquina.
   Nunca firmar con la cuenta corporativa.
+- **Un push no está terminado hasta que el despliegue termina en verde.** `make verificar` en local
+  comprueba el código; no comprueba la plataforma. El 7 de agosto de 2026 un push con toda la
+  verificación en verde no llegó a producción porque la CLI de Supabase se había actualizado sola
+  entre un despliegue y el siguiente. Se espera al workflow `desplegar`, y si falla se arregla en
+  ese momento: dar por hecho un despliegue que no se ha mirado deja el frontend nuevo sin publicar,
+  o publicado contra un esquema sin migrar, y quien se entera es la usuaria.
 
 ## Registro de cambios
 
