@@ -163,6 +163,13 @@
 
 ### Correcciones
 
+**Los códigos internos de la documentación del proyecto ya no se leen en pantalla**
+
+- Aparecían dos: uno en el panel del catálogo de una exposición y otro en el pie de la hoja del testigo
+  de gris, que además se imprime y se fotografía junto a la obra.
+- Son la forma de citar los documentos técnicos entre quienes los escriben, y no dicen nada a quien
+  cataloga.
+
 **Un formulario a medio rellenar ya no se pierde al tocar fuera del panel**
 
 - Ocurrió dos veces con datos dentro. El panel se cerraba por cuatro vías —el fondo oscuro, la ✕, Escape

@@ -235,7 +235,7 @@ export const GRAY_TARGET_SHEET_TEXT = {
     'Imprímela sin corrección de color y sin ahorro de tinta, y no recortes por dentro del marco oscuro: ese marco es lo que separa el parche claro del blanco del papel.',
     'Inclínala un poco si coge un brillo reflejado: un reflejo sobre un parche no es el color de ese parche, y con él el testigo no sirve.',
   ] as readonly string[],
-  footer: 'Inventario y catálogo razonado — Rotili / Ruiz Campins · testigo de gris (RF-418)',
+  footer: 'Inventario y catálogo razonado — Rotili / Ruiz Campins · testigo de gris',
 } as const
 
 /** Name the file is downloaded with. In Spanish: it is what the cataloger reads. */
