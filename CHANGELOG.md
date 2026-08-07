@@ -1,3 +1,22 @@
+## 7 de agosto de 2026
+
+### Interfaz
+
+**Al subir una fotografía se ve cuánto lleva y cuánto queda**
+
+- Antes decía «Subiendo 1 de 1…» y nada más, durante todo lo que tardara. Ahora dice de qué fichero
+  se trata, cuántos megas van de cuántos y el porcentaje.
+- Son dos ficheros seguidos cuando la fotografía lleva una transformación: el original, que se guarda
+  intacto, y la copia a tamaño completo con la corrección aplicada. Cada uno cuenta lo suyo y la línea
+  dice por cuál va, de modo que un envío que se atasca se puede señalar.
+- Entre 2 y 19 MB por fichero desde un almacén con mala cobertura: la diferencia entre una subida
+  lenta y una parada no se podía ver, y esperar o desistir era una decisión a ciegas.
+- Antes de eso, preparar la copia a tamaño completo son unos segundos sin nada en la red. También se
+  dice, en lugar de dar a entender que ya se está subiendo.
+- Si el envío se corta, ahora lo dice con esas palabras. Antes aparecía «Failed to fetch».
+- El fichero original se llama «el original» en toda la pantalla. En el aviso de fallo se llamaba «el
+  máster», que es una palabra de dentro y no dice nada.
+
 ## 5 de agosto de 2026
 
 ### Interfaz

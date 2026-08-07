@@ -33,20 +33,11 @@ import { photoEdit } from './photoDetails'
  * — the battery runs in node, so anything left inside the JSX is verified by nobody.
  */
 
-/** The two files, named as `sign-file` names them in its whitelist. */
-export type ArchiveKind = 'master' | 'corrected'
-
-/**
- * How each file is called inside a sentence («No se ha podido descargar el original»).
- *
- * «El original» and not «el máster»: the cataloger has no reason to know that word,
- * and every message she reads has to work without it. The code keeps saying `master`,
- * because that is the column, the path suffix and what the signing function calls it.
- */
-export const ARCHIVE_NOUN: Record<ArchiveKind, string> = {
-  master: 'el original',
-  corrected: 'la copia corregida',
-}
+// The two archive files and what they are called on screen live in `lib/images.ts`,
+// next to the paths they name: the upload says those words too now, and lib cannot
+// import from features. Re-exported so the download side still reads them from here.
+import { ARCHIVE_NOUN, type ArchiveKind } from '../../lib/images'
+export { ARCHIVE_NOUN, type ArchiveKind }
 
 /** What each button says, before the size is added. */
 const ARCHIVE_ACTION: Record<ArchiveKind, string> = {

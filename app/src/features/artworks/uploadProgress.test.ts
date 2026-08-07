@@ -1,0 +1,88 @@
+import { describe, expect, it } from 'vitest'
+import { ARCHIVE_NOUN } from '../../lib/images'
+import { preparingCopyText, uploadPercent, uploadStatusText } from './uploadProgress'
+
+/**
+ * RNF-106: the wait has to be legible.
+ *
+ * These fix the three ways a progress line goes wrong without anyone noticing: a
+ * percentage that reaches a hundred before the file does, a size that reads as a
+ * different number from the one the rest of the application shows for the same file, and
+ * a file that gets a second name here.
+ */
+
+describe('uploadPercent', () => {
+  it('is floored, so «100 %» never appears with bytes still in flight (RNF-106)', () => {
+    // 11 999 999 of 12 000 000 is 99.99…, and rounding it shows a finished upload that
+    // then keeps going — the reading that makes the number stop being believed.
+    expect(uploadPercent(11_999_999, 12_000_000)).toBe(99)
+    expect(uploadPercent(12_000_000, 12_000_000)).toBe(100)
+  })
+
+  it('clamps above and below', () => {
+    // Some browsers count the request headers into `loaded`, so it can exceed the body.
+    expect(uploadPercent(1_100, 1_000)).toBe(100)
+    expect(uploadPercent(-5, 1_000)).toBe(0)
+  })
+
+  it('answers null when there is nothing to divide by', () => {
+    expect(uploadPercent(10, null)).toBeNull()
+    expect(uploadPercent(10, undefined)).toBeNull()
+    expect(uploadPercent(10, 0)).toBeNull()
+    expect(uploadPercent(10, Number.NaN)).toBeNull()
+    expect(uploadPercent(Number.POSITIVE_INFINITY, 10)).toBeNull()
+  })
+})
+
+describe('uploadStatusText', () => {
+  it('keeps saying only the position until a transfer starts', () => {
+    // The screen must not go blank or flicker between the derivatives and the original.
+    expect(uploadStatusText({ index: 1, count: 3 })).toBe('Subiendo 1 de 3…')
+  })
+
+  it('says which file, how much of how much, and the percentage', () => {
+    expect(
+      uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 4_404_019, total: 12_373_197 }),
+    ).toBe('Subiendo 1 de 1 · el original: 4,2 MB de 11,8 MB (35 %)')
+  })
+
+  it('starts at «0 kB» and not at nothing', () => {
+    // `formatFileSize` answers null below one byte, and a line reading «de 7,6 MB» with
+    // no left-hand side looks broken at exactly the moment the wait begins.
+    expect(uploadStatusText({ index: 2, count: 4, step: 'master', loaded: 0, total: 8_000_000 })).toBe(
+      'Subiendo 2 de 4 · el original: 0 kB de 7,6 MB (0 %)',
+    )
+  })
+
+  it('shows what has gone out when the browser will not say the total', () => {
+    // `lengthComputable` false. Silence here is indistinguishable from a stall.
+    expect(
+      uploadStatusText({ index: 1, count: 1, step: 'corrected', loaded: 524_288, total: null }),
+    ).toBe('Subiendo 1 de 1 · la copia corregida: 512 kB enviados')
+  })
+
+  it('names the two files apart, so a stalled one can be said', () => {
+    const master = uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 1, total: 2 })
+    const corrected = uploadStatusText({ index: 1, count: 1, step: 'corrected', loaded: 1, total: 2 })
+    expect(master).not.toBe(corrected)
+  })
+
+  it('uses the same nouns as the download side and does not invent its own', () => {
+    // The duplicated vocabulary table this replaced: two screens naming one file two ways
+    // is how «el original» and «el máster» end up meaning the same thing to nobody.
+    expect(uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 1, total: 2 })).toContain(
+      ARCHIVE_NOUN.master,
+    )
+    expect(
+      uploadStatusText({ index: 1, count: 1, step: 'corrected', loaded: 1, total: 2 }),
+    ).toContain(ARCHIVE_NOUN.corrected)
+  })
+})
+
+describe('preparingCopyText', () => {
+  it('announces the render, which is not a transfer (RF-420)', () => {
+    // Around twelve seconds on a 9248 px original with nothing going over the network.
+    // Calling it «Subiendo» would be a lie the progress line then contradicts.
+    expect(preparingCopyText(2, 5)).toBe('Preparando la copia a tamaño completo de la 2 de 5…')
+  })
+})

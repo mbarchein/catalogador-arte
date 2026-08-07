@@ -16,6 +16,7 @@ import {
   type PhotoEdit,
 } from '../../lib/imageEdits'
 import { editSource, renderCorrectedCopy, savePhotoEdit } from '../../lib/imageRender'
+import { preparingCopyText, uploadStatusText } from './uploadProgress'
 import {
   PHOTO_PROVENANCE_LABEL,
   SHOT_TYPE_LABEL,
@@ -216,13 +217,14 @@ export function ArtworkPhotosPage() {
         // Announced with its own message because on a 9248 px master it is twelve seconds
         // of a screen that would otherwise claim to be uploading. `isNoEdit` here decides
         // only the WORDING; whether there is a copy at all is the generator's call.
+        const position = { index: i + 1, count: queue.length }
         setUploading(
           isNoEdit(shot.prepared.edit)
-            ? `Subiendo ${i + 1} de ${queue.length}…`
-            : `Preparando la copia a tamaño completo de la ${i + 1} de ${queue.length}…`,
+            ? uploadStatusText(position)
+            : preparingCopyText(position.index, position.count),
         )
         const correctedCopy = await correctedCopyOf(shot)
-        setUploading(`Subiendo ${i + 1} de ${queue.length}…`)
+        setUploading(uploadStatusText(position))
         // Never marked as index: which one represents the artwork is decided
         // separately, and adding a photo should not change the cover without
         // anyone asking.
@@ -234,6 +236,11 @@ export function ArtworkPhotosPage() {
           // the camera was in the foreground does not turn a reproduction into own work.
           provenance: shot.prepared.provenance,
           correctedCopy,
+          // The bytes as they go out (RNF-106). Straight to state: these arrive a few
+          // times a second at most — the browser throttles `upload.onprogress` — so
+          // there is nothing here worth debouncing.
+          onProgress: (step, event) =>
+            setUploading(uploadStatusText({ ...position, step, ...event })),
         })
         if (result.correctedPending) pending.push(result.correctedPending)
         URL.revokeObjectURL(shot.prepared.preview)

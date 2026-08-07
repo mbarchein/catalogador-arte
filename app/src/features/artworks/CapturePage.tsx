@@ -24,6 +24,8 @@ import {
 } from '../../components/ui'
 import { CORRECTED_NOT_GENERATED, uploadShot, type CorrectedCopyResult } from '../../lib/images'
 import { renderCorrectedCopy } from '../../lib/imageRender'
+import { isNoEdit } from '../../lib/imageEdits'
+import { preparingCopyText, uploadStatusText } from './uploadProgress'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { saveQueue, readQueue, rehydrate, clearQueue } from './photoQueue'
 import { previewId } from './useArtworks'
@@ -110,6 +112,9 @@ export function CapturePage() {
    * ADR-010 refuses — a queue nobody knows about is never emptied.
    */
   const [copyPending, setCopyPending] = useState<string | null>(null)
+
+  /** The bytes of the photograph going up right now, or null when nothing is (RNF-106). */
+  const [uploading, setUploading] = useState<string | null>(null)
 
   useEffect(() => {
     saveBatch(batch)
@@ -311,13 +316,27 @@ export function CapturePage() {
   async function uploadPending(artworkId: string, queue: QueuedShot[]): Promise<QueuedShot[]> {
     let current = queue
     const pending: string[] = []
+    // Counted over what is actually going up: a retry of a record whose photos did not
+    // finish skips the ones already stored, and «3 de 7» when only three are left would
+    // be a count of something nobody asked about.
+    const total = queue.filter((s) => s.status !== 'uploaded').length
+    let index = 0
     for (const s of queue) {
       if (s.status === 'uploaded') continue
+      index += 1
+      const position = { index, count: total }
       current = current.map((x) =>
         x.key === s.key ? { ...x, status: 'uploading' as const, error: undefined } : x,
       )
       setShots(current)
       try {
+        setUploading(
+          isNoEdit(s.prepared.edit)
+            ? uploadStatusText(position)
+            : preparingCopyText(position.index, position.count),
+        )
+        const correctedCopy = await correctedCopyOf(s)
+        setUploading(uploadStatusText(position))
         const result = await uploadShot(artworkId, s.prepared, {
           shotType: s.shotType,
           isIndex: s.isIndex,
@@ -325,7 +344,9 @@ export function CapturePage() {
           // The full-resolution copy with everything applied (RF-420), built HERE because
           // this is the one moment the master is already in memory: doing it later would
           // mean downloading it again over the connection of a storage room.
-          correctedCopy: await correctedCopyOf(s),
+          correctedCopy,
+          onProgress: (step, event) =>
+            setUploading(uploadStatusText({ ...position, step, ...event })),
         })
         if (result.correctedPending) pending.push(result.correctedPending)
         current = current.map((x) => (x.key === s.key ? { ...x, status: 'uploaded' as const } : x))
@@ -338,6 +359,7 @@ export function CapturePage() {
       }
       setShots(current)
     }
+    setUploading(null)
     // The first reason and how many share it: they are all the same sentence when the
     // phone is the same phone, and repeating it once per photograph would bury the code of
     // the record, which is what has to be written on the physical label.
@@ -733,6 +755,13 @@ export function CapturePage() {
             error ? (
               <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-800">
                 No se ha podido guardar: {error} Los datos siguen aquí.
+              </p>
+            ) : uploading ? (
+              // While it is going up, the bytes take the place of the saved-code line:
+              // there is no code yet, and «Guardando…» on the button for two minutes says
+              // nothing about whether it is moving (RNF-106).
+              <p role="status" className="rounded-lg bg-stone-100 p-2 text-sm text-stone-700">
+                {uploading}
               </p>
             ) : last ? (
               <div className="space-y-1">

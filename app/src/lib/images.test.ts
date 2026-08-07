@@ -59,6 +59,8 @@ const api = vi.hoisted(() => ({
   signMastersOnly: false,
   /** Set to simulate a PUT the store rejects. */
   putStatus: 200,
+  /** Progress reported to the caller, per step (RNF-106). */
+  progress: [] as { step: string; loaded: number; total: number | null }[],
 }))
 
 vi.mock('./supabase', () => ({
@@ -112,16 +114,46 @@ function resetApi() {
   api.rows.length = 0
   api.signMastersOnly = false
   api.putStatus = 200
-  globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
-    const headers = (init?.headers ?? {}) as Record<string, string>
-    api.puts.push({
-      url: String(url),
-      method: init?.method,
-      type: headers['Content-Type'],
-      body: init?.body,
-    })
-    return { ok: api.putStatus >= 200 && api.putStatus < 300, status: api.putStatus } as Response
-  }) as typeof fetch
+  api.progress.length = 0
+  // A fake `XMLHttpRequest`, because that is what the signed PUT uses now: `fetch`
+  // cannot report upload progress, and a 12 MB original over the connection of a
+  // storeroom was two minutes of a screen that said nothing (see signedUpload.ts).
+  // It records the same four fields the `fetch` stub recorded, so what these tests
+  // pin — above all that the body IS the master and not a copy of it — did not move.
+  class FakeXhr {
+    upload = { onprogress: null as ((e: ProgressEventLike) => void) | null }
+    status = 0
+    onload: (() => void) | null = null
+    onerror: (() => void) | null = null
+    onabort: (() => void) | null = null
+    ontimeout: (() => void) | null = null
+    private method = ''
+    private url = ''
+    private headers: Record<string, string> = {}
+    open(method: string, url: string) {
+      this.method = method
+      this.url = url
+    }
+    setRequestHeader(name: string, value: string) {
+      this.headers[name] = value
+    }
+    send(body: unknown) {
+      api.puts.push({ url: this.url, method: this.method, type: this.headers['Content-Type'], body })
+      // Half of the body, then the answer: enough for a caller wiring progress through
+      // to be exercised by every upload test rather than only by the one that looks.
+      const size = (body as Blob | undefined)?.size ?? 0
+      this.upload.onprogress?.({ lengthComputable: true, loaded: Math.floor(size / 2), total: size })
+      this.status = api.putStatus
+      this.onload?.()
+    }
+  }
+  ;(globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = FakeXhr
+}
+
+interface ProgressEventLike {
+  lengthComputable: boolean
+  loaded: number
+  total: number
 }
 
 /** The row `insert` received, for the assertions about columns. */
@@ -465,6 +497,39 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     // fichero de la cámara: no el de las derivadas.
     expect(puts[0]?.type).toBe('image/jpeg')
     expect(api.signed[0]).toMatchObject({ operation: 'upload', contentType: 'image/jpeg' })
+  })
+
+  it('cuenta lo enviado de cada fichero grande, diciendo de cuál (RNF-106)', async () => {
+    // La avería que esto tapa: subir una foto con transformación son DOS ficheros de
+    // megabytes seguidos —el original y la copia corregida—, y la pantalla decía
+    // «Subiendo 1 de 1…» durante los dos. Sin saber por cuál iba, un envío que se corta
+    // a los dos minutos no se distingue de uno atascado, ni se puede contar después.
+    const master = masterOf()
+    await uploadShot(
+      'AR-0001',
+      shotOf(master),
+      {
+        shotType: 'GENERAL',
+        isIndex: false,
+        correctedCopy: { status: 'READY', blob: new Blob([new Uint8Array(64)]) },
+        onProgress: (step, event) => api.progress.push({ step, ...event }),
+      },
+    )
+
+    // Los dos ficheros informan, y por separado: la miniatura y la copia de consulta
+    // van por la biblioteca de almacenamiento, que no dice nada, y meterlas en un total
+    // único daría una barra que nunca llega a su propio final.
+    expect(api.progress.map((p) => p.step)).toEqual(['master', 'corrected'])
+    expect(api.progress[0]?.total).toBe(master.size)
+    expect(api.progress[1]?.total).toBe(64)
+  })
+
+  it('sube sin informar de nada cuando nadie pregunta', async () => {
+    // `onProgress` es opcional: el resto de la aplicación sube sin pintar progreso y no
+    // debe romperse por no pasarlo.
+    await uploadShot('AR-0001', shotOf(masterOf()), { shotType: 'GENERAL', isIndex: false })
+    expect(api.progress).toEqual([])
+    expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(1)
   })
 
   it('no pasa el máster por Supabase Storage ni le cambia la extensión', async () => {

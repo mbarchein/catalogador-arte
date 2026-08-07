@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { EXIF_SLICE_BYTES, readPhotoExif, type PhotoTakenDate } from './exif'
 import { NO_EDIT, editToColumns, isNoEdit, type CropSource, type PhotoEdit } from './imageEdits'
 import type { PhotoProvenance } from './types'
+import { putSignedFile, type UploadProgressEvent } from './signedUpload'
 
 /**
  * Three levels per shot (ADR-002). Derivatives are generated **in the browser
@@ -22,6 +23,26 @@ export const BUCKET = 'obras'
 export const MAX_BYTES = 62_914_560
 
 export type ImageLevel = keyof typeof LEVELS
+
+/** The two files kept outside Supabase, named as `sign-file` names them. */
+export type ArchiveKind = 'master' | 'corrected'
+
+/**
+ * How each of them is called inside a sentence the cataloger reads («No se ha podido
+ * descargar el original», «Subiendo el original: 4,2 MB de 11,8 MB»).
+ *
+ * «El original» and not «el máster»: the cataloger has no reason to know that word, and
+ * every message she reads has to work without it. The code keeps saying `master`,
+ * because that is the column, the path suffix and what the signing function calls it.
+ *
+ * It lives here, next to the paths it names, and not on the download screen where it was
+ * written: the upload now says these words too, and one file with two names on two
+ * screens is how a vocabulary comes apart.
+ */
+export const ARCHIVE_NOUN: Record<ArchiveKind, string> = {
+  master: 'el original',
+  corrected: 'la copia corregida',
+}
 
 /**
  * The encoding of a derivative, always as a matched trio: Content-Type,
@@ -556,9 +577,13 @@ async function signStoredFile(
  * Signed download URL for the archive master (RF-411).
  *
  * The label says «el original de archivo» and not «el máster» because it ends up
- * inside a sentence the cataloger reads, and that word is ours, not hers. On the
- * upload side it stays «el máster»: there the message accompanies a technical failure
- * during a capture, and the screen around it already talks about masters.
+ * inside a sentence the cataloger reads, and that word is ours, not hers.
+ *
+ * The upload side used to keep «el máster», on the grounds that the screen around it
+ * already talked about masters. That stopped being true when the upload started
+ * counting its bytes out loud (see `uploadProgress`): the line above the failure now
+ * says «el original», and one file with two names in two consecutive sentences of the
+ * same screen is worse than either name.
  */
 export async function masterDownloadUrl(masterPath: string): Promise<string> {
   const { url } = await signStoredFile(masterPath, 'download', undefined, 'el original de archivo')
@@ -690,6 +715,8 @@ export async function saveCorrectedCopy(params: {
   masterPath?: string | null
   /** The path to write, when the caller already has a base (see `paths`). */
   path?: string
+  /** How much of the copy has gone out, for the screen (RNF-106). */
+  onProgress?: (event: UploadProgressEvent) => void
 }): Promise<CorrectedCopyOutcome> {
   const { catalogId, copy, masterPath } = params
   if (copy.status === 'NOT_NEEDED') return { columns: NO_CORRECTED_COPY, reason: null }
@@ -709,11 +736,12 @@ export async function saveCorrectedCopy(params: {
     const signature = await signStoredFile(path, 'upload', CORRECTED_CONTENT_TYPE, 'la copia corregida')
     // The PUT repeats exactly the signed Content-Type or the signature does not
     // validate, the same as for the master.
-    const response = await fetch(signature.url, {
-      method: 'PUT',
-      body: copy.blob,
-      headers: { 'Content-Type': CORRECTED_CONTENT_TYPE },
-    })
+    const response = await putSignedFile(
+      signature.url,
+      copy.blob,
+      CORRECTED_CONTENT_TYPE,
+      params.onProgress,
+    )
     if (!response.ok) return pending(CORRECTED_NOT_UPLOADED)
   } catch {
     return pending(CORRECTED_NOT_UPLOADED)
@@ -767,6 +795,14 @@ export async function uploadShot(
      * correction and as «none needed» when it does not.
      */
     correctedCopy?: CorrectedCopyResult
+    /**
+     * How much of each large file has gone out (RNF-106).
+     *
+     * Only the two of the order of megabytes report: the thumbnail and the consultation
+     * copy travel through the storage library, which does not say. Counting them into one
+     * total would mean a bar that never reaches its own end.
+     */
+    onProgress?: (step: 'master' | 'corrected', event: UploadProgressEvent) => void
   },
 ): Promise<UploadResult> {
   // What the derivatives really are is read from the bytes about to be
@@ -801,14 +837,12 @@ export async function uploadShot(
   // application produces derived files and parameters, and this line is the one that
   // has to stay boring — there is a test that pins the identity of this object.
   const masterType = shot.master.type || 'application/octet-stream'
-  const signature = await signStoredFile(target.master, 'upload', masterType, 'el máster')
-  const response = await fetch(signature.url, {
-    method: 'PUT',
-    body: shot.master,
-    headers: { 'Content-Type': masterType },
-  })
+  const signature = await signStoredFile(target.master, 'upload', masterType, ARCHIVE_NOUN.master)
+  const response = await putSignedFile(signature.url, shot.master, masterType, (event) =>
+    options.onProgress?.('master', event),
+  )
   if (!response.ok) {
-    throw new Error(`Subiendo el máster: HTTP ${response.status}`)
+    throw new Error(`Subiendo ${ARCHIVE_NOUN.master}: HTTP ${response.status}`)
   }
 
   // The corrected copy, when there is one, before the row: same order and same
@@ -820,6 +854,7 @@ export async function uploadShot(
     copy: options.correctedCopy ?? correctedCopyFor(shot.edit),
     masterPath: target.master,
     path: target.corrected,
+    onProgress: (event) => options.onProgress?.('corrected', event),
   })
 
   const { data, error } = await supabase
