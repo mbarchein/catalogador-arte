@@ -54,33 +54,37 @@ export function fundPrefixText(prefix: string): string {
 }
 
 /**
- * El estado del fondo en una frase, o null cuando no hay nada que decir.
+ * Cómo se rotula cada interruptor.
  *
- * Un fondo activo y con sus obras a la vista es lo normal y no lleva etiqueta: un
- * cartel sobre lo que está en su sitio es ruido que hace que no se lean los que sí
- * dicen algo.
+ * Los dos nombran el estado NORMAL, y encendido es ese estado. Así se lee
+ * siempre igual —encendido es «esto está como debe»— y no hay que resolver un
+ * doble negativo para saber qué pasa al apagar «retirado».
  */
-export function fundStateText(entry: ArtistFundEntry): string | null {
-  if (!entry.active && entry.hideArtworks) {
-    return 'Retirado y con sus obras apartadas del listado.'
-  }
-  if (!entry.active) {
-    return 'Retirado: no se ofrece al dar de alta, pero sus obras siguen en el listado.'
-  }
-  if (entry.hideArtworks) {
-    return 'Sus obras no salen en el listado, aunque el fondo se sigue ofreciendo.'
-  }
-  return null
+export const OFFERED_LABEL = 'Se ofrece al dar de alta'
+export const LISTED_LABEL = 'Sus obras salen en el listado'
+
+/**
+ * Lo que se lee bajo cada interruptor: **qué pasa ahora**, no qué pasaría.
+ *
+ * Antes había una frase fija que describía los dos estados a la vez, y por eso
+ * la pantalla no se entendía: había que averiguar cuál de las dos mitades
+ * aplicaba mirando el control. Ahora el subtexto solo cuenta el estado en el que
+ * se está, y el apagado carga además con la mitad que evita el susto —qué NO se
+ * ha hecho—, que es justo cuando hace falta.
+ */
+export function fundOfferedHint(active: boolean): string {
+  return active
+    ? 'Aparece entre los fondos al dar de alta una obra.'
+    : 'No aparece al dar de alta. Sus obras no se han tocado: siguen en el listado y siguen ' +
+        'diciendo que son de este fondo.'
 }
 
-/** Lo que explica cada interruptor, junto a él y no en una ayuda aparte. */
-export const RETIRE_FUND_HINT =
-  'Deja de ofrecerse al dar de alta una obra y en los selectores. Lo que ya está catalogado en ' +
-  'este fondo no se toca: sigue en el listado y sigue diciendo de qué fondo es.'
-
-export const HIDE_ARTWORKS_HINT =
-  'Sus obras dejan de salir en el listado. No se borra ni se retira nada: cada obra se sigue ' +
-  'abriendo por su enlace, y filtrando por este fondo vuelven a verse todas.'
+export function fundListedHint(listed: boolean): string {
+  return listed
+    ? 'Sus obras aparecen en el listado, como las de los demás fondos.'
+    : 'Sus obras no aparecen en el listado. No se ha borrado ni retirado nada: cada obra se sigue ' +
+        'abriendo por su enlace, y filtrando por este fondo vuelven a verse todas.'
+}
 
 /**
  * Por qué no se puede retirar este fondo, o null cuando sí.

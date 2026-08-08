@@ -2,15 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
   fundActiveNotice,
   fundHiddenNotice,
+  fundListedHint,
+  fundOfferedHint,
   fundPrefixText,
   fundRenamedNotice,
-  fundStateText,
   hiddenFundsNotice,
   offeredFunds,
   retireFundBlockedReason,
   sortFunds,
-  HIDE_ARTWORKS_HINT,
-  RETIRE_FUND_HINT,
   type ArtistFundEntry,
 } from './artistFunds'
 
@@ -50,36 +49,31 @@ describe('el orden y lo que identifica a un fondo', () => {
   })
 })
 
-describe('los dos interruptores dicen cosas distintas', () => {
-  it('lo normal no lleva cartel', () => {
-    // Un aviso sobre lo que está en su sitio es ruido, y hace que no se lean los
-    // que sí dicen algo.
-    expect(fundStateText(fund())).toBeNull()
+describe('el subtexto cuenta el estado en el que se está', () => {
+  // Lo que hacía ilegible la pantalla era un subtexto fijo que describía los dos
+  // estados a la vez: había que averiguar cuál aplicaba mirando el control. Cada
+  // interruptor dice ahora lo que pasa AHORA, y solo eso.
+
+  it('encendido dice lo que ocurre, sin hablar de lo que no ocurre', () => {
+    expect(fundOfferedHint(true)).toBe('Aparece entre los fondos al dar de alta una obra.')
+    expect(fundListedHint(true)).toContain('Sus obras aparecen en el listado')
+    expect(fundOfferedHint(true)).not.toContain('No ')
+    expect(fundListedHint(true)).not.toContain('No se')
   })
 
-  it('retirado dice que sus obras NO se tocan', () => {
-    const said = fundStateText(fund({ active: false })) ?? ''
-    expect(said).toContain('no se ofrece')
-    expect(said).toContain('sus obras siguen en el listado')
+  it('apagado carga además con la mitad que evita el susto: qué NO se ha hecho', () => {
+    expect(fundOfferedHint(false)).toContain('Sus obras no se han tocado')
+    expect(fundListedHint(false)).toContain('No se ha borrado ni retirado nada')
+    expect(fundListedHint(false)).toContain('se sigue abriendo por su enlace')
   })
 
-  it('apartado dice que el fondo SÍ se sigue ofreciendo', () => {
-    const said = fundStateText(fund({ hideArtworks: true })) ?? ''
-    expect(said).toContain('no salen en el listado')
-    expect(said).toContain('se sigue ofreciendo')
-  })
-
-  it('y los dos a la vez se dicen juntos', () => {
-    expect(fundStateText(fund({ active: false, hideArtworks: true }))).toBe(
-      'Retirado y con sus obras apartadas del listado.',
-    )
-  })
-
-  it('las dos explicaciones dejan claro qué NO hace cada una', () => {
-    // Es la mitad que evita el susto: ninguna de las dos borra ni esconde de verdad.
-    expect(RETIRE_FUND_HINT).toContain('no se toca')
-    expect(HIDE_ARTWORKS_HINT).toContain('No se borra ni se retira nada')
-    expect(HIDE_ARTWORKS_HINT).toContain('se sigue abriendo por su enlace')
+  it('y los dos apagados siguen diciendo cosas distintas', () => {
+    // Es la confusión que esta pantalla puede provocar: retirar no esconde obra,
+    // y apartar no retira el fondo. Si las dos frases se parecieran, daría igual
+    // que los interruptores fueran dos.
+    expect(fundOfferedHint(false)).not.toBe(fundListedHint(false))
+    expect(fundOfferedHint(false)).toContain('siguen en el listado')
+    expect(fundListedHint(false)).toContain('no aparecen en el listado')
   })
 })
 

@@ -2,18 +2,19 @@ import { useState } from 'react'
 import { Navigate } from 'react-router'
 import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { LoadingNotice } from '../../components/ui'
+import { LoadingNotice, Toggle } from '../../components/ui'
 import { useTableAction } from './MasterTableRow'
 import { useArtistFunds } from './useArtistFunds'
 import {
   fundActiveNotice,
   fundHiddenNotice,
+  fundListedHint,
+  fundOfferedHint,
   fundPrefixText,
   fundRenamedNotice,
-  fundStateText,
   retireFundBlockedReason,
-  HIDE_ARTWORKS_HINT,
-  RETIRE_FUND_HINT,
+  LISTED_LABEL,
+  OFFERED_LABEL,
   type ArtistFundEntry,
 } from './artistFunds'
 
@@ -119,7 +120,6 @@ function FundRow({
 }) {
   const [draft, setDraft] = useState<string | null>(null)
   const blocked = retireFundBlockedReason(entry, all)
-  const state = fundStateText(entry)
 
   return (
     <li className={`card ${entry.active ? '' : 'opacity-70'}`}>
@@ -155,7 +155,6 @@ function FundRow({
           {/* El prefijo explica qué fondo es esto mejor que su nombre: es lo que se
               lee en la etiqueta de la obra que se tiene delante. */}
           <p className="mt-0.5 text-xs text-stone-500">{fundPrefixText(entry.prefix)}</p>
-          {state && <p className="mt-1 text-xs text-amber-800">{state}</p>}
 
           <button
             type="button"
@@ -166,61 +165,30 @@ function FundRow({
             Cambiar el nombre
           </button>
 
+          {/* Los dos rótulos nombran el estado normal y encendido es ese estado,
+              así que la fila se lee de un vistazo: lo que está apagado es lo que
+              se ha cambiado. El subtexto cuenta el estado en el que se está. */}
           <div className="mt-3 space-y-3 border-t border-stone-200 pt-3">
-            <Switch
-              label={entry.active ? 'Se ofrece al dar de alta' : 'Retirado'}
-              hint={RETIRE_FUND_HINT}
-              checked={entry.active}
-              disabled={busy || (entry.active && blocked !== null)}
-              blocked={entry.active ? blocked : null}
-              onChange={(next) => onSetActive(next)}
-            />
-            <Switch
-              label={entry.hideArtworks ? 'Sus obras no salen en el listado' : 'Sus obras se listan'}
-              hint={HIDE_ARTWORKS_HINT}
-              checked={!entry.hideArtworks}
+            <div>
+              <Toggle
+                label={OFFERED_LABEL}
+                help={fundOfferedHint(entry.active)}
+                active={entry.active}
+                disabled={busy || blocked !== null}
+                onChange={onSetActive}
+              />
+              {blocked && <p className="mt-1 text-xs text-amber-800">{blocked}</p>}
+            </div>
+            <Toggle
+              label={LISTED_LABEL}
+              help={fundListedHint(!entry.hideArtworks)}
+              active={!entry.hideArtworks}
               disabled={busy}
-              blocked={null}
-              onChange={(next) => onSetHidden(!next)}
+              onChange={(listed) => onSetHidden(!listed)}
             />
           </div>
         </>
       )}
     </li>
-  )
-}
-
-/** Un interruptor con su explicación debajo, y el motivo cuando no se puede tocar. */
-function Switch({
-  label,
-  hint,
-  checked,
-  disabled,
-  blocked,
-  onChange,
-}: {
-  label: string
-  hint: string
-  checked: boolean
-  disabled: boolean
-  /** Por qué está bloqueado, cuando lo está. */
-  blocked: string | null
-  onChange: (next: boolean) => void
-}) {
-  return (
-    <div>
-      <label className="flex min-h-touch items-center gap-3">
-        <input
-          type="checkbox"
-          className="h-5 w-5 shrink-0"
-          checked={checked}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.checked)}
-        />
-        <span className="text-sm font-medium">{label}</span>
-      </label>
-      <p className="ml-8 text-xs text-stone-500">{hint}</p>
-      {blocked && <p className="ml-8 mt-1 text-xs text-amber-800">{blocked}</p>}
-    </div>
   )
 }
