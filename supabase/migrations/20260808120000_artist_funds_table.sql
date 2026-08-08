@@ -168,6 +168,12 @@ alter table public.artist_funds enable row level security;
 revoke all on public.artist_funds from anon, authenticated;
 grant select, update on public.artist_funds to authenticated;
 
+-- Y lo mismo con las funciones: `create function` las deja ejecutables por
+-- PUBLIC. Los dos disparadores corren solos desde la tabla y nadie los llama
+-- por su nombre, así que se les quita a todos.
+revoke all on function public.tg_artist_fund_keys_immutable() from public;
+revoke all on function public.tg_artist_fund_keeps_one_active() from public;
+
 -- Lee todo el equipo, ACTIVOS Y RETIRADOS, que es donde esta tabla se aparta de
 -- las otras maestras. Un tipo de publicación retirado casi no lo cita nadie; el
 -- fondo lo lleva TODA obra, así que esconder la fila a quien solo consulta
