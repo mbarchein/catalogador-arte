@@ -484,20 +484,28 @@ export function Toggle({
   onChange,
   label,
   help,
+  disabled = false,
 }: {
   active: boolean
   onChange: (v: boolean) => void
   label: string
   help?: string
+  /**
+   * Apagado del todo: ni se pulsa ni aparenta poder pulsarse. Para el control
+   * que la base va a rechazar de todas formas — quien lo mire tiene que ver que
+   * no va a ir ANTES de intentarlo, y el motivo se dice al lado.
+   */
+  disabled?: boolean
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={active}
+      disabled={disabled}
       onClick={() => onChange(!active)}
       className={`flex w-full min-h-touch items-center justify-between gap-3 rounded-lg border-2 px-3 py-2
-                  text-left transition ${
+                  text-left transition disabled:opacity-50 ${
                     active
                       ? 'border-stone-800 bg-stone-800 text-white'
                       : 'border-stone-300 bg-white text-stone-700'
