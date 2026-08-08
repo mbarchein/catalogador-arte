@@ -219,7 +219,7 @@ export function ExhibitionForm({
         </div>
       </FieldGroup>
 
-      <FieldGroup title="El catálogo de la muestra">
+      <FieldGroup title="Catálogo de la exposición">
         {/* Tri-estado y no una casilla: que no conste catálogo no es que no lo
             hubiera, y la diferencia es una mañana de biblioteca (RF-503). */}
         <TriStateIcons

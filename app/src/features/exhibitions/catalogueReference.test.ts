@@ -5,6 +5,7 @@ import {
   catalogueReferenceLine,
   catalogueReferenceNotice,
   noCatalogueOptionsText,
+  offersCatalogueChoice,
   planCatalogueReference,
 } from './catalogueReference'
 
@@ -58,6 +59,35 @@ describe('catalogueChoiceBlockedReason, el espejo de la restricción (RF-503)', 
     expect(text).not.toBeNull()
     expect(text).toContain('contradecir')
     expect(text).not.toBe(catalogueChoiceBlockedReason('UNREVIEWED'))
+  })
+})
+
+describe('offersCatalogueChoice', () => {
+  it('NO se ofrece elegir catálogo sobre una muestra que consta sin él', () => {
+    // Con «No publicó catálogo.» en la línea de arriba, un enlace que dice «Decir cuál es
+    // su catálogo» se contradice con ella: ofrece algo que la base va a rechazar y que,
+    // de aceptarse, dejaría la ficha diciendo dos cosas opuestas. Dicho por la
+    // catalogadora tal cual: «confunde».
+    expect(offersCatalogueChoice('NO')).toBe(false)
+  })
+
+  it('sí se ofrece mientras nadie lo haya mirado', () => {
+    // «Sin revisar» no es «no»: la respuesta puede acabar siendo que sí, y el panel
+    // explica qué hay que responder antes. Quitar también el enlace aquí dejaría la
+    // pantalla sin decir qué falta.
+    expect(offersCatalogueChoice('UNREVIEWED')).toBe(true)
+  })
+
+  it('y por supuesto cuando sí publicó', () => {
+    expect(offersCatalogueChoice('YES')).toBe(true)
+  })
+
+  it('se ofrece exactamente cuando la elección no está bloqueada por contradicción', () => {
+    // El par que hay que mantener a la vez: lo que se ofrece y lo que el panel deja
+    // hacer. Ofrecer algo bloqueado es lo que se acaba de quitar; bloquear algo que se
+    // ofrece sin decir por qué sería el error simétrico.
+    expect(offersCatalogueChoice('NO')).toBe(false)
+    expect(catalogueChoiceBlockedReason('NO')).not.toBeNull()
   })
 })
 

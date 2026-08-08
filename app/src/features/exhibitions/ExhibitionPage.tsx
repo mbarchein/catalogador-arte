@@ -27,6 +27,7 @@ import { CatalogueReferenceSheet } from './CatalogueReferenceSheet'
 import {
   catalogueReferenceHint,
   catalogueReferenceLine,
+  offersCatalogueChoice,
   catalogueReferenceNotice,
 } from './catalogueReference'
 
@@ -370,7 +371,7 @@ function ExhibitionReadOnly({ exhibition }: { exhibition: ExhibitionRow }) {
 }
 
 /**
- * «El catálogo de la muestra», leído y —con permiso— elegido (RF-503, RF-506).
+ * «Catálogo de la exposición», leído y —con permiso— elegido (RF-503, RF-506).
  *
  * Las cuatro respuestas las compone `catalogueReferenceLine`, y la que importa es la
  * cuarta: «publicó catálogo y todavía no consta cuál» no es un error ni un hueco, es lo
@@ -411,7 +412,7 @@ function CatalogueSection({
   return (
     <section className="card mt-3">
       <h2 className="text-sm font-medium uppercase tracking-wide text-stone-500">
-        El catálogo de la muestra
+        Catálogo de la exposición
       </h2>
       <p className="mt-1 text-sm text-stone-700">
         {catalogueReferenceLine({
@@ -438,7 +439,7 @@ function CatalogueSection({
         </p>
       )}
 
-      {canEdit && (
+      {canEdit && offersCatalogueChoice(exhibition.catalogue_published) && (
         <button
           type="button"
           onClick={() => {

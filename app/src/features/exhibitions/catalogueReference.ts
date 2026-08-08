@@ -64,6 +64,24 @@ export function catalogueChoiceBlockedReason(cataloguePublished: TriState): stri
 }
 
 /**
+ * ¿Se ofrece siquiera elegir catálogo?
+ *
+ * Con «No publicó catálogo» en pantalla, un enlace que dice «Decir cuál es su catálogo»
+ * se contradice con la línea que tiene encima: ofrece hacer algo que la base va a
+ * rechazar y que, si se aceptara, dejaría la ficha diciendo dos cosas opuestas. Se
+ * quita — la forma de arreglarlo, si hubo catálogo, es corregir «¿Se publicó catálogo?»
+ * en los datos de la exposición, que es donde se corrige cualquier otro dato suyo.
+ *
+ * **Con «sin revisar» sí se ofrece**, y la diferencia no es un descuido: ahí nadie ha
+ * mirado todavía y la respuesta puede acabar siendo que sí, así que el panel explica qué
+ * hay que responder antes. `catalogueChoiceBlockedReason` dice esas dos negativas por
+ * separado por el mismo motivo.
+ */
+export function offersCatalogueChoice(cataloguePublished: TriState): boolean {
+  return cataloguePublished !== 'NO'
+}
+
+/**
  * Lo que la ficha lee sobre su catálogo, en una línea, y **nunca un hueco** (RF-304).
  *
  * Las cuatro respuestas son distintas y confundirlas cuesta una mañana de biblioteca:

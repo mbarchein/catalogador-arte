@@ -17,6 +17,16 @@
 - El fichero original se llama «el original» en toda la pantalla. En el aviso de fallo se llamaba «el
   máster», que es una palabra de dentro y no dice nada.
 
+**El bloque del catálogo de una exposición ya no ofrece lo que no se puede hacer**
+
+- Cuando consta que la exposición no publicó catálogo, desaparece el enlace «Decir cuál es su
+  catálogo». Ofrecerlo contradecía la línea de encima y llevaba a un panel que solo servía para
+  decir que no se podía.
+- Si sí lo hubo, se corrige respondiendo «¿Se publicó catálogo?» en los datos de la exposición.
+- Mientras nadie lo haya mirado, el enlace sigue estando: ahí la respuesta puede acabar siendo que
+  sí, y el panel explica qué hay que responder antes.
+- El bloque se titula «Catálogo de la exposición», igual en la ficha y en el formulario.
+
 **Recargar la pantalla con trabajo a medias pregunta antes**
 
 - Con una subida en marcha, o con fotografías preparadas y sin subir, el navegador pregunta antes
