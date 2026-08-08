@@ -13,9 +13,13 @@
 - **Dos interruptores, y hacen cosas distintas a propósito:**
   - «Se ofrece al dar de alta» quita el fondo de la lista de una ficha nueva y **no toca nada de lo
     ya catalogado**: sus obras siguen en el listado, se abren y se corrigen como siempre.
-  - «Sus obras se listan» las aparta del listado y **no retira el fondo**, que se sigue ofreciendo.
+  - «Sus obras salen en el listado» las aparta y **no retira el fondo**, que se sigue ofreciendo.
     No se borra ni se esconde nada: se siguen abriendo por su enlace y por su QR, y filtrando por
     ese fondo vuelven a salir.
+- Los dos se leen igual: **encendido es que está como debe**, y lo que aparece apagado es lo que se
+  ha cambiado. Debajo de cada uno se lee **qué pasa ahora**, no las dos posibilidades a la vez, así
+  que no hay que mirar el control para saber cuál de las dos frases es la que aplica. Apagado añade
+  además lo que **no** se ha hecho, que es cuando hace falta saberlo.
 - Cuando un fondo está apartado, **el listado lo dice** junto al número de obras y nombra cuál es,
   en lugar de contar de menos sin explicar por qué.
 - El último fondo activo no se puede retirar, y se explica en la propia fila antes de intentarlo, no
