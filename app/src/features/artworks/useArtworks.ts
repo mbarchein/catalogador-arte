@@ -71,9 +71,19 @@ export async function fetchAllArtworks(): Promise<Artwork[]> {
  * loaded, and null while it has not arrived — see matchesView for why that is not
  * the same as an empty set.
  */
+/** Nada apartado, que es lo que ve quien no ha tocado la tabla de fondos. */
+const EMPTY_FUNDS: ReadonlySet<ArtistFund> = new Set()
+
 export function useArtworks(
   view: ListView = DEFAULT_VIEW,
   placeScope: ReadonlySet<string> | null = null,
+  /**
+   * Los fondos cuyas obras se apartan del listado (ADR-007, segunda entrega).
+   *
+   * Llega de la página, que es donde se lee la tabla de fondos, y por omisión no
+   * aparta nada: quien llame sin saber de esto ve el catálogo entero.
+   */
+  hiddenFunds: ReadonlySet<ArtistFund> = EMPTY_FUNDS,
 ) {
   const snapshot = useRef(readArtworksSnapshot()).current
   const [all, setAll] = useState<Artwork[] | null>(snapshot?.rows ?? null)
@@ -177,11 +187,14 @@ export function useArtworks(
   // what actually changes the answer.
   const key = serializeView(view).toString()
   const scopeKey = placeScope === null ? 'null' : [...placeScope].sort().join(' ')
+  // Por lo mismo que el alcance: el conjunto es un objeto nuevo en cada pintado y
+  // lo que cambia la respuesta son los códigos que lleva dentro.
+  const hiddenKey = [...hiddenFunds].sort().join(' ')
   const artworks = useMemo(() => {
     if (!all) return []
-    return sequenceOf(all, view, placeScope)
+    return sequenceOf(all, view, placeScope, hiddenFunds)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [all, key, scopeKey])
+  }, [all, key, scopeKey, hiddenKey])
 
   // Loading only when there is no snapshot at all: with one, the list paints
   // instantly and the refresh happens behind it.

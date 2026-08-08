@@ -1,3 +1,4 @@
+import type { ArtistFund } from '../../lib/types'
 import {
   matchesSearch,
   matchesView,
@@ -33,13 +34,21 @@ import {
  * inside them (ADR-006). It travels as an argument and is not derived here
  * because it comes from the tree, which is loaded state, and this module stays
  * arithmetic. Null means the tree has not arrived: see matchesView.
+ *
+ * `hiddenFunds` viaja igual y por el mismo motivo, y tiene que viajar: la
+ * secuencia de la ficha es la del listado, así que si el listado aparta un fondo
+ * y la secuencia no, «siguiente» acabaría llevando a una obra que la lista no
+ * enseña — y de ahí no se sabe volver.
  */
 export function sequenceOf<T extends ListedArtwork>(
   rows: readonly T[],
   view: ListView,
   scope: ReadonlySet<string> | null = null,
+  hiddenFunds: ReadonlySet<ArtistFund> = new Set(),
 ): T[] {
-  const matching = rows.filter((a) => matchesView(a, view, scope) && matchesSearch(a, view.search))
+  const matching = rows.filter(
+    (a) => matchesView(a, view, scope, hiddenFunds) && matchesSearch(a, view.search),
+  )
   return sortArtworks(matching, view.order)
 }
 

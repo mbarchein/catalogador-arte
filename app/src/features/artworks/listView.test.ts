@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { ArtistFund } from '../../lib/types'
 import {
   DEFAULT_VIEW,
   NO_FILTERS,
@@ -50,6 +51,31 @@ const TREE = buildPlaceTree([
 
 /** The reach of a filter that marks `ids`: what the list page computes. */
 const scopeOf = (ids: readonly string[]) => placesInside(TREE, ids)
+
+describe('los fondos apartados (ADR-007, segunda entrega)', () => {
+  const of = (artist: string, id: string) =>
+    ({ catalog_id: id, artist, artwork_type: '', series: '', physical_place_id: null }) as never
+
+  it('sus obras no salen por omisión', () => {
+    // El interruptor de la tabla de fondos, hecho efectivo. No es un borrado: la
+    // fila sigue existiendo y se abre por su enlace.
+    const hidden: ReadonlySet<ArtistFund> = new Set(['TEST'])
+    expect(matchesView(of('TEST', 'TS-0001'), DEFAULT_VIEW, null, hidden)).toBe(false)
+    expect(matchesView(of('ROTILI', 'AR-0001'), DEFAULT_VIEW, null, hidden)).toBe(true)
+  })
+
+  it('y VUELVEN al filtrar por ese fondo, que es lo que lo hace reversible', () => {
+    // Sin esto, apartar un fondo lo escondería sin forma de llegar a él desde el
+    // listado, que es una papelera con otro nombre.
+    const hidden: ReadonlySet<ArtistFund> = new Set(['TEST'])
+    const view = { ...DEFAULT_VIEW, funds: ['TEST' as ArtistFund] }
+    expect(matchesView(of('TEST', 'TS-0001'), view, null, hidden)).toBe(true)
+  })
+
+  it('sin nada apartado, el catálogo entero', () => {
+    expect(matchesView(of('TEST', 'TS-0001'), DEFAULT_VIEW)).toBe(true)
+  })
+})
 
 describe('URL ↔ view (RF-608: the list view survives in the URL)', () => {
   it('no parameters means the default view', () => {

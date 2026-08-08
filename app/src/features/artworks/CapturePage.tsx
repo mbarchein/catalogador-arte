@@ -8,7 +8,9 @@ import {
   composeDate,
   type StructuredDate,
 } from '../../lib/structuredDate'
-import { ARTIST_LABEL, type ArtistFund, type TriState } from '../../lib/types'
+import { ARTIST_FUNDS, ARTIST_LABEL, type ArtistFund, type TriState } from '../../lib/types'
+import { offeredFunds, type ArtistFundEntry } from '../tables/artistFunds'
+import { useArtistFunds } from '../tables/useArtistFunds'
 import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import {
@@ -43,11 +45,21 @@ import {
   type Batch,
 } from './batch'
 
-const FUNDS = [
-  { value: 'ROTILI' as ArtistFund, text: ARTIST_LABEL.ROTILI },
-  { value: 'RUIZ_CAMPINS' as ArtistFund, text: ARTIST_LABEL.RUIZ_CAMPINS },
-  { value: 'TEST' as ArtistFund, text: ARTIST_LABEL.TEST },
-]
+/**
+ * Los fondos que se ofrecen al abrir una tanda (ADR-007, segunda entrega).
+ *
+ * Salen de la tabla y no de una lista escrita a mano: renombrar un fondo se hace
+ * una vez y se ve aquí, y retirarlo deja de ofrecerlo sin tocar nada de lo ya
+ * catalogado. `ARTIST_LABEL` se queda como el nombre de último recurso mientras la
+ * tabla llega — un selector en blanco al abrir la pantalla sería peor que un
+ * nombre que se corrige medio segundo después.
+ */
+function fundOptions(entries: readonly ArtistFundEntry[]) {
+  if (entries.length === 0) {
+    return ARTIST_FUNDS.map((code) => ({ value: code, text: ARTIST_LABEL[code] }))
+  }
+  return offeredFunds(entries).map((f) => ({ value: f.code, text: f.name }))
+}
 
 /**
  * RF-1204 and RF-1205: batch capture, touch-first and one-handed.
@@ -71,6 +83,8 @@ export function CapturePage() {
 
   // Locations already used, as loose suggestions while typing (free text).
   const { tree: placeTree, ensurePlace, addPlaceInside } = usePhysicalPlaces()
+  // Los fondos, para ofrecer los activos con el nombre que tengan hoy.
+  const { entries: funds } = useArtistFunds()
 
   const [batch, setBatch] = useState<Batch>(() => readBatch())
   const [open, setOpen] = useState(() => batchConfigured(readBatch()))
@@ -236,7 +250,7 @@ export function CapturePage() {
             <Chips
               id="fund"
               label="Fondo"
-              options={FUNDS}
+              options={fundOptions(funds)}
               value={batch.fixed.artist}
               onChange={changeFund}
             />

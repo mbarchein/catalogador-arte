@@ -12,6 +12,8 @@ import {
 import { displayDate } from '../../lib/dates'
 import { existenceNotice, displayMeasurements, displayTitle } from '../../lib/title'
 import { ARTIST_LABEL, ARTIST_FUNDS } from '../../lib/types'
+import { useArtistFunds } from '../tables/useArtistFunds'
+import { hiddenFundsNotice } from '../tables/artistFunds'
 import { useLiveChanges } from '../../lib/live'
 import { placesInside } from '../../lib/places'
 import {
@@ -124,9 +126,27 @@ export function ArtworksPage() {
     [placesLoading, placeTree, view.places],
   )
 
+  // Los fondos y, de ellos, los que apartan sus obras (ADR-007, segunda entrega).
+  // Se leen aquí y no dentro del hook de las obras porque la lista de fondos es de
+  // la pantalla: también se usa para decir en voz alta lo que se está apartando.
+  const { entries: funds } = useArtistFunds()
+  const hidden = useMemo(() => funds.filter((f) => f.hideArtworks), [funds])
+  const hiddenFunds = useMemo(
+    () => new Set(hidden.map((f) => f.code)),
+    // Por el código y no por el objeto: la lista es nueva en cada carga.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hidden.map((f) => f.code).join(' ')],
+  )
+  // Y lo que se aparta se DICE: un listado que esconde obras en silencio es un
+  // listado en el que no se puede confiar para contar, y contar es media
+  // catalogación. Se calla cuando ya se está filtrando por ese fondo, que es
+  // cuando las obras sí están a la vista.
+  const hiddenNotice = hiddenFundsNotice(hidden.filter((f) => !view.funds.includes(f.code)))
+
   const { artworks, thumbnails, loading, error, reload, refreshThumbnails } = useArtworks(
     view,
     placeScope,
+    hiddenFunds,
   )
   const { canEdit } = useAuth()
 
@@ -226,6 +246,10 @@ export function ArtworksPage() {
           ) : (
             <>
               <p>No se han encontrado obras con estos criterios.</p>
+              {/* Y si además hay un fondo apartado, se dice aquí: buscar algo que
+                  existe y no encontrarlo por un interruptor de otra pantalla es
+                  exactamente el rato perdido que esta frase evita. */}
+              {hiddenNotice && <p className="mt-2 text-sm text-stone-600">{hiddenNotice}</p>}
               {!hasNoFilters(view) && (
                 <button
                   type="button"
@@ -243,6 +267,8 @@ export function ArtworksPage() {
           <p className="mb-2 text-xs text-stone-500">
             {artworks.length} {artworks.length === 1 ? 'obra' : 'obras'}
           </p>
+          {/* Junto al recuento, porque es al recuento a lo que le falta algo. */}
+          {hiddenNotice && <p className="mb-2 text-xs text-amber-800">{hiddenNotice}</p>}
           <ul className="space-y-2">
             {artworks.map((artwork) => {
               const notice = existenceNotice(artwork)

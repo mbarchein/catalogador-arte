@@ -454,11 +454,27 @@ export type ListedArtwork = Pick<
  * `NO_PLACE` is checked apart because "no place" is not a node of the tree and so
  * cannot be in any set.
  */
+/** Nada apartado, que es lo que ve quien no ha tocado la tabla de fondos. */
+const EMPTY_FUNDS: ReadonlySet<ArtistFund> = new Set()
+
 export function matchesView(
   a: ListedArtwork,
   view: ListView,
   scope: ReadonlySet<string> | null = null,
+  /**
+   * Los fondos marcados para apartar sus obras del listado (ADR-007, segunda
+   * entrega).
+   *
+   * **Se apartan por omisión y vuelven al filtrar por ellos**, que es la mitad
+   * que hace que esto no sea un borrado: la obra existe, se abre por su enlace y
+   * se encuentra pidiendo su fondo. Vacío por omisión, así que quien no sepa de
+   * esto ve el catálogo entero.
+   */
+  hiddenFunds: ReadonlySet<ArtistFund> = EMPTY_FUNDS,
 ): boolean {
+  // Antes que los filtros: si el fondo está apartado y nadie ha preguntado por
+  // él, esta obra no entra en la lista aunque cumpla todo lo demás.
+  if (hiddenFunds.has(a.artist) && !view.funds.includes(a.artist)) return false
   if (view.funds.length > 0 && !view.funds.includes(a.artist)) return false
   if (view.types.length > 0 && !view.types.includes(a.artwork_type)) return false
   // By name, across funds: see the note on ListView.series.
