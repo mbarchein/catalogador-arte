@@ -1,3 +1,31 @@
+## 8 de agosto de 2026
+
+### Interfaz
+
+**Los fondos se mantienen desde «Tablas», como las demás listas**
+
+- Una pantalla nueva, «Fondos», la primera de «La ficha de la obra». Hasta ahora los tres conjuntos
+  de obra estaban escritos por dentro y no se podía tocar ni su nombre.
+- **El nombre se corrige aquí y lo ven todas sus obras**, igual que con los tipos de obra o las
+  series: se escribe una vez y el catálogo entero queda dicho de la misma manera.
+- **El prefijo de los identificadores no se toca.** Es lo que está impreso en la etiqueta pegada a
+  cada obra, y cada fila lo enseña como se lee ahí: «Obras AR-0001, AR-0002…».
+- **Dos interruptores, y hacen cosas distintas a propósito:**
+  - «Se ofrece al dar de alta» quita el fondo de la lista de una ficha nueva y **no toca nada de lo
+    ya catalogado**: sus obras siguen en el listado, se abren y se corrigen como siempre.
+  - «Sus obras se listan» las aparta del listado y **no retira el fondo**, que se sigue ofreciendo.
+    No se borra ni se esconde nada: se siguen abriendo por su enlace y por su QR, y filtrando por
+    ese fondo vuelven a salir.
+- Cuando un fondo está apartado, **el listado lo dice** junto al número de obras y nombra cuál es,
+  en lugar de contar de menos sin explicar por qué.
+- El último fondo activo no se puede retirar, y se explica en la propia fila antes de intentarlo, no
+  después de pulsar.
+- **No se dan de alta fondos desde aquí, y la pantalla dice por qué** en lugar de dejar buscar el
+  botón que falta: uno nuevo trae su propio prefijo, y ese prefijo entra en la numeración de las
+  obras y en cómo se guardan sus ficheros de archivo.
+- **Ninguno se puede borrar.** Un fondo es el eje de los identificadores de sus obras; retirarlo o
+  apartarlo se deshace, borrarlo dejaría sin nombre a todo lo que cuelga de él.
+
 ## 7 de agosto de 2026
 
 ### Interfaz
