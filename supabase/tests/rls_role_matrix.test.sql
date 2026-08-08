@@ -387,7 +387,14 @@ begin
                            -- loops below —which insert, update and expect the
                            -- cataloger to succeed— would assert the opposite of
                            -- what this table needs.
-                           'change_log');
+                           'change_log',
+                           -- Covered by `artist_funds.test.sql`, and it cannot
+                           -- join these loops: they insert a row per table and
+                           -- expect the cataloger to succeed, while this table
+                           -- grants no insert at all — a fund is the axis of its
+                           -- artworks' identifiers, so it is created by
+                           -- migration and never from the application.
+                           'artist_funds');
   if array_length(v_missing, 1) > 0 then
     raise exception 'FAIL: this matrix does not cover these public tables: %',
       array_to_string(v_missing, ', ');

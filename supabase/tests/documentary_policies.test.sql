@@ -239,6 +239,12 @@ begin
        -- dos candados en su propia migración (20260805120000) y su perímetro
        -- entero está en `change_log.test.sql`.
        'change_log',
+       -- Los fondos tampoco son de este grupo, y su perímetro es el más estrecho
+       -- del esquema: aquí se afirma que el Catalogador crea, edita y retira en
+       -- las quince, y allí que NO crea y NO borra —solo `select` y `update`,
+       -- concedidos uno a uno—. Nació con sus políticas en su propia migración
+       -- (20260808120000) y su perímetro entero está en `artist_funds.test.sql`.
+       'artist_funds',
        -- Control de migraciones del stack local: no existe en producción.
        '_migraciones'
      );
