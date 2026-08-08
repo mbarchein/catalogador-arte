@@ -60,6 +60,11 @@ export function TablesPage() {
         hint="Lo que ofrecen sus campos y lo que cuentan las relaciones entre dos obras."
       >
         <TableRow
+          to="/artist-funds"
+          name="Fondos"
+          hint="Los conjuntos de obra del catálogo. Renombrar, retirar y apartar sus obras del listado. No se crean ni se borran."
+        />
+        <TableRow
           to="/artwork-types"
           name="Tipos de obra"
           hint="Lo que ofrece el campo «Tipo de obra». Crear, renombrar y retirar."

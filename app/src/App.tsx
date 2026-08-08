@@ -17,6 +17,7 @@ import { DocumentTypesPage } from './features/tables/DocumentTypesPage'
 import { ExhibitionVenuesPage } from './features/tables/ExhibitionVenuesPage'
 import { PartiesPage } from './features/tables/PartiesPage'
 import { PublicationTypesPage } from './features/tables/PublicationTypesPage'
+import { ArtistFundsPage } from './features/tables/ArtistFundsPage'
 import { RelationshipTypesPage } from './features/tables/RelationshipTypesPage'
 import { SeriesPage } from './features/tables/SeriesPage'
 import { TablesPage } from './features/tables/TablesPage'
@@ -113,6 +114,7 @@ export function App() {
       <Route path="/archive-series" element={<ArchiveSeriesPage />} />
       <Route path="/document-types" element={<DocumentTypesPage />} />
       <Route path="/publication-types" element={<PublicationTypesPage />} />
+      <Route path="/artist-funds" element={<ArtistFundsPage />} />
       {/* RF-901, RF-902: la papelera. Tampoco es una tabla maestra —dentro hay
           obras, fotografías y fichas, no solo listas—, así que su ruta cuelga de la
           raíz; su puerta está en «Tablas», que es el único índice del Catalogador.
