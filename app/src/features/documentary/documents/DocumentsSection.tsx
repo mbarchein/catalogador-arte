@@ -17,6 +17,7 @@ import {
 } from './documentActions'
 import { DocumentFileActions } from './DocumentFileActions'
 import {
+  documentLinkArgs,
   linkBlockedReason,
   linkedDocumentIds,
   retireLinkConfirmText,
@@ -157,13 +158,14 @@ export function DocumentsSection({
     <>
       {panel?.kind === 'link' && (
         <LinkDocumentSheet
-          catalogId={catalogId}
           documents={archive.documents}
           linked={linked}
           loading={archive.loading}
           error={archive.error}
-          onLink={async (args) => {
-            const failure = await linkDocumentToArtwork(args)
+          onLink={async (documentId, note) => {
+            const failure = await linkDocumentToArtwork(
+              documentLinkArgs(catalogId, documentId, note),
+            )
             if (failure === null) {
               await afterWrite(null, 'Documento enlazado con esta obra.')
             }

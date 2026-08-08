@@ -4,14 +4,14 @@ import { BottomSheet } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import {
   allLinkedText,
-  documentLinkArgs,
   noDocumentOptionsText,
   rankDocumentOptions,
   type DocumentOption,
 } from './documentLink'
 
 /**
- * Enlazar con esta obra un documento que YA está en el archivo (RF-516).
+ * Enlazar un documento que YA está en el archivo (RF-516), con una obra o con una
+ * exposición.
  *
  * Two steps inside one sheet: find the document, then say what it says about THIS
  * artwork. They are two steps and not one form because they are two different acts
@@ -20,12 +20,16 @@ import {
  * keyboard covers whichever one is not in use.
  *
  * **Nothing here decides anything.** What is offered, what is marked as already
- * linked, what is said instead of an empty list and what travels to
- * `document_artwork` are all answered by `documentLink.ts`, which the battery can
- * reach. What is left in this file is the fold of the sheet and the plumbing.
+ * linked and what is said instead of an empty list are all answered by
+ * `documentLink.ts`, which the battery can reach. What is left in this file is the fold
+ * of the sheet and the plumbing.
+ *
+ * It takes the chosen document and the note rather than the arguments of one RPC: the two
+ * ends of the bridge call two different functions —`document_artwork` and
+ * `document_exhibition`— and each caller builds its own. That is the only thing that had
+ * to change for the exhibition to reuse this sheet instead of growing a copy of it.
  */
 export function LinkDocumentSheet({
-  catalogId,
   documents,
   linked,
   loading,
@@ -33,16 +37,15 @@ export function LinkDocumentSheet({
   onLink,
   onClose,
 }: {
-  catalogId: string
   /** The whole archive, retired rows included. The chooser drops the retired. */
   documents: readonly DocumentOption[]
-  /** Documents already linked to this artwork: listed, marked, not choosable again. */
+  /** Documents already linked here: listed, marked, not choosable again. */
   linked: ReadonlySet<string>
   loading: boolean
   /** Why the archive could not be read, already in Spanish. */
   error: string | null
   /** Answers null when it worked, and the sentence to show when it did not. */
-  onLink: (args: ReturnType<typeof documentLinkArgs>) => Promise<string | null>
+  onLink: (documentId: string, note: string) => Promise<string | null>
   onClose: () => void
 }) {
   const [query, setQuery] = useState('')
@@ -61,7 +64,7 @@ export function LinkDocumentSheet({
     if (chosen === null) return
     setSaving(true)
     setFailure(null)
-    const problem = await onLink(documentLinkArgs(catalogId, chosen.id, note))
+    const problem = await onLink(chosen.id, note)
     setSaving(false)
     if (problem !== null) {
       setFailure(problem)

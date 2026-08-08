@@ -36,6 +36,7 @@ import type {
   ArtworkRelationshipType,
   BibliographyEntry,
   Exhibition,
+  ExhibitionDocument,
   ExhibitionVenue,
   ProvenanceEvent,
 } from '../../lib/types'
@@ -207,6 +208,29 @@ export interface DocumentLinkRow extends ArtworkDocument {
   document: DocumentRow | null
 }
 
+/**
+ * The same bridge row read from an EXHIBITION (RF-516).
+ *
+ * A document hangs off as many artworks and shows as it speaks about, through two
+ * bridge tables that differ only in which column names the other end. Everything
+ * downstream — the ordering, the row the screen paints — reads the document and the
+ * note and never the owner, so it is shared rather than copied.
+ */
+export interface ExhibitionDocumentLinkRow extends ExhibitionDocument {
+  document: DocumentRow | null
+}
+
+/** The joined document, identical on both sides of the bridge. */
+const LINKED_DOCUMENT_JOIN =
+  'document:archive_documents(id, archive_code, artist_fund, document_type_id, title, ' +
+  'archive_series_id, start_year, end_year, approximate_date, unconfirmed_date, date_note, ' +
+  'date_text, physical_place_id, file_path, file_size_bytes, mime_type, uploaded_at, note, ' +
+  'active, document_type:document_types(id, name, active), ' +
+  'archive_series:archive_series(id, parent_id, name, active))'
+
+export const EXHIBITION_DOCUMENT_LINK_COLUMNS =
+  `id, exhibition_id, document_id, note, active, ${LINKED_DOCUMENT_JOIN}`
+
 export const DOCUMENT_LINK_COLUMNS =
   'id, catalog_id, document_id, note, active, ' +
   'document:archive_documents(id, archive_code, artist_fund, document_type_id, title, ' +
@@ -221,7 +245,9 @@ export const DOCUMENT_LINK_COLUMNS =
  * Same criterion as the bibliography and for the same reason: a letter with no
  * year is an ordinary thing in an archive, and it is not a letter from year zero.
  */
-export function sortDocumentLinks(rows: readonly DocumentLinkRow[]): DocumentLinkRow[] {
+export function sortDocumentLinks<R extends { id: string; document: DocumentRow | null }>(
+  rows: readonly R[],
+): R[] {
   return rows.slice().sort((a, b) => {
     const ya = a.document?.start_year ?? null
     const yb = b.document?.start_year ?? null

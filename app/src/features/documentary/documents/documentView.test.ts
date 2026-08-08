@@ -153,6 +153,19 @@ describe('el documento que no se puede leer (RF-304)', () => {
     expect(view.linkNote).toBe('Sale en la página 3')
     expect(view.documentId).toBe('doc-1')
   })
+
+  it('nombra a quien lo tiene enlazado, y por omisión es la obra', () => {
+    // La misma fila se lee desde una obra y desde una exposición (RF-516), y esta frase
+    // es lo ÚNICO que cambia entre los dos lados del puente. Decir «esta obra» en la
+    // ficha de una exposición no es un detalle de estilo: cuenta mal dónde está el hueco.
+    expect(documentView(link({ document: null })).fileNote).toContain('con esta obra')
+    expect(
+      documentView(link({ document: null }), { owner: 'exhibition' }).fileNote,
+    ).toContain('con esta exposición')
+    expect(
+      documentView(link({ document: null }), { owner: 'exhibition' }).fileNote,
+    ).not.toContain('esta obra')
+  })
 })
 
 describe('el fichero digitalizado, o su ausencia (RF-408)', () => {

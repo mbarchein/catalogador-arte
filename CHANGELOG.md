@@ -17,6 +17,23 @@
 - El fichero original se llama «el original» en toda la pantalla. En el aviso de fallo se llamaba «el
   máster», que es una palabra de dentro y no dice nada.
 
+**La ficha de una exposición enseña los documentos del archivo que hablan de ella**
+
+- Un bloque nuevo, «Otros documentos relacionados»: las notas de prensa, los carteles, los dípticos
+  y las cartas enlazadas con esa muestra, con su signatura, su tipo, su fecha y su fichero.
+- El vínculo ya se podía crear, pero solo desde la ficha del documento, y la exposición no lo
+  enseñaba: una nota de prensa enlazada con una muestra no aparecía en ninguna parte de esa muestra.
+- Desde aquí se enlaza un documento que ya está en el archivo, y se quita. Subir uno nuevo, corregir
+  sus datos o añadirle el escaneo se siguen haciendo desde la documentación de una obra, y la
+  pantalla lo dice en lugar de dejar buscar el botón que no está.
+- Quitar pregunta antes, y dice qué NO se lleva: el documento sigue en el archivo y lo que diga de
+  otras obras o de otras exposiciones no se toca. El vínculo va a la papelera y se puede devolver.
+- Lo que el documento dice **de esta exposición** se escribe al enlazarlo y se lee en su fila, aparte
+  de la nota del propio documento.
+- El título de cada documento lleva a su ficha del archivo, que es donde se corrige y se digitaliza.
+- Si no hay ninguno lo dice, sin presentarlo como un fallo: una exposición sin documentos de archivo
+  es lo normal.
+
 **El bloque del catálogo de una exposición ya no ofrece lo que no se puede hacer**
 
 - Cuando consta que la exposición no publicó catálogo, desaparece el enlace «Decir cuál es su

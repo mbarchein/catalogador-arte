@@ -17,6 +17,8 @@ import {
 import { canWriteBlock } from '../documentary/sections'
 import { ExhibitionForm } from './ExhibitionForm'
 import { ParticipatingArtworks } from './ParticipatingArtworks'
+import { ExhibitionDocuments } from './ExhibitionDocuments'
+import { useExhibitionDocuments } from '../documentary/useDocumentary'
 import { exhibitionDraft, type ExhibitionDraft } from './exhibitionDraft'
 import { retireConfirmText } from './exhibitionMessages'
 import { activeParticipantCount } from './participatingArtworks'
@@ -66,6 +68,7 @@ export function ExhibitionPage() {
   const { exhibition, loading, error, saving, save, setActive, setCatalogueReference } =
     useExhibition(id)
   const artworks = useExhibitionArtworks(id)
+  const documents = useExhibitionDocuments(id)
 
   if (loading && exhibition === null) return <LoadingNotice>Cargando la exposición…</LoadingNotice>
 
@@ -135,6 +138,19 @@ export function ExhibitionPage() {
         loading={artworks.loading}
         error={artworks.error}
         cataloguePublished={exhibition.catalogue_published === 'YES'}
+      />
+
+      {/* RF-516: las notas de prensa, los carteles y los dípticos que hablan de esta
+          muestra. El vínculo ya existía y se creaba desde la ficha del documento; lo que
+          faltaba era que la exposición lo enseñara, así que una nota de prensa enlazada
+          no aparecía en ninguna parte de la muestra. Se LEE siempre y se toca con
+          permiso, como el bloque del catálogo. */}
+      <ExhibitionDocuments
+        exhibitionId={exhibition.id}
+        rows={documents.rows}
+        loading={documents.loading}
+        error={documents.error}
+        onReload={documents.reload}
       />
     </Layout>
   )

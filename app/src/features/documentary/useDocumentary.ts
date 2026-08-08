@@ -35,6 +35,7 @@ import {
   ARTWORK_DOCUMENTARY_COLUMNS,
   CITATION_COLUMNS,
   DOCUMENT_LINK_COLUMNS,
+  EXHIBITION_DOCUMENT_LINK_COLUMNS,
   PARTICIPATION_COLUMNS,
   PROVENANCE_COLUMNS,
   RELATIONSHIP_COLUMNS,
@@ -45,6 +46,7 @@ import {
   type ArtworkDocumentaryRow,
   type CitationRow,
   type DocumentLinkRow,
+  type ExhibitionDocumentLinkRow,
   type ParticipationRow,
   type ProvenanceEventRow,
   type RelationshipRow,
@@ -186,6 +188,29 @@ const shapeDocumentLinks = (rows: readonly unknown[]) =>
 /** The archive documents about this artwork (RF-516), oldest first. */
 export function useArtworkDocuments(catalogId: string): DocumentaryQuery<DocumentLinkRow> {
   return useDocumentaryRows(catalogId, loadDocumentLinks, shapeDocumentLinks)
+}
+
+const loadExhibitionDocuments: Loader = (exhibitionId) =>
+  supabase
+    .from('exhibition_documents')
+    .select(EXHIBITION_DOCUMENT_LINK_COLUMNS)
+    .eq('exhibition_id', exhibitionId)
+    .eq('active', true)
+
+const shapeExhibitionDocuments = (rows: readonly unknown[]) =>
+  sortDocumentLinks(rows as readonly ExhibitionDocumentLinkRow[])
+
+/**
+ * The archive documents about this exhibition (RF-516), oldest first.
+ *
+ * The other end of the same bridge as `useArtworkDocuments`, and the same ordering: a
+ * press cutting speaks about the show and about the artwork that appeared in it, and it
+ * is one document with two links, not two copies of a scan.
+ */
+export function useExhibitionDocuments(
+  exhibitionId: string,
+): DocumentaryQuery<ExhibitionDocumentLinkRow> {
+  return useDocumentaryRows(exhibitionId, loadExhibitionDocuments, shapeExhibitionDocuments)
 }
 
 /**

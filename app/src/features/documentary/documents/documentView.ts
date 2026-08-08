@@ -17,8 +17,43 @@
 
 import { ARTIST_LABEL, type ArtistFund } from '../../../lib/types'
 import { displayStructuredDate, fileSizeText } from '../documentaryFormat'
-import type { DocumentLinkRow } from '../documentaryRows'
+import type { DocumentRow } from '../documentaryRows'
 import { documentFileOffer, type DocumentFileOffer } from './documentFile'
+
+/**
+ * Quién enlaza el documento: una obra o una exposición.
+ *
+ * Lo único que cambia entre los dos lados de la tabla puente es UNA frase, la del
+ * documento que no se puede leer, y ahí la frase tiene que nombrar bien a quién le falta
+ * — decir «esta obra» en la ficha de una exposición no es un detalle de estilo, es contar
+ * mal dónde está el hueco.
+ */
+export type DocumentOwner = 'artwork' | 'exhibition'
+
+const UNAVAILABLE_NOTE: Record<DocumentOwner, string> = {
+  artwork:
+    'Hay un documento de archivo enlazado con esta obra, pero no se puede leer: puede estar ' +
+    'retirado o fuera de lo que tu permiso alcanza. No se muestra nada suyo para no inventar ' +
+    'lo que dice.',
+  exhibition:
+    'Hay un documento de archivo enlazado con esta exposición, pero no se puede leer: puede ' +
+    'estar retirado o fuera de lo que tu permiso alcanza. No se muestra nada suyo para no ' +
+    'inventar lo que dice.',
+}
+
+/**
+ * Lo mínimo que una fila puente tiene que traer para pintarse.
+ *
+ * Ni `catalog_id` ni `exhibition_id`: esta función nunca los ha mirado, y acotarla a la
+ * fila de una obra era lo único que impedía que la ficha de una exposición reutilizara el
+ * bloque entero en vez de copiarlo.
+ */
+export interface DocumentLinkLike {
+  id: string
+  document_id: string
+  note: string
+  document: DocumentRow | null
+}
 
 export interface DocumentViewOptions {
   /**
@@ -30,6 +65,8 @@ export interface DocumentViewOptions {
    * simply says nothing about the location, which is honest — it never guesses.
    */
   placeText?: (placeId: string) => string | null | undefined
+  /** Por omisión una obra, que es de donde viene este bloque. */
+  owner?: DocumentOwner
 }
 
 /** One document as this record reads it. */
@@ -111,7 +148,10 @@ function written(text: string | null | undefined): string | null {
 }
 
 /** One row of the block, whole. */
-export function documentView(row: DocumentLinkRow, options: DocumentViewOptions = {}): DocumentView {
+export function documentView(
+  row: DocumentLinkLike,
+  options: DocumentViewOptions = {},
+): DocumentView {
   const document = row.document
   const linkNote = written(row.note)
 
@@ -134,10 +174,7 @@ export function documentView(row: DocumentLinkRow, options: DocumentViewOptions 
       documentNote: null,
       placeText: null,
       file: null,
-      fileNote:
-        'Hay un documento de archivo enlazado con esta obra, pero no se puede leer: puede estar ' +
-        'retirado o fuera de lo que tu permiso alcanza. No se muestra nada suyo para no inventar ' +
-        'lo que dice.',
+      fileNote: UNAVAILABLE_NOTE[options.owner ?? 'artwork'],
     }
   }
 
@@ -170,7 +207,7 @@ export function documentView(row: DocumentLinkRow, options: DocumentViewOptions 
 
 /** Every row of the block, in the order the query already sorted them by (oldest first). */
 export function documentViews(
-  rows: readonly DocumentLinkRow[],
+  rows: readonly DocumentLinkLike[],
   options: DocumentViewOptions = {},
 ): DocumentView[] {
   return rows.map((row) => documentView(row, options))

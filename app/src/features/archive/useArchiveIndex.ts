@@ -49,13 +49,29 @@ function useAlive() {
   return alive
 }
 
-export function useArchiveIndex(): ArchiveIndexQuery {
+/**
+ * @param enabled Falso no pide NADA. La ficha de una exposición carga el catálogo entero
+ *   del archivo solo cuando va a ofrecerlo para enlazar (RF-516): esa pantalla se abre
+ *   muchas veces solo para leer la muestra, y quien únicamente lee no tiene por qué pagar
+ *   la lista de documentos. Verdadero por omisión, que es lo que necesitan el índice del
+ *   archivo y la documentación de una obra. Mismo parámetro y mismo motivo que en
+ *   `useExhibitions` y `useReferences`.
+ */
+export function useArchiveIndex(enabled = true): ArchiveIndexQuery {
   const [documents, setDocuments] = useState<DocumentOption[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const alive = useAlive()
 
   const reload = useCallback(async () => {
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
+    // Se vuelve a pedir al pasar de apagado a encendido, y la espera tiene que verse: sin
+    // esto el selector leería «todavía no hay ningún documento» mientras la primera
+    // consulta está en el aire.
+    setLoading(true)
     const { data, error: failure } = await supabase
       .from('archive_documents')
       .select(DOCUMENT_INDEX_COLUMNS)
@@ -69,7 +85,7 @@ export function useArchiveIndex(): ArchiveIndexQuery {
     // Sin `order`: el orden del índice es el de la estantería —la signatura normalizada
     // como la compara el índice único— y se decide en `sortArchiveDocuments`.
     setDocuments((data ?? []) as unknown as DocumentOption[])
-  }, [alive])
+  }, [alive, enabled])
 
   useEffect(() => {
     void reload()
