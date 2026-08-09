@@ -2,6 +2,15 @@
 
 ### Interfaz
 
+**La nota de un documento del archivo ya no se sale de la pantalla**
+
+- Iba en la columna estrecha de la lista de campos, y una dirección web larga se salía por el
+  lado derecho. Ahora va bajo el título, a ancho completo, y respeta los saltos de línea con que
+  se escribió.
+- Es el campo donde se pegan direcciones, así que era cuestión de tiempo. Arreglado también el
+  motivo de fondo, que afectaba a cualquier campo con una palabra muy larga, aquí y en la ficha de
+  una referencia.
+
 **Recuperar la contraseña olvidada**
 
 - Desde la pantalla de entrada, «¿Has olvidado la contraseña?»: se escribe el correo y llega un
