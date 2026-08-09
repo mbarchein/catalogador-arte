@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  documentReachSegments,
   documentReachSummary,
   linkedArtworkViews,
   linkedBlockNotice,
@@ -171,6 +172,61 @@ describe('documentReachSummary, de qué está colgando (RF-516)', () => {
     expect(text).toContain('No lo tiene enlazado nada')
     expect(text).toContain('esta pantalla es la única forma de encontrarlo')
     expect(text).not.toContain('No es un error')
+  })
+})
+
+describe('documentReachSegments, y además se puede ir (RF-516)', () => {
+  const obra = (catalogId: string, linked = true) => ({ catalogId, linked })
+  const muestra = (exhibitionId: string, title: string, linked = true) => ({
+    exhibitionId,
+    title,
+    linked,
+  })
+  const plain = (segments: ReturnType<typeof documentReachSegments>) =>
+    segments.map((s) => s.text).join('')
+  const links = (segments: ReturnType<typeof documentReachSegments>) =>
+    segments.filter((s) => s.kind === 'link')
+
+  it('nombra la obra en vez de contarla, y lleva a su ficha', () => {
+    // «Enlazado con una obra» obliga a bajar hasta el bloque de abajo para saber
+    // cuál es, y a bajar otra vez para llegar.
+    const segments = documentReachSegments({ artworks: [obra('RC-0005')], exhibitions: [] })
+    expect(plain(segments)).toBe('Enlazado con la obra RC-0005.')
+    expect(links(segments)).toEqual([{ kind: 'link', text: 'RC-0005', to: '/artwork/RC-0005' }])
+  })
+
+  it('varias van enumeradas, con «y» al final', () => {
+    const segments = documentReachSegments({
+      artworks: [obra('AR-0001'), obra('AR-0002'), obra('RC-0005')],
+      exhibitions: [],
+    })
+    expect(plain(segments)).toBe('Enlazado con las obras AR-0001, AR-0002 y RC-0005.')
+    expect(links(segments)).toHaveLength(3)
+  })
+
+  it('y las dos mitades se dicen juntas', () => {
+    const segments = documentReachSegments({
+      artworks: [obra('RC-0005')],
+      exhibitions: [muestra('e1', 'Saliente en el espacio')],
+    })
+    expect(plain(segments)).toBe(
+      'Enlazado con la obra RC-0005, y con la exposición «Saliente en el espacio».',
+    )
+    expect(links(segments).map((s) => s.to)).toEqual(['/artwork/RC-0005', '/exhibitions/e1'])
+  })
+
+  it('lo que no se puede leer desde aquí se nombra, pero SIN enlace', () => {
+    // Un enlace que lleva a una pantalla que dirá que esa ficha no existe es peor
+    // que decirlo aquí: promete algo que no hay al otro lado.
+    const segments = documentReachSegments({ artworks: [obra('RC-0005', false)], exhibitions: [] })
+    expect(plain(segments)).toBe('Enlazado con la obra RC-0005.')
+    expect(links(segments)).toEqual([])
+  })
+
+  it('sin nada enlazado dice lo mismo de siempre, y sin enlaces', () => {
+    const segments = documentReachSegments({ artworks: [], exhibitions: [] })
+    expect(plain(segments)).toBe(documentReachSummary({ artworks: 0, exhibitions: 0 }))
+    expect(links(segments)).toEqual([])
   })
 })
 

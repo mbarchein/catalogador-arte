@@ -211,13 +211,79 @@ export function documentReachSummary(input: {
   if (exhibitions === 1) parts.push('una exposición')
   else if (exhibitions > 1) parts.push(`${exhibitions} exposiciones`)
 
-  if (parts.length === 0) {
-    return (
-      'No lo tiene enlazado nada: ni una obra ni una exposición. Desde ninguna ficha se llega a él, ' +
-      'así que esta pantalla es la única forma de encontrarlo.'
-    )
-  }
+  if (parts.length === 0) return DOCUMENT_UNLINKED_TEXT
   return `Enlazado con ${parts.join(' y ')}.`
+}
+
+/** Lo que se lee cuando no cuelga de nada. */
+export const DOCUMENT_UNLINKED_TEXT =
+  'No lo tiene enlazado nada: ni una obra ni una exposición. Desde ninguna ficha se llega a él, ' +
+  'así que esta pantalla es la única forma de encontrarlo.'
+
+/** Un trozo del aviso: texto, o una referencia a la ficha de la que cuelga. */
+export type ReachSegment =
+  | { kind: 'text'; text: string }
+  | { kind: 'link'; text: string; to: string }
+
+/**
+ * El mismo aviso, pero **nombrando lo que hay al otro lado y pudiendo ir**.
+ *
+ * «Enlazado con una obra» obliga a bajar hasta el bloque de abajo para saber cuál
+ * es, y a bajar otra vez para llegar. Nombrarlas es lo que hace útil la frase: el
+ * identificador de catalogación es lo que se busca —«¿está AR-0042?»— y el título
+ * de la muestra es como se la llama.
+ *
+ * Una ficha que no se puede leer desde aquí se nombra igual pero **sin enlace**:
+ * un enlace que lleva a una pantalla que dirá que no existe es peor que decirlo
+ * aquí. `linked` es quien lo decide, y ya viene calculado en la vista.
+ */
+export function documentReachSegments(input: {
+  artworks: readonly Pick<LinkedArtworkView, 'catalogId' | 'linked'>[]
+  exhibitions: readonly Pick<LinkedExhibitionView, 'exhibitionId' | 'title' | 'linked'>[]
+}): ReachSegment[] {
+  const { artworks, exhibitions } = input
+  if (artworks.length === 0 && exhibitions.length === 0) {
+    return [{ kind: 'text', text: DOCUMENT_UNLINKED_TEXT }]
+  }
+
+  const segments: ReachSegment[] = [{ kind: 'text', text: 'Enlazado con ' }]
+
+  if (artworks.length > 0) {
+    segments.push({ kind: 'text', text: artworks.length === 1 ? 'la obra ' : 'las obras ' })
+    artworks.forEach((view, at) => {
+      if (at > 0) segments.push({ kind: 'text', text: at === artworks.length - 1 ? ' y ' : ', ' })
+      segments.push(
+        view.linked
+          ? { kind: 'link', text: view.catalogId, to: `/artwork/${view.catalogId}` }
+          : { kind: 'text', text: view.catalogId },
+      )
+    })
+  }
+
+  if (artworks.length > 0 && exhibitions.length > 0) {
+    segments.push({ kind: 'text', text: ', y con ' })
+  }
+
+  if (exhibitions.length > 0) {
+    segments.push({
+      kind: 'text',
+      text: exhibitions.length === 1 ? 'la exposición ' : 'las exposiciones ',
+    })
+    exhibitions.forEach((view, at) => {
+      if (at > 0) {
+        segments.push({ kind: 'text', text: at === exhibitions.length - 1 ? ' y ' : ', ' })
+      }
+      const named = `«${view.title}»`
+      segments.push(
+        view.linked
+          ? { kind: 'link', text: named, to: `/exhibitions/${view.exhibitionId}` }
+          : { kind: 'text', text: named },
+      )
+    })
+  }
+
+  segments.push({ kind: 'text', text: '.' })
+  return segments
 }
 
 /** Lo que va donde irían las filas de un bloque, o null cuando hay filas (RF-304). */
