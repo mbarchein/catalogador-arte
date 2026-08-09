@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TriState } from '../lib/types'
+import { ringOffset, RING_CIRCUMFERENCE, RING_RADIUS, RING_STROKE } from '../lib/progressRing'
 import { filterVocabulary, findEquivalent, fuzzyRank, searchableOptions } from '../lib/vocabulary'
 import {
   discardText,
@@ -235,6 +236,53 @@ export function EllipsisIcon({ className = 'h-6 w-6' }: { className?: string }) 
   return (
     <svg {...svg} className={className}>
       <path d="M5 12h.01M12 12h.01M19 12h.01" />
+    </svg>
+  )
+}
+
+/**
+ * Anillo de progreso, para el control que está trabajando (RNF-106).
+ *
+ * Dos formas y no una: **determinado** cuando se sabe cuánto pesa lo que viaja
+ * —el arco avanza y se puede decidir si esperar—, e **indeterminado** cuando no
+ * —gira, que solo dice «esto sigue vivo»—. Fingir un porcentaje sin conocer el
+ * total sería inventar el único dato que se está mirando.
+ *
+ * El fondo es el mismo círculo entero en gris tenue, para que el arco se lea como
+ * una parte de un todo y no como una raya suelta.
+ */
+export function ProgressRing({
+  percent,
+  className = 'h-5 w-5',
+}: {
+  /** De 0 a 100, o null cuando no se conoce el total. */
+  percent: number | null
+  className?: string
+}) {
+  const common = {
+    cx: 12,
+    cy: 12,
+    r: RING_RADIUS,
+    fill: 'none',
+    strokeWidth: RING_STROKE,
+    strokeLinecap: 'round' as const,
+  }
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      className={`${className} ${percent === null ? 'animate-spin' : ''}`}
+    >
+      <circle {...common} stroke="currentColor" opacity={0.25} />
+      <circle
+        {...common}
+        stroke="currentColor"
+        strokeDasharray={RING_CIRCUMFERENCE}
+        // Indeterminado: un cuarto de vuelta girando. Determinado: lo que falta.
+        strokeDashoffset={percent === null ? RING_CIRCUMFERENCE * 0.75 : ringOffset(percent)}
+        // Empieza arriba, como un reloj, y no a las tres.
+        transform="rotate(-90 12 12)"
+      />
     </svg>
   )
 }
