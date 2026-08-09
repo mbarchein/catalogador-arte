@@ -84,15 +84,15 @@ export function ArchivePage() {
           archivo lleno, el estado vacío ya no se lee nunca más, y esa era la única
           frase que lo decía. */}
       {entries.length > 0 && (
-        <p className="mb-2 flex items-start gap-1 text-sm text-stone-600">
-          <span className="min-w-0">
+        <div className="mb-2 flex items-start gap-1 text-sm text-stone-600">
+          <p className="min-w-0">
             {archiveCountText({
               total,
               shown: entries.length,
               searching: query.trim() !== '',
               withoutFile: withoutFileCount(entries),
             })}
-          </span>
+          </p>
           <InfoNote title="El archivo" className="-mt-1 shrink-0">
             <p>
               Los documentos se suben desde la documentación de una obra: así quedan
@@ -103,7 +103,7 @@ export function ArchivePage() {
               cada uno se ve si está digitalizado.
             </p>
           </InfoNote>
-        </p>
+        </div>
       )}
 
       {canEdit && retired > 0 && (

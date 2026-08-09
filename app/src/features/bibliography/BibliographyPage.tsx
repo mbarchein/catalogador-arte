@@ -84,14 +84,14 @@ export function BibliographyPage() {
       {/* El contador va arriba y siempre: un listado filtrado que parece completo es
           cómo se pierde una referencia. */}
       {entries.length > 0 && (
-        <p className="mb-2 flex items-start gap-1 text-sm text-stone-600">
-          <span className="min-w-0">
+        <div className="mb-2 flex items-start gap-1 text-sm text-stone-600">
+          <p className="min-w-0">
             {referenceCountText({
               total,
               shown: entries.length,
               searching: query.trim() !== '',
             })}
-          </span>
+          </p>
           {/* De dónde sale una referencia, detrás del icono: con la bibliografía
               llena, el estado vacío —que era quien lo decía— ya no se lee. */}
           <InfoNote title="La bibliografía" className="-mt-1 shrink-0">
@@ -103,7 +103,7 @@ export function BibliographyPage() {
               corrigen para todas las obras que las citen.
             </p>
           </InfoNote>
-        </p>
+        </div>
       )}
 
       {/* La papelera solo para quien puede editar, y solo cuando hay algo dentro: un

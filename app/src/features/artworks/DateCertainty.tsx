@@ -15,8 +15,8 @@ import { InfoNote } from '../../components/ui'
  */
 export function DateCertainty() {
   return (
-    <p className="flex items-start gap-1 text-xs text-stone-500">
-      <span className="min-w-0">«Aproximada» imprime «c.»; «Sin confirmar», «[?]».</span>
+    <div className="flex items-start gap-1 text-xs text-stone-500">
+      <p className="min-w-0">«Aproximada» imprime «c.»; «Sin confirmar», «[?]».</p>
       <InfoNote title="Aproximada y sin confirmar" className="-mt-1 shrink-0">
         <p>
           <strong>Aproximada</strong> es de alrededor de ese año: se sabe que es de
@@ -28,6 +28,6 @@ export function DateCertainty() {
         </p>
         <p>Pueden ir las dos: «c. 1978 [?]».</p>
       </InfoNote>
-    </p>
+    </div>
   )
 }
