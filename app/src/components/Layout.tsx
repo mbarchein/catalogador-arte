@@ -38,6 +38,7 @@ export function Layout({
   back,
   action,
   headerContent,
+  tabs = true,
 }: {
   children: ReactNode
   /** Short title of the view, next to the back button. */
@@ -53,6 +54,14 @@ export function Layout({
    * whole view — worth more than a title the view itself already says.
    */
   headerContent?: ReactNode
+  /**
+   * Si se pinta el menú de abajo. Falso en las pantallas de las que **no se puede
+   * salir todavía**: la de elegir contraseña nueva llega desde el enlace del
+   * correo, y hasta que se elige una, la aplicación no deja ir a ninguna otra
+   * parte. Cinco pestañas que rebotan aquí mismo no son navegación, son cinco
+   * botones averiados.
+   */
+  tabs?: boolean
 }) {
   const navigate = useNavigate()
   const { key } = useLocation()
@@ -91,7 +100,7 @@ export function Layout({
 
       <main className="flex-1 p-4">{children}</main>
 
-      <FooterMenu />
+      {tabs && <FooterMenu />}
     </div>
   )
 }

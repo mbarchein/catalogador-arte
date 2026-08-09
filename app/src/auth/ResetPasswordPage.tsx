@@ -13,7 +13,7 @@ import { supabase } from '../lib/supabase'
  */
 export function ResetPasswordPage() {
   const navigate = useNavigate()
-  const { finishPasswordRecovery } = useAuth()
+  const { finishPasswordRecovery, passwordRecovery } = useAuth()
   const [newPassword, setNewPassword] = useState('')
   const [repeated, setRepeated] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -52,7 +52,18 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <Layout title="Nueva contraseña" back="/">
+    // Sin menú de abajo, se llegue por donde se llegue: elegir contraseña es una
+    // tarea, no una sección del catálogo. Llegando desde el correo las pestañas
+    // además rebotarían a esta misma pantalla —la aplicación no deja salir hasta
+    // elegir una—, que es un menú de cinco botones averiados; y llegando desde el
+    // perfil invitan a irse a media tarea, con el «volver» ya al lado.
+    //
+    // El «volver» solo cuando hay a dónde: desde el correo no lo hay.
+    <Layout
+      title="Nueva contraseña"
+      back={passwordRecovery ? undefined : '/profile'}
+      tabs={false}
+    >
       {done ? (
         <div className="card text-sm">
           <p className="font-medium">Contraseña cambiada.</p>
