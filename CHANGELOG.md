@@ -8,7 +8,8 @@
   bloques con encabezado: **«Qué es esta toma»** (tipo, procedencia, autoría), **«Orden y
   portada»** y **«Retirar»**.
 - **Mientras descarga o sube, el icono se convierte en un anillo que se llena**, y sobre la imagen
-  aparece un rótulo con lo que está pasando: «Descargando el máster: 43 %». Antes no se enteraba
+  aparece un rótulo corto con lo que está pasando y el porcentaje: «Subiendo copias · 43 %». El
+  rótulo cede sitio si no cabe; **el número nunca**, que es lo único que se mira ahí. Antes no se enteraba
   nadie — el original son de 2 a 8 MB y la copia corregida hasta 19, y quien pulsa se queda mirando
   la fotografía sin saber si pasa algo.
 - Cuando el servidor no dice cuánto pesa el fichero, el anillo **gira** en lugar de inventarse un
