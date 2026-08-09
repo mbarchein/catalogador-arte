@@ -2,6 +2,18 @@
 
 ### Interfaz
 
+**El panel de una fotografía, ordenado y con «Guardar»**
+
+- Tenía nueve cosas apiladas en una sola caja gris sin un solo título. Ahora está partido en cuatro
+  bloques con encabezado: **«Qué es esta toma»** (tipo, procedencia, autoría), **«La imagen»**
+  (girar, recortar y color, y el estado de la copia), **«Orden y portada»** y **«Retirar»**.
+- El tipo de toma, la procedencia y la autoría son ahora un formulario con **«Guardar»** y
+  **«Deshacer»**: nada se escribe hasta pulsar, y si queda algo pendiente lo dice. Antes cada
+  control guardaba por su cuenta —los botones al tocarlos y el texto al salir del campo—, y ese
+  último era medio invisible en un móvil: se tocaba fuera y no se sabía si había entrado.
+- Cambiar la procedencia sin guardar ya no pierde lo escrito: si se anotó la autoría y se pasa a
+  «tomada de otro catálogo», el campo sale vacío, y al volver a «propia» el nombre sigue ahí.
+
 **De quién es cada fotografía, y de dónde salió si no es propia**
 
 - Ya se decía si una fotografía es propia, tomada de otro catálogo o recibida de un tercero. Ahora,
