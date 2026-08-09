@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
@@ -22,6 +29,14 @@ interface AuthContextValue {
   roleKnown: boolean
   /** RF-103: only Cataloger and Superuser write. */
   canEdit: boolean
+  /**
+   * Vuelve a leer el perfil de la sesión actual.
+   *
+   * Lo usa quien acaba de corregir su propio nombre: sin esto la pantalla seguiría
+   * enseñando el viejo hasta la siguiente recarga, y el nombre no es un dato del
+   * perfil y ya está — es lo que se lee en «actualizado por» de cada obra.
+   */
+  refreshProfile: () => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -44,30 +59,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe()
   }, [])
 
+  const userId = session?.user.id ?? null
+
+  const readProfile = useCallback(async (): Promise<Profile | null> => {
+    if (userId === null) return null
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, email, name, role')
+      .eq('id', userId)
+      .single()
+    return data as Profile | null
+  }, [userId])
+
   useEffect(() => {
-    if (!session) {
+    if (userId === null) {
       setProfile(null)
       setRoleKnown(false)
       return
     }
     let current = true
-    supabase
-      .from('profiles')
-      .select('id, email, name, role')
-      .eq('id', session.user.id)
-      .single()
-      .then(({ data }) => {
-        if (!current) return
-        setProfile(data as Profile | null)
-        // Settled, and that includes having failed: a session with no readable
-        // profile is a Reader as far as the interface goes, and leaving this
-        // false would hang the views that wait for it.
-        setRoleKnown(true)
-      })
+    void readProfile().then((data) => {
+      if (!current) return
+      setProfile(data)
+      // Settled, and that includes having failed: a session with no readable
+      // profile is a Reader as far as the interface goes, and leaving this
+      // false would hang the views that wait for it.
+      setRoleKnown(true)
+    })
     return () => {
       current = false
     }
-  }, [session])
+  }, [userId, readProfile])
 
   // The role is read from the profile, but the database is what truly decides.
   // This only avoids showing controls that would fail (RF-106): the real
@@ -82,6 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         roleKnown,
         canEdit,
+        refreshProfile: async () => {
+          const data = await readProfile()
+          // Solo se pisa lo que hay si la lectura trajo algo: un fallo de red al
+          // refrescar no puede dejar la pantalla sin nombre ni sin rol.
+          if (data !== null) setProfile(data)
+        },
         signOut: async () => {
           // The local mirror and the cached images hold catalog data, not
           // preferences: they must not stay readable on a shared device after

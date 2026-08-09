@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { Link } from 'react-router'
 import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { SignOut, Layout } from '../../components/Layout'
+import { AccountName } from './AccountName'
 import { ResourceUsage } from './ResourceUsage'
 import {
   isInstalled,
@@ -141,9 +142,14 @@ export function ProfilePage() {
           <DataRow label="Correo" value={profile?.email ?? session?.user.email ?? ''} />
           <DataRow label="Rol" value={profile ? ROLE_LABEL[profile.role] : 'Sin perfil'} />
         </dl>
+        {/* Las dos cosas que se pueden cambiar de la cuenta, juntas y con el mismo
+            peso. El nombre se corrige aquí mismo, que es un campo; la contraseña
+            tiene su pantalla porque se pide dos veces y la escribe el servicio de
+            identidad, no esta tabla. */}
+        <AccountName />
         <Link
           to="/reset-password"
-          className="mt-2 inline-block min-h-touch text-sm text-stone-600 underline hover:text-stone-800"
+          className="mt-2 block min-h-touch text-sm text-stone-600 underline hover:text-stone-800"
         >
           Cambiar la contraseña
         </Link>
