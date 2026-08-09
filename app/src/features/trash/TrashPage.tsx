@@ -81,8 +81,7 @@ export function TrashPage() {
     <Layout title="Papelera" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
         Aquí está todo lo que se ha retirado del catálogo. Nada se borra nunca de verdad, así que
-        todo lo de esta lista se puede devolver a su sitio. No hay ningún botón para borrar
-        definitivamente, y no es un olvido.
+        todo lo de esta lista se puede devolver a su sitio.
       </p>
 
       {failure !== null && (
@@ -160,7 +159,7 @@ function TrashGroupSection({
 
       {count === 0 && problems.length === 0 && (
         <p className="card text-sm text-stone-600">
-          Nada retirado de este grupo. No es que no se pueda retirar: es que no hay nada esperando.
+          Nada retirado de este grupo.
         </p>
       )}
 

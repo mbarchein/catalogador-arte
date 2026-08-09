@@ -93,7 +93,7 @@ export function TablesPage() {
         <TableRow
           to="/exhibition-venues"
           name="Sedes de exposición"
-          hint="Los sitios donde ocurrieron las muestras, con su localidad. No son las del almacén. Crear, corregir y retirar."
+          hint="Los sitios donde ocurrieron las muestras, con su localidad. Crear, corregir y retirar."
         />
         <TableRow
           to="/parties"
@@ -149,9 +149,6 @@ export function TablesPage() {
         <h2 className="px-1 text-sm font-medium uppercase tracking-wide text-stone-500">
           Contenido del catálogo
         </h2>
-        <p className="mb-2 px-1 text-xs text-stone-500">
-          No son listas que eligen las fichas: son fichas.
-        </p>
         <ul className="space-y-2">
           <TableRow
             to="/bibliography"
@@ -171,8 +168,7 @@ export function TablesPage() {
           Lo retirado
         </h2>
         <p className="mb-2 px-1 text-xs text-stone-500">
-          No es una lista de las que eligen las fichas: es todo lo que se sacó del catálogo,
-          reunido en un sitio.
+          Todo lo que se ha sacado del catálogo, reunido en un sitio.
         </p>
         <ul className="space-y-2">
           <TableRow

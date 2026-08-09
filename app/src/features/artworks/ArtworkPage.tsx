@@ -524,7 +524,7 @@ export function ArtworkPage() {
         <p className="mt-3 px-1 text-xs text-stone-500">
           ¿Falta algo en esta ficha?{' '}
           <Link to="/about" className="underline">
-            Lo que todavía no se puede hacer, y dónde se hace lo que no es aquí
+            Lo que todavía no se puede hacer desde aquí
           </Link>
           .
         </p>

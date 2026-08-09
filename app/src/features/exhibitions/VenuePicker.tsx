@@ -111,7 +111,8 @@ export function VenuePicker({
         >
           <span className="text-sm font-medium">Sin identificar</span>
           <span className="text-xs text-stone-500">
-            La fuente no dice cuál fue, o dice algo que no es una ficha: escríbelo abajo tal cual
+            La fuente no dice cuál fue, o dice algo que no está en la lista: escríbelo abajo tal
+            cual
           </span>
         </button>
 

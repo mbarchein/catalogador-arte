@@ -76,8 +76,7 @@ export function ExhibitionVenuesPage() {
     <Layout title="Sedes de exposición" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
         Los sitios donde ocurrieron las muestras. Corregir el nombre de un museo se hace una vez y
-        lo ven todas sus exposiciones. No son las ubicaciones del almacén: aquellas dicen dónde
-        está la obra hoy, y una sede dice dónde estuvo expuesta en 1985.
+        lo ven todas sus exposiciones.
       </p>
 
       {failure && (

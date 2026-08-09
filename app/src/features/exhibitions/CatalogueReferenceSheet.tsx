@@ -106,9 +106,8 @@ export function CatalogueReferenceSheet({
       {blocked === null && (
         <>
           <p className="mt-2 text-xs text-stone-500">
-            El catálogo de una muestra no es una tabla aparte: es una referencia de la bibliografía.
-            Elige la que sea, y si todavía no está, se da de alta citándola desde una obra que
-            aparezca en él.
+            Elige la referencia del catálogo. Si todavía no está, se da de alta citándola desde
+            una obra que aparezca en él.
           </p>
 
           <input

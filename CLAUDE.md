@@ -23,6 +23,14 @@
   error que ve la usuaria, también los `raise exception` de la base y los de las funciones Edge que
   la aplicación muestra tal cual.
 - **Documentación (`docs/`) y mensajes de commit: español.**
+- **La interfaz no se explica a sí misma ni se justifica.** Los textos que ve la usuaria dicen qué
+  hay y qué se puede hacer con ello. **Nunca** explican el modelo de datos, por qué una pantalla
+  está donde está, ni por qué falta un botón. Fuera, en concreto, la construcción «no es X: es Y»
+  —«No son listas que eligen las fichas: son fichas», «No es una lista de las de elegir», «No hay
+  botón de borrar, y no es un olvido»—: a quien cataloga no le importa esa distinción, y leída
+  suena a que la aplicación se defiende de una acusación que nadie ha hecho. El razonamiento va en
+  los comentarios del código, que es de quien es. Si un texto solo se entiende sabiendo cómo está
+  hecha la aplicación, sobra.
 
 ## Commits
 
