@@ -2,14 +2,26 @@
 
 ### Interfaz
 
-**La nota de un documento del archivo ya no se sale de la pantalla**
+**Las notas ya no se salen de la pantalla, y sus direcciones se pueden abrir**
 
-- Iba en la columna estrecha de la lista de campos, y una dirección web larga se salía por el
-  lado derecho. Ahora va bajo el título, a ancho completo, y respeta los saltos de línea con que
-  se escribió.
-- Es el campo donde se pegan direcciones, así que era cuestión de tiempo. Arreglado también el
-  motivo de fondo, que afectaba a cualquier campo con una palabra muy larga, aquí y en la ficha de
-  una referencia.
+- Una dirección web no tiene espacios: es una sola palabra larguísima, y en la columna estrecha de
+  la lista de campos se salía por el lado derecho. Pasaba en las notas de un documento del archivo
+  y en las del estado de una obra, que son justo donde se pegan direcciones.
+- La nota sigue **con los demás campos**, que es donde toca; lo que cambia es que su contenido
+  ocupa el ancho entero de la ficha, y respeta los saltos de línea con que se escribió.
+- **Las direcciones se enseñan cortas** —sin el «https://» ni el «www», y con puntos suspensivos
+  cuando no caben— y se pueden pulsar para abrirlas enteras. El nombre del sitio nunca se recorta:
+  es la parte que dice de quién es el enlace.
+- Arreglado además el motivo de fondo, que afectaba a cualquier campo con una palabra muy larga,
+  aquí y en la ficha de una referencia.
+
+**La ficha de un documento dice con qué obra está enlazado, y lleva a ella**
+
+- Antes decía «Enlazado con una obra» y había que bajar hasta el final para saber cuál. Ahora la
+  nombra —«Enlazado con la obra RC-0005»— y ese identificador se pulsa para ir a su ficha. Lo mismo
+  con las exposiciones, por su título.
+- Una ficha que no se puede abrir desde ahí se nombra igual, pero sin enlace: prometer un destino
+  que no lleva a ninguna parte es peor que decirlo.
 
 **Recuperar la contraseña olvidada**
 
