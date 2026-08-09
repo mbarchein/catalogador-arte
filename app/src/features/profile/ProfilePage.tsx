@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import { Link } from 'react-router'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { SignOut, Layout } from '../../components/Layout'
+import { ResourceUsage } from './ResourceUsage'
 import {
   isInstalled,
   launchInstall,
@@ -129,6 +130,7 @@ function TextSize() {
 
 export function ProfilePage() {
   const { profile, session } = useAuth()
+  const access = useEditingAccess()
 
   return (
     <Layout title="Mi perfil" back="/">
@@ -167,6 +169,12 @@ export function ProfilePage() {
           Abrir la información de la aplicación
         </Link>
       </section>
+
+      {/* Solo para quien cataloga: la base niega la medida a una cuenta de solo
+          consulta, así que pintarla sería enseñar un error a quien no puede hacer
+          nada al respecto. La sección se monta ya midiendo, y por eso se espera a
+          saber el rol en vez de suponerlo. */}
+      {access === 'allowed' && <ResourceUsage />}
 
       <SignOut />
     </Layout>

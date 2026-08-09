@@ -1,0 +1,102 @@
+import { describe, expect, it } from 'vitest'
+import { usagePage, MAX_USAGE_PAGES } from '../../../supabase/functions/sign-file/usage'
+
+/**
+ * La lectura del listado del almacén (RF-1202).
+ *
+ * Se cubre desde aquí porque en la función Edge no hay forma de ejecutar tests, y
+ * este módulo se escribió sin Deno justo para eso — igual que `multipart.ts`.
+ *
+ * Lo que se fija es lo único que puede fallar en silencio: contar de menos, y dar
+ * por terminado un listado que sigue. Las dos producen una cifra creíble y más
+ * pequeña que la real, en la pantalla que sirve para no quedarse sin sitio.
+ */
+
+const page = (rows: string, extra = '') => `<?xml version="1.0" encoding="UTF-8"?>
+<ListVersionsResult>${rows}${extra}</ListVersionsResult>`
+
+const version = (size: number) => `<Version><Key>obras/x.tif</Key><Size>${size}</Size></Version>`
+
+describe('sumar un tramo del listado', () => {
+  it('suma los tamaños y cuenta los ficheros', () => {
+    const result = usagePage(page(version(1_000) + version(2_500)))
+
+    expect(result.bytes).toBe(3_500)
+    expect(result.objects).toBe(2)
+  })
+
+  it('un listado vacío es cero y no un fallo', () => {
+    // Un bucket recién creado. Cero es la respuesta correcta, y tratarlo como
+    // error dejaría la pantalla sin cifra el primer día.
+    const result = usagePage(page(''))
+
+    expect(result.bytes).toBe(0)
+    expect(result.objects).toBe(0)
+    expect(result.next).toBeNull()
+  })
+
+  it('cuenta TODAS las versiones, que es por lo que se paga', () => {
+    // El bucket conserva las anteriores a propósito (infra/b2.tf). Contar solo la
+    // vigente diría menos de lo que factura el almacén.
+    const result = usagePage(page(version(4_000_000) + version(3_900_000) + version(3_800_000)))
+
+    expect(result.bytes).toBe(11_700_000)
+    expect(result.objects).toBe(3)
+  })
+
+  it('las marcas de borrado no suman: no ocupan', () => {
+    const withDeleteMarker = page(
+      version(1_000) + '<DeleteMarker><Key>obras/y.tif</Key></DeleteMarker>',
+    )
+
+    expect(usagePage(withDeleteMarker).bytes).toBe(1_000)
+    expect(usagePage(withDeleteMarker).objects).toBe(1)
+  })
+})
+
+describe('por dónde sigue el listado', () => {
+  it('un tramo truncado trae los dos marcadores del siguiente', () => {
+    const result = usagePage(
+      page(
+        version(10),
+        '<IsTruncated>true</IsTruncated>' +
+          '<NextKeyMarker>obras/AR-0500_v1.tif</NextKeyMarker>' +
+          '<NextVersionIdMarker>4_z8a</NextVersionIdMarker>',
+      ),
+    )
+
+    expect(result.next).toEqual({
+      keyMarker: 'obras/AR-0500_v1.tif',
+      versionIdMarker: '4_z8a',
+    })
+  })
+
+  it('sin truncar no hay siguiente, aunque vengan marcadores', () => {
+    const result = usagePage(
+      page(
+        version(10),
+        '<IsTruncated>false</IsTruncated><NextKeyMarker>x</NextKeyMarker>' +
+          '<NextVersionIdMarker>y</NextVersionIdMarker>',
+      ),
+    )
+
+    expect(result.next).toBeNull()
+  })
+
+  it('truncado pero sin marcador se da por terminado', () => {
+    // Es la defensa contra el bucle infinito: sin marcador, el tramo siguiente
+    // sería el mismo, y el mismo, y el mismo.
+    const result = usagePage(page(version(10), '<IsTruncated>true</IsTruncated>'))
+
+    expect(result.next).toBeNull()
+  })
+})
+
+describe('el tope de tramos', () => {
+  it('está por encima de lo que este catálogo puede tener, y existe', () => {
+    // Mil objetos por tramo. Un bucle que pagina contra un servicio remoto sin
+    // tope es un bucle que un día no termina.
+    expect(MAX_USAGE_PAGES).toBeGreaterThanOrEqual(100)
+    expect(Number.isFinite(MAX_USAGE_PAGES)).toBe(true)
+  })
+})
