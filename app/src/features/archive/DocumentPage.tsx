@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
+import { NoteRow } from '../documentary/NoteText'
 import { LoadingNotice } from '../../components/ui'
 import { placePathText } from '../../lib/places'
 import { displayStructuredDate } from '../documentary/documentaryFormat'
@@ -12,7 +13,8 @@ import { usePhysicalPlaces } from '../artworks/usePhysicalPlaces'
 import { useExhibitions } from '../exhibitions/useExhibitions'
 import {
   DOCUMENT_MISSING_TEXT,
-  documentReachSummary,
+  documentReachSegments,
+  type ReachSegment,
   linkedArtworkViews,
   linkedBlockNotice,
   linkedExhibitionViews,
@@ -92,7 +94,6 @@ export function DocumentPage() {
     : null
   const file = documentFileOffer(document)
   const code = (document.archive_code ?? '').trim() || null
-  const note = document.note.trim() || null
 
   return (
     <Layout title={document.title.trim() || 'Documento sin título'} back="/archive">
@@ -109,20 +110,10 @@ export function DocumentPage() {
         </p>
       )}
 
-      {/* La nota, a ancho completo y bajo el título, porque es texto libre: en la
-          columna estrecha de la lista de campos una dirección web larga se salía
-          de la pantalla, y es justo el campo donde se pegan direcciones. Aquí
-          además se respetan los saltos de línea con que se escribió. */}
-      <section className="card mb-3">
-        <h2 className="text-sm text-stone-500">Nota</h2>
-        <p className="mt-0.5 whitespace-pre-line break-words text-sm">
-          {note === null ? <span className="text-stone-400">Sin dato</span> : note}
-        </p>
-      </section>
-
-      {/* De qué cuelga, antes de los campos: es lo que esta ficha añade. */}
+      {/* De qué cuelga, lo primero y antes de los campos: es lo que esta ficha
+          añade, y nombra las fichas del otro lado para poder ir a ellas. */}
       <p className="card mb-3 text-sm text-stone-700">
-        {documentReachSummary({ artworks: artworks.length, exhibitions: exhibitions.length })}
+        <Reach segments={documentReachSegments({ artworks, exhibitions })} />
       </p>
 
       <section className="card">
@@ -133,6 +124,7 @@ export function DocumentPage() {
           <RecordRow label="Fondo" value={fundText(document.artist_fund)} />
           <RecordRow label="Serie" value={document.archive_series?.name.trim() || null} />
           <RecordRow label="El papel está en" value={place} />
+          <NoteRow label="Nota" value={document.note} />
         </dl>
       </section>
 
@@ -362,6 +354,29 @@ function ExhibitionLinkRow({
 }
 
 /** Una línea de la ficha. Nunca un hueco (RF-304): sin dato, se dice. */
+/**
+ * El aviso de de qué cuelga el documento, con sus referencias pulsables.
+ *
+ * Los trozos los decide `documentReachSegments`, que es donde se puede probar sin
+ * navegador; aquí solo se pintan. Un `Link` y no un ancla: son pantallas de la
+ * propia aplicación y salir al navegador perdería la sesión y el sitio.
+ */
+function Reach({ segments }: { segments: readonly ReachSegment[] }) {
+  return (
+    <>
+      {segments.map((segment, at) =>
+        segment.kind === 'link' ? (
+          <Link key={at} to={segment.to} className="font-medium underline">
+            {segment.text}
+          </Link>
+        ) : (
+          <span key={at}>{segment.text}</span>
+        ),
+      )}
+    </>
+  )
+}
+
 function RecordRow({
   label,
   value,

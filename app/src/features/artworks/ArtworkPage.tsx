@@ -10,6 +10,7 @@ import {
 } from 'react-router'
 import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
+import { NoteRow } from '../documentary/NoteText'
 import { WhenNearby } from '../../components/WhenNearby'
 import { supabase } from '../../lib/supabase'
 import { displayDate } from '../../lib/dates'
@@ -472,7 +473,9 @@ export function ArtworkPage() {
               label="Ficha publicable"
               value={artwork.catalog_record_complete ? 'Sí' : 'No'}
             />
-            <DataRow label="Notas" value={artwork.inventory_process_notes} />
+            {/* La única de texto libre, y la única que trae direcciones pegadas: a
+                ancho completo, o una dirección larga se sale por el lado. */}
+            <NoteRow label="Notas" value={artwork.inventory_process_notes} />
             <DataRow
               label="Actualizada"
               value={new Date(artwork.updated_at).toLocaleString('es-ES')}
