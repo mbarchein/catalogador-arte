@@ -4,9 +4,13 @@
 
 **El panel de una fotografía, ordenado y con «Guardar»**
 
-- Tenía nueve cosas apiladas en una sola caja gris sin un solo título. Ahora está partido en cuatro
-  bloques con encabezado: **«Qué es esta toma»** (tipo, procedencia, autoría), **«La imagen»**
-  (girar, recortar y color, y el estado de la copia), **«Orden y portada»** y **«Retirar»**.
+- Tenía nueve cosas apiladas en una sola caja gris sin un solo título. Ahora está partido en tres
+  bloques con encabezado: **«Qué es esta toma»** (tipo, procedencia, autoría), **«Orden y
+  portada»** y **«Retirar»**.
+- **Girar, recortar y color** sale del panel y pasa a ser un icono **sobre la propia fotografía**,
+  en una esquina: actúa sobre la que se está mirando, no sobre «la seleccionada». Debajo de la
+  imagen se lee qué edición tiene y cómo está la copia a resolución completa, que es donde se ve
+  lo que describen.
 - El tipo de toma, la procedencia y la autoría son ahora un formulario con **«Guardar»** y
   **«Deshacer»**: nada se escribe hasta pulsar, y si queda algo pendiente lo dice. Antes cada
   control guardaba por su cuenta —los botones al tocarlos y el texto al salir del campo—, y ese
