@@ -1,6 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PasswordField } from '../components/ui'
+import {
+  normalizeEmail,
+  recoveryOutcome,
+  recoveryText,
+  resendText,
+  secondsLeft,
+} from './passwordRecovery'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -9,6 +16,17 @@ export function LoginPage() {
   const [sending, setSending] = useState(false)
   const [recovering, setRecovering] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const [sentAt, setSentAt] = useState<number | null>(null)
+  const [waiting, setWaiting] = useState(0)
+
+  // La cuenta atrás del reenvío. Un segundo basta: lo que se pinta son segundos.
+  useEffect(() => {
+    if (sentAt === null) return
+    const tick = () => setWaiting(secondsLeft(sentAt, Date.now()))
+    tick()
+    const timer = setInterval(tick, 1000)
+    return () => clearInterval(timer)
+  }, [sentAt])
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault()
@@ -41,22 +59,30 @@ export function LoginPage() {
 
   async function sendRecovery(e: React.FormEvent) {
     e.preventDefault()
+    if (waiting > 0) return
     setSending(true)
     setError(null)
     setNotice(null)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizeEmail(email), {
       redirectTo: `${window.location.origin}/reset-password`,
     })
     setSending(false)
-    if (error) {
-      setError('No se ha podido enviar el correo. Espera un momento y vuelve a intentarlo.')
+
+    // El resultado es el mismo pase lo que pase salvo que el servidor no
+    // conteste. Ver `passwordRecovery.ts`: un mensaje distinto para una
+    // dirección sin cuenta, o para un rechazo por ritmo, sería decir quién
+    // tiene acceso al catálogo.
+    const outcome = recoveryOutcome(error)
+    if (outcome === 'unreachable') {
+      // En rojo, porque es un problema y hay que volver a intentarlo. No filtra
+      // nada: que la red esté caída se contesta igual para cualquier dirección.
+      setError(recoveryText(outcome))
       return
     }
-    // Neutral on purpose: confirming or denying the delivery would say which
-    // accounts exist.
-    setNotice(
-      'Si la cuenta existe, en unos minutos llegará un correo con el enlace para elegir una contraseña nueva. Mira también la carpeta de spam.',
-    )
+    setNotice(recoveryText(outcome))
+    // La espera solo empieza cuando la petición llegó a salir: con la red caída,
+    // obligar a esperar un minuto castigaría el intento que no se hizo.
+    setSentAt(Date.now())
   }
 
   // At the top, not vertically centered: on the phone, focusing the email
@@ -120,13 +146,13 @@ export function LoginPage() {
           </p>
         )}
 
-        <button className="btn-primary w-full" disabled={sending}>
+        <button className="btn-primary w-full" disabled={sending || (recovering && waiting > 0)}>
           {sending
             ? recovering
               ? 'Enviando…'
               : 'Entrando…'
             : recovering
-              ? 'Enviarme el enlace'
+              ? resendText(waiting)
               : 'Entrar'}
         </button>
 
