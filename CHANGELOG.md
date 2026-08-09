@@ -2,6 +2,13 @@
 
 ### Interfaz
 
+**El fondo apartado se señala en el filtro, no encima del listado**
+
+- El aviso «no se muestran las obras de Pruebas» estaba encima de la lista de obras, y ahí no se
+  podía hacer nada con él. Ahora la fila de ese fondo lleva un distintivo —«Apartado»— dentro del
+  panel de filtros, con una línea diciendo que sus obras no salen si no se marca.
+- Es el sitio donde se actúa: marcar ese fondo es exactamente lo que hace aparecer sus obras.
+
 **Las notas ya no se salen de la pantalla, y sus direcciones se pueden abrir**
 
 - Una dirección web no tiene espacios: es una sola palabra larguísima, y en la columna estrecha de
@@ -101,8 +108,8 @@
   ha cambiado. Debajo de cada uno se lee **qué pasa ahora**, no las dos posibilidades a la vez, así
   que no hay que mirar el control para saber cuál de las dos frases es la que aplica. Apagado añade
   además lo que **no** se ha hecho, que es cuando hace falta saberlo.
-- Cuando un fondo está apartado, **el listado lo dice** junto al número de obras y nombra cuál es,
-  en lugar de contar de menos sin explicar por qué.
+- Cuando un fondo está apartado, **su fila lleva un distintivo en el panel de filtros**, que es
+  justo donde marcarlo hace aparecer sus obras.
 - El último fondo activo no se puede retirar, y se explica en la propia fila antes de intentarlo, no
   después de pulsar.
 - **No se dan de alta fondos desde aquí, y la pantalla dice por qué** en lugar de dejar buscar el
