@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  photoStage,
   WORK_DOWNLOADING_MASTER,
+  WORK_FINISHING,
   WORK_OPENING_COPY,
   WORK_SAVING_TRACE,
   WORK_SHORT_MAX,
@@ -23,6 +25,7 @@ const TODOS: PhotoWork[] = [
   WORK_OPENING_COPY,
   WORK_UPLOADING,
   WORK_SAVING_TRACE,
+  WORK_FINISHING,
 ]
 
 describe('el texto del distintivo cabe', () => {
@@ -57,5 +60,36 @@ describe('el texto de la línea de debajo explica', () => {
     for (const work of TODOS) {
       expect(work.long.length).toBeGreaterThan(work.short.length)
     }
+  })
+})
+
+/**
+ * El 100 % no es el final (RNF-106).
+ *
+ * El porcentaje cuenta bytes que salen, y salir no es haber llegado: después del
+ * último trozo queda el almacén contestando y la ficha anotando. Con una copia de
+ * 19 MB eso dura, y lo que se veía era «Subiendo copias 100 %» con el anillo entero
+ * y quieto durante un rato largo, que es exactamente el aspecto de una pantalla
+ * colgada.
+ */
+describe('el tramo final', () => {
+  it('al llegar al 100 % deja de dar número, para que el anillo vuelva a girar', () => {
+    expect(photoStage(WORK_UPLOADING, 100)).toEqual({ work: WORK_FINISHING, percent: null })
+  })
+
+  it('y lo mismo al terminar de bajar el máster, que después se descodifica', () => {
+    expect(photoStage(WORK_DOWNLOADING_MASTER, 100).percent).toBeNull()
+  })
+
+  it('mientras viaja, el número se respeta tal cual', () => {
+    expect(photoStage(WORK_UPLOADING, 42)).toEqual({ work: WORK_UPLOADING, percent: 42 })
+  })
+
+  it('sin medida, el trabajo se dice y el anillo gira', () => {
+    expect(photoStage(WORK_SAVING_TRACE, null)).toEqual({ work: WORK_SAVING_TRACE, percent: null })
+  })
+
+  it('sin trabajo no hay ni distintivo ni número', () => {
+    expect(photoStage(null, 70)).toEqual({ work: null, percent: null })
   })
 })

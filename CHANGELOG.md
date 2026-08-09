@@ -14,6 +14,10 @@
   la fotografía sin saber si pasa algo.
 - Cuando el servidor no dice cuánto pesa el fichero, el anillo **gira** en lugar de inventarse un
   porcentaje. Un progreso que miente es peor que no tener ninguno: por él se decide si esperar.
+- Al llegar al 100 % el rótulo pasa a **«Terminando»** y el anillo vuelve a girar. El porcentaje
+  cuenta lo que ha salido, y salir no es haber llegado: después queda el almacén guardándolo y
+  contestando, que con una copia de 19 MB es un rato. Antes se quedaba en «100 %» con el anillo
+  entero y quieto, que es exactamente el aspecto de una pantalla colgada.
 - **Girar, recortar y color** sale del panel y pasa a ser un icono **sobre la propia fotografía**,
   en una esquina: actúa sobre la que se está mirando, no sobre «la seleccionada». Debajo de la
   imagen se lee qué edición tiene y cómo está la copia a resolución completa, que es donde se ve

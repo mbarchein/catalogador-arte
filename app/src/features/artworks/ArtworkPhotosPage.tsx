@@ -45,6 +45,7 @@ import { useEditingAccess } from '../../auth/AuthContext'
 import { ActionBar, Chips, CropIcon, LoadingNotice, ProgressRing } from '../../components/ui'
 import { ringLabel } from '../../lib/progressRing'
 import {
+  photoStage,
   WORK_DOWNLOADING_MASTER,
   WORK_OPENING_COPY,
   WORK_SAVING_TRACE,
@@ -165,7 +166,12 @@ export function ArtworkPhotosPage() {
   // Cuánto lleva viajado el fichero de `working`, o null cuando no se sabe.
   const [transfer, setTransfer] = useState<UploadProgressEvent | null>(null)
   // Null mientras no se sepa el total: entonces el anillo gira en vez de mentir.
-  const percent = transfer === null ? null : uploadPercent(transfer.loaded, transfer.total)
+  // Y el 100 % tampoco se enseña: ver `photoStage`, que es donde está el porqué.
+  const stage = photoStage(
+    working,
+    transfer === null ? null : uploadPercent(transfer.loaded, transfer.total),
+  )
+  const percent = stage.percent
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -727,7 +733,7 @@ export function ArtworkPhotosPage() {
                   queda pero no DE QUÉ, y quien pulsó el icono se queda mirando la
                   fotografía. Arriba a la izquierda, en la esquina opuesta al icono,
                   para no taparlo ni taparse con él. */}
-              {working !== null && (
+              {stage.work !== null && (
                 <p
                   className="absolute left-2 top-2 flex max-w-[85%] items-baseline gap-1.5
                              rounded-full bg-stone-900/70 px-3 py-1 text-2xs text-white shadow-lg
@@ -736,7 +742,7 @@ export function ArtworkPhotosPage() {
                   {/* El rótulo cede sitio; el porcentaje no. Con los dos en el mismo
                       texto, el recorte se comía justo el número, que es lo único que
                       se mira aquí. */}
-                  <span className="min-w-0 truncate">{working.short}</span>
+                  <span className="min-w-0 truncate">{stage.work.short}</span>
                   {percent !== null && <span className="shrink-0 tabular-nums">{percent} %</span>}
                 </p>
               )}
@@ -747,8 +753,16 @@ export function ArtworkPhotosPage() {
                   // Mientras trabaja, el rótulo es lo que está pasando y su
                   // porcentaje: quien mira la fotografía no lee la línea de abajo,
                   // y un lector de pantalla no ve girar nada.
-                  aria-label={working === null ? EDIT_ACTION : ringLabel(working.long.replace(/…$/, ''), percent)}
-                  title={working === null ? EDIT_ACTION : ringLabel(working.long.replace(/…$/, ''), percent)}
+                  aria-label={
+                    stage.work === null
+                      ? EDIT_ACTION
+                      : ringLabel(stage.work.long.replace(/…$/, ''), percent)
+                  }
+                  title={
+                    stage.work === null
+                      ? EDIT_ACTION
+                      : ringLabel(stage.work.long.replace(/…$/, ''), percent)
+                  }
                   aria-busy={working !== null}
                   disabled={saving || working !== null}
                   onClick={() => void openEditor(selected)}
@@ -774,8 +788,8 @@ export function ArtworkPhotosPage() {
             {selected && (
               <div className="mt-1">
                 <p className="text-xs text-stone-500">
-                  {working !== null
-                    ? ringLabel(working.long.replace(/…$/, ''), percent)
+                  {stage.work !== null
+                    ? ringLabel(stage.work.long.replace(/…$/, ''), percent)
                     : editSummary(selectedEdit)
                       ? `${editSummary(selectedEdit)}. El máster de archivo se conserva sin tocar.`
                       : 'Sin giro, recorte ni ajuste de color. Se editan las copias, nunca el máster de archivo.'}

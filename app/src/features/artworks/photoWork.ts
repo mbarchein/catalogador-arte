@@ -53,3 +53,34 @@ export const WORK_SAVING_TRACE: PhotoWork = {
   short: 'Guardando',
   long: 'Anotando la revisión del color…',
 }
+
+/**
+ * El tramo final, cuando ya no queda nada que contar.
+ *
+ * El porcentaje mide **los bytes que han salido**, y salir no es haber llegado: el
+ * navegador canta el 100 % en cuanto suelta el último trozo por el cable, y después
+ * queda el almacén guardándolo y contestando, y la ficha anotando dónde ha quedado.
+ * Con una copia de 19 MB desde un almacén con mala cobertura ese tramo dura, y lo que
+ * se veía era «100 %» con el anillo entero y quieto durante un rato largo —la misma
+ * imagen que tiene una pantalla colgada—. Así que al llegar al 100 % se deja de dar
+ * el número y el anillo vuelve a girar: se sabe menos, y se dice.
+ */
+export const WORK_FINISHING: PhotoWork = {
+  short: 'Terminando',
+  long: 'Terminando de guardar…',
+}
+
+/**
+ * Lo que hay que pintar: qué se está haciendo y cuánto va, ya resuelto el final.
+ *
+ * `percent` es el medido, y sale null cuando no hay que enseñar número —porque no se
+ * sabe o porque ya no informa—, que es lo que hace girar el anillo.
+ */
+export function photoStage(
+  work: PhotoWork | null,
+  percent: number | null,
+): { work: PhotoWork | null; percent: number | null } {
+  if (work === null) return { work: null, percent: null }
+  if (percent !== null && percent >= 100) return { work: WORK_FINISHING, percent: null }
+  return { work, percent }
+}
