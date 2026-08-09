@@ -2,6 +2,21 @@
 
 ### Interfaz
 
+**El nombre con el que apareces se corrige desde «Mi perfil»**
+
+- Hasta ahora el nombre venía dado y no había forma de tocarlo desde la aplicación. Ahora se cambia
+  ahí mismo, en «Cuenta», junto a la contraseña.
+- No es un dato del perfil y ya está: es el nombre que se lee en **«actualizado por» de cada obra**
+  y en la traza de lo retirado. Se dice al lado del campo, para que se sepa qué se está cambiando.
+- No se puede dejar en blanco, y se explica por qué: vaciarlo dejaría sin nombre esa traza en fichas
+  que ya están escritas.
+- El nombre nuevo se ve en el momento, sin recargar.
+
+**«Tablas» ya no dice que los fondos se mantengan en otro sitio**
+
+- Quedaba una nota diciendo que los fondos no se mantenían desde ahí. Desde que existe la pantalla
+  «Fondos» eso ya no es cierto, así que se ha quitado.
+
 **«Mi perfil» dice cuánto espacio queda**
 
 - Un bloque nuevo, «Espacio ocupado», debajo de «Sobre la aplicación», con un botón «Actualizar»
