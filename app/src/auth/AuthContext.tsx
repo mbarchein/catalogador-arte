@@ -37,7 +37,50 @@ interface AuthContextValue {
    * perfil y ya está — es lo que se lee en «actualizado por» de cada obra.
    */
   refreshProfile: () => Promise<void>
+  /**
+   * La sesión abierta viene del enlace de recuperación y todavía no ha elegido
+   * contraseña (RF-112).
+   *
+   * Mientras esto sea cierto, la aplicación no deja salir de «Nueva contraseña».
+   * Sin ello el enlace del correo **es un acceso**: abre una sesión normal, y
+   * quien lo pulse y se arrepienta se queda dentro del catálogo sin haber sabido
+   * nunca la contraseña. Que es justo lo que un enlace de recuperación no puede
+   * ser, porque vive para siempre en una bandeja de entrada.
+   */
+  passwordRecovery: boolean
+  /** Se llama al terminar de elegir la contraseña nueva. */
+  finishPasswordRecovery: () => void
   signOut: () => Promise<void>
+}
+
+/**
+ * Dónde se apunta que hay una recuperación a medias.
+ *
+ * En `sessionStorage` y no en memoria porque el aviso llega una sola vez, al
+ * abrir el enlace: una recarga de la página no lo vuelve a disparar, y sin dejar
+ * rastro la sesión se leería como una entrada normal — que es exactamente el
+ * agujero que esto cierra. Y en `sessionStorage` y no en `localStorage` porque
+ * muere con la pestaña, como debe morir una recuperación abandonada.
+ */
+const RECOVERY_KEY = 'password-recovery'
+
+function readRecoveryFlag(): boolean {
+  try {
+    return sessionStorage.getItem(RECOVERY_KEY) === '1'
+  } catch {
+    // Almacenamiento denegado (navegación privada de algunos navegadores). Sin
+    // marca no hay confinamiento, pero tampoco puede romperse la entrada.
+    return false
+  }
+}
+
+function writeRecoveryFlag(active: boolean) {
+  try {
+    if (active) sessionStorage.setItem(RECOVERY_KEY, '1')
+    else sessionStorage.removeItem(RECOVERY_KEY)
+  } catch {
+    // Igual que arriba: no poder apuntarlo no puede impedir usar la aplicación.
+  }
 }
 
 const Context = createContext<AuthContextValue | null>(null)
@@ -47,14 +90,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [roleKnown, setRoleKnown] = useState(false)
+  const [passwordRecovery, setPasswordRecovery] = useState(readRecoveryFlag)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession)
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true)
+        writeRecoveryFlag(true)
+      }
+      if (event === 'SIGNED_OUT') {
+        setPasswordRecovery(false)
+        writeRecoveryFlag(false)
+      }
     })
     return () => sub.subscription.unsubscribe()
   }, [])
@@ -109,6 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Solo se pisa lo que hay si la lectura trajo algo: un fallo de red al
           // refrescar no puede dejar la pantalla sin nombre ni sin rol.
           if (data !== null) setProfile(data)
+        },
+        passwordRecovery,
+        finishPasswordRecovery: () => {
+          setPasswordRecovery(false)
+          writeRecoveryFlag(false)
         },
         signOut: async () => {
           // The local mirror and the cached images hold catalog data, not

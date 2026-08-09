@@ -26,7 +26,7 @@ import { AboutPage } from './features/about/AboutPage'
 import { ProfilePage } from './features/profile/ProfilePage'
 
 export function App() {
-  const { session, loading } = useAuth()
+  const { session, loading, passwordRecovery } = useAuth()
 
   if (loading) {
     return <div className="p-8 text-center text-sm text-stone-600">Cargando…</div>
@@ -36,6 +36,18 @@ export function App() {
   // so the check is a single one and covers every route.
   if (!session) {
     return <LoginPage />
+  }
+
+  // RF-112: la sesión que abre el enlace de recuperación no llega a ninguna otra
+  // parte hasta que se elige la contraseña. Sin esto el enlace del correo es un
+  // acceso al catálogo, y uno que vive para siempre en una bandeja de entrada.
+  if (passwordRecovery) {
+    return (
+      <Routes>
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="*" element={<Navigate to="/reset-password" replace />} />
+      </Routes>
+    )
   }
 
   return (

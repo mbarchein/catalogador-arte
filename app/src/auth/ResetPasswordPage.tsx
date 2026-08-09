@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Layout } from '../components/Layout'
+import { useAuth } from './AuthContext'
 import { PasswordField } from '../components/ui'
 import { validateNewPassword } from '../lib/password'
 import { supabase } from '../lib/supabase'
@@ -12,6 +13,7 @@ import { supabase } from '../lib/supabase'
  */
 export function ResetPasswordPage() {
   const navigate = useNavigate()
+  const { finishPasswordRecovery } = useAuth()
   const [newPassword, setNewPassword] = useState('')
   const [repeated, setRepeated] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -33,6 +35,16 @@ export function ResetPasswordPage() {
       setError('No se ha podido cambiar la contraseña. Vuelve a pedir el correo de recuperación e inténtalo otra vez.')
       return
     }
+
+    // Quien cambia la contraseña por miedo a que alguien la sepa tiene que echar
+    // a ese alguien, no solo dejarlo con la contraseña vieja: las demás sesiones
+    // se cierran. Si esto fallara, la contraseña YA está cambiada y decirlo aquí
+    // convertiría un éxito en un mensaje de error, así que se deja pasar.
+    await supabase.auth.signOut({ scope: 'others' }).catch(() => undefined)
+
+    // Y con la contraseña elegida, la recuperación deja de estar a medias: la
+    // aplicación vuelve a dejar salir de esta pantalla.
+    finishPasswordRecovery()
     setDone(true)
     // The confirmation gets a moment to be read before returning to the
     // catalog.
