@@ -426,8 +426,7 @@ export function chainContinuity(
     undated,
     tone: 'continuous',
     text:
-      'Los eslabones están fechados y encadenados sin huecos entre ellos. Si está completa lo ' +
-      'dice el estado de la investigación.',
+      'Fechados y encadenados sin huecos entre ellos. Si está completa lo dice el estado de la investigación.',
   }
 }
 

@@ -484,7 +484,7 @@ export function partyFailureText(failure: DatabaseFailure, operation: PartyOpera
   const code = (failure.code ?? '').trim()
   if (code === '23505') {
     return (
-      'Ya hay una ficha con ese nombre; puede estar retirada, búscala y recupérala. Si son dos distintas, distínguelas: «Juan Pérez (Badajoz)».'
+      'Ya hay una ficha con ese nombre; búscala y recupérala. Si son dos distintas: «Juan Pérez (Badajoz)».'
     )
   }
   if (code === '23514') {
@@ -767,7 +767,7 @@ export function partyListNotice(state: {
     return `Ninguna ficha coincide con «${state.query.trim()}». Se busca por nombre, localidad y país.`
   }
   return (
-    'Todavía no hay ninguna persona ni institución: los eslabones de la cadena de procedencia. La primera se crea aquí arriba.'
+    'Todavía no hay ninguna: son los eslabones de la cadena de procedencia. La primera se crea aquí arriba.'
   )
 }
 
