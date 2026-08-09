@@ -84,6 +84,9 @@
   pulsara y se arrepintiera se quedaba dentro del catálogo sin haber elegido contraseña — y ese
   enlace vive para siempre en una bandeja de entrada. Ahora no deja salir de «Nueva contraseña»
   hasta que se elige una.
+- La pantalla de elegir contraseña **ya no enseña el menú de abajo**. Llegando desde el correo esas
+  cinco pestañas rebotaban a esta misma pantalla —la aplicación no deja salir hasta elegir una—, y
+  llegando desde el perfil invitaban a irse a media tarea.
 - Al cambiarla se cierran las demás sesiones abiertas. Quien la cambia porque teme que alguien la
   sepa necesita echar a ese alguien, no solo dejarle la contraseña vieja.
 
