@@ -213,9 +213,8 @@ export function documentReachSummary(input: {
 
   if (parts.length === 0) {
     return (
-      'No lo tiene enlazado nada: ni una obra ni una exposición. No es un error — un documento del ' +
-      'archivo existe por sí mismo — pero desde ninguna ficha se llega a él, así que esta pantalla es ' +
-      'la única forma de encontrarlo.'
+      'No lo tiene enlazado nada: ni una obra ni una exposición. Desde ninguna ficha se llega a él, ' +
+      'así que esta pantalla es la única forma de encontrarlo.'
     )
   }
   return `Enlazado con ${parts.join(' y ')}.`

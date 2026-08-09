@@ -163,13 +163,14 @@ describe('documentReachSummary, de qué está colgando (RF-516)', () => {
     )
   })
 
-  it('y con cero y cero dice que el documento está suelto, sin llamarlo error', () => {
+  it('y con cero y cero dice dónde está el documento suelto', () => {
     // La frase que justifica la pantalla entera: es la fila a la que no se llegaba
-    // desde ningún sitio.
+    // desde ningún sitio. Dice qué pasa y dónde se encuentra, sin defenderse de
+    // una acusación que nadie ha hecho.
     const text = documentReachSummary({ artworks: 0, exhibitions: 0 })
     expect(text).toContain('No lo tiene enlazado nada')
-    expect(text).toContain('No es un error')
     expect(text).toContain('esta pantalla es la única forma de encontrarlo')
+    expect(text).not.toContain('No es un error')
   })
 })
 
