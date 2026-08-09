@@ -1,3 +1,28 @@
+## 9 de agosto de 2026
+
+### Interfaz
+
+**«Mi perfil» dice cuánto espacio queda**
+
+- Un bloque nuevo, «Espacio ocupado», debajo de «Sobre la aplicación», con un botón «Actualizar»
+  que vuelve a medirlo.
+- **Son tres cifras y no una**, porque el catálogo vive repartido y cada trozo se llena a su ritmo:
+  las fichas, las fotografías de trabajo y el archivo de originales, que es lo que de verdad pesa.
+  Una sola cifra escondería lo único que hace falta ver, que es **cuál** se está llenando.
+- Cada uno dice **cuánto queda libre** —que es lo que se pregunta— y, detrás, cuánto ocupa y de
+  cuánto. Con una barra para verlo de un vistazo.
+- Cuando uno pasa del 80 % lo avisa, y al llegar al límite dice qué va a pasar: lo siguiente que se
+  guarde puede fallar. La salida no es borrar, que aquí nada se borra: es subir de plan.
+- El archivo de originales cuenta **también las versiones anteriores** de cada fichero, porque es lo
+  que ocupa de verdad y es por lo que se paga. Si tuviera tantos ficheros que no se pudieran contar
+  de una vez, lo dice en lugar de dar la cuenta a medias por buena.
+- Las dos medidas se piden por separado, así que si un servicio no contesta se sigue viendo la otra
+  en vez de perder las dos.
+- Debajo queda dicho a qué hora se midió y que los límites son los del plan gratuito de cada
+  servicio, para que se sepa de dónde sale la cifra.
+- Solo lo ve quien cataloga. Una cuenta de solo consulta no administra la capacidad de nada, y la
+  base tampoco le contesta.
+
 ## 8 de agosto de 2026
 
 ### Interfaz
