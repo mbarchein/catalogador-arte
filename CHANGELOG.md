@@ -2,6 +2,25 @@
 
 ### Interfaz
 
+**Los mandos de una fotografía, sobre la propia fotografía**
+
+- Poner la portada, cambiar el orden y quitar una toma estaban en el panel de abajo, con botones que
+  decían «esta» sin que se viera cuál era «esta». Ahora son **iconos en las esquinas de la imagen**,
+  como el de girar y recortar: la estrella arriba a la derecha, la papelera abajo a la izquierda —lo
+  más lejos posible del recortar, que es el de todos los días—, y el orden en los bordes laterales.
+- El orden **no son flechas ‹ ›**: sobre una fotografía que se pasa deslizando, eso se lee como «foto
+  siguiente». Son flechas con tope, las de ir al principio y al final.
+- En la primera y en la última, el mando que no lleva a ninguna parte **se ve apagado en vez de
+  desaparecer**: un icono que va y viene mueve a los demás de sitio, y entonces ya no se puede ir a
+  por uno sin mirar.
+- Bajo la imagen se lee lo que los dibujos no pueden decir: **«Principal · 2 de 4»**. Y cuando la
+  portada la puso la regla y no una persona, dice **«Principal, sin fijar»** con un icono ⓘ que
+  explica lo único que tiene consecuencia: que subir otra general la cambia sola.
+- **Quitar pregunta en una hoja**, con lo que pasa y lo que no —el fichero se conserva—. Es el mismo
+  gesto que retirar un eslabón o una cita, y el «atrás» del móvil la cierra sin hacer nada.
+- El panel de abajo se queda con **una sola sección**: «Qué es esta toma», que es lo único que se
+  escribe y por eso lo único con «Guardar».
+
 **El panel de una fotografía, ordenado y con «Guardar»**
 
 - Tenía nueve cosas apiladas en una sola caja gris sin un solo título. Ahora está partido en tres
