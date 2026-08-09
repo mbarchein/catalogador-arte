@@ -51,6 +51,22 @@
 - No se ha quitado nada que haga falta: lo que desaparece son las justificaciones y los ejemplos de
   más. Donde el texto avisaba de algo con consecuencias —que la aplicación no llama al sitio que
   enlazas, o que el gris de una impresora no sirve de referencia— el aviso se queda, más corto.
+- Segunda pasada, sobre las frases medianas: **otras 130 recortadas**. Los índices de Tablas eran
+  los peores —cada lista repetía «Crear, renombrar y retirar», que es lo que se ve al entrar—, y
+  las ayudas de campo pasan a una línea.
+
+**Un icono ⓘ donde la explicación larga sí hacía falta**
+
+- Recortar deja algunas explicaciones a medias, y hay tres que se necesitan enteras la primera vez.
+  Ahora están detrás de un icono de información, que abre una hoja con el texto completo:
+  - **«Aproximada» y «Sin confirmar»** de la fecha, en la ficha y en la captura: son dos casillas
+    parecidas que imprimen cosas distintas —«c. 1978» y «1978 [?]»—, y elegir la que no es cambia
+    lo que sale en el catálogo.
+  - **El contacto** de una persona o institución: fuera queda que se pide ficha a ficha; dentro,
+    que quien consulta el catálogo también lo ve, que es lo que decide qué se escribe ahí.
+  - **De dónde salen los documentos y las referencias**, en el archivo y en la bibliografía. Eso
+    solo lo decía el mensaje de lista vacía, y con el archivo lleno ese mensaje ya no se lee nunca.
+- El icono no se pone donde el texto de al lado ya basta: no es un sitio donde dejar lo que sobra.
 
 **El fondo apartado se señala en el filtro, no encima del listado**
 
