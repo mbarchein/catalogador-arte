@@ -34,6 +34,8 @@ function detail(over: Partial<PhotoDetailRow> = {}): PhotoDetailRow {
     original_height: null,
     master_bytes: null,
     provenance: 'OWN',
+    photo_credit: '',
+    provenance_source: '',
     corrected_path: null,
     corrected_bytes: null,
     corrected_pending: false,

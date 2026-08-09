@@ -58,6 +58,10 @@ export interface PhotoDetailRow extends ColorColumns {
    */
   master_bytes: number | null
   provenance: PhotoProvenance
+  /** Quién hizo la fotografía, cuando es propia y consta (RF-417). */
+  photo_credit: string
+  /** De dónde salió, cuando no lo es (RF-417). Ver `photoSource.ts`. */
+  provenance_source: string
   /** The full-resolution corrected copy (RF-420): a path, or nothing and why. */
   corrected_path: string | null
   corrected_bytes: number | null
@@ -75,7 +79,8 @@ export interface PhotoDetailRow extends ColorColumns {
  */
 export const PHOTO_DETAIL_COLUMNS =
   'image_id, file_photo_date, file_photo_date_exact, original_width, original_height, ' +
-  'master_bytes, provenance, corrected_path, corrected_bytes, corrected_pending, ' +
+  'master_bytes, provenance, photo_credit, provenance_source, ' +
+  'corrected_path, corrected_bytes, corrected_pending, ' +
   'color_temperature, color_tint, color_exposure, color_black, color_white, color_gamma, ' +
   'color_shoulder, color_gray, color_neutral_x, color_neutral_y, ' +
   'color_source, color_reference, color_light, color_inherited'

@@ -2,6 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
+import {
+  cleanPhotoSource,
+  photoSourceColumn,
+  photoSourceHint,
+  photoSourceLabel,
+  photoSourceOf,
+} from './photoSource'
 import { CORRECTED_NOT_GENERATED, uploadShot, type CorrectedCopyResult } from '../../lib/images'
 import {
   colorAvailability,
@@ -626,6 +633,35 @@ export function ArtworkPhotosPage() {
     setSaving(false)
   }
 
+  /**
+   * Quién la hizo, o de dónde salió (RF-417).
+   *
+   * Se escribe en la columna que decide la procedencia de hoy, y por eso el nombre
+   * de la columna sale de `photoSourceColumn` y no está clavado aquí: son dos, y
+   * escribir en la que no toca dejaría el dato invisible en su propia pantalla.
+   *
+   * Se guarda al salir del campo y no a cada tecla: es texto que se escribe de una
+   * sentada, y una petición por letra en un almacén con mala cobertura es una cola
+   * de peticiones que se pisan.
+   */
+  async function changePhotoSource(imageId: string, provenance: PhotoProvenance, value: string) {
+    const column = photoSourceColumn(provenance)
+    setSaving(true)
+    setError(null)
+    setNotice(null)
+    const { error } = await supabase
+      .from('images')
+      .update({ [column]: cleanPhotoSource(value) })
+      .eq('image_id', imageId)
+    if (error) {
+      setError(error.message)
+    } else {
+      await reload()
+      setNotice(`${photoSourceLabel(provenance)}: guardada.`)
+    }
+    setSaving(false)
+  }
+
   // A reader reaching this URL falls back to the record view (RF-109) — but only
   // once the role is KNOWN. Deciding on the first render sent the cataloger back to
   // the record every time she reloaded this address, because the profile arrives
@@ -763,6 +799,27 @@ export function ArtworkPhotosPage() {
                     {colorAvailability(true, selectedDetail?.provenance).reason ??
                       'En una fotografía propia se ofrece el ajuste de color de la luz de la sala.'}
                   </p>
+
+                  {/* Y lo que hay que apuntar en cada caso, que no es el mismo dato:
+                      en una propia, quién la hizo; en una de fuera, de dónde salió.
+                      Los dos opcionales — ver photoSource.ts. */}
+                  <PhotoSourceField
+                    key={selected.image_id}
+                    provenance={selectedDetail?.provenance ?? 'OWN'}
+                    value={
+                      selectedDetail
+                        ? photoSourceOf(selectedDetail, selectedDetail.provenance) ?? ''
+                        : ''
+                    }
+                    disabled={saving}
+                    onSave={(value) =>
+                      void changePhotoSource(
+                        selected.image_id,
+                        selectedDetail?.provenance ?? 'OWN',
+                        value,
+                      )
+                    }
+                  />
                 </div>
 
                 {/* Straightening, trimming and the colour of the room's light. It only
@@ -991,5 +1048,48 @@ export function ArtworkPhotosPage() {
         </ActionBar>
       )}
     </Layout>
+  )
+}
+
+/**
+ * El campo de autoría o de procedencia, según de quién sea la fotografía.
+ *
+ * Con borrador propio y guardado al salir del campo: escribir un nombre son diez
+ * pulsaciones, y guardar en cada una es una cola de peticiones que se pisan en un
+ * almacén con mala cobertura. El `key` de quien lo monta es el identificador de la
+ * fotografía, así que cambiar de toma trae el valor de la nueva y no el que se
+ * estaba escribiendo para la anterior.
+ */
+function PhotoSourceField({
+  provenance,
+  value,
+  disabled,
+  onSave,
+}: {
+  provenance: PhotoProvenance
+  value: string
+  disabled: boolean
+  onSave: (value: string) => void
+}) {
+  const [draft, setDraft] = useState(value)
+  const id = `p-source-${photoSourceColumn(provenance)}`
+
+  return (
+    <div className="mt-3">
+      <label className="label" htmlFor={id}>
+        {photoSourceLabel(provenance)}
+      </label>
+      <input
+        id={id}
+        className="field"
+        value={draft}
+        disabled={disabled}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          if (cleanPhotoSource(draft) !== cleanPhotoSource(value)) onSave(draft)
+        }}
+      />
+      <p className="mt-1 text-xs text-stone-500">{photoSourceHint(provenance)}</p>
+    </div>
   )
 }
