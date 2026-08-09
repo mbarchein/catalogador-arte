@@ -92,6 +92,7 @@ export function DocumentPage() {
     : null
   const file = documentFileOffer(document)
   const code = (document.archive_code ?? '').trim() || null
+  const note = document.note.trim() || null
 
   return (
     <Layout title={document.title.trim() || 'Documento sin título'} back="/archive">
@@ -108,7 +109,18 @@ export function DocumentPage() {
         </p>
       )}
 
-      {/* De qué cuelga, lo primero y antes de los campos: es lo que esta ficha añade. */}
+      {/* La nota, a ancho completo y bajo el título, porque es texto libre: en la
+          columna estrecha de la lista de campos una dirección web larga se salía
+          de la pantalla, y es justo el campo donde se pegan direcciones. Aquí
+          además se respetan los saltos de línea con que se escribió. */}
+      <section className="card mb-3">
+        <h2 className="text-sm text-stone-500">Nota</h2>
+        <p className="mt-0.5 whitespace-pre-line break-words text-sm">
+          {note === null ? <span className="text-stone-400">Sin dato</span> : note}
+        </p>
+      </section>
+
+      {/* De qué cuelga, antes de los campos: es lo que esta ficha añade. */}
       <p className="card mb-3 text-sm text-stone-700">
         {documentReachSummary({ artworks: artworks.length, exhibitions: exhibitions.length })}
       </p>
@@ -121,7 +133,6 @@ export function DocumentPage() {
           <RecordRow label="Fondo" value={fundText(document.artist_fund)} />
           <RecordRow label="Serie" value={document.archive_series?.name.trim() || null} />
           <RecordRow label="El papel está en" value={place} />
-          <RecordRow label="Nota" value={document.note.trim() || null} />
         </dl>
       </section>
 
@@ -363,7 +374,7 @@ function RecordRow({
   return (
     <div className="flex gap-3 py-1.5">
       <dt className="w-32 shrink-0 text-sm text-stone-500">{label}</dt>
-      <dd className={`break-words text-sm ${mono ? 'font-mono' : ''}`}>
+      <dd className={`min-w-0 break-words text-sm ${mono ? 'font-mono' : ''}`}>
         {value === null ? <span className="text-stone-400">Sin dato</span> : value}
       </dd>
     </div>

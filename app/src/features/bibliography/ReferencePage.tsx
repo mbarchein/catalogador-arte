@@ -221,7 +221,7 @@ function RecordRow({
   return (
     <div className="flex gap-3 py-1.5">
       <dt className="w-28 shrink-0 text-sm text-stone-500">{label}</dt>
-      <dd className={`break-words text-sm ${mono ? 'font-mono' : ''}`}>
+      <dd className={`min-w-0 break-words text-sm ${mono ? 'font-mono' : ''}`}>
         {value === null ? <span className="text-stone-400">Sin dato</span> : value}
       </dd>
     </div>
