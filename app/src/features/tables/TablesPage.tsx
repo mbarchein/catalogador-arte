@@ -123,14 +123,6 @@ export function TablesPage() {
         />
       </TableGroup>
 
-      {/* Never a blank space, and never a link that does nothing: what is not here
-          yet is said, so that it is not looked for. */}
-      <p className="mt-4 text-sm text-stone-600">
-        Los fondos —Rotili, Ruiz Campins y el de pruebas— no se mantienen aquí: su nombre está
-        dentro del identificador de catalogación de cada obra, la etiqueta pegada al cuadro, y
-        tocarlos es otra decisión.
-      </p>
-
       {/* ── LA PAPELERA, Y POR QUÉ ESTÁ AQUÍ SIN SER UNA MAESTRA ──────
           Dentro de la papelera hay obras, fotografías y fichas, no solo listas: no
           es una de las nueve, así que va FUERA de los tres grupos, con su propio
