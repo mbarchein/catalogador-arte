@@ -2,13 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
+import { photoSourceHint, photoSourceLabel } from './photoSource'
 import {
-  cleanPhotoSource,
-  photoSourceColumn,
-  photoSourceHint,
-  photoSourceLabel,
-  photoSourceOf,
-} from './photoSource'
+  draftSourceText,
+  pendingDataNotice,
+  photoDataColumns,
+  photoDataDirty,
+  photoDataDraft,
+  withSourceText,
+  PHOTO_SECTIONS,
+  type PhotoDataDraft,
+} from './photoData'
 import { CORRECTED_NOT_GENERATED, uploadShot, type CorrectedCopyResult } from '../../lib/images'
 import {
   colorAvailability,
@@ -33,7 +37,6 @@ import {
 import {
   PHOTO_PROVENANCE_LABEL,
   SHOT_TYPE_LABEL,
-  type PhotoProvenance,
   type ShotTypeValue,
 } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
@@ -343,19 +346,26 @@ export function ArtworkPhotosPage() {
     }
   }
 
-  async function changeShotType(imageId: string, type: ShotTypeValue) {
+  /**
+   * Los datos de la toma, guardados a la vez y solo al pulsar (RF-417).
+   *
+   * Antes eran tres escrituras sueltas —los chips al tocarlos y el texto al salir
+   * del campo— y esa última es medio invisible en un móvil. Ahora es un formulario:
+   * nada se escribe hasta que se pulsa, y la pantalla dice si queda algo pendiente.
+   */
+  async function savePhotoData(imageId: string, draft: PhotoDataDraft) {
     setSaving(true)
     setError(null)
     setNotice(null)
     const { error } = await supabase
       .from('images')
-      .update({ shot_type: type })
+      .update(photoDataColumns(draft))
       .eq('image_id', imageId)
     if (error) {
       setError(error.message)
     } else {
       await reload()
-      setNotice('Tipo de toma actualizado.')
+      setNotice('Datos de la toma guardados.')
     }
     setSaving(false)
   }
@@ -611,57 +621,6 @@ export function ArtworkPhotosPage() {
     setWorking(null)
   }
 
-  /**
-   * Where the photograph comes from (RF-417), chosen and never inferred.
-   *
-   * It is one tap and it has a consequence that is not obvious: on anything other than
-   * own work the colour adjustment stops being offered, because correcting the cast of
-   * somebody else's reproduction is amending their development of an artwork nobody here
-   * saw under that light. The screen says so under the control.
-   */
-  async function changeProvenance(imageId: string, provenance: PhotoProvenance) {
-    setSaving(true)
-    setError(null)
-    setNotice(null)
-    const { error } = await supabase.from('images').update({ provenance }).eq('image_id', imageId)
-    if (error) {
-      setError(error.message)
-    } else {
-      await reload()
-      setNotice(`Procedencia actualizada: ${PHOTO_PROVENANCE_LABEL[provenance].toLowerCase()}.`)
-    }
-    setSaving(false)
-  }
-
-  /**
-   * Quién la hizo, o de dónde salió (RF-417).
-   *
-   * Se escribe en la columna que decide la procedencia de hoy, y por eso el nombre
-   * de la columna sale de `photoSourceColumn` y no está clavado aquí: son dos, y
-   * escribir en la que no toca dejaría el dato invisible en su propia pantalla.
-   *
-   * Se guarda al salir del campo y no a cada tecla: es texto que se escribe de una
-   * sentada, y una petición por letra en un almacén con mala cobertura es una cola
-   * de peticiones que se pisan.
-   */
-  async function changePhotoSource(imageId: string, provenance: PhotoProvenance, value: string) {
-    const column = photoSourceColumn(provenance)
-    setSaving(true)
-    setError(null)
-    setNotice(null)
-    const { error } = await supabase
-      .from('images')
-      .update({ [column]: cleanPhotoSource(value) })
-      .eq('image_id', imageId)
-    if (error) {
-      setError(error.message)
-    } else {
-      await reload()
-      setNotice(`${photoSourceLabel(provenance)}: guardada.`)
-    }
-    setSaving(false)
-  }
-
   // A reader reaching this URL falls back to the record view (RF-109) — but only
   // once the role is KNOWN. Deciding on the first render sent the cataloger back to
   // the record every time she reloaded this address, because the profile arrives
@@ -766,66 +725,28 @@ export function ArtworkPhotosPage() {
                   </p>
                 )}
 
-                <Chips
-                  id="p-shot-type"
-                  label="Tipo de toma"
-                  columns={3}
-                  options={(Object.keys(SHOT_TYPE_LABEL) as ShotTypeValue[]).map((v) => ({
-                    value: v,
-                    text: SHOT_TYPE_LABEL[v],
-                  }))}
-                  value={selected.shot_type}
-                  onChange={(v) => void changeShotType(selected.image_id, v)}
+                {/* ── Qué es esta toma ──
+                    Los tres datos que describen la fotografía, juntos y con un solo
+                    «Guardar»: son la misma pregunta —qué es esto y de dónde salió— y
+                    antes se guardaban de tres formas distintas. Ver photoData.ts. */}
+                <PhotoDataForm
+                  key={selected.image_id}
+                  saved={photoDataDraft({
+                    shot_type: selected.shot_type,
+                    provenance: selectedDetail?.provenance ?? 'OWN',
+                    photo_credit: selectedDetail?.photo_credit ?? '',
+                    provenance_source: selectedDetail?.provenance_source ?? '',
+                  })}
+                  busy={saving}
+                  onSave={(draft) => void savePhotoData(selected.image_id, draft)}
                 />
 
-                {/* Where the photograph comes from (RF-417). Asked and never inferred:
-                    a 1080×2400 file with no camera data looks exactly like a screenshot
-                    of an online catalog, and looking like one is not being one. Four of
-                    the 44 masters are reproductions and nothing in the record said so. */}
-                <div>
-                  <Chips
-                    id="p-provenance"
-                    label="Procedencia"
-                    options={PHOTO_PROVENANCES.map((v) => ({
-                      value: v,
-                      text: PHOTO_PROVENANCE_LABEL[v],
-                    }))}
-                    value={selectedDetail?.provenance ?? 'OWN'}
-                    onChange={(v) => void changeProvenance(selected.image_id, v)}
-                  />
-                  {/* The consequence, in the same place as the cause, and taken from the
-                      model's own rule so it cannot drift from what the editor does. */}
-                  <p className="mt-1 text-xs text-stone-500">
-                    {colorAvailability(true, selectedDetail?.provenance).reason ??
-                      'En una fotografía propia se ofrece el ajuste de color de la luz de la sala.'}
-                  </p>
-
-                  {/* Y lo que hay que apuntar en cada caso, que no es el mismo dato:
-                      en una propia, quién la hizo; en una de fuera, de dónde salió.
-                      Los dos opcionales — ver photoSource.ts. */}
-                  <PhotoSourceField
-                    key={selected.image_id}
-                    provenance={selectedDetail?.provenance ?? 'OWN'}
-                    value={
-                      selectedDetail
-                        ? photoSourceOf(selectedDetail, selectedDetail.provenance) ?? ''
-                        : ''
-                    }
-                    disabled={saving}
-                    onSave={(value) =>
-                      void changePhotoSource(
-                        selected.image_id,
-                        selectedDetail?.provenance ?? 'OWN',
-                        value,
-                      )
-                    }
-                  />
-                </div>
-
-                {/* Straightening, trimming and the colour of the room's light. It only
+                {/* ── La imagen ──
+                    Straightening, trimming and the colour of the room's light. It only
                     redoes the copies that are served: the archive master stays as it
                     left the camera (ADR-002). */}
                 <div>
+                  <SectionTitle>{PHOTO_SECTIONS.image}</SectionTitle>
                   <button
                     type="button"
                     disabled={saving || working !== null}
@@ -860,101 +781,113 @@ export function ArtworkPhotosPage() {
                   )}
                 </div>
 
-                {/* Same move, one place at a time: dragging is faster but it
+                {/* ── Orden y portada ──
+                    Dónde va esta toma entre las demás y si es la que representa la
+                    obra. Juntas porque las dos contestan «cuál se ve primero».
+                    Same move, one place at a time: dragging is faster but it
                     is a gesture, and a gesture cannot be the only way to
                     reach a function. */}
-                {ordered.length > 1 && (
-                  <div>
-                    <p className="label">
-                      Orden · {ordered.findIndex((i) => i.image_id === selected.image_id) + 1} de{' '}
+                <div>
+                  <SectionTitle>{PHOTO_SECTIONS.order}</SectionTitle>
+                  {ordered.length > 1 && (
+                    <div className="mb-2">
+                      <p className="label">
+                        Orden · {ordered.findIndex((i) => i.image_id === selected.image_id) + 1} de{' '}
                       {ordered.length}
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        disabled={saving || ordered[0]?.image_id === selected.image_id}
-                        onClick={() => void moveSelected(-1)}
-                        className="btn-secondary disabled:opacity-40"
-                      >
-                        ← Antes
-                      </button>
-                      <button
-                        type="button"
-                        disabled={
-                          saving || ordered[ordered.length - 1]?.image_id === selected.image_id
-                        }
-                        onClick={() => void moveSelected(1)}
-                        className="btn-secondary disabled:opacity-40"
-                      >
-                        Después →
-                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={saving || ordered[0]?.image_id === selected.image_id}
+                          onClick={() => void moveSelected(-1)}
+                          className="btn-secondary disabled:opacity-40"
+                        >
+                          ← Antes
+                        </button>
+                        <button
+                          type="button"
+                          disabled={
+                            saving || ordered[ordered.length - 1]?.image_id === selected.image_id
+                          }
+                          onClick={() => void moveSelected(1)}
+                          className="btn-secondary disabled:opacity-40"
+                        >
+                          Después →
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {selected.image_id === mainId ? (
-                  <p className="text-xs text-stone-500">
+                  {selected.image_id === mainId ? (
+                    <p className="text-xs text-stone-500">
                     {manuallyChosen
                       ? 'Esta es la imagen principal.'
                       : // Distinguishing "chosen by hand" from "chosen by the
                         // fallback rule" matters: in the second case, uploading
                         // one more photo can change it on its own.
                         'Se muestra como principal por ser la general más reciente. Fíjala para que no cambie al añadir fotos.'}
-                    {!manuallyChosen && (
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={() => void useAsMain(selected.image_id)}
-                        className="ml-1 underline"
-                      >
-                        Fijar esta
-                      </button>
-                    )}
-                  </p>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => void useAsMain(selected.image_id)}
-                    className="btn-secondary w-full"
-                  >
-                    {saving ? 'Guardando…' : 'Usar como imagen principal'}
-                  </button>
-                )}
-
-                {confirmRemoval === selected.image_id ? (
-                  <div className="rounded-lg border border-red-200 bg-red-50 p-2">
-                    <p className="text-xs text-red-900">
-                      ¿Quitar esta fotografía de la ficha? El archivo se conserva, pero deja de
-                      mostrarse.
+                      {!manuallyChosen && (
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => void useAsMain(selected.image_id)}
+                          className="ml-1 underline"
+                        >
+                          Fijar esta
+                        </button>
+                      )}
                     </p>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={() => void removePhoto(selected.image_id)}
-                        className="btn min-h-touch bg-red-700 text-white"
-                      >
-                        {saving ? 'Quitando…' : 'Sí, quitar'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmRemoval(null)}
-                        className="btn-secondary"
-                      >
-                        Cancelar
-                      </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void useAsMain(selected.image_id)}
+                      className="btn-secondary w-full"
+                    >
+                      {saving ? 'Guardando…' : 'Usar como imagen principal'}
+                    </button>
+                  )}
+                </div>
+
+                {/* ── Retirar ──
+                    Aparte y al final, con su propio título: es lo único de este
+                    panel que quita algo de la ficha. */}
+                <div>
+                  <SectionTitle>{PHOTO_SECTIONS.remove}</SectionTitle>
+                  {confirmRemoval === selected.image_id ? (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-2">
+                      <p className="text-xs text-red-900">
+                        ¿Quitar esta fotografía de la ficha? El archivo se conserva, pero deja de
+                        mostrarse.
+                      </p>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => void removePhoto(selected.image_id)}
+                          className="btn min-h-touch bg-red-700 text-white"
+                        >
+                          {saving ? 'Quitando…' : 'Sí, quitar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRemoval(null)}
+                          className="btn-secondary"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmRemoval(selected.image_id)}
-                    className="btn min-h-touch w-full border border-red-300 bg-white text-sm text-red-800"
-                  >
-                    Quitar esta fotografía
-                  </button>
-                )}
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmRemoval(selected.image_id)}
+                      className="btn min-h-touch w-full border border-red-300 bg-white text-sm text-red-800"
+                    >
+                      Quitar esta fotografía
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </>
@@ -1051,45 +984,109 @@ export function ArtworkPhotosPage() {
   )
 }
 
+/** El título de cada bloque del panel, con la misma voz que los del filtro. */
+function SectionTitle({ children }: { children: string }) {
+  return (
+    <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">{children}</h3>
+  )
+}
+
 /**
- * El campo de autoría o de procedencia, según de quién sea la fotografía.
+ * Qué es esta toma: tipo, procedencia y de quién es (RF-417, RF-405).
  *
- * Con borrador propio y guardado al salir del campo: escribir un nombre son diez
- * pulsaciones, y guardar en cada una es una cola de peticiones que se pisan en un
- * almacén con mala cobertura. El `key` de quien lo monta es el identificador de la
- * fotografía, así que cambiar de toma trae el valor de la nueva y no el que se
- * estaba escribiendo para la anterior.
+ * Un formulario de verdad, con su borrador y su «Guardar»: nada se escribe hasta
+ * pulsarlo. Antes eran tres escrituras sueltas —dos al tocar un chip y una al
+ * salir del campo de texto— y esa mezcla es lo que hacía imposible saber si algo
+ * quedaba pendiente. La aritmética está en `photoData.ts`, con sus tests; aquí
+ * solo se pinta.
+ *
+ * El `key` de quien lo monta es el identificador de la fotografía, así que pasar a
+ * otra toma trae sus datos y no el borrador a medias de la anterior.
  */
-function PhotoSourceField({
-  provenance,
-  value,
-  disabled,
+function PhotoDataForm({
+  saved,
+  busy,
   onSave,
 }: {
-  provenance: PhotoProvenance
-  value: string
-  disabled: boolean
-  onSave: (value: string) => void
+  saved: PhotoDataDraft
+  busy: boolean
+  onSave: (draft: PhotoDataDraft) => void
 }) {
-  const [draft, setDraft] = useState(value)
-  const id = `p-source-${photoSourceColumn(provenance)}`
+  const [draft, setDraft] = useState(saved)
+  const dirty = photoDataDirty(draft, saved)
+  const pending = pendingDataNotice(dirty)
 
   return (
-    <div className="mt-3">
-      <label className="label" htmlFor={id}>
-        {photoSourceLabel(provenance)}
-      </label>
-      <input
-        id={id}
-        className="field"
-        value={draft}
-        disabled={disabled}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          if (cleanPhotoSource(draft) !== cleanPhotoSource(value)) onSave(draft)
-        }}
+    <div>
+      <SectionTitle>{PHOTO_SECTIONS.data}</SectionTitle>
+
+      <Chips
+        id="p-shot-type"
+        label="Tipo de toma"
+        columns={3}
+        options={(Object.keys(SHOT_TYPE_LABEL) as ShotTypeValue[]).map((v) => ({
+          value: v,
+          text: SHOT_TYPE_LABEL[v],
+        }))}
+        value={draft.shotType}
+        onChange={(shotType) => setDraft({ ...draft, shotType })}
       />
-      <p className="mt-1 text-xs text-stone-500">{photoSourceHint(provenance)}</p>
+
+      {/* Where the photograph comes from (RF-417). Asked and never inferred: a
+          1080×2400 file with no camera data looks exactly like a screenshot of an
+          online catalog, and looking like one is not being one. */}
+      <div className="mt-3">
+        <Chips
+          id="p-provenance"
+          label="Procedencia"
+          options={PHOTO_PROVENANCES.map((v) => ({ value: v, text: PHOTO_PROVENANCE_LABEL[v] }))}
+          value={draft.provenance}
+          onChange={(provenance) => setDraft({ ...draft, provenance })}
+        />
+        {/* La consecuencia, en el mismo sitio que la causa, y tomada de la regla del
+            propio modelo para que no se separe de lo que hace el editor. */}
+        <p className="mt-1 text-xs text-stone-500">
+          {colorAvailability(true, draft.provenance).reason ??
+            'En una fotografía propia se ofrece el ajuste de color de la luz de la sala.'}
+        </p>
+      </div>
+
+      <div className="mt-3">
+        <label className="label" htmlFor="p-photo-source">
+          {photoSourceLabel(draft.provenance)}
+        </label>
+        <input
+          id="p-photo-source"
+          className="field"
+          value={draftSourceText(draft)}
+          disabled={busy}
+          onChange={(e) => setDraft(withSourceText(draft, e.target.value))}
+        />
+        <p className="mt-1 text-xs text-stone-500">{photoSourceHint(draft.provenance)}</p>
+      </div>
+
+      {/* Lo pendiente se dice, además de encender el botón: un botón que cambia de
+          color no se ve cuando lo que se mira es la fotografía. */}
+      {pending && <p className="mt-2 text-xs text-amber-800">{pending}</p>}
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={busy || !dirty}
+          onClick={() => setDraft(saved)}
+        >
+          Deshacer
+        </button>
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={busy || !dirty}
+          onClick={() => onSave(draft)}
+        >
+          {busy ? 'Guardando…' : 'Guardar'}
+        </button>
+      </div>
     </div>
   )
 }
