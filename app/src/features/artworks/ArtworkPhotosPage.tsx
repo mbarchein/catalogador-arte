@@ -44,6 +44,13 @@ import { displayDate } from '../../lib/dates'
 import { useEditingAccess } from '../../auth/AuthContext'
 import { ActionBar, Chips, CropIcon, LoadingNotice, ProgressRing } from '../../components/ui'
 import { ringLabel } from '../../lib/progressRing'
+import {
+  WORK_DOWNLOADING_MASTER,
+  WORK_OPENING_COPY,
+  WORK_SAVING_TRACE,
+  WORK_UPLOADING,
+  type PhotoWork,
+} from './photoWork'
 import type { UploadProgressEvent } from '../../lib/signedUpload'
 import { moveItem } from '../../lib/reorder'
 import { useUnloadGuard } from '../../components/useUnloadGuard'
@@ -154,7 +161,7 @@ export function ArtworkPhotosPage() {
    */
   const [uploadError, setUploadError] = useState<string | null>(null)
   /** What the reframing is doing right now, so the screen is never half done. */
-  const [working, setWorking] = useState<string | null>(null)
+  const [working, setWorking] = useState<PhotoWork | null>(null)
   // Cuánto lleva viajado el fichero de `working`, o null cuando no se sabe.
   const [transfer, setTransfer] = useState<UploadProgressEvent | null>(null)
   // Null mientras no se sepa el total: entonces el anillo gira en vez de mentir.
@@ -466,7 +473,7 @@ export function ArtworkPhotosPage() {
   async function openEditor(row: ImageRow) {
     setError(null)
     setNotice(null)
-    setWorking(row.master_path ? 'Descargando el máster…' : 'Abriendo la copia de consulta…')
+    setWorking(row.master_path ? WORK_DOWNLOADING_MASTER : WORK_OPENING_COPY)
     setTransfer(null)
     try {
       // The colour and the provenance first, and if they cannot be read the editor does
@@ -557,7 +564,7 @@ export function ArtworkPhotosPage() {
       setNotice('El encuadre y el color no han cambiado: no se ha reescrito ninguna copia.')
       return
     }
-    setWorking('Aplicando la corrección y subiendo las copias…')
+    setWorking(WORK_UPLOADING)
     setTransfer(null)
     setError(null)
     setNotice(null)
@@ -617,7 +624,7 @@ export function ArtworkPhotosPage() {
    * the same one.
    */
   async function saveEditTrace(imageId: string, edit: PhotoEdit, cropSource: CropSource) {
-    setWorking('Anotando la revisión del color…')
+    setWorking(WORK_SAVING_TRACE)
     setError(null)
     setNotice(null)
     const { error } = await supabase
@@ -721,9 +728,16 @@ export function ArtworkPhotosPage() {
                   fotografía. Arriba a la izquierda, en la esquina opuesta al icono,
                   para no taparlo ni taparse con él. */}
               {working !== null && (
-                <p className="absolute left-2 top-2 max-w-[80%] truncate rounded-full bg-stone-900/70
-                              px-3 py-1 text-2xs text-white shadow-lg backdrop-blur">
-                  {ringLabel(working.replace(/…$/, ''), percent)}
+                <p
+                  className="absolute left-2 top-2 flex max-w-[85%] items-baseline gap-1.5
+                             rounded-full bg-stone-900/70 px-3 py-1 text-2xs text-white shadow-lg
+                             backdrop-blur"
+                >
+                  {/* El rótulo cede sitio; el porcentaje no. Con los dos en el mismo
+                      texto, el recorte se comía justo el número, que es lo único que
+                      se mira aquí. */}
+                  <span className="min-w-0 truncate">{working.short}</span>
+                  {percent !== null && <span className="shrink-0 tabular-nums">{percent} %</span>}
                 </p>
               )}
 
@@ -733,8 +747,8 @@ export function ArtworkPhotosPage() {
                   // Mientras trabaja, el rótulo es lo que está pasando y su
                   // porcentaje: quien mira la fotografía no lee la línea de abajo,
                   // y un lector de pantalla no ve girar nada.
-                  aria-label={working === null ? EDIT_ACTION : ringLabel(working, percent)}
-                  title={working === null ? EDIT_ACTION : ringLabel(working, percent)}
+                  aria-label={working === null ? EDIT_ACTION : ringLabel(working.long.replace(/…$/, ''), percent)}
+                  title={working === null ? EDIT_ACTION : ringLabel(working.long.replace(/…$/, ''), percent)}
                   aria-busy={working !== null}
                   disabled={saving || working !== null}
                   onClick={() => void openEditor(selected)}
@@ -761,7 +775,7 @@ export function ArtworkPhotosPage() {
               <div className="mt-1">
                 <p className="text-xs text-stone-500">
                   {working !== null
-                    ? ringLabel(working.replace(/…$/, ''), percent)
+                    ? ringLabel(working.long.replace(/…$/, ''), percent)
                     : editSummary(selectedEdit)
                       ? `${editSummary(selectedEdit)}. El máster de archivo se conserva sin tocar.`
                       : 'Sin giro, recorte ni ajuste de color. Se editan las copias, nunca el máster de archivo.'}
