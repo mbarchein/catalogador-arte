@@ -32,6 +32,7 @@ import {
   pendingUploadText,
   preparingCopyText,
   uploadFailureText,
+  uploadPercent,
   uploadStatusText,
 } from './uploadProgress'
 import {
@@ -41,7 +42,9 @@ import {
 } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
 import { useEditingAccess } from '../../auth/AuthContext'
-import { ActionBar, Chips, CropIcon, LoadingNotice } from '../../components/ui'
+import { ActionBar, Chips, CropIcon, LoadingNotice, ProgressRing } from '../../components/ui'
+import { ringLabel } from '../../lib/progressRing'
+import type { UploadProgressEvent } from '../../lib/signedUpload'
 import { moveItem } from '../../lib/reorder'
 import { useUnloadGuard } from '../../components/useUnloadGuard'
 import { rememberBatchColor } from './batch'
@@ -94,6 +97,9 @@ async function fetchPhotoDetail(imageId: string): Promise<PhotoDetailRow | null>
  * which asks twice). That is why this is not part of the edit form: a
  * "Cancelar" that cannot undo would promise what it cannot keep.
  */
+/** Lo que hace el icono que va sobre la fotografía, escrito una sola vez. */
+const EDIT_ACTION = 'Girar, recortar y color'
+
 export function ArtworkPhotosPage() {
   const { id, imageId } = useParams<{ id: string; imageId?: string }>()
   const navigate = useNavigate()
@@ -149,6 +155,10 @@ export function ArtworkPhotosPage() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   /** What the reframing is doing right now, so the screen is never half done. */
   const [working, setWorking] = useState<string | null>(null)
+  // Cuánto lleva viajado el fichero de `working`, o null cuando no se sabe.
+  const [transfer, setTransfer] = useState<UploadProgressEvent | null>(null)
+  // Null mientras no se sepa el total: entonces el anillo gira en vez de mentir.
+  const percent = transfer === null ? null : uploadPercent(transfer.loaded, transfer.total)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -457,6 +467,7 @@ export function ArtworkPhotosPage() {
     setError(null)
     setNotice(null)
     setWorking(row.master_path ? 'Descargando el máster…' : 'Abriendo la copia de consulta…')
+    setTransfer(null)
     try {
       // The colour and the provenance first, and if they cannot be read the editor does
       // not open. Not caution: saving writes the fourteen colour columns from what was
@@ -472,7 +483,7 @@ export function ArtworkPhotosPage() {
         return
       }
       const stored = photoEdit(row, detail)
-      const source = await editSource(row)
+      const source = await editSource(row, setTransfer)
 
       // A straightened photograph cannot be re-edited from the consultation copy.
       // That copy IS the straightened image, so there is no way to express a framing
@@ -508,6 +519,7 @@ export function ArtworkPhotosPage() {
       )
     } finally {
       setWorking(null)
+      setTransfer(null)
     }
   }
 
@@ -546,6 +558,7 @@ export function ArtworkPhotosPage() {
       return
     }
     setWorking('Aplicando la corrección y subiendo las copias…')
+    setTransfer(null)
     setError(null)
     setNotice(null)
     try {
@@ -562,6 +575,7 @@ export function ArtworkPhotosPage() {
         // copy stays pending — recoverable from a computer (RF-421).
         sourceIsMaster: current.fromMaster,
         masterPath: current.row.master_path,
+        onProgress: setTransfer,
       })
       // The light of the batch, remembered for the next photograph (RF-414). It is the
       // same room and the same afternoon whether the shot is already uploaded or still
@@ -588,6 +602,7 @@ export function ArtworkPhotosPage() {
       )
     } finally {
       setWorking(null)
+      setTransfer(null)
     }
   }
 
@@ -701,18 +716,40 @@ export function ArtworkPhotosPage() {
                 }}
                 catalogId={catalogId}
               />
+              {/* Qué está pasando, encima de la propia imagen: el anillo dice CUÁNTO
+                  queda pero no DE QUÉ, y quien pulsó el icono se queda mirando la
+                  fotografía. Arriba a la izquierda, en la esquina opuesta al icono,
+                  para no taparlo ni taparse con él. */}
+              {working !== null && (
+                <p className="absolute left-2 top-2 max-w-[80%] truncate rounded-full bg-stone-900/70
+                              px-3 py-1 text-2xs text-white shadow-lg backdrop-blur">
+                  {ringLabel(working.replace(/…$/, ''), percent)}
+                </p>
+              )}
+
               {selected && (
                 <button
                   type="button"
-                  aria-label="Girar, recortar y color"
-                  title="Girar, recortar y color"
+                  // Mientras trabaja, el rótulo es lo que está pasando y su
+                  // porcentaje: quien mira la fotografía no lee la línea de abajo,
+                  // y un lector de pantalla no ve girar nada.
+                  aria-label={working === null ? EDIT_ACTION : ringLabel(working, percent)}
+                  title={working === null ? EDIT_ACTION : ringLabel(working, percent)}
+                  aria-busy={working !== null}
                   disabled={saving || working !== null}
                   onClick={() => void openEditor(selected)}
                   className="absolute bottom-2 right-2 flex h-11 w-11 items-center justify-center
                              rounded-full bg-stone-900/70 text-white shadow-lg backdrop-blur
-                             active:bg-stone-900 disabled:opacity-40"
+                             active:bg-stone-900 disabled:opacity-70"
                 >
-                  <CropIcon className="h-5 w-5" />
+                  {/* El anillo ocupa el sitio del icono, no se pone al lado: lo que
+                      se está mirando es la fotografía, y el único punto donde ya
+                      está puesta la vista es el propio control que se pulsó. */}
+                  {working === null ? (
+                    <CropIcon className="h-5 w-5" />
+                  ) : (
+                    <ProgressRing percent={percent} className="h-6 w-6" />
+                  )}
                 </button>
               )}
             </div>
@@ -723,10 +760,11 @@ export function ArtworkPhotosPage() {
             {selected && (
               <div className="mt-1">
                 <p className="text-xs text-stone-500">
-                  {working ??
-                    (editSummary(selectedEdit)
+                  {working !== null
+                    ? ringLabel(working.replace(/…$/, ''), percent)
+                    : editSummary(selectedEdit)
                       ? `${editSummary(selectedEdit)}. El máster de archivo se conserva sin tocar.`
-                      : 'Sin giro, recorte ni ajuste de color. Se editan las copias, nunca el máster de archivo.')}
+                      : 'Sin giro, recorte ni ajuste de color. Se editan las copias, nunca el máster de archivo.'}
                 </p>
                 {/* El estado del cuarto nivel, siempre dicho y nunca un hueco: una copia,
                     ninguna que haga falta, una que hace falta y no está, o una fotografía
