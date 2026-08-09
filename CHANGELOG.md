@@ -2,6 +2,21 @@
 
 ### Interfaz
 
+**De quién es cada fotografía, y de dónde salió si no es propia**
+
+- Ya se decía si una fotografía es propia, tomada de otro catálogo o recibida de un tercero. Ahora,
+  además, se puede apuntar lo que hace útil esa respuesta — y no es el mismo dato en los dos casos:
+  - en una **propia**, quién la hizo;
+  - en una que **viene de fuera**, de dónde salió: el catálogo, la dirección de la página, o quién
+    la envió y cuándo.
+- Los dos son opcionales, y el campo cambia solo al cambiar la procedencia: no hay que elegir cuál
+  rellenar.
+- Admite cualquier texto, no solo una dirección: «me la pasó la familia en 2019» también es una
+  procedencia.
+- Cambiar la procedencia **no borra lo que ya estaba escrito**: si una fotografía tenía autoría y se
+  marca como tomada de otro catálogo, el nombre se guarda y vuelve a aparecer si se marca otra vez
+  como propia. Lo que no se hace nunca es enseñar la autoría junto a una fotografía ajena.
+
 **El fondo apartado se señala en el filtro, no encima del listado**
 
 - El aviso «no se muestran las obras de Pruebas» estaba encima de la lista de obras, y ahí no se
