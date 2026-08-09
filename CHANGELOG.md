@@ -2,6 +2,26 @@
 
 ### Interfaz
 
+**Recuperar la contraseña olvidada**
+
+- Desde la pantalla de entrada, «¿Has olvidado la contraseña?»: se escribe el correo y llega un
+  enlace para elegir una nueva.
+- **La respuesta es siempre la misma**, exista la cuenta o no: «si esa dirección tiene cuenta,
+  llegará un correo». Decir «esa dirección no existe» sería contarle a cualquiera quién tiene
+  acceso al catálogo, y con tres cuentas de correo adivinables eso es media entrada.
+- Va en condicional y no afirmando el envío, porque quien teclee mal su propia dirección se quedaría
+  esperando un correo que nadie mandó.
+- Lo único que se cuenta aparte es que el servidor no conteste, que no dice nada de ninguna cuenta.
+  Sin esa distinción, quedarse sin cobertura en un almacén se leería como «ya está enviado».
+- Entre un envío y el siguiente hay que esperar un minuto, y el botón dice cuánto falta en lugar de
+  quedarse apagado sin explicación.
+- **El enlace del correo ya no sirve para entrar.** Antes abría una sesión normal, así que quien lo
+  pulsara y se arrepintiera se quedaba dentro del catálogo sin haber elegido contraseña — y ese
+  enlace vive para siempre en una bandeja de entrada. Ahora no deja salir de «Nueva contraseña»
+  hasta que se elige una.
+- Al cambiarla se cierran las demás sesiones abiertas. Quien la cambia porque teme que alguien la
+  sepa necesita echar a ese alguien, no solo dejarle la contraseña vieja.
+
 **El nombre con el que apareces se corrige desde «Mi perfil»**
 
 - Hasta ahora el nombre venía dado y no había forma de tocarlo desde la aplicación. Ahora se cambia
