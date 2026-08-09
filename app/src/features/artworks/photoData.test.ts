@@ -103,15 +103,10 @@ describe('lo que se manda a la base', () => {
 })
 
 describe('las secciones del panel', () => {
-  it('son tres y se leen en orden', () => {
-    // El panel tenía nueve cosas apiladas sin un solo título. Los nombres viven
-    // aquí para que la pantalla no pueda tener dos redacciones del mismo bloque.
-    // «La imagen» se fue: girar, recortar y color es un icono sobre la propia
-    // fotografía, y su estado se lee debajo de ella.
-    expect(Object.values(PHOTO_SECTIONS)).toEqual([
-      'Qué es esta toma',
-      'Orden y portada',
-      'Retirar',
-    ])
+  it('queda una: lo único que se escribe', () => {
+    // El panel tenía nueve cosas apiladas sin un solo título, luego tres bloques,
+    // y ahora uno. Girar y recortar, la portada, el orden y quitar actúan sobre la
+    // toma que se está mirando, así que son iconos sobre la propia fotografía.
+    expect(Object.values(PHOTO_SECTIONS)).toEqual(['Qué es esta toma'])
   })
 })

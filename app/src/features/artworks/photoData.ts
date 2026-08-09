@@ -95,14 +95,18 @@ export function photoDataColumns(draft: PhotoDataDraft): {
 /**
  * Los títulos de las secciones del panel, en el orden en que se leen.
  *
- * Eran cuatro. «La imagen» se fue cuando girar, recortar y color pasó a ser un
- * icono sobre la propia fotografía y su estado a leerse debajo de ella: una
- * sección cuyo contenido vive junto a lo que describe no necesita un hueco aquí.
+ * Eran cuatro y queda una. Las otras tres se fueron por el mismo camino y por el
+ * mismo motivo: girar y recortar, la portada, el orden y quitar **actúan sobre la
+ * toma que se está mirando**, así que ahora son iconos sobre la propia fotografía
+ * y su estado se lee debajo de ella. Lo que queda aquí es lo único que se
+ * escribe, y por eso es lo único que tiene «Guardar».
+ *
+ * Sigue siendo un objeto con un solo título, y no una constante suelta: la
+ * sección puede volver a tener compañía, y el sitio donde se decide cómo se llama
+ * un bloque de este panel no debería mudarse por eso.
  */
 export const PHOTO_SECTIONS = {
   data: 'Qué es esta toma',
-  order: 'Orden y portada',
-  remove: 'Retirar',
 } as const
 
 /** Lo que se lee bajo el botón de guardar, o null cuando no hay nada pendiente. */

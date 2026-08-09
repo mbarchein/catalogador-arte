@@ -42,8 +42,34 @@ import {
 } from '../../lib/types'
 import { displayDate } from '../../lib/dates'
 import { useEditingAccess } from '../../auth/AuthContext'
-import { ActionBar, Chips, CropIcon, LoadingNotice, ProgressRing } from '../../components/ui'
+import {
+  ActionBar,
+  BottomSheet,
+  Chips,
+  CropIcon,
+  InfoNote,
+  LoadingNotice,
+  MoveAfterIcon,
+  MoveBeforeIcon,
+  ProgressRing,
+  StarIcon,
+  TrashIcon,
+} from '../../components/ui'
 import { ringLabel } from '../../lib/progressRing'
+import {
+  canMove,
+  mainButtonState,
+  photoStatusText,
+  MAIN_AUTO_NOTE,
+  MOVE_AFTER_LABEL,
+  MOVE_BEFORE_LABEL,
+  REMOVE_CANCEL_LABEL,
+  REMOVE_CONFIRM_LABEL,
+  REMOVE_CONSEQUENCE,
+  REMOVE_LABEL,
+  REMOVE_QUESTION,
+  REMOVE_TITLE,
+} from './photoOverlay'
 import {
   photoStage,
   WORK_DOWNLOADING_MASTER,
@@ -252,6 +278,21 @@ export function ArtworkPhotosPage() {
   // the summary of a photograph with a correction and no colour column read would
   // announce «sin ajuste de color» over a photograph that plainly shows one.
   const selectedEdit = photoEdit(selected, selectedDetail)
+  // Su sitio en el orden empezando en 1, que es como lo cuentan los mandos y como
+  // se lee bajo la fotografía. Cero cuando no hay ninguna abierta.
+  const position = selected ? ordered.findIndex((i) => i.image_id === selected.image_id) + 1 : 0
+  const mainState = mainButtonState(
+    selected?.image_id === mainId && mainId !== null,
+    manuallyChosen,
+  )
+  const status = selected
+    ? photoStatusText({
+        isMain: selected.image_id === mainId,
+        manuallyChosen,
+        position,
+        total: ordered.length,
+      })
+    : ''
 
   function discardStaged() {
     staged.forEach((s) => URL.revokeObjectURL(s.prepared.preview))
@@ -747,38 +788,86 @@ export function ArtworkPhotosPage() {
                 </p>
               )}
 
+              {/* ── LOS CUATRO MANDOS, UNO POR ESQUINA ────────────────
+                  Todos actúan sobre la toma que se está mirando, y por eso están
+                  sobre ella. Cada uno en un sitio fijo, que es lo que permite ir
+                  a por él sin buscarlo:
+
+                    · arriba a la izquierda, el rótulo de lo que está pasando;
+                    · arriba a la derecha, la portada;
+                    · abajo a la izquierda, quitar —lo único que quita algo, y
+                      lo más lejos posible del recortar, que es el de todos los
+                      días—;
+                    · abajo a la derecha, girar, recortar y color.
+
+                  El orden va en los BORDES LATERALES a media altura, que es hacia
+                  donde mueve. Y sus iconos no son galones: sobre una fotografía
+                  que se pasa deslizando, un «‹» se lee como «foto anterior». */}
               {selected && (
-                <button
-                  type="button"
-                  // Mientras trabaja, el rótulo es lo que está pasando y su
-                  // porcentaje: quien mira la fotografía no lee la línea de abajo,
-                  // y un lector de pantalla no ve girar nada.
-                  aria-label={
-                    stage.work === null
-                      ? EDIT_ACTION
-                      : ringLabel(stage.work.long.replace(/…$/, ''), percent)
-                  }
-                  title={
-                    stage.work === null
-                      ? EDIT_ACTION
-                      : ringLabel(stage.work.long.replace(/…$/, ''), percent)
-                  }
-                  aria-busy={working !== null}
-                  disabled={saving || working !== null}
-                  onClick={() => void openEditor(selected)}
-                  className="absolute bottom-2 right-2 flex h-11 w-11 items-center justify-center
-                             rounded-full bg-stone-900/70 text-white shadow-lg backdrop-blur
-                             active:bg-stone-900 disabled:opacity-70"
-                >
-                  {/* El anillo ocupa el sitio del icono, no se pone al lado: lo que
-                      se está mirando es la fotografía, y el único punto donde ya
-                      está puesta la vista es el propio control que se pulsó. */}
-                  {working === null ? (
-                    <CropIcon className="h-5 w-5" />
-                  ) : (
-                    <ProgressRing percent={percent} className="h-6 w-6" />
+                <>
+                  <PhotoAction
+                    corner="top-right"
+                    label={mainState.label}
+                    disabled={saving || mainState.disabled || working !== null}
+                    onClick={() => void useAsMain(selected.image_id)}
+                  >
+                    <StarIcon className="h-5 w-5" filled={mainState.filled} />
+                  </PhotoAction>
+
+                  {ordered.length > 1 && (
+                    <>
+                      <PhotoAction
+                        corner="left"
+                        label={MOVE_BEFORE_LABEL}
+                        disabled={saving || working !== null || !canMove(position, ordered.length, -1)}
+                        onClick={() => void moveSelected(-1)}
+                      >
+                        <MoveBeforeIcon className="h-5 w-5" />
+                      </PhotoAction>
+                      <PhotoAction
+                        corner="right"
+                        label={MOVE_AFTER_LABEL}
+                        disabled={saving || working !== null || !canMove(position, ordered.length, 1)}
+                        onClick={() => void moveSelected(1)}
+                      >
+                        <MoveAfterIcon className="h-5 w-5" />
+                      </PhotoAction>
+                    </>
                   )}
-                </button>
+
+                  <PhotoAction
+                    corner="bottom-left"
+                    label={REMOVE_LABEL}
+                    disabled={saving || working !== null}
+                    onClick={() => setConfirmRemoval(selected.image_id)}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </PhotoAction>
+
+                  <PhotoAction
+                    corner="bottom-right"
+                    // Mientras trabaja, el rótulo es lo que está pasando y su
+                    // porcentaje: quien mira la fotografía no lee la línea de abajo,
+                    // y un lector de pantalla no ve girar nada.
+                    label={
+                      stage.work === null
+                        ? EDIT_ACTION
+                        : ringLabel(stage.work.long.replace(/…$/, ''), percent)
+                    }
+                    busy={working !== null}
+                    disabled={saving || working !== null}
+                    onClick={() => void openEditor(selected)}
+                  >
+                    {/* El anillo ocupa el sitio del icono, no se pone al lado: lo que
+                        se está mirando es la fotografía, y el único punto donde ya
+                        está puesta la vista es el propio control que se pulsó. */}
+                    {working === null ? (
+                      <CropIcon className="h-5 w-5" />
+                    ) : (
+                      <ProgressRing percent={percent} className="h-6 w-6" />
+                    )}
+                  </PhotoAction>
+                </>
               )}
             </div>
 
@@ -787,6 +876,21 @@ export function ArtworkPhotosPage() {
                 icono no tiene sitio para decirlo—. */}
             {selected && (
               <div className="mt-1">
+                {/* Lo que los iconos de arriba no pueden decir con un dibujo: si esta
+                    es la portada y por dónde va en el orden. Y cuando la portada la
+                    puso la regla y no una persona, el porqué —que subir otra general
+                    la cambia sola— detrás del icono, porque es lo único de esto que
+                    tiene consecuencia. */}
+                {status !== '' && (
+                  <div className="flex items-start gap-1 text-xs font-medium text-stone-600">
+                    <p className="min-w-0">{status}</p>
+                    {selected.image_id === mainId && !manuallyChosen && (
+                      <InfoNote title="La imagen principal" className="-mt-1 shrink-0">
+                        <p>{MAIN_AUTO_NOTE}</p>
+                      </InfoNote>
+                    )}
+                  </div>
+                )}
                 <p className="text-xs text-stone-500">
                   {stage.work !== null
                     ? ringLabel(stage.work.long.replace(/…$/, ''), percent)
@@ -852,116 +956,41 @@ export function ArtworkPhotosPage() {
                   busy={saving}
                   onSave={(draft) => void savePhotoData(selected.image_id, draft)}
                 />
-
-                {/* ── Orden y portada ──
-                    Dónde va esta toma entre las demás y si es la que representa la
-                    obra. Juntas porque las dos contestan «cuál se ve primero».
-                    Same move, one place at a time: dragging is faster but it
-                    is a gesture, and a gesture cannot be the only way to
-                    reach a function. */}
-                <div>
-                  <SectionTitle>{PHOTO_SECTIONS.order}</SectionTitle>
-                  {ordered.length > 1 && (
-                    <div className="mb-2">
-                      <p className="label">
-                        Orden · {ordered.findIndex((i) => i.image_id === selected.image_id) + 1} de{' '}
-                      {ordered.length}
-                    </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          disabled={saving || ordered[0]?.image_id === selected.image_id}
-                          onClick={() => void moveSelected(-1)}
-                          className="btn-secondary disabled:opacity-40"
-                        >
-                          ← Antes
-                        </button>
-                        <button
-                          type="button"
-                          disabled={
-                            saving || ordered[ordered.length - 1]?.image_id === selected.image_id
-                          }
-                          onClick={() => void moveSelected(1)}
-                          className="btn-secondary disabled:opacity-40"
-                        >
-                          Después →
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {selected.image_id === mainId ? (
-                    <p className="text-xs text-stone-500">
-                    {manuallyChosen
-                      ? 'Esta es la imagen principal.'
-                      : // Distinguishing "chosen by hand" from "chosen by the
-                        // fallback rule" matters: in the second case, uploading
-                        // one more photo can change it on its own.
-                        'Es la principal por ser la general más reciente. Fíjala para que no cambie.'}
-                      {!manuallyChosen && (
-                        <button
-                          type="button"
-                          disabled={saving}
-                          onClick={() => void useAsMain(selected.image_id)}
-                          className="ml-1 underline"
-                        >
-                          Fijar esta
-                        </button>
-                      )}
-                    </p>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={() => void useAsMain(selected.image_id)}
-                      className="btn-secondary w-full"
-                    >
-                      {saving ? 'Guardando…' : 'Usar como imagen principal'}
-                    </button>
-                  )}
-                </div>
-
-                {/* ── Retirar ──
-                    Aparte y al final, con su propio título: es lo único de este
-                    panel que quita algo de la ficha. */}
-                <div>
-                  <SectionTitle>{PHOTO_SECTIONS.remove}</SectionTitle>
-                  {confirmRemoval === selected.image_id ? (
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-2">
-                      <p className="text-xs text-red-900">
-                        ¿Quitar esta fotografía de la ficha? El archivo se conserva, pero deja de
-                        mostrarse.
-                      </p>
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          disabled={saving}
-                          onClick={() => void removePhoto(selected.image_id)}
-                          className="btn min-h-touch bg-red-700 text-white"
-                        >
-                          {saving ? 'Quitando…' : 'Sí, quitar'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmRemoval(null)}
-                          className="btn-secondary"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmRemoval(selected.image_id)}
-                      className="btn min-h-touch w-full border border-red-300 bg-white text-sm text-red-800"
-                    >
-                      Quitar esta fotografía
-                    </button>
-                  )}
-                </div>
               </div>
             )}
+
+            {/* ── Quitar, en una hoja ──
+                La papelera está sobre la fotografía, al alcance del pulgar que la
+                está pasando, así que la pregunta interrumpe: es el mismo gesto que
+                retirar un eslabón o una cita, y el «atrás» del móvil la cierra sin
+                hacer nada. Una banda debajo se habría quedado fuera de la pantalla
+                con una foto vertical, que es justo el caso en el que se pulsa por
+                error. */}
+            <BottomSheet
+              open={confirmRemoval !== null}
+              onClose={() => setConfirmRemoval(null)}
+              title={REMOVE_TITLE}
+            >
+              <p className="text-sm text-stone-700">{REMOVE_QUESTION}</p>
+              <p className="mt-1 text-sm text-stone-600">{REMOVE_CONSEQUENCE}</p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => confirmRemoval && void removePhoto(confirmRemoval)}
+                  className="btn min-h-touch bg-red-700 text-white"
+                >
+                  {saving ? 'Quitando…' : REMOVE_CONFIRM_LABEL}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmRemoval(null)}
+                  className="btn-secondary"
+                >
+                  {REMOVE_CANCEL_LABEL}
+                </button>
+              </div>
+            </BottomSheet>
           </>
         )}
 
@@ -1060,6 +1089,61 @@ export function ArtworkPhotosPage() {
 function SectionTitle({ children }: { children: string }) {
   return (
     <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">{children}</h3>
+  )
+}
+
+/** Dónde va cada mando sobre la fotografía. */
+const CORNER = {
+  'top-right': 'right-2 top-2',
+  'bottom-right': 'bottom-2 right-2',
+  'bottom-left': 'bottom-2 left-2',
+  // A media altura y centrados de verdad, que con `top-1/2` a secas quedan
+  // medio botón por debajo del centro.
+  left: 'left-2 top-1/2 -translate-y-1/2',
+  right: 'right-2 top-1/2 -translate-y-1/2',
+} as const
+
+/**
+ * Uno de los mandos que van sobre la fotografía.
+ *
+ * Todos iguales —44 puntos, redondo, oscuro translúcido— porque son la misma clase
+ * de cosa y lo único que los distingue tiene que ser el dibujo y el sitio. El
+ * rótulo va en `aria-label` **y** en `title`: sin palabra al lado, es lo único que
+ * dice qué hace, y `title` es lo que lo cuenta en un ratón.
+ *
+ * Deshabilitado se queda a la vista, más apagado, en vez de desaparecer: un mando
+ * que aparece y desaparece según la fotografía mueve a los demás de sitio, y
+ * entonces ya no se puede ir a por uno sin mirar.
+ */
+function PhotoAction({
+  corner,
+  label,
+  onClick,
+  disabled = false,
+  busy = false,
+  children,
+}: {
+  corner: keyof typeof CORNER
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  busy?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-busy={busy}
+      disabled={disabled}
+      onClick={onClick}
+      className={`absolute ${CORNER[corner]} flex h-11 w-11 items-center justify-center
+                  rounded-full bg-stone-900/70 text-white shadow-lg backdrop-blur
+                  active:bg-stone-900 disabled:opacity-40`}
+    >
+      {children}
+    </button>
   )
 }
 

@@ -232,6 +232,66 @@ export function MoveIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+/**
+ * La estrella de la portada, en sus dos estados.
+ *
+ * `filled` la rellena, y es lo que distingue «esta es la principal» de «ponla de
+ * principal» sin una palabra al lado: el contorno es un botón y el relleno es un
+ * estado. Un icono que no cambia al pulsarlo no dice si ha pasado algo.
+ */
+export function StarIcon({
+  className = 'h-6 w-6',
+  filled = false,
+}: {
+  className?: string
+  filled?: boolean
+}) {
+  return (
+    <svg {...svg} fill={filled ? 'currentColor' : 'none'} className={className}>
+      <path d="m12 3.5 2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 9.7l5.9-.9z" />
+    </svg>
+  )
+}
+
+/** Quitar de la ficha. La tapa aparte, que es lo que lo hace legible a 20 px. */
+export function TrashIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M4 7h16" />
+      <path d="M9.5 4.5h5" />
+      <path d="M6.5 7l.8 12.2a1.8 1.8 0 0 0 1.8 1.8h5.8a1.8 1.8 0 0 0 1.8-1.8L17.5 7" />
+    </svg>
+  )
+}
+
+/**
+ * Mover una posición, hacia el principio o hacia el final.
+ *
+ * **No es un galón de navegación**, y esa es toda la decisión: sobre una fotografía
+ * que se pasa deslizando, un «‹» se lee como «foto anterior». La barra del final es
+ * lo que lo convierte en «llévala hacia allí», que es el mismo dibujo que usan las
+ * teclas de inicio y fin.
+ */
+export function MoveBeforeIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M5 4v16" />
+      <path d="M20 12H9" />
+      <path d="m13 8-4 4 4 4" />
+    </svg>
+  )
+}
+
+export function MoveAfterIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M19 4v16" />
+      <path d="M4 12h11" />
+      <path d="m11 8 4 4-4 4" />
+    </svg>
+  )
+}
+
 export function InfoIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
     <svg {...svg} strokeWidth={2} className={className}>
