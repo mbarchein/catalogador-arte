@@ -84,9 +84,7 @@ export function LinkExhibitionSheet({
       guard={guard}
     >
       <p className="text-xs text-stone-500">
-        Para el cartel, el díptico o la nota de prensa de una muestra: documentos que hablan de la
-        exposición y no de una pieza en concreto. El fichero se guarda una sola vez y cuelga de
-        tantas fichas como hable.
+        El cartel, el díptico o la nota de prensa de la muestra. Un fichero puede colgar de varias fichas.
       </p>
 
       {loadError !== null && (

@@ -182,9 +182,7 @@ export function ReferencePage() {
       </section>
 
       <p className="mt-3 text-xs text-stone-500">
-        Una obra se cita en esta referencia desde la bibliografía de la obra, no desde aquí: la
-        página y la nota son de esa cita en concreto. Y retirarla del catálogo o recuperarla se hace
-        desde la papelera, en Tablas.
+        Las obras se citan desde su propia ficha. Retirar la referencia, desde la papelera.
       </p>
 
       {/* La corrección espera a saber el rol: «todavía no se sabe» no es «no». */}

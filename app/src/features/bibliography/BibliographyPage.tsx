@@ -150,8 +150,7 @@ export function BibliographyPage() {
           que evita buscar un botón que no está. */}
       {entries.length > 0 && (
         <p className="mt-3 text-xs text-stone-500">
-          Una referencia nueva se crea citándola desde la bibliografía de una obra: existe porque
-          algo la cita. Aquí se encuentran todas, incluidas las que ya no cita ninguna.
+          Todas las referencias del catálogo. Se crean citándolas desde la bibliografía de una obra.
         </p>
       )}
     </Layout>

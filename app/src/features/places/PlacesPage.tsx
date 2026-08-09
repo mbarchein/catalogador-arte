@@ -66,8 +66,7 @@ export function PlacesPage() {
   return (
     <Layout title="Ubicaciones" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Los sitios donde están las obras. Renombrar o mover uno se hace una vez y lo ven todas
-        sus obras: la ficha no guarda el nombre, guarda el lugar.
+        Los sitios donde están las obras. Renombrar o mover uno lo ven todas sus obras.
       </p>
 
       {failure && (

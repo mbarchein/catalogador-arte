@@ -92,8 +92,7 @@ function TextSize() {
     <section className="card mb-3">
       <h2 className="mb-1 font-medium">Tamaño de letra</h2>
       <p className="mb-3 text-sm text-stone-600">
-        Agranda el texto de toda la aplicación, y con él los botones. Se guarda en este
-        dispositivo, así que cada móvil u ordenador tiene el suyo.
+        Agranda el texto y los botones. Se guarda en este dispositivo.
       </p>
 
       <div role="radiogroup" aria-label="Tamaño de letra" className="grid grid-cols-3 gap-2">

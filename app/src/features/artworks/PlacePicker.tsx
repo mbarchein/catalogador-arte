@@ -255,8 +255,7 @@ export function PlacePicker({
               </button>
             )}
             <p className="text-xs text-stone-500">
-              Cada coma abre un nivel dentro del anterior. Si el nombre lleva una coma —una
-              dirección, por ejemplo— usa el segundo botón.
+              Cada coma abre un nivel. Si el nombre lleva coma, usa el segundo botón.
             </p>
           </div>
         )}

@@ -176,8 +176,7 @@ export function LinkForm({
           onChange={(event) => patch({ url: event.target.value })}
         />
         <p className="mt-1 text-xs text-stone-500">
-          Pégala tal como la copia el navegador. La aplicación no abre la página ni le pide nada al
-          sitio: solo guarda la dirección.
+          Pégala tal como la copia el navegador. No se abre la página: solo se guarda la dirección.
         </p>
       </div>
 
@@ -239,8 +238,7 @@ export function LinkForm({
               }
             />
             <p className="mt-1 text-xs text-stone-500">
-              Un enlace cuelga de una sola cosa. La misma dirección puede estar en la obra y en una
-              de sus fotografías: son dos hechos distintos, y cada uno tiene su nota.
+              Un enlace cuelga de una sola cosa: la obra o una de sus fotografías, con su nota.
             </p>
           </div>
         )
@@ -288,9 +286,7 @@ export function LinkForm({
           onChange={(event) => patch({ archiveUrl: event.target.value })}
         />
         <p className="mt-1 text-xs text-stone-500">
-          La dirección de una copia que hayas guardado tú en un archivo público. La aplicación no
-          archiva nada por su cuenta: si hace falta conservar la página, imprímela a PDF y dala de
-          alta como documento del archivo.
+          La copia que hayas guardado tú en un archivo público. La aplicación no archiva nada.
         </p>
       </div>
 

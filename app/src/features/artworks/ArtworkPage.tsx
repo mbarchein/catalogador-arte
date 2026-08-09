@@ -233,8 +233,7 @@ export function ArtworkPage() {
             <>
               <p className="font-medium">No se ha podido cargar la ficha {id}.</p>
               <p className="mt-1 text-stone-600">
-                Sin conexión con el catálogo, y esta ficha no está descargada en este dispositivo.
-                Vuelve a intentarlo donde haya cobertura.
+                Sin conexión, y esta ficha no está descargada. Inténtalo donde haya cobertura.
               </p>
             </>
           ) : (
@@ -451,9 +450,7 @@ export function ArtworkPage() {
             <section className="card mb-3">
               <h2 className="font-medium">Documentación de la obra</h2>
               <p className="mt-1 text-sm text-stone-600">
-                Procedencia, historial expositivo, bibliografía, documentación de archivo, enlaces a
-                sitios externos y obras relacionadas. Se cargan al bajar hasta aquí, para no gastar
-                datos en las fichas que solo se hojean.
+                Procedencia, exposiciones, bibliografía, archivo, enlaces y obras relacionadas. Se cargan al llegar aquí.
               </p>
               <button type="button" onClick={reveal} className="btn-secondary mt-3 w-full text-sm">
                 Cargar la documentación ahora

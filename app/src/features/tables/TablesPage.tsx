@@ -50,9 +50,7 @@ export function TablesPage() {
   return (
     <Layout title="Tablas">
       <p className="mb-4 text-sm text-stone-600">
-        Las listas de las que eligen las fichas. Lo que se cambia aquí lo ven todas las obras a la
-        vez: renombrar una entrada se hace una sola vez, no obra por obra, y nada se borra —lo que
-        deja de usarse se retira y se puede recuperar.
+        Las listas de las que eligen las fichas. Un cambio aquí lo ven todas las obras a la vez.
       </p>
 
       <TableGroup

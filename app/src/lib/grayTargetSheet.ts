@@ -225,15 +225,18 @@ const framePercent = Math.round(MIN_FRAME_SHARE * 100)
 export const GRAY_TARGET_SHEET_TEXT = {
   title: 'Testigo de gris',
   intro:
-    'Hoja para imprimir y fotografiar al lado de la obra. Con la tira dentro del encuadre, la aplicación reconoce la escalera de grises y ofrece corregir la luz de la sala. Funciona igual sin ella: el testigo ayuda, no es obligatorio.',
+    'Imprime esta hoja y fotografíala junto a la obra: la aplicación corrige la luz de la sala.',
   values: 'Los números son el gris de cada parche, de 0 (negro) a 255 (blanco).',
   notes: [
-    'El gris de una impresora doméstica no es neutro. Esta tira sirve como patrón —para que la aplicación reconozca el testigo— y para fijar los puntos negro y blanco, pero no como referencia de dominante: para eso hace falta una carta de gris comprada.',
-    'Colócala al lado de la obra, nunca encima, en el mismo plano y con la misma luz. Un testigo en sombra mientras la obra está iluminada mide otra luz distinta de la que hay que corregir.',
+    'El gris de una impresora no es neutro: vale de patrón y para los puntos negro y blanco.',
+    // En su propia línea, y no al final de la anterior: el PDF parte por líneas y
+    // una frase a caballo de dos no se lee de un vistazo en papel.
+    'Para la dominante hace falta una carta de gris comprada.',
+    'Al lado de la obra, nunca encima, en el mismo plano y con la misma luz.',
     `Que salga entera en la fotografía y ocupando al menos el ${framePercent} % del ancho: por debajo de eso los parches traen muy pocos píxeles para medirse.`,
-    'Si la obra es grande, imprímela ampliada a A4 (141 %). Lo que importa es que los parches salgan grandes en la foto, no el tamaño del papel.',
-    'Imprímela sin corrección de color y sin ahorro de tinta, y no recortes por dentro del marco oscuro: ese marco es lo que separa el parche claro del blanco del papel.',
-    'Inclínala un poco si coge un brillo reflejado: un reflejo sobre un parche no es el color de ese parche, y con él el testigo no sirve.',
+    'Si la obra es grande, amplíala a A4 (141 %): lo que importa es que los parches salgan grandes.',
+    'Sin corrección de color ni ahorro de tinta, y no recortes por dentro del marco oscuro.',
+    'Inclínala si coge un brillo: un reflejo sobre un parche no es su color.',
   ] as readonly string[],
   footer: 'Inventario y catálogo razonado — Rotili / Ruiz Campins · testigo de gris',
 } as const

@@ -50,8 +50,7 @@ export function ResearchStatusSheet({
   return (
     <BottomSheet open={open} onClose={onClose} title="Investigación bibliográfica">
       <p className="mb-3 text-sm text-stone-600">
-        Esto no dice qué hay en el bloque, dice si alguien ha buscado. Un bloque vacío sin revisar
-        no afirma que la obra sea inédita.
+        Dice si alguien ha buscado, no qué hay. Vacío sin revisar no es inédito.
       </p>
       <div role="radiogroup" className="space-y-1">
         {researchStatusOptions(current, count).map((option) => (

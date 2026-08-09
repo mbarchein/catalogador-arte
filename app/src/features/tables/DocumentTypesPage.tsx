@@ -53,9 +53,7 @@ export function DocumentTypesPage() {
   return (
     <Layout title="Tipos de documento" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Lo que ofrece el campo «Tipo» de un documento del archivo: cartas, recortes de prensa,
-        carteles, fotografías. Renombrar uno se hace una vez y lo ven todos los documentos que lo
-        usan.
+        Lo que ofrece el campo «Tipo» de un documento. Renombrar uno lo ven todos los que lo usan.
       </p>
 
       {failure && (
@@ -117,10 +115,7 @@ export function DocumentTypesPage() {
           eso es lo que se cuenta. */}
       {!loading && entries.length === 0 && (
         <p className="card text-sm text-stone-600">
-          No hay ningún tipo de documento en la lista, y el catálogo nació con diez —Carta,
-          Recorte de prensa, Fotografía, Cartel…—. Lo más probable es que no se hayan podido
-          cargar: vuelve a entrar en esta pantalla. Si de verdad está vacía, el primero se crea
-          aquí arriba.
+          La lista está vacía y el catálogo nació con diez. Vuelve a entrar; si sigue vacía, créalos aquí.
         </p>
       )}
 

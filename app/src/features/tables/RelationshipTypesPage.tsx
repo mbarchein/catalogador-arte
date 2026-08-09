@@ -89,10 +89,7 @@ export function RelationshipTypesPage() {
   return (
     <Layout title="Tipos de relación" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        De qué clase es el parentesco entre dos obras. Cada tipo lleva sus dos lecturas —la que
-        muestra la ficha de una obra y la que muestra la de la otra—, así que la relación se
-        registra una sola vez y las dos fichas la cuentan bien. Renombrar un tipo se hace una vez y
-        lo ven todas las obras relacionadas.
+        De qué clase es el parentesco entre dos obras. Cada tipo lleva sus dos lecturas, una por ficha.
       </p>
 
       {failure && (
@@ -135,10 +132,7 @@ export function RelationshipTypesPage() {
           nothing. */}
       {!loading && entries.length === 0 && (
         <p className="card text-sm text-stone-600">
-          Todavía no hay ningún tipo de relación. Son las clases de parentesco entre dos obras
-          —pareja, parte del mismo políptico, estudio previo, versión, reverso catalogado aparte,
-          copia de una obra destruida— y son lo que hace que «AR-0012 y AR-0013 están
-          relacionadas» diga algo. El primero se crea aquí arriba, con sus dos lecturas.
+          Todavía no hay ninguno: pareja, políptico, estudio previo, versión. El primero se crea aquí arriba.
         </p>
       )}
 
@@ -222,8 +216,7 @@ function RelationshipTypeFields({
             placeholder="Obra final de"
           />
           <p className="mt-1 text-xs text-stone-500">
-            Es lo que dirá la ficha de la segunda obra sin que nadie registre nada más. Si se queda
-            mal escrita, esa ficha cuenta la relación al revés.
+            Es lo que dirá la ficha de la segunda obra. Mal escrita, cuenta la relación al revés.
           </p>
         </div>
       )}

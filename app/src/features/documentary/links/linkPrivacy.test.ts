@@ -109,6 +109,8 @@ describe('RF-1404: la aplicación no le pide nada al sitio enlazado', () => {
    */
   it('el formulario promete que no se le pide nada al sitio, y la promesa está atada al código', () => {
     const form = readFileSync(`${HERE}LinkForm.tsx`, 'utf8')
-    expect(form).toContain('no abre la página ni le pide nada al')
+    // La frase se acortó al barrer la sobreexplicación; lo que no puede perderse
+    // es la promesa, así que el aserto la sigue por su parte esencial.
+    expect(form).toContain('No se abre la página')
   })
 })

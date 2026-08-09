@@ -175,8 +175,7 @@ export function LinkDocumentSheet({
                 recorte puede estar enlazado con tres obras y decir algo distinto de
                 cada una. */}
             <p className="mt-1 text-xs text-stone-500">
-              Solo de esta obra. Lo que describe el documento entero se anota en el propio
-              documento. Si la dejas vacía no se borra nada de lo que ya hubiera.
+              Solo de esta obra. Vacía no borra lo que ya hubiera.
             </p>
           </div>
 

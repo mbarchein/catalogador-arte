@@ -147,8 +147,7 @@ export function ArchivePage() {
 
       {entries.length > 0 && (
         <p className="mt-3 text-xs text-stone-500">
-          Un documento nuevo se sube desde la documentación de una obra: así queda subido y enlazado
-          con ella de una vez. Aquí están todos, incluidos los que no tiene enlazados ninguna.
+          Todos los documentos del archivo. Se suben desde la documentación de una obra.
         </p>
       )}
     </Layout>

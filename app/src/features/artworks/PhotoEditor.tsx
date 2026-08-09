@@ -786,7 +786,7 @@ export function PhotoEditor({
     const next = withNeutralPick(color, sample, point, 'SCENE')
     if (!next) {
       setPickNotice(
-        'Ese punto está quemado o demasiado oscuro para medir su color: no se puede saber cuánto se pasó del blanco ni la proporción entre canales. Prueba con un gris medio — una pared, el cartón, el testigo.',
+        'Ese punto está quemado o demasiado oscuro para medir. Prueba con un gris medio.',
       )
       return
     }
@@ -1078,7 +1078,7 @@ export function PhotoEditor({
    */
   function helpText(): string {
     if (!canRestoreOriginal)
-      return 'Sobre la copia de consulta puedes girar y recortar más, pero no ensanchar el recorte, corregir la perspectiva, ajustar el color ni volver al original: lo que quedó fuera no está en esta copia, y el color ya viene aplicado en ella.'
+      return 'Sobre la copia de consulta solo puedes girar y recortar más: el color ya viene aplicado.'
     if (analysis.status === 'working') return 'Analizando la fotografía para reconocer el borde del cuadro…'
     if (analysis.status === 'none')
       return 'No he reconocido el borde del cuadro: arrastra las esquinas para recortarlo a mano.'

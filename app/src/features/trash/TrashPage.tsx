@@ -80,8 +80,7 @@ export function TrashPage() {
   return (
     <Layout title="Papelera" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Aquí está todo lo que se ha retirado del catálogo. Nada se borra nunca de verdad, así que
-        todo lo de esta lista se puede devolver a su sitio.
+        Todo lo retirado del catálogo. Nada se borra: todo esto se puede devolver a su sitio.
       </p>
 
       {failure !== null && (

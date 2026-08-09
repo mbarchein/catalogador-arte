@@ -97,8 +97,7 @@ export function ResearchStatusPicker({
         title={`${spec.title}: estado de la investigación`}
       >
         <p className="mb-2 text-xs text-stone-600">
-          Lo que se declara aquí es sobre la investigación, no sobre la obra: un bloque vacío que
-          nadie ha mirado y uno que se ha buscado sin resultado se leen distinto en la ficha.
+          Habla de la investigación: vacío sin mirar y buscado sin resultado no son lo mismo.
         </p>
         <RadioList
           options={researchStatusOptions(spec, count).map((option) => ({

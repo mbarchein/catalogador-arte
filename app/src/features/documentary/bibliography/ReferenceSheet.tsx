@@ -251,8 +251,7 @@ export function ReferenceSheet({
             spellCheck={false}
           />
           <p className="mt-1 text-xs text-stone-500">
-            El asa corta con la que se nombra la referencia. Sin espacios, comas ni llaves, y no
-            puede repetirse. Déjala vacía si no tiene.
+            Asa corta, sin espacios ni comas y sin repetir. Puede quedar vacía.
           </p>
         </div>
 

@@ -88,8 +88,7 @@ export function PhotoDownloads({
       </summary>
 
       <p className="mt-1 text-xs text-stone-600">
-        El original es el fichero tal como salió de la cámara; la copia corregida es el mismo
-        tamaño con el giro, el recorte y el color ya aplicados, y es la que se manda a imprimir.
+        El original sale tal cual de la cámara; la corregida ya lleva giro, recorte y color.
       </p>
 
       <div className="mt-2 space-y-2">

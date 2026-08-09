@@ -75,8 +75,7 @@ export function ExhibitionVenuesPage() {
   return (
     <Layout title="Sedes de exposición" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Los sitios donde ocurrieron las muestras. Corregir el nombre de un museo se hace una vez y
-        lo ven todas sus exposiciones.
+        Los sitios donde ocurrieron las muestras. Renombrar uno lo ven todas sus exposiciones.
       </p>
 
       {failure && (
@@ -117,9 +116,7 @@ export function ExhibitionVenuesPage() {
           aria-label="País de la nueva sede"
         />
         <p className="text-xs text-stone-500">
-          La localidad es lo que distingue dos sedes con el mismo nombre: hay una Casa de Cultura en
-          cada pueblo. Si la sede ya existe se reutiliza, aunque esté escrita con otras mayúsculas o
-          tildes; si estaba retirada, vuelve. La nota se escribe después, al editarla.
+          La localidad distingue dos sedes homónimas. Si ya existe se reutiliza; la nota, al editarla.
         </p>
         <button
           type="button"

@@ -101,9 +101,7 @@ export function DocumentFieldsForm({
               escribieron: primero «se puede corregir después», que no lo era porque no
               había pantalla, y luego «no hay dónde corregirla», que dejó de serlo el día
               que la hubo. Ahora se puede, y se dice desde dónde. */}
-          La que está escrita en la carpeta. Si el documento todavía no está archivado, déjala
-          vacía: no hace falta inventar un código, y se corrige después con «Corregir los datos
-          del documento».
+          La que está escrita en la carpeta. Vacía si todavía no está archivado.
         </p>
         <Problems problems={problemsOf(problems, 'code')} />
       </div>

@@ -275,8 +275,7 @@ function ExhibitionRecord({
         ) : (
           <div className="card">
             <p className="text-sm text-stone-700">
-              Esta exposición está retirada del catálogo: no aparece en las búsquedas ni en el
-              historial expositivo de ninguna obra. No se ha borrado nada.
+              Retirada del catálogo: no sale en búsquedas ni en el historial de ninguna obra.
             </p>
             <button
               type="button"

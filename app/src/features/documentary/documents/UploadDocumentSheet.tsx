@@ -197,10 +197,7 @@ export function UploadDocumentSheet({
              puede, y lo que se dice ahora es dónde — sin quitarle el «súbelo ahora si
              lo tienes», que sigue siendo el consejo: el fichero está en la mano una vez. */
           <p className="mt-1 text-xs text-stone-500">
-            Un PDF con todas las páginas del expediente, o el escaneo. Puedes registrar el documento
-            sin fichero: constará «sin digitalizar» y solo en papel, y el escaneo se le añade después
-            con «Añadir el escaneo» desde cualquier ficha enlazada. Aun así, si lo tienes a mano,
-            súbelo ahora.
+            El PDF o el escaneo. Sin fichero constará «sin digitalizar», y se añade después.
           </p>
         )}
         {fileProblem !== null && (

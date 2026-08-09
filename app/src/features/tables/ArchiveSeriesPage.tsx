@@ -88,9 +88,7 @@ export function ArchiveSeriesPage() {
   return (
     <Layout title="Clasificación del archivo" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Los fondos, series y subseries en los que se ordenan los papeles del archivo. Renombrar o
-        mover una se hace una vez y lo ven todos sus documentos: el documento no guarda el nombre,
-        guarda la serie.
+        Cómo se ordenan los papeles del archivo. Renombrar o mover una lo ven todos sus documentos.
       </p>
       {summary && <p className="mb-3 text-sm font-medium text-stone-700">{summary}</p>}
 

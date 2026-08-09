@@ -45,8 +45,7 @@ export function PublicationTypesPage() {
   return (
     <Layout title="Tipos de publicación" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Lo que ofrece el campo «Tipo» de cada referencia de la bibliografía. Renombrar uno se hace
-        una vez y lo ven todas las referencias que lo usan.
+        Lo que ofrece el campo «Tipo» de una referencia. Renombrar uno lo ven todas las que lo usan.
       </p>
 
       {failure && (
@@ -95,10 +94,7 @@ export function PublicationTypesPage() {
           seis valores— pero retirarlos todos es posible. */}
       {!loading && entries.length === 0 && (
         <p className="card text-sm text-stone-600">
-          Todavía no hay ningún tipo de publicación. Es lo que dice qué clase de publicación es
-          cada referencia de la bibliografía —un libro, un artículo de revista, un catálogo de
-          exposición, una tesis—, y sin ninguno el tipo de las referencias se queda en blanco. El
-          primero se crea aquí arriba.
+          Todavía no hay ninguno: libro, artículo, catálogo, tesis. El primero se crea aquí arriba.
         </p>
       )}
 

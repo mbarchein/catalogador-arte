@@ -68,8 +68,7 @@ export function NewExhibitionPage() {
   return (
     <Layout title="Nueva exposición" back="/exhibitions">
       <p className="mb-3 text-sm text-stone-600">
-        La muestra, no la participación de una obra en ella. Una vez creada, cada obra se añade a
-        su historial expositivo desde su propia ficha.
+        La muestra, no la participación de una obra. Cada obra se añade después desde su ficha.
       </p>
 
       {twinNotice && (

@@ -184,21 +184,14 @@ export function GrayTargetPage() {
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Qué es</h2>
         <p className="text-sm text-stone-700">
-          Un testigo de gris es una tira con varios grises —claro, medio y oscuro— que se pone al
-          lado de la obra al hacerle la foto. Los grises son conocidos, así que sirven de patrón: si
-          en la fotografía salen anaranjados, la culpa es de la bombilla, y con eso la aplicación
-          sabe cuánto hay que enfriar la imagen para que la obra se vea con el color que tiene.
+          Una tira de grises conocidos, fotografiada junto a la obra. Si salen anaranjados, se sabe cuánto enfriar la foto.
         </p>
         <p className="mt-2 text-sm text-stone-700">
-          Sin testigo la aplicación funciona igual. Lo que cambia es de dónde sale la referencia: con
-          testigo, de una medida; sin él, de un gris que se toma de la escena con el cuentagotas o
-          del ojo de quien ajusta. Las tres cosas se guardan con la fotografía, para que dentro de
-          diez años se sepa cuánto creerse el color.
+          Sin testigo funciona igual: el gris se toma de la escena o a ojo. La ficha guarda cuál de las tres fue.
         </p>
         <p className="mt-2 text-sm text-stone-700">
           Un gris liso, por sí solo, no se distingue de una pared gris. Lo que la aplicación reconoce
-          es la <strong>escalera</strong>: varios parches iguales, pegados, en fila y con saltos de
-          tono claros. Por eso el testigo tiene que salir entero y no medio tapado.
+          es la <strong>escalera</strong>: varios parches iguales, pegados y en fila. Tiene que salir entero, no medio tapado.
         </p>
       </section>
 
@@ -214,12 +207,10 @@ export function GrayTargetPage() {
             testigo cae en sombra, el testigo mide otra luz distinta de la que hay que corregir.
           </li>
           <li>
-            <strong>Que salga entero y con tamaño.</strong> Al menos una décima parte del ancho de la
-            fotografía; por debajo de eso los parches traen muy pocos píxeles para medirse.
+            <strong>Que salga entero y con tamaño.</strong> Al menos una décima del ancho de la foto; por debajo, los parches traen pocos píxeles.
           </li>
           <li>
-            <strong>Sin brillos.</strong> Si coge un reflejo de la ventana o del flash, se inclina un
-            poco: un reflejo sobre un parche no es el color de ese parche.
+            <strong>Sin brillos.</strong> Si coge un reflejo, inclínalo: un reflejo sobre un parche no es su color.
           </li>
           <li>
             <strong>Dentro del encuadre, no pegado al borde.</strong> Lo que llega al borde de la
@@ -242,8 +233,7 @@ export function GrayTargetPage() {
             </>
           }
         >
-          El testigo al lado de la obra, a su misma altura y bajo la misma luz. Sale entero, no tapa
-          nada de la pieza y ocupa un buen trozo del encuadre.
+          Al lado de la obra, a su altura y bajo la misma luz. Entero y sin tapar la pieza.
         </Case>
 
         <Case
@@ -263,8 +253,7 @@ export function GrayTargetPage() {
             </>
           }
         >
-          Sin testigo. La fotografía no está mal hecha: el color se corrige tomando un gris de la
-          escena con el cuentagotas, o a ojo, y la ficha guarda que fue así.
+          Sin testigo. El color se toma de un gris de la escena, y la ficha guarda que fue así.
         </Case>
 
         <Case
@@ -280,8 +269,7 @@ export function GrayTargetPage() {
             </>
           }
         >
-          El testigo en sombra mientras la obra está iluminada. Ahí los grises salen apagados y con
-          otro color, y corregir la obra con esa medida la deja peor de lo que estaba.
+          El testigo en sombra y la obra iluminada: se mide otra luz, y corregir con ella empeora.
         </Case>
 
         <Case
@@ -303,24 +291,17 @@ export function GrayTargetPage() {
             </>
           }
         >
-          El testigo cogiendo un reflejo. El brillo se come dos parches, y lo que se mediría ahí es
-          la ventana, no el gris. Basta inclinarlo un poco.
+          El testigo cogiendo un reflejo: se mediría la ventana, no el gris. Basta inclinarlo.
         </Case>
       </section>
 
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Carta comprada u hoja impresa</h2>
         <p className="text-sm text-stone-700">
-          <strong>Lo mejor es una carta de gris comprada.</strong> Su gris es de verdad neutro, así
-          que de ella se puede creer la dominante: cuánto tira a naranja o a azul la luz de la sala.
-          Es barata, dura años y cabe en el bolsillo del maletín.
+          <strong>Lo mejor es una carta de gris comprada.</strong> Su gris es neutro de verdad, así que de ella sí se puede creer la dominante.
         </p>
         <p className="mt-2 text-sm text-stone-700">
-          <strong>Si no hay carta, la hoja impresa en casa.</strong> El gris de una impresora
-          doméstica no es neutro —la tinta tiene su propio color y nadie sabe cuánto—, así que la
-          hoja sirve para que la aplicación reconozca el testigo y para fijar los puntos negro y
-          blanco, pero no como referencia de dominante. La aplicación guarda cuál de las dos se usó y
-          no se cree de la hoja lo que no puede.
+          <strong>Si no hay carta, la hoja impresa en casa.</strong> El gris de una impresora no es neutro: sirve de patrón y para blanco y negro, no de referencia.
         </p>
         <button
           type="button"
@@ -336,17 +317,14 @@ export function GrayTargetPage() {
           </p>
         )}
         <p className="mt-2 text-xs text-stone-500">
-          Imprímela sin corrección de color y sin ahorro de tinta. Si la obra es grande, amplíala a
-          A4 al 141 %: lo que importa es que los parches salgan grandes en la foto.
+          Imprímela sin corrección de color ni ahorro de tinta. Si la obra es grande, amplíala al 141 %.
         </p>
       </section>
 
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Y luego el recorte lo deja fuera</h2>
         <p className="text-sm text-stone-700">
-          El testigo no se queda en la imagen que se publica: al recortar la fotografía a la obra, la
-          tira se queda fuera. Pero sigue estando en el original, que no se toca nunca, y ahí queda
-          como testimonio de con qué luz se hizo la toma y de que el color no se ajustó a capricho.
+          Al recortar la foto a la obra, la tira queda fuera. Sigue en el original, que no se toca.
         </p>
       </section>
     </Layout>

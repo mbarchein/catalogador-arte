@@ -23,6 +23,12 @@
   error que ve la usuaria, también los `raise exception` de la base y los de las funciones Edge que
   la aplicación muestra tal cual.
 - **Documentación (`docs/`) y mensajes de commit: español.**
+- **Los textos son cortos.** Sobreexplicar es el defecto más extendido de esta interfaz, y cansa
+  hasta que se deja de leer: entonces el aviso que sí importaba tampoco se lee. Presupuestos, no
+  sugerencias: **un rótulo o una ayuda de campo, una frase y por debajo de 90 caracteres**; un
+  párrafo de pantalla, dos frases; un mensaje de error, una frase con qué pasó y otra con qué
+  hacer, y solo si no es obvio. Lo que no quepa ahí sobra o va en un comentario del código. Antes
+  de añadir una frase: si se quita, ¿alguien se equivoca? Si no, no se pone.
 - **La interfaz no se explica a sí misma ni se justifica.** Los textos que ve la usuaria dicen qué
   hay y qué se puede hacer con ello. **Nunca** explican el modelo de datos, por qué una pantalla
   está donde está, ni por qué falta un botón. Fuera, en concreto, la construcción «no es X: es Y»

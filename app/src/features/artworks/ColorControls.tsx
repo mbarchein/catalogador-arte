@@ -1011,7 +1011,7 @@ export function ColorControls({
     say(
       offer.movesWhiteBalance
         ? 'Balance de blancos tomado del testigo de gris, y anotado como carta de grises.'
-        : 'Anotado que en la toma había una hoja impresa. Su gris no se usa como referencia de dominante: la tinta doméstica no es neutra.',
+        : 'Hoja impresa anotada. Su gris no sirve de referencia: la tinta doméstica no es neutra.',
     )
   }
 
@@ -1042,7 +1042,7 @@ export function ColorControls({
     const clip = clippingNotice(clipping)
     if (clip) return clip
     if (eyedropper)
-      return 'Cuentagotas armado: arrastra el dedo hasta un gris de la fotografía —una pared, el cartón, el testigo— y levántalo ahí. La lupa te muestra el color de verdad, sin corregir. Con dos dedos mueves y acercas la foto.'
+      return 'Arrastra el dedo hasta un gris de la foto y levántalo ahí. Con dos dedos mueves y acercas.'
     const provenance = colorProvenanceText(color)
     if (provenance) return provenance
     return `${selectedRange.label}: arrastra, usa las flechas para una muesca, Inicio y Fin para los topes, y toca dos veces para volver al valor de origen.`
@@ -1100,7 +1100,7 @@ export function ColorControls({
           {rasterState === 'working'
             ? 'Midiendo la fotografía…'
             : rasterState === 'failed'
-              ? 'No se han podido medir los píxeles de esta fotografía: los mandos siguen funcionando, pero sin histograma, sin ajuste automático y sin buscar el testigo.'
+              ? 'No se han podido medir los píxeles: sin histograma, sin ajuste automático y sin testigo.'
               : 'Sin medición del encuadre todavía.'}
         </p>
       )}

@@ -238,10 +238,7 @@ export function DocumentPage() {
           ficha de obra desde la que corregirlo. */}
       {canEdit && (
         <p className="mt-3 text-xs text-stone-500">
-          Corregir los datos y añadir el escaneo se hacen desde la documentación de una obra
-          enlazada, donde el aviso dice a cuántas fichas afecta el cambio. Si este documento no
-          tiene ninguna obra enlazada, enlázalo primero con la obra a la que corresponda. Retirarlo o
-          recuperarlo se hace desde la papelera, en Tablas.
+          Los datos y el escaneo se corrigen desde la documentación de una obra enlazada. Retirarlo, desde la papelera.
         </p>
       )}
     </Layout>

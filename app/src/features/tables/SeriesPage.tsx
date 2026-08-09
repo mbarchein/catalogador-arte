@@ -79,8 +79,7 @@ export function SeriesPage() {
             aria-label="Nueva serie"
           />
           <p className="mt-1 text-xs text-stone-500">
-            La serie se crea en el fondo elegido arriba, y el fondo no se cambia después. Si ya
-            existe en ese fondo se reutiliza; si estaba retirada, vuelve.
+            Se crea en el fondo elegido arriba, y ese fondo no se cambia después.
           </p>
         </div>
         <button

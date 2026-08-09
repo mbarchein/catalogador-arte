@@ -1258,21 +1258,21 @@ export function grayTargetNotice(
     case 'unusable-image':
       return 'No se han podido medir los píxeles de esta fotografía, así que no se ha podido buscar el testigo de gris.'
     case 'thin-band':
-      return 'Se ve algo parecido a un testigo de gris, pero sale demasiado pequeño o demasiado cortado para medirlo. Conviene que salga entero y algo más grande.'
+      return 'Se ve un testigo, pero sale pequeño o cortado. Conviene que salga entero y más grande.'
     case 'too-large':
-      return 'Lo que se parece a una escalera de grises ocupa casi todo el encuadre, y un testigo es un objeto pequeño al lado de la obra. Se puede tomar el gris a mano con el cuentagotas.'
+      return 'Lo que parece una escalera de grises ocupa casi todo el encuadre. Toma el gris con el cuentagotas.'
     case 'clipped':
-      return 'El testigo de gris sale con algún parche quemado o completamente a oscuras, y ahí ya no queda color que medir. Conviene repetir la toma con menos luz directa sobre él.'
+      return 'El testigo tiene parches quemados o a oscuras. Repite la toma con menos luz directa.'
     case 'specular':
-      return 'El testigo de gris tiene un brillo reflejado encima, y un reflejo no es el color del parche. Conviene inclinarlo un poco o apartarlo de la luz directa.'
+      return 'El testigo tiene un reflejo encima. Inclínalo o apártalo de la luz directa.'
     case 'not-uniform':
       return 'Los parches del testigo de gris no salen lisos: puede haber una sombra, un pliegue o un objeto por encima.'
     case 'not-neutral':
-      return 'Lo que se parece a un testigo de gris tiene color propio, así que no sirve como referencia. Se puede tomar el gris a mano con el cuentagotas.'
+      return 'Lo que parece un testigo tiene color propio. Toma el gris con el cuentagotas.'
     case 'below-threshold':
-      return 'Hay algo que se parece a un testigo de gris, pero no lo suficiente para señalarlo. Es mejor tomar el gris a mano con el cuentagotas que fiarse de una suposición.'
+      return 'Hay algo parecido a un testigo, pero no lo bastante. Toma el gris con el cuentagotas.'
     case 'no-staircase':
     default:
-      return 'No se ha encontrado un testigo de gris en esta fotografía. Una superficie lisa, aunque sea gris, no se distingue de una pared: lo que se reconoce es la escalera de parches claro, medio y oscuro, y tiene que salir completa y al lado de la obra. Si no se usó ninguno, se puede tomar el gris a mano con el cuentagotas.'
+      return 'No se ha encontrado ningún testigo: se reconoce la escalera de parches, entera. Toma el gris con el cuentagotas.'
   }
 }

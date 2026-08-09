@@ -516,7 +516,7 @@ export function ArtworkPhotosPage() {
         initial: source.fromMaster ? stored : NO_EDIT,
         note: source.fromMaster
           ? null
-          : 'No se ha podido descargar el máster: se parte de la copia de consulta, que ya viene recortada, tiene menos resolución y lleva el color ya aplicado. Puedes recortar más, pero no ensanchar el recorte, ni ajustar el color, ni volver al original. El máster de archivo no se toca: inténtalo de nuevo con mejor cobertura para reencuadrar desde él.',
+          : 'Sin máster: se parte de la copia de consulta. Puedes recortar más, pero no ajustar el color.',
       })
     } catch (e) {
       setError(
@@ -790,9 +790,7 @@ export function ArtworkPhotosPage() {
                 </p>
                 {detailsFailed && (
                   <p className="mt-1 text-xs text-amber-800">
-                    No se han podido leer el color, la procedencia ni el estado de la copia a
-                    resolución completa de esta ficha. Lo que se ve arriba puede estar incompleto;
-                    los datos guardados no se han tocado.
+                    No se han podido leer el color ni el estado de las copias. Lo guardado no se ha tocado.
                   </p>
                 )}
               </div>

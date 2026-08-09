@@ -182,8 +182,7 @@ export function ProvenanceLinkForm({
         {/* «Se desconoce» y «Sin revisar» están los dos en la lista y no son lo
             mismo: uno es el resultado de haber buscado. */}
         <p className="text-xs text-stone-500">
-          «Se desconoce» es haber buscado y no encontrarlo. «Sin revisar» es que nadie lo ha mirado
-          todavía, y es donde nace todo eslabón.
+          «Se desconoce» es haber buscado sin encontrarlo. «Sin revisar» es que nadie lo ha mirado.
         </p>
 
         <div>
@@ -261,8 +260,7 @@ export function ProvenanceLinkForm({
             placeholder="finales de los setenta"
           />
           <p className="mt-1 text-xs text-stone-500">
-            Lo que se escriba aquí es lo que se imprime, por encima de los años. Los años se guardan
-            igual y son los que sitúan el eslabón en la cadena.
+            Esto es lo que se imprime, por encima de los años. Los años siguen ordenando la cadena.
           </p>
         </div>
 

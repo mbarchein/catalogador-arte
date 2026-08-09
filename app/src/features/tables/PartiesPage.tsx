@@ -102,9 +102,7 @@ export function PartiesPage() {
   return (
     <Layout title="Personas e instituciones" back="/tables">
       <p className="mb-1 text-sm text-stone-600">
-        Quién ha tenido cada obra, quién presta, quién es titular de los derechos y qué institución
-        hay detrás de una sede. Corregir un nombre aquí se hace una vez y lo ven todas las obras que
-        pasaron por esa persona o ese museo.
+        Quién ha tenido cada obra, quién presta y de quién son los derechos.
       </p>
       {count && <p className="mb-1 text-sm font-medium text-stone-700">{count}</p>}
       {/* El aviso del dato personal va arriba y una sola vez, no en cada fila: es
@@ -159,10 +157,7 @@ export function PartiesPage() {
           aria-label="País de la nueva ficha"
         />
         <p className="text-xs text-stone-500">
-          El catálogo guarda una sola ficha por nombre: si ya existe se reutiliza, aunque esté
-          escrita con otras mayúsculas o tildes, y si estaba retirada vuelve. Dos personas que se
-          llamen igual se distinguen en el propio nombre: «Juan Pérez (Badajoz)». El contacto y la
-          nota se escriben después, al editar la ficha.
+          Una ficha por nombre. Dos homónimos se distinguen escribiéndolo: «Juan Pérez (Badajoz)».
         </p>
         <button
           type="button"

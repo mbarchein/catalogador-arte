@@ -213,8 +213,7 @@ export function PartyPicker({
             </div>
 
             <p className="text-xs text-stone-500">
-              La ficha se añade al catálogo compartido, a la vista de todo el equipo, y la usarán
-              también las exposiciones y los derechos de reproducción.
+              La ficha se añade al catálogo compartido y la usa todo el equipo.
             </p>
 
             {error && (

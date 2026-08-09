@@ -69,8 +69,7 @@ export function ExhibitionForm({
             autoComplete="off"
           />
           <p className="mt-1 text-xs text-stone-500">
-            Tal como se imprimió. Es lo que el historial expositivo de cada obra imprime en
-            cursiva, y puede repetirse: una itinerante lleva el mismo título en cada sede.
+            Tal como se imprimió. Puede repetirse: una itinerante lleva el mismo título en cada sede.
           </p>
         </div>
 
@@ -104,8 +103,7 @@ export function ExhibitionForm({
             placeholder="Comisariada por…; itineró después a…"
           />
           <p className="mt-1 text-xs text-stone-500">
-            De la exposición entera: comisariado, contexto, circunstancias. Lo que le pasó a UNA
-            obra dentro de esta muestra va en la nota de su participación, desde su ficha.
+            De la exposición entera. Lo que le pasó a una obra va en la nota de su participación.
           </p>
         </div>
       </FieldGroup>
@@ -212,9 +210,7 @@ export function ExhibitionForm({
               identificada, esto sigue guardando la transcripción literal de la
               fuente, que es un dato y no ruido. */}
           <p className="mt-1 text-xs text-stone-500">
-            Lo que dice la fuente, literal. Si no se sabe qué sede fue, esto es la sede: «una
-            galería de Madrid» es un dato, y no hace falta inventar una ficha para poder guardarlo.
-            Con sede elegida, aquí cabe el matiz: «en la sala baja».
+            Lo que dice la fuente, literal: «una galería de Madrid» ya es un dato.
           </p>
         </div>
       </FieldGroup>

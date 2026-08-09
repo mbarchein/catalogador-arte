@@ -85,8 +85,7 @@ export function ChangeHistorySection({ catalogId }: { catalogId: string }) {
               obras catalogadas antes. */}
           {!loading && error === null && entries.length === 0 && (
             <p className="text-sm text-stone-500">
-              No hay cambios registrados en esta obra. El historial se guarda desde el 5 de agosto de
-              2026: lo anterior a esa fecha no consta, y eso no quiere decir que no ocurriera.
+              Sin cambios registrados. El historial empieza el 5 de agosto de 2026.
             </p>
           )}
 

@@ -53,8 +53,7 @@ export function ArtistFundsPage() {
   return (
     <Layout title="Fondos" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Los conjuntos de obra del catálogo. El nombre se corrige aquí y lo ven todas sus obras. El
-        prefijo de los identificadores no se toca: está impreso en la etiqueta pegada a cada obra.
+        Los conjuntos de obra del catálogo. El nombre se corrige aquí; el prefijo no se toca.
       </p>
 
       {failure && (
@@ -95,9 +94,7 @@ export function ArtistFundsPage() {
 
       {/* Por qué no hay «Añadir», dicho donde se busca el botón que falta. */}
       <p className="mt-4 text-xs text-stone-500">
-        No se dan de alta fondos desde aquí: uno nuevo trae su propio prefijo, y ese prefijo entra
-        en la numeración de las obras y en cómo se guardan sus ficheros de archivo. Es un cambio del
-        esquema, no una fila.
+        No se dan de alta desde aquí: un fondo nuevo trae prefijo, y eso cambia el esquema.
       </p>
     </Layout>
   )

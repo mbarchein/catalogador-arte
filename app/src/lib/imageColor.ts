@@ -1096,7 +1096,7 @@ export function autoColorFrom(
   const notices: string[] = []
   if (!enoughGrey) {
     notices.push(
-      'No se ha encontrado en el encuadre ningún gris fiable, así que el ajuste automático no ha tocado el balance de blancos: conviene tomar un gris con el cuentagotas.',
+      'Sin gris fiable en el encuadre: el balance no se ha tocado. Toma uno con el cuentagotas.',
     )
   }
   if (reachesBothEnds) {

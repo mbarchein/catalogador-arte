@@ -68,7 +68,7 @@ export type { AdditionPlan }
  */
 export function duplicateNameMessage(twinActive: boolean | null): string {
   const collision =
-    'Ya hay un tipo de publicación con ese nombre: para el catálogo, «catalogo de subasta» y «Catálogo de subasta» son el mismo.'
+    'Ya existe ese tipo: «catalogo de subasta» y «Catálogo de subasta» son el mismo.'
   if (twinActive === false) {
     return `${collision} El que lo tiene está retirado: recupéralo aquí mismo en vez de dejar dos iguales.`
   }
