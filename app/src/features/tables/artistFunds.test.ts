@@ -5,8 +5,9 @@ import {
   fundListedHint,
   fundOfferedHint,
   fundPrefixText,
+  HIDDEN_FUND_BADGE,
   fundRenamedNotice,
-  hiddenFundsNotice,
+  fundFilterOptions,
   offeredFunds,
   retireFundBlockedReason,
   sortFunds,
@@ -116,23 +117,40 @@ describe('lo que se ofrece para elegir', () => {
   })
 })
 
-describe('el listado dice lo que está apartando', () => {
-  it('nombra el fondo y dice cómo verlas', () => {
-    // Nunca un hueco en silencio: un listado que se calla que esconde cuarenta
-    // obras es un listado en el que no se puede confiar para contar.
-    expect(hiddenFundsNotice([fund({ name: 'Pruebas' })])).toBe(
-      'No se muestran las obras de Pruebas. Filtra por ese fondo para verlas.',
+describe('el filtro señala el fondo apartado', () => {
+  // Nunca un hueco en silencio, pero dicho donde se puede hacer algo con ello:
+  // en la fila del fondo dentro del panel de filtros, que es justo el sitio
+  // donde marcarlo hace aparecer sus obras. Antes era un aviso encima del
+  // listado, lejos del control que lo arregla.
+
+  it('el apartado lleva distintivo, y dice qué implica', () => {
+    const rows = fundFilterOptions([
+      fund({ id: '1', prefix: 'AR', name: 'Alberto Rotili' }),
+      fund({ id: '2', prefix: 'TS', name: 'Pruebas', hideArtworks: true }),
+    ])
+    expect(rows[1]).toMatchObject({ text: 'Pruebas', badge: HIDDEN_FUND_BADGE })
+    expect(rows[1]!.hint).toContain('no salen si no lo marcas')
+  })
+
+  it('y el que no lo está no lleva nada: un distintivo en todas no distingue', () => {
+    const rows = fundFilterOptions([fund({ name: 'Alberto Rotili' })])
+    expect(rows[0]!.badge).toBeUndefined()
+    expect(rows[0]!.hint).toBeUndefined()
+  })
+
+  it('las filas van en el mismo orden que la pantalla de fondos', () => {
+    const rows = fundFilterOptions([
+      fund({ id: '2', prefix: 'TS', name: 'Pruebas' }),
+      fund({ id: '1', prefix: 'AR', name: 'Alberto Rotili' }),
+    ])
+    expect(rows.map((r) => r.text)).toEqual(['Alberto Rotili', 'Pruebas'])
+  })
+
+  it('el nombre que se enseña es el de la tabla, no el escrito por dentro', () => {
+    // Es lo que hace que renombrar un fondo se vea también aquí.
+    expect(fundFilterOptions([fund({ name: 'Nombre corregido' })])[0]!.text).toBe(
+      'Nombre corregido',
     )
-  })
-
-  it('y los nombra todos cuando son varios', () => {
-    const said = hiddenFundsNotice([fund({ name: 'Pruebas' }), fund({ name: 'Ensayos' })]) ?? ''
-    expect(said).toContain('Pruebas, Ensayos')
-    expect(said).toContain('Filtra por uno')
-  })
-
-  it('sin nada apartado no dice nada', () => {
-    expect(hiddenFundsNotice([])).toBeNull()
   })
 })
 

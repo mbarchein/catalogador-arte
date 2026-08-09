@@ -13,7 +13,7 @@ import { displayDate } from '../../lib/dates'
 import { existenceNotice, displayMeasurements, displayTitle } from '../../lib/title'
 import { ARTIST_LABEL, ARTIST_FUNDS } from '../../lib/types'
 import { useArtistFunds } from '../tables/useArtistFunds'
-import { hiddenFundsNotice } from '../tables/artistFunds'
+import { fundFilterOptions } from '../tables/artistFunds'
 import { useLiveChanges } from '../../lib/live'
 import { placesInside } from '../../lib/places'
 import {
@@ -41,7 +41,8 @@ import { useArtworkTypes } from './useArtworkTypes'
 import { usePhysicalPlaces } from './usePhysicalPlaces'
 import { useSeries } from './useSeries'
 
-const FUND_OPTIONS = ARTIST_FUNDS.map((v) => ({ value: v, text: FUND_LABEL[v] }))
+/** Los de siempre, mientras la tabla de fondos llega. */
+const FALLBACK_FUND_OPTIONS = ARTIST_FUNDS.map((v) => ({ value: v, text: FUND_LABEL[v] }))
 
 const STATUS_OPTIONS = (Object.keys(STATUS_FILTER_LABEL) as StatusFilter[]).map((v) => ({
   value: v,
@@ -137,11 +138,6 @@ export function ArtworksPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [hidden.map((f) => f.code).join(' ')],
   )
-  // Y lo que se aparta se DICE: un listado que esconde obras en silencio es un
-  // listado en el que no se puede confiar para contar, y contar es media
-  // catalogación. Se calla cuando ya se está filtrando por ese fondo, que es
-  // cuando las obras sí están a la vista.
-  const hiddenNotice = hiddenFundsNotice(hidden.filter((f) => !view.funds.includes(f.code)))
 
   const { artworks, thumbnails, loading, error, reload, refreshThumbnails } = useArtworks(
     view,
@@ -246,10 +242,6 @@ export function ArtworksPage() {
           ) : (
             <>
               <p>No se han encontrado obras con estos criterios.</p>
-              {/* Y si además hay un fondo apartado, se dice aquí: buscar algo que
-                  existe y no encontrarlo por un interruptor de otra pantalla es
-                  exactamente el rato perdido que esta frase evita. */}
-              {hiddenNotice && <p className="mt-2 text-sm text-stone-600">{hiddenNotice}</p>}
               {!hasNoFilters(view) && (
                 <button
                   type="button"
@@ -267,8 +259,6 @@ export function ArtworksPage() {
           <p className="mb-2 text-xs text-stone-500">
             {artworks.length} {artworks.length === 1 ? 'obra' : 'obras'}
           </p>
-          {/* Junto al recuento, porque es al recuento a lo que le falta algo. */}
-          {hiddenNotice && <p className="mb-2 text-xs text-amber-800">{hiddenNotice}</p>}
           <ul className="space-y-2">
             {artworks.map((artwork) => {
               const notice = existenceNotice(artwork)
@@ -363,8 +353,11 @@ export function ArtworksPage() {
             <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">
               Fondo <span className="normal-case text-stone-400">· sin marcar, todos</span>
             </h3>
+            {/* Desde la tabla, no desde el enumerado: es donde está el nombre
+                corregido y el distintivo del fondo apartado. Con los de siempre
+                mientras carga, para no pintar un filtro vacío. */}
             <CheckList
-              options={FUND_OPTIONS}
+              options={funds.length > 0 ? fundFilterOptions(funds) : FALLBACK_FUND_OPTIONS}
               values={view.funds}
               onChange={(funds) => updateView({ funds })}
             />

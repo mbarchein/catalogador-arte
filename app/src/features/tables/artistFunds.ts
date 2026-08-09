@@ -124,18 +124,31 @@ export function fundHiddenNotice(name: string, hidden: boolean): string {
 }
 
 /**
- * Lo que el listado dice cuando está apartando obras.
+ * El distintivo del fondo apartado, en la lista de fondos del panel de filtros.
  *
- * **Nunca un hueco en silencio.** Un listado que se calla que está escondiendo
- * cuarenta obras es un listado en el que no se puede confiar para contar, y contar
- * es media catalogación. Null cuando no aparta nada.
+ * **Nunca un hueco en silencio**, pero dicho donde se puede hacer algo con ello.
+ * Antes era un aviso sobre el listado —«no se muestran las obras de X»— y estaba
+ * en el sitio equivocado dos veces: encima de una lista que ya es larga, y lejos
+ * del interruptor que lo arregla. Marcarlo en la fila del fondo, dentro del
+ * panel donde se filtra, lo pone justo donde se va a actuar: marcar ese fondo es
+ * exactamente lo que hace aparecer sus obras.
  */
-export function hiddenFundsNotice(hidden: readonly ArtistFundEntry[]): string | null {
-  if (hidden.length === 0) return null
-  const names = hidden.map((f) => f.name).join(', ')
-  return hidden.length === 1
-    ? `No se muestran las obras de ${names}. Filtra por ese fondo para verlas.`
-    : `No se muestran las obras de estos fondos: ${names}. Filtra por uno para verlas.`
+export const HIDDEN_FUND_BADGE = 'Apartado'
+
+/** Lo que se lee bajo el nombre del fondo apartado, en esa misma fila. */
+export const HIDDEN_FUND_FILTER_HINT = 'Sus obras no salen si no lo marcas'
+
+/** Las filas del filtro de fondo, con el apartado señalado. */
+export function fundFilterOptions(
+  entries: readonly ArtistFundEntry[],
+): { value: ArtistFund; text: string; badge?: string; hint?: string }[] {
+  return sortFunds(entries).map((entry) => ({
+    value: entry.code,
+    text: entry.name,
+    ...(entry.hideArtworks
+      ? { badge: HIDDEN_FUND_BADGE, hint: HIDDEN_FUND_FILTER_HINT }
+      : {}),
+  }))
 }
 
 /** Los fondos que se ofrecen para elegir: los activos, más el que la fila ya tenga. */
