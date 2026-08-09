@@ -7,6 +7,12 @@
 - Tenía nueve cosas apiladas en una sola caja gris sin un solo título. Ahora está partido en tres
   bloques con encabezado: **«Qué es esta toma»** (tipo, procedencia, autoría), **«Orden y
   portada»** y **«Retirar»**.
+- **Mientras descarga o sube, el icono se convierte en un anillo que se llena**, y sobre la imagen
+  aparece un rótulo con lo que está pasando: «Descargando el máster: 43 %». Antes no se enteraba
+  nadie — el original son de 2 a 8 MB y la copia corregida hasta 19, y quien pulsa se queda mirando
+  la fotografía sin saber si pasa algo.
+- Cuando el servidor no dice cuánto pesa el fichero, el anillo **gira** en lugar de inventarse un
+  porcentaje. Un progreso que miente es peor que no tener ninguno: por él se decide si esperar.
 - **Girar, recortar y color** sale del panel y pasa a ser un icono **sobre la propia fotografía**,
   en una esquina: actúa sobre la que se está mirando, no sobre «la seleccionada». Debajo de la
   imagen se lee qué edición tiene y cómo está la copia a resolución completa, que es donde se ve
