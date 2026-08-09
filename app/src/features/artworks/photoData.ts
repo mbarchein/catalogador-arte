@@ -92,10 +92,15 @@ export function photoDataColumns(draft: PhotoDataDraft): {
   }
 }
 
-/** Los títulos de las cuatro secciones del panel, en el orden en que se leen. */
+/**
+ * Los títulos de las secciones del panel, en el orden en que se leen.
+ *
+ * Eran cuatro. «La imagen» se fue cuando girar, recortar y color pasó a ser un
+ * icono sobre la propia fotografía y su estado a leerse debajo de ella: una
+ * sección cuyo contenido vive junto a lo que describe no necesita un hueco aquí.
+ */
 export const PHOTO_SECTIONS = {
   data: 'Qué es esta toma',
-  image: 'La imagen',
   order: 'Orden y portada',
   remove: 'Retirar',
 } as const

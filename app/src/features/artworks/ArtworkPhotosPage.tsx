@@ -685,7 +685,12 @@ export function ArtworkPhotosPage() {
 
             {/* Same swipe carousel as the record view: flicking through the
                 shots while retyping them is exactly the reviewing gesture. */}
-            <div className="mt-3">
+            {/* El icono de editar va SOBRE la fotografía, no en el panel de datos:
+                actúa sobre lo que se está mirando y no sobre «la seleccionada»,
+                que es la ambigüedad que tenía en una lista con cuatro tomas. Fuera
+                del carrusel y no dentro de cada diapositiva, para que se quede
+                quieto mientras se pasa de una a otra. */}
+            <div className="relative mt-3">
               <PhotoCarousel
                 images={ordered}
                 thumbUrls={thumbUrls}
@@ -696,7 +701,50 @@ export function ArtworkPhotosPage() {
                 }}
                 catalogId={catalogId}
               />
+              {selected && (
+                <button
+                  type="button"
+                  aria-label="Girar, recortar y color"
+                  title="Girar, recortar y color"
+                  disabled={saving || working !== null}
+                  onClick={() => void openEditor(selected)}
+                  className="absolute bottom-2 right-2 flex h-11 w-11 items-center justify-center
+                             rounded-full bg-stone-900/70 text-white shadow-lg backdrop-blur
+                             active:bg-stone-900 disabled:opacity-40"
+                >
+                  <CropIcon className="h-5 w-5" />
+                </button>
+              )}
             </div>
+
+            {/* Lo que le ha pasado a esta fotografía, bajo la fotografía: es donde se
+                ve lo que describen. Mientras se trabaja, aquí va el paso en curso —el
+                icono no tiene sitio para decirlo—. */}
+            {selected && (
+              <div className="mt-1">
+                <p className="text-xs text-stone-500">
+                  {working ??
+                    (editSummary(selectedEdit)
+                      ? `${editSummary(selectedEdit)}. El máster de archivo se conserva sin tocar.`
+                      : 'Sin giro, recorte ni ajuste de color. Se editan las copias, nunca el máster de archivo.')}
+                </p>
+                {/* El estado del cuarto nivel, siempre dicho y nunca un hueco: una copia,
+                    ninguna que haga falta, una que hace falta y no está, o una fotografía
+                    corregida antes de que existieran las copias (RF-420). */}
+                <p className="mt-1 text-xs text-stone-500">
+                  {selectedDetail || detailsFailed
+                    ? correctedStateText(selectedDetail, selectedEdit)
+                    : 'Comprobando el color y el estado de la copia a resolución completa…'}
+                </p>
+                {detailsFailed && (
+                  <p className="mt-1 text-xs text-amber-800">
+                    No se han podido leer el color, la procedencia ni el estado de la copia a
+                    resolución completa de esta ficha. Lo que se ve arriba puede estar incompleto;
+                    los datos guardados no se han tocado.
+                  </p>
+                )}
+              </div>
+            )}
 
             {selected && (
               <div className="mt-3 space-y-3 rounded-lg border border-stone-300 bg-stone-50 p-3">
@@ -740,46 +788,6 @@ export function ArtworkPhotosPage() {
                   busy={saving}
                   onSave={(draft) => void savePhotoData(selected.image_id, draft)}
                 />
-
-                {/* ── La imagen ──
-                    Straightening, trimming and the colour of the room's light. It only
-                    redoes the copies that are served: the archive master stays as it
-                    left the camera (ADR-002). */}
-                <div>
-                  <SectionTitle>{PHOTO_SECTIONS.image}</SectionTitle>
-                  <button
-                    type="button"
-                    disabled={saving || working !== null}
-                    onClick={() => void openEditor(selected)}
-                    className="btn-secondary w-full"
-                  >
-                    <CropIcon className="h-5 w-5" />
-                    {working ?? 'Girar, recortar y color'}
-                  </button>
-                  <p className="mt-1 text-xs text-stone-500">
-                    {editSummary(selectedEdit)
-                      ? `${editSummary(selectedEdit)}. El máster de archivo se conserva sin tocar.`
-                      : 'Sin giro, recorte ni ajuste de color. Se editan las copias, nunca el máster de archivo.'}
-                  </p>
-                  {/* The state of the fourth level, always said and never a gap: a copy,
-                      no copy needed, a copy that is needed and missing, or a photograph
-                      corrected before copies existed (RF-420). */}
-                  <p className="mt-1 text-xs text-stone-500">
-                    {/* «Todavía no lo sé» is not the same as «no se ha podido leer», and
-                        the second sentence over the first second of a load would be a
-                        false alarm on every visit. */}
-                    {selectedDetail || detailsFailed
-                      ? correctedStateText(selectedDetail, selectedEdit)
-                      : 'Comprobando el color y el estado de la copia a resolución completa…'}
-                  </p>
-                  {detailsFailed && (
-                    <p className="mt-1 text-xs text-amber-800">
-                      No se han podido leer el color, la procedencia ni el estado de la copia a
-                      resolución completa de esta ficha. Lo que se ve arriba puede estar
-                      incompleto; los datos guardados no se han tocado.
-                    </p>
-                  )}
-                </div>
 
                 {/* ── Orden y portada ──
                     Dónde va esta toma entre las demás y si es la que representa la
