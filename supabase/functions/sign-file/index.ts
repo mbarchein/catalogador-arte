@@ -23,6 +23,7 @@ import {
   validUploadId,
   type CompletedPart,
 } from './multipart.ts'
+import { usagePage, MAX_USAGE_PAGES } from './usage.ts'
 
 const S3_ENDPOINT = Deno.env.get('S3_ENDPOINT') ?? ''
 const S3_REGION = Deno.env.get('S3_REGION') ?? 'auto'
@@ -75,6 +76,10 @@ const OPERATIONS = [
   'multipart-start',
   'multipart-complete',
   'multipart-abort',
+  // Cuánto ocupa el bucket. Está aquí y no en una función aparte porque las
+  // credenciales del almacén solo pueden vivir en un sitio, y ese sitio es este:
+  // una segunda función significaría una segunda copia de la clave.
+  'usage',
 ] as const
 type Operation = (typeof OPERATIONS)[number]
 
@@ -106,7 +111,9 @@ Deno.serve(async (request) => {
   if (!OPERATIONS.includes(operation as Operation)) {
     return reply(400, { error: `operation debe ser una de: ${OPERATIONS.join(', ')}` })
   }
-  if (!isSignablePath(path)) {
+  // «usage» habla del bucket entero y no de un fichero, así que es la única
+  // operación sin ruta. Todas las demás la exigen antes de mirar nada más.
+  if (operation !== 'usage' && !isSignablePath(path)) {
     return reply(400, { error: 'ruta no válida para un fichero de archivo' })
   }
 
@@ -128,6 +135,43 @@ Deno.serve(async (request) => {
   })
 
   const objectUrl = () => new URL(`${S3_ENDPOINT}/${S3_BUCKET}/${path}`)
+
+  // ── Cuánto ocupa el archivo ──
+  //
+  // Se pagina hasta el final y se suma aquí, no en el navegador: el listado de un
+  // bucket con versiones son cientos de kilobytes de XML que no pintan nada en
+  // pantalla, y mandarlos al móvil de quien cataloga sería gastarle los datos en
+  // enseñar un número.
+
+  if (operation === 'usage') {
+    let bytes = 0
+    let objects = 0
+    let next: { keyMarker: string; versionIdMarker: string } | null = null
+    let pages = 0
+
+    do {
+      const url = new URL(`${S3_ENDPOINT}/${S3_BUCKET}`)
+      url.searchParams.set('versions', '')
+      if (next) {
+        url.searchParams.set('key-marker', next.keyMarker)
+        url.searchParams.set('version-id-marker', next.versionIdMarker)
+      }
+      const response = await s3.fetch(new Request(url, { method: 'GET' }))
+      if (!response.ok) {
+        return reply(502, { error: 'El almacén no ha dicho cuánto ocupa el archivo' })
+      }
+      const page = usagePage(await response.text())
+      bytes += page.bytes
+      objects += page.objects
+      next = page.next
+      pages += 1
+    } while (next !== null && pages < MAX_USAGE_PAGES)
+
+    // Si se ha llegado al tope, lo que hay es un mínimo y no un total. Se dice,
+    // porque una suma parcial presentada como total es la clase de cifra que
+    // tranquiliza justo el día que no debería.
+    return reply(200, { bytes, objects, truncated: next !== null })
+  }
 
   // ── Multipart: the two calls the browser cannot make ──
   //
