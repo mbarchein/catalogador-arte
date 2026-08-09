@@ -484,16 +484,12 @@ export function partyFailureText(failure: DatabaseFailure, operation: PartyOpera
   const code = (failure.code ?? '').trim()
   if (code === '23505') {
     return (
-      'Ya hay una ficha con ese nombre —las mayúsculas y las tildes no cuentan—, y el catálogo ' +
-      'guarda una sola por nombre. Puede estar retirada: búscala en la lista y recupérala. Si son ' +
-      'dos personas distintas que se llaman igual, distínguelas en el propio nombre: «Juan Pérez ' +
-      '(Badajoz)».'
+      'Ya hay una ficha con ese nombre; puede estar retirada, búscala y recupérala. Si son dos distintas, distínguelas: «Juan Pérez (Badajoz)».'
     )
   }
   if (code === '23514') {
     return (
-      'El nombre no puede quedar en blanco: es lo que imprime la línea de procedencia de cada obra ' +
-      'que pase por esta ficha.'
+      'El nombre no puede quedar en blanco: es lo que imprime cada línea de procedencia.'
     )
   }
   if (code === 'P0001') {
@@ -509,8 +505,7 @@ export function partyFailureText(failure: DatabaseFailure, operation: PartyOpera
   }
   if (code === '22P02') {
     return (
-      'No se ha entendido si la ficha es una persona o una institución. Vuelve a elegirlo y prueba ' +
-      'otra vez.'
+      'No se ha entendido si es una persona o una institución. Vuelve a elegirlo.'
     )
   }
   if (code === '') {
@@ -539,8 +534,7 @@ export function partyWriteResult(
   if (result.failure) return partyFailureText(result.failure, operation)
   if (result.rows === 0) {
     return (
-      'No se ha guardado nada: o la ficha ya no está en el catálogo, o tu sesión ha dejado de poder ' +
-      'editarla. Vuelve a entrar y comprueba si el cambio está.'
+      'No se ha guardado nada: o la ficha ya no está, o tu sesión no puede editarla. Vuelve a entrar.'
     )
   }
   return null
@@ -697,9 +691,21 @@ export function retireRefusalText(
  * that there is no restriction by field.
  */
 export const CONTACT_NOTICE =
-  'El teléfono y el correo son datos personales de un tercero, así que no se pintan en la lista: ' +
-  'se piden ficha a ficha. Quien tenga acceso de consulta al catálogo también los ve, así que ' +
-  'escribe aquí lo que haga falta para la investigación y nada más.'
+  'El teléfono y el correo son datos personales de un tercero: se piden ficha a ficha.'
+
+/**
+ * El resto del aviso, detrás del icono de información.
+ *
+ * Va aparte porque **son dos cosas distintas**: la de fuera dice qué está pasando en
+ * esta pantalla —por qué la lista no los enseña—, que se ve de un vistazo y no hay que
+ * volver a leerla; la de dentro es la regla que cambia lo que se escribe, y esa hace
+ * falta entera la primera vez que alguien va a teclear un teléfono aquí. Juntas eran
+ * tres líneas de gris pequeño encima de la lista, que es la forma más segura de que no
+ * se lea ninguna de las dos.
+ */
+export const CONTACT_DETAIL =
+  'No se pintan en la lista, y quien tenga acceso de consulta al catálogo también los ve. ' +
+  'Escribe lo que haga falta para la investigación y nada más.'
 
 /**
  * What the row shows once the contact has been asked for.
@@ -761,10 +767,7 @@ export function partyListNotice(state: {
     return `Ninguna ficha coincide con «${state.query.trim()}». Se busca por nombre, localidad y país.`
   }
   return (
-    'Todavía no hay ninguna persona ni institución. Son los eslabones de la cadena de procedencia ' +
-    '—quién tuvo cada obra y en qué calidad—, la institución que hay detrás de una sede de ' +
-    'exposición y el titular de los derechos: se dan de alta aquí una vez y las eligen todas las ' +
-    'fichas. La primera se crea aquí arriba.'
+    'Todavía no hay ninguna persona ni institución: los eslabones de la cadena de procedencia. La primera se crea aquí arriba.'
   )
 }
 

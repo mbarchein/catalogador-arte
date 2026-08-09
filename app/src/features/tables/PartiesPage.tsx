@@ -2,9 +2,18 @@ import { useMemo, useState } from 'react'
 import { Navigate } from 'react-router'
 import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { BanIcon, Chips, LoadingNotice, NoIcon, PenIcon, YesIcon } from '../../components/ui'
+import {
+  BanIcon,
+  Chips,
+  InfoNote,
+  LoadingNotice,
+  NoIcon,
+  PenIcon,
+  YesIcon,
+} from '../../components/ui'
 import { useTableAction } from './MasterTableRow'
 import {
+  CONTACT_DETAIL,
   CONTACT_NOTICE,
   CONTACT_STATUS_OPTIONS,
   PARTY_TYPE_OPTIONS,
@@ -108,7 +117,12 @@ export function PartiesPage() {
       {/* El aviso del dato personal va arriba y una sola vez, no en cada fila: es
           lo que hace falta saber ANTES de escribir un teléfono en un catálogo que
           otras personas consultan. */}
-      <p className="mb-3 text-xs text-stone-500">{CONTACT_NOTICE}</p>
+      <p className="mb-3 flex items-start gap-1 text-xs text-stone-500">
+        <span className="min-w-0">{CONTACT_NOTICE}</span>
+        <InfoNote title="El contacto" className="-mt-1 shrink-0">
+          <p>{CONTACT_DETAIL}</p>
+        </InfoNote>
+      </p>
 
       {failure && (
         <p ref={failureRef} role="alert" className="card mb-3 text-sm text-red-700">

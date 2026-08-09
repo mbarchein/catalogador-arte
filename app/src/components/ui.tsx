@@ -232,6 +232,16 @@ export function MoveIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+export function InfoIcon({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg {...svg} strokeWidth={2} className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <path d="M12 8h.01" />
+    </svg>
+  )
+}
+
 export function EllipsisIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>
@@ -517,8 +527,7 @@ export function YearStepper({
           next. */}
       {value == null && (
         <p className="mt-1 text-xs text-stone-500">
-          Toca el número para escribir el año. Después se ajusta con − y +, y se mantiene pulsado para
-          avanzar rápido.
+          Toca el número para escribirlo. Después se ajusta con − y +.
         </p>
       )}
     </div>
@@ -578,6 +587,52 @@ export function Toggle({
         />
       </span>
     </button>
+  )
+}
+
+
+// ── Información ampliada ─────────────────────────────────────
+
+/**
+ * El porqué largo, detrás de un icono (RNF-106).
+ *
+ * La pantalla dice lo justo —qué hay y qué se puede hacer— y esto guarda lo que
+ * de verdad hace falta a veces: por qué una regla es así, qué pasa si se hace de
+ * otra forma, el ejemplo que desatasca. **No es un sitio donde volcar lo que
+ * sobra**: si el texto de al lado ya basta, este icono no se pone. Lo que
+ * justifica añadirlo es que sin esa explicación alguien se equivoca; y como el
+ * hueco existe, la frase de fuera puede quedarse corta de verdad.
+ *
+ * Una hoja y no un globo de ayuda: se lee con el pulgar, cabe cualquier largo y
+ * el «atrás» del móvil la cierra —lo hace `BottomSheet`— en vez de salir de la
+ * pantalla.
+ */
+export function InfoNote({
+  title,
+  children,
+  className = '',
+}: {
+  /** De qué se está explicando. Es el título de la hoja. */
+  title: string
+  children: ReactNode
+  className?: string
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`Más sobre ${title.toLowerCase()}`}
+        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full
+                    text-stone-400 active:bg-stone-100 ${className}`}
+      >
+        <InfoIcon className="h-4 w-4" />
+      </button>
+      <BottomSheet open={open} onClose={() => setOpen(false)} title={title}>
+        <div className="space-y-2 text-sm text-stone-700">{children}</div>
+      </BottomSheet>
+    </>
   )
 }
 

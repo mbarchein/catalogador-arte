@@ -28,6 +28,7 @@ import { CORRECTED_NOT_GENERATED, uploadShot, type CorrectedCopyResult } from '.
 import { renderCorrectedCopy } from '../../lib/imageRender'
 import { isNoEdit } from '../../lib/imageEdits'
 import { preparingCopyText, uploadStatusText } from './uploadProgress'
+import { DateCertainty } from './DateCertainty'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { saveQueue, readQueue, rehydrate, clearQueue } from './photoQueue'
 import { previewId } from './useArtworks'
@@ -204,8 +205,7 @@ export function CapturePage() {
         <div className="card">
           <p className="font-medium">No tienes permiso para dar de alta obra.</p>
           <p className="mt-1 text-sm text-stone-600">
-            Tu cuenta es de solo consulta. Habla con el responsable del catálogo si necesitas
-            catalogar.
+            Tu cuenta es de solo consulta. Habla con el responsable del catálogo.
           </p>
         </div>
       </Layout>
@@ -242,8 +242,7 @@ export function CapturePage() {
       <Layout title="Abrir lote" back="/">
         <div className="space-y-3">
           <p className="text-sm text-stone-600">
-            Un lote agrupa las obras que vas a capturar seguidas: una estantería, una carpeta, una
-            serie.
+            Un lote agrupa las obras que vas a capturar seguidas.
           </p>
 
           <FieldGroup title="Fijo en todo el lote" hint="cambiarlo exige cerrar el lote">
@@ -687,10 +686,7 @@ export function CapturePage() {
             />
           </div>
 
-          <p className="text-xs text-stone-500">
-            «Aproximada»: de alrededor de ese año (c.). «Sin confirmar»: se desconoce; el año es
-            una estimación ([?]).
-          </p>
+          <DateCertainty />
 
           {/* What will be saved is shown. aria-live because the text changes
               without the focus moving. */}

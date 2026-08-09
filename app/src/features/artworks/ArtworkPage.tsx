@@ -62,6 +62,7 @@ import { DocumentsSection } from '../documentary/documents'
 import { ExternalLinksSection } from '../documentary/links'
 import { RelationshipsSection } from '../documentary/relationships'
 import { ChangeHistorySection } from '../history/ChangeHistorySection'
+import { DateCertainty } from './DateCertainty'
 import { ArtworkGallery } from './ArtworkGallery'
 import { parseView } from './listView'
 import { decideSwipe, dragOffset, swipeAxis } from './sequence'
@@ -450,7 +451,7 @@ export function ArtworkPage() {
             <section className="card mb-3">
               <h2 className="font-medium">Documentación de la obra</h2>
               <p className="mt-1 text-sm text-stone-600">
-                Procedencia, exposiciones, bibliografía, archivo, enlaces y obras relacionadas. Se cargan al llegar aquí.
+                Procedencia, exposiciones, bibliografía, archivo, enlaces y obras relacionadas.
               </p>
               <button type="button" onClick={reveal} className="btn-secondary mt-3 w-full text-sm">
                 Cargar la documentación ahora
@@ -1064,7 +1065,7 @@ function EditForm({
     if (attributed !== current) {
       setAuthorshipHint(
         current === 'NOT_APPLICABLE'
-          ? 'Constaba «No consta título» y ahora hay un título escrito: la autoría pasa a «Sin confirmar».'
+          ? 'Constaba «No consta título»: la autoría pasa a «Sin confirmar».'
           : blank
             ? 'El título ha quedado vacío: la autoría vuelve a «Sin revisar».'
             : 'Con título escrito, la autoría pasa a «Sin confirmar».',
@@ -1579,10 +1580,7 @@ function DateField({
         />
       </div>
 
-      <p className="text-xs text-stone-500">
-        «Aproximada»: de alrededor de ese año (c.). «Sin confirmar»: se desconoce; el año es una
-        estimación ([?]).
-      </p>
+      <DateCertainty />
 
       <div className="flex items-center justify-between gap-2 rounded-lg bg-stone-100 px-3 py-2">
         <span id="date-preview" aria-live="polite" className="text-sm">

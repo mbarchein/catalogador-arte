@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { Toggle } from '../../components/ui'
+import { InfoNote, Toggle } from '../../components/ui'
 import {
   archiveCountText,
   archiveListNotice,
@@ -80,14 +80,29 @@ export function ArchivePage() {
         </p>
       )}
 
+      {/* El recuento, y detrás del icono de dónde salen los documentos: con el
+          archivo lleno, el estado vacío ya no se lee nunca más, y esa era la única
+          frase que lo decía. */}
       {entries.length > 0 && (
-        <p className="mb-2 text-sm text-stone-600">
-          {archiveCountText({
-            total,
-            shown: entries.length,
-            searching: query.trim() !== '',
-            withoutFile: withoutFileCount(entries),
-          })}
+        <p className="mb-2 flex items-start gap-1 text-sm text-stone-600">
+          <span className="min-w-0">
+            {archiveCountText({
+              total,
+              shown: entries.length,
+              searching: query.trim() !== '',
+              withoutFile: withoutFileCount(entries),
+            })}
+          </span>
+          <InfoNote title="El archivo" className="-mt-1 shrink-0">
+            <p>
+              Los documentos se suben desde la documentación de una obra: así quedan
+              subidos y enlazados con ella de una vez.
+            </p>
+            <p>
+              Aquí están todos, también los que no tiene enlazados ninguna obra, y de
+              cada uno se ve si está digitalizado.
+            </p>
+          </InfoNote>
         </p>
       )}
 

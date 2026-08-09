@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { Toggle } from '../../components/ui'
+import { InfoNote, Toggle } from '../../components/ui'
 import {
   bibliographyListNotice,
   rankReferences,
@@ -84,12 +84,25 @@ export function BibliographyPage() {
       {/* El contador va arriba y siempre: un listado filtrado que parece completo es
           cómo se pierde una referencia. */}
       {entries.length > 0 && (
-        <p className="mb-2 text-sm text-stone-600">
-          {referenceCountText({
-            total,
-            shown: entries.length,
-            searching: query.trim() !== '',
-          })}
+        <p className="mb-2 flex items-start gap-1 text-sm text-stone-600">
+          <span className="min-w-0">
+            {referenceCountText({
+              total,
+              shown: entries.length,
+              searching: query.trim() !== '',
+            })}
+          </span>
+          {/* De dónde sale una referencia, detrás del icono: con la bibliografía
+              llena, el estado vacío —que era quien lo decía— ya no se lee. */}
+          <InfoNote title="La bibliografía" className="-mt-1 shrink-0">
+            <p>
+              Una referencia se da de alta al citarla desde la bibliografía de una obra.
+            </p>
+            <p>
+              Aquí están todas, también las que ya no cita ninguna, y desde su ficha se
+              corrigen para todas las obras que las citen.
+            </p>
+          </InfoNote>
         </p>
       )}
 

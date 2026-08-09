@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CONTACT_DETAIL,
   CONTACT_NOTICE,
   CONTACT_STATUS_OPTIONS,
   PARTY_TYPE_OPTIONS,
@@ -633,9 +634,12 @@ describe('la respuesta completa a un retiro que la base rechaza', () => {
 
 describe('el aviso del contacto (RF-105)', () => {
   it('dice de quién es el dato y quién más lo ve', () => {
+    // Fuera, lo que pasa en esta pantalla; detrás del icono, la regla que cambia
+    // lo que se escribe. Las dos mitades siguen dichas, y por eso se comprueban
+    // las dos: el recorte de los textos no puede llevarse por delante RF-105.
     expect(CONTACT_NOTICE).toContain('datos personales de un tercero')
-    expect(CONTACT_NOTICE).toContain('no se pintan en la lista')
-    expect(CONTACT_NOTICE).toContain('acceso de consulta')
+    expect(CONTACT_DETAIL).toContain('No se pintan en la lista')
+    expect(CONTACT_DETAIL).toContain('acceso de consulta')
   })
 
   it('un contacto vacío se cuenta, no se deja en hueco (RF-304)', () => {
@@ -690,11 +694,10 @@ describe('lo que dice la lista sin filas (RF-304)', () => {
     expect(text).toContain('nombre, localidad y país')
   })
 
-  it('el registro vacío explica qué es y para qué sirve', () => {
+  it('el registro vacío dice qué es y dónde se crea la primera', () => {
     const text = partyListNotice({ loading: false, error: null, total: 0, shown: 0, query: '' })
     expect(text).toContain('cadena de procedencia')
-    expect(text).toContain('sede de')
-    expect(text).toContain('titular de los derechos')
+    expect(text).toContain('La primera se crea aquí arriba')
   })
 })
 
