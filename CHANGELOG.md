@@ -40,6 +40,14 @@
   marca como tomada de otro catálogo, el nombre se guarda y vuelve a aparecer si se marca otra vez
   como propia. Lo que no se hace nunca es enseñar la autoría junto a una fotografía ajena.
 
+**Los textos, más cortos en toda la aplicación**
+
+- Se ha barrido la sobreexplicación: **82 frases recortadas**. La más larga pasaba de 350 caracteres
+  y ahora ninguna llega a 120; las que pasaban de 200 eran veintiséis y ya no queda ninguna.
+- No se ha quitado nada que haga falta: lo que desaparece son las justificaciones y los ejemplos de
+  más. Donde el texto avisaba de algo con consecuencias —que la aplicación no llama al sitio que
+  enlazas, o que el gris de una impresora no sirve de referencia— el aviso se queda, más corto.
+
 **El fondo apartado se señala en el filtro, no encima del listado**
 
 - El aviso «no se muestran las obras de Pruebas» estaba encima de la lista de obras, y ahí no se
