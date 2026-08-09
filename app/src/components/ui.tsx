@@ -1252,6 +1252,12 @@ export interface CheckOption<T extends string> {
   hint?: string
   /** Rendered instead of `text` when present, for the matched-letter emphasis. */
   label?: ReactNode
+  /**
+   * Distintivo corto junto al nombre, para lo que hay que saber de esa fila
+   * ANTES de elegirla. Va aquí y no en `hint` porque una condición de la fila se
+   * lee de un vistazo y una explicación se lee leyendo.
+   */
+  badge?: string
 }
 
 /**
@@ -1287,7 +1293,18 @@ export function CheckList<T extends string>({
             }`}
           >
             <span className="min-w-0">
-              <span className="block text-sm font-medium">{o.label ?? o.text}</span>
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium">{o.label ?? o.text}</span>
+                {o.badge && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-2xs ${
+                      active ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900'
+                    }`}
+                  >
+                    {o.badge}
+                  </span>
+                )}
+              </span>
               {o.hint && (
                 <span className={`block text-xs ${active ? 'text-stone-300' : 'text-stone-500'}`}>
                   {o.hint}
