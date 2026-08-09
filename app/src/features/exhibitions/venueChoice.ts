@@ -121,8 +121,7 @@ export function noVenuesText(total: number, query: string): string {
   const about = typed === '' ? '' : ` con «${typed}»`
   return (
     `Ninguna de las sedes registradas coincide${about}. Las sedes nuevas se dan de alta en «Tablas ` +
-    '→ Sedes de exposición». Si no se sabe cuál fue, deja la sede sin identificar y escribe abajo ' +
-    'lo que diga la fuente.'
+    '→ Sedes de exposición». Si no se sabe cuál fue, déjala sin identificar.'
   )
 }
 

@@ -178,8 +178,7 @@ export function ExhibitionPicker({
                 autoComplete="off"
               />
               <p className="mt-1 text-xs text-stone-500">
-                Tal como aparece impreso. Si no lo sabes todavía, déjalo vacío: se puede añadir
-                después sin perder nada.
+                Tal como aparece impreso. Si no lo sabes, déjalo vacío.
               </p>
             </div>
 

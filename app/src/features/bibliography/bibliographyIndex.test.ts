@@ -238,7 +238,7 @@ describe('bibliographyListNotice, nunca una página en blanco', () => {
 
   it('una búsqueda sin resultados apunta a la papelera', () => {
     const text = bibliographyListNotice({ ...base, shown: 0, query: 'zzz' })
-    expect(text).toContain('No se ha encontrado ninguna referencia con estos criterios')
+    expect(text).toContain('No se ha encontrado ninguna referencia')
     expect(text).toContain('retirada')
   })
 

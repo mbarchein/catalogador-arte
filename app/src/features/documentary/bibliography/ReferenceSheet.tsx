@@ -221,8 +221,7 @@ export function ReferenceSheet({
           compact
         />
         <p className="-mt-2 text-xs text-stone-500">
-          Déjalo vacío si la publicación no lleva año: se cita como «s.f.», que es un dato y no un
-          hueco.
+          Déjalo vacío si la publicación no lleva año: se cita como «s.f.».
         </p>
 
         <Chips

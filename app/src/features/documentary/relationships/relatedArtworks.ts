@@ -68,7 +68,7 @@ export const UNREADABLE_NOTICE =
 
 /** A retired artwork at the other end. Only an editor ever sees this one. */
 export const RETIRED_NOTICE =
-  'Esta obra está dada de baja: la relación consta, pero su ficha ya no está en el catálogo activo.'
+  'Esta obra está dada de baja: la relación consta, pero su ficha no está activa.'
 
 /**
  * A relationship whose kind has a name in neither direction. The database

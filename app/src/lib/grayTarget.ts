@@ -1256,23 +1256,23 @@ export function grayTargetNotice(
   if (!analysis || analysis.candidates.length > 0 || !analysis.declined) return null
   switch (analysis.declined) {
     case 'unusable-image':
-      return 'No se han podido medir los píxeles de esta fotografía, así que no se ha podido buscar el testigo de gris.'
+      return 'No se han podido medir los píxeles, así que no se ha buscado el testigo.'
     case 'thin-band':
       return 'Se ve un testigo, pero sale pequeño o cortado. Conviene que salga entero y más grande.'
     case 'too-large':
-      return 'Lo que parece una escalera de grises ocupa casi todo el encuadre. Toma el gris con el cuentagotas.'
+      return 'La escalera de grises ocupa casi todo. Toma el gris con el cuentagotas.'
     case 'clipped':
       return 'El testigo tiene parches quemados o a oscuras. Repite la toma con menos luz directa.'
     case 'specular':
       return 'El testigo tiene un reflejo encima. Inclínalo o apártalo de la luz directa.'
     case 'not-uniform':
-      return 'Los parches del testigo de gris no salen lisos: puede haber una sombra, un pliegue o un objeto por encima.'
+      return 'Los parches no salen lisos: puede haber una sombra, un pliegue o algo encima.'
     case 'not-neutral':
       return 'Lo que parece un testigo tiene color propio. Toma el gris con el cuentagotas.'
     case 'below-threshold':
       return 'Hay algo parecido a un testigo, pero no lo bastante. Toma el gris con el cuentagotas.'
     case 'no-staircase':
     default:
-      return 'No se ha encontrado ningún testigo: se reconoce la escalera de parches, entera. Toma el gris con el cuentagotas.'
+      return 'No se ha encontrado ningún testigo. Toma el gris con el cuentagotas.'
   }
 }

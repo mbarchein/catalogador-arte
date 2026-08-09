@@ -264,8 +264,7 @@ export function ExternalLinksSection({
                 leyendo la ficha se queda sin saber por qué no ve ningún botón. */}
             {!canWrite && canEdit && !nothing && (
               <p className="mt-3 border-t border-stone-100 pt-3 text-xs text-stone-500">
-                Añadir un enlace, corregirlo, retirarlo o anotar que lo has comprobado se hace en la
-                zona de edición de la ficha.
+                Los enlaces se añaden y se corrigen en la zona de edición de la ficha.
               </p>
             )}
           </>

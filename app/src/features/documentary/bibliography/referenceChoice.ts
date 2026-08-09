@@ -280,8 +280,7 @@ export function equivalentReferenceNotice(twin: ReferenceRow): string {
   }
   return (
     `Ya hay una referencia con ese título y ese año, «${title}», y está retirada del catálogo. ` +
-    'Se citará esa igualmente —una gemela nueva al lado sería peor—, y la cita avisará de que su ' +
-    'referencia está en la papelera. Recupérala desde su propia ficha si vuelve a valer.'
+    'Se citará esa igualmente, y la cita avisará de que está en la papelera. Recupérala desde su propia ficha.'
   )
 }
 

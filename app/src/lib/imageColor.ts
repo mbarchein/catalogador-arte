@@ -1101,7 +1101,7 @@ export function autoColorFrom(
   }
   if (reachesBothEnds) {
     notices.push(
-      'La fotografía ya llega al negro y al blanco, así que el ajuste automático no ha movido esos dos puntos.',
+      'La fotografía ya llega al negro y al blanco: esos dos puntos no se han movido.',
     )
   }
   if (!movedLevels && !movedExposure && !movedWhiteBalance && notices.length === 0) {

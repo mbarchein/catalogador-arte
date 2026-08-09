@@ -233,8 +233,7 @@ export function EditDocumentSheet({
 
       {unchanged && (
         <p role="status" className="mt-3 rounded-lg bg-stone-100 p-3 text-sm text-stone-700">
-          No has cambiado nada, así que no se ha guardado: el documento se queda como estaba y no
-          consta corregido hoy.
+          No has cambiado nada, así que no se ha guardado ni consta corregido hoy.
         </p>
       )}
       {failure !== null && (

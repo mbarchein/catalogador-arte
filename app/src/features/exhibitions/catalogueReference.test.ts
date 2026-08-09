@@ -204,7 +204,7 @@ describe('noCatalogueOptionsText, nunca una lista vacía (RF-304)', () => {
   it('la bibliografía vacía dice de dónde sale una referencia', () => {
     const text = noCatalogueOptionsText(0, 'zafra')
     expect(text).toContain('Todavía no hay ninguna referencia')
-    expect(text).toContain('citándolo desde la bibliografía de una obra')
+    expect(text).toContain('citándolo desde una obra')
   })
 
   it('sin nada teclado, invita a escribir', () => {
@@ -216,6 +216,6 @@ describe('noCatalogueOptionsText, nunca una lista vacía (RF-304)', () => {
     // buscador está roto.
     const text = noCatalogueOptionsText(12, 'zafra')
     expect(text).toContain('Ninguna referencia coincide')
-    expect(text).toContain('citándolo desde una obra')
+    expect(text).toContain('cítalo antes desde una obra')
   })
 })

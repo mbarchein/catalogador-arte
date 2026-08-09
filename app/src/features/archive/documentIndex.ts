@@ -190,13 +190,12 @@ export function archiveListNotice(input: {
 
   if (query.trim() !== '') {
     return includingRetired
-      ? 'No se ha encontrado ningún documento con estos criterios, ni entre los retirados.'
-      : 'No se ha encontrado ningún documento con estos criterios. Puede estar retirado: prueba a incluir la papelera.'
+      ? 'No se ha encontrado ningún documento, ni entre los retirados.'
+      : 'No se ha encontrado ningún documento. Puede estar retirado: incluye la papelera.'
   }
   if (total === 0) {
     return (
-      'Todavía no hay ningún documento en el archivo. Se suben desde la documentación de una obra, ' +
-      'con «Subir un documento del archivo»: así queda subido y enlazado con ella de una vez.'
+      'Todavía no hay ningún documento. Se suben desde la documentación de una obra.'
     )
   }
   return 'Todos los documentos del archivo están retirados. Inclúyelos para verlos y recuperarlos.'

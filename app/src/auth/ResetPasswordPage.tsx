@@ -32,7 +32,7 @@ export function ResetPasswordPage() {
     const { error: failure } = await supabase.auth.updateUser({ password: newPassword })
     setSending(false)
     if (failure) {
-      setError('No se ha podido cambiar la contraseña. Vuelve a pedir el correo de recuperación e inténtalo otra vez.')
+      setError('No se ha podido cambiar la contraseña. Vuelve a pedir el correo de recuperación.')
       return
     }
 

@@ -84,7 +84,7 @@ export function LinkExhibitionSheet({
       guard={guard}
     >
       <p className="text-xs text-stone-500">
-        El cartel, el díptico o la nota de prensa de la muestra. Un fichero puede colgar de varias fichas.
+        El cartel, el díptico o la nota de prensa de la muestra.
       </p>
 
       {loadError !== null && (
@@ -107,8 +107,7 @@ export function LinkExhibitionSheet({
           placeholder="cartel de la muestra"
         />
         <p className="mt-1 text-xs text-stone-500">
-          Solo de esa muestra. Lo que el documento diga de una obra suya se escribe en la ficha de
-          la obra.
+          Solo de esa muestra. Lo que diga de una obra va en la ficha de la obra.
         </p>
       </div>
 

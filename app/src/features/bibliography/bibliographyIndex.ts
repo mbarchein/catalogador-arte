@@ -204,13 +204,12 @@ export function bibliographyListNotice(input: {
   const searching = query.trim() !== ''
   if (searching) {
     return includingRetired
-      ? 'No se ha encontrado ninguna referencia con estos criterios, ni entre las retiradas.'
-      : 'No se ha encontrado ninguna referencia con estos criterios. Puede estar retirada: prueba a incluir la papelera.'
+      ? 'No se ha encontrado ninguna referencia, ni entre las retiradas.'
+      : 'No se ha encontrado ninguna referencia. Puede estar retirada: incluye la papelera.'
   }
   if (total === 0) {
     return (
-      'Todavía no hay ninguna referencia en el catálogo. Se crean desde la bibliografía de una obra, ' +
-      'al citarla: una referencia existe porque algo la cita.'
+      'Todavía no hay ninguna referencia. Se crean desde la bibliografía de una obra, al citarla.'
     )
   }
   // Total > 0 y ninguna enseñada sin buscar: están todas en la papelera.

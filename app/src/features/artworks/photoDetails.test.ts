@@ -203,12 +203,12 @@ describe('correctedStateText: el estado de la copia, siempre dicho (RF-420)', ()
     // database carry corrections, no path and the flag down. Nothing is repaired
     // backwards (ADR-010), so what is owed is saying it.
     const text = correctedStateText(detail(), { rotation: 90, crop: null })
-    expect(text).toContain('antes de que se guardaran copias')
+    expect(text).toContain('anterior a las copias')
     expect(text).not.toContain('no hace falta')
   })
 
   it('sin correcciones no hace falta ninguna copia', () => {
-    expect(correctedStateText(detail(), NO_EDIT)).toContain('no hace falta')
+    expect(correctedStateText(detail(), NO_EDIT)).toContain('Sin correcciones')
   })
 
   it('sin la fila, lo dice: nunca un hueco', () => {

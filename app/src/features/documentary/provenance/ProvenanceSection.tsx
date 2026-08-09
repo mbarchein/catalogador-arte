@@ -323,8 +323,7 @@ function ChainLinkItem({
               provenance consta. Only a RETIRED record is worth a word. */}
           {link.retired && (
             <p className="text-xs text-stone-500">
-              La ficha de esta persona o institución está retirada del catálogo. El eslabón sigue
-              contando, y el nombre se conserva.
+              Su ficha está retirada del catálogo. El eslabón sigue contando.
             </p>
           )}
 

@@ -105,8 +105,7 @@ export function DocumentPage() {
 
       {!document.active && (
         <p className="card mb-3 bg-stone-100 text-sm text-stone-700">
-          Este documento está retirado del archivo: no se ofrece para enlazar. Se recupera desde la
-          papelera, en Tablas.
+          Está retirado del archivo: no se ofrece para enlazar. Se recupera desde la papelera.
         </p>
       )}
 
@@ -238,7 +237,7 @@ export function DocumentPage() {
           ficha de obra desde la que corregirlo. */}
       {canEdit && (
         <p className="mt-3 text-xs text-stone-500">
-          Los datos y el escaneo se corrigen desde la documentación de una obra enlazada. Retirarlo, desde la papelera.
+          Los datos y el escaneo se corrigen desde una obra enlazada.
         </p>
       )}
     </Layout>

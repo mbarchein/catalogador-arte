@@ -55,48 +55,48 @@ export function TablesPage() {
 
       <TableGroup
         name="La ficha de la obra"
-        hint="Lo que ofrecen sus campos y lo que cuentan las relaciones entre dos obras."
+        hint="Lo que ofrecen sus campos y lo que cuentan sus relaciones."
       >
         <TableRow
           to="/artist-funds"
           name="Fondos"
-          hint="Los conjuntos de obra del catálogo. Renombrar, retirar y apartar sus obras del listado. No se crean ni se borran."
+          hint="Renombrar, retirar y apartar sus obras del listado."
         />
         <TableRow
           to="/artwork-types"
           name="Tipos de obra"
-          hint="Lo que ofrece el campo «Tipo de obra». Crear, renombrar y retirar."
+          hint="Lo que ofrece el campo «Tipo de obra» de la ficha."
         />
         <TableRow
           to="/series"
           name="Series"
-          hint="Las series de cada fondo. Crear, renombrar y retirar."
+          hint="Las series de cada fondo."
         />
         <TableRow
           to="/relationship-types"
           name="Tipos de relación"
-          hint="De qué clase es el parentesco entre dos obras, con sus dos lecturas. Crear, cambiar las lecturas y retirar."
+          hint="El parentesco entre dos obras, con sus dos lecturas."
         />
       </TableGroup>
 
       <TableGroup
         name="Dónde y quién"
-        hint="Los sitios del almacén, los sitios donde se expuso, y las personas e instituciones por las que ha pasado cada obra."
+        hint="Dónde está cada obra, dónde se expuso y por quién ha pasado."
       >
         <TableRow
           to="/places"
           name="Ubicaciones"
-          hint="Los sitios donde están las obras, unos dentro de otros. Crear, renombrar, mover y retirar."
+          hint="Los sitios del almacén, unos dentro de otros."
         />
         <TableRow
           to="/exhibition-venues"
           name="Sedes de exposición"
-          hint="Los sitios donde ocurrieron las muestras, con su localidad. Crear, corregir y retirar."
+          hint="Dónde ocurrieron las muestras, con su localidad."
         />
         <TableRow
           to="/parties"
           name="Personas e instituciones"
-          hint="Quién ha tenido cada obra, quién presta y qué institución hay detrás de una sede. Crear, corregir, ver el contacto y retirar."
+          hint="Quién ha tenido cada obra, quién presta y quién hay detrás de una sede."
         />
       </TableGroup>
 
@@ -107,17 +107,17 @@ export function TablesPage() {
         <TableRow
           to="/archive-series"
           name="Clasificación del archivo"
-          hint="Los fondos, series y subseries en los que se ordenan los papeles. Crear, renombrar, mover y retirar."
+          hint="Los fondos, series y subseries de los papeles."
         />
         <TableRow
           to="/document-types"
           name="Tipos de documento"
-          hint="Lo que ofrece el campo «Tipo» de un documento del archivo. Crear, renombrar y retirar."
+          hint="Lo que ofrece el campo «Tipo» de un documento."
         />
         <TableRow
           to="/publication-types"
           name="Tipos de publicación"
-          hint="Lo que ofrece el campo «Tipo» de cada referencia de la bibliografía. Crear, renombrar y retirar."
+          hint="Lo que ofrece el campo «Tipo» de una referencia."
         />
       </TableGroup>
 
@@ -151,12 +151,12 @@ export function TablesPage() {
           <TableRow
             to="/bibliography"
             name="Bibliografía"
-            hint="Todas las referencias del catálogo, con su búsqueda. Se crean y se corrigen desde la bibliografía de una obra; aquí se encuentran, también las que ya no cita ninguna."
+            hint="Todas las referencias del catálogo, también las que ya no cita ninguna obra."
           />
           <TableRow
             to="/archive"
             name="Archivo"
-            hint="Cartas, recortes, carteles y expedientes, con su búsqueda y cuántos quedan sin digitalizar. Se suben desde la documentación de una obra; aquí están todos, también los que no tiene enlazados ninguna."
+            hint="Cartas, recortes, carteles y expedientes, y cuántos quedan sin digitalizar."
           />
         </ul>
       </section>
@@ -172,7 +172,7 @@ export function TablesPage() {
           <TableRow
             to="/trash"
             name="Papelera"
-            hint="Obras, fotografías, fichas y entradas de las listas que se retiraron. Nada se borra nunca, así que todo se puede devolver a su sitio."
+            hint="Todo lo retirado se puede devolver a su sitio."
           />
         </ul>
       </section>

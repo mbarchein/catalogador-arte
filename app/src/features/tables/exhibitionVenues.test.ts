@@ -557,14 +557,15 @@ describe('lo que dice la lista cuando no tiene filas', () => {
   })
 
   /**
-   * RF-304, RF-512: nunca una página en blanco. Y la explicación tiene que separar
-   * la sede de la ubicación del almacén, que es la pregunta que provoca ver las dos
-   * pantallas juntas.
+   * RF-304, RF-512: nunca una página en blanco. Dice qué es una sede y dónde se crea
+   * la primera. Lo que NO hace es defenderse de la confusión con las ubicaciones del
+   * almacén: contarle a quien cataloga que dos cosas son distintas es un párrafo que
+   * solo hace falta si la pantalla está mal nombrada, y no lo está.
    */
-  it('vacía de verdad, explica qué es una sede y por qué no es una ubicación', () => {
+  it('vacía de verdad, dice qué es una sede y dónde se crea la primera', () => {
     const text = venueListNotice({ loading: false, error: null, count: 0 })
     expect(text).toContain('Todavía no hay ninguna sede')
-    expect(text).toContain('ubicaciones del almacén')
-    expect(text).toContain('dónde está la obra hoy')
+    expect(text).toContain('donde ocurrieron las muestras')
+    expect(text).toContain('La primera se crea aquí arriba')
   })
 })

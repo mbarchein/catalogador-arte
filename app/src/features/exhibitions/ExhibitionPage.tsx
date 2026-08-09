@@ -334,8 +334,7 @@ function ExhibitionReadOnly({ exhibition }: { exhibition: ExhibitionRow }) {
     <div className="card space-y-3">
       {!exhibition.active && (
         <p className="rounded-lg bg-stone-100 p-2 text-sm text-stone-700">
-          Esta exposición está retirada del catálogo. Se muestra porque nada se borra; para
-          recuperarla, entra en «Editar».
+          Esta exposición está retirada del catálogo. Para recuperarla, entra en «Editar».
         </p>
       )}
 

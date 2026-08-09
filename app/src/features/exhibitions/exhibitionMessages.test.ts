@@ -276,11 +276,10 @@ describe('lo que el listado dice cuando no tiene filas (RF-304, RF-605)', () => 
   })
 
   /** El catálogo empieza con cero exposiciones, así que este es el primer texto que se lee. */
-  it('el catálogo vacío explica qué es esta pantalla y qué se hace después', () => {
+  it('el catálogo vacío dice que lo está y dónde se da de alta la primera', () => {
     const text = exhibitionListNotice({ ...settled, total: 0, shown: 0 }) ?? ''
     expect(text).toContain('Todavía no hay ninguna exposición registrada')
-    expect(text).toContain('individual o colectiva')
-    expect(text).toContain('desde su propia ficha')
+    expect(text).toContain('Aquí se dan de alta')
   })
 
   it('una búsqueda sin resultados repite lo que se buscó', () => {

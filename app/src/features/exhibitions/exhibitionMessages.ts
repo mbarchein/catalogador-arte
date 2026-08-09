@@ -92,12 +92,11 @@ const OPERATION_TEXT: Record<ExhibitionOperation, string> = {
 const CHECK_TEXT: readonly (readonly [string, string])[] = [
   [
     'exhibitions_title_not_blank',
-    'El título de la exposición no puede quedar en blanco: es lo que el historial de cada obra imprime.',
+    'El título no puede quedar en blanco: es lo que imprime cada historial.',
   ],
   [
     'exhibitions_dated',
-    'La exposición necesita al menos el año: el historial expositivo se ordena por fecha, y una ' +
-      'muestra sin fechar no se puede colocar en él.',
+    'La exposición necesita al menos el año: el historial se ordena por fecha.',
   ],
   [
     'exhibitions_coherent_dates',
@@ -106,8 +105,7 @@ const CHECK_TEXT: readonly (readonly [string, string])[] = [
   ],
   [
     'exhibitions_year_matches_start_date',
-    'El año y la fecha de apertura se contradicen. Deja solo la fecha: el año lo pone el catálogo ' +
-      'a partir de ella.',
+    'El año y la fecha de apertura se contradicen. Deja solo la fecha.',
   ],
   [
     'exhibitions_plausible_year',
@@ -115,8 +113,7 @@ const CHECK_TEXT: readonly (readonly [string, string])[] = [
   ],
   [
     'exhibitions_catalogue_reference_needs_catalogue',
-    'El catálogo de esta exposición está dado de alta en la bibliografía, así que no puede constar ' +
-      'que no lo hubo. Deja «Sí», o quita antes esa ficha desde la bibliografía.',
+    'Su catálogo está dado de alta en la bibliografía: quítalo antes desde la bibliografía.',
   ],
 ]
 
@@ -176,7 +173,7 @@ export function exhibitionFailureText(
   // something never created, or a typed identifier. It is not an error of the
   // catalogue and it must not read as one.
   if (code === 'PGRST116') {
-    return 'Esa exposición no está en el catálogo. Puede que nunca se diera de alta, o que el enlace esté mal.'
+    return 'Esa exposición no está en el catálogo.'
   }
 
   if (isNetworkFailure(failure.message)) {
@@ -206,8 +203,7 @@ export function exhibitionWriteResult(
   if (result.failure) return exhibitionFailureText(result.failure, operation)
   if (result.rows === 0) {
     return (
-      'La exposición no se ha tocado: o ya no está en el catálogo, o tu sesión ha dejado de poder ' +
-      'editarla. Vuelve a cargar la pantalla.'
+      'La exposición no se ha tocado: o ya no está, o tu sesión no puede editarla. Vuelve a cargar.'
     )
   }
   return null
@@ -299,9 +295,7 @@ export function exhibitionListNotice(state: {
   if (state.loading && state.total === 0) return 'Cargando las exposiciones…'
   if (state.total === 0) {
     return (
-      'Todavía no hay ninguna exposición registrada. Aquí se dan de alta: el título, si fue ' +
-      'individual o colectiva, las fechas y la sede. Después, el historial expositivo de cada obra ' +
-      'se enlaza desde su propia ficha.'
+      'Todavía no hay ninguna exposición registrada. Aquí se dan de alta.'
     )
   }
   if (state.shown === 0) {

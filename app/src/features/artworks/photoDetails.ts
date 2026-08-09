@@ -191,13 +191,11 @@ export function correctedStateText(
   edit: PhotoEdit,
 ): string {
   if (!detail) {
-    return 'No se ha podido leer el estado de la copia a resolución completa de esta fotografía.'
+    return 'No se ha podido leer el estado de la copia a resolución completa.'
   }
   if (detail.corrected_pending) {
     return (
-      'La copia a resolución completa está pendiente: el dispositivo que aplicó la corrección no ' +
-      'pudo generarla o no pudo subirla. La corrección está guardada y la copia se genera después ' +
-      'desde un ordenador. El máster de archivo sigue intacto.'
+      'La copia a resolución completa queda pendiente: se genera después desde un ordenador. El máster, intacto.'
     )
   }
   if (detail.corrected_path) {
@@ -206,18 +204,16 @@ export function correctedStateText(
     const mb = ((detail.corrected_bytes ?? 0) / 1_048_576).toFixed(1).replace('.', ',')
     return (
       `Hay una copia a resolución completa con el giro, el recorte, la perspectiva y el color ya ` +
-      `aplicados (${mb} MB). Es la que se manda a una imprenta o a un comisario.`
+      `aplicados (${mb} MB). Es la que se manda a una imprenta.`
     )
   }
   if (!isNoEdit(edit)) {
     return (
-      'Esta corrección se aplicó antes de que se guardaran copias a resolución completa, así que ' +
-      'no hay ninguna. Se generará la próxima vez que se aplique una corrección a esta fotografía.'
+      'Esta corrección es anterior a las copias a resolución completa. Se generará en la próxima.'
     )
   }
   return (
-    'Sin correcciones: no hace falta ninguna copia a resolución completa, porque para una ' +
-    'imprenta el máster de archivo ya es el original.'
+    'Sin correcciones: para una imprenta, el máster de archivo ya es el original.'
   )
 }
 

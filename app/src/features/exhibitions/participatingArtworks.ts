@@ -169,10 +169,10 @@ export function participantEntry(
  */
 function participantRetirementNotice(row: ParticipantRow): string | null {
   if (!row.active) {
-    return 'Esta participación está retirada: se muestra porque nada se borra, y se recupera desde la ficha de la obra.'
+    return 'Esta participación está retirada. Se recupera desde la ficha de la obra.'
   }
   if (row.artwork !== null && !row.artwork.active) {
-    return 'La obra está retirada del catálogo; su participación en esta muestra sigue viva.'
+    return 'La obra está retirada del catálogo.'
   }
   return null
 }

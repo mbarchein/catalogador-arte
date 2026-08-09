@@ -43,8 +43,7 @@ export function ArtworkTypesPage() {
   return (
     <Layout title="Tipos de obra" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Lo que ofrece el campo «Tipo de obra» de la ficha. Renombrar uno se hace una vez y lo ven
-        todas las obras que lo usan.
+        Lo que ofrece el campo «Tipo de obra». Renombrar uno lo ven todas sus obras.
       </p>
 
       {failure && (
@@ -68,8 +67,7 @@ export function ArtworkTypesPage() {
           aria-label="Nuevo tipo de obra"
         />
         <p className="mt-1 text-xs text-stone-500">
-          Si ya existe se reutiliza, aunque esté escrito con otras mayúsculas o tildes. Si estaba
-          retirado, vuelve.
+          Si ya existe se reutiliza, aunque cambien mayúsculas o tildes. Si estaba retirado, vuelve.
         </p>
         <button
           type="button"

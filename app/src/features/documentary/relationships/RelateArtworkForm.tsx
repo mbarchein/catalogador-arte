@@ -130,7 +130,7 @@ export function RelateArtworkForm({
             /* Never a blank list under a search field: it reads as «no hay obras». */
             <p className="p-2 text-sm text-stone-600">
               {catalog.length === 0
-                ? 'No se ha podido cargar el catálogo en este dispositivo. Vuelve a intentarlo donde haya cobertura.'
+                ? 'No se ha podido cargar el catálogo. Inténtalo donde haya cobertura.'
                 : 'Ninguna obra coincide con la búsqueda.'}
             </p>
           ) : (

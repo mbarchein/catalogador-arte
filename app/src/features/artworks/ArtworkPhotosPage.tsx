@@ -522,7 +522,7 @@ export function ArtworkPhotosPage() {
         initial: source.fromMaster ? stored : NO_EDIT,
         note: source.fromMaster
           ? null
-          : 'Sin máster: se parte de la copia de consulta. Puedes recortar más, pero no ajustar el color.',
+          : 'Sin máster: se parte de la copia. Puedes recortar, pero no ajustar el color.',
       })
     } catch (e) {
       setError(
@@ -897,7 +897,7 @@ export function ArtworkPhotosPage() {
                       : // Distinguishing "chosen by hand" from "chosen by the
                         // fallback rule" matters: in the second case, uploading
                         // one more photo can change it on its own.
-                        'Se muestra como principal por ser la general más reciente. Fíjala para que no cambie al añadir fotos.'}
+                        'Es la principal por ser la general más reciente. Fíjala para que no cambie.'}
                       {!manuallyChosen && (
                         <button
                           type="button"

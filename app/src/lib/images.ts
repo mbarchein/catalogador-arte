@@ -835,14 +835,11 @@ const pending = (reason: string): CorrectedCopyOutcome => ({ columns: PENDING_CO
  * not generating it is a legitimate outcome, and the correction itself is safe.
  */
 export const CORRECTED_NOT_GENERATED =
-  'La copia a resolución completa con las correcciones aplicadas no se ha generado en este ' +
-  'dispositivo. La corrección está guardada y no se ha perdido nada; la copia queda pendiente y ' +
-  'se puede generar después desde un ordenador.'
+  'La copia a resolución completa no se ha generado aquí. La corrección está guardada y queda pendiente.'
 
 /** Generated but not uploaded: the bytes are gone, the row says it is pending. */
 export const CORRECTED_NOT_UPLOADED =
-  'La copia a resolución completa se ha generado pero no se ha podido subir. La corrección está ' +
-  'guardada; la copia queda pendiente y se puede generar y subir después desde un ordenador.'
+  'La copia a resolución completa no se ha podido subir. La corrección está guardada y queda pendiente.'
 
 /**
  * Refuses a corrected path that could touch a master (§0.1, ADR-002).

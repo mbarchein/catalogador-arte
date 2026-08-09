@@ -232,7 +232,7 @@ describe('archiveListNotice, nunca una página en blanco', () => {
     // obra, porque así queda subido y enlazado de una vez.
     const text = archiveListNotice({ ...base, total: 0, shown: 0 })
     expect(text).toContain('Todavía no hay ningún documento')
-    expect(text).toContain('Subir un documento del archivo')
+    expect(text).toContain('desde la documentación de una obra')
   })
 
   it('y con todos retirados lo dice, en vez de parecer un archivo vacío', () => {

@@ -432,10 +432,6 @@ export function venueListNotice(state: {
   // here would say it twice, and claiming the list is empty would say it wrong.
   if (state.error !== null) return null
   return (
-    'Todavía no hay ninguna sede de exposición. Son los sitios donde ocurrieron las muestras —un ' +
-    'museo, una casa de cultura, una galería—, y el historial expositivo de cada obra elige de ' +
-    'aquí en vez de escribirlos a mano. No son las ubicaciones del almacén: aquellas dicen dónde ' +
-    'está la obra hoy, y una sede dice dónde estuvo expuesta en 1985. La primera se crea aquí ' +
-    'arriba.'
+    'Todavía no hay ninguna sede: los sitios donde ocurrieron las muestras. La primera se crea aquí arriba.'
   )
 }

@@ -36,8 +36,7 @@ export const RESEND_COOLDOWN_SECONDS = 60
  * propia dirección se quedaría esperando un correo que nadie mandó.
  */
 export const RECOVERY_NOTICE =
-  'Si esa dirección tiene cuenta, en unos minutos llegará un correo con el enlace para elegir ' +
-  'una contraseña nueva. Mira también la carpeta de spam.'
+  'Si esa dirección tiene cuenta, llegará un correo con el enlace. Mira también el spam.'
 
 /** El único caso que se cuenta aparte, porque no habla de cuentas sino de la red. */
 export const UNREACHABLE_NOTICE =

@@ -374,8 +374,7 @@ function CitationItem({
              screen, one tap and the citation somebody researched is gone. */
           <div className="mt-2 rounded-lg bg-stone-100 p-2">
             <p className="text-xs text-stone-700">
-              La cita sale de la ficha y va a la papelera. La referencia no se toca: la comparten
-              las demás obras que la citan.
+              La cita va a la papelera. La referencia no se toca: la comparten las demás obras.
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <button type="button" onClick={onRemove} className="btn min-h-touch bg-red-700 text-white">

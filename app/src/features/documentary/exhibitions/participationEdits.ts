@@ -109,8 +109,7 @@ export function rankExhibitionOptions(
 export function noOptionsText(total: number, query: string): string {
   if (total === 0) {
     return (
-      'Todavía no hay ninguna exposición registrada en el catálogo. Se dan de alta en la pantalla ' +
-      'Exposiciones, en el menú de abajo.'
+      'Todavía no hay ninguna exposición registrada. Se dan de alta en la pantalla Exposiciones.'
     )
   }
   const typed = query.trim()

@@ -89,7 +89,7 @@ export function RelationshipTypesPage() {
   return (
     <Layout title="Tipos de relación" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        De qué clase es el parentesco entre dos obras. Cada tipo lleva sus dos lecturas, una por ficha.
+        El parentesco entre dos obras. Cada tipo lleva sus dos lecturas, una por ficha.
       </p>
 
       {failure && (
@@ -132,7 +132,7 @@ export function RelationshipTypesPage() {
           nothing. */}
       {!loading && entries.length === 0 && (
         <p className="card text-sm text-stone-600">
-          Todavía no hay ninguno: pareja, políptico, estudio previo, versión. El primero se crea aquí arriba.
+          Todavía no hay ninguno: pareja, políptico, estudio previo… El primero, aquí arriba.
         </p>
       )}
 

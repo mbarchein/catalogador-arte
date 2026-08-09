@@ -214,10 +214,7 @@ export function scanTargetProblem(document: Pick<EditableDocument, 'file_path'>)
   const path = document.file_path?.trim() ?? ''
   if (path === '') return null
   return (
-    'Este documento ya tiene su fichero subido. Sustituirlo no se hace desde aquí: los ficheros ' +
-    'del almacén no se sobrescriben nunca —la ficha y el navegador los recuerdan por su ruta—, así ' +
-    'que cambiar el escaneo dejaría el anterior suelto y sin que nadie lo pueda encontrar. Si el ' +
-    'que está subido está mal, regístralo como un documento nuevo y retira este de la ficha.'
+    'Este documento ya tiene fichero, y los ficheros no se sobrescriben. Si está mal, sube un documento nuevo.'
   )
 }
 

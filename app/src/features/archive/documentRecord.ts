@@ -217,8 +217,7 @@ export function documentReachSummary(input: {
 
 /** Lo que se lee cuando no cuelga de nada. */
 export const DOCUMENT_UNLINKED_TEXT =
-  'No lo tiene enlazado nada: ni una obra ni una exposición. Desde ninguna ficha se llega a él, ' +
-  'así que esta pantalla es la única forma de encontrarlo.'
+  'No lo tiene enlazado nada: ni una obra ni una exposición. Solo se llega a él desde aquí.'
 
 /** Un trozo del aviso: texto, o una referencia a la ficha de la que cuelga. */
 export type ReachSegment =
@@ -300,8 +299,7 @@ export function linkedBlockNotice(input: {
 }
 
 export const NO_LINKED_ARTWORKS =
-  'Ninguna obra lo tiene enlazado. Se enlaza desde la documentación de una obra, con «Enlazar un ' +
-  'documento del archivo»: el fichero se guarda una sola vez y cuelga de tantas obras como hable.'
+  'Ninguna obra lo tiene enlazado. Se enlaza desde la documentación de una obra.'
 
 /*
  * El bloque vacío de las exposiciones dice algo distinto del de las obras, y vive en
@@ -313,5 +311,4 @@ export const NO_LINKED_ARTWORKS =
 
 /** Lo que se lee cuando la dirección no corresponde a ningún documento. */
 export const DOCUMENT_MISSING_TEXT =
-  'Ese documento no está en el archivo. Puede que se haya retirado, o que la dirección esté mal ' +
-  'copiada: búscalo en el listado del archivo.'
+  'Ese documento no está en el archivo. Búscalo en el listado, por si está retirado.'

@@ -800,8 +800,7 @@ export function probePoints(width: number, height: number): { x: number; y: numb
 
 /** The tail every «pendiente» sentence carries: what is safe, and what happens next. */
 const PENDING_TAIL =
-  'La copia a resolución completa queda pendiente y se puede generar después desde un ordenador. ' +
-  'Las copias de consulta se han guardado y el máster de archivo sigue intacto.'
+  'La copia a resolución completa queda pendiente. Las de consulta y el máster están a salvo.'
 
 function pending(reason: string): CorrectedCopy {
   return { status: 'PENDING', reason: `${reason} ${PENDING_TAIL}` }
@@ -1361,9 +1360,7 @@ async function buildAndUploadCorrected(params: {
     return {
       status: 'PENDING',
       reason:
-        'La copia a resolución completa se genera desde el máster de archivo, y aquí se ha trabajado ' +
-        'sobre la copia de consulta. Queda pendiente: se genera después desde un ordenador. ' +
-        'El máster sigue intacto.',
+        'Aquí se ha trabajado sobre la copia de consulta, así que la de resolución completa queda pendiente.',
     }
   }
   try {

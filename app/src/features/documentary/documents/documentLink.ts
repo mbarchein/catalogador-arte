@@ -236,9 +236,7 @@ export function documentLinkArgs(
 export function linkBlockedReason(status: ResearchStatus | null): string | null {
   if (status !== 'NONE_FOUND') return null
   return (
-    'Esta documentación consta «Investigado, sin resultados», así que la base rechaza cualquier ' +
-    'documento que lo contradiga: sería decir que en el archivo no hay nada justo encima de algo ' +
-    'que hay. Cambia antes el estado a «Investigación en curso» o «Investigación completa».'
+    'La documentación consta «Investigado, sin resultados»: ponla en «Investigación en curso» o «Investigación completa».'
   )
 }
 
@@ -283,6 +281,4 @@ export function retireLinkConfirmText(view: {
  * from then on two rows that have to be reconciled by hand.
  */
 export const TWO_ACTS_TEXT =
-  'Un documento del archivo puede hablar de varias obras y se guarda una sola vez: un recorte ' +
-  'sobre una colectiva se sube una vez y se enlaza con cada obra que menciona. Súbelo solo si ' +
-  'todavía no está en el archivo.'
+  'Un documento se guarda una sola vez y cuelga de varias obras. Súbelo si todavía no está en el archivo.'

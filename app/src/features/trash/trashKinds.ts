@@ -222,18 +222,17 @@ export const TRASH_GROUPS: readonly TrashGroupSpec[] = [
     id: 'record',
     title: 'Lo que cuelga de una ficha',
     hint:
-      'Eslabones de procedencia, citas, participaciones en exposiciones, vínculos con documentos, ' +
-      'relaciones entre obras y enlaces. También vuelven volviéndolos a añadir en la ficha.',
+      'Eslabones de procedencia, citas, participaciones, vínculos, relaciones y enlaces.',
   },
   {
     id: 'archive',
     title: 'El archivo, la bibliografía y las exposiciones',
-    hint: 'Las fichas propias de un documento, una publicación o una muestra, no su vínculo con una obra.',
+    hint: 'Las fichas propias, no su vínculo con una obra.',
   },
   {
     id: 'lists',
     title: 'Las listas del catálogo',
-    hint: 'Las nueve maestras. Cada una tiene además su propia pantalla, donde se ve la lista entera.',
+    hint: 'Las nueve maestras. Cada una tiene además su propia pantalla.',
   },
 ]
 
@@ -523,9 +522,7 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
       },
     ],
     duplicateText:
-      'Mientras el enlace estaba en la papelera, alguien ha guardado otro con la misma dirección ' +
-      'en el mismo sitio, y el catálogo no admite dos activos iguales. Si el nuevo sirve, este ya ' +
-      'no hace falta; si el bueno es este, retira antes el otro.',
+      'Ya hay otro enlace activo con la misma dirección en el mismo sitio. Si el bueno es este, retira antes el otro.',
   },
 
   // ── El archivo, la bibliografía y las exposiciones ───────────

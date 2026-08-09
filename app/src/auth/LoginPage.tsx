@@ -47,8 +47,8 @@ export function LoginPage() {
       const isNetwork = error.status === undefined || error.status === 0
       if (isNetwork) {
         setError(
-          `No se ha podido contactar con el servidor (${import.meta.env.VITE_SUPABASE_URL}). ` +
-            'Comprueba que estás en la misma red y que esa dirección es alcanzable desde este dispositivo.',
+          `No hay contacto con el servidor (${import.meta.env.VITE_SUPABASE_URL}). ` +
+            'Comprueba que estás en la misma red.',
         )
       } else {
         setError('No se ha podido entrar. Revisa el correo y la contraseña.')

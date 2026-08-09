@@ -70,7 +70,7 @@ export function directionOptions(
       {
         value: 'THIS_TO_OTHER',
         text: `${catalogId} es ${verb} ${other}`,
-        hint: 'Es simétrica: las dos fichas dicen lo mismo y se guarda una sola vez, así que da igual en qué orden se registre.',
+        hint: 'Es simétrica: las dos fichas dicen lo mismo y se guarda una sola vez.',
       },
     ]
   }

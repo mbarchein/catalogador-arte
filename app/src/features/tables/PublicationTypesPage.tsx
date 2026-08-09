@@ -45,7 +45,7 @@ export function PublicationTypesPage() {
   return (
     <Layout title="Tipos de publicación" back="/tables">
       <p className="mb-3 text-sm text-stone-600">
-        Lo que ofrece el campo «Tipo» de una referencia. Renombrar uno lo ven todas las que lo usan.
+        Lo que ofrece el campo «Tipo» de una referencia. Renombrar uno lo ven todas.
       </p>
 
       {failure && (
@@ -70,8 +70,7 @@ export function PublicationTypesPage() {
           aria-label="Nuevo tipo de publicación"
         />
         <p className="mt-1 text-xs text-stone-500">
-          Si ya existe se reutiliza, aunque esté escrito con otras mayúsculas o tildes. Si estaba
-          retirado, vuelve.
+          Si ya existe se reutiliza, aunque cambien mayúsculas o tildes. Si estaba retirado, vuelve.
         </p>
         <button
           type="button"

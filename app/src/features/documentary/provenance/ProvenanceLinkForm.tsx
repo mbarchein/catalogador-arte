@@ -232,8 +232,7 @@ export function ProvenanceLinkForm({
           </div>
 
           <p className="mt-2 text-xs text-stone-500">
-            Sin año final, el eslabón dice desde cuándo y no dice hasta cuándo — que es distinto de
-            decir que la obra sigue ahí.
+            Sin año final, el eslabón dice desde cuándo y no hasta cuándo.
           </p>
 
           {showProblems &&
@@ -288,8 +287,7 @@ export function ProvenanceLinkForm({
             placeholder="según el catálogo de la exposición de 1985"
           />
           <p className="mt-1 text-xs text-stone-500">
-            La fuente y su fiabilidad. Es lo que permite volver a comprobar el eslabón dentro de
-            diez años.
+            La fuente y su fiabilidad, para poder comprobarlo dentro de diez años.
           </p>
         </div>
 

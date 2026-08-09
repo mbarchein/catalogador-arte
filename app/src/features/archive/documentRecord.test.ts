@@ -170,7 +170,7 @@ describe('documentReachSummary, de qué está colgando (RF-516)', () => {
     // una acusación que nadie ha hecho.
     const text = documentReachSummary({ artworks: 0, exhibitions: 0 })
     expect(text).toContain('No lo tiene enlazado nada')
-    expect(text).toContain('esta pantalla es la única forma de encontrarlo')
+    expect(text).toContain('Solo se llega a él desde aquí')
     expect(text).not.toContain('No es un error')
   })
 })
@@ -249,7 +249,7 @@ describe('linkedBlockNotice, nunca un hueco (RF-304)', () => {
   it('el bloque de obras vacío dice desde dónde se enlaza', () => {
     expect(
       linkedBlockNotice({ loading: false, error: null, count: 0, empty: NO_LINKED_ARTWORKS }),
-    ).toContain('Enlazar un documento del archivo')
+    ).toContain('desde la documentación de una obra')
   })
 
   it('la frase del bloque vacío pasa tal cual, que es lo que deja decir dos cosas distintas', () => {

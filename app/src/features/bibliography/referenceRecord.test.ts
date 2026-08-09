@@ -191,13 +191,13 @@ describe('citedArtworksNotice, nunca un hueco (RF-304)', () => {
     )
   })
 
-  it('sin ninguna cita dice que NO es un dato pendiente', () => {
-    // Es la frase que importa de todo el módulo: una referencia sin citas es
-    // exactamente la fila que el listado se construyó para poder encontrar, no un
-    // hueco que se lee como «falta algo aquí».
+  it('sin ninguna cita se cuenta, y se dice desde dónde se cita', () => {
+    // Una referencia sin citas es exactamente la fila que el listado se construyó
+    // para poder encontrar. Se dice qué pasa y qué se puede hacer; que no sea un
+    // dato pendiente ya no se argumenta, porque a quien cataloga no le hacía falta
+    // esa distinción para nada.
     const text = citedArtworksNotice({ loading: false, error: null, count: 0 })
-    expect(text).toContain('Ninguna obra del catálogo la cita')
-    expect(text).toContain('No es un dato pendiente')
-    expect(text).toContain('cita retirada')
+    expect(text).toContain('Ninguna obra la cita')
+    expect(text).toContain('bibliografía de cualquier obra')
   })
 })

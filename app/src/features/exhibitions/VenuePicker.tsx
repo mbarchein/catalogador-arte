@@ -80,8 +80,7 @@ export function VenuePicker({
           decoración. */}
       {chosen !== null && !chosen.active && (
         <p className="mt-1 text-xs text-amber-800">
-          Esta sede está retirada del catálogo. La exposición la conserva; si la cambias, no vuelve
-          a ofrecerse.
+          Esta sede está retirada. Si la cambias, no vuelve a ofrecerse.
         </p>
       )}
 

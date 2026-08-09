@@ -154,8 +154,7 @@ export function referencePayload(draft: ReferenceEdit): ReferencePayload {
 export function referenceEditProblem(draft: ReferenceEdit): string | null {
   if (draft.title.trim() === '') {
     return (
-      'El título de la referencia no puede quedar en blanco: es lo que se lee en la ficha de cada ' +
-      'obra que la cita'
+      'El título no puede quedar en blanco: es lo que lee cada obra que la cita'
     )
   }
   if (draft.year != null && (draft.year < MIN_REFERENCE_YEAR || draft.year > MAX_REFERENCE_YEAR)) {
@@ -333,8 +332,7 @@ export function referenceTitleText(reference: Pick<ReferenceRow, 'title'>): stri
  * this artwork's record.
  */
 const SHARED_ROW =
-  'Esta referencia es del catálogo compartido, no de esta obra: lo que corrijas aquí se lee igual ' +
-  'en la ficha de cualquier obra que la cite.'
+  'Es una referencia del catálogo compartido: lo que corrijas aquí lo lee cualquier obra que la cite.'
 
 /**
  * The warning that goes above the fields, with the reach of the correction
@@ -448,8 +446,7 @@ export function referenceFailureText(failure: DatabaseFailure): string {
   if (code === '23514') {
     if (message.includes('bibliography_title_not_blank')) {
       return (
-        'El título de la referencia no puede quedar en blanco: es lo que se lee en la ficha de ' +
-        'cada obra que la cita.'
+        'El título no puede quedar en blanco: es lo que lee cada obra que la cita.'
       )
     }
     if (message.includes('bibliography_plausible_year')) {
@@ -526,8 +523,7 @@ export function referenceWriteResult(result: {
   if (result.failure) return referenceFailureText(result.failure)
   if (result.rows === 0) {
     return (
-      'La referencia no se ha tocado: o ya no está en el catálogo, o tu sesión ha dejado de poder ' +
-      'corregirla. Vuelve a cargar la ficha y compruébalo antes de escribirla otra vez.'
+      'La referencia no se ha tocado: o ya no está, o tu sesión no puede corregirla. Vuelve a cargar la ficha.'
     )
   }
   return null

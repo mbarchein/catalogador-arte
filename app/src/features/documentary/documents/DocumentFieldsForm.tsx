@@ -159,8 +159,7 @@ export function DocumentFieldsForm({
           placeholder="finales de los setenta"
         />
         <p className="mt-1 text-xs text-stone-500">
-          Lo que la estructura no puede guardar. Si la escribes, es esto lo que se imprime en vez
-          del año.
+          Si la escribes, se imprime esto en vez del año.
         </p>
       </div>
 
@@ -270,8 +269,7 @@ export function DocumentFieldsForm({
           ))}
         </select>
         <p className="mt-1 text-xs text-stone-500">
-          El mismo árbol de sitios que las obras: una caja de cartas está en el mismo edificio que
-          los cuadros.
+          El mismo árbol de sitios que las obras.
         </p>
       </div>
 

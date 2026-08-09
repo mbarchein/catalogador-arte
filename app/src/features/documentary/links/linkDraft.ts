@@ -204,9 +204,7 @@ export type UrlVerdict = 'ACCEPTED' | 'REFUSED' | 'UNKNOWN'
  * se puede corregir.
  */
 export const REFUSAL_GENERAL =
-  'La base no acepta esa dirección. Tiene que empezar por http:// o https:// y seguir con el ' +
-  'nombre de un sitio web —letras, cifras y guiones separados por puntos, como www.macvac.es—, ' +
-  'sin espacios y sin nada raro en medio.'
+  'La base no acepta esa dirección. Tiene que empezar por http:// o https://, sin espacios.'
 
 /**
  * Los caracteres que no se ven y que dentro del nombre de un sitio son un ataque:
@@ -259,7 +257,7 @@ export function describeUrlRefusal(url: string): string {
     return 'Falta el principio de la dirección: escribe https:// delante del nombre del sitio.'
   }
   if (!/^https?:\/\//i.test(text)) {
-    return 'La dirección tiene que empezar por http:// o https://. Pégala tal como la copia el navegador.'
+    return 'La dirección tiene que empezar por http:// o https://.'
   }
 
   // Caracteres invisibles ANTES que «no es ASCII»: un ancho cero no se ve, así
@@ -269,12 +267,11 @@ export function describeUrlRefusal(url: string): string {
   // algo invisible que nadie puede revisar en una diferencia.
   if (INVISIBLE.test(text)) {
     return (
-      'La dirección lleva caracteres invisibles dentro. Se cuelan al copiar de un PDF o de un ' +
-      'correo, no se ven y llevan a otro sitio del que parece: bórrala y vuelve a escribirla a mano.'
+      'La dirección lleva caracteres invisibles y puede llevar a otro sitio. Escríbela a mano.'
     )
   }
   if (/\s/.test(text)) {
-    return 'La dirección lleva un espacio o un salto de línea. Quítalo: ninguna dirección legítima los lleva sin escapar.'
+    return 'La dirección lleva un espacio o un salto de línea. Quítalo.'
   }
   if (CONTROL.test(text)) {
     return 'La dirección lleva caracteres de control. Bórrala y vuelve a escribirla a mano.'
@@ -418,7 +415,7 @@ export function describeLinkFailure(
     if (message.includes('external_links_title_trimmed')) {
       // No debería llegar: el borrador recorta antes de mandar. Si llega, algo se
       // saltó `trimDraft`, y decirlo así es lo que permite encontrarlo.
-      return 'El título llevaba espacios al principio o al final y la base no los admite. Vuelve a escribirlo.'
+      return 'El título llevaba espacios al principio o al final. Vuelve a escribirlo.'
     }
     if (message.includes('external_links_exactly_one_owner')) {
       return (
@@ -471,8 +468,7 @@ export function describeLinkFailure(
  * guardado, que es la peor de las mentiras posibles en un catálogo.
  */
 export const NOTHING_CHANGED =
-  'La base ha aceptado la petición pero no ha cambiado nada, así que el enlace sigue como estaba. ' +
-  'Lo normal es que tu sesión ya no tenga permiso para editar: vuelve a entrar y compruébalo.'
+  'La base no ha cambiado nada: el enlace sigue igual. Lo normal es que tu sesión no tenga permiso.'
 
 // ── Los textos de las dos confirmaciones ─────────────────────
 

@@ -122,8 +122,6 @@ export function bibliographyBlockState(state: BlockState, notice: string | null)
 export function citeBlockedReason(status: ResearchStatus | null): string | null {
   if (status !== 'NONE_FOUND') return null
   return (
-    'Esta bibliografía consta «Investigado, sin resultados», así que la base rechaza cualquier ' +
-    'cita que la contradiga. Cambia antes el estado a «Investigación en curso» o «Investigación ' +
-    'completa».'
+    'La bibliografía consta «Investigado, sin resultados»: ponla en «Investigación en curso» o «Investigación completa».'
   )
 }

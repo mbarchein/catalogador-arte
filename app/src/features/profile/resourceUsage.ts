@@ -37,8 +37,7 @@ export const MASTERS_LIMIT_BYTES = 10_000_000_000
 
 /** El plan del que hablan esos límites, dicho en la pantalla. */
 export const PLAN_NOTICE =
-  'Los límites son los del plan gratuito de cada servicio. Si algún día se sube de plan, aquí ' +
-  'seguirán saliendo los de ahora hasta que se cambien.'
+  'Los límites son los del plan gratuito de cada servicio.'
 
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const
 

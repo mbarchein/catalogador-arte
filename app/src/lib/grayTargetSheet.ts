@@ -234,7 +234,7 @@ export const GRAY_TARGET_SHEET_TEXT = {
     'Para la dominante hace falta una carta de gris comprada.',
     'Al lado de la obra, nunca encima, en el mismo plano y con la misma luz.',
     `Que salga entera en la fotografía y ocupando al menos el ${framePercent} % del ancho: por debajo de eso los parches traen muy pocos píxeles para medirse.`,
-    'Si la obra es grande, amplíala a A4 (141 %): lo que importa es que los parches salgan grandes.',
+    'Si la obra es grande, amplíala a A4 (141 %).',
     'Sin corrección de color ni ahorro de tinta, y no recortes por dentro del marco oscuro.',
     'Inclínala si coge un brillo: un reflejo sobre un parche no es su color.',
   ] as readonly string[],

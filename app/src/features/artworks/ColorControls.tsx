@@ -967,7 +967,7 @@ export function ColorControls({
     )
     say(
       proposal.notice ??
-        'Ajuste automático propuesto: es un punto de partida, revisa las tiras y corrige lo que haga falta.',
+        'Ajuste automático propuesto: revisa las tiras y corrige lo que haga falta.',
     )
   }
 

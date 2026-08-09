@@ -167,8 +167,7 @@ export function ProfilePage() {
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Sobre la aplicación</h2>
         <p className="text-sm text-stone-600">
-          Qué versión está instalada, las novedades que trajo y lo que todavía no se puede
-          hacer desde aquí.
+          Qué versión está instalada y qué novedades trajo.
         </p>
         <Link to="/about" className="mt-2 inline-block min-h-touch text-sm underline">
           Abrir la información de la aplicación

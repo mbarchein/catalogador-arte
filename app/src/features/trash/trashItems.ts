@@ -232,6 +232,6 @@ export function blockedCountText(views: readonly TrashKindView[]): string | null
   )
   if (blocked === 0) return null
   return blocked === 1
-    ? 'Una de ellas no se puede recuperar todavía: hay que recuperar antes aquello de lo que cuelga.'
-    : `${blocked} de ellas no se pueden recuperar todavía: hay que recuperar antes aquello de lo que cuelgan.`
+    ? 'Una de ellas no se puede recuperar todavía: hay que recuperar antes de lo que cuelga.'
+    : `${blocked} de ellas no se pueden recuperar todavía: hay que recuperar antes de lo que cuelgan.`
 }

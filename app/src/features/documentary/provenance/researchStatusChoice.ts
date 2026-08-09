@@ -93,6 +93,6 @@ export function statusUnknownNotice(
   const aside = input.error ? ` (${input.error})` : ''
   return (
     `No se ha podido leer si alguien ha investigado la procedencia${aside}, así que lo que se ve ` +
-    'aquí no dice si la cadena está completa ni si alguien ha buscado. Vuelve a cargar la ficha.'
+    'aquí no dice si la cadena está completa. Vuelve a cargar la ficha.'
   )
 }

@@ -53,13 +53,11 @@ export function catalogueChoiceBlockedReason(cataloguePublished: TriState): stri
   if (cataloguePublished === 'YES') return null
   if (cataloguePublished === 'NO') {
     return (
-      'Esta exposición consta SIN catálogo, así que no se le puede enlazar uno: sería contradecir la ' +
-      'ficha. Si lo hubo, corrige antes «¿Se publicó catálogo?» y ponlo en «Sí».'
+      'Consta SIN catálogo, y enlazar uno sería contradecir la ficha. Si lo hubo, pon antes «Sí».'
     )
   }
   return (
-    'No consta todavía si esta exposición publicó catálogo, y la base no admite enlazar uno mientras ' +
-    'no conste. Responde antes «¿Se publicó catálogo?»: «sin revisar» no es «no».'
+    'No consta si publicó catálogo: «sin revisar» no es «no». Responde antes esa pregunta.'
   )
 }
 
@@ -99,8 +97,7 @@ export function catalogueReferenceLine(input: {
   if (cataloguePublished === 'NO') return 'No publicó catálogo.'
   if (unreadable) {
     return (
-      'Publicó catálogo, y consta cuál es, pero esa referencia no se puede leer desde aquí: puede ' +
-      'estar retirada del catálogo.'
+      'Publicó catálogo y consta cuál, pero no se puede leer: puede estar retirada.'
     )
   }
   if (reference === null) {
@@ -165,15 +162,13 @@ export function catalogueReferenceNotice(plan: CatalogueReferencePlan, title: st
 export function noCatalogueOptionsText(total: number, query: string): string {
   if (total === 0) {
     return (
-      'Todavía no hay ninguna referencia en la bibliografía. El catálogo de una muestra se da de alta ' +
-      'como cualquier referencia: citándolo desde la bibliografía de una obra que aparezca en él.'
+      'Todavía no hay ninguna referencia. El catálogo se da de alta citándolo desde una obra.'
     )
   }
   if (query.trim() === '') {
     return 'Escribe para buscar entre las referencias de la bibliografía.'
   }
   return (
-    'Ninguna referencia coincide con lo que has escrito. Si el catálogo de esta muestra no está ' +
-    'todavía en la bibliografía, se da de alta citándolo desde una obra que aparezca en él.'
+    'Ninguna referencia coincide. Si el catálogo no está, cítalo antes desde una obra.'
   )
 }

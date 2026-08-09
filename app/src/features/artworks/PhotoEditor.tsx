@@ -778,7 +778,7 @@ export function PhotoEditor({
   function pickAt(point: { x: number; y: number }) {
     if (!rasterRef.current) {
       setPickNotice(
-        'No se han podido medir los píxeles de esta fotografía, así que el cuentagotas no puede tomar el gris.',
+        'No se han podido medir los píxeles: el cuentagotas no puede tomar el gris.',
       )
       return
     }
@@ -1086,12 +1086,12 @@ export function PhotoEditor({
       return 'Recorte sugerido: se han reconocido dos bordes. Elige uno y ajusta las esquinas.'
     if (analysis.status === 'found') return 'Recorte sugerido: ajusta las esquinas si hace falta.'
     if (!suggestionMakesSense && framing !== 'NONE')
-      return `En una toma de tipo «${SHOT_TYPE_LABEL[shotType!]}» no hay borde de cuadro que reconocer: ajusta el encuadre a mano.`
+      return `En una toma de tipo «${SHOT_TYPE_LABEL[shotType!]}» no hay borde que reconocer: ajústalo a mano.`
     if (framing === 'PERSPECTIVE')
-      return 'Perspectiva: arrastra las cuatro esquinas de la obra. Para acercarte, pellizca o usa la rueda.'
+      return 'Perspectiva: arrastra las cuatro esquinas de la obra.'
     if (framing === 'RECTANGLE')
-      return 'Rectángulo: arrastra las esquinas, o el asa del centro para moverlo entero. Se deshace cuando quieras.'
-    return 'Sin recorte: se guarda la fotografía entera. Un cuadro tomado de lado se endereza con Perspectiva.'
+      return 'Rectángulo: arrastra las esquinas, o el asa del centro para moverlo entero.'
+    return 'Sin recorte: se guarda la fotografía entera.'
   }
 
   const rotated = rotatedSize(natural, rotation)

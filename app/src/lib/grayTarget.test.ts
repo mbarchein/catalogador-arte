@@ -448,7 +448,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
       const analysis = analyseGrayTarget(raster as PixelRaster | null, CARD_OPTIONS)
       expect(analysis.candidates).toEqual([])
       expect(analysis.declined).toBe('unusable-image')
-      expect(grayTargetNotice(analysis)).toContain('no se ha podido buscar')
+      expect(grayTargetNotice(analysis)).toContain('no se ha buscado el testigo')
     }
   })
 
@@ -525,14 +525,14 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     const analysis = analyseGrayTarget(photo, CARD_OPTIONS)
     expect(analysis.candidates).toEqual([])
     expect(analysis.declined).toBe('too-large')
-    expect(grayTargetNotice(analysis)).toContain('encuadre')
+    expect(grayTargetNotice(analysis)).toContain('ocupa casi todo')
   })
 
   it('RF-418: sin candidato hay una explicación, nunca un hueco', () => {
     const flat = canvas()
     addNoise(flat, 6)
     const notice = grayTargetNotice(analyseGrayTarget(flat, CARD_OPTIONS))
-    expect(notice).toContain('escalera')
+    expect(notice).toContain('No se ha encontrado ningún testigo')
     expect(notice).toContain('cuentagotas')
     expect(grayTargetNotice(null)).toBeNull()
   })

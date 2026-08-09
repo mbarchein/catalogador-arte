@@ -119,9 +119,7 @@ export function textScaleOptionText(scale: TextScale): string {
 export function textScaleNotice(scale: TextScale): string | null {
   if (scale === 'NORMAL') return null
   return (
-    'Con la letra más grande cabe menos en cada pantalla y hay que desplazarse más: los botones ' +
-    'crecen con el texto, para que se puedan seguir tocando. El editor de fotografía se queda al ' +
-    'tamaño normal, porque sus mandos y su lienzo se miden en píxeles.'
+    'Con la letra grande cabe menos en cada pantalla. El editor de fotografía no cambia.'
   )
 }
 

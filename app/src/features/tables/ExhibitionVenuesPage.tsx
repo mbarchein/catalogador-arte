@@ -116,7 +116,7 @@ export function ExhibitionVenuesPage() {
           aria-label="País de la nueva sede"
         />
         <p className="text-xs text-stone-500">
-          La localidad distingue dos sedes homónimas. Si ya existe se reutiliza; la nota, al editarla.
+          La localidad distingue dos sedes homónimas. Si ya existe se reutiliza.
         </p>
         <button
           type="button"

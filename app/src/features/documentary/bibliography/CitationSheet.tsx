@@ -237,8 +237,7 @@ export function CitationSheet({
           {creating ? (
             <div className="space-y-3 rounded-lg border border-stone-200 p-3">
               <p className="text-xs text-stone-500">
-                Lo mínimo para poder citarla. El resto de los datos de la referencia se completan
-                después, en su propia ficha.
+                Lo mínimo para citarla. El resto se completa después, en su propia ficha.
               </p>
               <div>
                 <label className="label" htmlFor="new-reference-title">
@@ -308,8 +307,7 @@ export function CitationSheet({
                 compact
               />
               <p className="-mt-2 text-xs text-stone-500">
-                Déjalo vacío si la publicación no lleva año: se cita como «s.f.», que es un dato y
-                no un hueco.
+                Déjalo vacío si la publicación no lleva año: se cita como «s.f.».
               </p>
               <Chips
                 id="new-reference-type"

@@ -157,7 +157,7 @@ function draftYear(draft: ExhibitionDraft): number | null {
  */
 export function exhibitionDraftProblem(draft: ExhibitionDraft): string | null {
   if (draft.title.trim() === '') {
-    return 'Escribe el título de la exposición: es lo que la ficha de cada obra imprime en su historial.'
+    return 'Escribe el título: es lo que imprime el historial de cada obra.'
   }
 
   const start = draft.startDate.trim()

@@ -82,8 +82,7 @@ export function fundOfferedHint(active: boolean): string {
 export function fundListedHint(listed: boolean): string {
   return listed
     ? 'Sus obras aparecen en el listado, como las de los demás fondos.'
-    : 'Sus obras no aparecen en el listado. No se ha borrado ni retirado nada: cada obra se sigue ' +
-        'abriendo por su enlace, y filtrando por este fondo vuelven a verse todas.'
+    : 'Sus obras no aparecen en el listado. No se ha borrado ni retirado nada: cada obra se sigue abriendo por su enlace.'
 }
 
 /**
@@ -101,8 +100,7 @@ export function retireFundBlockedReason(
   const othersActive = all.filter((f) => f.active && f.id !== entry.id).length
   if (othersActive > 0) return null
   return (
-    'Es el último fondo activo. Si se retira no queda ninguno que elegir al dar de alta una obra, ' +
-    'así que la base lo rechaza: activa antes otro.'
+    'Es el último fondo activo: si se retira no queda ninguno, así que activa antes otro.'
   )
 }
 

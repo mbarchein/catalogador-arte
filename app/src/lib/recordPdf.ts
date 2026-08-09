@@ -381,7 +381,7 @@ export async function generateRecordPdf(
 
   // The note names where the code is, because it does not sit beside it: the
   // note belongs to the foot, with the rest of what the sheet says about itself.
-  const qrNote = 'El código QR de la cabecera abre esta misma ficha en la aplicación, con sus fotografías y su historial al día.'
+  const qrNote = 'El código QR de la cabecera abre esta misma ficha en la aplicación, al día.'
   // Anchored to the top of the reserved box, not to the image: a landscape
   // photograph is shorter than the box and the note would drift down with it.
   let noteY = margin + 12 + photoBox - 8

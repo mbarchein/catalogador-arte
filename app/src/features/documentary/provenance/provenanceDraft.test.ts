@@ -230,8 +230,8 @@ describe('reordenar la cadena (RF-509)', () => {
    * leen como una lista que no supo ordenarse.
    */
   it('explica por qué el orden es manual, y no lo explica cuando no hay orden', () => {
-    expect(reorderHint(2)).toContain('no lo deciden las fechas')
-    expect(reorderHint(5)).toContain('no tienen año')
+    expect(reorderHint(2)).toContain('lo pones tú')
+    expect(reorderHint(5)).toContain('no llevan año')
     expect(reorderHint(1)).toBeNull()
     expect(reorderHint(0)).toBeNull()
   })

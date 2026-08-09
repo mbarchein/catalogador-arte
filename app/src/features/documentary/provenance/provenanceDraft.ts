@@ -289,8 +289,7 @@ export function stepTarget(rows: readonly unknown[], index: number, delta: numbe
 export function reorderHint(count: number): string | null {
   if (count < 2) return null
   return (
-    'El orden de la cadena lo pones tú, y no lo deciden las fechas: la mitad de los eslabones de ' +
-    'un catálogo razonado no tienen año, y un orden sacado de los que faltan no sería un orden.'
+    'El orden de la cadena lo pones tú: la mitad de los eslabones no llevan año.'
   )
 }
 
@@ -332,7 +331,6 @@ export function retireConfirmText(row: ProvenanceEventRow): string {
   const when = dates === '' ? '' : ` (${dates})`
   return (
     `Se retirará el eslabón de ${name}${when}. La cadena se recompone sin él, así que el tramo ` +
-    'que cubría deja de constar y puede quedar un hueco donde ahora no hay ninguno. No se borra: ' +
-    'queda en la papelera y se puede volver a añadir.'
+    'que cubría deja de constar y puede quedar un hueco. Se puede volver a añadir desde la papelera.'
   )
 }

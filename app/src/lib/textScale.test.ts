@@ -93,7 +93,6 @@ describe('textScaleNotice, la consecuencia que no se ve desde el perfil', () => 
     for (const scale of ['LARGE', 'LARGER'] as const) {
       const text = textScaleNotice(scale)!
       expect(text).toContain('cabe menos')
-      expect(text).toContain('los botones crecen con el texto')
       expect(text).toContain('editor de fotografía')
     }
   })

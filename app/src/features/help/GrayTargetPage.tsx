@@ -184,10 +184,10 @@ export function GrayTargetPage() {
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Qué es</h2>
         <p className="text-sm text-stone-700">
-          Una tira de grises conocidos, fotografiada junto a la obra. Si salen anaranjados, se sabe cuánto enfriar la foto.
+          Una tira de grises conocidos, junto a la obra. Si salen anaranjados, se sabe cuánto enfriar.
         </p>
         <p className="mt-2 text-sm text-stone-700">
-          Sin testigo funciona igual: el gris se toma de la escena o a ojo. La ficha guarda cuál de las tres fue.
+          Sin testigo funciona igual: el gris se toma de la escena o a ojo.
         </p>
         <p className="mt-2 text-sm text-stone-700">
           Un gris liso, por sí solo, no se distingue de una pared gris. Lo que la aplicación reconoce
@@ -199,15 +199,13 @@ export function GrayTargetPage() {
         <h2 className="mb-2 font-medium">Dónde se coloca</h2>
         <ul className="space-y-2 text-sm text-stone-700">
           <li>
-            <strong>Al lado de la obra, nunca encima.</strong> Apoyado en la pared junto al marco, o
-            sobre la mesa junto al borde, sin tapar nada de la pieza.
+            <strong>Al lado de la obra, nunca encima.</strong> Apoyado junto al marco o sobre la mesa, sin tapar nada de la pieza.
           </li>
           <li>
-            <strong>En el mismo plano y con la misma luz.</strong> Si la obra está iluminada y el
-            testigo cae en sombra, el testigo mide otra luz distinta de la que hay que corregir.
+            <strong>En el mismo plano y con la misma luz.</strong> Si el testigo cae en sombra, mide otra luz distinta de la que hay que corregir.
           </li>
           <li>
-            <strong>Que salga entero y con tamaño.</strong> Al menos una décima del ancho de la foto; por debajo, los parches traen pocos píxeles.
+            <strong>Que salga entero y con tamaño.</strong> Al menos una décima del ancho de la foto.
           </li>
           <li>
             <strong>Sin brillos.</strong> Si coge un reflejo, inclínalo: un reflejo sobre un parche no es su color.
@@ -298,10 +296,10 @@ export function GrayTargetPage() {
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Carta comprada u hoja impresa</h2>
         <p className="text-sm text-stone-700">
-          <strong>Lo mejor es una carta de gris comprada.</strong> Su gris es neutro de verdad, así que de ella sí se puede creer la dominante.
+          <strong>Lo mejor es una carta de gris comprada.</strong> Su gris es neutro de verdad.
         </p>
         <p className="mt-2 text-sm text-stone-700">
-          <strong>Si no hay carta, la hoja impresa en casa.</strong> El gris de una impresora no es neutro: sirve de patrón y para blanco y negro, no de referencia.
+          <strong>Si no hay carta, la hoja impresa en casa.</strong> El gris de una impresora no es neutro: sirve de patrón, no de referencia.
         </p>
         <button
           type="button"
@@ -317,7 +315,7 @@ export function GrayTargetPage() {
           </p>
         )}
         <p className="mt-2 text-xs text-stone-500">
-          Imprímela sin corrección de color ni ahorro de tinta. Si la obra es grande, amplíala al 141 %.
+          Imprímela sin corrección de color ni ahorro de tinta. Si la obra es grande, al 141 %.
         </p>
       </section>
 

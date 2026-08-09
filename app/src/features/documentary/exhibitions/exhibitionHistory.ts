@@ -223,7 +223,7 @@ export function catalogueNumberText(row: ParticipationRow): string | null {
 export function retirementNotice(exhibition: ExhibitionRow | null): string | null {
   if (exhibition === null) return null
   if (!exhibition.active) {
-    return 'Esta exposición está retirada del catálogo; se muestra porque la participación de esta obra sigue viva.'
+    return 'Esta exposición está retirada del catálogo; la participación de esta obra sigue viva.'
   }
   if (exhibition.venue !== null && !exhibition.venue.active) {
     return 'La sede está retirada del catálogo.'

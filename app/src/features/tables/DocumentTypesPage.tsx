@@ -80,8 +80,7 @@ export function DocumentTypesPage() {
           aria-label="Nuevo tipo de documento"
         />
         <p className="mt-1 text-xs text-stone-500">
-          Si ya existe se reutiliza, aunque esté escrito con otras mayúsculas o tildes. Si estaba
-          retirado, vuelve.
+          Si ya existe se reutiliza, aunque cambien mayúsculas o tildes. Si estaba retirado, vuelve.
         </p>
         <button
           type="button"
@@ -115,7 +114,7 @@ export function DocumentTypesPage() {
           eso es lo que se cuenta. */}
       {!loading && entries.length === 0 && (
         <p className="card text-sm text-stone-600">
-          La lista está vacía y el catálogo nació con diez. Vuelve a entrar; si sigue vacía, créalos aquí.
+          La lista está vacía y nació con diez. Vuelve a entrar; si sigue así, créalos aquí.
         </p>
       )}
 

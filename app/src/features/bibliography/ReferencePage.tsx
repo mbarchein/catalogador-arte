@@ -110,8 +110,7 @@ export function ReferencePage() {
 
       {!reference.active && (
         <p className="card mb-3 bg-stone-100 text-sm text-stone-700">
-          Esta referencia está retirada del catálogo: no se ofrece para citar. Se recupera desde la
-          papelera, en Tablas.
+          Está retirada del catálogo: no se ofrece para citar. Se recupera desde la papelera.
         </p>
       )}
 

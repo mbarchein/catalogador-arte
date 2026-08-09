@@ -157,13 +157,10 @@ export function citedArtworksNotice(input: {
   if (loading) return 'Cargando las obras que la citan…'
   if (count > 0) return null
   return (
-    'Ninguna obra del catálogo la cita ahora mismo. No es un dato pendiente: la referencia sigue en ' +
-    'el catálogo y se puede citar desde la bibliografía de cualquier obra. Si se quedó suelta por una ' +
-    'cita retirada, esto es lo que lo dice.'
+    'Ninguna obra la cita ahora mismo. Se cita desde la bibliografía de cualquier obra.'
   )
 }
 
 /** Lo que se lee cuando la dirección no corresponde a ninguna referencia. */
 export const REFERENCE_MISSING_TEXT =
-  'Esa referencia no está en el catálogo. Puede que se haya retirado, o que la dirección esté mal ' +
-  'copiada: búscala en el listado de la bibliografía.'
+  'Esa referencia no está en el catálogo. Búscala en el listado, por si está retirada.'

@@ -120,7 +120,7 @@ export function retireExhibitionLinkText(exhibitionTitle: string): string {
   const clean = exhibitionTitle.trim()
   return (
     `Se quita de ${clean === '' ? 'esta exposición' : `«${clean}»`}. El documento se queda en el ` +
-    'archivo con su fichero, y lo siguen viendo las obras y las exposiciones que lo tengan enlazado.'
+    'archivo con su fichero, y lo siguen viendo las demás fichas enlazadas.'
   )
 }
 
@@ -132,8 +132,7 @@ export function retireExhibitionLinkText(exhibitionTitle: string): string {
  * obra ha pagado seis veces.
  */
 export const NO_LINKED_EXHIBITIONS_WRITABLE =
-  'Ninguna exposición lo tiene enlazado. Si es el cartel, el díptico o la nota de prensa de una ' +
-  'muestra, enlázalo con ella aquí abajo.'
+  'Ninguna exposición lo tiene enlazado. Si es de una muestra, enlázalo con ella aquí abajo.'
 
 export const NO_LINKED_EXHIBITIONS_READONLY =
   'Ninguna exposición lo tiene enlazado.'
