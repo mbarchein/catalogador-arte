@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { putSignedFile, type UploadProgressEvent } from './signedUpload'
 import {
   BUCKET,
   LEVELS,
@@ -1113,27 +1114,67 @@ export async function renderCorrectedCopy(source: Blob, edit: PhotoEdit): Promis
  * the function is the only thing that knows the credentials. The Content-Type of the
  * PUT has to repeat the signed one exactly or the signature does not validate.
  */
-async function uploadCorrectedCopy(path: string, blob: Blob): Promise<void> {
+async function uploadCorrectedCopy(
+  path: string,
+  blob: Blob,
+  onProgress?: TransferListener,
+): Promise<void> {
   const { data, error } = await supabase.functions.invoke('sign-file', {
     body: { operation: 'upload', path, contentType: CORRECTED_CONTENT_TYPE },
   })
   if (error) throw new Error(`firmando la subida: ${error.message}`)
   const url = (data as { url?: string } | null)?.url
   if (!url) throw new Error('la función de firma no ha devuelto ninguna URL')
-  const response = await fetch(url, {
-    method: 'PUT',
-    body: blob,
-    headers: { 'Content-Type': CORRECTED_CONTENT_TYPE },
-  })
-  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  // `putSignedFile` y no `fetch`: es el mismo PUT firmado, pero por XHR, que es lo
+  // único que sabe decir cuánto lleva subido. Son hasta 19 MB.
+  const result = await putSignedFile(url, blob, CORRECTED_CONTENT_TYPE, onProgress)
+  if (!result.ok) throw new Error(`HTTP ${result.status}`)
 }
+
+/**
+ * Quien escucha cuánto lleva viajado un fichero, subiendo o bajando.
+ *
+ * `total` nulo es «no se sabe cuánto pesa», y es un estado legítimo: una respuesta
+ * comprimida no trae `content-length`. Quien pinte decide entonces girar en vez de
+ * inventarse un porcentaje.
+ */
+export type TransferListener = (event: UploadProgressEvent) => void
 
 /* --------------------------------------------------------------- the two paths */
 
-async function fetchBlob(url: string): Promise<Blob> {
+/**
+ * La descarga, contada mientras llega.
+ *
+ * Se lee el cuerpo a trozos en vez de pedir `.blob()` de una vez, y por un motivo
+ * concreto: el máster son de 2 a 8 MB desde un almacén con mala cobertura, y quien
+ * pulsa el icono se queda mirando la fotografía sin saber si pasa algo. Con el
+ * total del `content-length` el anillo avanza; sin él —una respuesta comprimida o
+ * troceada no lo trae— se cuenta lo que lleva y el total va nulo, que es lo que
+ * hace que el anillo gire en vez de fingir un porcentaje.
+ *
+ * Si el cuerpo no se puede leer a trozos, se cae a `.blob()` de siempre: quedarse
+ * sin fotografía por no poder dibujar una barra sería el peor intercambio posible.
+ */
+async function fetchBlob(url: string, onProgress?: TransferListener): Promise<Blob> {
   const response = await fetch(url)
   if (!response.ok) throw new Error(`HTTP ${response.status}`)
-  return response.blob()
+
+  const header = response.headers.get('content-length')
+  const total = header === null ? null : Number(header)
+  if (!response.body || onProgress === undefined) return response.blob()
+
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let loaded = 0
+  onProgress({ loaded: 0, total })
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    loaded += value.byteLength
+    onProgress({ loaded, total })
+  }
+  return new Blob(chunks as BlobPart[], { type: response.headers.get('content-type') ?? '' })
 }
 
 export interface EditSource {
@@ -1157,20 +1198,24 @@ export interface EditSource {
  * signing function unavailable — it falls back to the consultation copy instead
  * of leaving the cataloger in front of a screen that does nothing.
  */
-export async function editSource(row: {
-  master_path: string | null
-  derivative_path: string
-}): Promise<EditSource> {
+export async function editSource(
+  row: {
+    master_path: string | null
+    derivative_path: string
+  },
+  onProgress?: TransferListener,
+): Promise<EditSource> {
   if (row.master_path) {
     try {
-      return { blob: await fetchBlob(await masterDownloadUrl(row.master_path)), fromMaster: true }
+      const url = await masterDownloadUrl(row.master_path)
+      return { blob: await fetchBlob(url, onProgress), fromMaster: true }
     } catch {
       /* falls back to the consultation copy below */
     }
   }
   const url = await signedUrl(row.derivative_path)
   if (!url) throw new Error('No se ha podido abrir ninguna copia de la fotografía')
-  return { blob: await fetchBlob(url), fromMaster: false }
+  return { blob: await fetchBlob(url, onProgress), fromMaster: false }
 }
 
 /**
@@ -1221,6 +1266,13 @@ export async function savePhotoEdit(params: {
    * is what proves it rather than arguing it.
    */
   masterPath?: string | null
+  /**
+   * Cuánto lleva subido de la copia a resolución completa, que es el fichero
+   * grande de este camino: hasta 19 MB. Las dos copias pequeñas van por el
+   * almacenamiento de Supabase, que no sabe contar, así que de esas no hay
+   * progreso y el anillo gira mientras duran.
+   */
+  onProgress?: TransferListener
 }): Promise<{
   thumbnailPath: string
   derivativePath: string
@@ -1301,6 +1353,7 @@ async function buildAndUploadCorrected(params: {
   store: PhotoEdit
   sourceIsMaster?: boolean
   masterPath?: string | null
+  onProgress?: TransferListener
 }): Promise<CorrectedOutcome> {
   const stored = normalizeEdit(params.store)
   if (isNoEdit(stored)) return { status: 'NOT_NEEDED' }
@@ -1320,7 +1373,7 @@ async function buildAndUploadCorrected(params: {
     }
     // Named and checked before anything is signed.
     const path = correctedPath(params.catalogId, params.masterPath)
-    await uploadCorrectedCopy(path, copy.blob)
+    await uploadCorrectedCopy(path, copy.blob, params.onProgress)
     return { status: 'UPLOADED', path, bytes: copy.blob.size }
   } catch (e) {
     return {
