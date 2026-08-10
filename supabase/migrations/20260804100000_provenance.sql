@@ -1,56 +1,56 @@
 -- ============================================================
--- La procedencia deja de ser un campo y pasa a ser una cadena de eventos
--- fechados (RF-509, RF-510, RF-511, RF-218).
+-- The provenance stops being a field and becomes a chain of dated
+-- events (RF-509, RF-510, RF-511, RF-218).
 --
--- El esquema de campos v11 fusionó en v4 `propietario_actual` y
--- `procedencia_historial` en un `procedencia` narrativo, y en v10 le colgó al
--- lado `propietarios_documentados` como «versión estructurada y filtrable» que
--- explícitamente «no registra fechas de adquisición ni orden cronológico». Eso
--- deja el dato con DOS representaciones y NINGUNA completa: el relato no se
--- puede consultar y la relación múltiple no sabe el orden ni las fechas, que es
--- justo lo que una cadena de procedencia es.
+-- The v11 field schema merged in v4 `propietario_actual` and
+-- `procedencia_historial` into a narrative `procedencia`, and in v10 hung
+-- `propietarios_documentados` alongside it as a «structured and filterable version» that
+-- explicitly «does not record acquisition dates nor chronological order». That
+-- leaves the datum with TWO representations and NEITHER complete: the account cannot
+-- be queried and the multiple relation does not know the order nor the dates, which is
+-- exactly what a provenance chain is.
 --
--- Aquí se invierte la jerarquía. La cadena de eventos es el REGISTRO —con su
--- orden, en qué calidad se tuvo la obra, cómo se adquirió y entre qué años— y el
--- relato narrativo es la REDACCIÓN publicable (RF-510). Es exactamente la regla
--- que ADR-004 ya aplica con `date_note` sobre `execution_date`: la estructura
--- alimenta la búsqueda y la prosa manda al imprimir, porque la prosa de un
--- catálogo razonado no se puede generar. Y `propietarios_documentados`
--- desaparece antes de llegar a existir: el `join` por `party_id` contesta a «¿qué
--- obras están vinculadas a esta institución?», que era lo único que lo
--- justificaba.
+-- Here the hierarchy is inverted. The chain of events is the RECORD —with its
+-- order, in what capacity the artwork was held, how it was acquired and between which years— and the
+-- narrative account is the publishable WORDING (RF-510). It is exactly the rule
+-- ADR-004 already applies with `date_note` over `execution_date`: the structure
+-- feeds the search and the prose rules when printing, because the prose of a
+-- catalogue raisonné cannot be generated. And `propietarios_documentados`
+-- disappears before getting to exist: the `join` by `party_id` answers «which
+-- artworks are linked to this institution?», which was the only thing that
+-- justified it.
 --
--- Tampoco se crea `estatus_legal`. v11 lo define como Selección (Donación /
--- Cesión / Depósito / Propiedad familia / Desconocido) y esa lista mezcla dos
--- preguntas distintas: en qué calidad se tiene la obra y cómo llegó. Con la
--- cadena, la primera es `capacity` del último eslabón y la segunda es
--- `acquisition`; un campo suelto que puede contradecir a la cadena que tiene al
--- lado sobra.
+-- Nor is `estatus_legal` created. v11 defines it as a Selection (Donación /
+-- Cesión / Depósito / Propiedad familia / Desconocido) and that list mixes two
+-- different questions: in what capacity the artwork is held and how it arrived. With the
+-- chain, the first is the last link's `capacity` and the second is
+-- `acquisition`; a loose field that can contradict the chain it has
+-- alongside is superfluous.
 --
--- Esta migración crea la tabla de eventos y sus reglas, añade a la obra las
--- columnas de procedencia, cierra la comprobación que la migración de `parties`
--- dejó pendiente —una parte que sostiene una cadena no se retira— y traslada al
--- modelo nuevo los cuatro nodos del árbol de lugares que hoy son propiedad
--- disfrazada de sitio.
+-- This migration creates the events table and its rules, adds the provenance
+-- columns to the artwork, closes the check the `parties` migration
+-- left pending —a party that holds up a chain is not withdrawn— and moves to the
+-- new model the four nodes of the tree of places that today are ownership
+-- disguised as a site.
 --
--- Las POLÍTICAS RLS de `provenance_events` van en la migración siguiente. Lo que
--- SÍ se hace aquí es activar RLS y revocar los privilegios, porque una tabla que
--- existe un solo despliegue sin RLS es una tabla publicada. Con RLS activado y
--- sin ninguna política, la tabla está cerrada para todo el mundo salvo el acceso
--- administrativo directo, que es el estado seguro para esperar.
+-- The RLS POLICIES of `provenance_events` go in the next migration. What IS
+-- done here is enabling RLS and revoking the privileges, because a table that
+-- exists for a single deployment with no RLS is a published table. With RLS enabled and
+-- no policy, the table is closed to everybody except direct
+-- administrative access, which is the safe state to wait in.
 -- ============================================================
 
 
--- ── Tres enumerados, y por qué no son tablas maestras ───────
+-- ── Three enumerated types, and why they are not master tables ──
 --
--- El criterio del esquema es si el CÓDIGO mira el valor. `artwork_types` es
--- maestra porque el código nunca lo mira: lo renderiza. De estos tres depende
--- quién es el poseedor actual, cómo se redacta la línea publicable y si un
--- bloque documental está investigado, así que mirarlos es justo lo que hay que
--- hacer.
+-- The schema's criterion is whether the CODE looks at the value. `artwork_types` is
+-- a master table because the code never looks at it: it renders it. On these three depends
+-- who the current holder is, how the publishable line is worded and whether a
+-- documentary block is researched, so looking at them is exactly what has to be
+-- done.
 
--- En qué calidad se tuvo la obra. Es la mitad de `estatus_legal` de v11, la que
--- responde «¿como qué la tenía?».
+-- In what capacity the artwork was held. It is half of v11's `estatus_legal`, the one that
+-- answers «as what did they have it?».
 create type public.provenance_capacity as enum (
   'OWNER',       -- Propietario
   'DEPOSIT',     -- En depósito
@@ -62,10 +62,10 @@ create type public.provenance_capacity as enum (
 comment on type public.provenance_capacity is
   'En qué calidad tuvo la obra un eslabón de la cadena. «Desconocido» es investigado sin resultado; «Sin revisar» es pendiente (RF-205).';
 
--- Cómo llegó a sus manos. Es la otra mitad de `estatus_legal`, y son dos hechos
--- distintos: «Depósito» dice en qué calidad y «Donación» dice cómo llegó. Una
--- obra puede estar en depósito habiendo llegado por donación, y con un solo
--- campo había que elegir cuál de las dos verdades se guardaba.
+-- How it came into their hands. It is the other half of `estatus_legal`, and they are two
+-- different facts: «Depósito» says in what capacity and «Donación» says how it arrived. An
+-- artwork can be on deposit having arrived by donation, and with a single
+-- field one had to choose which of the two truths was stored.
 create type public.provenance_acquisition as enum (
   'PURCHASE',    -- Compra
   'GIFT',        -- Donación
@@ -79,9 +79,9 @@ create type public.provenance_acquisition as enum (
 comment on type public.provenance_acquisition is
   'Cómo llegó la obra a ese eslabón. Separado de la calidad de tenencia a propósito: una obra en depósito puede haber llegado por donación.';
 
--- El estado de investigación de un bloque documental de la ficha. Lo crea este
--- grupo y lo reutilizan bibliografía, exposiciones y documentación: es la misma
--- pregunta cuatro veces, y cuatro enumerados iguales divergirían.
+-- The research state of a documentary block of the record. This group creates it
+-- and bibliography, exhibitions and documentation reuse it: it is the same
+-- question four times, and four identical enumerated types would diverge.
 create type public.research_status as enum (
   'UNREVIEWED',   -- Sin revisar: nadie ha mirado todavía
   'IN_PROGRESS',  -- En curso
@@ -93,44 +93,44 @@ comment on type public.research_status is
   'Estado de investigación de un bloque documental de la obra (RF-218). Distingue el bloque pendiente del investigado sin resultado: una obra sin exposiciones registradas no es una obra que no se expuso.';
 
 
--- ── La cadena ───────────────────────────────────────────────
+-- ── The chain ───────────────────────────────────────────────
 
 create table public.provenance_events (
-  -- Clave sustituta (ADR-007). No hay ninguna etiqueta pegada a un eslabón, y
-  -- reordenar la cadena no puede ser renumerar identificadores.
+  -- Surrogate key (ADR-007). There is no label stuck to a link, and
+  -- reordering the chain cannot be renumbering identifiers.
   id uuid primary key default gen_random_uuid(),
 
-  -- Misma forma que `images`: `on update cascade` porque el identificador de
-  -- catalogación es texto y, aunque RF-204 lo declare inmutable, la cascada
-  -- cuesta cero y evita que una corrección administrativa deje eslabones
-  -- huérfanos. Sin `on delete`: de `artworks` no se borra nada (RF-901).
+  -- Same shape as `images`: `on update cascade` because the cataloguing
+  -- identifier is text and, although RF-204 declares it immutable, the cascade
+  -- costs nothing and prevents an administrative correction from leaving orphan
+  -- links. With no `on delete`: nothing is deleted from `artworks` (RF-901).
   catalog_id text not null references public.artworks (catalog_id) on update cascade,
 
-  -- El orden de la cadena, 1..n. Es MANUAL y no derivado de las fechas: la mitad
-  -- de los eslabones de un catálogo razonado no tienen año conocido, y un orden
-  -- derivado de nulos no es un orden. Lo asigna el trigger al insertar y lo
-  -- rehace `reorder_provenance_events`, como en las fotografías (RF-401).
+  -- The chain's order, 1..n. It is MANUAL and not derived from the dates: half
+  -- the links of a catalogue raisonné have no known year, and an order
+  -- derived from nulls is not an order. The trigger assigns it on inserting and
+  -- `reorder_provenance_events` redoes it, as in the photographs (RF-401).
   position integer not null,
 
-  -- NULO A PROPÓSITO. «Colección privada, España» y «colección desconocida» son
-  -- eslabones legítimos sin ficha detrás —el propio v11 los fija como convención
-  -- de redacción—, y obligar a crear una parte fantasma para cada uno ensuciaría
-  -- la maestra con filas sin contacto, sin país y sin nada que consultar.
-  -- `restrict` es coherente con que nadie tenga DELETE sobre `parties`: si
-  -- alguna vez se borrara una a mano, esto avisa en vez de romper la cadena.
+  -- NULL ON PURPOSE. «Colección privada, España» and «colección desconocida» are
+  -- legitimate links with no record behind them —v11 itself fixes them as a wording
+  -- convention—, and forcing the creation of a phantom party for each one would dirty
+  -- the master table with rows with no contact, no country and nothing to consult.
+  -- `restrict` is coherent with nobody having DELETE over `parties`: if
+  -- one were ever deleted by hand, this warns instead of breaking the chain.
   party_id uuid references public.parties (id) on delete restrict,
 
-  -- Cómo consta el eslabón cuando no tiene ficha, o la precisión que la ficha no
-  -- da («propiedad de la tía de X» dentro de una colección familiar).
+  -- How the link is recorded when it has no record, or the precision the record does not
+  -- give («propiedad de la tía de X» inside a family collection).
   party_note text not null default '',
 
   capacity public.provenance_capacity not null default 'UNREVIEWED',
   acquisition public.provenance_acquisition not null default 'UNREVIEWED',
 
-  -- ── La fecha, con la forma estructurada de ADR-004 ────────
-  -- Se repiten cinco columnas a cambio de heredar el analizador de fechas del
-  -- frontend, la columna generada y los tests ya escritos. Es un buen cambio: la
-  -- alternativa era un texto libre por el que no se puede preguntar.
+  -- ── The date, with ADR-004's structured shape ─────────────
+  -- Five columns are repeated in exchange for inheriting the date parser from the
+  -- frontend, the generated column and the tests already written. It is a good trade: the
+  -- alternative was a free text that cannot be asked about.
   start_year smallint,
   end_year smallint,
   approximate_date boolean not null default false,
@@ -147,53 +147,53 @@ create table public.provenance_events (
     end
   ) stored,
 
-  -- La fuente del dato y el `[?]` de RF-214: «según catálogo de la exposición de
+  -- The datum's source and RF-214's `[?]`: «según catálogo de la exposición de
   -- 1985», «dato facilitado por la familia, sin documentar».
   note text not null default '',
 
-  -- RF-804: trazabilidad completa, sellada por `tg_row_audit`.
+  -- RF-804: complete traceability, stamped by `tg_row_audit`.
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-517, que revisa RF-903: un eslabón se retira, no se borra. La premisa de
-  -- RF-903 —que una fila puente no tiene nada citable y basta con rehacerla— no
-  -- se sostiene aquí: el eslabón lleva años, calidad de tenencia y la fuente del
-  -- dato, es trabajo de investigación, y quién lo retiró es traza que interesa.
+  -- RF-517, which revises RF-903: a link is withdrawn, not deleted. RF-903's
+  -- premise —that a bridge row has nothing citable and redoing it is enough— does
+  -- not hold here: the link carries years, quality of tenure and the datum's
+  -- source, it is research work, and who withdrew it is a trace that matters.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
   restored_at timestamptz,
   restored_by uuid references public.profiles (id),
 
-  -- Un eslabón tiene que decir de quién habla, con ficha o sin ella. Uno sin
-  -- ninguna de las dos cosas es un hueco en la cadena que además ocupa una
-  -- posición, y una cadena con un hueco es un documento falseado. La salida es
-  -- barata: `party_note` es texto libre y «colección desconocida» vale.
+  -- A link has to say whom it speaks of, with a record or without one. One with
+  -- neither of the two things is a gap in the chain that also occupies a
+  -- position, and a chain with a gap is a falsified document. The way out is
+  -- cheap: `party_note` is free text and «colección desconocida» will do.
   constraint provenance_events_link_has_an_end
     check (party_id is not null or btrim(party_note) <> ''),
 
-  -- El orden empieza en 1, como el de las fotografías.
+  -- The order starts at 1, like the photographs'.
   constraint provenance_events_position_positive check (position >= 1),
 
-  -- Un año fuera de rango plausible es una errata, no una fecha (ADR-004).
+  -- A year outside a plausible range is a typo, not a date (ADR-004).
   constraint provenance_events_plausible_years check (
     (start_year is null or start_year between 1000 and 2100)
     and (end_year is null or end_year between 1000 and 2100)
   ),
 
-  -- LA ÚNICA DIFERENCIA con `artworks_coherent_range`, y es deliberada: allí el
-  -- rango exige `end_year > start_year` porque «1985-1985» no es un rango de
-  -- ejecución sino un año suelto mal escrito, y se escribe con `start_year` a
-  -- secas. Aquí es `>=` porque una obra comprada y vendida en 1985 es una
-  -- tenencia real y sus dos extremos son datos distintos.
+  -- THE ONLY DIFFERENCE from `artworks_coherent_range`, and it is deliberate: there the
+  -- range requires `end_year > start_year` because «1985-1985» is not an execution
+  -- range but a badly written loose year, and it is written with `start_year` on
+  -- its own. Here it is `>=` because an artwork bought and sold in 1985 is a
+  -- real tenure and its two ends are different data.
   constraint provenance_events_coherent_range check (
     end_year is null or (start_year is not null and end_year >= start_year)
   ),
 
-  -- Las banderas hablan de un año: sin año no hay nada que aproximar ni que
-  -- poner en duda («[?]» a secas no dice nada).
+  -- The flags speak about a year: with no year there is nothing to approximate nor to
+  -- cast doubt on («[?]» on its own says nothing).
   constraint provenance_events_flags_require_year check (
     start_year is not null or (not approximate_date and not unconfirmed_date)
   )
@@ -209,23 +209,23 @@ comment on column public.provenance_events.party_id is
 comment on column public.provenance_events.date_text is
   'Generada: se compone de los campos estructurados (o de date_note si existe). No se escribe nunca directamente (ADR-004).';
 
--- El orden de la cadena de una obra, que es como se lee siempre.
+-- The order of an artwork's chain, which is how it is always read.
 create index provenance_events_artwork_idx
   on public.provenance_events (catalog_id, position);
 
--- «¿Qué obras han pasado por esta institución?». Era la única razón de ser del
--- `propietarios_documentados` de v11 v10, y aquí es un índice.
+-- «Which artworks have passed through this institution?». It was the only reason for being of
+-- v11 v10's `propietarios_documentados`, and here it is an index.
 create index provenance_events_party_idx
   on public.provenance_events (party_id);
 
 
--- ── El orden se asigna solo, y se rehace a mano ─────────────
+-- ── The order assigns itself, and is redone by hand ─────────
 
--- Un eslabón nuevo va AL FINAL, nunca en medio de un orden que alguien colocó.
--- SECURITY DEFINER como `tg_assign_image_sort_order` y por lo mismo: el máximo
--- se calcula sobre TODA la cadena, incluidos los eslabones que la política de
--- lectura pudiera ocultar a quien inserta. Un máximo calculado sobre media tabla
--- devolvería una posición repetida.
+-- A new link goes AT THE END, never in the middle of an order somebody arranged.
+-- SECURITY DEFINER like `tg_assign_image_sort_order` and for the same reason: the maximum
+-- is computed over the WHOLE chain, including the links the read policy
+-- might hide from whoever inserts. A maximum computed over half a table
+-- would return a repeated position.
 create function public.tg_assign_provenance_position()
 returns trigger language plpgsql security definer
 set search_path = public as $$
@@ -246,10 +246,10 @@ create trigger assign_provenance_position
   before insert on public.provenance_events
   for each row execute function public.tg_assign_provenance_position();
 
--- Reordenar, todo o nada. Calcado de `reorder_images`, que ya tiene sus tests, y
--- sin SECURITY DEFINER por lo mismo: las políticas siguen en vigor, así que un
--- Lector no escribe aquí; la comprobación explícita solo convierte el silencioso
--- «no ha cambiado nada» en un error legible, y en español porque lo lee ella.
+-- Reordering, all or nothing. Traced from `reorder_images`, which already has its tests, and
+-- with no SECURITY DEFINER for the same reason: the policies remain in force, so a
+-- Reader does not write here; the explicit check only turns the silent
+-- «nothing has changed» into a legible error, and in Spanish because she reads it.
 create function public.reorder_provenance_events(p_catalog_id text, p_event_ids uuid[])
 returns void
 language plpgsql
@@ -263,16 +263,16 @@ begin
     raise exception 'No tienes permiso para reordenar la procedencia';
   end if;
 
-  -- Un identificador repetido pasaría el recuento de más abajo y dejaría dos
-  -- eslabones peleándose por una posición, así que se rechaza primero.
+  -- A repeated identifier would pass the count further below and would leave two
+  -- links fighting over a position, so it is rejected first.
   if v_given <> (select count(distinct t.id) from unnest(p_event_ids) as t(id)) then
     raise exception 'La lista de eslabones tiene identificadores repetidos';
   end if;
 
-  -- La lista tiene que ser EXACTAMENTE los eslabones activos de la obra. Un
-  -- cliente desfasado —alguien añadió o retiró un eslabón mientras tanto— dejaría
-  -- si no la cadena a medio ordenar, y media cadena ordenada es peor que un
-  -- rechazo: se lee como un orden y no lo es.
+  -- The list has to be EXACTLY the artwork's active links. An
+  -- out-of-date client —somebody added or withdrew a link in the meantime— would otherwise leave
+  -- the chain half ordered, and half an ordered chain is worse than a
+  -- rejection: it reads as an order and it is not one.
   select count(*) into v_active
     from provenance_events e
    where e.catalog_id = p_catalog_id and e.active;
@@ -305,36 +305,36 @@ comment on function public.reorder_provenance_events is
   'Rehace el orden de la cadena de procedencia de una obra, todo o nada (RF-509).';
 
 
--- ── Autoría y papelera ──────────────────────────────────────
--- La función genérica de RF-804, creada con `parties`. La tabla tiene las cuatro
--- columnas de la papelera completa, así que restaurar conserva la traza de la
--- baja anterior (RF-902).
+-- ── Authorship and wastebasket ──────────────────────────────
+-- RF-804's generic function, created with `parties`. The table has the four
+-- columns of the complete wastebasket, so restoring keeps the previous
+-- withdrawal's trace (RF-902).
 
 create trigger provenance_event_row_audit
   before insert or update on public.provenance_events
   for each row execute function public.tg_row_audit();
 
 
--- ── Lo que la obra gana ─────────────────────────────────────
+-- ── What the artwork gains ──────────────────────────────────
 
 alter table public.artworks
-  -- RF-510: el relato publicable. Cuando tiene texto, es lo que la ficha imprime;
-  -- cuando está vacío, la ficha compone la línea a partir de los eslabones. La
-  -- regla vive en la interfaz; lo que la base garantiza es que las dos
-  -- representaciones existen y ninguna pisa a la otra.
+  -- RF-510: the publishable account. When it has text, it is what the record prints;
+  -- when it is empty, the record composes the line out of the links. The
+  -- rule lives in the interface; what the base guarantees is that both
+  -- representations exist and neither treads on the other.
   add column provenance text not null default '',
 
-  -- El `nota_procedencia` de v11 v5: de dónde sale la información y qué
-  -- fiabilidad tiene. Separado del relato a propósito, porque no se publica.
+  -- v11 v5's `nota_procedencia`: where the information comes from and what
+  -- reliability it has. Separate from the account on purpose, because it is not published.
   add column provenance_note text not null default '',
 
-  -- RF-511: el titular de los derechos es una RELACIÓN y no el «Texto/Relación»
-  -- ambiguo de v11, y puede no coincidir con quien posee la obra (obra en
-  -- depósito en una institución, derechos reservados a la familia).
+  -- RF-511: the rights holder is a RELATIONSHIP and not v11's ambiguous
+  -- «Texto/Relación», and it may not coincide with whoever possesses the artwork (an artwork on
+  -- deposit at an institution, rights reserved to the family).
   add column rights_holder_party_id uuid references public.parties (id) on delete restrict,
   add column rights_holder_note text not null default '',
 
-  -- RF-218. La columna que hacía falta y que v11 no tiene en absoluto.
+  -- RF-218. The column that was needed and that v11 does not have at all.
   add column provenance_status public.research_status not null default 'UNREVIEWED';
 
 comment on column public.artworks.provenance is
@@ -349,37 +349,37 @@ comment on column public.artworks.provenance_status is
 create index artworks_rights_holder_idx on public.artworks (rights_holder_party_id);
 
 
--- ── «Sin revisar» no es «no» (RF-218) ───────────────────────
+-- ── «Sin revisar» is not «no» (RF-218) ──────────────────────
 --
--- Sin esta regla la columna puede mentir, y una columna que puede mentir sobre
--- si algo se investigó es peor que no tenerla: la ficha diría «investigado sin
--- resultado» debajo de una lista de eslabones.
+-- Without this rule the column can lie, and a column that can lie about
+-- whether something was researched is worse than not having it: the record would say «investigado sin
+-- resultado» underneath a list of links.
 --
--- Se comprueba por las DOS puertas, porque una sola no cierra la invariante: ni
--- se declara «investigado sin resultado» en una obra con eslabones activos, ni se
--- añade o restaura un eslabón en una obra declarada así. La segunda cuesta un
--- update más a la usuaria y es la que hace que el aserto se sostenga.
+-- It is checked through BOTH doors, because a single one does not close the invariant: neither
+-- is «investigado sin resultado» declared on an artwork with active links, nor is a
+-- link added or restored on an artwork declared that way. The second costs the user one
+-- more update and is the one that makes the assertion hold.
 --
--- Lo que SÍ se permite, y es intencionado: eslabones con el estado en «Sin
--- revisar». Tener un dato no es haber hecho la investigación —los ocho eslabones
--- que traslada esta misma migración son exactamente ese caso—, así que la regla
--- es de un solo sentido.
+-- What IS allowed, and it is intentional: links with the state on «Sin
+-- revisar». Having a datum is not having done the research —the eight links
+-- this same migration moves are exactly that case—, so the rule
+-- is one-way.
 --
--- Los grupos de bibliografía, exposiciones y documentación REEMPLAZAN esta
--- función con `create or replace` para añadir su bloque. El trigger se declara a
--- propósito sin lista de columnas para que no haya que recrearlo cada vez: la
--- comprobación solo hace trabajo cuando el estado cambia a «investigado sin
+-- The bibliography, exhibitions and documentation groups REPLACE this
+-- function with `create or replace` in order to add their block. The trigger is declared
+-- on purpose with no column list so that it does not have to be recreated each time: the
+-- check only does work when the state changes to «investigado sin
 -- resultado».
 --
--- Los `if` van anidados y no en una sola condición por un detalle de plpgsql que
--- muerde: en un trigger de INSERT el registro `old` no está asignado, y una
--- expresión que lo nombre falla aunque el `and` de la izquierda ya sea falso
--- —la expresión entera se prepara como una consulta con parámetros antes de
--- evaluarse—. Se comprueba `tg_op` en su propio `if`.
+-- The `if`s are nested and not in a single condition because of a plpgsql detail that
+-- bites: in an INSERT trigger the `old` record is not assigned, and an
+-- expression naming it fails even if the `and` on the left is already false
+-- —the whole expression is prepared as a query with parameters before being
+-- evaluated—. `tg_op` is checked in its own `if`.
 --
--- Y la comprobación se salta cuando el estado no cambia, que es lo que evita que
--- una fila que ya estuviera en un estado imposible bloqueara cualquier edición
--- de la obra en vez de dejar arreglarla.
+-- And the check is skipped when the state does not change, which is what prevents
+-- a row that was already in an impossible state from blocking any edit
+-- of the artwork instead of letting it be fixed.
 create function public.tg_artwork_research_status_coherent()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -431,26 +431,26 @@ create trigger provenance_event_status_coherent
   for each row execute function public.tg_provenance_event_status_coherent();
 
 
--- ── Una parte que sostiene una cadena no se retira ──────────
+-- ── A party that holds up a chain is not withdrawn ──────────
 --
--- La comprobación que la migración de `parties` no podía escribir todavía: hasta
--- ahora no había nada que comprobar. Es la misma regla que
--- `tg_series_deactivation` y `tg_physical_place_deactivation`, y aquí el motivo
--- es más fuerte que en aquellas: una cadena de procedencia con un hueco no es un
--- dato incompleto, es un documento falseado.
+-- The check the `parties` migration could not write yet: until
+-- now there was nothing to check. It is the same rule as
+-- `tg_series_deactivation` and `tg_physical_place_deactivation`, and here the reason
+-- is stronger than in those: a provenance chain with a gap is not an
+-- incomplete datum, it is a falsified document.
 --
--- Esto REVISA RF-905 en lo que toca a los propietarios. RF-905 dice que un
--- propietario dado de baja «deja el campo vacío en las obras que lo tenían
--- asignado»; aplicado a la procedencia, eso sería borrar un eslabón documentado
--- por la vía indirecta. En su lugar rige la regla de las demás maestras: primero
--- se saca la parte de donde esté, y entonces se retira.
+-- This REVISES RF-905 as far as the owners are concerned. RF-905 says that a
+-- withdrawn owner «leaves the field empty in the artworks that had it
+-- assigned»; applied to the provenance, that would be erasing a documented link
+-- by the indirect route. In its place the rule of the other master tables governs: first
+-- the party is taken out of wherever it is, and then it is withdrawn.
 --
--- Una obra en la papelera NO cuenta, como en los lugares: está de baja lógica,
--- sus eslabones ya no se muestran (RF-905 hacia abajo), y exigir vaciar la
--- papelera antes de retirar una parte sería hacer que la papelera estorbe.
+-- An artwork in the wastebasket does NOT count, as in the places: it is logically withdrawn,
+-- its links are no longer shown (RF-905 downwards), and requiring the
+-- wastebasket to be emptied before withdrawing a party would be making the wastebasket get in the way.
 --
--- Las sedes de exposición añadirán su comprobación aquí con `create or replace`
--- cuando existan.
+-- The exhibition venues will add their check here with `create or replace`
+-- when they exist.
 create function public.tg_party_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -485,17 +485,17 @@ create trigger party_deactivation
   for each row execute function public.tg_party_deactivation();
 
 
--- ── RLS y privilegios ───────────────────────────────────────
+-- ── RLS and privileges ──────────────────────────────────────
 --
--- Se revoca primero y se concede después, uno a uno: la plataforma concede por
--- omisión todos los privilegios de cada tabla nueva a los roles anónimo y
--- autenticado, incluido `delete` (RF-113).
+-- It is revoked first and granted afterwards, one by one: the platform grants by
+-- default all the privileges of every new table to the anonymous and
+-- authenticated roles, `delete` included (RF-113).
 --
--- Sin DELETE: ni privilegio ni política, nunca (RF-901, RF-517). Retirar un
--- eslabón es un update de `active`.
+-- No DELETE: neither privilege nor policy, ever (RF-901, RF-517). Withdrawing a
+-- link is an update of `active`.
 --
--- Las políticas van en la migración siguiente. Hasta que existan, esta tabla no
--- la lee ni la escribe nadie con sesión: RLS activado sin política niega.
+-- The policies go in the next migration. Until they exist, nobody with a session
+-- reads or writes this table: RLS enabled with no policy denies.
 
 alter table public.provenance_events enable row level security;
 
@@ -503,9 +503,9 @@ revoke all on public.provenance_events from anon, authenticated;
 
 grant select, insert, update on public.provenance_events to authenticated;
 
--- Explícito, como en 20260801140000 y 20260804090000: en esta plataforma una
--- función nueva nace con EXECUTE para PUBLIC pese al `alter default privileges`,
--- y quien lo caza es `function_privileges.test.sql`.
+-- Explicit, as in 20260801140000 and 20260804090000: on this platform a
+-- new function is born with EXECUTE for PUBLIC despite the `alter default privileges`,
+-- and what catches it is `function_privileges.test.sql`.
 revoke all on function public.tg_assign_provenance_position() from public;
 revoke all on function public.tg_artwork_research_status_coherent() from public;
 revoke all on function public.tg_provenance_event_status_coherent() from public;
@@ -516,45 +516,45 @@ grant execute on function public.reorder_provenance_events(text, uuid[]) to auth
 
 
 -- ============================================================
--- El traslado: los cuatro nodos del árbol que son propiedad, no sitio
+-- The move: the tree's four nodes that are ownership, not a site
 -- ============================================================
 --
--- ADR-006 dejó anotado que MUBA, MACVA y las colecciones particulares «dejarán
--- de ser lugares y pasarán a ser filas de esa tabla» cuando la tabla existiera.
--- Ya existe. Se cumple A MEDIAS Y A PROPÓSITO:
+-- ADR-006 left it noted that MUBA, MACVA and the private collections «will stop
+-- being places and will become rows of that table» when the table existed.
+-- It exists now. It is fulfilled HALF WAY AND ON PURPOSE:
 --
---   • Se crea su ficha en `parties` y un eslabón de procedencia por obra.
---   • NO se borran los nodos: un museo donde una obra está depositada sigue
---     siendo la respuesta correcta a «¿dónde está la obra?», que es para lo que
---     sirve el árbol, y el árbol ya tiene ciudades por raíz.
---   • Lo que SÍ sale del árbol es la propiedad metida dentro del nombre.
+--   • Their record is created in `parties` and one provenance link per artwork.
+--   • The nodes are NOT deleted: a museum where an artwork is on deposit goes on
+--     being the correct answer to «where is the artwork?», which is what
+--     the tree is for, and the tree already has cities as roots.
+--   • What DOES leave the tree is the ownership stuffed inside the name.
 --
--- Sobre la coletilla, que es el caso que obliga a decidir: «Colección particular
--- familia Hormeño (propiedad de la tia de Almudena Hormeño)» y «Colección
--- particular familia Hormeño» son HERMANOS bajo Castelar n.º 5 y, quitada la
--- propiedad del nombre, son el MISMO sitio —y además dos hermanos homónimos, que
--- el índice de unicidad del árbol no admite. Así que no basta con recortar el
--- nombre: la obra se mueve al hermano que queda y el nodo con coletilla se
--- RETIRA (baja lógica, RF-901, nunca un borrado). La precisión que ese nombre
--- llevaba dentro no se pierde: viaja a `party_note` del eslabón, que es donde
--- significa algo.
+-- About the tag-on, which is the case that forces a decision: «Colección particular
+-- familia Hormeño (propiedad de la tia de Almudena Hormeño)» and «Colección
+-- particular familia Hormeño» are SIBLINGS under Castelar n.º 5 and, with the
+-- ownership taken out of the name, they are the SAME site —and besides two homonymous siblings, which
+-- the tree's uniqueness index does not admit. So trimming the
+-- name is not enough: the artwork is moved to the sibling that remains and the node with the tag-on is
+-- WITHDRAWN (logical deletion, RF-901, never a delete). The precision that name
+-- carried inside is not lost: it travels to the link's `party_note`, which is where
+-- it means something.
 --
--- La CALIDAD de tenencia de los ocho eslabones queda en «Sin revisar» y no en
--- «Depósito» ni en «Propietario». El árbol decía dónde está la obra, no en qué
--- calidad la tiene quien la guarda; deducir un hecho jurídico del nombre de un
--- sitio es exactamente lo que «Sin revisar no es no» prohíbe. Por lo mismo,
--- `provenance_status` de esas ocho obras se queda en «Sin revisar»: tener un
--- dato no es haber investigado la procedencia.
+-- The QUALITY of tenure of the eight links is left at «Sin revisar» and not at
+-- «Depósito» nor at «Propietario». The tree said where the artwork is, not in what
+-- capacity whoever keeps it has it; deducing a legal fact from a site's
+-- name is exactly what «Sin revisar no es no» forbids. For the same reason,
+-- the `provenance_status` of those eight artworks is left at «Sin revisar»: having a
+-- datum is not having researched the provenance.
 --
--- Si la base no lleva el volcado —integración continua, o una instalación
--- nueva—, no se encuentra ninguno de los cuatro nodos y este bloque no hace
--- absolutamente nada.
+-- If the base does not carry the dump —continuous integration, or a new
+-- installation—, none of the four nodes is found and this block does
+-- absolutely nothing.
 
--- La auditoría de `artworks` se desactiva mientras se escribe, como en
--- 20260801150000 y 20260803160000: dentro de una migración `auth.uid()` no es
--- nadie, y el trigger borraría el «actualizado por» de las obras. Y mover una
--- obra es un campo de fase 1 (RF-802), así que además movería la fecha de la
--- última vez que alguien la tuvo delante, que no ha pasado.
+-- The `artworks` audit is switched off while it writes, as in
+-- 20260801150000 and 20260803160000: inside a migration `auth.uid()` is
+-- nobody, and the trigger would erase the artworks' «actualizado por». And moving an
+-- artwork is a phase-1 field (RF-802), so it would also move the date of the
+-- last time somebody had it in front, which has not happened.
 alter table public.artworks disable trigger artwork_audit_trail;
 
 do $$
@@ -568,7 +568,7 @@ declare
 begin
   for v_map in
     select * from (values
-      -- nodo del árbol tal como está hoy escrito | ficha en `parties` | tipo | localidad | país | precisión del eslabón
+      -- tree node as it is written today | record in `parties` | type | locality | country | link's precision
       ('Colección particular familia Hormeño',
        'Colección particular familia Hormeño', 'PERSON', 'Badajoz', 'España', ''),
       ('Colección particular familia Hormeño (propiedad de la tia de Almudena Hormeño)',
@@ -587,15 +587,15 @@ begin
 
     continue when v_node is null;
 
-    -- La ficha se busca antes de crearla porque las dos colecciones Hormeño
-    -- comparten parte: son la misma familia con una precisión distinta.
+    -- The record is looked up before creating it because the two Hormeño collections
+    -- share a party: they are the same family with a different precision.
     --
-    -- El nombre de la ficha se escribe BIEN, con sus tildes y su acrónimo entre
-    -- paréntesis, y no se copia el del nodo: el árbol quedó en minúsculas y sin
-    -- tildes por el traslado de ADR-006, y curar tres nombres a mano aquí es
-    -- más barato que dejarlos deformados esperando una pasada de interfaz. El
-    -- nodo conserva el suyo: son dos cosas distintas y cada una se llama como le
-    -- toca.
+    -- The record's name is written PROPERLY, with its accents and its acronym in
+    -- brackets, and the node's is not copied: the tree was left in lower case and with no
+    -- accents by ADR-006's move, and curing three names by hand here is
+    -- cheaper than leaving them deformed waiting for an interface pass. The
+    -- node keeps its own: they are two different things and each is called what
+    -- it should be.
     select id into v_party
       from public.parties
      where public.place_key(name) = public.place_key(v_map.party_name);
@@ -609,8 +609,8 @@ begin
       v_parties := v_parties + 1;
     end if;
 
-    -- Un eslabón por obra, también por las que estén en la papelera: su cadena
-    -- documental existe igual y restaurarlas no puede devolverlas mancas.
+    -- One link per artwork, including those in the wastebasket: their documentary
+    -- chain exists just the same and restoring them cannot give them back maimed.
     for v_artwork in
       select catalog_id from public.artworks
        where physical_place_id = v_node order by catalog_id
@@ -626,7 +626,7 @@ begin
   raise notice 'Partes creadas: %. Eslabones de procedencia creados: %.', v_parties, v_events;
 end $$;
 
--- ── La fusión de los dos nodos Hormeño ──────────────────────
+-- ── The merger of the two Hormeño nodes ─────────────────────
 do $$
 declare
   v_long uuid;
@@ -648,9 +648,9 @@ begin
     raise exception 'El nodo con coletilla existe y el nodo hermano no: la fusión no tiene destino';
   end if;
 
-  -- Que sean hermanos es la premisa de toda esta decisión: si el árbol se ha
-  -- reorganizado y ya no lo son, no son el mismo sitio y fusionarlos movería
-  -- obras de edificio. Mejor parar que adivinar.
+  -- Their being siblings is the premise of this whole decision: if the tree has been
+  -- reorganised and they no longer are, they are not the same site and merging them would move
+  -- artworks between buildings. Better to stop than to guess.
   if (select parent_id from public.physical_places where id = v_long)
      is distinct from
      (select parent_id from public.physical_places where id = v_short) then
@@ -661,15 +661,15 @@ begin
    where physical_place_id = v_long;
   get diagnostics v_moved = row_count;
 
-  -- Ahora el nodo está vacío y el trigger de baja lo deja retirar. Retirar no es
-  -- borrar: la fila sigue ahí con su fecha de baja (RF-901).
+  -- Now the node is empty and the withdrawal trigger lets it be withdrawn. Withdrawing is not
+  -- deleting: the row is still there with its withdrawal date (RF-901).
   update public.physical_places set active = false where id = v_long;
 
   raise notice 'Obras movidas al nodo hermano: %. Nodo con coletilla retirado.', v_moved;
 end $$;
 
--- ── El recuento, que es lo que convierte esto en una migración y no en un
---    intento ────────────────────────────────────────────────
+-- ── The count, which is what turns this into a migration and not an
+--    attempt ─────────────────────────────────────────────────
 do $$
 declare
   v_events int;
@@ -680,9 +680,9 @@ begin
     from public.provenance_events
    where note like 'Trasladado del árbol de lugares%';
 
-  -- Las obras que quedan colgando de los tres nodos supervivientes: son las que
-  -- tenían que salir con eslabón. Si una se quedó sin él, los dos números
-  -- discrepan y la migración se para en vez de dejar media cadena escrita.
+  -- The artworks left hanging from the three surviving nodes: they are the ones that
+  -- had to come out with a link. If one was left without it, the two numbers
+  -- disagree and the migration stops instead of leaving half a chain written.
   select count(*) into v_artworks
     from public.artworks a
     join public.physical_places p on p.id = a.physical_place_id
@@ -697,8 +697,8 @@ begin
       v_events, v_artworks;
   end if;
 
-  -- Y ninguna obra con dos eslabones del traslado, que sería la otra forma de
-  -- que los recuentos cuadraran mintiendo.
+  -- And no artwork with two links from the move, which would be the other way
+  -- of the counts adding up while lying.
   if exists (
     select 1 from public.provenance_events
      where note like 'Trasladado del árbol de lugares%'
@@ -707,8 +707,8 @@ begin
     raise exception 'Alguna obra ha salido del traslado con más de un eslabón';
   end if;
 
-  -- Y que no quede propiedad metida dentro del nombre de un lugar activo, que es
-  -- la mitad del motivo de todo esto.
+  -- And that no ownership be left stuffed inside the name of an active place, which is
+  -- half the reason for all this.
   select count(*) into v_dangling
     from public.physical_places
    where active and name ilike '%propiedad de%';
@@ -721,7 +721,7 @@ begin
     v_events, v_artworks;
 end $$;
 
--- La auditoría vuelve antes de que nadie más pueda escribir. Si alguna vez se
--- olvidara, el catálogo perdería la traza sin que nada fallara: por eso lo
--- comprueba también `artwork_physical_place.test.sql`.
+-- The audit comes back before anybody else can write. If it were ever
+-- forgotten, the catalogue would lose the trace with nothing failing: that is why
+-- `artwork_physical_place.test.sql` also checks it.
 alter table public.artworks enable trigger artwork_audit_trail;

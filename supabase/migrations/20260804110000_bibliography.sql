@@ -1,64 +1,64 @@
 -- ============================================================
--- Bibliografía y la cita de una obra en una referencia
--- (RF-514, RF-513, RF-504, RF-506, RF-517, RF-218; resuelve DP-03).
+-- Bibliography and the citation of an artwork in a reference
+-- (RF-514, RF-513, RF-504, RF-506, RF-517, RF-218; resolves DP-03).
 --
--- Son las tablas 6 y 7 del esquema de campos v11 —«Bibliografía» y la puente
--- «Obra_Bibliografia»—, más el vocabulario de tipos de publicación que v11
--- dejaba como una selección cerrada de cuatro valores.
+-- They are tables 6 and 7 of the v11 field schema —«Bibliografía» and the bridge
+-- «Obra_Bibliografia»—, plus the vocabulary of publication types that v11
+-- left as a closed selection of four values.
 --
--- POR QUÉ ANTES QUE LAS EXPOSICIONES, que v11 numera como tabla 4 y esta como
--- 6: la flecha apunta en este sentido. `Exposiciones.referencia_catalogo`
--- (RF-503) referencia a la bibliografía y no al revés, porque el catálogo de
--- una exposición no es una tabla propia: es una publicación como cualquier
--- otra. Construir en el orden del documento dejaría la migración de
--- exposiciones con una clave ajena a una tabla que todavía no existe.
+-- WHY BEFORE THE EXHIBITIONS, which v11 numbers as table 4 and this one as
+-- 6: the arrow points this way. `Exposiciones.referencia_catalogo`
+-- (RF-503) references the bibliography and not the other way round, because an exhibition's
+-- catalogue is not a table of its own: it is a publication like any
+-- other. Building in the document's order would leave the exhibitions'
+-- migration with a foreign key to a table that does not yet exist.
 --
--- Lo que este grupo añade sobre v11, y por qué:
+-- What this group adds over v11, and why:
 --
---   • `publication_types` es una MAESTRA abierta y no una selección de cuatro
---     valores. Libro / Artículo / Catálogo / Prensa no aguanta el primer mes de
---     investigación real: tesis doctoral, catálogo de subasta, entrada de blog,
---     programa de radio, folleto. Es el caso de `artwork_types` sin adaptación
---     ninguna — la usuaria amplía la lista y el código no mira nunca el valor,
---     solo lo renderiza.
---   • `clave_bibtex` deja de ser clave primaria y pasa a columna única,
---     opcional y editable. Es DP-03, que el documento de requisitos deja
---     pendiente «solo para cuando exista Bibliografía»: ADR-007 ya decidió lo
---     esencial y aquí se ejecuta.
---   • `container_title`, que v11 no tiene y sin el cual el nombre de la revista
---     de un artículo acaba dentro del título y la cita no se puede componer.
---   • La puente conserva `pages` separado de `note`, siguiendo a v11 v9, que ya
---     revirtió la fusión con el argumento correcto: la página es un dato
---     citable de forma exacta y de uso recurrente (RF-504).
---   • Y la puente TIENE papelera, que es lo que revisa RF-903 (ver más abajo).
+--   • `publication_types` is an open MASTER table and not a selection of four
+--     values. Book / Article / Catalogue / Press does not survive the first month of
+--     real research: a doctoral thesis, an auction catalogue, a blog entry,
+--     a radio programme, a leaflet. It is `artwork_types`'s case with no adaptation
+--     at all — the user extends the list and the code never looks at the value,
+--     it only renders it.
+--   • `clave_bibtex` stops being the primary key and becomes a unique column,
+--     optional and editable. It is DP-03, which the requirements document leaves
+--     pending «only for when Bibliography exists»: ADR-007 already decided the
+--     essential part and here it is executed.
+--   • `container_title`, which v11 does not have and without which the name of an article's
+--     journal ends up inside the title and the citation cannot be composed.
+--   • The bridge keeps `pages` separate from `note`, following v11 v9, which already
+--     reverted the merger with the correct argument: the page is a datum
+--     citable exactly and of recurrent use (RF-504).
+--   • And the bridge HAS a wastebasket, which is what revises RF-903 (see further below).
 --
--- Las POLÍTICAS RLS de las tres tablas van en la migración siguiente. Lo que SÍ
--- se hace aquí es activar RLS y revocar los privilegios, porque una tabla que
--- existe un solo despliegue sin RLS es una tabla publicada. Con RLS activado y
--- sin ninguna política, la tabla está cerrada para todo el mundo salvo el
--- acceso administrativo directo, que es el estado seguro para esperar.
+-- The RLS POLICIES of the three tables go in the next migration. What IS
+-- done here is enabling RLS and revoking the privileges, because a table that
+-- exists for a single deployment with no RLS is a published table. With RLS enabled and
+-- no policy, the table is closed to everybody except direct
+-- administrative access, which is the safe state to wait in.
 -- ============================================================
 
 
--- ── El vocabulario de tipos de publicación (RF-514) ─────────
+-- ── The vocabulary of publication types (RF-514) ────────────
 --
--- Patrón de `artwork_types` tras ADR-007: clave sustituta, el nombre como
--- atributo único, papelera y autoría. La diferencia con aquella es que la
--- unicidad va por `place_key(name)` y no por el nombre literal: «Catálogo de
--- exposición» y «catalogo de exposicion» son el mismo tipo, y descubrirlo
--- cuando ya hay dos filas cuesta repasar todas las referencias.
+-- `artwork_types`'s pattern after ADR-007: surrogate key, the name as a
+-- unique attribute, wastebasket and authorship. The difference from that one is that the
+-- uniqueness goes by `place_key(name)` and not by the literal name: «Catálogo de
+-- exposición» and «catalogo de exposicion» are the same type, and discovering it
+-- when there are already two rows costs going through every reference.
 
 create table public.publication_types (
   id uuid primary key default gen_random_uuid(),
 
-  -- Tal cual se escribe, con sus mayúsculas y sus tildes. Lo que se normaliza
-  -- es la clave de comparación, no el dato.
+  -- Just as it is written, with its capitals and its accents. What is normalised
+  -- is the comparison key, not the datum.
   name text not null,
 
-  -- RF-901: nada se borra, se retira. Sin `restored_at`: como en las demás
-  -- maestras de vocabulario, restaurar deja la fila como si nunca se hubiera
-  -- retirado, y `tg_row_audit` distingue ese caso por la ausencia de la
-  -- columna.
+  -- RF-901: nothing is deleted, it is withdrawn. With no `restored_at`: as in the other
+  -- vocabulary master tables, restoring leaves the row as if it had never been
+  -- withdrawn, and `tg_row_audit` distinguishes that case by the column's
+  -- absence.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
@@ -66,8 +66,8 @@ create table public.publication_types (
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
 
-  -- Un tipo en blanco no clasifica nada, y uno con espacios alrededor rompería
-  -- la comparación de duplicados sin que se vea en pantalla.
+  -- A blank type classifies nothing, and one with spaces around it would break
+  -- the duplicate comparison without it being visible on screen.
   constraint publication_types_name_not_blank
     check (btrim(name) <> '' and name = btrim(name))
 );
@@ -80,23 +80,23 @@ create unique index publication_types_name_unique
 
 create index publication_types_active_idx on public.publication_types (active);
 
--- Autoría y papelera con la función genérica de RF-804, y no con una cuarta
--- copia de `tg_artwork_type_authorship`: era exactamente la divergencia que
--- `tg_row_audit` vino a evitar.
+-- Authorship and wastebasket with RF-804's generic function, and not with a fourth
+-- copy of `tg_artwork_type_authorship`: it was exactly the divergence
+-- `tg_row_audit` came to avoid.
 create trigger publication_type_row_audit
   before insert or update on public.publication_types
   for each row execute function public.tg_row_audit();
 
--- La siembra, que es lo que hace que la interfaz sirva el primer día: una
--- maestra vacía deja el selector en blanco y obliga a inventar el vocabulario
--- mientras se cataloga. Son los cuatro valores de v11 con el de catálogo
--- escrito entero —«Catálogo» a secas se confunde con el catálogo razonado que
--- este proyecto está haciendo—, más «Tesis» y «Otro», que son los dos que
--- faltan el primer día de archivo. Ampliar la lista no requiere migración: ese
--- es el motivo de que sea una maestra.
+-- The seeding, which is what makes the interface usable on the first day: an
+-- empty master table leaves the selector blank and forces inventing the vocabulary
+-- while cataloguing. They are v11's four values with the catalogue one
+-- written out in full —«Catálogo» on its own gets confused with the catalogue raisonné
+-- this project is making—, plus «Tesis» and «Otro», which are the two that
+-- are missing on the first day in the archive. Extending the list requires no migration: that
+-- is the reason it is a master table.
 --
--- `created_by` queda nulo a propósito: dentro de una migración `auth.uid()` no
--- es nadie, y estas filas no las creó ninguna persona.
+-- `created_by` is left null on purpose: inside a migration `auth.uid()` is
+-- nobody, and these rows were created by no person.
 insert into public.publication_types (name) values
   ('Libro'),
   ('Artículo'),
@@ -105,10 +105,10 @@ insert into public.publication_types (name) values
   ('Tesis'),
   ('Otro');
 
--- Un tipo que todavía clasifica referencias no se retira, con la misma regla
--- que `tg_artwork_type_deactivation` y `tg_series_deactivation`: retirarlo no
--- lo retira, deja el catálogo apuntando a algo que la interfaz ya no ofrece.
--- Una referencia en la papelera no cuenta, como en las demás.
+-- A type that still classifies references is not withdrawn, with the same rule
+-- as `tg_artwork_type_deactivation` and `tg_series_deactivation`: withdrawing it does not
+-- withdraw it, it leaves the catalogue pointing at something the interface no longer offers.
+-- A reference in the wastebasket does not count, as in the others.
 create function public.tg_publication_type_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -130,88 +130,88 @@ create trigger publication_type_deactivation
   for each row execute function public.tg_publication_type_deactivation();
 
 
--- ── La referencia bibliográfica ─────────────────────────────
+-- ── The bibliographic reference ─────────────────────────────
 
 create table public.bibliography (
-  -- Clave sustituta (ADR-007). La clave BibTeX era la clave primaria en v11 y
-  -- deja de serlo: ver la columna siguiente.
+  -- Surrogate key (ADR-007). The BibTeX key was the primary key in v11 and
+  -- stops being it: see the next column.
   id uuid primary key default gen_random_uuid(),
 
-  -- DP-03, resuelta. Es el asa corta con la que la investigadora nombra una
-  -- referencia («rotili1985muba»), y por eso se conserva aunque RF-507 —la
-  -- exportación a `.bib`— esté retirada: el catálogo impreso está aparcado, no
-  -- cancelado. Lo que cambia es su papel:
+  -- DP-03, resolved. It is the short handle with which the researcher names a
+  -- reference («rotili1985muba»), and that is why it is kept even though RF-507 —the
+  -- export to `.bib`— is withdrawn: the printed catalogue is parked, not
+  -- cancelled. What changes is its role:
   --
-  --   • NULA PERMITIDA, porque una referencia recién anotada de un recorte de
-  --     prensa no tiene clave todavía y obligar a inventarla llenaría la tabla
-  --     de claves que nadie eligió.
-  --   • EDITABLE, que es justo lo que no era siendo clave primaria: una clave
-  --     BibTeX se corrige al descubrir que el año era otro.
-  --   • ÚNICA, comparada como el resto de nombres del esquema: dos claves que
-  --     solo difieren en mayúsculas son la misma clave y `.bib` no las
-  --     distinguiría.
+  --   • NULL ALLOWED, because a reference just noted from a press
+  --     clipping does not have a key yet and forcing one to be invented would fill the table
+  --     with keys nobody chose.
+  --   • EDITABLE, which is exactly what it was not while being the primary key: a BibTeX
+  --     key gets corrected on discovering that the year was another.
+  --   • UNIQUE, compared like the rest of the schema's names: two keys that
+  --     differ only in capitals are the same key and `.bib` would not
+  --     distinguish them.
   --
-  -- Y NO lleva un `bibtex_type` al lado: sería construir para RF-507, que está
-  -- tachado, y así es como se acumula el código que después nadie puede quitar.
+  -- And it does NOT carry a `bibtex_type` alongside: that would be building for RF-507, which is
+  -- struck out, and that is how the code nobody can remove afterwards accumulates.
   bibtex_key text,
 
-  -- Texto libre y NO una relación a `parties`, a propósito: el autor de un
-  -- artículo de 1985 no es un contacto del catálogo —no tiene procedencia, ni
-  -- teléfono, ni derechos— y meterlo en la maestra la llenaría de fichas vacías
-  -- que después estorban en el selector de propietarios. El día que un autor sí
-  -- sea además un propietario, tendrá su ficha por ese otro motivo.
+  -- Free text and NOT a relationship to `parties`, on purpose: the author of a
+  -- 1985 article is not a contact of the catalogue —they have no provenance, no
+  -- telephone, no rights— and putting them in the master table would fill it with empty records
+  -- that then get in the way in the owners' selector. The day an author does
+  -- also happen to be an owner, they will have their record for that other reason.
   authors text not null default '',
-  -- El editor o coordinador del volumen, cuando es distinto del autor
-  -- (frecuente en catálogos colectivos). v11 lo añadió en v4 para poder buscar
-  -- por él.
+  -- The volume's editor or coordinator, when it is different from the author
+  -- (frequent in collective catalogues). v11 added it in v4 so as to be able to search
+  -- by it.
   editors text not null default '',
 
   title text not null,
 
-  -- La revista, el volumen o el catálogo que CONTIENE el texto citado. v11 no
-  -- lo tiene, y sin él el nombre de la revista acaba dentro del título: la cita
-  -- deja de poder componerse y buscar «todo lo publicado en tal revista» pasa a
-  -- ser una búsqueda de texto libre dentro de otro campo.
+  -- The journal, the volume or the catalogue that CONTAINS the cited text. v11 does not
+  -- have it, and without it the journal's name ends up inside the title: the citation
+  -- stops being composable and searching «everything published in such-and-such journal» becomes
+  -- a free-text search inside another field.
   container_title text not null default '',
 
-  -- Nulo es «sin clasificar todavía», que es una respuesta legítima mientras la
-  -- referencia se anota de una fotocopia. `restrict` por lo mismo que en el
-  -- resto del esquema: nadie tiene DELETE, y si alguna vez se borrara una fila
-  -- a mano esto avisa en vez de dejar referencias apuntando al vacío.
+  -- Null is «not classified yet», which is a legitimate answer while the
+  -- reference is noted from a photocopy. `restrict` for the same reason as in the
+  -- rest of the schema: nobody has DELETE, and if a row were ever deleted
+  -- by hand this warns instead of leaving references pointing at nothing.
   publication_type_id uuid references public.publication_types (id) on delete restrict,
 
-  -- Nulo permitido: `s.f.` existe y es un dato, no un hueco. Es un año suelto y
-  -- no la forma estructurada de ADR-004 porque una referencia se cita por su
-  -- año de publicación, que no es un rango ni una aproximación.
+  -- Null allowed: `s.f.` exists and is a datum, not a gap. It is a loose year and
+  -- not ADR-004's structured shape because a reference is cited by its
+  -- year of publication, which is neither a range nor an approximation.
   year smallint,
 
   publisher text not null default '',
   place text not null default '',
   note text not null default '',
 
-  -- RF-804: trazabilidad completa, sellada por `tg_row_audit`.
+  -- RF-804: complete traceability, stamped by `tg_row_audit`.
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-901 y RF-902: papelera completa, con la traza de la última baja y de la
-  -- última restauración.
+  -- RF-901 and RF-902: complete wastebasket, with the trace of the last withdrawal and of the
+  -- last restoration.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
   restored_at timestamptz,
   restored_by uuid references public.profiles (id),
 
-  -- Una referencia sin título no se puede citar. NO se exige además que esté
-  -- recortado, a diferencia de los nombres de las maestras: aquí no hay clave
-  -- de comparación que un espacio pueda romper, y un título se pega de un PDF.
+  -- A reference with no title cannot be cited. It is NOT also required to be
+  -- trimmed, unlike the master tables' names: here there is no comparison
+  -- key a space could break, and a title is pasted from a PDF.
   constraint bibliography_title_not_blank check (btrim(title) <> ''),
 
-  -- Si hay clave, que sea una clave: recortada, no vacía y sin los caracteres
-  -- que un fichero `.bib` no admite dentro de una — un espacio o una coma
-  -- parten la entrada, y las llaves la cierran antes de tiempo. Rechazarlo aquí
-  -- cuesta una línea; descubrirlo el día que alguien exporte, un rato.
+  -- If there is a key, let it be a key: trimmed, not empty and without the characters
+  -- a `.bib` file does not admit inside one — a space or a comma
+  -- splits the entry, and braces close it before time. Rejecting it here
+  -- costs one line; discovering it the day somebody exports, a while.
   constraint bibliography_bibtex_key_shape check (
     bibtex_key is null
     or (bibtex_key = btrim(bibtex_key)

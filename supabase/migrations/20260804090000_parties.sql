@@ -53,10 +53,10 @@ create type public.party_type_value as enum ('PERSON', 'INSTITUTION');
 comment on type public.party_type_value is
   'Persona o institución. Sin «Sin revisar»: de este valor depende cómo se redacta la línea de procedencia (excepción a RF-205, con el argumento de RF-203).';
 
--- El estado del contacto, tal cual lo enumera el esquema de campos v11: sin
--- contactar, contactado, información recibida, visita realizada, verificada. Es
--- dato de trabajo de la investigadora y su orden es un progreso, no una
--- clasificación: por eso es un enumerado y no una lista abierta.
+-- The contact state, just as the v11 field schema enumerates it: not
+-- contacted, contacted, information received, visit made, verified. It is
+-- the researcher's working datum and its order is a progression, not a
+-- classification: that is why it is an enumerated type and not an open list.
 create type public.contact_status_value as enum (
   'NOT_CONTACTED',   -- Sin contactar
   'CONTACTED',       -- Contactado
@@ -69,31 +69,31 @@ comment on type public.contact_status_value is
   'Progreso del contacto con una persona o institución (tabla 8 del esquema de campos v11).';
 
 
--- ── La trazabilidad, una sola vez para todo el esquema ──────
+-- ── The traceability, a single time for the whole schema ────
 --
--- RF-804 pide que la trazabilidad sea «base común reutilizable por todas las
--- tablas con clave primaria propia, no solo por Obras». Hasta ahora eran tres
--- funciones casi idénticas —`tg_physical_place_authorship`,
--- `tg_artwork_type_authorship`, `tg_series_authorship`— y el catálogo razonado
--- documental añade seis tablas más con exactamente el mismo sello. Seis copias de
--- veinte líneas es la divergencia garantizada: el día que una de ellas arregle un
--- caso, las otras cinco se quedan atrás y nadie se entera.
+-- RF-804 asks that the traceability be a «common base reusable by all the
+-- tables with a primary key of their own, not only by Artworks». Until now they were three
+-- almost identical functions —`tg_physical_place_authorship`,
+-- `tg_artwork_type_authorship`, `tg_series_authorship`— and the documentary catalogue
+-- raisonné adds six more tables with exactly the same stamp. Six copies of
+-- twenty lines is guaranteed divergence: the day one of them fixes a
+-- case, the other five are left behind and nobody finds out.
 --
--- La función lee la fila como `jsonb`, decide qué tocar según las columnas que
--- esa fila TENGA, y devuelve con `jsonb_populate_record`. El parche solo lleva
--- las columnas que cambian —y no la fila entera— para que ninguna otra columna
--- pase por una conversión de ida y vuelta que podría alterarla: lo que no está en
--- el parche sale de `new` tal como entró.
+-- The function reads the row as `jsonb`, decides what to touch according to the columns
+-- that row HAS, and returns with `jsonb_populate_record`. The patch carries only
+-- the columns that change —and not the whole row— so that no other column
+-- goes through a round-trip conversion that could alter it: what is not in
+-- the patch comes out of `new` just as it went in.
 --
--- Consecuencia deliberada: una tabla sin `restored_at` funciona igual. Los
--- lugares y las maestras de vocabulario borran la traza de la baja al restaurar,
--- porque no tienen dónde guardarla; las tablas con clave propia y papelera
--- completa (RF-902) sellan la restauración y CONSERVAN la traza de la baja
--- anterior. La función distingue los dos casos por la presencia de la columna, de
--- modo que adoptarla en las tablas viejas no cambiaría su comportamiento.
+-- A deliberate consequence: a table with no `restored_at` works just the same. The
+-- places and the vocabulary master tables erase the withdrawal's trace on restoring,
+-- because they have nowhere to keep it; the tables with a key of their own and a complete
+-- wastebasket (RF-902) stamp the restoration and KEEP the previous withdrawal's
+-- trace. The function distinguishes the two cases by the column's presence, so
+-- that adopting it in the old tables would not change their behaviour.
 --
--- No es SECURITY DEFINER: solo escribe sobre `new` y lee `auth.uid()`, que ya es
--- lo que la sesión declara.
+-- It is not SECURITY DEFINER: it only writes over `new` and reads `auth.uid()`, which already is
+-- what the session declares.
 create function public.tg_row_audit()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -105,9 +105,9 @@ declare
   v_who   uuid := auth.uid();
 begin
   if tg_op = 'INSERT' then
-    -- Quién crea lo dice la sesión, no el cliente. Dentro de una migración
-    -- `auth.uid()` no es nadie y la columna queda nula, que es la verdad: una
-    -- fila trasladada por una migración no la creó ninguna persona.
+    -- Who creates is said by the session, not by the client. Inside a migration
+    -- `auth.uid()` is nobody and the column is left null, which is the truth: a
+    -- row moved by a migration was created by no person.
     if v_new ? 'created_by' then
       v_patch := v_patch || jsonb_build_object('created_by', v_who);
     end if;
@@ -120,7 +120,7 @@ begin
   else
     v_old := to_jsonb(old);
 
-    -- RF-801: cualquier cambio mueve la fecha de actualización.
+    -- RF-801: any change moves the update date.
     if v_new ? 'updated_at' then
       v_patch := v_patch || jsonb_build_object('updated_at', v_now);
     end if;
@@ -128,9 +128,9 @@ begin
       v_patch := v_patch || jsonb_build_object('updated_by', v_who);
     end if;
 
-    -- RF-902: la baja y la restauración se sellan solas. Si dependieran de lo
-    -- que manda la interfaz, la traza de la papelera valdría lo que el reloj del
-    -- teléfono que la envió.
+    -- RF-902: the withdrawal and the restoration stamp themselves. If they depended on what
+    -- the interface sends, the wastebasket's trace would be worth what the clock of the
+    -- phone that sent it is worth.
     if v_new ? 'active' then
       if (v_old->>'active')::boolean and not (v_new->>'active')::boolean then
         if v_new ? 'deactivated_at' then
@@ -142,16 +142,16 @@ begin
 
       elsif not (v_old->>'active')::boolean and (v_new->>'active')::boolean then
         if v_new ? 'restored_at' then
-          -- Papelera completa: se guarda el último evento de cada clase y la
-          -- restauración NO borra la traza de la baja anterior.
+          -- Complete wastebasket: the last event of each class is kept and the
+          -- restoration does NOT erase the previous withdrawal's trace.
           v_patch := v_patch || jsonb_build_object('restored_at', v_now);
           if v_new ? 'restored_by' then
             v_patch := v_patch || jsonb_build_object('restored_by', v_who);
           end if;
         else
-          -- Sin sitio donde guardar la restauración, lo honrado es dejar la fila
-          -- como si nunca se hubiera retirado, que es lo que ya hacen los lugares
-          -- y las maestras de vocabulario.
+          -- With nowhere to keep the restoration, the honest thing is to leave the row
+          -- as if it had never been withdrawn, which is what the places
+          -- and the vocabulary master tables already do.
           v_patch := v_patch || jsonb_build_object('deactivated_at', null,
                                                    'deactivated_by', null);
         end if;
@@ -169,52 +169,52 @@ comment on function public.tg_row_audit is
   'Sello común de autoría, fecha de actualización y papelera (RF-804, RF-801, RF-902). Toca solo las columnas que la fila tenga, de modo que una tabla sin fecha de restauración funciona igual.';
 
 
--- ── La tabla ────────────────────────────────────────────────
+-- ── The table ───────────────────────────────────────────────
 
 create table public.parties (
-  -- Clave sustituta (ADR-007), no el nombre: renombrar una institución tiene que
-  -- ser una fila y no una migración de datos, y el nombre de un museo cambia.
+  -- Surrogate key (ADR-007), not the name: renaming an institution has to
+  -- be one row and not a data migration, and a museum's name changes.
   id uuid primary key default gen_random_uuid(),
 
   party_type public.party_type_value not null,
 
-  -- Tal cual se escribe, con sus mayúsculas y sus tildes, como en el árbol de
-  -- lugares. Lo que se normaliza es la clave de comparación, no el dato.
+  -- Just as it is written, with its capitals and its accents, as in the tree of
+  -- places. What is normalised is the comparison key, not the datum.
   name text not null,
 
-  -- Localidad y país sueltos, y no una dirección en un texto: son justo lo que la
-  -- fórmula de catálogo necesita por separado para escribir «Colección privada,
-  -- España» sin analizar nada.
+  -- Locality and country loose, and not an address in one text: they are exactly what the
+  -- catalogue formula needs separately in order to write «Colección privada,
+  -- España» without parsing anything.
   locality text not null default '',
   country text not null default '',
 
-  -- Dato personal de un tercero, y la fila más importante de la matriz RLS de
-  -- todo el proyecto. RF-105 decide explícitamente que el Lector lo ve —no hay
-  -- restricción de visibilidad por campo—, de modo que la única barrera es la
-  -- política de la tabla: un fallo aquí no corrompe el catálogo, expone el
-  -- teléfono de una coleccionista.
+  -- A third party's personal datum, and the most important row of the whole project's RLS
+  -- matrix. RF-105 decides explicitly that the Reader sees it —there is no
+  -- per-field visibility restriction—, so the only barrier is the
+  -- table's policy: a failure here does not corrupt the catalogue, it exposes a
+  -- collector's telephone number.
   contact text not null default '',
 
   contact_status public.contact_status_value not null default 'NOT_CONTACTED',
 
   note text not null default '',
 
-  -- RF-804: trazabilidad completa, sellada por `tg_row_audit`.
+  -- RF-804: complete traceability, stamped by `tg_row_audit`.
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-901 y RF-902: nada se borra, y la papelera guarda el último evento de baja
-  -- y el último de restauración, no el historial de ciclos.
+  -- RF-901 and RF-902: nothing is deleted, and the wastebasket keeps the last withdrawal event
+  -- and the last restoration one, not the history of cycles.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
   restored_at timestamptz,
   restored_by uuid references public.profiles (id),
 
-  -- Un nombre en blanco no identifica a nadie, y uno con espacios alrededor
-  -- rompería la comparación de duplicados sin que se vea en pantalla.
+  -- A blank name identifies nobody, and one with spaces around it
+  -- would break the duplicate comparison without it being visible on screen.
   constraint parties_name_not_blank
     check (btrim(name) <> '' and name = btrim(name))
 );
@@ -228,55 +228,55 @@ comment on column public.parties.locality is
   'Localidad, suelta para poder componer «Colección privada, [país]» sin analizar una dirección.';
 
 
--- ── Un nombre, una ficha ────────────────────────────────────
+-- ── One name, one record ────────────────────────────────────
 --
--- Se REUTILIZA `place_key` en vez de escribir una función gemela con otro nombre.
--- Una segunda copia de la misma regla de normalización es exactamente la
--- divergencia que este proyecto persigue en todo lo demás: el día que una de las
--- dos aprenda a tratar la ç, la otra no.
+-- `place_key` is REUSED instead of writing a twin function with another name.
+-- A second copy of the same normalisation rule is exactly the
+-- divergence this project chases in everything else: the day one of the
+-- two learns to handle the ç, the other will not.
 --
--- El coste aceptado: dos coleccionistas distintos que se llamen igual se
--- desambiguan en el propio nombre, que es lo que hacen los catálogos («Juan
--- Pérez (Badajoz)»). A cambio, la procedencia de una obra no se parte entre dos
--- filas del mismo museo escritas con y sin tilde, que es un error que no se ve al
--- escribirlo y solo aparece al consultar «qué obras han pasado por aquí».
+-- The accepted cost: two different collectors called the same are
+-- disambiguated in the name itself, which is what catalogues do («Juan
+-- Pérez (Badajoz)»). In exchange, an artwork's provenance is not split between two
+-- rows of the same museum written with and without an accent, which is a mistake that is not seen on
+-- writing it and only appears on querying «which artworks have passed through here».
 --
--- El índice cubre también las fichas retiradas, como en las demás maestras:
--- volver a dar de alta un nombre que está en la papelera lo RESTAURA, y para eso
--- hay que poder encontrarlo.
+-- The index also covers the withdrawn records, as in the other master tables:
+-- registering again a name that is in the wastebasket RESTORES it, and for that
+-- it has to be findable.
 create unique index parties_name_unique
   on public.parties (public.place_key(name));
 
 create index parties_active_idx on public.parties (active);
 
--- El nombre de la función se ha quedado estrecho para lo que hace, y se corrige
--- con su comentario y no renombrándola: `place_key` está en los índices del árbol
--- de lugares, en el selector de ubicación y espejada carácter a carácter en
--- `app/src/lib/places.ts`. Un renombrado costaría más de lo que aclara.
+-- The function's name has become narrow for what it does, and it is corrected
+-- with its comment and not by renaming it: `place_key` is in the indexes of the tree
+-- of places, in the location selector and mirrored character by character in
+-- `app/src/lib/places.ts`. A renaming would cost more than it clarifies.
 comment on function public.place_key is
   'Clave de comparación de nombres de todo el esquema: minúsculas y sin tildes, conservando la ñ. Nació para el árbol de lugares (ADR-006) y la usan además las tablas maestras y la de personas e instituciones. Inmutable para poder indexarla.';
 
 
--- ── Autoría y papelera, selladas por la base ────────────────
+-- ── Authorship and wastebasket, stamped by the base ─────────
 
 create trigger party_row_audit
   before insert or update on public.parties
   for each row execute function public.tg_row_audit();
 
 
--- ── RLS y privilegios ───────────────────────────────────────
+-- ── RLS and privileges ──────────────────────────────────────
 --
--- Una tabla sin RLS está abierta, no cerrada, y la plataforma concede por omisión
--- todos los privilegios de cada tabla nueva a los roles anónimo y autenticado,
--- incluido `delete` (RF-113). Se revoca primero y se concede después, uno a uno.
+-- A table with no RLS is open, not closed, and the platform grants by default
+-- all the privileges of every new table to the anonymous and authenticated roles,
+-- `delete` included (RF-113). It is revoked first and granted afterwards, one by one.
 --
--- Sin DELETE: ni privilegio ni política, nunca (RF-901). Retirar una ficha es un
--- update de `active`.
+-- No DELETE: neither privilege nor policy, ever (RF-901). Withdrawing a record is an
+-- update of `active`.
 --
--- Las POLÍTICAS van en la migración siguiente, y hasta que existan esta tabla no
--- la lee ni la escribe nadie con sesión: RLS activado sin política niega. Es el
--- estado seguro para quedarse a medias, y el contrario del que habría dejado
--- conceder los privilegios sin activar RLS.
+-- The POLICIES go in the next migration, and until they exist nobody with a session
+-- reads or writes this table: RLS enabled with no policy denies. It is the
+-- safe state to be left half way in, and the opposite of the one granting
+-- the privileges without enabling RLS would have left.
 
 alter table public.parties enable row level security;
 
@@ -284,8 +284,8 @@ revoke all on public.parties from anon, authenticated;
 
 grant select, insert, update on public.parties to authenticated;
 
--- Explícito, como en 20260801140000: en esta plataforma una función nueva nace
--- con EXECUTE para PUBLIC pese al `alter default privileges`, y quien lo caza es
--- `function_privileges.test.sql`. Una función de trigger no la invoca nadie desde
--- la API, y aun así dispara.
+-- Explicit, as in 20260801140000: on this platform a new function is born
+-- with EXECUTE for PUBLIC despite the `alter default privileges`, and what catches it is
+-- `function_privileges.test.sql`. A trigger function is invoked by nobody from
+-- the API, and it fires all the same.
 revoke all on function public.tg_row_audit() from public;
