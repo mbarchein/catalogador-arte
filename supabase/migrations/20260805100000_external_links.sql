@@ -335,28 +335,28 @@ create trigger external_link_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── La comprobación no la escribe el cliente (RF-1405) ──────
+-- ── The check is not written by the client (RF-1405) ────────
 --
--- Las tres columnas de comprobación son las únicas de la tabla que afirman un
--- HECHO SOBRE EL MUNDO EXTERIOR —que esa página, hoy, carga y muestra lo que
--- decía—, y una fecha que se rellenara sola sería falsa. Así que el camino de
--- escritura es uno solo, `record_link_check`, y este trigger cierra los demás.
+-- The three check columns are the only ones in the table that assert a
+-- FACT ABOUT THE OUTSIDE WORLD —that that page, today, loads and shows what
+-- it said—, and a date that filled itself in would be false. So the write
+-- path is a single one, `record_link_check`, and this trigger closes the others.
 --
--- Lo hace EN SILENCIO y no con excepción: un formulario que manda la fila entera
--- no debe fallar por reenviar lo que ya había; el efecto que interesa es que no
--- la pueda mover.
+-- It does so IN SILENCE and not with an exception: a form that sends the whole row
+-- must not fail for resending what was already there; the effect that matters is that it
+-- cannot move it.
 --
--- Límite dicho en voz alta: el ajuste `app.link_check` es un guardarraíl contra
--- el cliente honesto y no un perímetro. PostgREST no deja fijar variables
--- arbitrarias de sesión, así que desde la API no hay forma de ponerlo; quien ya
--- tiene acceso directo por SQL puede. El perímetro de verdad es que solo
--- `can_edit()` escribe en esta tabla, y eso lo pone la RLS.
+-- A limit said out loud: the `app.link_check` setting is a guardrail against
+-- the honest client and not a perimeter. PostgREST does not allow setting
+-- arbitrary session variables, so from the API there is no way of setting it; whoever already
+-- has direct SQL access can. The real perimeter is that only
+-- `can_edit()` writes in this table, and that is set by the RLS.
 create function public.tg_external_link_check_freeze()
 returns trigger language plpgsql set search_path = public as $$
 begin
   if tg_op = 'INSERT' then
-    -- Un enlace nace sin comprobar, también el que inserte una migración: nadie
-    -- ha abierto esa página hoy y la base no va a afirmar que funciona.
+    -- A link is born unchecked, including the one a migration inserts: nobody
+    -- has opened that page today and the base is not going to assert that it works.
     new.check_status := null;
     new.checked_at   := null;
     new.checked_by   := null;
@@ -378,21 +378,21 @@ create trigger external_link_check_freeze
   before insert or update on public.external_links
   for each row execute function public.tg_external_link_check_freeze();
 
--- El nombre importa: los triggers de una misma tabla y un mismo momento disparan
--- por orden alfabético, y `external_link_check_freeze` va antes que
--- `external_link_row_audit`. Aquí da igual porque no comparten ni una columna,
--- pero conviene que quien añada un tercero lo sepa.
+-- The name matters: the triggers of the same table and the same moment fire
+-- in alphabetical order, and `external_link_check_freeze` goes before
+-- `external_link_row_audit`. Here it makes no difference because they do not share a single column,
+-- but it is worth whoever adds a third one knowing it.
 
 
--- `security invoker`, calcada de `set_main_image`, así que sigue pasando por RLS:
--- un Lector no cambia nada aunque llame a la función. Devuelve la marca de tiempo
--- para que la pantalla la muestre sin volver a consultar.
+-- `security invoker`, traced from `set_main_image`, so it still goes through RLS:
+-- a Reader changes nothing even if they call the function. It returns the timestamp
+-- so that the screen shows it without querying again.
 --
--- Consecuencias deseadas, todas con test: volver a confirmar el mismo estado un
--- año después SÍ mueve la fecha —es el caso más frecuente, «sigue
--- funcionando»—; poner el estado a nulo devuelve las tres columnas a nulo,
--- porque «vuelve a estar sin comprobar» es una corrección legítima; y editar la
--- nota de un enlace no mueve la fecha de comprobación pero sí `updated_at`.
+-- Desired consequences, all with a test: confirming the same state again a
+-- year later DOES move the date —it is the most frequent case, «it still
+-- works»—; setting the state to null returns the three columns to null,
+-- because «it is unchecked again» is a legitimate correction; and editing a
+-- link's note does not move the check date but does move `updated_at`.
 create function public.record_link_check(
   p_link_id uuid, p_status public.link_check_status)
 returns timestamptz
@@ -414,15 +414,15 @@ begin
    where id = p_link_id
   returning checked_at into v_when;
 
-  -- El recuento se guarda AQUÍ y no se consulta `found` más abajo: en PL/pgSQL
-  -- un `perform` también escribe `found`, y el `set_config` que viene a
-  -- continuación lo dejaría siempre a cierto. Un enlace inexistente pasaría sin
-  -- una queja y la pantalla se quedaría esperando una fecha que no llega.
+  -- The count is stored HERE and `found` is not consulted further below: in PL/pgSQL
+  -- a `perform` also writes `found`, and the `set_config` that comes
+  -- next would always leave it true. A non-existent link would pass without
+  -- a complaint and the screen would be left waiting for a date that never arrives.
   get diagnostics v_rows = row_count;
 
-  -- El ajuste se limpia siempre: es local a la transacción, y dejarlo puesto
-  -- abriría una ventana en la que un update posterior sobre la misma fila, en la
-  -- misma transacción, sí podría mover la fecha.
+  -- The setting is always cleared: it is local to the transaction, and leaving it set
+  -- would open a window in which a later update over the same row, in the
+  -- same transaction, could move the date.
   perform set_config('app.link_check', '', true);
 
   if v_rows = 0 then
@@ -439,16 +439,16 @@ revoke all on function public.record_link_check(uuid, public.link_check_status) 
 grant execute on function public.record_link_check(uuid, public.link_check_status) to authenticated;
 
 
--- ── RLS y privilegios ───────────────────────────────────────
+-- ── RLS and privileges ──────────────────────────────────────
 --
--- Una tabla sin RLS está abierta, no cerrada, y la plataforma concede por omisión
--- todos los privilegios de cada tabla nueva a los roles anónimo y autenticado,
--- incluido `delete` (RF-113). Se revoca primero y se concede después, uno a uno.
+-- A table with no RLS is open, not closed, and the platform grants by default
+-- all the privileges of every new table to the anonymous and authenticated roles,
+-- `delete` included (RF-113). It is revoked first and granted afterwards, one by one.
 --
--- Y las políticas van EN ESTA MISMA MIGRACIÓN, al contrario que en el catálogo
--- razonado documental: allí eran quince tablas y una migración de perímetro
--- propia; aquí es una tabla, y una tabla que existe un solo despliegue sin
--- política es una tabla que la aplicación no puede usar.
+-- And the policies go IN THIS VERY MIGRATION, unlike in the documentary
+-- catalogue raisonné: there they were fifteen tables and a perimeter migration
+-- of their own; here it is one table, and a table that exists for a single deployment with no
+-- policy is a table the application cannot use.
 
 alter table public.external_links enable row level security;
 
@@ -456,25 +456,25 @@ revoke all on public.external_links from anon, authenticated;
 
 grant select, insert, update on public.external_links to authenticated;
 
--- Sin DELETE: ni privilegio ni política, nunca (RF-901, RF-1406). Retirar un
--- enlace es un update de `active`.
+-- No DELETE: neither privilege nor policy, ever (RF-901, RF-1406). Withdrawing a
+-- link is an update of `active`.
 
--- La primera mitad es la forma de `artworks` e `images`: el Lector ve lo activo,
--- quien edita ve también la papelera.
+-- The first half is the shape of `artworks` and `images`: the Reader sees what is active,
+-- whoever edits also sees the wastebasket.
 --
--- LA SEGUNDA MITAD ES LA VISIBILIDAD HEREDADA, y merece el comentario porque no
--- es una copia de la regla de la ficha, es la regla misma. Las subconsultas se
--- evalúan BAJO LA POLÍTICA DE SU PROPIA TABLA: la de `artworks` esconde al Lector
--- las obras retiradas y la de `images` le esconde las fotografías retiradas. De
--- ahí sale gratis el comportamiento correcto —el Catalogador ve todo, el Lector
--- no se entera de que existe el enlace de una ficha que no puede ver (RF-609)— y,
--- si mañana cambia la regla de visibilidad de las obras, la de los enlaces la
--- sigue sola.
+-- THE SECOND HALF IS THE INHERITED VISIBILITY, and it deserves the comment because it is
+-- not a copy of the record's rule, it is the rule itself. The subqueries are
+-- evaluated UNDER THEIR OWN TABLE'S POLICY: `artworks`' hides the withdrawn
+-- artworks from the Reader and `images`' hides the withdrawn photographs from them. Out of
+-- that comes the correct behaviour for free —the Cataloguer sees everything, the Reader
+-- does not find out that the link of a record they cannot see exists (RF-609)— and,
+-- if tomorrow the artworks' visibility rule changes, the links' one
+-- follows it on its own.
 --
--- Cuesta una búsqueda por clave primaria y evita filtrar la existencia de una
--- ficha que RF-609 esconde. Nótese que `images` sigue teniendo el hueco de
--- RF-905 —el nombre del fichero de una fotografía retirada— y que el día que se
--- cierre para las fotografías hay que hacerlo en SU PROPIA migración, no aquí.
+-- It costs one primary-key lookup and it avoids leaking the existence of a
+-- record RF-609 hides. Note that `images` still has RF-905's hole
+-- —the file name of a withdrawn photograph— and that the day it is
+-- closed for the photographs it has to be done in ITS OWN migration, not here.
 create policy external_links_select on public.external_links
   for select using (
     ((active and public.can_read()) or public.can_edit())

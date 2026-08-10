@@ -1,130 +1,130 @@
 -- ============================================================
--- El registro de cambios de obras y fotografías (RF-1501 a RF-1508).
+-- The change log of artworks and photographs (RF-1501 to RF-1508).
 --
--- Hoy una ficha dice CUÁNDO se tocó por última vez y QUIÉN la tocó
--- (`updated_at`, `updated_by`), y nada más. No dice qué cambió, ni desde qué
--- valor, ni cuántas veces. Con dos personas catalogando dos mil obras a lo largo
--- de años, «¿esta obra siempre midió 45 cm o alguien la corrigió?» es una
--- pregunta que hoy no tiene respuesta y que dentro de cinco años la va a tener
--- alguien que no estaba. Eso es lo que este registro contesta.
+-- Today a record says WHEN it was last touched and WHO touched it
+-- (`updated_at`, `updated_by`), and nothing else. It does not say what changed, nor from which
+-- value, nor how many times. With two people cataloguing two thousand artworks over
+-- years, «did this artwork always measure 45 cm or did somebody correct it?» is a
+-- question that today has no answer and that five years from now will be asked by
+-- somebody who was not there. That is what this log answers.
 --
--- Esta migración crea LA TABLA Y SUS CANDADOS. No escribe nadie en ella
--- todavía: el trigger que la rellena llega en la migración siguiente. Se parte
--- así a propósito, y no por comodidad — la tabla existe cerrada y probada
--- durante un despliegue entero antes de recibir su primera fila, de modo que si
--- el escritor hubiera que retirarlo, la tabla, sus privilegios y sus
--- protecciones no se tocan. Al revés no funciona: un escritor sobre una tabla
--- cuyos permisos todavía no están decididos escribe en una tabla abierta.
+-- This migration creates THE TABLE AND ITS PADLOCKS. Nobody writes in it
+-- yet: the trigger that fills it arrives in the next migration. It is split
+-- this way on purpose, and not out of convenience — the table exists closed and tested
+-- for a whole deployment before receiving its first row, so that if
+-- the writer had to be withdrawn, the table, its privileges and its
+-- protections are not touched. The other way round does not work: a writer over a table
+-- whose permissions are not yet decided writes in an open table.
 --
--- ── LO QUE DECIDE SI ESTO VALE ALGO O NADA: LOS PERMISOS ─────
+-- ── WHAT DECIDES WHETHER THIS IS WORTH ANYTHING OR NOTHING: THE PERMISSIONS ─
 --
--- Un registro de auditoría que el auditado puede editar no es un registro de
--- auditoría, es una nota. Así que la regla entera de esta tabla cabe en una
--- frase: SOLO INSERCIÓN, Y SOLO POR TRIGGER. Ni el Catalogador, ni el Lector, ni
--- el Superusuario, ni la clave de servicio tienen `insert`, `update` o `delete`
--- aquí. La escritura la hace una función `security definer` que solo se dispara
--- al cambiar una fila auditada.
+-- An audit log the audited can edit is not an audit
+-- log, it is a note. So this table's whole rule fits in one
+-- sentence: INSERT ONLY, AND ONLY BY TRIGGER. Neither the Cataloguer, nor the Reader, nor
+-- the Superuser, nor the service key have `insert`, `update` or `delete`
+-- here. The writing is done by a `security definer` function that only fires
+-- on a change to an audited row.
 --
--- Y no basta con un candado, porque en esta plataforma cada candado tiene su
--- agujero conocido:
+-- And one padlock is not enough, because on this platform every padlock has its
+-- known hole:
 --
---   1. EL PRIVILEGIO. `revoke` de anon, authenticated y service_role. Sin el
---      privilegio, PostgREST contesta 403 a un POST, un PATCH o un DELETE ANTES
---      de mirar ninguna política. Es lo que pide RF-113: dos cerraduras en
---      serie y no una.
---   2. LA POLÍTICA. Solo existe la de SELECT. La ausencia de política de
---      `insert`, `update` y `delete` ES la denegación (RF-111).
---      -> Agujero: la RLS no se aplica al propietario de la tabla, ni a
---         `service_role` ni a `postgres`, que llevan `bypassrls`.
---   3. LOS TRIGGERS. Uno rechaza `update`, `delete` y `truncate` para todo el
---      mundo, propietario incluido; otro rechaza cualquier `insert` que no venga
---      de dentro de otro trigger. Los triggers sí se aplican al propietario.
+--   1. THE PRIVILEGE. `revoke` from anon, authenticated and service_role. Without the
+--      privilege, PostgREST answers 403 to a POST, a PATCH or a DELETE BEFORE
+--      looking at any policy. It is what RF-113 asks for: two locks in
+--      series and not one.
+--   2. THE POLICY. Only the SELECT one exists. The absence of an
+--      `insert`, `update` and `delete` policy IS the denial (RF-111).
+--      -> Hole: RLS does not apply to the table's owner, nor to
+--         `service_role` nor to `postgres`, which carry `bypassrls`.
+--   3. THE TRIGGERS. One rejects `update`, `delete` and `truncate` for everybody,
+--      the owner included; another rejects any `insert` that does not come
+--      from inside another trigger. Triggers do apply to the owner.
 --
--- Hasta dónde llega esto, dicho en voz alta: un superusuario puede desactivar un
--- trigger o ponerse `session_replication_role = replica` con una sentencia
--- deliberada. Nada dentro de una base de datos es inviolable contra quien la
--- administra. Lo que estas tres capas hacen es subir el listón de «un PATCH con
--- la clave de servicio» a «una sentencia DDL deliberada», y volver IMPOSIBLE el
--- destrozo accidental, que es el modo de fallo realista con dos personas y un
--- panel de Supabase abierto.
+-- How far this reaches, said out loud: a superuser can disable a
+-- trigger or set themselves `session_replication_role = replica` with a
+-- deliberate statement. Nothing inside a database is inviolable against whoever
+-- administers it. What these three layers do is raise the bar from «a PATCH with
+-- the service key» to «a deliberate DDL statement», and make accidental
+-- destruction IMPOSSIBLE, which is the realistic failure mode with two people and a
+-- Supabase panel open.
 --
--- ── AVISO QUE NO SE PUEDE PERDER: NADA DE `force row level security` ─
+-- ── A WARNING THAT CANNOT BE LOST: NO `force row level security` ─
 --
--- Esta tabla NO lleva `force row level security`, y no es un descuido. Es
--- justamente la línea que alguien añade en una revisión de seguridad pensando
--- que endurece. Aquí anularía la exención del propietario, abortaría el `insert`
--- del trigger escritor y, con él, EL GUARDADO DEL USUARIO: se rompería el
--- catálogo entero, no el registro. Si en una auditoría futura aparece la
--- sugerencia, la respuesta está escrita aquí.
+-- This table does NOT carry `force row level security`, and it is not an oversight. It is
+-- precisely the line somebody adds in a security review thinking
+-- it hardens things. Here it would annul the owner's exemption, would abort the trigger
+-- writer's `insert` and, with it, THE USER'S SAVE: the whole
+-- catalogue would break, not the log. If in a future audit the
+-- suggestion appears, the answer is written here.
 --
--- ── NO ES REVERSIBLE, Y ESO ES UN REQUISITO (RF-1505) ───────
+-- ── IT IS NOT REVERSIBLE, AND THAT IS A REQUIREMENT (RF-1505) ───
 --
--- El registro es INFORMATIVO. No se construye ninguna función de deshacer, ni
--- pantalla, ni botón, ni RPC, ni nada que sea el sustrato cómodo de una. Ni
--- siquiera se guarda en una forma que lo invite: no hay instantáneas de fila ni
--- valores en `jsonb` con la fila entera, sino dos columnas de texto por campo
--- suelto. El registro es un testimonio; la copia de seguridad es el volcado
--- periódico (RNF-113). Confiarle una restauración dejaría la fila a medias,
--- porque por diseño no guarda las columnas derivadas ni los ficheros del
--- almacén. Si algún día aparece un camino de vuelta, es un error y no una
--- mejora.
+-- The log is INFORMATIVE. No undo function is built, nor a
+-- screen, nor a button, nor an RPC, nor anything that is the comfortable substrate of one. It is not
+-- even stored in a form that invites it: there are no row snapshots nor
+-- values in `jsonb` with the whole row, but two text columns per loose
+-- field. The log is a testimony; the backup is the periodic
+-- dump (RNF-113). Entrusting a restoration to it would leave the row half done,
+-- because by design it does not store the derived columns nor the store's
+-- files. If one day a way back appears, it is a mistake and not an
+-- improvement.
 --
--- ── LO QUE ESTA MIGRACIÓN NO HACE, Y CONSTA ─────────────────
+-- ── WHAT THIS MIGRATION DOES NOT DO, AND IT IS ON RECORD ────
 --
---  * No publica en `supabase_realtime`. Un canal que emite cada campo cambiado
---    a todos los clientes abiertos no lo ha pedido nadie y multiplica el tráfico
---    por el número de columnas de cada guardado.
---  * No crea ninguna vista de lectura. Una vista es propiedad de quien la crea y
---    se salta la RLS salvo que lleve `security_invoker = true`: sería superficie
---    de seguridad nueva para ahorrarle al frontend un `join` con una tabla de
---    tres filas. La interfaz lee la tabla y resuelve los nombres contra
---    `profiles`, que ya carga.
---  * No crea ninguna función que lea el registro y escriba en `artworks` o en
+--  * It does not publish in `supabase_realtime`. A channel emitting every changed field
+--    to all open clients has been asked for by nobody and multiplies the traffic
+--    by the number of columns of each save.
+--  * It creates no read view. A view is the property of whoever creates it and
+--    bypasses RLS unless it carries `security_invoker = true`: it would be new security
+--    surface in order to save the frontend a `join` with a table of
+--    three rows. The interface reads the table and resolves the names against
+--    `profiles`, which it already loads.
+--  * It creates no function that reads the log and writes in `artworks` or in
 --    `images` (RF-1505).
---  * No audita `profiles`. Un cambio de rol es probablemente el cambio más
---    sensible del sistema y hoy no deja rastro. Queda FUERA DE ALCANCE a
---    propósito: exige relajar `catalog_id`, tiene otra regla de visibilidad y es
---    una decisión del propietario, no un efecto colateral de esta migración.
---  * No audita `parties`, `provenance_events` ni el resto del catálogo razonado
---    documental, por lo mismo: `catalog_id not null` los deja fuera, y así la
---    decisión sobre el historial de `contact` —dato personal de un tercero que
---    el Lector ve por RF-105— se toma con esa columna delante y en su propia
---    migración, en vez de heredarse hoy por descuido. Tampoco `external_links`:
---    un enlace podrá colgar de una exposición y entonces no tiene `catalog_id`.
---  * No purga ni caduca nada (RF-1507). Si algún día pasara de unos dos millones
---    de filas, la respuesta prevista NO es borrar: es trasladar lo más antiguo a
---    una tabla de archivo con exactamente los mismos privilegios, la misma
---    política y los mismos candados. Y no hay ningún interruptor para silenciar
---    el registro, ni siquiera durante una migración: un registro de auditoría
---    con botón de apagado no es un registro de auditoría.
---  * No renombra `tg_artwork_audit_trail`. El nombre miente —sella marcas de
---    tiempo, no es un rastro de auditoría— pero renombrarlo obliga a recrear su
---    trigger a cambio de nada. Para quien lea esto dentro de un año:
---    `tg_artwork_audit_trail` y `tg_row_audit` (RF-804) sellan quién y cuándo EN
---    LA PROPIA FILA; el registro de cambios es esto otro, y es una tabla aparte.
+--  * It does not audit `profiles`. A role change is probably the most
+--    sensitive change in the system and today it leaves no trace. It is deliberately OUT OF
+--    SCOPE: it requires relaxing `catalog_id`, it has another visibility rule and it is
+--    a decision of the owner, not a side effect of this migration.
+--  * It does not audit `parties`, `provenance_events` nor the rest of the documentary
+--    catalogue raisonné, for the same reason: `catalog_id not null` leaves them out, and this way the
+--    decision about the history of `contact` —a third party's personal datum that
+--    the Reader sees by RF-105— is taken with that column in front and in its own
+--    migration, instead of being inherited today out of carelessness. Nor `external_links`:
+--    a link will be able to hang from an exhibition and then it has no `catalog_id`.
+--  * It purges nothing and expires nothing (RF-1507). If one day it went past about two million
+--    rows, the foreseen answer is NOT to delete: it is to move the oldest to
+--    an archive table with exactly the same privileges, the same
+--    policy and the same padlocks. And there is no switch to silence
+--    the log, not even during a migration: an audit log
+--    with an off button is not an audit log.
+--  * It does not rename `tg_artwork_audit_trail`. The name lies —it stamps
+--    timestamps, it is not an audit trail— but renaming it forces recreating its
+--    trigger in exchange for nothing. For whoever reads this a year from now:
+--    `tg_artwork_audit_trail` and `tg_row_audit` (RF-804) stamp who and when IN
+--    THE ROW ITSELF; the change log is this other thing, and it is a separate table.
 -- ============================================================
 
 
--- ── Los dos enumerados ──────────────────────────────────────
+-- ── The two enumerated types ────────────────────────────────
 --
--- El criterio de siempre para separar un enumerado de una tabla maestra en este
--- esquema es quién es dueño de las entradas y si el código mira el valor. Aquí
--- los dos son del esquema y los dos los mira el código.
+-- The usual criterion for separating an enumerated type from a master table in this
+-- schema is who owns the entries and whether the code looks at the value. Here
+-- both belong to the schema and the code looks at both.
 
--- Qué clase de ficha cambió. Se GUARDA y no se deduce del formato del
--- identificador: `AR-0001` frente a `AR-0001_v3` es un patrón, y deducir de un
--- patrón es adivinar donde se puede afirmar. Además la interfaz redacta distinto
--- la línea de una obra («Marta creó la ficha») y la de una fotografía («Marta
--- subió la fotografía 3»), así que el valor lo necesita el código.
+-- What class of record changed. It is STORED and not deduced from the identifier's
+-- format: `AR-0001` as against `AR-0001_v3` is a pattern, and deducing from a
+-- pattern is guessing where one can assert. Besides, the interface words
+-- an artwork's line («Marta creó la ficha») differently from a photograph's («Marta
+-- subió la fotografía 3»), so the code needs the value.
 create type public.audited_entity as enum ('ARTWORK', 'IMAGE');
 
 comment on type public.audited_entity is
   'Qué clase de ficha cambió: una obra o una fotografía. Se guarda y no se deduce del formato del identificador.';
 
--- El verbo de la línea. Es redundante con la propia fila de campo de `active`
--- —retirar es poner `active` a falso— y se guarda igual: el verbo lo necesitan
--- tres pantallas, y recalcularlo en tres sitios son tres sitios donde
--- equivocarse.
+-- The line's verb. It is redundant with `active`'s own field row
+-- —withdrawing is setting `active` to false— and it is stored all the same: three screens
+-- need the verb, and recomputing it in three places is three places to
+-- get it wrong.
 create type public.change_operation as enum ('CREATE', 'UPDATE', 'DEACTIVATE', 'RESTORE');
 
 comment on type public.change_operation is
@@ -136,23 +136,23 @@ grant usage on type public.audited_entity   to authenticated;
 grant usage on type public.change_operation to authenticated;
 
 
--- ── La tabla ────────────────────────────────────────────────
+-- ── The table ───────────────────────────────────────────────
 --
--- Granularidad POR CAMPO (RF-1502): una fila por cada columna que cambia, con su
--- valor anterior y su valor nuevo. No una instantánea de la fila, que sería a la
--- vez más cara y una invitación a restaurarla.
+-- PER-FIELD granularity (RF-1502): one row for each column that changes, with its
+-- previous value and its new value. Not a snapshot of the row, which would be at
+-- once more expensive and an invitation to restore it.
 create table public.change_log (
-  -- Clave monótona y no `uuid`: el registro es de solo añadir y se lee en orden
-  -- temporal, así que la clave primaria hace de paso el desempate de dos cambios
-  -- con la misma marca de tiempo — que es el caso NORMAL, porque `now()` es la
-  -- hora de la transacción y una sola acción escribe varias filas.
-  -- `generated always` y no `by default`: nadie debe poder elegir el número.
+  -- A monotonic key and not a `uuid`: the log is append-only and is read in temporal
+  -- order, so the primary key incidentally acts as the tiebreaker of two changes
+  -- with the same timestamp — which is the NORMAL case, because `now()` is the
+  -- transaction's time and a single action writes several rows.
+  -- `generated always` and not `by default`: nobody should be able to choose the number.
   id          bigint generated always as identity primary key,
 
-  -- Identifica la fila-operación: todos los campos que cambiaron de una vez en
-  -- una misma fila auditada. Lo genera el trigger escritor. Sin valor por
-  -- omisión a propósito: una fila sin operación a la que pertenecer no la
-  -- escribe nadie legítimo.
+  -- It identifies the row-operation: all the fields that changed at once in
+  -- the same audited row. The writer trigger generates it. With no default
+  -- value on purpose: a row with no operation to belong to is written by
+  -- nobody legitimate.
   change_id   uuid   not null,
 
   entity      public.audited_entity   not null,
@@ -164,22 +164,22 @@ create table public.change_log (
   old_value   text,
   new_value   text,
 
-  -- Hora de la TRANSACCIÓN y no `clock_timestamp()`. Todas las filas de un mismo
-  -- guardado comparten valor, y eso es lo correcto: un guardado es un momento.
-  -- Es además lo que permite a la interfaz agrupar la acción del usuario sin
-  -- guardar ningún identificador de transacción — y por eso NO SE GUARDA
-  -- NINGUNO: un identificador de transacción es justo la clave por la que se
-  -- indexaría un «deshacer esta acción» (RF-1505).
+  -- The TRANSACTION's time and not `clock_timestamp()`. All the rows of the same
+  -- save share a value, and that is the correct thing: a save is one moment.
+  -- It is besides what allows the interface to group the user's action without
+  -- storing any transaction identifier — and that is why NONE IS
+  -- STORED: a transaction identifier is exactly the key by which
+  -- an «undo this action» would be indexed (RF-1505).
   changed_at  timestamptz not null default now(),
   changed_by  uuid,
 
-  -- Para una obra, la fila que cambió ES la obra: dos columnas que dijeran cosas
-  -- distintas serían una incoherencia silenciosa.
+  -- For an artwork, the row that changed IS the artwork: two columns saying different
+  -- things would be a silent incoherence.
   constraint change_log_artwork_key_is_catalog_id
     check (entity <> 'ARTWORK' or row_key = catalog_id),
 
-  -- La equivalencia, en los dos sentidos: el alta es la única fila sin columna,
-  -- y ninguna fila con columna es un alta.
+  -- The equivalence, in both directions: the creation is the only row with no column,
+  -- and no row with a column is a creation.
   constraint change_log_create_has_no_column
     check ((column_name is null) = (operation = 'CREATE')),
 
@@ -215,76 +215,76 @@ comment on column public.change_log.changed_by is
   'Quién lo cambió. SIN clave ajena a profiles, y es la única ruptura del patrón del esquema: profiles.id cae en cascada desde auth.users, y borrar una cuenta desde el panel de Supabase es un clic (RF-1105). Con clave ajena ese clic o falla —y el registro tiene secuestrado a un usuario que se fue— o alguien lo resuelve borrando filas del registro de auditoría, que es justo el desenlace que este diseño existe para impedir. Nulo cuando no hay sesión: una migración o un acceso administrativo. Nulo es la verdad.';
 
 
--- ── Un índice, y no tres ────────────────────────────────────
+-- ── One index, and not three ────────────────────────────────
 --
--- La cuenta, delante, porque un índice de auditoría se paga en cada escritura de
--- la tabla auditada: con el dimensionado de RNF-108 (1.000 obras, 5.000 tomas) y
--- la granularidad por campo que este diseño elige, el registro completo del
--- proyecto son del orden de 360.000 filas y ~61 MB de montón. Tres índices
--- sumaban otros ~66 MB, más que el propio montón.
+-- The arithmetic first, because an audit index is paid for on every write of
+-- the audited table: with RNF-108's sizing (1,000 artworks, 5,000 shots) and
+-- the per-field granularity this design chooses, the project's complete log
+-- is of the order of 360,000 rows and ~61 MB of heap. Three indexes
+-- added another ~66 MB, more than the heap itself.
 --
--- Este es el historial de la ficha, que es la única consulta con volumen. Sirve
--- también para el historial de una fotografía suelta
--- (`where catalog_id = … and entity = 'IMAGE' and row_key = …`), porque una obra
--- tiene decenas de filas de registro y no millones: por eso NO hay un segundo
--- índice por `(entity, row_key)`.
+-- This is the record's history, which is the only query with volume. It serves
+-- for a single photograph's history too
+-- (`where catalog_id = … and entity = 'IMAGE' and row_key = …`), because an artwork
+-- has dozens of log rows and not millions: that is why there is NO second
+-- index by `(entity, row_key)`.
 --
--- Tampoco hay un único parcial por `(change_id, column_name)`: su invariante
--- —no hay dos filas para el mismo campo en la misma operación— la garantiza el
--- recorrido de claves del escritor, que no repite ninguna, y se afirma con un
--- test en vez de con ~24 MB de índice. Ni índice por `changed_by`: esa pantalla
--- no existe, y un índice cuya consulta no existe es una decisión tomada antes de
--- tiempo.
+-- Nor is there a single partial one by `(change_id, column_name)`: its invariant
+-- —there are no two rows for the same field in the same operation— is guaranteed by the
+-- writer's walk over the keys, which repeats none, and it is asserted with a
+-- test instead of with ~24 MB of index. Nor an index by `changed_by`: that screen
+-- does not exist, and an index whose query does not exist is a decision taken before
+-- time.
 create index change_log_by_artwork_idx
   on public.change_log (catalog_id, changed_at desc, id desc);
 
 
--- ── RLS, privilegios y la única política ────────────────────
+-- ── RLS, privileges and the only policy ─────────────────────
 
 alter table public.change_log enable row level security;
 
--- IMPORTANTE, y la línea que no estaba en el primer diseño: se revoca también de
--- `service_role`, y no solo de `anon` y `authenticated`. Las ACL por omisión de
--- esta plataforma conceden INSERT, UPDATE, DELETE y TRUNCATE sobre toda tabla
--- nueva a los tres, y `service_role` tiene además `bypassrls`. Sin esta línea,
--- cualquiera con la clave de servicio podría insertar filas FALSAS en el
--- registro de auditoría, que es peor que no tener registro.
+-- IMPORTANT, and the line that was not in the first design: it is revoked from
+-- `service_role` too, and not only from `anon` and `authenticated`. This platform's default
+-- ACLs grant INSERT, UPDATE, DELETE and TRUNCATE over every new
+-- table to all three, and `service_role` besides has `bypassrls`. Without this line,
+-- anybody with the service key could insert FALSE rows in the
+-- audit log, which is worse than having no log.
 --
--- `postgres` conserva las suyas y no se le revocan: es el rol con el que se
--- repone el volcado (RNF-113), y quitárselas rompería la restauración de la base
--- para no cerrar nada — lleva `bypassrls`, así que lo que lo detiene no es el
--- privilegio sino los dos triggers de más abajo. Va con test: se ataca la tabla
--- como `postgres` y se comprueba que lo para el candado.
+-- `postgres` keeps its own and they are not revoked from it: it is the role with which
+-- the dump is restored (RNF-113), and taking them away would break the base's restoration
+-- in order to close nothing — it carries `bypassrls`, so what stops it is not the
+-- privilege but the two triggers further below. It goes with a test: the table is attacked
+-- as `postgres` and it is checked that the padlock stops it.
 revoke all on public.change_log from anon, authenticated, service_role;
 
--- `select` y NADA MÁS. Sin insert, sin update, sin delete, sin truncate y sin
--- references. Y no se concede `usage` sobre la secuencia de identidad: con
--- `generated always as identity` la secuencia pertenece a la columna, y quien
--- pudiera hacerle `setval` hacia atrás dejaría el catálogo entero sin poder
--- guardar, porque cada cambio de una obra chocaría contra la clave primaria del
--- registro.
+-- `select` and NOTHING ELSE. No insert, no update, no delete, no truncate and no
+-- references. And `usage` over the identity sequence is not granted: with
+-- `generated always as identity` the sequence belongs to the column, and whoever
+-- could `setval` it backwards would leave the whole catalogue unable to
+-- save, because every change to an artwork would clash against the log's primary
+-- key.
 grant select on public.change_log to authenticated;
 
 revoke all on sequence public.change_log_id_seq from anon, authenticated, service_role;
 
--- Una sola política, y solo de lectura (RF-1506).
+-- A single policy, and read-only (RF-1506).
 --
--- LA CONDICIÓN MERECE EL COMENTARIO: cada subconsulta se evalúa BAJO LA POLÍTICA
--- DE SU PROPIA TABLA. De ahí sale gratis el comportamiento correcto — el
--- Catalogador ve la historia de todo, papelera incluida, porque sus políticas se
--- la enseñan; el Lector ve la de las obras activas y las fotografías activas, y
--- ni siquiera sabe que existe la historia de una ficha retirada (RF-609) ni la
--- de una fotografía retirada, que la política de `images` le esconde. No es una
--- copia de la regla de visibilidad: es la regla misma, así que si mañana cambia
--- en `artworks` o en `images`, la del historial la sigue sola.
+-- THE CONDITION DESERVES THE COMMENT: each subquery is evaluated UNDER ITS OWN
+-- TABLE'S POLICY. Out of that comes the correct behaviour for free — the
+-- Cataloguer sees the history of everything, wastebasket included, because their policies
+-- show it to them; the Reader sees that of the active artworks and the active photographs, and
+-- does not even know that the history of a withdrawn record exists (RF-609) nor that
+-- of a withdrawn photograph, which `images`' policy hides from them. It is not a
+-- copy of the visibility rule: it is the rule itself, so if tomorrow it changes
+-- in `artworks` or in `images`, the history's follows it on its own.
 --
--- `can_read()` delante es cinturón y documenta la intención: una sesión sin
--- perfil no lee nada.
+-- `can_read()` in front is a belt and documents the intention: a session with no
+-- profile reads nothing.
 --
--- Y NO HAY POLÍTICA DE INSERT, UPDATE NI DELETE. Esa ausencia es la denegación
--- (RF-111). El escritor no la necesita: es `security definer` y su propietario
--- está exento de la RLS de esta tabla — por eso, y se repite aquí porque es
--- donde se mira, esta tabla no lleva `force row level security`.
+-- And THERE IS NO INSERT, UPDATE OR DELETE POLICY. That absence is the denial
+-- (RF-111). The writer does not need it: it is `security definer` and its owner
+-- is exempt from this table's RLS — that is why, and it is repeated here because it is
+-- where one looks, this table does not carry `force row level security`.
 create policy change_log_select on public.change_log
   for select using (
     public.can_read()
@@ -298,11 +298,11 @@ create policy change_log_select on public.change_log
   );
 
 
--- ── Los dos candados que la RLS no da ───────────────────────
+-- ── The two padlocks the RLS does not give ──────────────────
 --
--- La RLS no se aplica al propietario de la tabla, ni a `service_role`, ni a
--- `postgres`. Los triggers sí. Esto no es redundante con las políticas: es la
--- otra mitad.
+-- RLS does not apply to the table's owner, nor to `service_role`, nor to
+-- `postgres`. Triggers do. This is not redundant with the policies: it is the
+-- other half.
 
 create function public.tg_change_log_append_only()
 returns trigger language plpgsql set search_path = public as $$
@@ -322,18 +322,18 @@ create trigger change_log_no_truncate
   before truncate on public.change_log
   for each statement execute function public.tg_change_log_append_only();
 
--- El candado que faltaba: sin él, el propietario y `service_role` podrían
--- INSERTAR filas falsas, porque el de arriba solo cubre update, delete y
--- truncate — y una auditoría a la que se le pueden añadir líneas inventadas está
--- tan rota como una a la que se le pueden quitar las verdaderas.
+-- The padlock that was missing: without it, the owner and `service_role` could
+-- INSERT false rows, because the one above only covers update, delete and
+-- truncate — and an audit to which invented lines can be added is
+-- as broken as one from which the true ones can be removed.
 --
--- `pg_trigger_depth()` vale 1 en un insert directo (estamos dentro de este mismo
--- trigger y de ninguno más) y 2 o más cuando el insert lo hace el escritor desde
--- dentro del trigger de la tabla auditada. NO se usa un ajuste de sesión
--- `app.*`, como sí hace el congelado de la comprobación de enlaces: allí el
--- ajuste protege de un descuido del formulario, y aquí hay que protegerse de
--- alguien que quiere escribir — y el mismo actor al que se quiere frenar podría
--- ponerse el ajuste.
+-- `pg_trigger_depth()` is worth 1 in a direct insert (we are inside this very
+-- trigger and no other) and 2 or more when the insert is done by the writer from
+-- inside the audited table's trigger. An `app.*` session setting is NOT
+-- used, as the freezing of the link check does: there the
+-- setting protects from a form's slip, and here one has to be protected from
+-- somebody who wants to write — and the same actor one wants to stop could
+-- set the setting.
 create function public.tg_change_log_insert_guard()
 returns trigger language plpgsql set search_path = public as $$
 begin
@@ -354,8 +354,8 @@ create trigger change_log_insert_guard
 revoke all on function public.tg_change_log_append_only()  from public;
 revoke all on function public.tg_change_log_insert_guard() from public;
 
--- CONSECUENCIA QUE HAY QUE ESCRIBIR: para cambiar una fila ya escrita del
--- registro —por ejemplo, para rellenar una columna nueva en una migración
--- futura— hay que desactivar `change_log_append_only` dentro de esa migración y
--- volver a activarlo. Es incómodo a propósito: así es una decisión visible en un
--- diff que alguien lee, y no un `update` que pasa desapercibido.
+-- A CONSEQUENCE THAT HAS TO BE WRITTEN: to change a row already written in the
+-- log —for example, to fill in a new column in a future
+-- migration— `change_log_append_only` has to be disabled inside that migration and
+-- enabled again. It is deliberately uncomfortable: this way it is a decision visible in a
+-- diff somebody reads, and not an `update` that goes unnoticed.
