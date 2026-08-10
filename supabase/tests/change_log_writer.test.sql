@@ -371,10 +371,10 @@ end $$;
 
 reset role;
 
--- La columna DERIVADA, con el mismo criterio y la misma cautela: se comprueba que
--- `execution_date` cambió de verdad y que el registro anota la causa y no el
--- efecto. Anotar las dos contaría el mismo cambio dos veces y presentaría como
--- cambio del usuario algo que el usuario no puede escribir.
+-- The DERIVED column, with the same criterion and the same caution: it is checked that
+-- `execution_date` really changed and that the log notes the cause and not the
+-- effect. Noting both would count the same change twice and would present as
+-- a user change something the user cannot write.
 do $$
 declare v_antes text; v_despues text; v_n integer;
 begin
@@ -407,12 +407,12 @@ end $$;
 reset role;
 
 
--- ── 5. La papelera: los dos verbos (RF-1503) ─────────────────
+-- ── 5. The wastebasket: the two verbs (RF-1503) ──────────────
 --
--- Retirar y restaurar son cambios del campo `active` y se anotan también como
--- tales: la línea lleva el campo, y el verbo es lo que la interfaz lee. Se
--- comprueba además que el sello de la papelera —`deactivated_at`,
--- `deactivated_by`— se puso de verdad y NO aparece como línea.
+-- Withdrawing and restoring are changes of the `active` field and are noted as
+-- such too: the line carries the field, and the verb is what the interface reads. It is
+-- also checked that the wastebasket's stamp —`deactivated_at`,
+-- `deactivated_by`— was really set and does NOT appear as a line.
 do $$
 declare v_op text; v_col text; v_old text; v_new text; v_n integer; v_sello timestamptz;
 begin
@@ -460,16 +460,16 @@ end $$;
 reset role;
 
 
--- ── 6. TODOS LOS CAMINOS DE ESCRITURA ────────────────────────
+-- ── 6. EVERY WRITE PATH ──────────────────────────────────────
 --
--- Es la razón por la que el registro lo escribe un trigger de la tabla y no la
--- aplicación: un trigger no distingue de dónde viene el cambio. Aquí se ejercen
--- los caminos que NO son «la PWA manda un update», que son justo los que se
--- olvidan.
+-- It is the reason the log is written by a trigger of the table and not by the
+-- application: a trigger does not distinguish where the change comes from. Here the
+-- paths that are NOT «the PWA sends an update» are exercised, which are precisely the ones
+-- that get forgotten.
 
--- 6a. LA FOTOGRAFÍA. El alta de una imagen deja su propia línea, y `catalog_id`
---     la cuelga del historial de la obra sin ningún join, que es para lo que está
---     desnormalizado.
+-- 6a. THE PHOTOGRAPH. An image's creation leaves its own line, and `catalog_id`
+--     hangs it from the artwork's history with no join, which is what it is
+--     denormalised for.
 do $$
 declare v_n integer; v_key text; v_cat text; v_ent text;
 begin
@@ -495,13 +495,13 @@ end $$;
 
 reset role;
 
--- 6b. EL UPDATE QUE HACE OTRO TRIGGER, que es el camino que se olvida siempre.
---     Al subir la primera fotografía, `sync_photographed` llama a
---     `recalculate_photographed()`, que actualiza `artworks.photographed`. Ese
---     cambio de la obra no lo escribió nadie desde el formulario y tiene que
---     quedar registrado igual — y CON EL AUTOR CORRECTO, que es lo que se
---     perdería si el escritor sacara el autor de otro sitio que no fuera la
---     sesión: `recalculate_photographed` es `security definer`.
+-- 6b. THE UPDATE ANOTHER TRIGGER MAKES, which is the path that always gets forgotten.
+--     On uploading the first photograph, `sync_photographed` calls
+--     `recalculate_photographed()`, which updates `artworks.photographed`. That
+--     change of the artwork was written by nobody from the form and has to
+--     be logged all the same — and WITH THE RIGHT AUTHOR, which is what
+--     would be lost if the writer took the author from anywhere other than the
+--     session: `recalculate_photographed` is `security definer`.
 do $$
 declare v_n integer; v_old text; v_new text; v_autor uuid; v_valor boolean;
 begin
@@ -529,9 +529,9 @@ begin
   raise notice 'OK: lo que cambia OTRO TRIGGER queda registrado, con el autor de la sesión que lo provocó (RF-1512)';
 end $$;
 
--- 6c. LA RPC. `set_main_image()` actualiza `images.index_image` con dos `update`
---     dentro de una función. Es un camino de escritura que no pasa por ningún
---     `PATCH` de la tabla, y el registro lo tiene que ver igual.
+-- 6c. THE RPC. `set_main_image()` updates `images.index_image` with two `update`s
+--     inside a function. It is a write path that goes through no
+--     `PATCH` of the table, and the log has to see it all the same.
 do $$
 declare v_n integer;
 begin
@@ -550,18 +550,18 @@ end $$;
 
 reset role;
 
--- 6d. LA SESIÓN ADMINISTRATIVA, sin sesión de aplicación: `changed_by` nulo. Nulo
---     es la verdad —una migración o un acceso por consola no los hizo ninguna
---     persona— y es lo que justifica que la columna sea nulable. Lo que NO puede
---     pasar es que el cambio no se anote: el propietario de la tabla se salta la
---     RLS, y si el registro dependiera de las políticas este cambio sería
+-- 6d. THE ADMINISTRATIVE SESSION, with no application session: `changed_by` null. Null
+--     is the truth —a migration or console access was made by no
+--     person— and it is what justifies the column being nullable. What CANNOT
+--     happen is that the change goes unlogged: the table's owner bypasses the
+--     RLS, and if the log depended on the policies this change would be
 --     invisible.
 do $$
 declare v_n integer; v_autor uuid;
 begin
-  -- Se vacía la reclamación del JWT a mano: `reset role` devuelve el rol pero NO
-  -- borra `request.jwt.claims`, así que sin esta línea el bloque seguiría
-  -- corriendo con el usuario del bloque anterior y no mediría lo que dice medir.
+  -- The JWT claim is emptied by hand: `reset role` gives back the role but does NOT
+  -- clear `request.jwt.claims`, so without this line the block would go on
+  -- running with the previous block's user and would not measure what it says it measures.
   perform set_config('request.jwt.claims', '', true);
   if auth.uid() is not null then
     raise exception 'FAIL: la sesión del test todavía tiene usuario (%), así que este bloque no mide la sesión administrativa', auth.uid();
@@ -585,11 +585,11 @@ begin
 end $$;
 
 
--- ── 7. El registro no se audita a sí mismo ───────────────────
+-- ── 7. The log does not audit itself ─────────────────────────
 --
--- Sería una recursión: cada línea escrita generaría líneas sobre la línea. No se
--- comprueba solo que no hay trigger enganchado —eso es la forma—, sino el
--- resultado: escribir en el registro no produce más filas que las escritas.
+-- It would be a recursion: every line written would generate lines about the line. It is not
+-- only checked that there is no trigger attached —that is the shape—, but the
+-- result: writing in the log produces no more rows than those written.
 do $$
 declare v_n integer; v_esperadas integer; v_antes integer;
 begin
@@ -597,7 +597,7 @@ begin
 
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
   set local role authenticated;
-  -- Tres campos de una vez: tres líneas y ni una más.
+  -- Three fields at once: three lines and not one more.
   update public.artworks
      set signature_description = 'Ángulo inferior derecho',
          physical_location     = 'Almacén 2',
@@ -621,8 +621,8 @@ end $$;
 
 reset role;
 
--- Y la forma, que es lo que impide que vuelva: ningún trigger del registro llama
--- al escritor, y el escritor no cuelga de ninguna tabla que no sea auditada.
+-- And the shape, which is what prevents it coming back: no trigger of the log calls
+-- the writer, and the writer hangs from no table that is not audited.
 do $$
 declare v_tablas text[];
 begin
@@ -637,20 +637,20 @@ begin
   raise notice 'OK: el escritor cuelga exactamente de las dos tablas auditadas y de ninguna más';
 end $$;
 
--- LOS DOS TRIGGERS SON `AFTER`, Y ESTE ASERTO NO ES DECORACIÓN ESTRUCTURAL: ES EL
--- MÁS CARO DE TODO EL FICHERO.
+-- BOTH TRIGGERS ARE `AFTER`, AND THIS ASSERTION IS NOT STRUCTURAL DECORATION: IT IS THE
+-- MOST EXPENSIVE ONE IN THE WHOLE FILE.
 --
--- Medido, enganchando el escritor como BEFORE y repitiendo el alta de un Lector:
--- la obra NO se creó (0 filas en `artworks`) y el registro SÍ anotó su línea de
--- alta (1 fila), sin que el `insert` diera ningún error. La causa es que el
--- escritor termina con `return null`, que en un AFTER se ignora y en un BEFORE
--- SIGNIFICA «descarta esta fila en silencio». Enganchado como BEFORE, el escritor
--- convierte el catálogo entero en un agujero: cada alta se pierde sin avisar y el
--- registro certifica creaciones que no ocurrieron, que es la peor combinación
--- posible de las dos mitades de esta pareja.
+-- Measured, hooking the writer up as BEFORE and repeating a Reader's creation:
+-- the artwork was NOT created (0 rows in `artworks`) and the log DID note its
+-- creation line (1 row), with the `insert` giving no error at all. The cause is that the
+-- writer ends with `return null`, which in an AFTER is ignored and in a BEFORE
+-- MEANS «discard this row in silence». Hooked up as BEFORE, the writer
+-- turns the whole catalogue into a hole: every creation is lost with no warning and the
+-- log certifies creations that did not happen, which is the worst possible combination
+-- of this pair's two halves.
 --
--- La migración ya lo comprueba al aplicarse; esto lo comprueba en cada
--- `make db-test`, que es donde se va a notar si alguien recrea el trigger a mano.
+-- The migration already checks it when applied; this checks it on every
+-- `make db-test`, which is where it will show if somebody recreates the trigger by hand.
 do $$
 declare v_mal text[];
 begin
@@ -669,14 +669,14 @@ begin
 end $$;
 
 
--- ── 8. Lo que el escritor NO puede convertirse en (RF-1505) ──
+-- ── 8. What the writer CANNOT turn into (RF-1505) ────────────
 --
--- Un escritor que sabe reconstruir los valores anteriores es el 90 % de un
--- «deshacer». La otra mitad no existe y este bloque se pone rojo el día que
--- aparezca. Es deliberadamente tosco: su valor no es la precisión, es obligar a
--- que borrarlo aparezca en un diff que alguien lee.
+-- A writer that knows how to reconstruct the previous values is 90 % of an
+-- «undo». The other half does not exist and this block goes red the day it
+-- appears. It is deliberately crude: its value is not precision, it is forcing
+-- its deletion to appear in a diff somebody reads.
 
--- 8a. Ninguna función lee el registro y escribe en el catálogo.
+-- 8a. No function reads the log and writes in the catalogue.
 do $$
 declare v_sospechosas text[];
 begin
@@ -696,11 +696,11 @@ begin
   raise notice 'OK: ninguna función devuelve un valor del registro al catálogo (RF-1505)';
 end $$;
 
--- 8b. Y NINGUNA FUNCIÓN ACEPTA UN `change_id`, que es la firma que tendría un
---     «deshacer esta acción»: el registro agrupa por `change_id` justamente para
---     que la interfaz lea la acción, y esa misma clave es la que indexaría la
---     restauración. Se mira el nombre del parámetro y no solo el tipo, porque
---     media base usa uuid.
+-- 8b. And NO FUNCTION ACCEPTS A `change_id`, which is the signature an
+--     «undo this action» would have: the log groups by `change_id` precisely so
+--     the interface reads the action, and that same key is the one that would index the
+--     restoration. The parameter's name is looked at and not only the type, because
+--     half the base uses uuid.
 do $$
 declare v_rpc text[];
 begin
@@ -718,8 +718,8 @@ begin
   raise notice 'OK: ninguna función recibe un change_id: no hay por dónde deshacer una acción (RF-1505)';
 end $$;
 
--- 8c. Ninguna vista sobre el registro que se salte su política, y el escritor no
---     devuelve nada aprovechable: es una función de trigger.
+-- 8c. No view over the log that bypasses its policy, and the writer
+--     returns nothing usable: it is a trigger function.
 do $$
 declare v_vistas text[];
 begin
@@ -743,15 +743,15 @@ begin
 end $$;
 
 
--- ── 9. El candado, con el escritor ya puesto (RF-1504) ───────
+-- ── 9. The padlock, with the writer already in place (RF-1504) ─
 --
--- ESTE ES EL BLOQUE QUE JUSTIFICA REPETIR LO QUE YA MIDE change_log.test.sql.
--- Desde esta migración existe una función `security definer` que SÍ puede
--- insertar en el registro: es superficie nueva, y hay que demostrar que no hay
--- forma de llegar a ella. Los doce intentos —tres verbos por cada uno de los
--- cuatro papeles— sobre una tabla que AHORA TIENE FILAS DE VERDAD, escritas por
--- el escritor unos bloques más arriba, para que un `update` o un `delete` que
--- «afecta a cero filas» no pueda pasar por un fallo.
+-- THIS IS THE BLOCK THAT JUSTIFIES REPEATING WHAT change_log.test.sql ALREADY MEASURES.
+-- Since this migration there exists a `security definer` function that CAN
+-- insert into the log: it is new surface, and it has to be demonstrated that there is no
+-- way of reaching it. The twelve attempts —three verbs for each of the
+-- four roles— over a table that NOW HAS REAL ROWS, written by
+-- the writer a few blocks above, so that an `update` or a `delete` that
+-- «affects zero rows» cannot pass for a failure.
 do $$
 declare
   v_actores constant text[] := array['Lector', 'Catalogador', 'Superusuario', 'anónimo'];
@@ -787,17 +787,17 @@ begin
         v_pasaron := v_pasaron + 1;
       exception
         when insufficient_privilege then
-          -- LO CORRECTO, y el tipo de error importa tanto como el hecho de
-          -- fallar: parado por PRIVILEGIO es la PRIMERA de las dos cerraduras en
-          -- serie de RF-113, la que PostgREST aplica antes de mirar ninguna
-          -- política y la que también para a un `curl` que se salte la interfaz.
+          -- THE RIGHT ONE, and the kind of error matters as much as the fact of
+          -- failing: stopped by PRIVILEGE is the FIRST of RF-113's two locks in
+          -- series, the one PostgREST applies before looking at any
+          -- policy and the one that also stops a `curl` bypassing the interface.
           reset role;
         when others then
-          -- Parado, pero por la SEGUNDA cerradura. Es un fallo del test y no un
-          -- aprobado por los pelos: significa que alguien ha concedido el
-          -- privilegio y que del par de cerraduras solo queda una. Medido: con
-          -- `grant insert, update, delete ... to authenticated`, los doce intentos
-          -- pasan a morir en el candado en vez de en el privilegio.
+          -- Stopped, but by the SECOND lock. It is a failure of the test and not a
+          -- pass by the skin of its teeth: it means somebody has granted the
+          -- privilege and that only one of the pair of locks is left. Measured: with
+          -- `grant insert, update, delete ... to authenticated`, the twelve attempts
+          -- start dying at the padlock instead of at the privilege.
           reset role;
           v_mal_motivo := v_mal_motivo
             || (v_actores[a] || ' ' || v_verbos[v] || ' (' || sqlstate || ')');
@@ -826,10 +826,10 @@ end $$;
 
 reset role;
 
--- Y los dos roles que se saltan la RLS, contra una tabla con filas. A estos no
--- los para el privilegio: los para el candado, que es el argumento entero de
--- 20260805120000 visto desde el rol para el que solo sirve una de las dos
--- cerraduras.
+-- And the two roles that bypass the RLS, against a table with rows. These are not
+-- stopped by the privilege: they are stopped by the padlock, which is 20260805120000's whole
+-- argument seen from the role for which only one of the two
+-- locks works.
 do $$
 declare v_paradas integer := 0;
 begin
@@ -898,26 +898,26 @@ end $$;
 
 reset role;
 
--- LA VÍA QUE ABRIRÍA EL PROPIO CANDADO SI SE MIRARA MAL. El candado de inserción
--- deja pasar cualquier `insert` que venga de dentro de otro trigger
--- (`pg_trigger_depth() >= 2`). Eso sería explotable si un rol de la aplicación
--- pudiera CREAR una tabla con un trigger propio y meter desde ahí una línea
--- inventada. No puede, por dos razones independientes, y las dos se miden porque
--- si se cayera una quedaría la otra sola.
+-- THE ROUTE THE PADLOCK ITSELF WOULD OPEN IF IT WERE LOOKED AT BADLY. The insertion padlock
+-- lets through any `insert` coming from inside another trigger
+-- (`pg_trigger_depth() >= 2`). That would be exploitable if an application role
+-- could CREATE a table with a trigger of its own and put an invented line in from there. It
+-- cannot, for two independent reasons, and both are measured because
+-- if one fell the other would be left alone.
 do $$
 begin
   if has_schema_privilege('authenticated', 'public', 'create')
      or has_schema_privilege('anon', 'public', 'create') then
     raise exception 'FAIL: un rol de la aplicación puede crear objetos en el esquema público; podría montar un trigger y colar líneas en el registro por el hueco de pg_trigger_depth()';
   end if;
-  -- Y aunque pudiera: seguiría sin tener `insert` sobre el registro, que se
-  -- comprueba antes que ningún trigger.
+  -- And even if it could: it would still not have `insert` over the log, which is
+  -- checked before any trigger.
   if has_table_privilege('authenticated', 'public.change_log', 'insert')
      or has_table_privilege('anon', 'public.change_log', 'insert') then
     raise exception 'FAIL: un rol de la aplicación tiene insert sobre el registro (RF-1504)';
   end if;
-  -- Ni EXECUTE sobre el escritor, que es la tercera puerta y la más directa:
-  -- invocarlo no serviría —es una función de trigger— pero no se deja abierta.
+  -- Nor EXECUTE over the writer, which is the third door and the most direct:
+  -- invoking it would be of no use —it is a trigger function— but it is not left open.
   if has_function_privilege('authenticated', 'public.tg_change_log()', 'execute')
      or has_function_privilege('anon', 'public.tg_change_log()', 'execute') then
     raise exception 'FAIL: un rol de la aplicación puede ejecutar el escritor del registro';
@@ -926,17 +926,17 @@ begin
 end $$;
 
 
--- ── 10. Quién ve la historia que el escritor acaba de escribir ─
+-- ── 10. Who sees the history the writer has just written ─────
 --
--- RF-1506 y RF-609, ahora sobre líneas REALES y no sobre un fixture insertado a
--- mano. Es la comprobación que faltaba: la política se escribió contra filas
--- puestas con el candado desactivado, y hasta hoy nunca se había leído una línea
--- que hubiera escrito el trigger.
+-- RF-1506 and RF-609, now over REAL lines and not over a fixture inserted by
+-- hand. It is the check that was missing: the policy was written against rows
+-- put in with the padlock disabled, and until today a line written by the
+-- trigger had never been read.
 do $$
 declare v_n integer;
 begin
-  -- La obra AR-9601 queda ACTIVA (se restauró en el bloque 5) y AR-9600 también.
-  -- Se retira AR-9601 para leer la historia de una ficha de la papelera.
+  -- The artwork AR-9601 stays ACTIVE (it was restored in block 5) and AR-9600 too.
+  -- AR-9601 is withdrawn to read the history of a record from the wastebasket.
   update public.artworks set active = false where catalog_id = 'AR-9601';
 
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
@@ -967,12 +967,12 @@ end $$;
 reset role;
 
 
--- ── 11. Lo que el escritor descarta, medido contra el catálogo ─
+-- ── 11. What the writer discards, measured against the catalogue ─
 --
--- Los dos sentidos, igual que en la migración, para que este fichero se ponga
--- rojo si alguien añade una columna generada a una tabla auditada sin decidir qué
--- hacer con ella. En la migración el aserto se ejecuta una vez; aquí se ejecuta
--- en cada `make db-test`, que es donde se va a notar.
+-- Both directions, as in the migration, so this file goes
+-- red if somebody adds a generated column to an audited table without deciding what
+-- to do with it. In the migration the assertion runs once; here it runs
+-- on every `make db-test`, which is where it will show.
 do $$
 declare
   c_ignored constant text[] := array[
