@@ -57,10 +57,10 @@ describe('un eslabón nuevo', () => {
 
 describe('las fechas del eslabón (ADR-004)', () => {
   /**
-   * La diferencia de un carácter con `artworks`: allí el rango exige
-   * `end_year > start_year` y aquí `>=`, porque una obra comprada y vendida en
-   * 1985 es una tenencia real. Copiar la regla de la obra rechazaría un eslabón
-   * legítimo.
+   * The one-character difference from `artworks`: there the range requires
+   * `end_year > start_year` and here `>=`, because an artwork bought and sold in
+   * 1985 is a real tenure. Copying the artwork's rule would reject a legitimate
+   * link.
    */
   it('un tramo que empieza y acaba el mismo año es válido, al revés que en la obra', () => {
     expect(draftIsSaveable(draft({ startYear: 1985, endYear: 1985 }))).toBe(true)
@@ -128,8 +128,8 @@ describe('lo que viaja a la base', () => {
   })
 
   /**
-   * Quitar el año de un eslabón que estaba marcado «c.» no puede mandar una
-   * combinación que la base rechaza: las banderas se normalizan contra el año.
+   * Removing the year from a link that was marked «c.» cannot send a
+   * combination the base rejects: the flags are normalised against the year.
    */
   it('sin año, las banderas y el año final se apagan solos', () => {
     const payload = draftPayload(draft({ approximate: true, unconfirmed: true, endYear: 1990 }))
@@ -213,8 +213,8 @@ describe('reordenar la cadena (RF-509)', () => {
   })
 
   /**
-   * En los extremos el botón se desactiva en vez de no hacer nada: un control
-   * que se pulsa y no pasa nada se lee como que reordenar está roto.
+   * At the ends the button is disabled instead of doing nothing: a control
+   * that gets pressed and nothing happens reads as reordering being broken.
    */
   it('en los extremos no hay destino, y se dice con un nulo', () => {
     expect(stepTarget(rows, 0, -1)).toBeNull()
@@ -225,9 +225,9 @@ describe('reordenar la cadena (RF-509)', () => {
   })
 
   /**
-   * El orden manual es la decisión más rara de este bloque: todas las demás
-   * listas de la aplicación se ordenan solas. Sin explicarlo, las flechas se
-   * leen como una lista que no supo ordenarse.
+   * The manual order is this block's oddest decision: every other
+   * list in the application sorts itself. Without explaining it, the arrows
+   * read as a list that did not know how to sort itself.
    */
   it('explica por qué el orden es manual, y no lo explica cuando no hay orden', () => {
     expect(reorderHint(2)).toContain('lo pones tú')

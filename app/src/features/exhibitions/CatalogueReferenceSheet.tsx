@@ -14,22 +14,22 @@ import {
 import type { TriState } from '../../lib/types'
 
 /**
- * Elegir cuál de las referencias de la bibliografía es el catálogo de esta muestra
+ * Choosing which of the bibliography's references is this show's catalogue
  * (RF-503, RF-506).
  *
- * El selector que le faltaba a la columna `catalogue_reference_id`, que existía desde la
- * primera migración de exposiciones y que ninguna pantalla podía fijar. Reutiliza el
- * buscador de referencias de la ficha de obra (`searchReferenceOptions`) tal cual: se
- * busca una referencia igual desde una obra que la cita que desde la muestra cuyo
- * catálogo es.
+ * The selector the `catalogue_reference_id` column was missing, which had existed since the
+ * first exhibitions migration and which no screen could set. It reuses the
+ * artwork record's reference finder (`searchReferenceOptions`) as is: a
+ * reference is searched for the same from an artwork that cites it as from the show whose
+ * catalogue it is.
  *
- * **Lo primero que se lee es la negativa, cuando la hay**: la base ata el vínculo a
- * `catalogue_published`, así que si no consta que hubo catálogo esto no se puede guardar,
- * y se dice antes de que se elija nada — con dos frases distintas, porque «sin revisar» y
- * «No» llevan a hacer cosas distintas. Lo decide `catalogueChoiceBlockedReason`.
+ * **The first thing read is the refusal, when there is one**: the base ties the link to
+ * `catalogue_published`, so if it is not recorded that there was a catalogue this cannot be stored,
+ * and it is said before anything is chosen — with two different sentences, because «sin revisar» and
+ * «No» lead to doing different things. `catalogueChoiceBlockedReason` decides it.
  *
- * Y quitar el vínculo se ofrece siempre que haya uno, también sobre una ficha incoherente:
- * es la única salida de una fila que hubiera llegado por SQL.
+ * And removing the link is offered whenever there is one, also over an inconsistent record:
+ * it is the only way out of a row that had arrived through SQL.
  */
 export function CatalogueReferenceSheet({
   cataloguePublished,

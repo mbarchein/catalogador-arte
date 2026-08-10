@@ -22,9 +22,9 @@ describe('declarar el estado de la investigación (RF-218)', () => {
   })
 
   /**
-   * La base lo rechaza con un *trigger*. Aquí no se reimplementa la regla: se
-   * deja de ofrecer lo que va a ser rechazado, y se dice por qué en el mismo
-   * sitio donde estaba la opción.
+   * The base rejects it with a *trigger*. Here the rule is not reimplemented: what
+   * is going to be rejected stops being offered, and the reason is said in the same
+   * place where the option was.
    */
   it('con eslabones registrados, «investigado sin resultados» se apaga y dice por qué', () => {
     const option = researchStatusOptions(spec, 3).find((one) => one.value === 'NONE_FOUND')

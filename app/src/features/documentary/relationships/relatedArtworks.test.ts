@@ -15,14 +15,14 @@ import {
 import type { ArtworkRef, RelationshipRow, RelationshipView } from '../documentaryRows'
 
 /**
- * RF-217 y RF-305: una relación tiene DOS EXTREMOS y una dirección, se guarda una
- * sola vez, y la ficha tiene que enseñar la que corresponde mirada desde la obra
- * que se está viendo.
+ * RF-217 and RF-305: a relationship has TWO ENDS and a direction, it is stored
+ * once, and the record has to show the one that corresponds looked at from the artwork
+ * being viewed.
  *
- * Lo que se verifica aquí es justo eso —qué frase se lee desde cada lado— y lo
- * que pasa cuando la obra del otro extremo no se puede leer. Equivocar la
- * dirección publicaría el estudio previo como la obra final, y no hay nada aguas
- * abajo que lo detecte: las dos filas son igual de válidas.
+ * What is verified here is exactly that —which sentence is read from each side— and what
+ * happens when the artwork at the other end cannot be read. Getting the
+ * direction wrong would publish the preparatory study as the final work, and there is nothing downstream
+ * that detects it: both rows are equally valid.
  */
 
 // ── Fixtures ─────────────────────────────────────────────────

@@ -12,19 +12,19 @@ import type { ArtworkRef, RelationshipRow } from '../documentaryRows'
 import type { ArtworkRelationshipType } from '../../../lib/types'
 
 /**
- * RF-217: registrar una relación es elegir una obra, un tipo y —lo que de verdad
- * decide— UN SENTIDO.
+ * RF-217: registering a relationship is choosing an artwork, a type and —what really
+ * decides— A DIRECTION.
  *
- * «AR-0012 es estudio previo de AR-0013» y «AR-0013 es estudio previo de
- * AR-0012» son dos filas igual de válidas para la base y cuentan cosas opuestas
- * sobre el trabajo del artista. No hay nada aguas abajo que detecte la
- * equivocación, así que la pregunta se hace con las dos frases escritas y la
- * traducción de la respuesta a las dos columnas se verifica aquí.
+ * «AR-0012 es estudio previo de AR-0013» and «AR-0013 es estudio previo de
+ * AR-0012» are two equally valid rows for the base and they say opposite things
+ * about the artist's work. There is nothing downstream that detects the
+ * mistake, so the question is asked with both sentences written out and the
+ * translation of the answer into the two columns is verified here.
  *
- * Las negativas que este módulo anticipa son las mismas que la base impone con
- * sus propios mensajes en español. Se adelantan para que se lean ANTES de pulsar,
- * no en lugar de la comprobación: la copia de aquí trabaja sobre las relaciones
- * que esta ficha cargó, y otra persona puede escribir una entre medias.
+ * The refusals this module anticipates are the same ones the base imposes with
+ * its own messages in Spanish. They are brought forward so they are read BEFORE pressing,
+ * not instead of the check: the copy here works over the relationships
+ * this record loaded, and another person can write one in the meantime.
  */
 
 const STUDY: ArtworkRelationshipType = {
@@ -152,9 +152,9 @@ describe('la llamada que registra la relación (RF-517)', () => {
   })
 
   it('una relación retirada NO se bloquea: volver a añadirla es lo que la restaura', () => {
-    // La consulta de la ficha solo trae las activas, así que una relación en la
-    // papelera no está en `existing`. Bloquearla aquí convertiría un gesto que
-    // funciona —`relate_artworks` la restaura— en un callejón sin salida.
+    // The record's query only brings the active ones, so a relationship in the
+    // wastebasket is not in `existing`. Blocking it here would turn a gesture that
+    // works —`relate_artworks` restores it— into a dead end.
     const plan = planRelation(draft(), [])
     expect(plan.ok).toBe(true)
   })
@@ -187,10 +187,10 @@ describe('lo que no se puede registrar, y por qué', () => {
   })
 
   /**
-   * Es EL caso de este bloque. Si ya consta que A es estudio previo de B, que B
-   * sea estudio previo de A no es un dato más: es una contradicción documental, y
-   * de las que no se ven al escribirlas porque cada una se da de alta desde la
-   * ficha de su obra. La base la rechaza; aquí se lee antes de pulsar.
+   * It is THE case of this block. If it is already recorded that A is a preparatory study of B, B
+   * being a preparatory study of A is not one more datum: it is a documentary contradiction, and
+   * one of those that are not visible when written because each one is created from
+   * its own artwork's record. The base rejects it; here it is read before pressing.
    */
   it('la contraria de una asimétrica se rechaza, y se recuerda que la otra ficha ya lo dice', () => {
     const plan = planRelation(draft({ direction: 'OTHER_TO_THIS' }), [stored()])

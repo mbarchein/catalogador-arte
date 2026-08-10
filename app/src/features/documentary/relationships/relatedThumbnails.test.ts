@@ -3,13 +3,13 @@ import { relatedThumbnailUrls, seededThumbnails, thumbnailKey } from './relatedT
 import type { CachedThumbnail } from '../../artworks/artworksCache'
 
 /**
- * La miniatura de cada obra relacionada (RF-403, RF-110).
+ * Each related artwork's thumbnail (RF-403, RF-110).
  *
- * Dos fuentes —el espejo local, ya firmado para una semana, y la consulta que lo
- * corrige— y el orden entre ellas es lo que se verifica: reutilizar una firma
- * válida es lo que hace que la imagen ya descargada no se vuelva a descargar, y
- * conservar una que apunta a OTRO fichero sería enseñar la fotografía equivocada
- * de la obra correcta.
+ * Two sources —the local mirror, already signed for a week, and the query that
+ * corrects it— and the order between them is what is verified: reusing a valid
+ * signature is what makes the already downloaded image not be downloaded again, and
+ * keeping one that points to ANOTHER file would be showing the wrong photograph
+ * of the right artwork.
  */
 
 function cached(path: string, url: string): CachedThumbnail {

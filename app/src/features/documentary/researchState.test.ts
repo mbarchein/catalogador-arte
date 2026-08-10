@@ -10,13 +10,13 @@ import {
 import { RESEARCH_STATUS_LABEL, type ArtworkDocumentary, type ResearchStatus } from '../../lib/types'
 
 /**
- * RF-218 y «sin revisar» no es «no», que es la regla que más pantallas decide en
- * este proyecto.
+ * RF-218 and «sin revisar» is not «no», which is the rule that decides the most screens in
+ * this project.
  *
- * Lo que se verifica es el TEXTO que lee la catalogadora, porque el texto es la
- * regla: un bloque vacío que nadie ha mirado y un bloque vacío que se ha
- * investigado a fondo se ven igual en pantalla y significan lo contrario, y lo
- * único que los separa es la frase.
+ * What is verified is the TEXT the cataloguer reads, because the text is the
+ * rule: an empty block nobody has looked at and an empty block that has been
+ * thoroughly researched look the same on screen and mean the opposite, and the
+ * only thing separating them is the sentence.
  */
 
 const IDS: DocumentarySectionId[] = [
@@ -150,11 +150,11 @@ describe('un bloque con datos', () => {
   })
 
   /**
-   * La base lo impide con un *trigger* —no se puede declarar «Investigado, sin
-   * resultados» sobre un bloque con filas, ni añadir filas a uno declarado así—,
-   * pero la pantalla no da por hecho que el *trigger* siga ahí: si la
-   * contradicción llega, se dice, en vez de enseñar citas bajo un rótulo que
-   * afirma que no hay ninguna.
+   * The base prevents it with a *trigger* —«Investigado, sin
+   * resultados» cannot be declared over a block with rows, nor can rows be added to one declared that way—,
+   * but the screen does not take for granted that the *trigger* is still there: if the
+   * contradiction arrives, it is said, instead of showing citations under a heading that
+   * states there are none.
    */
   it('la contradicción que la base no debería permitir se dice en voz alta', () => {
     const state = blockState(bibliography, 'NONE_FOUND', 3)

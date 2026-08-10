@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { canWriteBlock } from './sections'
 
 describe('escribir exige el modo Y el permiso (RF-308, RF-109)', () => {
-  // Los dos fallos que esta regla existe para impedir, y los dos han ocurrido:
-  // un botón que escribe en la ficha que se está leyendo, y un botón que escribe
-  // ofrecido a quien solo consulta.
+  // The two failures this rule exists to prevent, and both have happened:
+  // a button that writes in the record being read, and a button that writes
+  // offered to whoever only consults.
   it('no escribe en la vista, ni siquiera quien tiene permiso', () => {
     expect(canWriteBlock(false, true)).toBe(false)
   })
