@@ -54,17 +54,17 @@ let stamps = 0
 let listening = false
 
 /**
- * Un sello distinto en cada carga de la página, y no un adorno.
+ * A different stamp on every page load, and not an ornament.
  *
- * Las entradas de historia sobreviven a una recarga; el contador de arriba no. Sin
- * este sello, recargar con una hoja abierta dejaba una entrada marcada «modal-1» y la
- * hoja siguiente se marcaba «modal-1» otra vez: el «atrás» aterrizaba en la entrada
- * vieja, el árbitro la reconocía como la de la hoja abierta —misma clave— y cerraba
- * «lo que hubiera por encima», que era nada. La hoja se quedaba abierta y el botón
- * parecía roto. Medido en Chromium.
+ * History entries survive a reload; the counter above does not. Without
+ * this stamp, reloading with a sheet open left an entry marked «modal-1» and the
+ * next sheet was marked «modal-1» again: the «back» landed on the old
+ * entry, the arbiter recognised it as the open sheet's —same key— and closed
+ * «whatever was on top», which was nothing. The sheet stayed open and the button
+ * looked broken. Measured in Chromium.
  *
- * Con el sello, una entrada de otra carga no es de nadie, y eso ya está resuelto:
- * cierra lo que haya abierto.
+ * With the stamp, an entry from another load belongs to nobody, and that is already resolved:
+ * it closes whatever is open.
  */
 const session = Math.random().toString(36).slice(2, 8)
 

@@ -5,31 +5,31 @@ import { render, waitFor } from '@testing-library/react'
 import { useCloseOnBack } from './useCloseOnBack'
 
 /**
- * El «atrás» del móvil cierra el modal de encima y no la pantalla (RNF-106).
+ * The phone's «back» closes the modal on top and not the screen (RNF-106).
  *
- * Estos tests son la razón de existir del *hook* y no un adorno: lo que hace es
- * manipular el historial del navegador —estado global, compartido con el
- * enrutador—, y los cuatro fallos que se pueden cometer aquí no se ven leyendo el
- * código. Uno, que un «atrás» cierre DOS modales anidados de golpe porque los dos
- * escuchan el mismo evento. Dos, que cerrar con la ✕ deje la entrada de historia
- * puesta y el «atrás» siguiente parezca averiado. Tres, que abrir un modal
- * consuma su propia entrada y se cierre solo. Y cuatro, que un modal que se niega
- * a cerrarse deje el «atrás» siguiente abandonando la pantalla. Los cuatro se
- * reproducen abajo.
+ * These tests are the *hook*'s reason to exist and not an ornament: what it does is
+ * manipulate the browser's history —global state, shared with the
+ * router—, and the four mistakes that can be made here are not visible reading the
+ * code. One, that a «back» closes TWO nested modals at once because both
+ * listen to the same event. Two, that closing with the ✕ leaves the history entry
+ * in place and the next «back» looks broken. Three, that opening a modal
+ * consumes its own entry and it closes by itself. And four, that a modal refusing
+ * to close leaves the next «back» abandoning the screen. All four are
+ * reproduced below.
  *
- * `history.back()` en jsdom no es sincrónico —el recorrido del historial se
- * encola—, así que todo lo que espera un `popstate` va dentro de un `waitFor`.
+ * `history.back()` in jsdom is not synchronous —history traversal is
+ * queued—, so everything awaiting a `popstate` goes inside a `waitFor`.
  *
- * Nota: `@vitest-environment jsdom` en la primera línea es obligatorio. Sin ella
- * el fichero corre en node y falla con «window is not defined», que no dice lo
- * que pasa.
+ * Note: `@vitest-environment jsdom` on the first line is compulsory. Without it
+ * the file runs in node and fails with «window is not defined», which does not say what
+ * is happening.
  */
 
 /**
- * Un modal cualquiera. Lo que importa es que se comporte como los de verdad: al
- * cerrarse deja de estar abierto. `cierra: false` es el que se NIEGA —la hoja que
- * sube un documento mientras el fichero está en vuelo—, cuyo cierre es
- * deliberadamente un no-op.
+ * Any modal. What matters is that it behaves like the real ones: on
+ * closing it stops being open. `cierra: false` is the one that REFUSES —the sheet that
+ * uploads a document while the file is in flight—, whose close is
+ * deliberately a no-op.
  */
 function Modal({
   onClose,
@@ -137,9 +137,9 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
   })
 
   it('un modal que se niega a cerrarse recupera su entrada y el «atrás» no saca de la pantalla', async () => {
-    // La hoja que sube un documento: mientras el fichero está en vuelo su cierre
-    // no hace nada. Sin devolverle la entrada, el primer «atrás» no haría nada y
-    // el segundo abandonaría la pantalla con la subida a medias.
+    // The sheet that uploads a document: while the file is in flight its close
+    // does nothing. Without giving the entry back, the first «back» would do nothing and
+    // the second would abandon the screen with the upload half-done.
     onScreen('ficha')
     const ocupada = vi.fn()
     render(<Modal onClose={ocupada} cierra={false} />)
@@ -158,16 +158,16 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
 
   it('un modal que nace ya abierto sobrevive al doble montaje de desarrollo', async () => {
     /**
-     * La incidencia, reproducida. **Todas las hojas de la aplicación nacen abiertas**
-     * —la pantalla las monta cuando hace falta y les pasa `open` a secas—, así que en
-     * desarrollo React montaba el efecto, lo destruía y lo volvía a montar; el
-     * destruido consumía la entrada de historia por el camino, la aplicación se
-     * quedaba en la entrada de la pantalla y el árbitro leía «no hay ningún modal
-     * abierto». Resultado: la hoja se cerraba sola en el mismo instante de abrirse.
+     * The incident, reproduced. **Every sheet in the application is born open**
+     * —the screen mounts them when needed and passes them a bare `open`—, so in
+     * development React mounted the effect, destroyed it and mounted it again; the
+     * destroyed one consumed the history entry on the way, the application
+     * stayed on the screen's entry and the arbiter read «there is no modal
+     * open». Result: the sheet closed by itself the very instant it opened.
      *
-     * Se descubrió en Chromium y no aquí, porque el primer test de este fichero monta
-     * con `open` cambiando de estado y ese camino no dispara el doble montaje. Por eso
-     * este test monta dentro de `StrictMode`, que es lo que lo dispara.
+     * It was discovered in Chromium and not here, because this file's first test mounts
+     * with `open` changing state and that path does not trigger the double mount. That is why
+     * this test mounts inside `StrictMode`, which is what triggers it.
      */
     onScreen('ficha')
     const onClose = vi.fn()
@@ -189,9 +189,9 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
   })
 
   it('y en el doble montaje no se apila una entrada de más', async () => {
-    // Si el segundo montaje empujara su propia entrada, harían falta dos «atrás» para
-    // salir de una hoja: uno para consumir la entrada huérfana y otro para la de
-    // verdad. Es el otro lado del mismo fallo.
+    // If the second mount pushed its own entry, two «back»es would be needed to
+    // leave a sheet: one to consume the orphan entry and another for the real
+    // one. It is the other side of the same failure.
     onScreen('listado')
     onScreen('ficha')
     const onClose = vi.fn()
@@ -210,12 +210,12 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
 
   it('una entrada de modal de otra carga de la página no confunde al «atrás»', async () => {
     /**
-     * Recargar con una hoja abierta deja en el historial una entrada marcada como de
-     * un modal, y al recargar el contador del módulo vuelve a empezar. Sin un sello
-     * por carga, la hoja siguiente se marcaba con la MISMA clave: el «atrás» aterrizaba
-     * en la entrada vieja, el árbitro la reconocía como la de la hoja abierta y cerraba
-     * «lo que hubiera por encima», que era nada. La hoja se quedaba abierta y el botón
-     * parecía roto. Medido en Chromium antes de arreglarlo.
+     * Reloading with a sheet open leaves in the history an entry marked as belonging to
+     * a modal, and on reloading the module's counter starts over. Without a stamp
+     * per load, the next sheet was marked with the SAME key: the «back» landed
+     * on the old entry, the arbiter recognised it as the open sheet's and closed
+     * «whatever was on top», which was nothing. The sheet stayed open and the button
+     * looked broken. Measured in Chromium before fixing it.
      */
     onScreen('ficha')
     // The entry the previous load left behind, with the shape it would have.

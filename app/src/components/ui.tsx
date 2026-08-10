@@ -1615,34 +1615,34 @@ export function ActionBar({ children, notice }: { children: ReactNode; notice?: 
 }
 
 /**
- * Los botones de una hoja, pegados a su borde inferior (RNF-106).
+ * A sheet's buttons, stuck to its bottom edge (RNF-106).
  *
- * El hermano de `ActionBar`, para las hojas que son un formulario. La hoja mide como
- * mucho tres cuartos de pantalla y su contenido se desplaza dentro, así que un
- * «Guardar» al final de siete campos se queda fuera igual que se quedaba fuera el de
- * la ficha: se rellena, se busca el botón, no está, y lo que hay a mano es el fondo
- * oscuro — que en un formulario ya no cierra, precisamente por esto.
+ * `ActionBar`'s sibling, for the sheets that are a form. The sheet is at
+ * most three quarters of the screen tall and its content scrolls inside, so a
+ * «Guardar» at the end of seven fields ends up out of sight just as the record's did:
+ * it gets filled in, the button is looked for, it is not there, and what is within reach is the dark
+ * backdrop — which in a form no longer closes, precisely because of this.
  *
- * `sticky` y no `fixed`: lo que tiene que quedarse quieto es el pie **dentro de la
- * hoja**, no en la ventana, y una hoja corta no debe llevar el pie despegado del
- * final de su contenido. Los márgenes negativos deshacen el `p-4` de la hoja para
- * que la franja llegue de un borde al otro; sin eso, el contenido se ve pasar por los
- * cuatro puntos de los lados.
+ * `sticky` and not `fixed`: what has to stay still is the foot **inside the
+ * sheet**, not in the window, and a short sheet must not carry the foot detached from the
+ * end of its content. The negative margins undo the sheet's `p-4` so
+ * the band reaches from one edge to the other; without that, the content is seen going past the
+ * four points at the sides.
  */
 export function SheetFooter({ children }: { children: ReactNode }) {
   return (
     <div
       className="sticky -mx-4 mt-4 border-t border-stone-200 bg-white px-4 pt-3"
       style={{
-        // Bajado exactamente el relleno inferior de la hoja, para que la franja
-        // llegue a su borde: con `bottom: 0` se quedaba flotando por encima y por
-        // ese hueco se veía pasar el campo siguiente, que es peor que no tener
-        // franja — parece que el formulario sigue debajo del botón de guardar.
+        // Lowered by exactly the sheet's bottom padding, so the band
+        // reaches its edge: with `bottom: 0` it floated above and through
+        // that gap the next field was seen going past, which is worse than having no
+        // band — it looks as if the form continued below the save button.
         bottom: 'calc(-1 * max(1rem, env(safe-area-inset-bottom)))',
         paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
-        // Y su sitio natural puesto donde se queda pegada, para que al llegar al
-        // final del formulario no dé un salto de un centímetro: es el mismo cuidado
-        // que se tuvo con la barra de la página.
+        // And its natural place set where it stays stuck, so that on reaching the
+        // end of the form it does not jump a centimetre: it is the same care
+        // that was taken with the page's bar.
         marginBottom: 'calc(-1 * max(1rem, env(safe-area-inset-bottom)))',
       }}
     >
@@ -1654,26 +1654,26 @@ export function SheetFooter({ children }: { children: ReactNode }) {
 // ── The floating notice ──────────────────────────────────────
 
 /**
- * La confirmación de algo que acaba de pasar, flotando arriba (RNF-106).
+ * The confirmation of something that has just happened, floating at the top (RNF-106).
  *
- * ── POR QUÉ ARRIBA Y FLOTANDO ───────────────────────────────
+ * ── WHY AT THE TOP AND FLOATING ─────────────────────────────
  *
- * «Imagen principal actualizada» vivía al final de la tarjeta, debajo de todo el
- * panel de datos: con la vista puesta en la fotografía —que es donde está el mando
- * que se acaba de pulsar— aparecía fuera de la pantalla, así que la confirmación no
- * confirmaba nada. Y **no puede quedarse en el hueco** ni desplazar el contenido:
- * una línea que aparece y desaparece entre los campos mueve de sitio lo que se
- * estaba mirando, que en un móvil es el dedo cayendo en el botón de al lado.
+ * «Imagen principal actualizada» lived at the end of the card, below the whole
+ * data panel: with the eyes on the photograph —which is where the control
+ * just pressed is— it appeared off screen, so the confirmation confirmed
+ * nothing. And **it cannot stay in the gap** nor displace the content:
+ * a line that appears and disappears among the fields moves what was
+ * being looked at, which on a phone is the finger landing on the button next to it.
  *
- * ── Y POR QUÉ SE VA SOLA ────────────────────────────────────
+ * ── AND WHY IT LEAVES ON ITS OWN ────────────────────────────
  *
- * Porque no hay nada que hacer con ella. Un aviso que se queda hasta que alguien lo
- * cierra convierte cada acción en dos, y a la tercera se deja de leer; entonces el
- * que sí importaba tampoco se lee. Los segundos y el porqué de esos segundos están
- * en `useAutoClear`. **Los errores no van aquí**: piden hacer algo, se quedan.
+ * Because there is nothing to do with it. A notice that stays until somebody
+ * closes it turns every action into two, and by the third one it stops being read; then
+ * the one that did matter is not read either. The seconds and the why of those seconds are
+ * in `useAutoClear`. **Errors do not go here**: they ask for something to be done, they stay.
  *
- * `role="status"` y no `alert`: es una confirmación, y un `alert` interrumpe lo que
- * el lector de pantalla esté leyendo para anunciar que algo ha ido bien.
+ * `role="status"` and not `alert`: it is a confirmation, and an `alert` interrupts whatever
+ * the screen reader is reading to announce that something went well.
  */
 export function Toast({ children }: { children: ReactNode }) {
   return (
@@ -1683,13 +1683,13 @@ export function Toast({ children }: { children: ReactNode }) {
       className="pointer-events-none fixed left-1/2 z-30 max-w-[92vw] -translate-x-1/2
                  rounded-full bg-stone-900/90 px-4 py-2 text-center text-sm text-white
                  shadow-lg backdrop-blur"
-      // Debajo de la cabecera, no encima: ahí están el «atrás» y el título de la
-      // pantalla, y taparlos cuatro segundos deja sin saber dónde se está. Que no
-      // reciba toques —`pointer-events-none`— es lo que salva al botón que quede
-      // debajo, pero un botón invisible tampoco se pulsa.
+      // Below the heading, not above it: that is where the «back» and the screen's
+      // title are, and covering them for four seconds leaves you not knowing where you are. That it
+      // receives no taps —`pointer-events-none`— is what saves whatever button ends up
+      // underneath, but an invisible button is not pressed either.
       //
-      // 3.5rem es la altura de la cabecera; la franja segura del sistema la añade
-      // ella, así que aquí solo se suma.
+      // 3.5rem is the heading's height; the system's safe strip is added
+      // by it, so here it is only summed.
       style={{ top: 'calc(3.5rem + 0.5rem + env(safe-area-inset-top))' }}
     >
       {children}
