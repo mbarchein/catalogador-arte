@@ -60,8 +60,8 @@ export function useTrash(): TrashState {
   const load = useCallback(async () => {
     setLoading(true)
 
-    // Una lectura por clase, todas a la vez. Se pide UNA fila más de las que se
-    // muestran: es cómo se sabe que hay más sin pagar un recuento exacto.
+    // One read per class, all at once. ONE row more than is shown is asked
+    // for: it is how having more is known without paying for an exact count.
     const answers = await Promise.all(
       TRASH_KINDS.map(async (spec) => {
         try {
@@ -87,8 +87,8 @@ export function useTrash(): TrashState {
       }),
     )
 
-    // Los nombres se resuelven en UNA consulta acotada a las personas que de verdad
-    // aparecen, como en el historial de cambios: son unas pocas y no todo el equipo.
+    // The names are resolved in ONE query narrowed to the people who really
+    // appear, as in the change history: they are a few and not the whole team.
     const ids = [
       ...new Set(
         answers.flatMap((answer) =>
@@ -101,8 +101,8 @@ export function useTrash(): TrashState {
     let authors = new Map<string, TrashAuthor>()
     if (ids.length > 0) {
       const { data } = await supabase.from('profiles').select('id, name, email').in('id', ids)
-      // Si esta consulta falla, la papelera se muestra igual sin nombres: perder los
-      // nombres es mucho menos malo que no poder recuperar nada.
+      // If this query fails, the wastebasket is shown all the same without names: losing the
+      // names is far less bad than not being able to recover anything.
       authors = new Map(
         ((data ?? []) as { id: string; name: string | null; email: string | null }[]).map((p) => [
           p.id,
@@ -173,5 +173,5 @@ export function useTrash(): TrashState {
   return { views, loading, reload: () => void load(), restore }
 }
 
-/** Los identificadores de clase, para las comprobaciones que los recorren. */
+/** The class identifiers, for the checks that go through them. */
 export type { TrashKindId }

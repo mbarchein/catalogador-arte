@@ -150,7 +150,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     expect(candidate.patches).toHaveLength(3)
     expect(candidate.confidence).toBeGreaterThan(0.9)
 
-    // Del más claro al más oscuro, con los tonos que se pintaron.
+    // From the lightest to the darkest, with the tones that were painted.
     expect(candidate.patches.map((patch) => patch.tone.r)).toEqual(
       CARD.map((reflectance) => toneCode(reflectance)),
     )
@@ -160,7 +160,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
       expect(patch.pixels).toBe(PATCH.width * PATCH.height)
     }
 
-    // Posición y tamaño en fracciones del ráster analizado.
+    // Position and size as fractions of the analysed raster.
     expect(candidate.patches[0]!.box.x).toBeCloseTo(boxes[0]!.x / WIDTH, 6)
     expect(candidate.patches[0]!.box.y).toBeCloseTo(boxes[0]!.y / HEIGHT, 6)
     expect(candidate.patches[0]!.box.width).toBeCloseTo(PATCH.width / WIDTH, 6)
@@ -168,14 +168,14 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     expect(candidate.box.x).toBeCloseTo(STRIP.x / WIDTH, 6)
     expect(candidate.box.width).toBeCloseTo((3 * PATCH.width) / WIDTH, 6)
 
-    // La escalera se reconoce por su estructura relativa, y eso es lo que se mide.
+    // The staircase is recognised by its relative structure, and that is what is measured.
     expect(candidate.measure.toneRatio).toBeGreaterThan(10)
     expect(candidate.measure.sizeRatio).toBeCloseTo(1, 6)
     expect(candidate.measure.support).toBe(1)
     expect(candidate.measure.specularShare).toBe(0)
     expect(candidate.measure.clippedShare).toBe(0)
 
-    // La declaración de la usuaria es lo único que distingue carta de papel.
+    // The user's declaration is the only thing telling a chart from paper.
     expect(candidate.reference).toBe('TARGET_CARD')
     expect(candidate.trustsGray).toBe(true)
     expect(grayTargetNotice(analysis)).toBeNull()
@@ -184,26 +184,26 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
 
   it('RF-418: la dominante de la bombilla no impide detectar la escalera, y su gris propone enfriarla', () => {
     const photo = canvas()
-    // Una bombilla cálida: mucho rojo, algo menos de verde, bastante menos de azul.
+    // A warm bulb: plenty of red, somewhat less green, considerably less blue.
     targetOn(photo, { gains: [1, 0.93, 0.82] })
 
     const candidate = detectGrayTarget(photo, CARD_OPTIONS)[0]
     expect(candidate).toBeDefined()
     expect(candidate!.patches).toHaveLength(3)
-    // Los parches ya no son neutros en los códigos: lo que los delata es que los
-    // tres comparten cromaticidad, porque una luz multiplica a todos por igual.
+    // The patches are no longer neutral in the codes: what gives them away is that the
+    // three share chromaticity, because a light multiplies them all equally.
     expect(candidate!.patches[0]!.tone.r).toBeGreaterThan(candidate!.patches[0]!.tone.b)
     expect(candidate!.measure.chromaSpread).toBeLessThan(0.02)
     expect(candidate!.measure.castSpread).toBeGreaterThan(0.05)
 
-    // Y el gris de una carta sí se cree: propone corregir hacia el azul.
+    // And a chart's grey is believed: it proposes correcting towards blue.
     expect(candidate!.neutral).not.toBeNull()
     expect(candidate!.neutral!.temperature).toBeLessThan(0)
   })
 
   it('RF-418: el testigo en sombra se sigue detectando, porque la relación de tonos no depende de la exposición', () => {
     const photo = canvas()
-    // La obra iluminada y el testigo a la sombra: un tercio de la luz.
+    // The artwork lit and the target in the shade: a third of the light.
     targetOn(photo, { gains: [0.35, 0.35, 0.35] })
 
     const analysis = analyseGrayTarget(photo, CARD_OPTIONS)
@@ -211,7 +211,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     expect(analysis.candidates).toHaveLength(1)
     const candidate = analysis.candidates[0]!
     expect(candidate.patches).toHaveLength(3)
-    // Los códigos han bajado mucho y la razón de tonos en luz lineal no se ha movido.
+    // The codes have dropped a lot and the tone ratio in linear light has not moved.
     expect(candidate.patches[0]!.tone.r).toBeLessThan(toneCode(CARD[0]) - 60)
     expect(candidate.measure.toneRatio).toBeGreaterThan(10)
     expect(candidate.confidence).toBeGreaterThanOrEqual(MIN_CONFIDENCE)
@@ -224,7 +224,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     expect(flatAnalysis.candidates).toEqual([])
     expect(flatAnalysis.declined).toBe('no-staircase')
 
-    // Y una pared iluminada desde un lado tampoco: un degradado no tiene escalones.
+    // And a wall lit from one side does not either: a gradient has no steps.
     const lit = canvas()
     for (let x = 0; x < WIDTH; x += 1) {
       const code = Math.round(96 + (80 * x) / WIDTH)
@@ -319,8 +319,8 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     const photo = canvas()
     const boxes = targetOn(photo)
     const middle = boxes[1]!
-    // Un brillo sobre el parche medio, ni quemado ni en todas las filas: es
-    // exactamente lo que hace un reflejo de ventana sobre una carta.
+    // A highlight over the middle patch, neither blown out nor on every row: it is
+    // exactly what a window reflection on a chart does.
     fill(photo, { x: middle.x + 4, y: middle.y + 8, width: 14, height: 4 }, [178, 178, 178])
 
     const analysis = analyseGrayTarget(photo, CARD_OPTIONS)
@@ -354,8 +354,8 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     const photo = canvas()
     targetOn(photo, {
       patches: [
-        // El rojo ha recortado: ya no se sabe cuánto se pasó, así que su
-        // cromaticidad es un número que parece medido y no lo es.
+        // Red has clipped: how far it went over is no longer known, so its
+        // chromaticity is a number that looks measured and is not.
         [255, 236, 232],
         tone(CARD[1]),
         tone(CARD[2]),
@@ -369,8 +369,8 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
 
   it('RF-418: una escalera de un color propio no es un testigo de gris', () => {
     const photo = canvas()
-    // Tres bandas de la misma pintura roja: comparten cromaticidad perfectamente
-    // y sin embargo tienen color, que es lo que un testigo no tiene.
+    // Three bands of the same red paint: they share chromaticity perfectly
+    // and yet they have colour, which is what a target does not have.
     targetOn(photo, { gains: [1, 0.25, 0.2] })
 
     const analysis = analyseGrayTarget(photo, CARD_OPTIONS)
@@ -381,10 +381,10 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
   it('RF-418: la escalera se busca fuera de la obra, porque el testigo se pone al lado', () => {
     const photo = canvas()
     targetOn(photo)
-    // Sin decir dónde está la obra, la escalera se encuentra.
+    // Without saying where the artwork is, the staircase is found.
     expect(detectGrayTarget(photo, CARD_OPTIONS)).toHaveLength(1)
 
-    // Declarada la obra encima del testigo, deja de ser un candidato.
+    // With the artwork declared on top of the target, it stops being a candidate.
     const rect = { x: 0.1, y: 0.3, width: 0.68, height: 0.4 }
     const inside = analyseGrayTarget(photo, {
       kind: 'CARD',
@@ -393,14 +393,14 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     expect(inside.candidates).toEqual([])
     expect(inside.declined).toBe('no-staircase')
 
-    // Y el cuadrilátero llega en fracciones de la imagen YA GIRADA, como se guarda.
+    // And the quadrilateral arrives as fractions of the ALREADY ROTATED image, as it is stored.
     const turned = analyseGrayTarget(photo, {
       kind: 'CARD',
       artwork: { rotation: 90, corners: rotateCorners(cornersOfRect(rect), 90) },
     })
     expect(turned.candidates).toEqual([])
 
-    // Con un recorte en vez de esquinas, lo mismo.
+    // With a crop instead of corners, the same.
     const cropped = analyseGrayTarget(photo, { kind: 'CARD', artwork: { crop: rect } })
     expect(cropped.candidates).toEqual([])
   })
@@ -412,7 +412,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     const card = detectGrayTarget(photo, { kind: 'CARD' })[0]!
     const print = detectGrayTarget(photo, { kind: 'PRINT' })[0]!
 
-    // La imagen es la misma: la distinción no está en los píxeles.
+    // The image is the same: the distinction is not in the pixels.
     expect(print.box).toEqual(card.box)
     expect(print.patches.map((patch) => patch.tone)).toEqual(
       card.patches.map((patch) => patch.tone),
@@ -438,7 +438,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
       expect(candidate.patches).toHaveLength(3)
       expect(candidate.confidence).toBeGreaterThanOrEqual(MIN_CONFIDENCE)
     }
-    // Ordenados por confianza, y sin repetir el mismo sitio dos veces.
+    // Ordered by confidence, and without repeating the same place twice.
     expect(candidates[0]!.confidence).toBeGreaterThanOrEqual(candidates[1]!.confidence)
     expect(candidates[0]!.box.y).not.toBeCloseTo(candidates[1]!.box.y, 3)
   })
@@ -475,7 +475,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     expect(analysis.candidates).toHaveLength(1)
     const candidate = analysis.candidates[0]!
     expect(candidate.patches).toHaveLength(3)
-    // La costura queda fuera de los parches medidos, no dentro.
+    // The seam falls outside the measured patches, not inside.
     expect(candidate.measure.sizeRatio).toBeLessThan(1.3)
     expect(candidate.measure.uniformShare).toBeGreaterThanOrEqual(0.9)
     expect(candidate.confidence).toBeGreaterThan(0.9)
@@ -488,7 +488,7 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     const candidate = detectGrayTarget(photo, { kind: 'PRINT' })[0]
     expect(candidate).toBeDefined()
     expect(candidate!.patches).toHaveLength(5)
-    // Ordenados del más claro al más oscuro, siempre.
+    // Ordered from the lightest to the darkest, always.
     const codes = candidate!.patches.map((patch) => patch.luminance)
     expect(codes).toEqual([...codes].sort((a, b) => b - a))
     expect(candidate!.reference).toBe('TARGET_PRINT')

@@ -606,7 +606,7 @@ function lineSupport(
 ): number {
   const across = axis === 'vertical' ? width : height
   const along = axis === 'vertical' ? height : width
-  // Redondeados: son índices de un array, y llegan con precisión subpíxel.
+  // Rounded: they are indexes of an array, and they arrive with subpixel precision.
   const start = Math.max(1, Math.round(Math.min(from, to)))
   const end = Math.min(along - 2, Math.round(Math.max(from, to)))
   if (end <= start) return 0
@@ -673,7 +673,7 @@ function refineSide(
 ): Side {
   const across = axis === 'vertical' ? width : height
   const along = axis === 'vertical' ? height : width
-  // Redondeados, por lo mismo que en lineSupport: son índices.
+  // Rounded, for the same reason as in lineSupport: they are indexes.
   const start = Math.max(1, Math.round(Math.min(from, to)))
   const end = Math.min(along - 2, Math.round(Math.max(from, to)))
   const span = end - start

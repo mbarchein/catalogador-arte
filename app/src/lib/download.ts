@@ -88,8 +88,8 @@ export function downloadFailureKind(status: number): DownloadFailureKind {
  * programa entero justo cuando algo acaba de ir mal.
  */
 export function contracted(preposition: 'a' | 'de', label: string): string {
-  // Solo el artículo masculino singular se contrae: «de la copia» y «de los originales»
-  // se quedan como están.
+  // Only the masculine singular article contracts: «de la copia» and «de los originales»
+  // stay as they are.
   if (label.startsWith('el ')) return `${preposition === 'a' ? 'al' : 'del'} ${label.slice(3)}`
   return `${preposition} ${label}`
 }

@@ -238,7 +238,7 @@ describe('RF-416, RF-419: leer los datos técnicos de una fotografía', () => {
     })
   })
 
-  // El caso de los 14 másteres de 2022: sin este respaldo no se corrige ninguno.
+  // The case of the 14 masters from 2022: without this fallback none gets corrected.
   it('usa el DateTime del IFD0 cuando falta el otro, y lo marca como aproximado', () => {
     const exif = readPhotoExif(
       jpegWithExif([{ tag: TAG.DATE_TIME, type: TYPE.ASCII, value: '2022:10:09 17:10:33\u0000' }]),
@@ -290,7 +290,7 @@ describe('RF-416, RF-419: leer los datos técnicos de una fotografía', () => {
           { tag: TAG.EXPOSURE_TIME, type: TYPE.RATIONAL, value: [1, 125] },
           { tag: TAG.F_NUMBER, type: TYPE.RATIONAL, value: [18, 10] },
           { tag: TAG.FOCAL_LENGTH, type: TYPE.RATIONAL, value: [543, 100] },
-          // Tres componentes: no cabe en la entrada y viaja por offset.
+          // Three components: it does not fit in the entry and travels by offset.
           { tag: TAG.ISO, type: TYPE.SHORT, value: [100, 0, 0] },
         ],
       ),
@@ -311,8 +311,8 @@ describe('RF-416, RF-419: leer los datos técnicos de una fotografía', () => {
     expect(exif?.make).toBe('Xiaomi')
   })
 
-  // La cadena acaba en el primer NUL, no al final de la entrada: hay ficheros que
-  // empaquetan varios valores seguidos, y arrastrar el segundo daría «Xiaomi 8 Pro».
+  // The string ends at the first NUL, not at the end of the entry: there are files that
+  // pack several values in a row, and dragging in the second would give «Xiaomi 8 Pro».
   it('corta en el primer NUL y no en el final de la entrada', () => {
     const exif = readPhotoExif(
       jpegWithExif([{ tag: TAG.MAKE, type: TYPE.ASCII, value: 'Xiaomi\u0000Redmi\u0000' }]),
@@ -320,7 +320,7 @@ describe('RF-416, RF-419: leer los datos técnicos de una fotografía', () => {
     expect(exif?.make).toBe('Xiaomi')
   })
 
-  // Hay 2 másteres con una cadena de 32 NUL: una etiqueta presente y vacía.
+  // There are 2 masters with a string of 32 NULs: a tag present and empty.
   it('devuelve null, no cadena vacía, cuando la cadena es solo relleno', () => {
     const exif = readPhotoExif(
       jpegWithExif([
@@ -344,7 +344,7 @@ describe('RF-416, RF-419: leer los datos técnicos de una fotografía', () => {
     expect(big?.orientation).toBe(6)
   })
 
-  // 2 de los 44 másteres traen Orientation = 0, que no es un valor legal.
+  // 2 of the 44 masters carry Orientation = 0, which is not a legal value.
   it('trata una Orientation fuera de 1..8 como ausente', () => {
     for (const written of [0, 9, 255]) {
       const exif = readPhotoExif(
@@ -367,13 +367,13 @@ describe('RF-416, RF-419: leer los datos técnicos de una fotografía', () => {
     expect(flash(0x00)?.flashFired).toBe(false)
     expect(flash(0x01)?.flashFired).toBe(true)
     expect(flash(0x19)?.flashFired).toBe(true)
-    // 0x20: «esta cámara no tiene flash». Decir «no disparó» sería una decisión
-    // que nadie tomó.
+    // 0x20: «this camera has no flash». Saying «it did not fire» would be a decision
+    // nobody took.
     expect(flash(0x20)?.flashFired).toBeNull()
   })
 
   it('salta las entradas de un tipo TIFF que no conoce, sin lanzar', () => {
-    // Tipo 11 (FLOAT), uno de los cuatro que la tabla de tamaños no tiene.
+    // Type 11 (FLOAT), one of the four the size table does not have.
     const exif = readPhotoExif(
       jpegWithExif(
         [{ tag: TAG.MAKE, type: TYPE.ASCII, value: 'Xiaomi\u0000' }],
@@ -434,7 +434,7 @@ describe('RF-419: lo que no trae datos devuelve null y nunca lanza', () => {
   })
 
   it('un IFD con entradas, ninguna de la lista blanca', () => {
-    // 0x011a es XResolution: existe, y no se muestra.
+    // 0x011a is XResolution: it exists, and it is not shown.
     expect(readPhotoExif(jpegWithExif([{ tag: 0x011a, type: TYPE.RATIONAL, value: [72, 1] }]))).toBeNull()
   })
 
@@ -495,7 +495,7 @@ describe('RF-419: lo que no trae datos devuelve null y nunca lanza', () => {
       segment(0xfe, new Uint8Array(6)), // un comentario, para adelantar el puntero
       new Uint8Array([0xff, 0xe1, 0x00, 0x10, 0x45, 0x78]),
     ])
-    // El marcador empieza en el byte 12; los cortes recorren su cabecera entera.
+    // The marker starts at byte 12; the cuts go through its whole header.
     for (let length = 14; length <= head.length; length += 1) {
       const cut = bufferOf(head.slice(0, length))
       expect(() => readPhotoExif(cut), `cortado a ${length} bytes`).not.toThrow()
@@ -513,8 +513,8 @@ describe('RF-419: lo que no trae datos devuelve null y nunca lanza', () => {
     for (let length = 12; length < full.length; length += 1) {
       expect(() => readPhotoExif(bufferOf(full.slice(0, length))), `cortado a ${length}`).not.toThrow()
     }
-    // Cortado antes de los valores externos, lo que sí cupo se sigue leyendo y lo
-    // que no, falta: nunca un valor inventado.
+    // Cut before the external values, what did fit is still read and what
+    // did not is missing: never an invented value.
     const early = readPhotoExif(bufferOf(full.slice(0, 24)))
     expect(early).toBeNull()
   })
@@ -556,7 +556,7 @@ describe('RF-419: PixelXDimension no son las dimensiones de la fotografía', () 
     for (const row of rows) {
       expect(`${row.label} ${row.value}`).not.toMatch(/recort/i)
     }
-    // El tamaño que se muestra es el del decodificador, ya girado, no el del EXIF.
+    // The size shown is the decoder's, already rotated, not the EXIF's.
     expect(rows.find((row) => row.key === 'originalSize')?.value).toBe('2252 × 4000 px · 3,1 MB')
     expect(rows.some((row) => row.value.includes('4000 × 2252'))).toBe(false)
   })
@@ -717,8 +717,8 @@ describe('RF-419: el panel solo pinta los campos presentes', () => {
     expect(rows.map((row) => row.key)).toEqual(['camera'])
   })
 
-  // Sin EXIF pero con el fichero descargado, el tamaño del original sigue siendo
-  // un dato: la pantalla no se queda en blanco por no tener datos de cámara.
+  // With no EXIF but with the file downloaded, the original's size is still
+  // a datum: the screen does not go blank for lack of camera data.
   it('da el tamaño del original aunque no haya nada de EXIF', () => {
     expect(photoExifRows(null, { width: 1080, height: 2400, bytes: 245_000 })).toEqual([
       { key: 'originalSize', label: 'Tamaño del original', value: '1080 × 2400 px · 239 kB' },

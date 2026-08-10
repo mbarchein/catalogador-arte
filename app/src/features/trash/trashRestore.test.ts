@@ -108,8 +108,8 @@ describe('lo que no debería poder pasar se dice, no se traga', () => {
   })
 
   it('un fallo desconocido conserva el mensaje crudo detrás de una entradilla', () => {
-    // Inventar una frase amable para un fallo que no se ha visto nunca esconde la
-    // única pista que hay.
+    // Inventing a kind sentence for a failure never seen before hides the
+    // only clue there is.
     const text = describeRestoreRefusal('artworks', {
       code: 'XX000',
       message: 'algo muy raro ha pasado',
@@ -122,8 +122,8 @@ describe('lo que no debería poder pasar se dice, no se traga', () => {
 
 describe('la conexión caída se separa de la regla que dice no', () => {
   it('un fallo de red dice que el cambio no se ha enviado, no que se haya rechazado', () => {
-    // En un almacén sin cobertura es el fallo más probable de esta pantalla, y las dos
-    // frases piden cosas opuestas: reintentar, o cambiar algo antes.
+    // In a storeroom with no coverage it is this screen's most likely failure, and the two
+    // sentences ask for opposite things: retry, or change something first.
     const text = describeRestoreRefusal('images', { message: 'TypeError: Failed to fetch' })
     expect(text).toContain('no ha podido hablar con el catálogo')
     expect(text).toContain('Comprueba la conexión')
@@ -163,7 +163,7 @@ describe('ninguna clase se queda sin frase, en ninguna de las negativas', () => 
       for (const refusal of refusals) {
         const text = describeRestoreRefusal(kind.id, refusal)
         expect(text.trim()).not.toBe('')
-        // Nada de plantillas a medio rellenar llegando a pantalla.
+        // No half-filled templates reaching the screen.
         expect(text).not.toContain('undefined')
         expect(text).not.toContain('[object')
       }

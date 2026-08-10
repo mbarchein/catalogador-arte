@@ -44,8 +44,8 @@ describe('el fichero llega con el nombre que se ha pedido (RF-411)', () => {
   })
 
   it('no guarda nada cuando el almacén no ha dado el fichero', async () => {
-    // Media descarga guardada es peor que ninguna: un JPEG truncado se abre y parece
-    // una fotografía rota, y quien lo recibe cree que la obra está así.
+    // Half a download saved is worse than none: a truncated JPEG opens and looks like
+    // a broken photograph, and whoever receives it believes the artwork is like that.
     const saved: string[] = []
     await expect(
       downloadSignedFile('https://s3.local/firmada', 'AR-0001_general_original.jpg', 'el original', {
@@ -97,8 +97,8 @@ describe('cada fallo se cuenta, y se cuenta en español (RF-411)', () => {
   })
 
   it('un fichero que ya no está no se confunde con un permiso caducado', async () => {
-    // Volver a tocar el botón no arregla un 404, y decir que sí sería mandar a alguien
-    // a repetir un gesto para siempre. Esto hay que avisarlo.
+    // Tapping the button again does not fix a 404, and saying it would means sending somebody
+    // to repeat a gesture forever. This has to be warned about.
     const failure = await downloadSignedFile('https://s3.local/x', 'f.jpg', 'el original', {
       fetch: () => Promise.resolve(response({ ok: false, status: 404 })),
       save: () => undefined,
@@ -124,9 +124,9 @@ describe('cada fallo se cuenta, y se cuenta en español (RF-411)', () => {
     for (const kind of kinds) {
       const text = downloadFailureText('la copia corregida', kind)
       expect(text).toContain('la copia corregida')
-      // Ni jerga ni el nombre de ninguna pieza de la máquina.
+      // Neither jargon nor the name of any piece of the machine.
       expect(text).not.toMatch(/bucket|fetch|Edge|CORS|S3/i)
-      // Y siempre termina en algo que hacer.
+      // And it always ends in something to do.
       expect(text).toMatch(/intentarlo|avisar|Vuelve|Espera/)
     }
   })
@@ -143,10 +143,10 @@ describe('cada fallo se cuenta, y se cuenta en español (RF-411)', () => {
     // ha podido preparar la descarga DE EL documento».
     expect(contracted('a', 'el documento «Carta»')).toBe('al documento «Carta»')
     expect(contracted('de', 'el original')).toBe('del original')
-    // Solo el masculino singular se contrae.
+    // Only the masculine singular contracts.
     expect(contracted('a', 'la copia corregida')).toBe('a la copia corregida')
     expect(contracted('de', 'los originales')).toBe('de los originales')
-    // Y una etiqueta que empieza por «el» sin ser artículo no se destroza.
+    // And a label starting with «el» without it being an article is not wrecked.
     expect(contracted('a', 'elementos sueltos')).toBe('a elementos sueltos')
   })
 

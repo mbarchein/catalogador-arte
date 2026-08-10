@@ -115,8 +115,8 @@ export function describeRestoreRefusal(
     )
   }
 
-  // Sin código y con un fallo de red: la petición no llegó al catálogo. Decirlo es
-  // más útil que «Failed to fetch», y avisa de que nada se ha quedado a medias.
+  // With no code and with a network failure: the request never reached the catalogue. Saying so is
+  // more useful than «Failed to fetch», and it warns that nothing has been left half-done.
   if (isNetworkFailure(message)) {
     return (
       `No se ha podido recuperar ${spec.one}: la aplicación no ha podido hablar con el catálogo. ` +
