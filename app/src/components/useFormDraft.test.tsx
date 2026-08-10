@@ -7,17 +7,17 @@ import { draftStorageKey, packDraft } from './draftStore'
 import { useFormDraft } from './useFormDraft'
 
 /**
- * El borrador que sobrevive a cerrar la hoja, con `localStorage` de verdad.
+ * The draft that survives closing the sheet, with a real `localStorage`.
  *
- * Lo que decide está en `draftStore.test.ts`, en node. Aquí se comprueba el cableado, que
- * es donde esto se rompe de tres formas concretas:
+ * What decides lives in `draftStore.test.ts`, in node. Here the wiring is checked, which
+ * is where this breaks in three concrete ways:
  *
- *   · **leerlo más de una vez**, con lo que el borrador reaparece después de descartarlo y,
- *     peor, se ofrece a sí mismo: lo que se acaba de teclear se guarda, y una lectura
- *     posterior lo encuentra y lo presenta como si fuera de otra sesión;
- *   · **no limpiarlo al guardar**, con lo que a la vuelta se ofrece un borrador idéntico a
- *     lo que ya está en el catálogo;
- *   · **escribir en cada tecla**, que en un móvil modesto se nota al teclear.
+ *   · **reading it more than once**, whereby the draft reappears after being discarded and,
+ *     worse, offers itself: what has just been typed is stored, and a later
+ *     read finds it and presents it as if it were from another session;
+ *   · **not cleaning it up on saving**, whereby on returning a draft identical to
+ *     what is already in the catalogue is offered;
+ *   · **writing on every keystroke**, which on a modest phone is felt while typing.
  */
 
 const SCOPE = 'prueba:1'
@@ -163,10 +163,10 @@ describe('useFormDraft, el cableado del borrador', () => {
   })
 
   it('abrir la hoja limpia NO borra el borrador que acaba de ofrecer', async () => {
-    // El fallo, encontrado en Chromium: una hoja de corrección abre con la fila guardada, o
-    // sea limpia, y la regla de «limpio, pues fuera el borrador» se disparaba en el efecto
-    // de montaje. La oferta se seguía leyendo —se lee antes que los efectos— pero debajo ya
-    // no había nada, así que recuperarlo y recargar, o salir sin guardar, lo perdía.
+    // The failure, found in Chromium: a correction sheet opens with the stored row, that
+    // is, clean, and the rule of «clean, so out with the draft» fired in the mount
+    // effect. The offer was still read —it is read before the effects— but underneath there
+    // was nothing left, so recovering it and reloading, or leaving without saving, lost it.
     window.localStorage.setItem(
       KEY,
       packDraft({ draft: { title: 'Carta a medias' }, at: new Date(), fingerprint: null }),

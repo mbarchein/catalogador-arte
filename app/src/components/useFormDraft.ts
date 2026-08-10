@@ -1,24 +1,24 @@
 /**
- * Apuntar lo que se está escribiendo, y ofrecerlo a la vuelta (RNF-106).
+ * Noting down what is being written, and offering it on returning (RNF-106).
  *
- * El cableado de `draftStore.ts`, que es quien decide. Aquí solo están los dos bordes que
- * necesitan un navegador: leer `localStorage` al abrir la hoja y escribirlo mientras se
- * teclea.
+ * The wiring of `draftStore.ts`, which is the one that decides. Here there are only the two edges that
+ * need a browser: reading `localStorage` on opening the sheet and writing it while
+ * typing.
  *
- * **Se lee UNA vez, al abrir.** Volver a leerlo en cada render haría que el borrador
- * reapareciera después de haberlo descartado, y sobre todo se ofrecería a sí mismo: lo que
- * se acaba de escribir se guarda, y una lectura posterior lo encontraría y lo ofrecería
- * como si fuera de otra sesión.
+ * **It is read ONCE, on opening.** Reading it again on every render would make the draft
+ * reappear after having discarded it, and above all it would offer itself: what
+ * has just been written is stored, and a later read would find it and offer it
+ * as if it were from another session.
  *
- * **Se escribe con retardo.** Un `localStorage.setItem` por pulsación de tecla es
- * síncrono y bloquea el hilo de la interfaz: en un móvil modesto, con un formulario de
- * quince campos, eso se nota al teclear. Medio segundo después de la última tecla es
- * invisible para quien escribe y sobra para lo que esto protege — recargar, que la pestaña
- * muera, quedarse sin batería.
+ * **It is written with a delay.** One `localStorage.setItem` per keystroke is
+ * synchronous and blocks the interface thread: on a modest phone, with a form of
+ * fifteen fields, that is felt while typing. Half a second after the last key is
+ * invisible to whoever is writing and is plenty for what this protects — reloading, the tab
+ * dying, running out of battery.
  *
- * `localStorage` puede lanzar: modo privado de Safari, cuota llena, o el usuario con el
- * almacenamiento bloqueado. Nada de eso puede impedir rellenar un formulario, así que todo
- * va envuelto y el fallo se traga: lo que se pierde es la red de seguridad, no la hoja.
+ * `localStorage` can throw: Safari's private mode, quota full, or the user with
+ * storage blocked. None of that can prevent filling in a form, so everything
+ * is wrapped and the failure is swallowed: what is lost is the safety net, not the sheet.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -48,17 +48,17 @@ export interface FormDraft<T> {
   /** Discards and deletes it: «empezar de cero». */
   discard: () => void
   /**
-   * Lo borra sin ruido. Se llama **al guardar de verdad**: si no, la hoja ofrecería a la
-   * vuelta un borrador idéntico a lo que ya está guardado.
+   * Deletes it without noise. Called **on really saving**: otherwise, the sheet would offer on
+   * returning a draft identical to what is already stored.
    */
   clear: () => void
 }
 
 export function useFormDraft<T extends object>(input: {
   /**
-   * Qué formulario y sobre qué fila, para la clave. Con el identificador dentro: dos
-   * documentos a medio corregir son dos borradores, y compartir clave haría que el
-   * segundo se ofreciera al abrir el primero.
+   * Which form and over which row, for the key. With the identifier inside: two
+   * half-corrected documents are two drafts, and sharing a key would make the
+   * second one be offered on opening the first.
    */
   scope: string
   /** The live draft, exactly as it stands in the sheet's state. */
@@ -66,8 +66,8 @@ export function useFormDraft<T extends object>(input: {
   /** Something has been typed. Without this an empty draft would be stored on every open. */
   dirty: boolean
   /**
-   * Cómo está la fila guardada, con `draftFingerprint`. Null en un formulario de alta.
-   * Sirve para avisar si otra sesión la ha corregido mientras esto esperaba.
+   * How the stored row looks, with `draftFingerprint`. Null in a creation form.
+   * It serves to warn if another session has corrected it while this was waiting.
    */
   fingerprint?: string | null
   /** The form carried a file, which cannot be noted down. It is said when offering it. */
@@ -101,15 +101,15 @@ export function useFormDraft<T extends object>(input: {
 
   useEffect(() => {
     if (!dirty) {
-      // Vaciar el formulario a mano también borra el borrador: dejarlo puesto haría que la
-      // hoja ofreciera a la vuelta lo que se acaba de quitar a propósito.
+      // Emptying the form by hand also deletes the draft: leaving it in place would make the
+      // sheet offer on returning what has just been removed on purpose.
       //
-      // **Salvo mientras hay una oferta sin contestar**, y esto no es un detalle: al abrir
-      // la hoja el formulario está limpio por definición —trae la fila guardada—, así que
-      // sin esta condición el efecto de montaje borraba el borrador que la hoja acababa de
-      // ofrecer. La oferta se seguía leyendo, porque se lee antes que los efectos, pero
-      // debajo ya no había nada: recuperarlo y recargar, o salir sin guardar, lo perdía.
-      // Encontrado en Chromium, recargando la página con el formulario a medias.
+      // **Except while there is an unanswered offer**, and this is not a detail: on opening
+      // the sheet the form is clean by definition —it carries the stored row—, so
+      // without this condition the mount effect deleted the draft the sheet had just
+      // offered. The offer was still read, because it is read before the effects, but
+      // underneath there was nothing left: recovering it and reloading, or leaving without saving, lost it.
+      // Found in Chromium, reloading the page with the form half-done.
       if (offer === null) safeRemove(key)
       return
     }
@@ -144,10 +144,10 @@ export function useFormDraft<T extends object>(input: {
   return { offer, accept, discard, clear }
 }
 
-// ── Los tres bordes, envueltos ───────────────────────────────
-// `localStorage` lanza en el modo privado de Safari, con la cuota llena y con el
-// almacenamiento bloqueado por política. Ninguna de las tres puede impedir rellenar un
-// formulario: lo que se pierde es la red, no la hoja.
+// ── The three edges, wrapped ─────────────────────────────────
+// `localStorage` throws in Safari's private mode, with the quota full and with
+// storage blocked by policy. None of the three can prevent filling in a
+// form: what is lost is the net, not the sheet.
 
 function safeRead(key: string): string | null {
   try {

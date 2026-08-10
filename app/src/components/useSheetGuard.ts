@@ -1,20 +1,20 @@
 /**
- * El guardián de una hoja con formulario: no perder lo escrito por un roce (RNF-106).
+ * The guard of a sheet with a form: not losing what was written to a brush (RNF-106).
  *
- * ── POR QUÉ UN HOOK Y NO TRES PROPS ─────────────────────────
+ * ── WHY A HOOK AND NOT THREE PROPS ──────────────────────────
  *
- * Una hoja tiene **cinco** salidas —el fondo oscuro, la ✕, Escape, el botón de atrás del
- * móvil y el «Cancelar» del pie— y hay que taparlas todas: la que se quedara fuera sería
- * la que pierde los datos. Cuatro las controla `BottomSheet`, pero el «Cancelar» lo pinta
- * cada formulario, **en el mismo componente que pinta la hoja y no debajo** — así que ni
- * un contexto ni una prop de `BottomSheet` le llegan.
+ * A sheet has **five** exits —the dark backdrop, the ✕, Escape, the phone's back
+ * button and the footer's «Cancelar»— and all of them have to be covered: the one left
+ * out would be the one that loses the data. `BottomSheet` controls four, but the «Cancelar» is painted
+ * by each form, **in the same component that paints the sheet and not below it** — so neither
+ * a context nor a `BottomSheet` prop reaches it.
  *
- * De ahí que el estado viva aquí, en el llamador, y que `BottomSheet` reciba el guardián
- * entero: un solo dueño de «¿estoy preguntando?», y las cinco salidas entrando por la
- * misma puerta. La alternativa —que cada hoja se guardara su propio `confirming`— es
- * cinco copias de la misma pregunta y cinco sitios donde olvidar una salida.
+ * Hence the state living here, in the caller, and `BottomSheet` receiving the whole
+ * guard: a single owner of «am I asking?», and the five exits coming in through the
+ * same door. The alternative —each sheet keeping its own `confirming`— is
+ * five copies of the same question and five places to forget an exit.
  *
- * Lo que se DECIDE es puro y está en `sheetExit.ts`, con sus tests. Aquí solo hay estado.
+ * What is DECIDED is pure and lives in `sheetExit.ts`, with its tests. Here there is only state.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -36,30 +36,30 @@ export interface SheetGuard {
   /** «Salir sin guardar»: really closes. What was typed may still be noted, see `draftKept`. */
   leave: () => void
   /**
-   * La quinta salida: el «Cancelar» que el formulario pinta al pie.
+   * The fifth exit: the «Cancelar» the form paints at the foot.
    *
-   * Es la ✕ con otro botón, así que entra por la misma puerta. Un «Cancelar» es un gesto
-   * deliberado, sí, pero está pegado a «Guardar» y en un móvil eso son unos milímetros.
+   * It is the ✕ with another button, so it comes in through the same door. A «Cancelar» is a
+   * deliberate gesture, yes, but it is right next to «Guardar» and on a phone that is a few millimetres.
    */
   cancel: () => void
 }
 
 export function useSheetGuard(input: {
   /**
-   * Hay algo escrito que se perdería al cerrar. Lo calcula la hoja —ver `formDirty.ts`—
-   * porque solo ella sabe qué es un dato suyo y qué es una búsqueda a medio teclear.
+   * There is something written that would be lost on closing. The sheet calculates it —see `formDirty.ts`—
+   * because only it knows what is a datum of its own and what is a half-typed search.
    *
-   * Y **no vale con «alguien ha tocado la hoja»**: una pregunta que sale siempre se
-   * aprende a despachar sin leerla, y el día que importa tampoco se lee.
+   * And **«somebody has touched the sheet» is not enough**: a question that always comes up is
+   * learnt to be dismissed unread, and on the day it matters it is not read either.
    */
   dirty: boolean
   /** Really closes the sheet. What the sheet would pass to `BottomSheet` with no guard. */
   onClose: () => void
   /**
-   * El fondo cierra. **Por omisión NO**, que es lo que necesita un formulario: con la
-   * hoja a tres cuartos de pantalla, el fondo cae justo donde se apoya el pulgar al
-   * desplazarse, y un roce ahí borraba diez minutos de tecleo. Las hojas de dos modos
-   * —elegir de una lista o dar de alta— lo pasan según el modo.
+   * The backdrop closes. **By default NOT**, which is what a form needs: with the
+   * sheet at three quarters of the screen, the backdrop falls exactly where the thumb rests when
+   * scrolling, and a brush there erased ten minutes of typing. The two-mode sheets
+   * —choosing from a list or creating— pass it according to the mode.
    */
   backdropCloses?: boolean
   discardNotice?: string | null
