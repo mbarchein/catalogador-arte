@@ -25,9 +25,9 @@ import type { ExternalLinkType, LinkCheckStatus } from '../../../lib/types'
 import { LINK_CHECK_STATUS_DESCRIPTION, LINK_CHECK_STATUS_LABEL } from '../../../lib/types'
 import { linkDomain, linkLabel, type ExternalLinkRow } from './externalLinks'
 
-// ── El borrador ──────────────────────────────────────────────
+// ── The draft ────────────────────────────────────────────────
 
-/** De qué ficha cuelga el enlace. El arco es exclusivo: exactamente una (RF-1401). */
+/** Which record the link hangs from. The arc is exclusive: exactly one (RF-1401). */
 export type LinkAnchor =
   | { readonly kind: 'ARTWORK'; readonly id: string }
   | { readonly kind: 'IMAGE'; readonly id: string }
@@ -36,10 +36,10 @@ export interface LinkDraft {
   readonly anchor: LinkAnchor
   readonly url: string
   readonly title: string
-  /** Cadena vacía es «sin clasificar» en el formulario, y viaja como nulo (RF-1402). */
+  /** An empty string is «sin clasificar» in the form, and travels as null (RF-1402). */
   readonly linkType: ExternalLinkType | ''
   readonly note: string
-  /** La copia que **una persona** guardó en un archivo público. La aplicación no archiva nada (RF-1404). */
+  /** The copy that **a person** saved in a public archive. The application archives nothing (RF-1404). */
   readonly archiveUrl: string
 }
 
@@ -47,7 +47,7 @@ export function emptyDraft(anchor: LinkAnchor): LinkDraft {
   return { anchor, url: '', title: '', linkType: '', note: '', archiveUrl: '' }
 }
 
-/** El borrador de un enlace que ya existe, para corregirlo sin volver a escribirlo. */
+/** The draft of a link that already exists, to correct it without writing it again. */
 export function draftFrom(link: ExternalLinkRow): LinkDraft {
   return {
     anchor:
@@ -90,7 +90,7 @@ export function trimDraft(draft: LinkDraft): LinkDraft {
   }
 }
 
-/** Lo que viaja al `insert`. Las tres columnas de comprobación no se mandan: las congela la base (RF-1405). */
+/** What travels to the `insert`. The three check columns are not sent: the base freezes them (RF-1405). */
 export function insertPayload(draft: LinkDraft): Record<string, string | null> {
   const clean = trimDraft(draft)
   return {
@@ -117,7 +117,7 @@ export function updatePayload(draft: LinkDraft): Record<string, string | null> {
   return rest
 }
 
-// ── Lo que se puede decir sin preguntar a la base ────────────
+// ── What can be said without asking the base ─────────────────
 
 /**
  * El único problema que este lado decide solo: que no hay dirección.
@@ -184,19 +184,19 @@ export function retiredTwin(
   return rows.find((row) => row.url === clean.url && anchored(row) && !row.active) ?? null
 }
 
-/** La frase de una dirección repetida, contada con lo que hay que hacer. */
+/** The sentence for a repeated address, told with what has to be done. */
 export function duplicateMessage(twin: ExternalLinkRow | null): string {
   const collision = 'Esa dirección ya está en esta ficha'
   if (twin === null) {
-    // La carrera: alguien la añadió mientras este formulario estaba abierto.
+    // The race: somebody added it while this form was open.
     return `${collision}. Alguien la ha añadido mientras tenías esto abierto: cierra y vuelve a mirar la lista.`
   }
   return `${collision}, como «${linkLabel(twin)}». Si lo que quieres es corregirla, edita ese enlace en vez de añadir otro igual.`
 }
 
-// ── Por qué la base ha dicho que no (RF-1403) ────────────────
+// ── Why the base has said no (RF-1403) ───────────────────────
 
-/** Lo que contesta `is_web_url`, con el caso de que no contestara nadie. */
+/** What `is_web_url` answers, with the case of nobody answering. */
 export type UrlVerdict = 'ACCEPTED' | 'REFUSED' | 'UNKNOWN'
 
 /**
@@ -214,7 +214,7 @@ export const REFUSAL_GENERAL =
  */
 const INVISIBLE = /[\u00ad\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/
 
-/** Caracteres de control: `java<tab>script:` lo han ejecutado navegadores reales. */
+/** Control characters: `java<tab>script:` has been run by real browsers. */
 const CONTROL = /[\u0000-\u001f\u007f]/
 
 /**
@@ -243,8 +243,8 @@ export function describeUrlRefusal(url: string): string {
 
   if (text === '') return 'Pega la dirección de la página, empezando por https://'
 
-  // El esquema, primero, porque es el rechazo que más veces se ve: se pega el
-  // texto de un correo, o una dirección relativa al protocolo.
+  // The scheme first, because it is the rejection seen most often: the text of an
+  // e-mail gets pasted, or a protocol-relative address.
   const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(text)
   if (scheme && !/^https?$/i.test(scheme[1] ?? '')) {
     return (
@@ -328,14 +328,14 @@ export function describeUrlRefusal(url: string): string {
   return REFUSAL_GENERAL
 }
 
-/** Lo mismo para la copia archivada, que se rechaza por la misma función de la base. */
+/** The same for the archived copy, rejected by the same function of the base. */
 export function describeArchiveRefusal(url: string): string {
   return `La dirección de la copia archivada tampoco vale. ${describeUrlRefusal(url)}`
 }
 
-// ── Las respuestas de la base, traducidas ────────────────────
+// ── The base's answers, translated ───────────────────────────
 
-/** Lo que se estaba intentando, que es lo que una respuesta inesperada tiene que decir. */
+/** What was being attempted, which is what an unexpected answer has to say. */
 export type LinkAction = 'load' | 'add' | 'save' | 'retire' | 'restore' | 'check'
 
 const ATTEMPT: Record<LinkAction, string> = {
@@ -396,7 +396,7 @@ export function describeLinkFailure(
   const code = failure.code ?? ''
   const message = failure.message ?? ''
 
-  // Escrito en español por la base para quien cataloga, con su pista si la trae.
+  // Written in Spanish by the base for whoever catalogues, with its hint if it carries one.
   if (code === 'P0001') {
     const hint = (failure.hint ?? '').trim()
     const sentence = message.trim().replace(/\.$/, '')
@@ -411,8 +411,8 @@ export function describeLinkFailure(
       return 'La dirección de la copia archivada no la acepta la base. Revísala o déjala vacía.'
     }
     if (message.includes('external_links_title_trimmed')) {
-      // No debería llegar: el borrador recorta antes de mandar. Si llega, algo se
-      // saltó `trimDraft`, y decirlo así es lo que permite encontrarlo.
+      // It should not arrive: the draft trims before sending. If it arrives, something
+      // skipped `trimDraft`, and saying so is what makes it findable.
       return 'El título llevaba espacios al principio o al final. Vuelve a escribirlo.'
     }
     if (message.includes('external_links_exactly_one_owner')) {
@@ -436,8 +436,8 @@ export function describeLinkFailure(
     return `${ATTEMPT[action]}: ${of}. Vuelve a cargar la ficha.`
   }
 
-  // Un Catalogador que lo era hace un minuto y ya no lo es: la sesión ha caducado
-  // o su papel cambió con la pantalla abierta.
+  // A Cataloguer who was one a minute ago and is not any more: the session has expired
+  // or their role changed with the screen open.
   if (code === '42501') {
     return `${ATTEMPT[action]}: tu sesión no tiene permiso para escribir en el catálogo. Puede que haya caducado; vuelve a entrar.`
   }
@@ -468,9 +468,9 @@ export function describeLinkFailure(
 export const NOTHING_CHANGED =
   'La base no ha cambiado nada: el enlace sigue igual. Lo normal es que tu sesión no tenga permiso.'
 
-// ── Los textos de las dos confirmaciones ─────────────────────
+// ── The texts of the two confirmations ───────────────────────
 
-/** Retirar no es borrar (RF-901, RF-1406), y la frase lo dice antes del segundo toque. */
+/** Withdrawing is not deleting (RF-901, RF-1406), and the sentence says so before the second tap. */
 export function retireConfirmText(link: ExternalLinkRow): string {
   const domain = linkDomain(link.url)
   const where = domain === '' ? 'esa dirección' : domain
@@ -480,11 +480,11 @@ export function retireConfirmText(link: ExternalLinkRow): string {
   )
 }
 
-/** Y la pregunta de la comprobación, que es sobre lo que la persona acaba de ver. */
+/** And the check's question, which is about what the person has just seen. */
 export const CHECK_QUESTION =
   'Abre el enlace y vuelve. ¿Qué has visto?'
 
-/** Las tres respuestas, con lo que significa cada una (RF-1405). */
+/** The three answers, with what each one means (RF-1405). */
 export const CHECK_OPTIONS: readonly {
   value: LinkCheckStatus
   text: string

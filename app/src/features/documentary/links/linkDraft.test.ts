@@ -72,7 +72,7 @@ function link(over: Partial<ExternalLinkRow> = {}): ExternalLinkRow {
   }
 }
 
-// ── El borrador y lo que viaja ───────────────────────────────
+// ── The draft and what travels ───────────────────────────────
 
 describe('trimDraft · lo que se valida es lo que se guarda', () => {
   it('recorta los extremos de la dirección, el título y la nota', () => {
@@ -130,8 +130,8 @@ describe('insertPayload · el arco exclusivo y las columnas que no se mandan', (
   })
 
   it('una copia archivada vacía viaja como nulo, no como cadena vacía', () => {
-    // La columna admite nulo y el `check` exige que, si hay algo, sea una
-    // dirección: mandar '' la haría fallar por nada.
+    // The column admits null and the `check` requires that, if there is anything, it be
+    // an address: sending '' would make it fail for nothing.
     expect(insertPayload(draft({ archiveUrl: '' })).archive_url).toBeNull()
     expect(insertPayload(draft({ archiveUrl: ' https://web.archive.org/x ' })).archive_url).toBe(
       'https://web.archive.org/x',
@@ -172,7 +172,7 @@ describe('draftFrom y emptyDraft', () => {
   })
 })
 
-// ── La misma dirección otra vez (RF-1406) ───────────────────
+// ── The same address again (RF-1406) ────────────────────────
 
 describe('duplicateOf · la misma dirección no se repite activa en la misma ficha', () => {
   it('encuentra el choque en la misma obra', () => {
@@ -184,8 +184,8 @@ describe('duplicateOf · la misma dirección no se repite activa en la misma fic
   })
 
   it('la misma dirección en la obra y en su fotografía no choca: son dos hechos', () => {
-    // «esta ficha se documenta aquí» y «esta imagen se descargó de aquí». Los
-    // índices únicos de la base son (obra, url) y (foto, url) por separado.
+    // «this record is documented here» and «this image was downloaded from here». The
+    // base's unique indexes are (artwork, url) and (photo, url) separately.
     const enLaFoto = draft({ anchor: { kind: 'IMAGE', id: 'RC-0005_v1' } })
     expect(duplicateOf(enLaFoto, [link()])).toBeNull()
   })
@@ -234,7 +234,7 @@ describe('duplicateMessage · el mismo choque se cuenta igual desde los dos lado
   })
 })
 
-// ── Por qué la base ha dicho que no ─────────────────────────
+// ── Why the base has said no ────────────────────────────────
 
 describe('describeUrlRefusal · no decide, explica (RF-1403)', () => {
   it('el esquema prohibido se nombra y se dice que la lista es de lo permitido', () => {
@@ -281,8 +281,8 @@ describe('describeUrlRefusal · no decide, explica (RF-1403)', () => {
   })
 
   it('un carácter de control se nombra como tal', () => {
-    // `java<tab>script:` y `java<nl>script:` los han ejecutado navegadores reales;
-    // escrito con su código, porque en el fuente no se vería.
+    // `java<tab>script:` and `java<nl>script:` have been run by real browsers;
+    // written with their code, because in the source it would not be visible.
     expect(describeUrlRefusal('https://www.macvac.es/o\u0001bra')).toContain('control')
   })
 
@@ -315,8 +315,8 @@ describe('describeUrlRefusal · no decide, explica (RF-1403)', () => {
   })
 
   it('lo que no se ha previsto se explica igual, con la frase general', () => {
-    // Rechazada por la base —el dominio de primer nivel tiene una sola letra— y
-    // sin pista propia: la frase general dice lo que sí se admite.
+    // Rejected by the base —the top-level domain has a single letter— and
+    // with no hint of its own: the general sentence says what is accepted.
     expect(describeUrlRefusal('https://ejemplo.e')).toBe(REFUSAL_GENERAL)
     expect(REFUSAL_GENERAL).toContain('http:// o https://')
   })
@@ -335,7 +335,7 @@ describe('describeUrlRefusal · no decide, explica (RF-1403)', () => {
   })
 })
 
-// ── Las respuestas de la base, traducidas ───────────────────
+// ── The base's answers, translated ──────────────────────────
 
 describe('describeLinkFailure · códigos medidos contra la base local', () => {
   it('el check de la dirección explica ESTA dirección cuando se le pasa', () => {
@@ -346,8 +346,8 @@ describe('describeLinkFailure · códigos medidos contra la base local', () => {
     expect(describeLinkFailure('add', failure, 'javascript:alert(1)')).toContain(
       'no es una dirección de un sitio web',
     )
-    // Sin la dirección —PostgreSQL no la devuelve— queda la frase general, que
-    // sigue siendo accionable.
+    // Without the address —PostgreSQL does not return it— the general sentence remains,
+    // which is still actionable.
     expect(describeLinkFailure('add', failure)).toBe(REFUSAL_GENERAL)
   })
 
@@ -454,13 +454,13 @@ describe('describeLinkFailure · códigos medidos contra la base local', () => {
 
 describe('NOTHING_CHANGED · una escritura que no falla y no cambia nada', () => {
   it('no dice que se haya guardado, porque no se ha guardado', () => {
-    // Medido: con la sesión de un Lector, el PATCH contesta 200 [] y no un error.
+    // Measured: with a Reader's session, the PATCH answers 200 [] and not an error.
     expect(NOTHING_CHANGED).toContain('no ha cambiado nada')
     expect(NOTHING_CHANGED).toContain('permiso')
   })
 })
 
-// ── Los textos de las dos confirmaciones ────────────────────
+// ── The texts of the two confirmations ──────────────────────
 
 describe('retireConfirmText · retirar no es borrar (RF-901, RF-1406)', () => {
   it('dice qué pasa y qué no, y a dónde apuntaba', () => {

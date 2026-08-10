@@ -315,19 +315,19 @@ export function sortLinks(rows: readonly ExternalLinkRow[]): readonly ExternalLi
 /** A photograph's links, with the photograph named. */
 export interface PhotoLinkGroup {
   readonly imageId: string
-  /** «General», «Reverso»… y la posición, que es como se nombra una toma en la galería. */
+  /** «General», «Reverso»… and the position, which is how a shot is named in the gallery. */
   readonly title: string
-  /** Que la toma esté retirada, o que venga de otro catálogo. Null si no hay nada que decir. */
+  /** That the shot is withdrawn, or that it comes from another catalogue. Null if there is nothing to say. */
   readonly notice: string | null
   readonly links: readonly ExternalLinkRow[]
 }
 
 export interface LinkGroups {
-  /** Los que cuelgan de la obra. */
+  /** The ones hanging from the artwork. */
   readonly artwork: readonly ExternalLinkRow[]
-  /** Los que cuelgan de una fotografía de esta obra, agrupados por toma. */
+  /** The ones hanging from a photograph of this artwork, grouped by shot. */
   readonly photos: readonly PhotoLinkGroup[]
-  /** Total de enlaces ACTIVOS, que es lo que cuenta la cabecera. */
+  /** Total of ACTIVE links, which is what the heading counts. */
   readonly activeCount: number
 }
 
@@ -342,7 +342,7 @@ export function photoTitle(photo: PhotoRef): string {
   return `Foto ${photo.sort_order} · ${SHOT_TYPE_LABEL[photo.shot_type]}`
 }
 
-/** Lo que hay que advertir de la toma de la que cuelga un enlace. */
+/** What has to be warned about the shot a link hangs from. */
 export function photoNotice(photo: PhotoRef): string | null {
   const parts: string[] = []
   if (!photo.active) parts.push('Fotografía retirada de la ficha')
@@ -379,8 +379,8 @@ export function groupLinks(
     else byPhoto.set(row.image_id, [row])
   }
 
-  // El orden de los grupos es el de la galería, y las tomas que no se conocen van
-  // al final: no se puede colocar en la secuencia lo que no tiene posición.
+  // The groups' order is the gallery's, and shots that are not known go
+  // last: what has no position cannot be placed in the sequence.
   const known = [...photos].sort((a, b) => a.sort_order - b.sort_order)
   const groups: PhotoLinkGroup[] = []
   for (const photo of known) {
@@ -412,7 +412,7 @@ export function groupLinks(
   }
 }
 
-// ── El par que cierra RF-1407 ────────────────────────────────
+// ── The pair that closes RF-1407 ─────────────────────────────
 
 /**
  * Las reproducciones que no dicen de dónde salieron.

@@ -32,7 +32,7 @@ import * as useExternalLinks from './useExternalLinks'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
 
-/** El código de la pieza, sin sus propios tests: un test sí nombra lo que prohíbe. */
+/** The piece's code, without its own tests: a test does name what it forbids. */
 function featureSources(): { name: string; code: string }[] {
   return readdirSync(HERE)
     .filter((name) => /\.tsx?$/.test(name) && !name.includes('.test.'))
@@ -77,8 +77,8 @@ describe('RF-1404: la aplicación no le pide nada al sitio enlazado', () => {
     ]
     for (const { name, code } of featureSources()) {
       for (const pattern of forbidden) {
-        // El nombre del fichero va en el aserto: con cinco ficheros, un fallo sin
-        // él obliga a buscar a mano en cuál de los cinco está.
+        // The file's name goes in the assertion: with five files, a failure without
+        // it forces a hand search for which of the five it is in.
         expect(`${name}: ${pattern.test(code)}`).toBe(`${name}: false`)
       }
     }
@@ -109,8 +109,8 @@ describe('RF-1404: la aplicación no le pide nada al sitio enlazado', () => {
    */
   it('el formulario promete que no se le pide nada al sitio, y la promesa está atada al código', () => {
     const form = readFileSync(`${HERE}LinkForm.tsx`, 'utf8')
-    // La frase se acortó al barrer la sobreexplicación; lo que no puede perderse
-    // es la promesa, así que el aserto la sigue por su parte esencial.
+    // The sentence was shortened when sweeping the over-explaining; what cannot be lost
+    // is the promise, so the assertion follows it by its essential part.
     expect(form).toContain('No se abre la página')
   })
 })

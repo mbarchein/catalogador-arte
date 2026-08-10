@@ -40,13 +40,13 @@ const LINK_COLUMNS =
   'id, artwork_id, image_id, url, title, link_type, note, archive_url, ' +
   'check_status, checked_at, checked_by, active, created_at'
 
-/** Lo justo de cada fotografía: nombrarla, ordenarla y saber si es una reproducción (RF-1407). */
+/** Just enough of each photograph: to name it, order it and know whether it is a reproduction (RF-1407). */
 const PHOTO_COLUMNS = 'image_id, shot_type, sort_order, provenance, active'
 
 export interface ExternalLinksState {
-  /** Los enlaces de la obra y los de sus fotografías, en una sola lista. */
+  /** The artwork's links and those of its photographs, in a single list. */
   readonly rows: readonly ExternalLinkRow[]
-  /** Las fotografías de la obra, para nombrar los grupos y para elegir ancla. */
+  /** The artwork's photographs, to name the groups and to choose an anchor. */
   readonly photos: readonly PhotoRef[]
   readonly loading: boolean
   readonly error: string | null
