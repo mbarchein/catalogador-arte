@@ -404,11 +404,11 @@ end $$;
 delete from public.external_links where artwork_id = 'AR-9702';
 
 
--- ── 5. Un enlace no se añade dos veces, y sí se vuelve a añadir ──
+-- ── 5. A link is not added twice, and it can be added again ──
 --
--- Los dos únicos son PARCIALES sobre `active` a propósito: pegar dos veces lo
--- mismo en la misma ficha es el accidente real, y volver a añadir lo que se
--- retiró es una operación legítima (RF-1406).
+-- Both unique indexes are PARTIAL on `active` on purpose: pasting the same thing
+-- twice into the same record is the real accident, and adding again what was
+-- withdrawn is a legitimate operation (RF-1406).
 do $$
 declare v_id uuid;
 begin
@@ -424,12 +424,12 @@ begin
     null;
   end;
 
-  -- La misma dirección en OTRA obra sí: el mismo artículo puede documentar dos
-  -- obras, y cada copia gana su propia nota.
+  -- The same address in ANOTHER artwork does: the same article can document two
+  -- artworks, and each copy earns its own note.
   insert into public.external_links (artwork_id, url)
   values ('AR-9700', 'https://prensa.example/critica-1985');
 
-  -- Y retirada, se puede volver a añadir.
+  -- And once withdrawn, it can be added again.
   update public.external_links set active = false where id = v_id;
   insert into public.external_links (artwork_id, url)
   values ('AR-9702', 'https://prensa.example/critica-1985');
@@ -441,11 +441,11 @@ delete from public.external_links where artwork_id in ('AR-9702');
 delete from public.external_links where url = 'https://prensa.example/critica-1985';
 
 
--- ── 6. La baja lógica (RF-901, RF-902, RF-1406) ──────────────
+-- ── 6. The logical deletion (RF-901, RF-902, RF-1406) ────────
 --
--- Un enlace no se borra nunca: se retira, con traza de quién y cuándo, y se
--- restaura desde la propia ficha. Sin `restored_at`, que `tg_row_audit` detecta:
--- al restaurar devuelve a nulo las dos columnas de baja, como en los lugares.
+-- A link is never deleted: it is withdrawn, with a trace of who and when, and it is
+-- restored from the record itself. With no `restored_at`, which `tg_row_audit` detects:
+-- on restoring it returns both withdrawal columns to null, as in the places.
 do $$
 declare v_id uuid; v_fila public.external_links%rowtype;
 begin
@@ -488,10 +488,10 @@ end $$;
 reset role;
 
 
--- ── 7. La comprobación (RF-1405) ─────────────────────────────
+-- ── 7. The check (RF-1405) ───────────────────────────────────
 --
--- Las tres columnas afirman un hecho sobre el mundo exterior, así que solo las
--- escribe `record_link_check`. Nulo es «sin comprobar» y NO es «roto».
+-- The three columns state a fact about the outside world, so they are written only
+-- by `record_link_check`. Null is «unchecked» and is NOT «broken».
 do $$
 declare
   v_sin uuid; v_roto uuid; v_cuando timestamptz; v_fila public.external_links%rowtype;
@@ -524,8 +524,8 @@ begin
     raise exception 'FAIL: un enlace sin comprobar no está a nulo';
   end if;
 
-  -- Y la distinción, que es el requisito entero: el que nadie ha mirado no se
-  -- puede confundir con el que se miró y estaba roto.
+  -- And the distinction, which is the whole requirement: the one nobody has looked at cannot
+  -- be confused with the one that was looked at and was broken.
   if (select count(*) from public.external_links
        where id in (v_sin, v_roto) and check_status is null) <> 1 then
     raise exception 'FAIL: «sin comprobar» y «roto» no se distinguen (RF-1405)';
@@ -536,9 +536,9 @@ end $$;
 
 reset role;
 
--- 7b. Un `update` directo que intenta escribir las tres columnas las deja como
--- estaban, y NO lanza: un formulario que reenvía la fila entera no debe fallar
--- por reenviar lo que ya había.
+-- 7b. A direct `update` trying to write the three columns leaves them as
+-- they were, and does NOT throw: a form that resends the whole row must not fail
+-- for resending what was already there.
 do $$
 declare v_id uuid; v_antes public.external_links%rowtype; v_despues public.external_links%rowtype;
 begin
@@ -571,10 +571,10 @@ end $$;
 
 reset role;
 
--- 7c. Volver a confirmar el mismo estado un año después SÍ mueve la fecha: es el
--- caso más frecuente, «sigue funcionando». Como `now()` es la hora de la
--- transacción, la fecha se atrasa a mano —con el ajuste puesto, que es el único
--- camino— para poder ver que la RPC la adelanta.
+-- 7c. Confirming the same state again a year later DOES move the date: it is the
+-- most frequent case, «it still works». Since `now()` is the transaction's
+-- time, the date is put back by hand —with the setting in place, which is the only
+-- way— in order to see the RPC move it forward.
 do $$
 declare v_id uuid; v_antigua timestamptz; v_nueva timestamptz;
 begin
@@ -607,15 +607,15 @@ end $$;
 
 reset role;
 
--- 7d. Editar la nota no mueve la fecha de comprobación, pero sí la de
--- actualización y su autor: son dos hechos distintos y no se pisan.
+-- 7d. Editing the note does not move the check date, but it does move the
+-- update one and its author: they are two different facts and they do not tread on each other.
 do $$
 declare v_id uuid; v_comprobada timestamptz; v_fila public.external_links%rowtype;
 begin
   select id into v_id from public.external_links
    where artwork_id = 'AR-9700' and url = 'https://ejemplo.es/roto';
 
-  -- Se atrasa la comprobación para que un cambio se note.
+  -- The check is put back so a change is noticeable.
   perform set_config('app.link_check', v_id::text, true);
   update public.external_links set checked_at = now() - interval '30 days' where id = v_id;
   perform set_config('app.link_check', '', true);
@@ -644,9 +644,9 @@ end $$;
 
 reset role;
 
--- 7e. Poner el estado a nulo por la RPC devuelve las TRES columnas a nulo:
--- «vuelve a estar sin comprobar» es una corrección legítima y no una pérdida de
--- datos.
+-- 7e. Setting the state to null through the RPC returns ALL THREE columns to null:
+-- «it is unchecked again» is a legitimate correction and not a loss of
+-- data.
 do $$
 declare v_id uuid; v_fila public.external_links%rowtype; v_cuando timestamptz;
 begin
@@ -669,9 +669,9 @@ end $$;
 
 reset role;
 
--- 7f. El ajuste se limpia SIEMPRE: después de llamar a la RPC, un segundo update
--- directo sobre la misma fila y dentro de la misma transacción tampoco mueve las
--- tres columnas. Sin la limpieza, esa ventana existiría.
+-- 7f. The setting is ALWAYS cleared: after calling the RPC, a second direct update
+-- over the same row and inside the same transaction does not move the three
+-- columns either. Without the clearing, that window would exist.
 do $$
 declare v_id uuid; v_fila public.external_links%rowtype;
 begin
@@ -697,8 +697,8 @@ end $$;
 
 reset role;
 
--- 7g. Una fecha sin estado no se guarda. Solo se puede intentar con el ajuste
--- puesto, que es el único camino que llega a la restricción.
+-- 7g. A date with no state is not stored. It can only be attempted with the setting
+-- in place, which is the only path that reaches the constraint.
 do $$
 declare v_id uuid; v_restriccion text;
 begin
@@ -720,7 +720,7 @@ begin
   raise notice 'OK: o las dos o ninguna: external_links_check_pair (RF-1405)';
 end $$;
 
--- 7h. Y el estado tampoco admite texto libre.
+-- 7h. And the state does not admit free text either.
 do $$
 declare v_id uuid;
 begin
@@ -734,7 +734,7 @@ begin
   end;
 end $$;
 
--- 7i. Un enlace que no existe no se comprueba en silencio.
+-- 7i. A link that does not exist is not checked in silence.
 do $$
 begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
@@ -752,14 +752,14 @@ end $$;
 reset role;
 
 
--- ── 8. La matriz de roles, autenticándose de verdad ──────────
+-- ── 8. The role matrix, authenticating for real ──────────────
 --
--- RF-105, RF-106, RF-109. Comprobar que la política existe no verifica nada: lo
--- que importa es lo que la base contesta cuando la petición viene de quien
--- viene.
+-- RF-105, RF-106, RF-109. Checking that the policy exists verifies nothing: what
+-- matters is what the base answers when the request comes from whom it
+-- comes.
 
--- 8a. El Catalogador hace lo suyo: crea, clasifica, anota, archiva una copia,
--- retira y restaura.
+-- 8a. The Cataloguer does their own: creates, classifies, notes, archives a copy,
+-- withdraws and restores.
 do $$
 declare v_id uuid; v_fila public.external_links%rowtype;
 begin
@@ -793,7 +793,7 @@ end $$;
 
 reset role;
 
--- 8b. El Lector lee lo activo de una ficha que puede ver.
+-- 8b. The Reader reads what is active of a record they can see.
 do $$
 declare v_n integer;
 begin
@@ -812,10 +812,10 @@ end $$;
 
 reset role;
 
--- 8c. Y NO escribe ni una columna. Lo que hay que afirmar es el SILENCIO: un
--- update que la cláusula USING esconde no falla, no afecta a ninguna fila. Se
--- comprueba el contenido FUERA de su sesión, porque `row_count` a cero no
--- distingue «no escribió» de «escribió y luego se lo escondieron».
+-- 8c. And does NOT write a single column. What has to be asserted is the SILENCE: an
+-- update the USING clause hides does not fail, it affects no row. The
+-- content is checked OUTSIDE their session, because a `row_count` of zero does not
+-- distinguish «it did not write» from «it wrote and then it was hidden from them».
 do $$
 declare v_id uuid; v_afectadas integer; v_fila public.external_links%rowtype;
 begin
@@ -854,7 +854,7 @@ end $$;
 
 reset role;
 
--- 8d. Ni da de alta.
+-- 8d. Nor do they create.
 do $$
 begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
@@ -870,9 +870,9 @@ end $$;
 
 reset role;
 
--- 8e. Ni comprueba: la RPC es `security invoker` y encima pregunta por
--- `can_edit()`, así que el lector se queda fuera por las dos puertas. Y el
--- estado no se ha movido, comprobado desde fuera de su sesión.
+-- 8e. Nor do they check: the RPC is `security invoker` and on top of that it asks about
+-- `can_edit()`, so the reader is left out through both doors. And the
+-- state has not moved, checked from outside their session.
 do $$
 declare v_id uuid; v_estado public.link_check_status;
 begin
@@ -900,12 +900,12 @@ end $$;
 reset role;
 
 
--- ── 9. La visibilidad heredada (RF-609, RF-1401) ─────────────
+-- ── 9. The inherited visibility (RF-609, RF-1401) ────────────
 --
--- Las subconsultas de la política se evalúan bajo la política de SU PROPIA
--- tabla, así que el Lector no se entera de que existe el enlace de una ficha o de
--- una fotografía que no puede ver. No es una copia de la regla: es la regla
--- misma, y si mañana cambia la de las obras, esta la sigue sola.
+-- The policy's subqueries are evaluated under the policy of THEIR OWN
+-- table, so the Reader does not find out that the link of a record or of
+-- a photograph they cannot see exists. It is not a copy of the rule: it is the rule
+-- itself, and if the artworks' one changes tomorrow, this one follows it on its own.
 insert into public.external_links (artwork_id, url, title) values
   ('AR-9701', 'https://ejemplo.es/de-obra-retirada', 'De una obra retirada');
 insert into public.external_links (image_id, url, title) values
@@ -962,7 +962,7 @@ end $$;
 
 reset role;
 
--- Y el enlace RETIRADO de una obra activa: el lector tampoco.
+-- And the WITHDRAWN link of an active artwork: the reader does not either.
 do $$
 declare v_id uuid; v_n integer;
 begin
@@ -984,9 +984,9 @@ end $$;
 
 reset role;
 
--- Y la política nombra las dos anclas: el día que se añada una tercera sin
--- ampliarla, sus enlaces serían invisibles para todo el mundo y nadie sabría por
--- qué.
+-- And the policy names both anchors: the day a third is added without
+-- extending it, its links would be invisible to everybody and nobody would know
+-- why.
 do $$
 declare v_expresion text;
 begin
@@ -1003,14 +1003,14 @@ begin
 end $$;
 
 
--- ── 10. Las funciones (RF-111) ───────────────────────────────
+-- ── 10. The functions (RF-111) ───────────────────────────────
 do $$
 declare v_volatilidad char; v_config text[];
 begin
   select provolatile, proconfig into v_volatilidad, v_config
     from pg_proc where oid = 'public.is_web_url(text)'::regprocedure;
 
-  -- Inmutable: si no lo fuera no podría usarse en un `check`, que es donde vive.
+  -- Immutable: if it were not, it could not be used in a `check`, which is where it lives.
   if v_volatilidad <> 'i' then
     raise exception 'FAIL: is_web_url no es inmutable (%)', v_volatilidad;
   end if;
