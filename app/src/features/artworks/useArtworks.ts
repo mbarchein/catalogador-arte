@@ -71,7 +71,7 @@ export async function fetchAllArtworks(): Promise<Artwork[]> {
  * loaded, and null while it has not arrived — see matchesView for why that is not
  * the same as an empty set.
  */
-/** Nada apartado, que es lo que ve quien no ha tocado la tabla de fondos. */
+/** Nothing set aside, which is what whoever has not touched the funds table sees. */
 const EMPTY_FUNDS: ReadonlySet<ArtistFund> = new Set()
 
 export function useArtworks(
@@ -187,8 +187,8 @@ export function useArtworks(
   // what actually changes the answer.
   const key = serializeView(view).toString()
   const scopeKey = placeScope === null ? 'null' : [...placeScope].sort().join(' ')
-  // Por lo mismo que el alcance: el conjunto es un objeto nuevo en cada pintado y
-  // lo que cambia la respuesta son los códigos que lleva dentro.
+  // For the same reason as the scope: the set is a new object on every paint and
+  // what changes the answer are the codes it carries inside.
   const hiddenKey = [...hiddenFunds].sort().join(' ')
   const artworks = useMemo(() => {
     if (!all) return []

@@ -52,8 +52,8 @@ describe('bibliographyOrderKey, con qué se ordena una referencia', () => {
   })
 
   it('y con el título cuando no hay nadie firmando', () => {
-    // La mitad de un archivo real son recortes sin firma. «Anónimo» no es un autor
-    // que empiece por z: la referencia se coloca por su título entre las demás.
+    // Half of a real archive is unsigned clippings. «Anónimo» is not an author starting
+    // with z: the reference is placed by its title among the rest.
     expect(bibliographyOrderKey(reference({ title: 'Crónica de la exposición' }))).toBe(
       'Crónica de la exposición',
     )
@@ -62,8 +62,8 @@ describe('bibliographyOrderKey, con qué se ordena una referencia', () => {
 
 describe('sortReferences, el orden del índice', () => {
   it('alfabético por autor, en es-ES', () => {
-    // «Álvarez» se sienta con las a y no después de la z, que es lo que haría el
-    // orden del octeto.
+    // «Álvarez» sits with the a's and not after the z, which is what byte order
+    // would do.
     const rows = [
       reference({ id: 'c', authors: 'Zafra, Luis' }),
       reference({ id: 'a', authors: 'Álvarez, Ana' }),
@@ -73,8 +73,8 @@ describe('sortReferences, el orden del índice', () => {
   })
 
   it('y dentro de un autor, por año ascendente', () => {
-    // Ascendente, como el historial expositivo (RF-502): dentro de un autor lo que
-    // se lee es su recorrido.
+    // Ascending, like the exhibition history (RF-502): within an author what is read
+    // is their journey.
     const rows = [
       reference({ id: 'nuevo', authors: 'Rotili, Alberto', year: 1991 }),
       reference({ id: 'viejo', authors: 'Rotili, Alberto', year: 1978 }),
@@ -83,8 +83,8 @@ describe('sortReferences, el orden del índice', () => {
   })
 
   it('la referencia sin año va después de las fechadas del mismo autor', () => {
-    // «s.f.» es un dato legítimo y no un punto en el tiempo, así que no encabeza la
-    // obra de su autor.
+    // «s.f.» is a legitimate datum and not a point in time, so it does not head its
+    // author's work.
     const rows = [
       reference({ id: 'sin-fecha', authors: 'Rotili, Alberto', year: null }),
       reference({ id: 'con-fecha', authors: 'Rotili, Alberto', year: 1985 }),
@@ -102,8 +102,8 @@ describe('sortReferences, el orden del índice', () => {
   })
 
   it('el orden es estable entre dos cargas de la misma pantalla', () => {
-    // Mismo autor, mismo año y mismo título: sin el identificador rompiendo el
-    // empate, dos referencias se cambiarían el sitio de una carga a otra.
+    // Same author, same year and same title: without the identifier breaking the
+    // tie, two references would swap places from one load to the next.
     const rows = [
       reference({ id: 'b', authors: 'Rotili', year: 1985, title: 'Igual' }),
       reference({ id: 'a', authors: 'Rotili', year: 1985, title: 'Igual' }),
@@ -139,8 +139,8 @@ describe('rankReferences, lo que la búsqueda encuentra (RF-606)', () => {
   })
 
   it('caza por el lugar, que no está en el título', () => {
-    // Se busca «Zafra» —el sitio— o la revista, no solo el título: es lo que
-    // `referenceSearchText` mete en la cadena, y por eso la fila enseña esa línea.
+    // «Zafra» —the place— or the journal is searched, not just the title: it is what
+    // `referenceSearchText` puts in the string, and that is why the row shows that line.
     expect(rankReferences(catalogo, 'badajoz').map((e) => e.row.id)).toEqual(['libro'])
   })
 
@@ -253,8 +253,8 @@ describe('bibliographyListNotice, nunca una página en blanco', () => {
   })
 
   it('el catálogo sin ninguna referencia dice de dónde salen', () => {
-    // Y no ofrece un botón de «nueva referencia» que no existe: una referencia se
-    // crea al citarla desde una obra.
+    // And it offers no «nueva referencia» button that does not exist: a reference is
+    // created by citing it from an artwork.
     const text = bibliographyListNotice({ ...base, total: 0, shown: 0 })
     expect(text).toContain('Todavía no hay ninguna referencia')
     expect(text).toContain('al citarla')

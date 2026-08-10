@@ -40,8 +40,8 @@ describe('qué se pregunta en cada procedencia', () => {
   })
 
   it('las dos se dicen opcionales, que es lo que son', () => {
-    // En 35 de las 39 tomas la hizo quien cataloga: obligar a teclearlo treinta y
-    // cinco veces convertiría un crédito en un peaje.
+    // In 35 of the 39 shots it was taken by whoever catalogues: forcing them to type it
+    // thirty-five times would turn a credit into a toll.
     expect(photoSourceHint('OWN')).toContain('Opcional')
     expect(photoSourceHint('THIRD_PARTY')).toContain('Opcional')
   })
@@ -58,8 +58,8 @@ describe('el valor dormido no se cuela', () => {
   })
 
   it('y la misma fila, marcada como ajena, enseña el origen', () => {
-    // Este es el caso que importa: si aquí saliera la autoría, la ficha impresa
-    // de una reproducción ajena atribuiría la foto a quien no la hizo.
+    // This is the case that matters: if the authorship showed up here, the printed record
+    // of somebody else's reproduction would attribute the photo to whoever did not take it.
     const both = row({ photo_credit: 'Mario Barchéin', provenance_source: 'Web del MACVA' })
     expect(photoSourceOf(both, 'OTHER_CATALOG')).toBe('Web del MACVA')
   })

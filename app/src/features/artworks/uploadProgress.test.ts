@@ -57,12 +57,12 @@ describe('uploadStatusText', () => {
   })
 
   it('nombra los cuatro ficheros, también los dos que no pueden contarse', () => {
-    // Las derivadas van por la biblioteca de almacenamiento, que no informa de bytes.
-    // Callárselas es lo que las hacía parecer no subidas.
+    // The derivatives go through the storage library, which reports no bytes.
+    // Keeping quiet about them is what made them look not uploaded.
     expect(uploadStatusText({ index: 1, count: 1, step: 'derivatives' })).toBe(
       'Subiendo las copias que se ven en la ficha…',
     )
-    // Y sin porcentaje inventado, que sería el único número falso de la pantalla.
+    // And with no made-up percentage, which would be the only false number on the screen.
     expect(uploadStatusText({ index: 1, count: 1, step: 'derivatives' })).not.toMatch(/%/)
   })
 
@@ -108,7 +108,7 @@ describe('uploadStatusText', () => {
   it('no dice nada del primer intento, que no es un reintento', () => {
     const first = uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 1, total: 2, attempt: 1 })
     expect(first).not.toContain('reintento')
-    // Y sin `attempt`, que es como llega desde cualquier sitio que no lo cuente.
+    // And with no `attempt`, which is how it arrives from anywhere that does not count it.
     expect(uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 1, total: 2 })).toBe(first)
   })
 
@@ -169,12 +169,12 @@ describe('el aviso de que no se ha podido subir', () => {
   })
 
   it('no inventa un «se quedó en» cuando no llegó a empezar', () => {
-    // Sin un solo evento de progreso no hay dónde: decir «0 kB de 0» sería peor que
-    // callarse, porque parece una medida.
+    // Without a single progress event there is no where: saying «0 kB de 0» would be worse
+    // than keeping quiet, because it looks like a measurement.
     expect(uploadFailureText({ failed: 1, total: 1, message: 'Vaya.' })).toBe(
       'No se ha podido subir la fotografía: Vaya.',
     )
-    // Y las derivadas no cuentan bytes, así que tampoco tienen un punto donde quedarse.
+    // And the derivatives count no bytes, so they have no point to stay at either.
     expect(
       uploadFailureText({
         failed: 1,
@@ -195,8 +195,8 @@ describe('lo que queda por subir', () => {
   })
 
   it('no dice nada cuando no queda nada', () => {
-    // La barra del pie no se pinta, así que no puede tapar el menú ni la ficha cuando
-    // no hay nada que hacer con ella.
+    // The footer bar is not painted, so it cannot cover the menu or the record when
+    // there is nothing to do with it.
     expect(pendingUploadNotice(0)).toBeNull()
     expect(pendingUploadNotice(-1)).toBeNull()
   })

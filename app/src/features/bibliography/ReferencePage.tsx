@@ -70,8 +70,8 @@ export function ReferencePage() {
 
   if (loading && reference === null) return <LoadingNotice>Cargando la referencia…</LoadingNotice>
 
-  // Nunca una página en blanco: una dirección que no corresponde a ninguna referencia
-  // lo dice y ofrece la salida, en vez de una pantalla vacía que parece un fallo de red.
+  // Never a blank page: an address matching no reference says so and offers the way
+  // out, instead of an empty screen that looks like a network failure.
   if (reference === null) {
     return (
       <Layout title="Referencia" back="/bibliography">
@@ -205,7 +205,7 @@ export function ReferencePage() {
   )
 }
 
-/** Una línea de la ficha. Nunca un hueco (RF-304): cuando no hay dato, se dice. */
+/** One line of the record. Never a gap (RF-304): when there is no datum, it is said. */
 function RecordRow({
   label,
   value,

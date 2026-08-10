@@ -21,12 +21,12 @@ describe('el gesto del cuentagotas (RF-414, RF-418)', () => {
     it('apunta en vez de desplazar', () => {
       const intent = pointerIntent({ ...touch, eyedropper: true, touches: 1 })
       expect(intent.aims).toBe(true)
-      // Este es el aserto de la incidencia: antes valía `true` y la foto se iba con el dedo.
+      // This is the incident's assertion: it used to be `true` and the photo went off with the finger.
       expect(intent.pans).toBe(false)
     })
 
     it('arrastrar hasta el gris y levantar toma la muestra, por lejos que se haya ido', () => {
-      // Antes, cualquier recorrido por encima del margen de holgura descartaba la muestra.
+      // Before, any travel beyond the slack margin discarded the sample.
       expect(liftTakesSample({ eyedropper: true, aiming: true, pinching: false, touches: 1 })).toBe(
         true,
       )
@@ -83,8 +83,8 @@ describe('el gesto del cuentagotas (RF-414, RF-418)', () => {
   })
 
   it('desarmar el modo a media pasada cancela la muestra', () => {
-    // Escape desarma el cuentagotas antes de cerrar el panel: lo que estaba a medias no
-    // se cobra al levantar el dedo.
+    // Escape disarms the eyedropper before closing the panel: what was half-done is not
+    // charged when the finger lifts.
     expect(liftTakesSample({ eyedropper: false, aiming: true, pinching: false, touches: 1 })).toBe(
       false,
     )

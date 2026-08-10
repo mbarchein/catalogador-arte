@@ -49,7 +49,7 @@ import { referenceTitleText } from '../documentary/bibliography/referenceEdit'
  */
 export { REFERENCE_COLUMNS }
 
-/** Lo que la búsqueda mira, que es también lo que la fila enseña. */
+/** What the search looks at, which is also what the row shows. */
 export { referenceSearchText as bibliographySearchText }
 
 /**
@@ -91,8 +91,8 @@ export function sortReferences(rows: readonly ReferenceRow[]): ReferenceRow[] {
       sensitivity: 'base',
     })
     if (byKey !== 0) return byKey
-    // Sin año va DESPUÉS de los años del mismo autor: «s.f.» es un dato legítimo
-    // que no es un punto en el tiempo, así que no encabeza su obra.
+    // With no year it goes AFTER the same author's years: «s.f.» is a legitimate datum
+    // that is not a point in time, so it does not head their work.
     const ya = a.year ?? null
     const yb = b.year ?? null
     if (ya !== yb) {
@@ -107,22 +107,22 @@ export function sortReferences(rows: readonly ReferenceRow[]): ReferenceRow[] {
   })
 }
 
-/** Una fila del índice, lista para pintar. */
+/** One row of the index, ready to paint. */
 export interface BibliographyIndexEntry {
   row: ReferenceRow
-  /** El título. Nunca vacío: la base lo exige, y si llegara vacío se dice. */
+  /** The title. Never empty: the base requires it, and if it arrived empty it is said. */
   title: string
-  /** `Rotili, A. · 1985 · Revista de Estudios Extremeños · Artículo`. Nunca un hueco (RF-304). */
+  /** `Rotili, A. · 1985 · Revista de Estudios Extremeños · Artículo`. Never a gap (RF-304). */
   hint: string
-  /** El año o «s.f.», aparte, para la columna que se lee en vertical. */
+  /** The year or «s.f.», apart, for the column read vertically. */
   year: string
-  /** La clave BibTeX, cuando la tiene: es como se cita en el ensayo. */
+  /** The BibTeX key, when it has one: it is how it is cited in the essay. */
   bibtexKey: string | null
-  /** En la papelera. Se pinta apagada — y SE DICE, porque el gris a secas es decoración. */
+  /** In the wastebasket. Painted dimmed — and SAID, because grey alone is decoration. */
   retired: boolean
-  /** Lo que la búsqueda ha mirado, y lo que la fila enseña como una línea. */
+  /** What the search has looked at, and what the row shows as one line. */
   text: string
-  /** Dónde han caído las letras tecleadas dentro de `text`, para el énfasis. */
+  /** Where the typed letters have landed inside `text`, for the emphasis. */
   indices: number[]
 }
 
@@ -158,7 +158,7 @@ export function rankReferences(
   }))
 }
 
-/** Cuántas están en la papelera, para ofrecer el interruptor solo cuando hay algo dentro. */
+/** How many are in the wastebasket, to offer the switch only when there is something inside. */
 export function retiredReferenceCount(rows: readonly ReferenceRow[]): number {
   return rows.filter((row) => !row.active).length
 }
@@ -212,6 +212,6 @@ export function bibliographyListNotice(input: {
       'Todavía no hay ninguna referencia. Se crean desde la bibliografía de una obra, al citarla.'
     )
   }
-  // Total > 0 y ninguna enseñada sin buscar: están todas en la papelera.
+  // Total > 0 and none shown without searching: they are all in the wastebasket.
   return 'Todas las referencias del catálogo están retiradas. Inclúyelas para verlas y recuperarlas.'
 }

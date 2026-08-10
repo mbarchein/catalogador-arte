@@ -47,7 +47,7 @@ function cited(over: Partial<CitedArtworkRow> = {}): CitedArtworkRow {
   }
 }
 
-/** La obra incrustada de una cita cualquiera, para retocarle un campo. */
+/** The embedded artwork of any citation, to tweak one of its fields. */
 function artworkOf(row: CitedArtworkRow) {
   const artwork = row.artwork
   if (artwork === null) throw new Error('el fixture trae la obra incrustada')
@@ -69,8 +69,8 @@ describe('sortCitedArtworks, el orden del bloque (RF-506)', () => {
   })
 
   it('las páginas NO ordenan, aunque en una bibliografía lo parezca', () => {
-    // `pages` es texto libre a propósito (RF-504): ordenar por eso pondría «lám. XII»
-    // antes que «p. 9». El orden es el del código, y las páginas se leen dentro.
+    // `pages` is free text on purpose (RF-504): ordering by that would put «lám. XII»
+    // before «p. 9». The order is the code's, and the pages are read inside.
     const rows = [
       cited({ catalog_id: 'AR-0007', pages: 'lám. XII' }),
       cited({ catalog_id: 'AR-0002', pages: '9' }),
@@ -125,7 +125,7 @@ describe('citedArtworkView, una fila del bloque', () => {
   })
 
   it('una obra que no se puede leer deja la fila puesta y lo dice', () => {
-    // Tirarla acortaría en silencio la lista de obras que citan la referencia.
+    // Dropping it would silently shorten the list of artworks citing the reference.
     const view = citedArtworkView(cited({ artwork: null }))
     expect(view.unavailable).toBe(true)
     expect(view.title).toContain('no se puede leer')

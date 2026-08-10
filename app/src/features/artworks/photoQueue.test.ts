@@ -270,8 +270,8 @@ describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', ()
       ...toStoredShot(shot({ rotation: 0, crop: null })),
       provenance: 'INHERITED_FROM_A_FUTURE_VERSION',
     } as unknown as StoredShot
-    // Una etiqueta desconocida viajaría al enum de la base, sería rechazada, y se
-    // perdería la toma entera por una palabra.
+    // An unknown label would travel to the base's enum, be rejected, and the whole shot
+    // would be lost over one word.
     expect(rehydrate(strange).prepared.provenance).toBeUndefined()
   })
 
@@ -291,7 +291,7 @@ describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', ()
     const back = rehydrate(legacy)
     expect(back.prepared.fileDate).toBeNull()
     expect(back.prepared.provenance).toBeUndefined()
-    // Y lo que ya funcionaba sigue funcionando: la fila antigua no revienta.
+    // And what already worked keeps working: the old row does not blow up.
     expect(back.prepared.edit).toEqual({ rotation: 0, crop: null, corners: null })
   })
 })

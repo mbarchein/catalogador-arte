@@ -27,27 +27,27 @@ import type { PhotoProvenance } from '../../lib/types'
  * que sería atribuir la foto a quien no la hizo.
  */
 
-/** Cuál de los dos campos tiene sentido con esta procedencia. */
+/** Which of the two fields makes sense with this provenance. */
 export type PhotoSourceField = 'credit' | 'source'
 
 export function photoSourceField(provenance: PhotoProvenance): PhotoSourceField {
   return provenance === 'OWN' ? 'credit' : 'source'
 }
 
-/** Las dos columnas, como llegan de la fila. */
+/** The two columns, as they arrive from the row. */
 export interface PhotoSourceColumns {
   photo_credit: string
   provenance_source: string
 }
 
-/** Cómo se rotula el campo que se ofrece. */
+/** How the offered field is labelled. */
 export function photoSourceLabel(provenance: PhotoProvenance): string {
   return photoSourceField(provenance) === 'credit'
     ? 'Autoría de la fotografía'
     : 'De dónde salió'
 }
 
-/** Lo que se explica debajo: qué se espera ahí, con un ejemplo. */
+/** What is explained underneath: what is expected there, with an example. */
 export function photoSourceHint(provenance: PhotoProvenance): string {
   return photoSourceField(provenance) === 'credit'
     ? 'Quién la hizo, si no fuiste tú. Opcional: en blanco no se atribuye a nadie.'
@@ -55,7 +55,7 @@ export function photoSourceHint(provenance: PhotoProvenance): string {
         'cualquier texto: «me la pasó la familia en 2019» también es una procedencia.'
 }
 
-/** La columna que hay que escribir con esta procedencia. */
+/** The column to write with this provenance. */
 export function photoSourceColumn(provenance: PhotoProvenance): keyof PhotoSourceColumns {
   return photoSourceField(provenance) === 'credit' ? 'photo_credit' : 'provenance_source'
 }
@@ -76,7 +76,7 @@ export function photoSourceOf(
   return written === '' ? null : written
 }
 
-/** Lo que se guarda: recortado, como el resto del catálogo. */
+/** What gets stored: trimmed, like the rest of the catalogue. */
 export function cleanPhotoSource(value: string): string {
   return value.trim()
 }
