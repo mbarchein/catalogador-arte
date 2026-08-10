@@ -11,18 +11,18 @@ import {
 } from './documentRecord'
 
 /**
- * La ficha de un documento del archivo (RF-309, RF-516, RF-609).
+ * The record of an archive document (RF-309, RF-516, RF-609).
  *
- * Lo que fija esta batería, y que es la diferencia con la ficha de una referencia: **dos
- * bloques y no uno**. La relación de un documento es de muchos a muchos con las obras y
- * con las exposiciones, así que un recorte habla de tres piezas y un díptico cuelga de
- * la muestra y de ninguna pieza. Fundirlos mezclaría códigos de catalogación con títulos
- * de exposición en la misma columna, y el documento que solo cuelga de una muestra
- * —justo el caso que hizo falta esta pantalla— saldría bajo un encabezado que dice
+ * What this suite pins down, and it is the difference from a reference's record: **two
+ * blocks and not one**. A document's relationship is many-to-many with the artworks and
+ * with the exhibitions, so a clipping speaks of three pieces and a leaflet hangs from
+ * the show and from no piece. Merging them would mix cataloguing codes with exhibition
+ * titles in the same column, and the document that only hangs from a show
+ * —precisely the case that made this screen necessary— would come out under a heading that says
  * «obras».
  *
- * Y fija la frase que convierte a un documento en «suelto»: cero obras y cero
- * exposiciones es exactamente la fila a la que no se llegaba desde ningún sitio.
+ * And it pins down the sentence that turns a document into a «standalone» one: zero artworks and zero
+ * exhibitions is exactly the row that was not reachable from anywhere.
  */
 
 function linkedArtwork(over: Partial<LinkedArtworkRow> = {}): LinkedArtworkRow {

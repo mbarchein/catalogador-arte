@@ -352,11 +352,11 @@ function ExhibitionLinkRow({
 
 /** One line of the record. Never a gap (RF-304): with no datum, it is said. */
 /**
- * El aviso de de qué cuelga el documento, con sus referencias pulsables.
+ * The warning about what the document hangs from, with its clickable references.
  *
- * Los trozos los decide `documentReachSegments`, que es donde se puede probar sin
- * navegador; aquí solo se pintan. Un `Link` y no un ancla: son pantallas de la
- * propia aplicación y salir al navegador perdería la sesión y el sitio.
+ * The pieces are decided by `documentReachSegments`, which is where it can be tested without a
+ * browser; here they are only painted. A `Link` and not an anchor: they are screens of the
+ * application itself and going out to the browser would lose the session and the place.
  */
 function Reach({ segments }: { segments: readonly ReachSegment[] }) {
   return (

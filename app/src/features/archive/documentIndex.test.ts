@@ -11,17 +11,17 @@ import {
 } from './documentIndex'
 
 /**
- * El índice del archivo (RF-515, RF-606, RF-609).
+ * The archive's index (RF-515, RF-606, RF-609).
  *
- * El hueco que cierra: un documento se subía, se enlazaba, se descargaba, se corregía y
- * se digitalizaba, **todo desde la ficha de una obra que lo tuviera enlazado**. A uno
- * que ninguna obra tuviera enlazado no se llegaba desde ningún sitio — el cartel de una
- * muestra que no habla de una pieza concreta, o el documento cuyo vínculo se retiró —.
+ * The gap it closes: a document could be uploaded, linked, downloaded, corrected and
+ * digitised, **all from the record of an artwork that had it linked**. One
+ * that no artwork had linked was not reachable from anywhere — the poster of a
+ * show that does not speak of a particular piece, or the document whose link was withdrawn —.
  *
- * Y lo que estos tests fijan además del hueco: que el orden es el de la ESTANTERÍA y no
- * el del bloque de una obra, que los que no están archivados van al final y no
- * inventando un sitio en ella, y que el recuento dice cuántos quedan sin digitalizar,
- * que es la única pantalla donde esa cifra es una lista de trabajo.
+ * And what these tests pin down besides the gap: that the order is the SHELF's and not
+ * an artwork's block's, that the ones not filed go last and not
+ * inventing a place on it, and that the count says how many are left undigitised,
+ * which is the only screen where that figure is a work list.
  */
 
 function doc(over: Partial<DocumentOption> = {}): DocumentOption {
@@ -70,9 +70,9 @@ describe('sortArchiveDocuments, el orden de la estantería', () => {
   })
 
   it('los que no están archivados van AL FINAL, no entre los que sí', () => {
-    // Y esto no contradice a la bibliografía, donde la referencia sin autor se coloca
-    // por su título entre las demás: un documento sin signatura no tiene sitio en la
-    // estantería, mientras que un texto anónimo sí tiene sitio en el alfabeto.
+    // And this does not contradict the bibliography, where a reference with no author is placed
+    // by its title among the rest: a document with no shelfmark has no place on the
+    // shelf, whereas an anonymous text does have a place in the alphabet.
     const rows = [
       doc({ id: 'sin', archive_code: null, title: 'AAA recorte sin archivar' }),
       doc({ id: 'con', archive_code: 'AR-ARCH-0100' }),

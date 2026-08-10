@@ -1,25 +1,25 @@
 /**
- * El índice del archivo: en qué orden se lee, qué caza la búsqueda y qué dice cada
- * fila (RF-515, RF-606, RF-609).
+ * The archive's index: in what order it is read, what the search catches and what each
+ * row says (RF-515, RF-606, RF-609).
  *
- * Puro y sin React, como todo lo que decide en este proyecto: la batería corre en node
- * sin DOM, así que el orden de una lista y las palabras de una fila se verifican aquí o
- * no se verifican.
+ * Pure and without React, like everything that decides in this project: the suite runs in node
+ * with no DOM, so a list's order and a row's words are verified here or
+ * they are not verified.
  *
- * **Reutiliza tal cual lo que ya decide el selector de la ficha de obra**
- * (`documentLink.ts`): las columnas, la línea de la fila y la frase de «sin
- * digitalizar». Un documento tiene que leerse IGUAL en el listado del archivo que en el
- * selector que lo enlaza, o son dos dialectos del mismo catálogo. Lo nuevo es solo lo
- * que necesita una lista y un selector no: el orden de la tabla entera y el recuento.
+ * **It reuses as is what the artwork record's selector already decides**
+ * (`documentLink.ts`): the columns, the row's line and the «sin
+ * digitalizar» sentence. A document has to read the SAME in the archive's listing as in the
+ * selector that links it, or they are two dialects of the same catalogue. What is new is only what
+ * a list needs and a selector does not: the whole table's order and the count.
  *
- * ── POR QUÉ EXISTE ESTA PANTALLA ────────────────────────────
+ * ── WHY THIS SCREEN EXISTS ──────────────────────────────────
  *
- * Un documento del archivo se subía, se enlazaba, se descargaba, se corregía y se
- * digitalizaba — todo desde la ficha de una obra que lo tuviera enlazado. Así que a un
- * documento que ninguna obra tuviera enlazado **no se llegaba desde ningún sitio**: ni
- * el cartel de una exposición que no habla de una pieza concreta, ni el documento que
- * se dio de alta y cuyo vínculo se retiró después. Seguía en el archivo, ocupando su
- * signatura, invisible. Es el mismo hueco que tenía la bibliografía y se cierra igual.
+ * An archive document could be uploaded, linked, downloaded, corrected and
+ * digitised — all from the record of an artwork that had it linked. So a
+ * document that no artwork had linked **was not reachable from anywhere**: neither
+ * the poster of an exhibition that does not speak of a particular piece, nor the document that
+ * was created and whose link was withdrawn afterwards. It was still in the archive, taking up its
+ * shelfmark, invisible. It is the same gap the bibliography had and it is closed the same way.
  */
 
 import { placeKey } from '../../lib/places'
@@ -33,10 +33,10 @@ import {
 import { displayStructuredDate } from '../documentary/documentaryFormat'
 
 /**
- * Las columnas del índice, que son las que ya pide el selector.
+ * The index's columns, which are the ones the selector already asks for.
  *
- * Importadas y no reescritas: las dos listas enseñan las mismas filas con las mismas
- * palabras, así que una columna que una necesite la necesita la otra.
+ * Imported and not rewritten: the two lists show the same rows with the same
+ * words, so a column one of them needs the other needs too.
  */
 export { DOCUMENT_OPTION_COLUMNS as DOCUMENT_INDEX_COLUMNS }
 
@@ -44,24 +44,24 @@ export { DOCUMENT_OPTION_COLUMNS as DOCUMENT_INDEX_COLUMNS }
 export { documentOptionText as archiveSearchText }
 
 /**
- * Con qué se ordena un documento: **por su signatura**, y los que no la tienen después.
+ * What a document is ordered by: **its shelfmark**, and the ones without it afterwards.
  *
- * Es el orden de la estantería, y por eso es el bueno aquí: la signatura es la etiqueta
- * escrita en la carpeta y un archivo se recorre por ella. No es el orden del bloque de
- * una obra —que va de lo antiguo a lo reciente, porque allí lo que se lee es el
- * recorrido de una pieza— y la diferencia merece la pena señalarla: son dos preguntas
- * distintas sobre las mismas filas.
+ * It is the shelf's order, and that is why it is the right one here: the shelfmark is the label
+ * written on the folder and an archive is walked through by it. It is not an artwork's block's
+ * order —which goes from old to recent, because what is read there is a
+ * piece's journey— and the difference is worth pointing out: they are two different
+ * questions about the same rows.
  *
- * **Los que no tienen signatura van al final**, y aquí sí, al contrario que la
- * referencia sin firma en la bibliografía. No es una incoherencia: un documento sin
- * signatura es un documento que todavía **no está archivado** —un recorte que se anotó
- * antes de guardarlo—, así que no tiene sitio en la estantería y ponerlo entre los que
- * lo tienen inventaría un orden. Una referencia sin autor, en cambio, sí tiene un sitio
- * natural en el alfabeto: el de su título.
+ * **The ones with no shelfmark go last**, and here they do, unlike the
+ * reference with no signature in the bibliography. It is not an inconsistency: a document with no
+ * shelfmark is a document that is **not filed yet** —a clipping noted down
+ * before storing it—, so it has no place on the shelf and putting it among those that
+ * have one would invent an order. A reference with no author, by contrast, does have a natural
+ * place in the alphabet: its title's.
  *
- * La comparación es la del índice único, `place_key`: dos signaturas que solo difieren
- * en mayúsculas o tildes son la misma signatura para la base, así que también para el
- * orden.
+ * The comparison is the unique index's, `place_key`: two shelfmarks differing only
+ * in capitals or accents are the same shelfmark for the base, so also for the
+ * order.
  */
 export function archiveOrderKey(option: DocumentOption): string | null {
   const code = (option.archive_code ?? '').trim()
@@ -105,10 +105,10 @@ export interface ArchiveIndexEntry {
 }
 
 /**
- * Las filas del índice, la mejor coincidencia primero.
+ * The index's rows, the best match first.
  *
- * **Los retirados se esconden salvo que se pidan** (RF-609), y pedirlos es la única
- * forma de que uno vuelva.
+ * **The withdrawn ones are hidden unless asked for** (RF-609), and asking for them is the only
+ * way for one to come back.
  */
 export function rankArchiveDocuments(
   rows: readonly DocumentOption[],
@@ -116,9 +116,9 @@ export function rankArchiveDocuments(
   options: { includeRetired?: boolean } = {},
 ): ArchiveIndexEntry[] {
   const visible = options.includeRetired === true ? rows : rows.filter((row) => row.active)
-  // Ordenados ANTES de puntuar: `fuzzyRankBy` es estable y conserva el orden de quien
-  // llama entre coincidencias igual de buenas, así que el orden de la estantería
-  // sobrevive dentro de cada nivel del ranking.
+  // Sorted BEFORE scoring: `fuzzyRankBy` is stable and keeps the caller's
+  // order among equally good matches, so the shelf's order
+  // survives inside each level of the ranking.
   const ordered = sortArchiveDocuments(visible)
   return fuzzyRankBy(ordered, documentOptionText, query).map(({ item, indices }) => {
     const path = item.file_path?.trim() ?? ''
@@ -143,12 +143,12 @@ export function retiredDocumentCount(rows: readonly DocumentOption[]): number {
 }
 
 /**
- * Lo que se lee encima de la lista: cuántos hay, cuántos se enseñan y **cuántos están
- * sin digitalizar**.
+ * What is read above the list: how many there are, how many are shown and **how many are
+ * undigitised**.
  *
- * La tercera cifra es la que solo tiene sentido en esta pantalla: es la lista de
- * trabajo del escaneo. En el bloque de una obra la pregunta es «¿puedo leer este
- * papel?»; aquí es «¿cuánto archivo queda por digitalizar?».
+ * The third figure is the one that only makes sense on this screen: it is the scanning
+ * work list. In an artwork's block the question is «can I read this
+ * paper?»; here it is «how much archive is left to digitise?».
  */
 export function archiveCountText(input: {
   total: number
@@ -169,11 +169,11 @@ export function withoutFileCount(entries: readonly ArchiveIndexEntry[]): number 
 }
 
 /**
- * Lo que va donde irían las filas cuando no hay ninguna, o null cuando sí hay.
+ * What goes where the rows would go when there are none, or null when there are.
  *
- * **Nunca una página en blanco**, que es criterio del proyecto: una búsqueda sin
- * resultados devuelve la misma página con el motivo, y no una lista vacía que se lee
- * como un archivo vacío.
+ * **Never a blank page**, which is a criterion of the project: a search with no
+ * results returns the same page with the reason, and not an empty list that reads
+ * as an empty archive.
  */
 export function archiveListNotice(input: {
   loading: boolean

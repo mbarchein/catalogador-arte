@@ -11,21 +11,21 @@ import {
 } from './exhibitionLink'
 
 /**
- * Enlazar este documento con una exposición (RF-516, RF-517).
+ * Linking this document to an exhibition (RF-516, RF-517).
  *
- * El panel que le faltaba a `document_exhibition`, que está en el esquema —con su
- * `grant execute` y su test de que restaura el vínculo retirado— desde la migración del
- * archivo y que no llamaba nadie. Sin él, el cartel de una muestra no se podía enlazar
- * con la muestra desde ninguna pantalla.
+ * The panel `document_exhibition` was missing, which has been in the schema —with its
+ * `grant execute` and its test that it restores the withdrawn link— since the archive's
+ * migration and which nobody called. Without it, a show's poster could not be linked
+ * to the show from any screen.
  *
- * Reutiliza el buscador de exposiciones de la ficha de obra, con su misma frontera y por
- * los mismos motivos: **las retiradas se dejan fuera** —ofrecerlas las devolvería a
- * circulación por la puerta de atrás— y **las ya enlazadas se siguen listando**,
- * marcadas, porque esconderlas hace teclear el mismo título una y otra vez. Lo decide
- * `exhibitionLink.ts`, que es puro y tiene tests.
+ * It reuses the artwork record's exhibition finder, with its same boundary and for
+ * the same reasons: **the withdrawn ones are left out** —offering them would bring them back into
+ * circulation through the back door— and **the ones already linked are still listed**,
+ * marked, because hiding them makes people type the same title over and over. `exhibitionLink.ts`
+ * decides it, which is pure and has tests.
  *
- * La nota es del VÍNCULO y no del documento: lo que un cartel dice de la muestra no es lo
- * que dice de una obra suya, y por eso cada tabla puente lleva la suya (RF-516).
+ * The note belongs to the LINK and not to the document: what a poster says about the show is not what
+ * it says about one of its artworks, and that is why each bridge table carries its own (RF-516).
  */
 export function LinkExhibitionSheet({
   exhibitions,
