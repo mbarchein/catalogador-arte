@@ -79,9 +79,9 @@ export interface DocumentFileOffer {
    * (RF-411), pero un paso por detrás.
    */
   preview: DocumentPreviewKind | null
-  /** Lo que dice el botón de ver, con el peso dentro. Null cuando no hay botón. */
+  /** What the view button says, with the weight inside. Null when there is no button. */
   previewLabel: string | null
-  /** Lo que se lee debajo de ese botón, o null. */
+  /** What is read below that button, or null. */
   previewHint: string | null
   /** The text of the button, weight included. */
   label: string

@@ -51,7 +51,7 @@ import { storedExtension } from '../../artworks/archiveDownloads'
  */
 export type DocumentPreviewKind = 'image' | 'newTab'
 
-/** Los tipos que se pintan en un `<img>` en toda la gama de navegadores declarada. */
+/** The types painted in an `<img>` across the whole declared range of browsers. */
 const INLINE_IMAGE_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -72,7 +72,7 @@ const INLINE_IMAGE_TYPES = new Set([
  */
 const INLINE_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'])
 
-/** El tipo declarado, sin sus parámetros y en minúsculas. Cadena vacía si no dice nada. */
+/** The declared type, without its parameters and in lower case. Empty string if it says nothing. */
 function bareType(mime: string | null | undefined): string {
   if (typeof mime !== 'string') return ''
   return mime.split(';')[0]?.trim().toLowerCase() ?? ''

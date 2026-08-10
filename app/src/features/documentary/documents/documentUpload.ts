@@ -239,7 +239,7 @@ export function fileColumns(
   }
 }
 
-// ── Cuando el almacén dice no ─────────────────────────────────
+// ── When the store says no ────────────────────────────────────
 
 /**
  * A storage refusal as `@supabase/storage-js` hands it over: the message, and the
@@ -437,9 +437,9 @@ export async function runDocumentUpload(
   }
 }
 
-// ── El escaneo que le faltaba a un documento ya registrado ────
+// ── The scan an already registered document was missing ───────
 
-/** Los dos pasos de añadir un escaneo. El primero es el que dura. */
+/** The two steps of adding a scan. The first one is the one that lasts. */
 export type ScanStep = 'uploading' | 'attaching'
 
 export const SCAN_STEP_TEXT: Record<ScanStep, string> = {

@@ -81,9 +81,9 @@ export function documentEditDraft(document: EditableDocument): DocumentFields {
 }
 
 export type DocumentEditPlan =
-  /** Falta algo o hay una incoherencia: la base lo rechazaría y se dice antes. */
+  /** Something is missing or there is an inconsistency: the base would reject it and it is said first. */
   | { action: 'problems'; problems: DocumentDraftProblem[] }
-  /** Nada que mandar. No es un error y no se presenta como uno. */
+  /** Nothing to send. It is not an error and it is not presented as one. */
   | { action: 'unchanged' }
   | { action: 'update'; payload: Record<string, unknown> }
 
@@ -128,17 +128,17 @@ export function planDocumentEdit(
   return changed ? { action: 'update', payload } : { action: 'unchanged' }
 }
 
-// ── Lo que hay que decir antes de guardar ─────────────────────
+// ── What has to be said before saving ─────────────────────────
 
 const SHARED_ROW =
   'Este documento es del archivo, no de esta obra: lo que corrijas aquí se lee igual desde ' +
   'cualquier ficha enlazada con él.'
 
-/** A cuántas fichas más les cambia lo que leen. */
+/** How many more records have what they read changed. */
 export interface DocumentReach {
-  /** Obras distintas de esta, o null mientras se cuenta y cuando el recuento falló. */
+  /** Artworks other than this one, or null while counting and when the count failed. */
   otherArtworks: number | null
-  /** Exposiciones enlazadas con el documento, con el mismo criterio para el null. */
+  /** Exhibitions linked to the document, with the same criterion for the null. */
   exhibitions: number | null
 }
 
@@ -189,13 +189,13 @@ export function documentRetiredNotice(document: Pick<EditableDocument, 'active'>
   )
 }
 
-/** Lo que se dice cuando la corrección ha entrado. */
+/** What is said when the correction has gone in. */
 export function documentEditedNotice(title: string): string {
   const clean = title.trim()
   return `${clean === '' ? 'El documento' : `«${clean}»`} queda corregido en el archivo.`
 }
 
-// ── El escaneo que faltaba ────────────────────────────────────
+// ── The scan that was missing ─────────────────────────────────
 
 /**
  * Por qué no se puede añadir un escaneo a este documento, o null cuando sí.
@@ -218,7 +218,7 @@ export function scanTargetProblem(document: Pick<EditableDocument, 'file_path'>)
   )
 }
 
-/** Lo que se dice cuando el escaneo ya está arriba. */
+/** What is said when the scan is already up. */
 export function scanAddedNotice(title: string, bytes: number): string {
   const clean = title.trim()
   const weight = fileSizeText(bytes)

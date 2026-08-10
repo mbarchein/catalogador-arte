@@ -110,8 +110,8 @@ describe('el nombre con el que el fichero sale de la aplicación (RF-411)', () =
 
   it('la extensión es la del fichero guardado y no una suposición', () => {
     expect(documentFileName(document({ file_path: 'archivo/x.JPG' }))).toMatch(/\.jpg$/)
-    // Una extensión imposible no se pega: un nombre con la extensión equivocada abre
-    // en el programa equivocado y se reporta como fichero roto.
+    // An impossible extension is not glued on: a name with the wrong extension opens
+    // in the wrong program and gets reported as a broken file.
     expect(documentFileName(document({ file_path: 'archivo/documento-sin-extension' }))).toBe(
       'ar-arch-0001_carta-de-la-galeria',
     )
@@ -194,11 +194,11 @@ describe('lo que la ficha ofrece de un documento (RF-408, RF-411)', () => {
     )!
     expect(tiff.preview).toBeNull()
     expect(tiff.previewLabel).toBeNull()
-    // Descargarlo sigue estando: es lo que siempre funciona.
+    // Downloading it is still there: it is what always works.
     expect(tiff.label).toContain('Descargar')
   })
 
-  /** No hay bandera «digitalizado»: es `file_path !== null`, y sin ruta no hay botón. */
+  /** There is no «digitised» flag: it is `file_path !== null`, and with no path there is no button. */
   it('sin fichero no hay oferta, y no un botón que no puede funcionar', () => {
     expect(documentFileOffer(document({ file_path: null }))).toBeNull()
     expect(documentFileOffer(document({ file_path: '   ' }))).toBeNull()
@@ -248,10 +248,10 @@ describe('el camino de la descarga (RF-411, RF-110)', () => {
     }).catch((cause: unknown) => cause)
     expect(failure).toBeInstanceOf(DownloadFailure)
     expect((failure as DownloadFailure).kind).toBe('sign')
-    // «al documento» y no «a el documento»: el aviso de la firma es el único que lleva
-    // preposición delante del nombre, y lo contrae `contracted`.
+    // «al documento» and not «a el documento»: the signature warning is the only one carrying
+    // a preposition before the noun, and `contracted` contracts it.
     expect((failure as DownloadFailure).message).toContain('al documento «Carta de la galería»')
-    // La miga técnica, entre paréntesis: inútil para ella, decisiva por teléfono.
+    // The technical crumb, in brackets: useless to her, decisive over the phone.
     expect((failure as DownloadFailure).message).toContain('Failed to fetch')
   })
 
@@ -264,8 +264,8 @@ describe('el camino de la descarga (RF-411, RF-110)', () => {
       (cause: unknown) => cause,
     )
     expect(failure).toBeInstanceOf(DownloadFailure)
-    // «acceder» y no «preparar la descarga»: firmar es el paso previo de bajárselo y
-    // también de VERLO, y nadie había pedido descargar nada.
+    // «acceder» and not «preparar la descarga»: signing is the step before downloading it and
+    // also before SEEING it, and nobody had asked to download anything.
     expect((failure as DownloadFailure).message).toContain('No se ha podido acceder al documento')
   })
 

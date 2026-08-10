@@ -212,23 +212,23 @@ describe('documentRetiredNotice, corregir uno retirado (RF-901)', () => {
 describe('scanTargetProblem, por qué no se puede añadir un escaneo', () => {
   it('sin fichero, se puede', () => {
     expect(scanTargetProblem({ file_path: null })).toBeNull()
-    // Una ruta de solo espacios no es un fichero: es lo mismo que no tener ninguno,
-    // igual que lo lee `documentFileOffer`.
+    // A path of only spaces is not a file: it is the same as having none,
+    // exactly as `documentFileOffer` reads it.
     expect(scanTargetProblem({ file_path: '   ' })).toBeNull()
   })
 
   it('con fichero, no se sustituye, y se dice por qué y qué hacer', () => {
     const text = scanTargetProblem({ file_path: 'archivo/ar-arch-0001_k3m9p2qz.pdf' })
     expect(text).not.toBeNull()
-    // El motivo real y no un «no se puede»: las rutas del almacén son inmutables.
+    // The real reason and not a «cannot be done»: the store's paths are immutable.
     expect(text).toContain('no se sobrescriben')
-    // Y la salida: registrarlo como documento nuevo.
+    // And the way out: register it as a new document.
     expect(text).toContain('documento nuevo')
   })
 
   it('estar retirado no impide digitalizarlo', () => {
-    // Un expediente retirado del archivo sigue mereciendo su escaneo, y subirlo no lo
-    // devuelve a circulación.
+    // A file withdrawn from the archive still deserves its scan, and uploading it does not
+    // put it back in circulation.
     expect(scanTargetProblem({ file_path: null })).toBeNull()
     expect(documentRetiredNotice({ active: false })).not.toBeNull()
   })

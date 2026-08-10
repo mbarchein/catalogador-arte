@@ -50,7 +50,7 @@ function link(over: Partial<DocumentLinkRow> = {}): DocumentLinkRow {
   }
 }
 
-/** Un documento con los campos que se quieran cambiados, dentro de su enlace. */
+/** A document with whichever fields changed, inside its link. */
 function withDocument(over: Partial<NonNullable<DocumentLinkRow['document']>>): DocumentLinkRow {
   return link({ document: { ...link().document!, ...over } })
 }

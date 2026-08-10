@@ -72,10 +72,10 @@ describe('las columnas que pide el buscador', () => {
     expect(DOCUMENT_OPTION_COLUMNS).toContain('document_type:document_types(')
   })
 
-  /** Más estrecha que la del bloque a propósito: un buscador identifica, no pinta. */
+  /** Narrower than the block's on purpose: a finder identifies, it does not paint. */
   it('no arrastra las notas, la serie ni el lugar del papel', () => {
-    // `note` como columna suelta, que es la del documento: `date_note` sí viaja,
-    // porque es la fecha en palabras y es lo que se imprime (ADR-004).
+    // `note` as a standalone column, which is the document's: `date_note` does travel,
+    // because it is the date in words and it is what gets printed (ADR-004).
     expect(DOCUMENT_OPTION_COLUMNS).not.toMatch(/(^|[ ,])note([ ,)]|$)/)
     expect(DOCUMENT_OPTION_COLUMNS).not.toContain('archive_series')
     expect(DOCUMENT_OPTION_COLUMNS).not.toContain('physical_place_id')
@@ -161,7 +161,7 @@ describe('a quién se ofrece y a quién no', () => {
     expect(choice?.text).toBe(documentOptionText(option()))
   })
 
-  /** Los vínculos retirados cuentan: `document_artwork` los restaura, no los duplica. */
+  /** Withdrawn links count: `document_artwork` restores them, it does not duplicate them. */
   it('se considera enlazado también lo que está en la papelera', () => {
     const ids = linkedDocumentIds([link(), link({ id: 'link-2', document_id: 'doc-2', active: false })])
     expect(ids).toEqual(new Set(['doc-1', 'doc-2']))
@@ -194,9 +194,9 @@ describe('nunca una lista vacía sin explicación (RF-304)', () => {
   it('cuando todo lo que coincide ya está enlazado, se dice en vez de dejar la lista muerta', () => {
     const choices = rankDocumentOptions([option()], '', new Set(['doc-1']))
     expect(allLinkedText(choices)).toContain('ya enlazados con esta obra')
-    // Con algo elegible no se dice nada: sería ruido sobre una lista que funciona.
+    // With something selectable nothing is said: it would be noise over a list that works.
     expect(allLinkedText(rankDocumentOptions([option()], '', new Set()))).toBeNull()
-    // Y con la lista vacía tampoco: eso lo cuenta `noDocumentOptionsText`.
+    // And with the list empty, nothing either: `noDocumentOptionsText` tells that.
     expect(allLinkedText([])).toBeNull()
   })
 })
@@ -237,7 +237,7 @@ describe('«sin revisar» no es «no», y aquí manda al revés (RF-218)', () =>
     expect(linkBlockedReason('UNREVIEWED')).toBeNull()
     expect(linkBlockedReason('IN_PROGRESS')).toBeNull()
     expect(linkBlockedReason('COMPLETE')).toBeNull()
-    // Y sin saber el estado tampoco se bloquea nada: no saber no es un no.
+    // And without knowing the state nothing is blocked either: not knowing is not a no.
     expect(linkBlockedReason(null)).toBeNull()
   })
 })

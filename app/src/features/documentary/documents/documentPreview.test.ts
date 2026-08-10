@@ -33,13 +33,13 @@ describe('documentPreviewKind, qué se puede ver y qué solo se descarga', () =>
   })
 
   it('un TIFF no se ofrece, aunque sea una imagen: no lo pinta NINGÚN navegador', () => {
-    // Y es el formato de un escaneado de archivo de verdad, así que va a llegar.
+    // And it is the format of a real archive scan, so it is going to turn up.
     expect(documentPreviewKind({ file_path: 'archivo/x.tif', mime_type: 'image/tiff' })).toBeNull()
   })
 
   it('un HEIC tampoco: Safari lo pinta y Chrome no', () => {
-    // Un botón que funciona en un teléfono y no en el de al lado se deja de usar en los
-    // dos, y el fallo no se parece a un fallo.
+    // A button that works on one phone and not on the one next to it stops being used on
+    // both, and the failure does not look like a failure.
     expect(documentPreviewKind({ file_path: 'archivo/x.heic', mime_type: 'image/heic' })).toBeNull()
   })
 
@@ -78,8 +78,8 @@ describe('documentPreviewKind, cuando el tipo declarado no sirve', () => {
   })
 
   it('pero el tipo declarado MANDA sobre la extensión', () => {
-    // Un fichero que dice ser TIFF y se llama `.jpg` es más probablemente un TIFF
-    // renombrado que un JPEG mal declarado, y pintarlo daría la imagen rota.
+    // A file claiming to be TIFF and named `.jpg` is more likely a renamed TIFF
+    // than a badly declared JPEG, and painting it would give the broken image.
     expect(documentPreviewKind({ file_path: 'archivo/x.jpg', mime_type: 'image/tiff' })).toBeNull()
   })
 })

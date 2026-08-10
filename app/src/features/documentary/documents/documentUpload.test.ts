@@ -54,7 +54,7 @@ describe('el límite del bucket, medido y no supuesto (RF-408)', () => {
   })
 
   it('un expediente escaneado en blanco y negro cabe holgado', () => {
-    // ~200 páginas a 300 ppp en blanco y negro rondan los 12 MB.
+    // ~200 pages at 300 dpi in black and white come to around 12 MB.
     expect(documentFileProblem(picked({ size: 12 * 1_048_576 }))).toBeNull()
   })
 
@@ -66,7 +66,7 @@ describe('el límite del bucket, medido y no supuesto (RF-408)', () => {
     const problem = documentFileProblem(picked({ size: BUCKET_FILE_LIMIT_BYTES + 1 }))
     expect(problem).toContain('60,0 MB')
     expect(problem).toContain('blanco y negro')
-    // Y sin el número real del fichero la frase no sirve para decidir.
+    // And without the file's real number the sentence is of no use for deciding.
     expect(problem).toContain('«expediente 1985.pdf»')
   })
 
@@ -74,7 +74,7 @@ describe('el límite del bucket, medido y no supuesto (RF-408)', () => {
     expect(documentFileProblem(picked({ size: BUCKET_FILE_LIMIT_BYTES }))).toBeNull()
   })
 
-  /** `archive_documents_file_size_positive`: un fichero de cero bytes es una subida fallida. */
+  /** `archive_documents_file_size_positive`: a zero-byte file is a failed upload. */
   it('cero bytes es un escaneo que se cortó, y se dice así', () => {
     expect(documentFileProblem(picked({ size: 0 }))).toContain('vacío')
   })
@@ -116,8 +116,8 @@ describe('dónde aterriza el fichero, que NUNCA es donde están las fotografías
     )
     expect(path.startsWith(`${ARCHIVE_PREFIX}/`)).toBe(true)
     expect(path).toBe('archivo/recorte-sobre-ar-0001_aaaa1111.pdf')
-    // La ruta de una foto es «AR-0001/AR-0001_xxxx_master.jpg»: sin barra dentro del
-    // nombre, este fichero no puede caer en la carpeta de ninguna obra.
+    // A photo's path is «AR-0001/AR-0001_xxxx_master.jpg»: with no slash inside the
+    // name, this file cannot land in any artwork's folder.
     expect(path.slice(ARCHIVE_PREFIX.length + 1)).not.toContain('/')
   })
 
@@ -173,7 +173,7 @@ describe('la extensión, que decide con qué nombre se baja después (RF-411)', 
 })
 
 describe('las cuatro columnas del fichero, juntas o ninguna', () => {
-  /** `archive_documents_file_all_or_nothing`: media descripción de un fichero no existe. */
+  /** `archive_documents_file_all_or_nothing`: half a file description does not exist. */
   it('se construyen de una vez, así que nunca pueden viajar tres', () => {
     const columns = fileColumns('archivo/x_aaaa.pdf', picked(), new Date('2026-08-04T10:00:00Z'))
     expect(columns).toEqual({
@@ -185,7 +185,7 @@ describe('las cuatro columnas del fichero, juntas o ninguna', () => {
     expect(Object.values(columns).every((value) => value !== null)).toBe(true)
   })
 
-  /** `archive_documents_mime_type_shape` rechaza la cadena vacía. */
+  /** `archive_documents_mime_type_shape` rejects the empty string. */
   it('un fichero que el navegador no clasifica no deja la columna en blanco', () => {
     expect(mimeForFile(picked({ type: '' }))).toBe('application/octet-stream')
     expect(mimeForFile(picked({ type: '   ' }))).toBe('application/octet-stream')
@@ -237,7 +237,7 @@ describe('cuando el almacén dice no, medido contra el almacén local', () => {
   })
 })
 
-// ── El camino entero: subir, registrar, enlazar ───────────────
+// ── The whole path: upload, register, link ────────────────────
 
 function deps(over: Partial<UploadDocumentDeps> = {}) {
   const calls: string[] = []
@@ -307,7 +307,7 @@ describe('subir, registrar y enlazar, en ese orden (RF-408, RF-516)', () => {
     )
   })
 
-  /** RF-408: un documento que solo está en papel es un estado del archivo, no un error. */
+  /** RF-408: a document that exists only on paper is a state of the archive, not an error. */
   it('sin fichero no se sube nada y el documento queda «sin digitalizar»', async () => {
     const { calls, base } = deps()
     const outcome = await runDocumentUpload({ ...PLAN, file: null }, base)
@@ -371,7 +371,7 @@ describe('subir, registrar y enlazar, en ese orden (RF-408, RF-516)', () => {
     expect(!outcome.ok && outcome.problem).toContain('ya está en el archivo con su fichero')
     expect(!outcome.ok && outcome.problem).toContain('NO vuelvas a subirlo')
     expect(!outcome.ok && outcome.problem).toContain('Enlazar un documento del archivo')
-    // Y la frase de la base viaja tal cual: la escribió en español y para ella.
+    // And the base's sentence travels as is: it was written in Spanish and for her.
     expect(!outcome.ok && outcome.problem).toContain('consta investigada sin resultado')
   })
 })
@@ -400,7 +400,7 @@ describe('lo que se dice cuando ha funcionado', () => {
   })
 })
 
-// ── El escaneo que le faltaba a un documento ya registrado ────
+// ── The scan an already registered document was missing ───────
 
 /**
  * `runAddScan` es la mitad que le faltaba al alta: un documento registrado «sin
@@ -452,8 +452,8 @@ describe('añadir el escaneo a un documento que ya está en el archivo (RF-408)'
   })
 
   it('la ruta no lleva el identificador de la obra desde la que se sube', async () => {
-    // El documento es del archivo: uno enlazado con tres obras no puede tener tres
-    // nombres. Es la misma decisión que tomó la descarga.
+    // The document belongs to the archive: one linked to three artworks cannot have three
+    // names. It is the same decision the download took.
     const { calls, base } = scanDeps()
     await runAddScan(REGISTERED, picked(), base)
     expect(calls[0]).not.toContain('AR-0001')
@@ -466,8 +466,8 @@ describe('añadir el escaneo a un documento que ya está en el archivo (RF-408)'
     expect(outcome.ok).toBe(false)
     if (outcome.ok) return
     expect(outcome.problem).toContain('0 bytes')
-    // Y no se ha llamado a nada: en un almacén, subir para que le digan que no cuesta
-    // un cuarto de hora y el plan de datos de alguien.
+    // And nothing has been called: in a storeroom, uploading only to be told no costs
+    // a quarter of an hour and somebody's data plan.
     expect(calls).toEqual([])
   })
 
