@@ -1614,6 +1614,89 @@ export function ActionBar({ children, notice }: { children: ReactNode; notice?: 
   )
 }
 
+/**
+ * Los botones de una hoja, pegados a su borde inferior (RNF-106).
+ *
+ * El hermano de `ActionBar`, para las hojas que son un formulario. La hoja mide como
+ * mucho tres cuartos de pantalla y su contenido se desplaza dentro, así que un
+ * «Guardar» al final de siete campos se queda fuera igual que se quedaba fuera el de
+ * la ficha: se rellena, se busca el botón, no está, y lo que hay a mano es el fondo
+ * oscuro — que en un formulario ya no cierra, precisamente por esto.
+ *
+ * `sticky` y no `fixed`: lo que tiene que quedarse quieto es el pie **dentro de la
+ * hoja**, no en la ventana, y una hoja corta no debe llevar el pie despegado del
+ * final de su contenido. Los márgenes negativos deshacen el `p-4` de la hoja para
+ * que la franja llegue de un borde al otro; sin eso, el contenido se ve pasar por los
+ * cuatro puntos de los lados.
+ */
+export function SheetFooter({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="sticky -mx-4 mt-4 border-t border-stone-200 bg-white px-4 pt-3"
+      style={{
+        // Bajado exactamente el relleno inferior de la hoja, para que la franja
+        // llegue a su borde: con `bottom: 0` se quedaba flotando por encima y por
+        // ese hueco se veía pasar el campo siguiente, que es peor que no tener
+        // franja — parece que el formulario sigue debajo del botón de guardar.
+        bottom: 'calc(-1 * max(1rem, env(safe-area-inset-bottom)))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        // Y su sitio natural puesto donde se queda pegada, para que al llegar al
+        // final del formulario no dé un salto de un centímetro: es el mismo cuidado
+        // que se tuvo con la barra de la página.
+        marginBottom: 'calc(-1 * max(1rem, env(safe-area-inset-bottom)))',
+      }}
+    >
+      <div className="flex gap-2">{children}</div>
+    </div>
+  )
+}
+
+// ── El aviso flotante ────────────────────────────────────────
+
+/**
+ * La confirmación de algo que acaba de pasar, flotando arriba (RNF-106).
+ *
+ * ── POR QUÉ ARRIBA Y FLOTANDO ───────────────────────────────
+ *
+ * «Imagen principal actualizada» vivía al final de la tarjeta, debajo de todo el
+ * panel de datos: con la vista puesta en la fotografía —que es donde está el mando
+ * que se acaba de pulsar— aparecía fuera de la pantalla, así que la confirmación no
+ * confirmaba nada. Y **no puede quedarse en el hueco** ni desplazar el contenido:
+ * una línea que aparece y desaparece entre los campos mueve de sitio lo que se
+ * estaba mirando, que en un móvil es el dedo cayendo en el botón de al lado.
+ *
+ * ── Y POR QUÉ SE VA SOLA ────────────────────────────────────
+ *
+ * Porque no hay nada que hacer con ella. Un aviso que se queda hasta que alguien lo
+ * cierra convierte cada acción en dos, y a la tercera se deja de leer; entonces el
+ * que sí importaba tampoco se lee. Los segundos y el porqué de esos segundos están
+ * en `useAutoClear`. **Los errores no van aquí**: piden hacer algo, se quedan.
+ *
+ * `role="status"` y no `alert`: es una confirmación, y un `alert` interrumpe lo que
+ * el lector de pantalla esté leyendo para anunciar que algo ha ido bien.
+ */
+export function Toast({ children }: { children: ReactNode }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none fixed left-1/2 z-30 max-w-[92vw] -translate-x-1/2
+                 rounded-full bg-stone-900/90 px-4 py-2 text-center text-sm text-white
+                 shadow-lg backdrop-blur"
+      // Debajo de la cabecera, no encima: ahí están el «atrás» y el título de la
+      // pantalla, y taparlos cuatro segundos deja sin saber dónde se está. Que no
+      // reciba toques —`pointer-events-none`— es lo que salva al botón que quede
+      // debajo, pero un botón invisible tampoco se pulsa.
+      //
+      // 3.5rem es la altura de la cabecera; la franja segura del sistema la añade
+      // ella, así que aquí solo se suma.
+      style={{ top: 'calc(3.5rem + 0.5rem + env(safe-area-inset-top))' }}
+    >
+      {children}
+    </div>
+  )
+}
+
 // ── Password field with show/hide ────────────────────────────
 
 /**
