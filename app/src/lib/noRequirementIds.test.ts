@@ -2,37 +2,37 @@ import { globSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 /**
- * Ningún identificador de requisito llega a la pantalla.
+ * No requirement identifier reaches the screen.
  *
- * ── POR QUÉ ES UN TEST Y NO UNA REVISIÓN ────────────────────
+ * ── WHY IT IS A TEST AND NOT A REVIEW ───────────────────────
  *
- * `RF-503`, `RNF-106`, `ADR-004` son la forma de citar los documentos de este proyecto, y
- * están por todo el código y por todos los tests, que es donde tienen que estar: un test
- * que no dice qué requisito verifica no sirve para detectar un requisito sin cubrir.
+ * `RF-503`, `RNF-106`, `ADR-004` are the way of citing this project's documents, and they
+ * are all over the code and all over the tests, which is where they have to be: a test
+ * that does not say which requirement it verifies is of no use for detecting an uncovered requirement.
  *
- * Pero a quien cataloga no le dicen nada. Se colaron dos en la interfaz —el panel del
- * catálogo de una exposición y el pie de la hoja de gris, que además se IMPRIME— sin que
- * nadie lo notara, porque quien escribe el texto viene de leer el requisito y le parece
- * natural citarlo. Va a volver a pasar, y por eso esto se comprueba en vez de revisarse.
+ * But to whoever catalogues they say nothing. Two slipped into the interface —the panel of
+ * an exhibition's catalogue and the foot of the grey sheet, which is also PRINTED— without
+ * anybody noticing, because whoever writes the text comes from reading the requirement and finds it
+ * natural to cite it. It is going to happen again, and that is why this is checked instead of reviewed.
  *
- * ── QUÉ MIRA, Y QUÉ NO ──────────────────────────────────────
+ * ── WHAT IT LOOKS AT, AND WHAT IT DOES NOT ──────────────────
  *
- * Solo lo que llega a la pantalla: se quitan antes los comentarios —de bloque, de línea y
- * los de JSX, que son de bloque dentro de llaves— y los ficheros de test. Lo que queda es
- * código y literales, y ahí no debe haber ninguno.
+ * Only what reaches the screen: the comments are removed first —block, line and
+ * the JSX ones, which are block comments inside braces— and the test files. What is left is
+ * code and literals, and there must be none there.
  *
- * Y el `CHANGELOG.md`, porque desde que se lee dentro de la aplicación es texto de
- * interfaz como cualquier otro.
+ * And `CHANGELOG.md`, because since it is read inside the application it is interface
+ * text like any other.
  */
 
 /** `RF-`, `RNF-` and `ADR-` followed by a number. */
 const REQUIREMENT_ID = /\b(?:RF|RNF|ADR)-\d+/g
 
 /**
- * El fichero sin sus comentarios.
+ * The file without its comments.
  *
- * Los de bloque primero, que es lo que cubre los de JSX (`{/* … *␘/}`): quitar antes los
- * de línea rompería una URL con `//` dentro de un comentario de bloque.
+ * The block ones first, which is what covers the JSX ones (`{/* … *␘/}`): removing the
+ * line ones first would break a URL with `//` inside a block comment.
  */
 function withoutComments(source: string): string {
   return source

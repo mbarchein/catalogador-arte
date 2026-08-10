@@ -72,9 +72,9 @@ describe('lo que ya está al otro lado', () => {
   })
 
   it('es lo que impide que la barra vuelva a cero en cada tropiezo', () => {
-    // Al reintentar una parte se pierde ESA parte, no el fichero: lo anterior ya está
-    // aceptado por el almacén. Sin esto, cada corte devolvería el contador a cero y el
-    // número dejaría de decir nada.
+    // On retrying a part THAT part is lost, not the file: what came before is already
+    // accepted by the store. Without this, every break would return the counter to zero and the
+    // number would stop saying anything.
     const parts = planParts(19 * MB)
     const enElAire = 3
     const reintentoDesdeCero = bytesBefore(parts, enElAire) + 0

@@ -540,10 +540,10 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     await uploadShot('AR-0001', shotOf(master), { shotType: 'GENERAL', isIndex: false })
 
     const puts = api.puts.filter((p) => p.url.includes('_master'))
-    // Un solo PUT, a una ruta nueva, con el objeto que se recibió: la MISMA
-    // referencia. Un `new Blob([master])` pasaría un `toEqual` y ya sería otro
-    // fichero; un canvas por medio lo recomprimiría; «arreglarle» el EXIF o
-    // normalizarle la orientación cambiaría los bytes del documento de archivo.
+    // A single PUT, to a new path, with the object that was received: the SAME
+    // reference. A `new Blob([master])` would pass a `toEqual` and would already be another
+    // file; a canvas in between would recompress it; «fixing» its EXIF or
+    // normalising its orientation would change the archive document's bytes.
     expect(puts).toHaveLength(1)
     expect(puts[0]?.body).toBe(master)
     expect(puts[0]?.method).toBe('PUT')
@@ -554,10 +554,10 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
   })
 
   it('reintenta un envío que se corta, y vuelve a firmar cada vez', async () => {
-    // La incidencia que esto arregla, con su mensaje: «La conexión se ha cortado durante
-    // el envío», a mitad de un original de varios megas. No es una avería que reportar,
-    // es lo normal en un almacén — y sin reintento se pierde la fotografía entera,
-    // incluidos los doce segundos de generar la copia corregida.
+    // The incident this fixes, with its message: «La conexión se ha cortado durante
+    // el envío», halfway through an original of several megabytes. It is not a breakdown to report,
+    // it is the norm in a storeroom — and with no retry the whole photograph is lost,
+    // including the twelve seconds of generating the corrected copy.
     api.cutsBeforeSuccess = 2
     const master = masterOf()
     // Fake clock: between attempts it waits 2 s and then 6 s, which is right in a
@@ -577,10 +577,10 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     // The SAME object in all three: a retry cannot re-encode the archive
     // document on the way (ADR-002).
     expect(masterPuts.every((p) => p.body === master)).toBe(true)
-    // Y una firma nueva por intento. La de subida vale diez minutos desde que se emite,
-    // y el intento que acaba de fallar ha podido gastarse tres: reutilizar la URL haría
-    // que el reintento con más posibilidades de funcionar fuera el más propenso a que se
-    // lo rechacen por firma caducada, que se lee como un problema de permisos y no lo es.
+    // And a new signature per attempt. The upload one is valid for ten minutes from when it is issued,
+    // and the attempt that has just failed may have spent three: reusing the URL would make
+    // the retry with the best chance of working the most prone to being
+    // rejected for an expired signature, which reads as a permissions problem and is not one.
     expect(api.signed.filter((s) => s.path.includes('_master'))).toHaveLength(3)
     // The screen finds out which attempt it is on, or the counter drops from 80 % to 0 % on its own.
     expect(api.progress.filter((p) => p.step === 'master').map((p) => p.attempt)).toEqual([1, 2, 3])
@@ -613,9 +613,9 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
   })
 
   it('parte un fichero grande y lo termina con todas sus marcas (RNF-106)', async () => {
-    // Lo que pidió la usuaria: aprovechar lo ya subido cuando la red va mal. Un PUT
-    // único de 12 MB o llega entero o se pierde entero, así que un enlace que se cae
-    // cada pocos megas no termina nunca por muchos reintentos que se le den.
+    // What the user asked for: making use of what is already uploaded when the network is bad. A single
+    // 12 MB PUT either arrives whole or is lost whole, so a link that drops
+    // every few megabytes never finishes however many retries it is given.
     const master = bigMaster(12 * MiB)
     await uploadShot('AR-0001', shotOf(master), {
       shotType: 'GENERAL',
@@ -629,9 +629,9 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     expect(masterPuts).toHaveLength(3)
     expect(api.putParts.filter((n) => n !== undefined)).toEqual([1, 2, 3])
 
-    // Las partes cubren el fichero exactamente una vez. Si no, el almacén junta un
-    // objeto más corto que el original y lo da por bueno, que es lo peor que puede
-    // pasarle al documento de archivo porque no se nota después.
+    // The parts cover the file exactly once. Otherwise, the store assembles an
+    // object shorter than the original and takes it as good, which is the worst thing that can
+    // happen to the archive document because it is not noticed afterwards.
     const enviado = masterPuts.reduce((n, p) => n + ((p.body as Blob).size ?? 0), 0)
     expect(enviado).toBe(master.size)
 
@@ -713,10 +713,10 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
   })
 
   it('cuenta lo enviado de cada fichero grande, diciendo de cuál (RNF-106)', async () => {
-    // La avería que esto tapa: subir una foto con transformación son DOS ficheros de
-    // megabytes seguidos —el original y la copia corregida—, y la pantalla decía
-    // «Subiendo 1 de 1…» durante los dos. Sin saber por cuál iba, un envío que se corta
-    // a los dos minutos no se distingue de uno atascado, ni se puede contar después.
+    // The breakdown this covers: uploading a photo with a transformation is TWO files of
+    // megabytes in a row —the original and the corrected copy—, and the screen said
+    // «Subiendo 1 de 1…» during both. Without knowing which one it was on, a send that breaks off
+    // after two minutes cannot be told from a stuck one, nor can it be reported afterwards.
     const master = masterOf()
     await uploadShot(
       'AR-0001',
@@ -729,12 +729,12 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
       },
     )
 
-    // Los dos ficheros informan, y por separado: la miniatura y la copia de consulta
-    // van por la biblioteca de almacenamiento, que no dice nada, y meterlas en un total
-    // único daría una barra que nunca llega a su propio final.
-    // Los cuatro ficheros de una fotografía, y los cuatro dichos: las dos derivadas se
-    // anuncian juntas aunque no puedan contar bytes, porque callárselas es lo que las
-    // hacía parecer no subidas.
+    // Both files report, and separately: the thumbnail and the reference copy
+    // go through the storage library, which says nothing, and putting them in a single
+    // total would give a bar that never reaches its own end.
+    // A photograph's four files, and all four said: the two derivatives are
+    // announced together even though they cannot count bytes, because keeping quiet about them is what
+    // made them look not uploaded.
     expect(api.progress.map((p) => p.step)).toEqual(['derivatives', 'master', 'corrected'])
     expect(api.progress[0]?.total).toBeNull()
     expect(api.progress[1]?.total).toBe(master.size)
@@ -842,9 +842,9 @@ describe('uploadShot: la fecha del fichero, el tamaño y la procedencia (RF-416,
   })
 
   it('no deduce la procedencia de las dimensiones (RF-417)', async () => {
-    // 1080×2400 sin datos de cámara es lo que parece una captura de pantalla de un
-    // catálogo en línea, y parecerlo no es serlo: el proyecto ya decidió con
-    // `crop_source` no inventar el dato.
+    // 1080×2400 with no camera data is what looks like a screenshot of an
+    // online catalogue, and looking like it is not being it: the project already decided with
+    // `crop_source` not to invent the datum.
     await uploadShot('AR-0001', shotOf(masterOf(), { originalWidth: 1080, originalHeight: 2400 }), {
       shotType: 'GENERAL',
       isIndex: false,
@@ -912,10 +912,10 @@ describe('uploadShot: la copia corregida a resolución completa (RF-420)', () =>
   })
 
   it('registra la toma igualmente cuando la firma de la copia se rechaza', async () => {
-    // Es lo que pasa HOY: `sign-file` solo acepta rutas de máster y responde 400
-    // «ruta no válida para un máster». La corrección es el trabajo; la copia es un
-    // fichero derivado que se puede regenerar desde un ordenador, así que perder el
-    // trabajo para avisar de la pérdida del fichero sería el peor de los cambios.
+    // It is what happens TODAY: `sign-file` only accepts master paths and answers 400
+    // «ruta no válida para un máster». The correction is the work; the copy is a
+    // derived file that can be regenerated from a computer, so losing the
+    // work in order to report the file's loss would be the worst of changes.
     api.signMastersOnly = true
     const result = await uploadShot('AR-0001', shotOf(masterOf(), { edit: edited }), {
       shotType: 'GENERAL',
@@ -1016,14 +1016,14 @@ describe('saveCorrectedCopy (RF-420, ADR-010)', () => {
 })
 
 // ---------------------------------------------------------------------------
-// La fecha que el fichero trae dentro (RF-416)
+// The date the file carries inside (RF-416)
 // ---------------------------------------------------------------------------
 
 /**
- * Los ficheros se construyen en bytes, aquí, por lo mismo que en exif.test.ts: el
- * repositorio es público y los másteres que motivan esto están fuera. Cada caso monta
- * un JPEG de verdad —SOI, APP1 con `Exif\0\0`, cabecera TIFF y uno o dos
- * directorios— alrededor de la única etiqueta de la que habla.
+ * The files are built in bytes, here, for the same reason as in exif.test.ts: the
+ * repository is public and the masters that motivate this are outside it. Each case assembles
+ * a real JPEG —SOI, APP1 with `Exif\0\0`, TIFF header and one or two
+ * directories— around the single tag it speaks of.
  */
 const asciiZ = (text: string): Uint8Array => {
   const bytes = new Uint8Array(text.length + 1)
@@ -1140,9 +1140,9 @@ describe('readShotDate (RF-416)', () => {
   })
 
   it('devuelve nulo sin lanzar cuando no hay fecha que leer', async () => {
-    // Un JPEG sin EXIF, algo que no es un JPEG, y un fichero vacío. Los tres son
-    // «esta fotografía no dice cuándo se tomó», que la fila anota como nulo y la
-    // interfaz explica: nunca un hueco y nunca una fecha inventada.
+    // A JPEG with no EXIF, something that is not a JPEG, and an empty file. All three are
+    // «this photograph does not say when it was taken», which the row notes as null and the
+    // interface explains: never a gap and never an invented date.
     const bare = new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])])
     await expect(readShotDate(bare)).resolves.toBeNull()
     await expect(readShotDate(blobOf(pngBytes, 'image/png'))).resolves.toBeNull()
@@ -1150,9 +1150,9 @@ describe('readShotDate (RF-416)', () => {
   })
 
   it('no confunde la fecha de modificación del fichero con la de la toma', async () => {
-    // `File.lastModified` es la fecha en que se escribió el fichero; el teléfono la
-    // reescribe al copiar, descargar o compartir, y una toma rehidratada de la cola
-    // la trae del instante de la rehidratación.
+    // `File.lastModified` is the date the file was written; the phone
+    // rewrites it on copying, downloading or sharing, and a shot rehydrated from the queue
+    // brings it from the instant of the rehydration.
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], 'IMG_9.jpg', {
       type: 'image/jpeg',
       lastModified: Date.parse('2026-08-03T12:00:00Z'),
