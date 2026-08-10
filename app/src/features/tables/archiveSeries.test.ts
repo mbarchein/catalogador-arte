@@ -61,14 +61,14 @@ const ALBUMES = node({ id: 'f2', name: 'Álbumes' })
 const ROWS = [GALERIAS, ALBUMES, ENVIADAS, FONDO, RECIBIDAS]
 const TREE = buildSeriesTree(ROWS)
 
-// ── El árbol, que es el de lib/places con otro nombre ─────────
+// ── The tree, which is lib/places' under another name ─────────
 
 describe('el árbol de la clasificación (RF-515)', () => {
   it('los fondos son las raíces, con la clave nula que usa la base', () => {
     expect(TREE.childrenOf.get(null)?.map((series) => series.id)).toEqual(['f2', 'f1'])
   })
 
-  /** «Álbumes» va con las a y no después de la z, sea cual sea la colación de la base. */
+  /** «Álbumes» goes with the a's and not after the z, whatever the base's collation. */
   it('los hermanos salen ordenados en español', () => {
     expect(TREE.childrenOf.get(null)?.map((series) => series.name)).toEqual([
       'Álbumes',
@@ -80,7 +80,7 @@ describe('el árbol de la clasificación (RF-515)', () => {
     expect(TREE.byId.get('ss1')?.name).toBe('Galerías')
   })
 
-  /** Nunca un hueco: un nodo cuyo padre no está en la lista se ve como fondo. */
+  /** Never a gap: a node whose parent is not in the list is seen as a root. */
   it('una serie huérfana se muestra como fondo en vez de desaparecer', () => {
     const tree = buildSeriesTree([node({ id: 'x', parent_id: 'no-existe', name: 'Suelta' })])
     expect(tree.childrenOf.get(null)?.map((series) => series.id)).toEqual(['x'])
@@ -123,7 +123,7 @@ describe('el árbol de la clasificación (RF-515)', () => {
     expect(seriesDepth(TREE, 'ss1')).toBe(2)
   })
 
-  /** −1 para «ninguno», para que el nivel de un hijo sea siempre padre + 1. */
+  /** −1 for «none», so that a child's level is always parent + 1. */
   it('sin padre el nivel es −1, así que el primer nivel no es un caso especial', () => {
     expect(seriesDepth(TREE, null)).toBe(-1)
     expect(seriesDepth(TREE, 'no-existe')).toBe(-1)
@@ -137,7 +137,7 @@ describe('el árbol de la clasificación (RF-515)', () => {
   })
 })
 
-// ── La clave de comparación, gemela de los dos índices ────────
+// ── The comparison key, twin of the two indexes ───────────────
 
 describe('la clave de comparación de un nombre', () => {
   it('no distingue mayúsculas ni tildes, como los dos índices únicos', () => {
@@ -181,7 +181,7 @@ describe('añadir una serie (RF-515, RF-901)', () => {
     })
   })
 
-  /** Nada se borra (RF-901): escribir el nombre de una retirada es querer que vuelva. */
+  /** Nothing is deleted (RF-901): writing the name of a withdrawn one means wanting it back. */
   it('el nombre de una retirada la recupera en vez de fallar por duplicado', () => {
     expect(planSeriesAddition(TREE, 'f1', 'Cartas enviadas')).toEqual({
       action: 'restore',
@@ -189,7 +189,7 @@ describe('añadir una serie (RF-515, RF-901)', () => {
     })
   })
 
-  /** Los dos índices son parciales: la unicidad es entre hermanos, no global. */
+  /** Both indexes are partial: uniqueness is among siblings, not global. */
   it('el mismo nombre en otro padre es otra serie, y se crea', () => {
     expect(planSeriesAddition(TREE, 'f2', 'Cartas recibidas')).toMatchObject({ action: 'insert' })
   })
@@ -207,7 +207,7 @@ describe('añadir una serie (RF-515, RF-901)', () => {
     expect(planSeriesAddition(tree, null, 'Nineces')).toMatchObject({ action: 'insert' })
   })
 
-  /** Aquí el nombre NO es una ruta: la coma es un carácter y el padre se elige. */
+  /** Here the name is NOT a path: the comma is a character and the parent is chosen. */
   it('las comas del nombre se guardan, no abren niveles', () => {
     expect(planSeriesAddition(TREE, 'f1', 'Cartas, telegramas y postales')).toEqual({
       action: 'insert',
@@ -259,7 +259,7 @@ describe('el botón de añadir', () => {
     expect(canAddSeries(TREE, null, 'Prensa')).toBe(true)
   })
 
-  /** Una serie que otra sesión movió o retiró mientras el formulario estaba a medias. */
+  /** A series another session moved or withdrew while the form was half-done. */
   it('tampoco si la serie elegida ya no está: la base contestaría con una clave ajena', () => {
     expect(canAddSeries(TREE, 'se-fue', 'Prensa')).toBe(false)
     expect(canAddSeries(TREE, 'f1', 'Prensa')).toBe(true)
@@ -274,7 +274,7 @@ describe('renombrar una serie (RF-515, ADR-006)', () => {
     expect(seriesRenameProblem({ action: 'blank' })).toBe('El nombre no puede quedar vacío')
   })
 
-  /** Abrir el lápiz y guardar sin tocar nada no es una escritura ni una fila de auditoría. */
+  /** Opening the pencil and saving without touching anything is neither a write nor an audit row. */
   it('el mismo nombre no escribe nada', () => {
     expect(planSeriesRename(TREE, 's1', 'Cartas recibidas')).toEqual({ action: 'unchanged' })
     expect(planSeriesRename(TREE, 's1', ' Cartas recibidas ')).toEqual({ action: 'unchanged' })
@@ -304,7 +304,7 @@ describe('renombrar una serie (RF-515, ADR-006)', () => {
     expect(planSeriesRename(TREE, 's1', 'Álbumes')).toMatchObject({ action: 'rename' })
   })
 
-  /** Copia desfasada: contesta la base, que es la que sabe, con «no se ha guardado nada». */
+  /** Stale copy: the base answers, which is the one that knows, with «no se ha guardado nada». */
   it('un nodo que ya no está en la lista se manda igual y decide la base', () => {
     expect(planSeriesRename(TREE, 'se-fue', 'Prensa')).toEqual({
       action: 'rename',
@@ -360,7 +360,7 @@ describe('mover una serie (RF-515, sin ciclos)', () => {
   })
 })
 
-// ── El nombre que ya tiene otra ───────────────────────────────
+// ── The name another one already has ──────────────────────────
 
 describe('la frase del nombre repetido', () => {
   it('dice quién lo tiene y que las mayúsculas y las tildes no cuentan', () => {
@@ -369,7 +369,7 @@ describe('la frase del nombre repetido', () => {
     expect(text).toContain('Las mayúsculas y las tildes no cuentan')
   })
 
-  /** Recuperar una retirada trae lo que tenía dentro; crear una segunda, no. */
+  /** Recovering a withdrawn one brings back what it had inside; creating a second one does not. */
   it('si la que lo tiene está retirada, manda a recuperarla', () => {
     expect(takenText(ENVIADAS, 'add')).toContain('recupérala en vez de crear una segunda')
   })
@@ -383,7 +383,7 @@ describe('la frase del nombre repetido', () => {
   })
 })
 
-// ── Lo que contesta la base ──────────────────────────────────
+// ── What the base answers ────────────────────────────────────
 
 describe('lo que contesta la base, traducido (RF-1106)', () => {
   /**
@@ -511,7 +511,7 @@ describe('lo que contesta la base, traducido (RF-1106)', () => {
     )
   })
 
-  /** Inventarle una frase amable a un fallo desconocido esconde la única pista que hay. */
+  /** Inventing a kind sentence for an unknown failure hides the only clue there is. */
   it('lo imprevisto se enmarca conservando lo que dijo la base', () => {
     expect(describeArchiveSeriesFailure('load', { code: 'XX000', message: 'algo raro' })).toBe(
       'No se ha podido cargar la clasificación archivística: algo raro',
@@ -519,12 +519,12 @@ describe('lo que contesta la base, traducido (RF-1106)', () => {
   })
 })
 
-// ── Cuántos hay dentro, y dónde mirarlos ─────────────────────
+// ── How many are inside, and where to look at them ───────────
 
 describe('cuánto tiene dentro una serie que no se deja retirar (RF-515)', () => {
   const nothing = { subseries: [], subseriesCount: 0, documents: [], documentCount: 0 }
 
-  /** Después de la negativa, «nada» significa que alguien la vació entre medias. */
+  /** After the refusal, «nothing» means somebody emptied it in the meantime. */
   it('si no hay nada dentro, no se dice nada', () => {
     expect(describeSeriesContents(nothing)).toBeNull()
   })
@@ -565,7 +565,7 @@ describe('cuánto tiene dentro una serie que no se deja retirar (RF-515)', () =>
     ).toContain('Tiene 3 documentos: «A», «B» y «C».')
   })
 
-  /** Doscientos documentos son otra tarde: por eso el número es el de la base y no el de la lista. */
+  /** Two hundred documents are another afternoon: that is why the number is the base's and not the list's. */
   it('con muchos, se nombran los primeros y se cuenta el resto', () => {
     expect(
       describeSeriesContents({
@@ -623,7 +623,7 @@ describe('cuánto tiene dentro una serie que no se deja retirar (RF-515)', () =>
     )
   })
 
-  /** El recuento viene de la base y la lista puede no llegar (una carrera, un permiso). */
+  /** The count comes from the base and the list may not arrive (a race, a permission). */
   it('si hay recuento pero no nombres, se dice el número a secas', () => {
     expect(describeSeriesContents({ ...nothing, subseriesCount: 4 })).toBe(
       'Tiene 4 series dentro.',
@@ -660,7 +660,7 @@ describe('la respuesta completa a un «Retirar» que la base rechaza', () => {
     expect(text).toContain('Tiene 3 documentos: «AR-0001 · Carta» y 2 más.')
   })
 
-  /** La frase de la base sola sigue siendo una respuesta completa. */
+  /** The base's sentence on its own is still a complete answer. */
   it('si no se ha podido preguntar cuántos, la negativa se muestra sola', () => {
     expect(retireRefusalText(refusal, null)).toBe(
       'No se puede retirar una serie que todavía tiene documentos dentro. Mueve antes los documentos a otra serie.',
@@ -681,7 +681,7 @@ describe('la respuesta completa a un «Retirar» que la base rechaza', () => {
   })
 })
 
-// ── Lo que dice la pantalla sobre la lista ───────────────────
+// ── What the screen says about the list ──────────────────────
 
 describe('el recuento de la clasificación', () => {
   it('sin nada, no hay recuento: habla el estado vacío', () => {
@@ -725,7 +725,7 @@ describe('lo que dice una lista sin filas (RF-515)', () => {
     expect(seriesListNotice({ loading: false, error: 'no hay conexión', count: 0 })).toBeNull()
   })
 
-  /** RF-515: la tabla nace vacía a propósito, así que este texto es la pantalla entera. */
+  /** RF-515: the table is born empty on purpose, so this text is the whole screen. */
   it('vacía de verdad, explica qué es la clasificación y cómo se empieza', () => {
     const text = seriesListNotice({ loading: false, error: null, count: 0 })
     expect(text).toContain('fondos, series y subseries')

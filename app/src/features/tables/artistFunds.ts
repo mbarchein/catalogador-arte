@@ -31,24 +31,24 @@
 
 import type { ArtistFund } from '../../lib/types'
 
-/** Un fondo como lo lee y lo corrige esta pantalla. */
+/** A fund as this screen reads and corrects it. */
 export interface ArtistFundEntry {
   id: string
-  /** El valor del enumerado. Legado, inmutable, y no se enseña. */
+  /** The enum's value. Legacy, immutable, and not shown. */
   code: ArtistFund
-  /** El prefijo de los identificadores. Se enseña porque explica el fondo; no se edita. */
+  /** The identifiers' prefix. Shown because it explains the fund; not editable. */
   prefix: string
   name: string
   active: boolean
   hideArtworks: boolean
 }
 
-/** El orden en que se leen: por prefijo, que es como están numeradas las obras. */
+/** The order they are read in: by prefix, which is how the artworks are numbered. */
 export function sortFunds(entries: readonly ArtistFundEntry[]): ArtistFundEntry[] {
   return entries.slice().sort((a, b) => a.prefix.localeCompare(b.prefix, 'es'))
 }
 
-/** Lo que se lee bajo el nombre de cada fondo: su prefijo, que es lo que lo identifica. */
+/** What is read under each fund's name: its prefix, which is what identifies it. */
 export function fundPrefixText(prefix: string): string {
   return `Obras ${prefix}-0001, ${prefix}-0002…`
 }
@@ -104,7 +104,7 @@ export function retireFundBlockedReason(
   )
 }
 
-/** Lo que se dice tras cada cambio, nombrando el fondo. */
+/** What is said after each change, naming the fund. */
 export function fundRenamedNotice(name: string): string {
   return `El fondo se llama ahora «${name}». Lo ven todas sus obras.`
 }
@@ -133,10 +133,10 @@ export function fundHiddenNotice(name: string, hidden: boolean): string {
  */
 export const HIDDEN_FUND_BADGE = 'Apartado'
 
-/** Lo que se lee bajo el nombre del fondo apartado, en esa misma fila. */
+/** What is read under the name of the fund set aside, in that same row. */
 export const HIDDEN_FUND_FILTER_HINT = 'Sus obras no salen si no lo marcas'
 
-/** Las filas del filtro de fondo, con el apartado señalado. */
+/** The rows of the fund filter, with the one set aside marked. */
 export function fundFilterOptions(
   entries: readonly ArtistFundEntry[],
 ): { value: ArtistFund; text: string; badge?: string; hint?: string }[] {
@@ -149,7 +149,7 @@ export function fundFilterOptions(
   }))
 }
 
-/** Los fondos que se ofrecen para elegir: los activos, más el que la fila ya tenga. */
+/** The funds offered to choose from: the active ones, plus whichever the row already had. */
 export function offeredFunds(
   entries: readonly ArtistFundEntry[],
   current?: ArtistFund | null,

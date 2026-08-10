@@ -35,7 +35,7 @@ function venue(over: Partial<ExhibitionVenue> = {}): ExhibitionVenue {
   }
 }
 
-// ── El sitio de la sede ──────────────────────────────────────
+// ── The venue's place ────────────────────────────────────────
 
 describe('el sitio de una sede', () => {
   it('se lee «localidad, país»', () => {
@@ -67,10 +67,10 @@ describe('el sitio de una sede', () => {
   })
 })
 
-// ── La clave de comparación ──────────────────────────────────
+// ── The comparison key ───────────────────────────────────────
 
 describe('la clave de comparación de una sede', () => {
-  /** Es el gemelo de `place_key(name), place_key(locality)` del índice único. */
+  /** It is the twin of the unique index's `place_key(name), place_key(locality)`. */
   it('ignora mayúsculas y tildes, en el nombre y en la localidad', () => {
     expect(venueKey({ name: 'Cása de Cultura', locality: 'Badajóz' })).toBe(
       venueKey({ name: 'casa de cultura', locality: 'BADAJOZ' }),
@@ -99,7 +99,7 @@ describe('la clave de comparación de una sede', () => {
     )
   })
 
-  /** Sin separador imposible, «Casa, de Cultura»/«Zafra» chocaría con «Casa»/«de Cultura, Zafra». */
+  /** Without an impossible separator, «Casa, de Cultura»/«Zafra» would clash with «Casa»/«de Cultura, Zafra». */
   it('el nombre y la localidad no se confunden entre sí', () => {
     expect(venueKey({ name: 'Casa de Cultura', locality: 'Zafra' })).not.toBe(
       venueKey({ name: 'Casa', locality: 'de CulturaZafra' }),
@@ -107,7 +107,7 @@ describe('la clave de comparación de una sede', () => {
   })
 })
 
-// ── El orden de la lista ─────────────────────────────────────
+// ── The list's order ─────────────────────────────────────────
 
 describe('el orden de la lista de sedes', () => {
   it('es por nombre en es-ES, con las tildes en su sitio y no detrás de la z', () => {
@@ -128,7 +128,7 @@ describe('el orden de la lista de sedes', () => {
     expect(sortVenues(rows).map((row) => row.id)).toEqual(['b', 'm', 'z'])
   })
 
-  /** RF-901: la retirada se ve gris donde estaba, no escondida al final. */
+  /** RF-901: the withdrawn one is seen grey where it was, not hidden at the end. */
   it('las retiradas no se van al fondo: se buscan donde están', () => {
     const rows = [
       venue({ id: 'b', name: 'Bilbao, sala de' }),
@@ -144,10 +144,10 @@ describe('el orden de la lista de sedes', () => {
   })
 })
 
-// ── Lo que la base exige antes de escribir ───────────────────
+// ── What the base requires before writing ────────────────────
 
 describe('lo que impide escribir una sede', () => {
-  /** `exhibition_venues_name_not_blank`: un nombre en blanco no sitúa nada. */
+  /** `exhibition_venues_name_not_blank`: a blank name locates nothing. */
   it('el nombre en blanco', () => {
     expect(venueDraftProblem({ ...emptyVenueDraft(), name: '   ' })).toBe(
       'Escribe el nombre de la sede',
@@ -251,7 +251,7 @@ describe('añadir una sede', () => {
     expect(plan.action === 'restore' && plan.venue.id).toBe('v7')
   })
 
-  /** RF-512: el mismo nombre en otro pueblo es otra sede, y la base la acepta. */
+  /** RF-512: the same name in another town is another venue, and the base accepts it. */
   it('la misma casa de cultura en otro pueblo es una sede nueva', () => {
     const plan = planVenueAddition([venue({ locality: 'Zafra' })], {
       name: 'Casa de Cultura',
@@ -262,7 +262,7 @@ describe('añadir una sede', () => {
     expect(plan.action).toBe('insert')
   })
 
-  /** El país no entra en el índice único: no distingue dos sedes. */
+  /** The country does not enter the unique index: it does not tell two venues apart. */
   it('el país no convierte una sede repetida en una sede nueva', () => {
     const plan = planVenueAddition([venue({ id: 'v1', country: 'España' })], {
       name: 'Casa de Cultura',
@@ -285,7 +285,7 @@ describe('guardar una sede editada', () => {
     })
   })
 
-  /** Abrir una fila, leerla y cerrarla no escribe: gastaría petición y recarga para nada. */
+  /** Opening a row, reading it and closing it does not write: it would spend a request and a reload for nothing. */
   it('sin cambios no se pide nada a la base', () => {
     const rows = [venue({ note: 'Cerró en 1988' })]
     expect(planVenueEdit(rows, 'v1', venueDraft(rows[0] as ExhibitionVenue))).toEqual({
@@ -309,7 +309,7 @@ describe('guardar una sede editada', () => {
     })
   })
 
-  /** Cambiar solo las tildes del nombre no choca con la propia fila. */
+  /** Changing only the name's accents does not clash with the row itself. */
   it('ponerle las tildes al nombre no se lee como un duplicado de sí misma', () => {
     const rows = [venue({ name: 'galeria rayuela' })]
     const plan = planVenueEdit(rows, 'v1', {
@@ -374,7 +374,7 @@ describe('guardar una sede editada', () => {
     )
   })
 
-  /** RF-512: mudar la sede de pueblo la separa de la homónima, y es legítimo. */
+  /** RF-512: moving the venue to another town separates it from its namesake, and it is legitimate. */
   it('mover una sede a otra localidad deja de chocar con su homónima', () => {
     const rows = [
       venue({ id: 'v1', name: 'Casa de Cultura', locality: 'Zafra' }),

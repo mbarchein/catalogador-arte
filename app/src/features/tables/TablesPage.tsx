@@ -42,8 +42,8 @@ import { ChevronRightIcon, LoadingNotice } from '../../components/ui'
  */
 export function TablesPage() {
   const access = useEditingAccess()
-  // La espera importa: el rol llega después de la sesión, así que decidir en el
-  // primer render echaría a quien sí puede. Ver useEditingAccess.
+  // The wait matters: the role arrives after the session, so deciding on the
+  // first render would throw out whoever can. See useEditingAccess.
   if (access === 'loading') return <LoadingNotice />
   if (access === 'denied') return <Navigate to="/" replace />
 

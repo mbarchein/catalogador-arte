@@ -44,8 +44,8 @@ describe('el orden y lo que identifica a un fondo', () => {
   })
 
   it('el prefijo se explica con la forma de los identificadores', () => {
-    // Es lo que se lee en la etiqueta de la obra que se tiene delante, y explica
-    // qué fondo es esto mejor que su nombre.
+    // It is what is read on the label of the artwork in front of you, and it explains
+    // which fund this is better than its name.
     expect(fundPrefixText('AR')).toBe('Obras AR-0001, AR-0002…')
   })
 })
@@ -80,8 +80,8 @@ describe('el subtexto cuenta el estado en el que se está', () => {
 
 describe('no quedarse sin fondos', () => {
   it('el último activo no se puede retirar, y se dice antes de pulsar', () => {
-    // La base lo rechaza, pero quien cataloga está de pie: un viaje de ida y
-    // vuelta para que le digan que no es peor que un botón que se explica.
+    // The base rejects it, but whoever catalogues is on their feet: a round trip
+    // just to be told no is worse than a button that explains itself.
     const only = fund({ id: '1' })
     const retired = fund({ id: '2', active: false })
     const said = retireFundBlockedReason(only, [only, retired]) ?? ''
@@ -109,8 +109,8 @@ describe('lo que se ofrece para elegir', () => {
   })
 
   it('más el que la ficha ya tenga, aunque esté retirado', () => {
-    // Sin esto, abrir una obra del fondo retirado dejaría el selector sin su valor
-    // y guardar la cambiaría de fondo sin que nadie lo pidiera.
+    // Without this, opening an artwork of the withdrawn fund would leave the selector without its value
+    // and saving would change its fund without anybody asking.
     const a = fund({ id: '1' })
     const b = fund({ id: '2', code: 'TEST', active: false })
     expect(offeredFunds([a, b], 'TEST').map((f) => f.id)).toEqual(['1', '2'])
@@ -147,7 +147,7 @@ describe('el filtro señala el fondo apartado', () => {
   })
 
   it('el nombre que se enseña es el de la tabla, no el escrito por dentro', () => {
-    // Es lo que hace que renombrar un fondo se vea también aquí.
+    // It is what makes renaming a fund show up here too.
     expect(fundFilterOptions([fund({ name: 'Nombre corregido' })])[0]!.text).toBe(
       'Nombre corregido',
     )
