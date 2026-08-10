@@ -1,9 +1,9 @@
--- Cuánto ocupa el catálogo, y quién puede preguntarlo (RF-1202, RF-106).
+-- How much the catalogue takes up, and who can ask (RF-1202, RF-106).
 --
--- Lo que se fija aquí es lo que hace peligrosa a una función `security definer`:
--- que dentro comprueba el permiso. El privilegio de ejecución no distingue roles
--- —o se concede o no—, así que sin esa comprobación un Lector leería el catálogo
--- del servidor y las filas del almacén con la llave del propietario puesta.
+-- What is pinned down here is what makes a `security definer` function dangerous:
+-- that it checks the permission inside. The execution privilege does not distinguish roles
+-- —either it is granted or it is not—, so without that check a Reader would read the server's
+-- catalogue and the store's rows with the owner's key in place.
 \set ON_ERROR_STOP on
 begin;
 

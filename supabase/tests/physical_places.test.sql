@@ -123,15 +123,15 @@ begin
     raise exception 'FAIL: el renombrado no ha cuajado';
   end if;
 
-  -- Y una raíz puede pasar a ser hija de otra, que es la reorganización que se
-  -- espera cuando el estudio se ordene.
+  -- And a root can become another's child, which is the reorganisation
+  -- expected when the studio gets tidied.
   select id into v_raiz from public.physical_places where name = 'Villafranca de los Barros';
   update public.physical_places set parent_id = v_raiz
    where name = 'Museo de Bellas Artes de Badajoz (MUBA)';
   raise notice 'OK: renombrar es un update, y una raíz puede pasar a ser hija';
 end $$;
 
--- ── 6. Un lugar con cosas dentro no se retira ────────────────
+-- ── 6. A place with things inside is not withdrawn ───────────
 do $$
 declare v_padre uuid;
 begin
@@ -144,7 +144,7 @@ begin
   end;
 end $$;
 
--- ── 7. La baja la sella la base, y es reversible ─────────────
+-- ── 7. The withdrawal is stamped by the base, and it is reversible ─
 do $$
 declare v_id uuid; v_cuando timestamptz; v_quien uuid;
 begin
@@ -168,7 +168,7 @@ begin
   raise notice 'OK: la baja sella quién y cuándo, y restaurar lo deshace';
 end $$;
 
--- ── 8. Nadie borra de verdad ─────────────────────────────────
+-- ── 8. Nobody really deletes ─────────────────────────────────
 do $$
 begin
   if exists (select 1 from pg_policies
@@ -182,10 +182,10 @@ begin
   raise notice 'OK: retirar es un update; borrar no está concedido a nadie (RF-901)';
 end $$;
 
--- ── 9. Quién puede qué ───────────────────────────────────────
--- Renombrar, mover y retirar son del Catalogador: el estudio está en
--- reordenación y esperar a un administrador para renombrar una balda no es
--- viable. El Lector ve el árbol porque etiqueta la ficha y alimenta el filtro.
+-- ── 9. Who can do what ───────────────────────────────────────
+-- Renaming, moving and withdrawing belong to the Cataloguer: the studio is being
+-- reorganised and waiting for an administrator to rename a shelf is not
+-- viable. The Reader sees the tree because it labels the record and feeds the filter.
 do $$
 declare v_visibles int;
 begin

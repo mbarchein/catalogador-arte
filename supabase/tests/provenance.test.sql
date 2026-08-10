@@ -1,24 +1,24 @@
--- RF-509: la procedencia es una secuencia ordenada de eventos, no un campo.
--- RF-510: el relato narrativo y la cadena estructurada conviven sin pisarse.
--- RF-511: el titular de derechos es una relación, y una parte que sostiene una
---         cadena no se retira (revisa RF-905).
--- RF-218: «Sin revisar» no es «no» llevado del campo al bloque documental.
--- RF-517, RF-901, RF-902: un eslabón se retira, no se borra, y la baja deja traza.
--- RF-111, RF-113: la tabla nace cerrada y nadie tiene DELETE.
--- ADR-004: la fecha estructurada, con la única diferencia que este grupo cambia.
+-- RF-509: the provenance is an ordered sequence of events, not a field.
+-- RF-510: the narrative account and the structured chain coexist without treading on each other.
+-- RF-511: the rights holder is a relationship, and a party that holds up a
+--         chain is not withdrawn (revises RF-905).
+-- RF-218: «Sin revisar» is not «no», carried from the field to the documentary block.
+-- RF-517, RF-901, RF-902: a link is withdrawn, not deleted, and the withdrawal leaves a trace.
+-- RF-111, RF-113: the table is born closed and nobody has DELETE.
+-- ADR-004: the structured date, with the only difference this group changes.
 --
--- Lo que se comprueba es lo que el cliente no debe volver a comprobar: que un
--- eslabón dice de quién habla, que el orden es de la catalogadora y se rehace
--- entero o no se rehace, que los tres enumerados no admiten texto libre, que un
--- año imposible no entra, que un eslabón comprado y vendido el mismo año SÍ
--- entra —y que la obra sigue sin admitirlo—, y que la columna de estado de
--- investigación no puede mentir por ninguna de sus dos puertas.
+-- What is checked is what the client must not check again: that a
+-- link says whom it speaks of, that the order is the cataloguer's and is redone
+-- whole or is not redone, that the three enums admit no free text, that an
+-- impossible year does not go in, that a link bought and sold in the same year DOES
+-- go in —and that the artwork still does not admit it—, and that the research-state
+-- column cannot lie through either of its two doors.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
--- Un catalogador, un lector, dos obras y dos partes. Los perfiles los crea el
--- trigger de auth.users.
+-- One cataloguer, one reader, two artworks and two parties. The profiles are created by the
+-- auth.users trigger.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'cat-procedencia@test.local'),
   ('00000000-0000-0000-0000-0000000000d2', 'lec-procedencia@test.local');
@@ -32,14 +32,14 @@ insert into public.artworks (catalog_id, artist, title, attributed_title) values
 insert into public.parties (id, party_type, name) values
   ('00000000-0000-0000-0000-0000000000e1', 'INSTITUTION', 'Galería de prueba de procedencia'),
   ('00000000-0000-0000-0000-0000000000e2', 'PERSON',      'Coleccionista de prueba'),
-  -- Titular de derechos que NO aparece en ninguna cadena: es el caso de RF-511
-  -- —los derechos pueden no ir con la posesión— y además es lo que permite
-  -- comprobar las dos ramas del guardarraíl por separado.
+  -- A rights holder that does NOT appear in any chain: it is RF-511's case
+  -- —the rights may not go with possession— and besides it is what allows
+  -- checking the guardrail's two branches separately.
   ('00000000-0000-0000-0000-0000000000e3', 'PERSON',      'Heredera de prueba');
 
--- ── 1. Un eslabón mínimo entra ───────────────────────────────
--- Lo que se sabe la primera vez que un nombre aparece en un catálogo de 1985: de
--- quién se habla, y nada más. Todo lo demás nace explícito y pendiente.
+-- ── 1. A minimal link goes in ────────────────────────────────
+-- What is known the first time a name appears in a 1985 catalogue: whom
+-- it speaks of, and nothing else. Everything else is born explicit and pending.
 do $$
 declare v_fila public.provenance_events%rowtype;
 begin
@@ -62,11 +62,11 @@ begin
   raise notice 'OK: un eslabón mínimo entra y lo pendiente queda pendiente (RF-509, RF-205)';
 end $$;
 
--- ── 2. Un eslabón dice de quién habla ────────────────────────
--- Con ficha o sin ella: «Colección privada, España» y «colección desconocida»
--- son eslabones legítimos sin parte detrás, y por eso `party_id` es nulo a
--- propósito. Lo que no existe es un eslabón anónimo que además ocupa una
--- posición: una cadena con un hueco es un documento falseado.
+-- ── 2. A link says whom it speaks of ─────────────────────────
+-- With a record or without one: «Colección privada, España» and «colección desconocida»
+-- are legitimate links with no party behind them, and that is why `party_id` is null on
+-- purpose. What does not exist is an anonymous link that also occupies a
+-- position: a chain with a gap is a falsified document.
 do $$
 begin
   begin
@@ -81,9 +81,9 @@ begin
   raise notice 'OK: un eslabón sin ficha detrás es legítimo (v11: «Colección privada, [país]»)';
 end $$;
 
--- ── 3. El orden lo pone la catalogadora ──────────────────────
--- Manual y no derivado de las fechas: la mitad de los eslabones de un catálogo
--- razonado no tienen año conocido, y un orden derivado de nulos no es un orden.
+-- ── 3. The order is set by the cataloguer ────────────────────
+-- Manual and not derived from the dates: half the links of a catalogue
+-- raisonné have no known year, and an order derived from nulls is not an order.
 do $$
 declare v_orden integer[];
 begin
@@ -96,7 +96,7 @@ begin
     raise exception 'FAIL: los eslabones no se numeraron por orden de llegada: %', v_orden;
   end if;
 
-  -- Y el orden es de cada obra: el primero de otra empieza en 1.
+  -- And the order belongs to each artwork: another's first one starts at 1.
   insert into public.provenance_events (catalog_id, party_note)
   values ('AR-9701', 'colección desconocida');
   if (select position from public.provenance_events where catalog_id = 'AR-9701') <> 1 then
@@ -105,14 +105,14 @@ begin
   raise notice 'OK: cada eslabón nuevo se coloca al final de la cadena de su obra';
 end $$;
 
--- ── 4. Rehacer el orden es todo o nada ───────────────────────
+-- ── 4. Redoing the order is all or nothing ───────────────────
 --
--- El test NO cambia de rol a `authenticated`, al contrario que el de las
--- fotografías, y es a propósito: las políticas de esta tabla las escribe la
--- migración siguiente, así que con RLS activado y sin política un rol con sesión
--- no vería ni una fila y la función fallaría por no encontrar la cadena, no por
--- lo que aquí se comprueba. Lo que sí se fija es la sesión, que es de donde
--- `can_edit()` saca el papel de quien llama.
+-- The test does NOT change role to `authenticated`, unlike the photographs'
+-- one, and it is on purpose: this table's policies are written by the
+-- next migration, so with RLS enabled and no policy a role with a session
+-- would not see a single row and the function would fail for not finding the chain, not for
+-- what is checked here. What is set is the session, which is where
+-- `can_edit()` gets the caller's role from.
 do $$
 declare
   v_ids uuid[];
@@ -147,7 +147,7 @@ begin
     from public.provenance_events where catalog_id = 'AR-9700' and active;
   v_antes := v_ids;
 
-  -- Falta uno: media cadena ordenada se lee como un orden y no lo es.
+  -- One is missing: half an ordered chain reads as an order and is not one.
   begin
     perform public.reorder_provenance_events('AR-9700', array[v_ids[2], v_ids[1]]);
     raise exception 'FAIL: se admitió una lista incompleta';
@@ -155,7 +155,7 @@ begin
     if position('no coincide' in sqlerrm) = 0 then raise; end if;
   end;
 
-  -- Repetido: pasaría el recuento y dejaría dos eslabones peleándose una posición.
+  -- Repeated: it would pass the count and would leave two links fighting over a position.
   begin
     perform public.reorder_provenance_events(
       'AR-9700', array[v_ids[1], v_ids[1], v_ids[2]]);
@@ -164,7 +164,7 @@ begin
     if position('repetidos' in sqlerrm) = 0 then raise; end if;
   end;
 
-  -- De otra obra: arrastraría la cadena de al lado.
+  -- From another artwork: it would drag the chain next door.
   begin
     perform public.reorder_provenance_events(
       'AR-9700',
@@ -199,9 +199,9 @@ exception when others then
   raise notice 'OK: el lector no reordena la cadena: %', sqlerrm;
 end $$;
 
--- ── 6. Los tres enumerados son cerrados ──────────────────────
--- Son enumerados y no maestras porque el CÓDIGO mira su valor: de la calidad de
--- tenencia depende quién es el poseedor actual y cómo se redacta la línea.
+-- ── 6. The three enums are closed ────────────────────────────
+-- They are enums and not master tables because the CODE looks at their value: on the quality of
+-- tenure depends who the current holder is and how the line is worded.
 do $$
 declare v_id uuid;
 begin
@@ -233,14 +233,14 @@ begin
     raise notice 'OK: el estado de investigación es un enumerado cerrado';
   end;
 
-  -- Y los dos que distinguen lo pendiente de lo investigado sin resultado
-  -- conviven, que es el motivo de que sean cinco valores y no cuatro (RF-205).
+  -- And the two that distinguish what is pending from what was researched with no result
+  -- coexist, which is the reason there are five values and not four (RF-205).
   update public.provenance_events set capacity = 'UNKNOWN' where id = v_id;
   update public.provenance_events set capacity = 'UNREVIEWED' where id = v_id;
   raise notice 'OK: «Desconocido» y «Sin revisar» son dos valores distintos';
 end $$;
 
--- ── 7. La fecha, con la forma de ADR-004 ─────────────────────
+-- ── 7. The date, with ADR-004's shape ────────────────────────
 do $$
 declare v_id uuid; v_texto text;
 begin
@@ -254,7 +254,7 @@ begin
     raise exception 'FAIL: el texto de la fecha no se compone solo (%)', v_texto;
   end if;
 
-  -- La nota manda sobre la composición, como `date_note` sobre `execution_date`.
+  -- The note rules over the composition, like `date_note` over `execution_date`.
   update public.provenance_events set date_note = 'finales de los ochenta' where id = v_id;
   select date_text into v_texto from public.provenance_events where id = v_id;
   if v_texto <> 'finales de los ochenta' then
@@ -262,7 +262,7 @@ begin
   end if;
   update public.provenance_events set date_note = '' where id = v_id;
 
-  -- Y no se escribe nunca directamente.
+  -- And it is never written directly.
   begin
     update public.provenance_events set date_text = 'a mano' where id = v_id;
     raise exception 'FAIL: se ha podido escribir la columna generada';
@@ -293,11 +293,11 @@ begin
   end;
 end $$;
 
--- ── 8. Comprada y vendida en 1985 ────────────────────────────
--- La ÚNICA diferencia con `artworks_coherent_range`, y es la que justifica
--- repetir las cinco columnas en vez de reutilizar las de la obra: allí el rango
--- exige estrictamente mayor y aquí admite el mismo año, porque una tenencia de
--- unos meses es un eslabón perfectamente normal.
+-- ── 8. Bought and sold in 1985 ───────────────────────────────
+-- The ONLY difference from `artworks_coherent_range`, and it is the one that justifies
+-- repeating the five columns instead of reusing the artwork's: there the range
+-- requires strictly greater and here it admits the same year, because a tenure of
+-- a few months is a perfectly normal link.
 do $$
 declare v_id uuid;
 begin
@@ -314,11 +314,11 @@ begin
   end;
 end $$;
 
--- ── 9. El relato y la cadena conviven ────────────────────────
--- RF-510: cuando el relato tiene texto es lo que la ficha imprime, y cuando está
--- vacío la ficha compone la línea con los eslabones. La regla vive en la
--- interfaz; lo que la base garantiza es que las dos representaciones existen y
--- ninguna pisa a la otra.
+-- ── 9. The account and the chain coexist ─────────────────────
+-- RF-510: when the account has text it is what the record prints, and when it is
+-- empty the record composes the line with the links. The rule lives in the
+-- interface; what the base guarantees is that both representations exist and
+-- neither treads on the other.
 do $$
 declare v_fila public.artworks%rowtype; v_eslabones int;
 begin
@@ -343,14 +343,14 @@ begin
   raise notice 'OK: el relato publicable y la cadena estructurada conviven (RF-510, RF-511)';
 end $$;
 
--- ── 10. «Sin revisar» no es «no», por las dos puertas ────────
--- RF-218. Sin esto la columna puede mentir, y una columna que puede mentir sobre
--- si algo se investigó es peor que no tenerla: la ficha diría «investigado sin
--- resultado» encima de una lista de eslabones.
+-- ── 10. «Sin revisar» is not «no», through both doors ────────
+-- RF-218. Without this the column can lie, and a column that can lie about
+-- whether something was researched is worse than not having it: the record would say «researched with no
+-- result» above a list of links.
 do $$
 declare v_ids uuid[];
 begin
-  -- Primera puerta: declararlo con eslabones debajo.
+  -- First door: declaring it with links underneath.
   begin
     update public.artworks set provenance_status = 'NONE_FOUND' where catalog_id = 'AR-9700';
     raise exception 'FAIL: se ha declarado la procedencia investigada sin resultado con eslabones';
@@ -359,13 +359,13 @@ begin
     raise notice 'OK: no se declara «investigado sin resultado» habiendo cadena';
   end;
 
-  -- Con la cadena retirada sí se puede: es la diferencia entre no haber mirado y
-  -- haber mirado y no encontrar nada.
+  -- With the chain withdrawn it can be: it is the difference between not having looked and
+  -- having looked and finding nothing.
   update public.provenance_events set active = false where catalog_id = 'AR-9700';
   update public.artworks set provenance_status = 'NONE_FOUND' where catalog_id = 'AR-9700';
   raise notice 'OK: sin cadena activa, «investigado sin resultado» es una respuesta legítima';
 
-  -- Segunda puerta: añadir un eslabón a una obra declarada así.
+  -- Second door: adding a link to an artwork declared that way.
   begin
     insert into public.provenance_events (catalog_id, party_note)
     values ('AR-9700', 'Un hallazgo posterior');
@@ -375,7 +375,7 @@ begin
     raise notice 'OK: un eslabón nuevo no contradice en silencio al estado declarado';
   end;
 
-  -- Y restaurar uno retirado tampoco cuela por la puerta de atrás.
+  -- And restoring a withdrawn one does not slip through the back door either.
   select array_agg(id) into v_ids
     from public.provenance_events where catalog_id = 'AR-9700';
   begin
@@ -386,16 +386,16 @@ begin
     raise notice 'OK: restaurar un eslabón tampoco contradice al estado declarado';
   end;
 
-  -- Lo que SÍ se permite, y es intencionado: eslabones con el estado en «Sin
-  -- revisar». Tener un dato no es haber hecho la investigación.
+  -- What IS allowed, and it is intentional: links with the state on «Sin
+  -- revisar». Having a datum is not having done the research.
   update public.artworks set provenance_status = 'UNREVIEWED' where catalog_id = 'AR-9700';
   update public.provenance_events set active = true where catalog_id = 'AR-9700';
   raise notice 'OK: una cadena con el estado «Sin revisar» es normal: tener datos no es haber investigado';
 end $$;
 
--- ── 11. Una parte que sostiene una cadena no se retira ───────
--- RF-511, y revisa RF-905: dejar el campo vacío en las obras que la tenían
--- asignada sería borrar un eslabón documentado por la vía indirecta.
+-- ── 11. A party that holds up a chain is not withdrawn ───────
+-- RF-511, and it revises RF-905: leaving the field empty in the artworks that had it
+-- assigned would be erasing a documented link by the indirect route.
 do $$
 declare v_id uuid;
 begin
@@ -419,16 +419,16 @@ begin
     raise notice 'OK: una parte titular de derechos de una obra activa no se retira';
   end;
 
-  -- Sacada de la cadena, sí se retira: la regla no es un candado, es un orden.
+  -- Taken out of the chain, it is withdrawn: the rule is not a padlock, it is an order.
   update public.provenance_events set active = false
    where party_id = '00000000-0000-0000-0000-0000000000e1';
   update public.parties set active = false
    where id = '00000000-0000-0000-0000-0000000000e1';
   raise notice 'OK: sacada de la cadena, la parte se retira con normalidad';
 
-  -- Y una obra en la papelera no cuenta, como en los lugares: sus eslabones ya no
-  -- se muestran (RF-905 hacia abajo) y exigir vaciar la papelera antes de retirar
-  -- una parte sería hacer que la papelera estorbe.
+  -- And an artwork in the wastebasket does not count, as in the places: its links are no longer
+  -- shown (RF-905 downwards) and requiring the wastebasket to be emptied before withdrawing
+  -- a party would make the wastebasket get in the way.
   update public.provenance_events set active = true
    where party_id = '00000000-0000-0000-0000-0000000000e1';
   update public.parties set active = true
@@ -443,10 +443,10 @@ begin
   update public.parties set active = true where id = '00000000-0000-0000-0000-0000000000e1';
 end $$;
 
--- ── 12. Una parte en uso tampoco se borra a la fuerza ────────
--- `on delete restrict` es el cinturón por debajo de que nadie tenga DELETE:
--- si alguna vez se borrara una parte a mano, esto avisa en vez de romper la
--- cadena en silencio.
+-- ── 12. A party in use is not force-deleted either ───────────
+-- `on delete restrict` is the belt under nobody having DELETE:
+-- if a party were ever deleted by hand, this warns instead of breaking the
+-- chain in silence.
 do $$
 begin
   begin
@@ -457,10 +457,10 @@ begin
   end;
 end $$;
 
--- ── 13. La papelera del eslabón ──────────────────────────────
--- RF-517, que revisa RF-903: la premisa de RF-903 —que una fila puente no tiene
--- nada citable y basta con rehacerla— no se sostiene en un eslabón que lleva
--- años, calidad de tenencia y la fuente del dato.
+-- ── 13. The link's wastebasket ───────────────────────────────
+-- RF-517, which revises RF-903: RF-903's premise —that a bridge row has
+-- nothing citable and redoing it is enough— does not hold for a link that carries
+-- years, quality of tenure and the datum's source.
 do $$
 declare
   v_id uuid;
@@ -490,11 +490,11 @@ begin
   raise notice 'OK: el eslabón se retira, se restaura y conserva las dos trazas';
 end $$;
 
--- ── 14. Nadie borra de verdad, y la tabla nace cerrada ───────
--- RF-901, RF-111, RF-113. Las políticas las escribe la migración siguiente; con
--- RLS activado y sin política, la tabla está cerrada, que es el estado seguro
--- para esperar. Lo que no puede pasar nunca es lo contrario: privilegios
--- concedidos sin RLS.
+-- ── 14. Nobody really deletes, and the table is born closed ──
+-- RF-901, RF-111, RF-113. The policies are written by the next migration; with
+-- RLS enabled and no policy, the table is closed, which is the safe state
+-- to wait in. What can never happen is the opposite: privileges
+-- granted with no RLS.
 do $$
 begin
   if exists (select 1 from pg_policies
@@ -524,14 +524,14 @@ end $$;
 
 reset role;
 
--- ── 15. El traslado de los cuatro nodos del árbol ────────────
--- Sobre una base cargada con el volcado: ADR-006 anticipó que los museos y las
--- colecciones dejarían de ser lugares, y esta migración lo cumple a medias y a
--- propósito —el nodo se queda, porque sigue contestando a «dónde está la obra»;
--- lo que sale del árbol es la propiedad metida dentro del nombre.
+-- ── 15. The move of the tree's four nodes ────────────────────
+-- Over a base loaded with the dump: ADR-006 anticipated that the museums and the
+-- collections would stop being places, and this migration fulfils it halfway and on
+-- purpose —the node stays, because it still answers «where is the artwork»;
+-- what leaves the tree is the ownership stuffed inside the name.
 --
--- En una base sin el volcado (integración continua) no hay nada que comprobar y
--- el bloque lo dice en voz alta en vez de dar por bueno un cero.
+-- In a base with no dump (continuous integration) there is nothing to check and
+-- the block says so out loud instead of taking a zero as good.
 do $$
 declare
   v_eslabones int;
@@ -559,15 +559,15 @@ begin
       v_fichas;
   end if;
 
-  -- Ningún lugar activo lleva ya la propiedad dentro del nombre, que es la mitad
-  -- del motivo de todo esto.
+  -- No active place carries the ownership inside its name any more, which is half
+  -- the reason for all this.
   if exists (select 1 from public.physical_places where active and name ilike '%propiedad de%') then
     raise exception 'FAIL: sigue habiendo un lugar activo con la propiedad dentro del nombre';
   end if;
 
-  -- Y la precisión que ese nombre llevaba dentro no se ha perdido: viaja al
-  -- eslabón, que es donde significa algo. La obra sigue en el árbol, en el nodo
-  -- hermano.
+  -- And the precision that name carried inside has not been lost: it travels to the
+  -- link, which is where it means something. The artwork is still in the tree, in the
+  -- sibling node.
   select count(*) into v_matiz
     from public.provenance_events
    where note like 'Trasladado del árbol de lugares%' and party_note <> '';
@@ -584,8 +584,8 @@ begin
     raise exception 'FAIL: la obra de la coletilla no ha quedado en el nodo hermano (%)', v_lugar;
   end if;
 
-  -- Y no se ha inventado ningún hecho jurídico: el árbol decía dónde está la
-  -- obra, no en qué calidad la tiene quien la guarda.
+  -- And no legal fact has been invented: the tree said where the
+  -- artwork is, not in what capacity whoever keeps it has it.
   select count(*) into v_inventados
     from public.provenance_events
    where note like 'Trasladado del árbol de lugares%'
