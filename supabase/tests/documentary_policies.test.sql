@@ -1,31 +1,31 @@
--- El perímetro de las quince tablas del catálogo razonado documental.
+-- The perimeter of the documentary catalogue raisonné's fifteen tables.
 --
 -- RF-101, RF-103, RF-105, RF-106, RF-109, RF-111, RF-113, RF-901, RF-906.
 --
--- Los seis grupos anteriores crearon quince tablas con RLS activado y cero
--- políticas. Este fichero comprueba la migración que las abre, y lo hace de las
--- dos maneras que hacen falta:
+-- The six previous groups created fifteen tables with RLS enabled and zero
+-- policies. This file checks the migration that opens them, and it does so in the
+-- two ways that are needed:
 --
---   1. MIDIENDO el catálogo del sistema —RLS activado, tres políticas por
---      tabla, ninguna de DELETE, y los privilegios de `anon` y `authenticated`
---      leídos de `column_privileges`, que es donde se ve un `grant update
---      (columna)` que `role_table_grants` no enseña—.
---   2. ATACANDO la base autenticado de verdad como un usuario de cada papel.
---      Comprobar que la política existe no verifica nada: lo que importa es lo
---      que la base contesta cuando la petición viene de quien viene.
+--   1. MEASURING the system catalogue —RLS enabled, three policies per
+--      table, none of them DELETE, and `anon`'s and `authenticated`'s privileges
+--      read from `column_privileges`, which is where a `grant update
+--      (column)` that `role_table_grants` does not show is visible—.
+--   2. ATTACKING the base authenticated for real as a user of each role.
+--      Checking that the policy exists verifies nothing: what matters is what
+--      the base answers when the request comes from whom it comes.
 --
--- Las dos hacen falta y ninguna sustituye a la otra: la primera caza la tabla a
--- la que se le olvidó una operación, la segunda caza la política que está
--- escrita al revés.
+-- Both are needed and neither replaces the other: the first catches the table
+-- that forgot an operation, the second catches the policy that is
+-- written backwards.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
 --
--- Un catalogador y un lector de verdad, con su fila en `profiles` creada por el
--- trigger de `auth.users`, y una fila ACTIVA y otra RETIRADA en cada una de las
--- quince tablas. Los identificadores se fijan a mano para poder preguntar por
--- ellos desde dentro de la sesión de cada papel.
+-- A real cataloguer and a real reader, with their `profiles` row created by the
+-- `auth.users` trigger, and one ACTIVE row and one WITHDRAWN row in each of the
+-- fifteen tables. The identifiers are set by hand so they can be asked about
+-- from inside each role's session.
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000e1', 'cat-perimetro@test.local'),
@@ -38,8 +38,8 @@ insert into public.artworks (catalog_id, artist, title, attributed_title) values
   ('AR-9601', 'ROTILI', 'La otra obra del perímetro', 'UNCONFIRMED'),
   ('AR-9602', 'ROTILI', 'La tercera obra del perímetro', 'UNCONFIRMED');
 
--- 1. parties. `contact` lleva un dato de tercero a propósito: RF-105 decide que
--- el Lector lo ve, y esa decisión hay que ejercerla, no suponerla.
+-- 1. parties. `contact` carries a third party's datum on purpose: RF-105 decides that
+-- the Reader sees it, and that decision has to be exercised, not assumed.
 insert into public.parties (id, party_type, name, contact) values
   ('9e000001-0000-4000-8000-000000000001', 'INSTITUTION',
    'Museo del Perímetro de prueba', 'contacto@perimetro.test'),
@@ -48,7 +48,7 @@ insert into public.parties (id, party_type, name, contact) values
 update public.parties set active = false
  where id = '9e000001-0000-4000-8000-000000000002';
 
--- 2. provenance_events. Dos eslabones activos, que es el mínimo para reordenar.
+-- 2. provenance_events. Two active links, which is the minimum for reordering.
 insert into public.provenance_events (id, catalog_id, party_note) values
   ('9e000002-0000-4000-8000-000000000001', 'AR-9600', 'Colección desconocida de prueba'),
   ('9e000002-0000-4000-8000-000000000003', 'AR-9600', 'Segunda mano de prueba'),
@@ -139,8 +139,8 @@ insert into public.exhibition_documents (id, exhibition_id, document_id) values
 update public.exhibition_documents set active = false
  where id = '9e00000d-0000-4000-8000-000000000002';
 
--- 14. artwork_relationship_types. Tres: la activa, la retirada y una tercera
--- para que el ataque de más abajo no choque contra la unicidad de la terna.
+-- 14. artwork_relationship_types. Three: the active one, the withdrawn one and a third
+-- so the attack below does not clash against the triple's uniqueness.
 insert into public.artwork_relationship_types (id, name, inverse_name, is_symmetric) values
   ('9e00000e-0000-4000-8000-000000000001', 'Perímetro simétrico de', '', true),
   ('9e00000e-0000-4000-8000-000000000002', 'Perímetro retirado de', '', true),
@@ -157,15 +157,15 @@ insert into public.artwork_relationships (id, from_catalog_id, to_catalog_id, re
 update public.artwork_relationships set active = false
  where id = '9e00000f-0000-4000-8000-000000000002';
 
--- La tabla de trabajo con la que se recorren las quince. Está aquí y no
--- repartida por quince bloques a mano porque lo que se comprueba es que NO HAY
--- EXCEPCIONES: una tabla que se cuele sin política es exactamente el fallo que
--- este fichero tiene que cazar, y una lista escrita quince veces se olvida una.
+-- The working table the fifteen are walked with. It is here and not
+-- spread over fifteen hand-written blocks because what is checked is that THERE ARE NO
+-- EXCEPTIONS: a table slipping through with no policy is exactly the failure
+-- this file has to catch, and a list written fifteen times forgets one.
 create temporary table perimeter_spec (
   table_name  text primary key,
   id_active   uuid not null,
   id_trash    uuid not null,
-  -- Un alta legal y mínima en esa tabla, con la que se ataca desde cada papel.
+  -- A legal and minimal creation in that table, which each role attacks with.
   insert_sql  text not null
 ) on commit drop;
 
@@ -207,8 +207,8 @@ insert into perimeter_spec values
   $q$insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id)
      values ('AR-9600', 'AR-9602', '9e00000e-0000-4000-8000-000000000001')$q$);
 
--- Que la lista no se quede corta el día que alguien añada la tabla dieciséis:
--- se contrasta contra el catálogo del sistema y no contra un número escrito.
+-- That the list does not fall short the day somebody adds the sixteenth table:
+-- it is checked against the system catalogue and not against a written number.
 do $$
 declare v_missing text[];
 begin
@@ -220,32 +220,32 @@ begin
      and c.relkind = 'r'
      and c.relname not in (select table_name from perimeter_spec)
      and c.relname not in (
-       -- Las de antes de este grupo, con perímetro propio y sus propios tests.
+       -- The ones from before this group, with their own perimeter and their own tests.
        'artworks', 'images', 'profiles', 'artwork_types', 'series', 'physical_places',
-       -- Los enlaces externos no son de este grupo y no tienen migración de
-       -- perímetro aparte: nacieron con sus políticas en su propia migración
-       -- (20260805100000), y su perímetro entero está en
-       -- `external_links.test.sql`. Fueron los primeros en heredar la
-       -- visibilidad de su ficha ancla; desde 20260805130000 la heredan también
-       -- seis de las quince de aquí, y eso se comprueba en
-       -- `documentary_visibility.test.sql`, no en este fichero: aquí las anclas
-       -- de los fixtures están todas activas a propósito, para que lo que se
-       -- mida sea el perímetro y no la cascada.
+       -- The external links are not from this group and have no perimeter
+       -- migration apart: they were born with their policies in their own migration
+       -- (20260805100000), and their whole perimeter is in
+       -- `external_links.test.sql`. They were the first to inherit the
+       -- visibility of their anchor record; since 20260805130000 six of the fifteen
+       -- here inherit it too, and that is checked in
+       -- `documentary_visibility.test.sql`, not in this file: here the fixtures'
+       -- anchors are all active on purpose, so what is
+       -- measured is the perimeter and not the cascade.
        'external_links',
-       -- El registro de cambios tampoco es de este grupo, y además su perímetro
-       -- es el contrario del que este fichero comprueba: aquí se afirma que el
-       -- Catalogador crea, edita y retira en las quince, y allí lo que hay que
-       -- afirmar es que NO escribe —es el auditado—. Nació con su política y sus
-       -- dos candados en su propia migración (20260805120000) y su perímetro
-       -- entero está en `change_log.test.sql`.
+       -- The change log is not from this group either, and besides its perimeter
+       -- is the opposite of the one this file checks: here it is asserted that the
+       -- Cataloguer creates, edits and withdraws in all fifteen, and there what has to be
+       -- asserted is that they do NOT write —they are the audited—. It was born with its policy and its
+       -- two padlocks in its own migration (20260805120000) and its whole perimeter
+       -- is in `change_log.test.sql`.
        'change_log',
-       -- Los fondos tampoco son de este grupo, y su perímetro es el más estrecho
-       -- del esquema: aquí se afirma que el Catalogador crea, edita y retira en
-       -- las quince, y allí que NO crea y NO borra —solo `select` y `update`,
-       -- concedidos uno a uno—. Nació con sus políticas en su propia migración
-       -- (20260808120000) y su perímetro entero está en `artist_funds.test.sql`.
+       -- The funds are not from this group either, and their perimeter is the narrowest
+       -- in the schema: here it is asserted that the Cataloguer creates, edits and withdraws in
+       -- all fifteen, and there that they do NOT create and do NOT delete —only `select` and `update`,
+       -- granted one by one—. It was born with its policies in its own migration
+       -- (20260808120000) and its whole perimeter is in `artist_funds.test.sql`.
        'artist_funds',
-       -- Control de migraciones del stack local: no existe en producción.
+       -- Migration control of the local stack: it does not exist in production.
        '_migraciones'
      );
 
@@ -258,11 +258,11 @@ begin
 end $$;
 
 
--- ── 1. Cada tabla tiene RLS y las tres políticas ─────────────
+-- ── 1. Every table has RLS and the three policies ────────────
 --
--- RF-111. Una tabla sin RLS está completamente abierta; una tabla con RLS y sin
--- política para una operación tiene esa operación cerrada. Lo que se afirma
--- aquí es que hay exactamente tres y que ninguna es de DELETE.
+-- RF-111. A table with no RLS is completely open; a table with RLS and no
+-- policy for an operation has that operation closed. What is asserted
+-- here is that there are exactly three and that none of them is DELETE.
 do $$
 declare
   v_specs perimeter_spec[];
@@ -293,13 +293,13 @@ begin
 end $$;
 
 
--- ── 2. Los privilegios, medidos y no supuestos ───────────────
+-- ── 2. The privileges, measured and not assumed ──────────────
 --
--- RF-113. La plataforma concede por omisión TODOS los privilegios de cada tabla
--- nueva a `anon` y `authenticated`, incluido DELETE. Se mira
--- `column_privileges` y no solo `role_table_grants`: un `grant select (contact)`
--- o un `grant update (active)` no aparecen en la segunda, y serían un agujero
--- de una columna invisible desde donde se suele mirar.
+-- RF-113. The platform grants by default EVERY privilege of each new table
+-- to `anon` and `authenticated`, DELETE included.
+-- `column_privileges` is looked at and not only `role_table_grants`: a `grant select (contact)`
+-- or a `grant update (active)` do not appear in the second, and they would be a hole
+-- of one column invisible from where one usually looks.
 do $$
 declare
   v_specs perimeter_spec[];
@@ -333,8 +333,8 @@ begin
         r.table_name, coalesce(v_privs, '(ninguno)');
     end if;
 
-    -- Y el privilegio de tabla, además del de columna: son dos catálogos
-    -- distintos y un DELETE concedido a nivel de tabla se ve en el primero.
+    -- And the table privilege, besides the column one: they are two different
+    -- catalogues and a DELETE granted at table level is visible in the first.
     if exists (select 1 from information_schema.role_table_grants
                 where table_schema = 'public' and table_name = r.table_name
                   and grantee in ('anon', 'authenticated', 'PUBLIC')
@@ -347,10 +347,10 @@ begin
 end $$;
 
 
--- ── 3. El rol anónimo no llega a ninguna de las quince ───────
+-- ── 3. The anonymous role does not reach any of the fifteen ──
 --
--- RF-101: la aplicación no tiene zona pública, y la clave anónima viaja en el
--- cliente de todo el mundo. Se ataca tabla a tabla y no de muestra.
+-- RF-101: the application has no public area, and the anonymous key travels in
+-- everybody's client. It is attacked table by table and not by sampling.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec;
 begin
@@ -373,10 +373,10 @@ end $$;
 reset role;
 
 
--- ── 4. El Lector lee lo activo ───────────────────────────────
+-- ── 4. The Reader reads what is active ───────────────────────
 --
--- RF-105. Autenticado de verdad: la sesión lleva el `sub` del lector y el rol
--- `authenticated`, que es exactamente lo que PostgREST pone al recibir su token.
+-- RF-105. Authenticated for real: the session carries the reader's `sub` and the
+-- `authenticated` role, which is exactly what PostgREST sets on receiving their token.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec; v_n integer;
 begin
@@ -398,11 +398,11 @@ end $$;
 reset role;
 
 
--- ── 5. El Lector no ve la papelera ───────────────────────────
+-- ── 5. The Reader does not see the wastebasket ───────────────
 --
--- RF-906, y es la mitad del motivo de que el select lleve `active` en vez de
--- ser `can_read()` a secas: la papelera es trabajo a medio hacer de otra
--- persona, no catálogo.
+-- RF-906, and it is half the reason the select carries `active` instead of
+-- being a bare `can_read()`: the wastebasket is somebody else's half-done
+-- work, not catalogue.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec; v_n integer;
 begin
@@ -424,10 +424,10 @@ end $$;
 reset role;
 
 
--- ── 6. El Catalogador sí ve la papelera ──────────────────────
+-- ── 6. The Cataloguer does see the wastebasket ───────────────
 --
--- La otra mitad. Sin este aserto, una política que escondiera la papelera a
--- todo el mundo pasaría el bloque anterior y dejaría la papelera irrecuperable.
+-- The other half. Without this assertion, a policy hiding the wastebasket from
+-- everybody would pass the previous block and would leave the wastebasket unrecoverable.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec; v_n integer;
 begin
@@ -451,10 +451,10 @@ end $$;
 reset role;
 
 
--- ── 7. El Lector no da de alta en ninguna ────────────────────
+-- ── 7. The Reader does not create in any of them ─────────────
 --
--- RF-106, atacando la base directamente. Que la interfaz esconda el botón no es
--- una protección: no hay interfaz que se interponga entre el token del lector y
+-- RF-106, attacking the base directly. That the interface hides the button is not
+-- a protection: there is no interface standing between the reader's token and
 -- PostgREST.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec;
@@ -479,11 +479,11 @@ end $$;
 reset role;
 
 
--- ── 8. El Lector no edita ni manda nada a la papelera ────────
+-- ── 8. The Reader neither edits nor sends anything to the wastebasket ─
 --
--- Y lo que hay que afirmar es el SILENCIO: un update que la cláusula USING
--- esconde no falla, no afecta a ninguna fila. Sin este aserto, el test pasaría
--- igual sobre una tabla sin política ninguna.
+-- And what has to be asserted is the SILENCE: an update the USING clause
+-- hides does not fail, it affects no row. Without this assertion, the test would pass
+-- all the same over a table with no policy at all.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec; v_affected integer;
 begin
@@ -505,9 +505,9 @@ end $$;
 
 reset role;
 
--- Y las quince filas siguen activas, comprobado FUERA de la sesión del lector.
--- `row_count = 0` por sí solo no cazaría una política que dejara pasar la
--- escritura y escondiera la fila después.
+-- And the fifteen rows are still active, checked OUTSIDE the reader's session.
+-- `row_count = 0` on its own would not catch a policy that let the
+-- write through and hid the row afterwards.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec; v_active boolean;
 begin
@@ -524,10 +524,10 @@ begin
 end $$;
 
 
--- ── 9. Nadie borra de verdad, tampoco quien puede editar ─────
+-- ── 9. Nobody really deletes, not even whoever can edit ──────
 --
--- RF-901. Dos barreras: no hay política de DELETE y no hay privilegio. Aquí se
--- comprueba la segunda desde las dos sesiones, porque es la que decide.
+-- RF-901. Two barriers: there is no DELETE policy and there is no privilege. Here the
+-- second is checked from both sessions, because it is the one that decides.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec;
 begin
@@ -573,13 +573,13 @@ end $$;
 reset role;
 
 
--- ── 10. El Catalogador sí escribe: las quince, de verdad ─────
+-- ── 10. The Cataloguer does write: all fifteen, for real ─────
 --
--- Este es el aserto que separa «cerrado» de «bien cerrado». Antes de esta
--- migración las quince tablas estaban con RLS y cero políticas, es decir,
--- negadas para todo el mundo con sesión: los bloques 7, 8 y 9 pasaban igual y
--- no verificaban nada. Lo que prueba que las políticas están escritas y no solo
--- ausentes es que el papel que debe poder, puede.
+-- This is the assertion that separates «closed» from «well closed». Before this
+-- migration the fifteen tables were with RLS and zero policies, that is,
+-- denied for everybody with a session: blocks 7, 8 and 9 passed all the same and
+-- verified nothing. What proves the policies are written and not just
+-- absent is that the role that must be able to, can.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec;
 begin

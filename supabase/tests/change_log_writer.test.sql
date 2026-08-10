@@ -984,9 +984,9 @@ declare
   v_fuente text := (select prosrc from pg_proc
                      where oid = 'public.tg_change_log()'::regprocedure);
 begin
-  -- Que la lista de este test siga siendo la de la función: si alguien cambia una
-  -- y no la otra, este fichero deja de medir lo que dice medir. Se busca cada
-  -- nombre en el cuerpo del escritor, que es lo único observable desde aquí.
+  -- That this test's list stays the function's: if somebody changes one
+  -- and not the other, this file stops measuring what it says it measures. Each
+  -- name is searched for in the writer's body, which is the only observable thing from here.
   select coalesce(array_agg(i order by i), '{}') into v_mal
     from unnest(c_ignored) i
    where position(i in v_fuente) = 0;
