@@ -13,7 +13,7 @@ import { emptyDataMessage, photoDateWhisper } from './PhotoDataPanel'
 
 describe('RF-419 · la fecha de la foto y la de la ficha, cuando difieren', () => {
   it('lo dice en voz baja y con la fecha en español', () => {
-    // El lote de 2022 es el caso real: la ficha guarda la fecha de subida.
+    // The 2022 batch is the real case: the record keeps the upload date.
     expect(photoDateWhisper('2022-10-09', '2026-07-28')).toBe(
       'La ficha guarda otra fecha; la foto dice 9 de octubre de 2022.',
     )
@@ -37,8 +37,8 @@ describe('RF-419 · la fecha de la foto y la de la ficha, cuando difieren', () =
   })
 
   it('la fecha se escribe tal como el fichero la dice, sin que la zona del portátil la mueva', () => {
-    // Una fecha EXIF es un reloj de pared sin zona: el primero de enero no puede aparecer
-    // como el 31 de diciembre según dónde se abra la aplicación.
+    // An EXIF date is a wall clock with no zone: the first of January cannot show up
+    // as the 31st of December depending on where the application is opened.
     expect(photoDateWhisper('2023-01-01', '2023-06-01')).toContain('1 de enero de 2023')
     expect(photoDateWhisper('2023-12-31', '2023-06-01')).toContain('31 de diciembre de 2023')
   })
@@ -88,7 +88,7 @@ describe('RF-419 · números y no juicios, y solo los campos presentes', () => {
   it('la orientación no se muestra: ya está cocida en los píxeles que se ven', () => {
     const keys = photoExifRows(full, { width: 2252, height: 4000, bytes: 3_200_000 }).map((r) => r.key)
     expect(keys).not.toContain('orientation')
-    // Ni el aviso de recorte previo: 23 falsos positivos de 31 medidos.
+    // Nor the prior-crop warning: 23 false positives out of 31 measured.
     expect(keys).not.toContain('cropped')
   })
 

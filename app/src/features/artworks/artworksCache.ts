@@ -120,8 +120,8 @@ export function clearArtworksCache(storage: Storage | undefined = getStorage()):
   } catch {
     /* nothing to clear */
   }
-  // Las firmas de las fotografías de las fichas, por lo mismo: son rutas del catálogo
-  // y una firma sigue abriendo el fichero hasta que caduca.
+  // The signatures of the records' photographs, for the same reason: they are catalogue
+  // paths and a signature keeps opening the file until it expires.
   clearSignedPaths(storage)
   forgetSignedPaths()
   try {

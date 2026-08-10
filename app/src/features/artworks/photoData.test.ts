@@ -69,8 +69,8 @@ describe('cuándo hay algo que guardar', () => {
   })
 
   it('unos espacios de más tampoco', () => {
-    // Sin recortar al comparar, abrir el campo y cerrarlo dejaría el botón
-    // encendido para siempre y el aviso de pendiente puesto sin nada pendiente.
+    // Without trimming when comparing, opening the field and closing it would leave the
+    // button lit forever and the pending warning shown with nothing pending.
     expect(photoDataDirty({ ...saved, credit: '  Ana Ruiz  ' }, saved)).toBe(false)
   })
 
@@ -81,8 +81,8 @@ describe('cuándo hay algo que guardar', () => {
   })
 
   it('y un cambio en el texto que NO se está enseñando cuenta igual', () => {
-    // Se escribió el origen, se volvió a «propia» y no se guardó: sigue habiendo
-    // algo pendiente aunque en pantalla no se vea.
+    // The source was written, it went back to «propia» and it was not saved: there is
+    // still something pending even if it cannot be seen on screen.
     expect(photoDataDirty({ ...saved, origin: 'Web del MACVA' }, saved)).toBe(true)
   })
 

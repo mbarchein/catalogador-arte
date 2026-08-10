@@ -68,7 +68,7 @@ export function PhotoViewer({
       const { images: fotos, viewId: actual, onView: ver } = paso.current
       const desde = fotos.findIndex((r) => r.image_id === actual)
       const destino = fotos[(e.key === 'ArrowLeft' ? desde - 1 : desde + 1)]
-      // Sin dar la vuelta, como la cola de obras: en los extremos no pasa nada.
+      // No wrapping around, same as the artwork queue: at the ends nothing happens.
       if (desde < 0 || !destino) return
       e.preventDefault()
       ver(destino.image_id)

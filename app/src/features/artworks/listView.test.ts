@@ -57,16 +57,16 @@ describe('los fondos apartados (ADR-007, segunda entrega)', () => {
     ({ catalog_id: id, artist, artwork_type: '', series: '', physical_place_id: null }) as never
 
   it('sus obras no salen por omisión', () => {
-    // El interruptor de la tabla de fondos, hecho efectivo. No es un borrado: la
-    // fila sigue existiendo y se abre por su enlace.
+    // The switch of the funds table, made effective. It is not a delete: the row
+    // still exists and opens through its link.
     const hidden: ReadonlySet<ArtistFund> = new Set(['TEST'])
     expect(matchesView(of('TEST', 'TS-0001'), DEFAULT_VIEW, null, hidden)).toBe(false)
     expect(matchesView(of('ROTILI', 'AR-0001'), DEFAULT_VIEW, null, hidden)).toBe(true)
   })
 
   it('y VUELVEN al filtrar por ese fondo, que es lo que lo hace reversible', () => {
-    // Sin esto, apartar un fondo lo escondería sin forma de llegar a él desde el
-    // listado, que es una papelera con otro nombre.
+    // Without this, setting a fund aside would hide it with no way to reach it from the
+    // listing, which is a wastebasket under another name.
     const hidden: ReadonlySet<ArtistFund> = new Set(['TEST'])
     const view = { ...DEFAULT_VIEW, funds: ['TEST' as ArtistFund] }
     expect(matchesView(of('TEST', 'TS-0001'), view, null, hidden)).toBe(true)

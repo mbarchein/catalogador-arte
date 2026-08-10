@@ -181,8 +181,8 @@ describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', ()
   })
 
   it('conserva la fecha aproximada Y su condición de aproximada (RF-416)', () => {
-    // Sin el respaldo del IFD0 marcado como aproximado no se corrige ninguna de las
-    // 14 fotografías de 2022, y sin la marca la aproximación se leería como medida.
+    // Without the IFD0 fallback marked as approximate none of the 14 photographs from 2022
+    // gets corrected, and without the mark the approximation would read as measured.
     const back = rehydrate(
       toStoredShot(shot({ rotation: 0, crop: null }, undefined, { fileDate: APPROXIMATE })),
     )
@@ -218,8 +218,8 @@ describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', ()
   })
 
   it('reconstruye el texto de la fecha desde sus partes, no desde el texto guardado (RF-416)', () => {
-    // El texto y las partes no pueden divergir: se escribe con la misma función que
-    // lo produjo.
+    // The text and the parts cannot diverge: it is written with the same function that
+    // produced it.
     const row = {
       ...toStoredShot(shot({ rotation: 0, crop: null })),
       fileDate: { ...APPROXIMATE, date: '1999-01-01' },
@@ -240,8 +240,8 @@ describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', ()
     ]
     for (const fileDate of broken) {
       const row = { ...base, fileDate } as StoredShot
-      // Una fecha que no se entiende es «no hay fecha», nunca un `undefined` que
-      // siga viajando hasta el insert.
+      // A date that is not understood is «there is no date», never an `undefined` that
+      // keeps travelling all the way to the insert.
       expect(rehydrate(row).prepared.fileDate).toBeNull()
     }
   })

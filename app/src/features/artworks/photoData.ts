@@ -29,13 +29,13 @@ import { cleanPhotoSource, photoSourceField } from './photoSource'
 export interface PhotoDataDraft {
   shotType: ShotTypeValue
   provenance: PhotoProvenance
-  /** Quién la hizo. Se enseña cuando la procedencia es propia. */
+  /** Who took it. Shown when the provenance is our own. */
   credit: string
-  /** De dónde salió. Se enseña cuando no lo es. */
+  /** Where it came from. Shown when it is not. */
   origin: string
 }
 
-/** Lo que hay guardado, como borrador de partida. */
+/** What is stored, as the starting draft. */
 export function photoDataDraft(saved: {
   shot_type: ShotTypeValue
   provenance: PhotoProvenance
@@ -50,12 +50,12 @@ export function photoDataDraft(saved: {
   }
 }
 
-/** El texto que toca enseñar con la procedencia elegida ahora mismo. */
+/** The text to show with the provenance chosen right now. */
 export function draftSourceText(draft: PhotoDataDraft): string {
   return photoSourceField(draft.provenance) === 'credit' ? draft.credit : draft.origin
 }
 
-/** El borrador con ese texto cambiado, sin tocar el otro. */
+/** The draft with that text changed, without touching the other one. */
 export function withSourceText(draft: PhotoDataDraft, value: string): PhotoDataDraft {
   return photoSourceField(draft.provenance) === 'credit'
     ? { ...draft, credit: value }
@@ -77,7 +77,7 @@ export function photoDataDirty(draft: PhotoDataDraft, saved: PhotoDataDraft): bo
   )
 }
 
-/** Lo que se manda a la base: las cuatro columnas, con los textos recortados. */
+/** What is sent to the base: the four columns, with the texts trimmed. */
 export function photoDataColumns(draft: PhotoDataDraft): {
   shot_type: ShotTypeValue
   provenance: PhotoProvenance
@@ -109,7 +109,7 @@ export const PHOTO_SECTIONS = {
   data: 'Qué es esta toma',
 } as const
 
-/** Lo que se lee bajo el botón de guardar, o null cuando no hay nada pendiente. */
+/** What is read under the save button, or null when nothing is pending. */
 export function pendingDataNotice(dirty: boolean): string | null {
   return dirty ? 'Hay cambios sin guardar en esta toma.' : null
 }

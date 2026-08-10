@@ -58,9 +58,9 @@ export interface PhotoDetailRow extends ColorColumns {
    */
   master_bytes: number | null
   provenance: PhotoProvenance
-  /** Quién hizo la fotografía, cuando es propia y consta (RF-417). */
+  /** Who took the photograph, when it is our own and it is recorded (RF-417). */
   photo_credit: string
-  /** De dónde salió, cuando no lo es (RF-417). Ver `photoSource.ts`. */
+  /** Where it came from, when it is not (RF-417). See `photoSource.ts`. */
   provenance_source: string
   /** The full-resolution corrected copy (RF-420): a path, or nothing and why. */
   corrected_path: string | null

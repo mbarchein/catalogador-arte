@@ -423,7 +423,7 @@ describe('RF-414 · «se miró y se dejó como estaba» no es «no se ha mirado�
   it('no se inventa una revisión que no ocurrió, ni pisa un origen que ya existe', () => {
     expect(reviewedColor(null, false).source).toBeNull()
     expect(reviewedColor({ source: 'MANUAL' }, true).source).toBe('MANUAL')
-    // Con el ajuste hecho, el origen ya lo escribió quien lo hizo.
+    // With the adjustment made, whoever made it already wrote the source.
     expect(reviewedColor({ temperature: 12 }, true).source).toBeNull()
   })
 })
@@ -481,7 +481,7 @@ describe('RF-418 · el testigo se ofrece, nunca se aplica solo', () => {
       x: 0.5,
       y: 0.5,
     })
-    // El aspecto es el mismo: la tinta de una impresora no puede corregir una dominante.
+    // The look is the same: a printer's ink cannot correct a colour cast.
     expect(sameColor(before, next)).toBe(true)
     expect(next.reference).toBe('TARGET_PRINT')
   })
@@ -499,7 +499,7 @@ describe('§7 · el filtro de previsualización está puesto ANTES del primer ar
   it('con el panel cerrado solo está puesto si hay algo que mostrar', () => {
     expect(showsColorFilter(false, NO_COLOR)).toBe(false)
     expect(showsColorFilter(false, { temperature: 4 })).toBe(true)
-    // Un «revisado y sin cambios» no pinta nada: no mueve ningún píxel.
+    // A «revisado y sin cambios» paints nothing: it moves no pixel.
     expect(showsColorFilter(false, { source: 'REVIEWED_UNCHANGED' })).toBe(false)
   })
 })

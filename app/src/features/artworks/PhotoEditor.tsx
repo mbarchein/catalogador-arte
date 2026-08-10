@@ -444,7 +444,7 @@ export function PhotoEditor({
   // and move a rectangle the cataloger is already dragging.
   const analysisTicket = useRef(0)
   const appliedRef = useRef(false)
-  /** Puesta por `close`: se sale del editor, sin pelar ninguna capa antes. */
+  /** Set by `close`: leave the editor without peeling any layer first. */
   const leavingRef = useRef(false)
   const onApplyRef = useRef(onApply)
   onApplyRef.current = onApply

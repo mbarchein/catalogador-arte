@@ -18,13 +18,13 @@ describe('editorExit, salir del editor pela una capa a la vez (RF-1205)', () => 
   })
 
   it('con un panel abierto, cierra el panel y no el editor', () => {
-    // La incidencia: aquí el «atrás» salía y perdía el trabajo sin aplicar.
+    // The incident: here «atrás» left and lost the work without applying it.
     expect(editorExit({ ...cerrado, panelOpen: true })).toBe('CLOSE_PANEL')
   })
 
   it('con el cuentagotas armado, lo desarma antes de tocar el panel', () => {
-    // Se arma DESDE el panel de color, así que es la capa de dentro: desarmar
-    // primero y cerrar el panel en el toque siguiente.
+    // It is armed FROM the colour panel, so it is the inner layer: disarm
+    // first and close the panel on the next tap.
     expect(editorExit({ ...cerrado, eyedropper: true, panelOpen: true })).toBe(
       'DISARM_EYEDROPPER',
     )
@@ -35,8 +35,8 @@ describe('editorExit, salir del editor pela una capa a la vez (RF-1205)', () => 
   })
 
   it('la salida del editor no pela nada, ni con un panel abierto', () => {
-    // La ✕, «Cancelar» y «Aplicar» se ven con el panel abierto. Desde ahí
-    // «Aplicar» aplica: pelar primero sería un botón que no hace nada.
+    // The ✕, «Cancelar» and «Aplicar» are visible with the panel open. From there
+    // «Aplicar» applies: peeling first would be a button that does nothing.
     expect(editorExit({ eyedropper: false, panelOpen: true, leaving: true })).toBe('LEAVE')
     expect(editorExit({ eyedropper: true, panelOpen: true, leaving: true })).toBe('LEAVE')
   })

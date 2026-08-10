@@ -46,8 +46,8 @@ function detail(over: Partial<CorrectedCopyColumns> = {}): CorrectedCopyColumns 
 
 describe('el nombre del fichero descargado (RF-411)', () => {
   it('lleva la clave de catalogación, el tipo de toma y qué fichero es', () => {
-    // Alguien lo va a recibir por correo sin ningún contexto: el nombre tiene que
-    // decir de qué obra es, qué toma y si está corregido o no.
+    // Somebody is going to receive it by e-mail with no context at all: the name has to
+    // say which artwork it belongs to, which shot, and whether it is corrected or not.
     expect(
       archiveFileName({
         catalogId: 'AR-0001',
@@ -78,8 +78,8 @@ describe('el nombre del fichero descargado (RF-411)', () => {
   })
 
   it('conserva la extensión real del máster, que no siempre es jpg', () => {
-    // El máster se sube con los bytes y el nombre que dio la cámara (ADR-002): llamar
-    // `.jpg` a un HEIC es un fichero que miente sobre su contenido.
+    // The master is uploaded with the bytes and the name the camera gave (ADR-002): calling
+    // a HEIC `.jpg` is a file that lies about its content.
     expect(
       archiveFileName({
         catalogId: 'AR-0001',
@@ -120,8 +120,8 @@ describe('el nombre del fichero descargado (RF-411)', () => {
     ]
     expect(shotOrdinal(rows, 'a')).toBe(1)
     expect(shotOrdinal(rows, 'b')).toBe(2)
-    // La única de su tipo no se numera: `AR-0001_reverso-1_original.jpg` sugiere que
-    // hay un segundo reverso que nadie ha subido.
+    // The only one of its kind is not numbered: `AR-0001_reverso-1_original.jpg` suggests
+    // there is a second back nobody has uploaded.
     expect(shotOrdinal(rows, 'c')).toBeUndefined()
     expect(shotOrdinal(rows, 'no-existe')).toBeUndefined()
     expect(
@@ -136,7 +136,7 @@ describe('el nombre del fichero descargado (RF-411)', () => {
   })
 
   it('ningún tipo de toma produce un nombre con acentos, espacios ni mayúsculas', () => {
-    // «Daño» es el caso que rompe un servidor de correo o una cola de imprenta.
+    // «Daño» is the case that breaks a mail server or a print queue.
     for (const shot of Object.keys(SHOT_TYPE_LABEL) as ShotTypeValue[]) {
       const name = archiveFileName({
         catalogId: 'AR-0001',
@@ -161,8 +161,8 @@ describe('el nombre del fichero descargado (RF-411)', () => {
 
 describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
   it('con copia corregida se ofrecen las dos, y la copia va primero', () => {
-    // La copia es la que se manda a imprimir: va debajo del pulgar. El original no se
-    // esconde nunca: es el documento de archivo.
+    // The copy is the one sent to print: it goes under the thumb. The original is never
+    // hidden: it is the archive document.
     const { offers, notes } = archiveDownloads({
       catalogId: 'AR-0001',
       row: row({ rotation: 90 }),
@@ -175,10 +175,10 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
     expect(offers.map((o) => o.kind)).toEqual(['corrected', 'master'])
     expect(offers[0]?.fileName).toBe('AR-0001_general_corregida.jpg')
     expect(offers[1]?.fileName).toBe('AR-0001_general_original.jpg')
-    // Nada se descarga sin pedirlo, y pedirlo solo es una decisión si se sabe cuánto pesa.
+    // Nothing downloads unasked, and asking is only a decision if the weight is known.
     expect(offers[0]?.label).toContain('4,2 MB')
     expect(offers[1]?.label).toContain('19,0 MB')
-    // Y la diferencia entre las dos, dicha sin jerga.
+    // And the difference between the two, said without jargon.
     expect(offers[0]?.hint).toContain('imprenta')
     expect(offers[1]?.hint).toContain('cámara')
     expect(offers.some((o) => /máster/i.test(o.label + o.hint))).toBe(false)
@@ -186,7 +186,7 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
   })
 
   it('la copia pendiente NO se ofrece: se dice que falta y por qué', () => {
-    // Un botón ausente no distingue «no hace falta» de «falta».
+    // A missing button does not tell «not needed» from «missing».
     const { offers, notes } = archiveDownloads({
       catalogId: 'AR-0001',
       row: row({ rotation: 90 }),
@@ -200,8 +200,8 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
   })
 
   it('una corrección anterior a las copias se explica, no se lee como «no hace falta»', () => {
-    // El estado en que está hoy la mayor parte de la base: la corrección es real, la
-    // copia no se hizo nunca y nada se repara hacia atrás (ADR-010).
+    // The state most of the base is in today: the correction is real, the copy was never
+    // made and nothing is repaired backwards (ADR-010).
     const { offers, notes } = archiveDownloads({
       catalogId: 'AR-0001',
       row: row({ rotation: 0, crop_x: 0.1, crop_y: 0.1, crop_width: 0.8, crop_height: 0.8 }),
@@ -236,8 +236,8 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
   })
 
   it('mientras se lee el estado no se acusa de nada, y cuando falla se dice', () => {
-    // «Todavía no lo sé» y «no hay» no son lo mismo, y la segunda frase durante el
-    // primer segundo de cada carga sería una falsa alarma en cada visita.
+    // «I do not know yet» and «there is none» are not the same, and the second sentence
+    // during the first second of every load would be a false alarm on every visit.
     const loading = archiveDownloads({ catalogId: 'AR-0001', row: row(), detail: undefined })
     expect(loading.notes[0]).toContain('Comprobando')
     expect(loading.offers.map((o) => o.kind)).toEqual(['master'])
@@ -249,13 +249,13 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
       detailsFailed: true,
     })
     expect(failed.notes[0]).toContain('No se ha podido comprobar')
-    // Y el original se sigue pudiendo descargar: un fallo de lectura no cierra la puerta.
+    // And the original can still be downloaded: a read failure does not close the door.
     expect(failed.offers.map((o) => o.kind)).toEqual(['master'])
   })
 
   it('sin original de archivo no hay hueco mudo: se explica que no consta', () => {
-    // Hoy no hay ninguna fila así, pero la columna es nullable y el botón sencillamente
-    // desaparecía, que es el hueco sin explicación que la regla prohíbe.
+    // There is no such row today, but the column is nullable and the button simply
+    // disappeared, which is the unexplained gap the rule forbids.
     const { offers, notes } = archiveDownloads({
       catalogId: 'AR-0001',
       row: row({ master_path: null }),
@@ -331,8 +331,8 @@ describe('la descarga, paso a paso y contando lo que pasa (RF-411, RF-420)', () 
     expect(saved).toEqual([
       ['https://s3.local/firmada', 'AR-0001_general_corregida.jpg', 'la copia corregida'],
     ])
-    // Y se dice que ha terminado: en el móvil el fichero cae donde el navegador decide
-    // y la página no se mueve, así que sin mensaje el toque parece no haber hecho nada.
+    // And it is said to have finished: on mobile the file lands wherever the browser decides
+    // and the page does not move, so with no message the tap looks like it did nothing.
     expect(notice).toContain('AR-0001_general_corregida.jpg')
   })
 
@@ -347,8 +347,8 @@ describe('la descarga, paso a paso y contando lo que pasa (RF-411, RF-420)', () 
   })
 
   it('el fallo al firmar se traduce en vez de salir crudo', async () => {
-    // Lo que devuelve la invocación es «Firmando el original de archivo: Failed to
-    // fetch»: cierto, inútil y la mitad en inglés.
+    // What the invocation returns is «Firmando el original de archivo: Failed to
+    // fetch»: true, useless and half of it in English.
     const thrown: unknown = await runArchiveDownload(offer, {
       sign: () => Promise.reject(new Error('Failed to fetch')),
       save: () => Promise.resolve(),

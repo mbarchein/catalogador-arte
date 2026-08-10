@@ -454,7 +454,7 @@ export type ListedArtwork = Pick<
  * `NO_PLACE` is checked apart because "no place" is not a node of the tree and so
  * cannot be in any set.
  */
-/** Nada apartado, que es lo que ve quien no ha tocado la tabla de fondos. */
+/** Nothing set aside, which is what whoever has not touched the funds table sees. */
 const EMPTY_FUNDS: ReadonlySet<ArtistFund> = new Set()
 
 export function matchesView(
@@ -472,8 +472,8 @@ export function matchesView(
    */
   hiddenFunds: ReadonlySet<ArtistFund> = EMPTY_FUNDS,
 ): boolean {
-  // Antes que los filtros: si el fondo está apartado y nadie ha preguntado por
-  // él, esta obra no entra en la lista aunque cumpla todo lo demás.
+  // Before the filters: if the fund is set aside and nobody has asked for
+  // it, this artwork does not enter the list even if it meets everything else.
   if (hiddenFunds.has(a.artist) && !view.funds.includes(a.artist)) return false
   if (view.funds.length > 0 && !view.funds.includes(a.artist)) return false
   if (view.types.length > 0 && !view.types.includes(a.artwork_type)) return false
