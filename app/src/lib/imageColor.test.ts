@@ -137,10 +137,10 @@ describe('buildColorLuts, la cadena canónica (RF-414)', () => {
     for (const lut of channels(luts)) {
       expect(lut[255]).toBe(255)
       expect(lut[40]).toBe(0)
-      // Y la tabla sube de verdad: no es el canal a cero que produciría el NaN.
-      // Con medios tonos por debajo de 1 el exponente es mayor que 1 y oscurece,
-      // así que el valor esperado está por debajo de la entrada, pero muy lejos de
-      // cero: (200−40)/(255−40) elevado a 1/0,6.
+      // And the table really rises: it is not the channel at zero the NaN would produce.
+      // With midtones below 1 the exponent is greater than 1 and darkens,
+      // so the expected value is below the input, but far from
+      // zero: (200−40)/(255−40) raised to 1/0.6.
       expect(lut[200]).toBe(Math.round((160 / 215) ** (1 / 0.6) * 255))
       expect(lut[200]!).toBeGreaterThan(100)
       expect(lut.reduce((sum, value) => sum + value, 0)).toBeGreaterThan(0)
@@ -260,9 +260,9 @@ describe('el paso de blanco y negro (RF-414)', () => {
 
 describe('colorSvgTables, la previsualización (RF-414)', () => {
   it('fija color-interpolation-filters="sRGB" por igualdad literal', () => {
-    // Su olvido es el fallo silencioso número uno: el filtro interpola en linearRGB
-    // por omisión, nada lanza, y la previsualización deja de coincidir con el
-    // fichero que se escribe.
+    // Forgetting it is silent failure number one: the filter interpolates in linearRGB
+    // by default, nothing throws, and the preview stops matching the
+    // file that gets written.
     expect(colorSvgTables(NO_COLOR).colorInterpolationFilters).toBe('sRGB')
     expect(colorSvgTables({ exposure: 1, gray: true }).colorInterpolationFilters).toBe('sRGB')
   })
@@ -300,9 +300,9 @@ describe('colorSvgTables, la previsualización (RF-414)', () => {
     expect(colorSvgTables(NO_COLOR).grayMatrix).toBeNull()
     const gray = colorSvgTables({ gray: true }).grayMatrix
     expect(gray).not.toBeNull()
-    // linearRGB en esta primitiva y solo en esta: es lo que hace que el navegador
-    // linealice, aplique la matriz y vuelva a codificar, que es exactamente la
-    // luminancia Rec. 709 en luz lineal que aplica la exportación.
+    // linearRGB in this primitive and only in this one: it is what makes the browser
+    // linearise, apply the matrix and re-encode, which is exactly the
+    // Rec. 709 luminance in linear light that the export applies.
     expect(gray?.colorInterpolationFilters).toBe('linearRGB')
     expect(gray?.values).toBe(
       '0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0',
@@ -312,9 +312,9 @@ describe('colorSvgTables, la previsualización (RF-414)', () => {
 
 describe('el conjunto de operaciones es cerrado (RF-415)', () => {
   it('no exporta saturación, vibrancia, contraste, sombras, altas luces por rango, nitidez ni velo', () => {
-    // Requisito negativo, y por eso tiene test: falsearían el documento de
-    // catalogación. Un barniz amarilleado y un color apagado son el estado de la
-    // obra, que es justo lo que la fotografía tiene que testificar.
+    // A negative requirement, and that is why it has a test: they would falsify the
+    // cataloguing document. A yellowed varnish and a dulled colour are the artwork's
+    // state, which is precisely what the photograph has to testify to.
     const forbidden = /satur|vibran|contrast|shadow|highlight|sharp|dehaze|deshaze|sepia|hue|glare|reflex/i
     for (const name of Object.keys(imageColor)) {
       expect(name).not.toMatch(forbidden)
@@ -365,9 +365,9 @@ describe('neutralFromSample, el cuentagotas (RF-414, RF-418)', () => {
   })
 
   it('rechaza la muestra con un canal a 250 o más, o a 5 o menos', () => {
-    // Un canal recortado ha perdido cuánto se pasó del tope y uno enterrado en el
-    // ruido ha perdido su proporción: los dos devuelven un número con pinta de
-    // medido que no lo es, y una sugerencia equivocada es peor que ninguna.
+    // A clipped channel has lost how far it went over the cap and one buried in the
+    // noise has lost its proportion: both return a number that looks
+    // measured and is not, and a wrong suggestion is worse than none.
     expect(neutralFromSample({ r: 250, g: 128, b: 100 })).toBeNull()
     expect(neutralFromSample({ r: 128, g: 251, b: 100 })).toBeNull()
     expect(neutralFromSample({ r: 128, g: 100, b: 5 })).toBeNull()
@@ -551,9 +551,9 @@ describe('los presets de tipo de luz (RF-414)', () => {
 
 describe('normalizeColor, isNoColor y sameColor (RF-414)', () => {
   it('la forma canónica redondea a lo que la columna puede guardar', () => {
-    // La tira mueve la exposición de sexto en sexto de EV y la columna es
-    // numeric(3,2): si la forma canónica no redondeara, el valor de la fila y el de
-    // la pantalla dejarían de coincidir y «Aplicar» regeneraría ficheros iguales.
+    // The strip moves the exposure a sixth of an EV at a time and the column is
+    // numeric(3,2): if the canonical form did not round, the row's value and the
+    // screen's would stop matching and «Aplicar» would regenerate identical files.
     expect(normalizeColor({ exposure: 1 / 6 }).exposure).toBe(0.17)
     expect(normalizeColor({ exposure: -5 / 6 }).exposure).toBe(-0.83)
     expect(normalizeColor({ gamma: 0.8500000001 }).gamma).toBe(0.85)
@@ -678,9 +678,9 @@ describe('las columnas del color (RF-414, RF-418)', () => {
   })
 
   it('el rango almacenable garantiza la restricción de los dos puntos', () => {
-    // check (coalesce(color_white,255) - coalesce(color_black,0) >= 128): con los
-    // topes de las dos tiras la diferencia mínima es 192 − 64 = 128, así que la
-    // forma canónica no puede escribir una fila que la base rechace.
+    // check (coalesce(color_white,255) - coalesce(color_black,0) >= 128): with the
+    // caps of both strips the minimum difference is 192 − 64 = 128, so the
+    // canonical form cannot write a row the base rejects.
     for (const color of [
       { blackPoint: 64, whitePoint: 192 },
       { blackPoint: 100, whitePoint: 150 },

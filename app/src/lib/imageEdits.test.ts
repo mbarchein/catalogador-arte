@@ -50,11 +50,11 @@ import {
 } from './imageEdits'
 
 /**
- * Las catorce columnas de color en su valor identidad: lo que escribe una fotografía
- * sin ajuste.
+ * The fourteen colour columns at their identity value: what a photograph with no
+ * adjustment writes.
  *
- * Escritas a mano y no con `colorToColumns`, para que los nombres que se comprueban
- * sean los de la migración y no los que este módulo diga que son.
+ * Written by hand and not with `colorToColumns`, so the names checked
+ * are the migration's and not the ones this module says they are.
  */
 const SIN_COLOR = {
   color_temperature: null,
@@ -170,10 +170,10 @@ describe('rotateEdit: todo lo dibujado sobre la foto gira con ella (RF-410)', ()
   }
 
   it('gira las esquinas, y no solo el giro y el recorte', () => {
-    // La incidencia: el editor giraba el giro, el recorte y los candidatos uno a
-    // uno, y se dejaba las esquinas. Girar una foto ya enderezada dejaba el
-    // cuadrilátero en el marco anterior, transpuesto sobre un cuadro que se había
-    // movido.
+    // The incident: the editor rotated the rotation, the crop and the candidates one by
+    // one, and left the corners out. Rotating an already straightened photo left the
+    // quadrilateral in the previous frame, transposed over a painting that had
+    // moved.
     const turned = rotateEdit({ rotation: 0, crop: null, corners }, 90)
     expect(turned.rotation).toBe(90)
     expect(turned.corners).not.toBeNull()
@@ -568,9 +568,9 @@ describe('el encuadre por esquinas (RF-410)', () => {
   }
 
   it('las esquinas mandan sobre el recorte, y no se escriben las dos cosas', () => {
-    // Las dos columnas pueden convivir en una FILA —es lo que deja el despliegue en
-    // una fase— pero un encuadre concreto es una cosa o la otra: escribir además un
-    // rectángulo sería escribir algo que el renderizador va a ignorar.
+    // The two columns can coexist in a ROW —it is what the single-phase deployment
+    // leaves— but a particular framing is one thing or the other: also writing a
+    // rectangle would be writing something the renderer is going to ignore.
     const columns = editToColumns({ rotation: 0, crop: fullCrop(), corners: trapecio })
     expect(columns.corner_nw_x).toBeCloseTo(0.3, 6)
     expect(columns.crop_x).toBeNull()
@@ -578,9 +578,9 @@ describe('el encuadre por esquinas (RF-410)', () => {
   })
 
   it('unas esquinas que son un rectángulo se guardan como recorte', () => {
-    // Enderezar remuestrea cada píxel, así que hacerlo para un cuadrilátero que ES
-    // un rectángulo costaría nitidez a cambio de nada. Y evita que una fotografía
-    // cuyas asas se arrastraron y se devolvieron quede registrada como «corregida».
+    // Straightening resamples every pixel, so doing it for a quadrilateral that IS
+    // a rectangle would cost sharpness in exchange for nothing. And it prevents a photograph
+    // whose handles were dragged and put back from being recorded as «corrected».
     const columns = editToColumns({
       rotation: 0,
       crop: null,
@@ -601,9 +601,9 @@ describe('el encuadre por esquinas (RF-410)', () => {
   })
 
   it('una fila con esquinas a medias se lee como recorte, no como cuadrilátero roto', () => {
-    // La base no puede haber aceptado esa fila, así que si aparece es un dato
-    // corrupto: leerla como el recorte que sí tiene es mejor que enderezar con tres
-    // esquinas.
+    // The base cannot have accepted that row, so if it appears it is corrupt
+    // data: reading it as the crop it does have is better than straightening with three
+    // corners.
     const back = editFromColumns({
       rotation: 0,
       crop_x: 0.1,
@@ -638,11 +638,11 @@ describe('el encuadre por esquinas (RF-410)', () => {
   })
 
   /**
-   * Este caso afirmaba lo contrario y por eso pasaba mientras la función estaba
-   * rota: decía que componer perspectiva SIEMPRE lanza. Pero `composeEdits` se
-   * llama en cada guardado, también desde el máster, y ahí no hay nada sobre lo que
-   * componer — así que aplicar la primera corrección de perspectiva lanzaba. Lo
-   * imposible es la perspectiva sobre algo ya incrustado, no la perspectiva.
+   * This case asserted the opposite and that is why it passed while the function was
+   * broken: it said that composing perspective ALWAYS throws. But `composeEdits` is
+   * called on every save, also from the master, and there there is nothing to
+   * compose over — so applying the first perspective correction threw. What is
+   * impossible is perspective over something already baked in, not perspective.
    */
   it('desde el máster, la perspectiva pasa tal cual: no hay nada que componer', () => {
     const perspectiva: PhotoEdit = { rotation: 0, crop: null, corners: trapecio }
@@ -652,9 +652,9 @@ describe('el encuadre por esquinas (RF-410)', () => {
   })
 
   it('pero sobre un encuadre ya incrustado se rechaza', () => {
-    // La vía degradada: el máster no se pudo descargar y la copia de consulta ya
-    // viene recortada. Un segundo warp iría sobre píxeles ya interpolados y la fila
-    // dejaría de decir la verdad sobre el máster.
+    // The degraded path: the master could not be downloaded and the reference copy already
+    // arrives cropped. A second warp would go over already interpolated pixels and the row
+    // would stop telling the truth about the master.
     const horneado: PhotoEdit = { rotation: 0, crop: { x: 0.1, y: 0.1, width: 0.6, height: 0.6 } }
     expect(() => composeEdits(horneado, { rotation: 0, crop: null, corners: trapecio })).toThrow()
     // And over an already straightened base, anything: there is no way of expressing a
@@ -667,15 +667,15 @@ describe('el encuadre por esquinas (RF-410)', () => {
   })
 
   /**
-   * Incidencia: el editor mostraba «Sin cambios» mientras la perspectiva estaba
-   * corregida en pantalla.
+   * Incident: the editor showed «Sin cambios» while the perspective was
+   * corrected on screen.
    *
-   * La causa no estaba aquí —`editSummary` describe las esquinas desde el primer
-   * día— sino en la cabecera del editor, que construía su propio objeto con el giro
-   * y el recorte y **se dejaba las esquinas fuera**. Este caso fija las dos mitades
-   * del contrato: qué tiene que decir una edición que solo trae esquinas, y que
-   * omitir el campo es exactamente lo que producía el «Sin cambios». Así, quien
-   * vuelva a pasar una edición a medias verá aquí escrito lo que se rompe.
+   * The cause was not here —`editSummary` has described the corners since day
+   * one— but in the editor's heading, which built its own object with the rotation
+   * and the crop and **left the corners out**. This case pins down the two halves
+   * of the contract: what an edit carrying only corners has to say, and that
+   * omitting the field is exactly what produced the «Sin cambios». So whoever
+   * passes a half-done edit again will see written here what breaks.
    */
   it('la perspectiva sola ya es un cambio, y omitir las esquinas es lo que lo silenciaba', () => {
     const soloPerspectiva: PhotoEdit = { rotation: 0, crop: null, corners: trapecio }
@@ -789,9 +789,9 @@ describe('el original siempre se puede recuperar', () => {
   })
 
   it('volver al original deja la fila sin encuadre NI COLOR: todo a nulo y sin giro', () => {
-    // «Volver al original» limpia también el color (RF-414): si dejara el ajuste
-    // puesto, la fila diría que la fotografía está corregida mientras los ficheros se
-    // regeneran desde el máster sin tocar.
+    // «Volver al original» also clears the colour (RF-414): if it left the adjustment
+    // in place, the row would say the photograph is corrected while the files are
+    // regenerated from the untouched master.
     const columns = editToColumns(NO_EDIT)
     expect(columns).toEqual({
       rotation: 0,
