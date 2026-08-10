@@ -41,12 +41,12 @@ function row(over: Partial<ParticipantRow> = {}): ParticipantRow {
 }
 
 describe('lo que se le pide a la base', () => {
-  /** RF-105: el contacto de un tercero no se pide donde no hace falta. */
+  /** RF-105: a third party's contact is not asked for where it is not needed. */
   it('RF-105: la consulta del bloque no pide ningún dato de contacto', () => {
     expect(PARTICIPANT_COLUMNS).not.toContain('contact')
   })
 
-  /** El bloque enlaza a la ficha por el código, que es su única puerta (RF-604). */
+  /** The block links to the record by its code, which is its only door (RF-604). */
   it('pide el código de la obra, que es lo único que enlaza con su ficha', () => {
     expect(PARTICIPANT_COLUMNS).toContain('catalog_id')
     expect(PARTICIPANT_COLUMNS).toContain('artwork:artworks(')
@@ -89,7 +89,7 @@ describe('RF-513: el bloque se ordena por el número del catálogo de la muestra
     expect(ordered.map((item) => item.id)).toEqual(['con', 'sin'])
   })
 
-  /** «s/n» es una transcripción, no un número, y también va al final. */
+  /** «s/n» is a transcription, not a number, and it also goes last. */
   it('un «s/n» tampoco se cuela entre los numerados', () => {
     const ordered = sortParticipants([
       row({ id: 'sn', catalog_id: 'AR-0009', catalogue_number: 's/n' }),
@@ -126,7 +126,7 @@ describe('RF-505: lo que dice cada fila', () => {
     expect(entry.retirementNotice).toBeNull()
   })
 
-  /** Nunca un hueco: una obra sin título lo dice. */
+  /** Never a gap: an artwork with no title says so. */
   it('RF-304: una obra sin título no deja la línea en blanco', () => {
     const entry = participantEntry(
       row({ artwork: { ...row().artwork!, title: '' } }),
@@ -171,7 +171,7 @@ describe('RF-505: lo que dice cada fila', () => {
     expect(entry.retirementNotice).not.toContain('participación está retirada')
   })
 
-  /** Dos avisos en una fila de un móvil es uno de más: gana el de la fila. */
+  /** Two warnings in one row of a phone is one too many: the row's wins. */
   it('retiradas las dos, gana el aviso de la participación, que es de lo que va la fila', () => {
     const entry = participantEntry(
       row({ active: false, artwork: { ...row().artwork!, active: false } }),
@@ -211,7 +211,7 @@ describe('el bloque entero', () => {
     expect(entries[1]?.retirementNotice).not.toBeNull()
   })
 
-  /** El recuento sí es de las vivas: es cuántas obras sostienen la muestra hoy. */
+  /** The count is of the live ones: it is how many artworks hold up the show today. */
   it('el recuento cuenta solo las participaciones vivas', () => {
     const rows = [row({ id: 'a' }), row({ id: 'b', active: false })]
     expect(activeParticipantCount(rows)).toBe(1)
@@ -277,7 +277,7 @@ describe('RF-505: las miniaturas que se piden', () => {
     ).toEqual(['AR-0001', 'AR-0002'])
   })
 
-  /** Sin filas, ninguna petición: una muestra sin obras no manda firmar nada. */
+  /** With no rows, no request: a show with no artworks sends nothing to be signed. */
   it('sin filas no pide firmar nada', () => {
     expect(thumbnailCatalogIds([])).toEqual([])
   })

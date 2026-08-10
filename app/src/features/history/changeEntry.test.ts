@@ -43,15 +43,15 @@ describe('el nombre de un campo en español (RF-1503)', () => {
   })
 
   it('los cuatro campos de la fecha de ejecución son la misma cosa', () => {
-    // Cambiar el año de inicio y el de fin es cambiar la fecha, una vez.
+    // Changing the start year and the end one is changing the date, once.
     for (const c of ['start_year', 'end_year', 'approximate_date', 'unconfirmed_date']) {
       expect(fieldLabel(c)).toBe('la fecha de ejecución')
     }
   })
 
   it('un campo desconocido se nombra, no se calla', () => {
-    // Es jerga a propósito: un cambio que no se lista es un cambio que el
-    // historial niega, y eso es peor que una palabra fea en pantalla.
+    // It is jargon on purpose: a change that is not listed is a change the
+    // history denies, and that is worse than an ugly word on screen.
     expect(fieldLabel('columna_del_futuro')).toBe('un dato (columna_del_futuro)')
   })
 
@@ -72,8 +72,8 @@ describe('quién lo hizo (RF-1502)', () => {
   })
 
   it('sin autor es «El sistema», y no «alguien»', () => {
-    // Lo escribe una migración o un trigger. Decir «alguien» sugeriría que el dato
-    // se ha perdido, y no se ha perdido: nunca lo hubo.
+    // A migration or a trigger writes it. Saying «somebody» would suggest the datum
+    // has been lost, and it has not been lost: there never was one.
     expect(authorName(fila({ author: null, changed_by: null }))).toBe('El sistema')
     expect(authorName(fila({ author: { name: '  ', email: '  ' } }))).toBe('El sistema')
   })
@@ -115,8 +115,8 @@ describe('un guardado es una línea y no cuatro (RF-1503)', () => {
 })
 
 describe('las cuatro operaciones se cuentan distinto (RF-1502)', () => {
-  // El `!` es honesto aquí: groupChanges de una fila devuelve exactamente una
-  // entrada, y la alternativa sería un aserto por caso que no prueba nada nuevo.
+  // The `!` is honest here: groupChanges of one row returns exactly one
+  // entry, and the alternative would be an assertion per case proving nothing new.
   const de = (over: Partial<ChangeLogRow>) => groupChanges([fila(over)])[0]!
 
   it('el alta de una ficha y el de una fotografía', () => {
@@ -142,8 +142,8 @@ describe('las cuatro operaciones se cuentan distinto (RF-1502)', () => {
   })
 
   it('un cambio en una fotografía dice que es de una fotografía', () => {
-    // El historial de una ficha mezcla la obra y sus fotos: «cambió el giro» sin
-    // decir de qué no sirve de nada.
+    // A record's history mixes the artwork and its photos: «the rotation changed» without
+    // saying of what is of no use.
     expect(changeSentence(de({ entity: 'IMAGE', column_name: 'rotation' }))).toBe(
       'Marta cambió el giro de una fotografía',
     )

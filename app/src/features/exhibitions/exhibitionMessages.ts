@@ -47,7 +47,7 @@ export type ExhibitionOperation =
   | 'save'
   | 'retire'
   | 'restore'
-  /** Decir cuál de las referencias de la bibliografía es su catálogo, o dejar de decirlo (RF-503). */
+  /** Saying which of the bibliography's references is its catalogue, or stopping saying it (RF-503). */
   | 'catalogue'
 
 const OPERATION_TEXT: Record<ExhibitionOperation, string> = {

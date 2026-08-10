@@ -38,7 +38,7 @@ const FLOOR = '#e7e5e4'
 const FRAME = '#a8a29e'
 const LINE = '#57534e'
 
-/** La obra colgada en la pared: marco, lienzo y dos trazos que sugieren pintura. */
+/** The artwork hanging on the wall: frame, canvas and two strokes suggesting paint. */
 function Artwork() {
   return (
     <g>
@@ -55,10 +55,10 @@ function Artwork() {
   )
 }
 
-/** Dónde va la tira en el dibujo: al lado de la obra y a su misma altura. */
+/** Where the strip goes in the drawing: next to the artwork and at its same height. */
 const TARGET_BOX = { x: 116, y: 44, width: 66, height: 21 } as const
 
-/** La tira de grises con su marco oscuro, tal como sale impresa. */
+/** The grey strip with its dark frame, just as it comes out printed. */
 function Target({ opacity = 1 }: { opacity?: number }) {
   return (
     <g opacity={opacity}>
@@ -77,7 +77,7 @@ function Target({ opacity = 1 }: { opacity?: number }) {
   )
 }
 
-/** El foco de la sala y hacia dónde va su luz. */
+/** The room's lamp and where its light goes. */
 function Light({ rays }: { rays: readonly { to: [number, number] }[] }) {
   return (
     <g>
@@ -99,7 +99,7 @@ function Light({ rays }: { rays: readonly { to: [number, number] }[] }) {
   )
 }
 
-/** El escenario común: pared, suelo y lo que cada caso añada encima. */
+/** The common stage: wall, floor and whatever each case adds on top. */
 function Scene({ description, children }: { description: string; children: ReactNode }) {
   return (
     <svg
@@ -120,7 +120,7 @@ type Verdict = 'ok' | 'note' | 'bad'
 
 const VERDICT: Record<Verdict, { Icon: typeof YesIcon; className: string; text: string }> = {
   ok: { Icon: YesIcon, className: 'bg-green-50 text-green-900', text: 'Así sí' },
-  // «Sin revisar» no es «no»: la fotografía sin testigo no está mal hecha.
+  // «Sin revisar» is not «no»: the photograph with no target is not badly taken.
   note: { Icon: UnreviewedIcon, className: 'bg-stone-100 text-stone-700', text: 'También vale' },
   bad: { Icon: NoIcon, className: 'bg-red-50 text-red-800', text: 'Así no' },
 }
@@ -132,11 +132,11 @@ function Case({
   children,
 }: {
   verdict: Verdict
-  /** Texto alternativo del dibujo: lo que se vería si se viera. */
+  /** The drawing's alternative text: what would be seen if it were seen. */
   description: string
-  /** Lo que se dibuja sobre la pared y el suelo. */
+  /** What is drawn over the wall and the floor. */
   scene: ReactNode
-  /** El pie: qué pasa en este caso, en una o dos frases. */
+  /** The caption: what happens in this case, in one or two sentences. */
   children: ReactNode
 }) {
   const { Icon, className, text } = VERDICT[verdict]
@@ -156,7 +156,7 @@ export function GrayTargetPage() {
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
 
-  // pdf-lib se carga solo cuando se pide la hoja: no debe engordar el arranque.
+  // pdf-lib is loaded only when the sheet is asked for: it must not fatten the start-up.
   async function downloadSheet() {
     setGenerating(true)
     setError('')

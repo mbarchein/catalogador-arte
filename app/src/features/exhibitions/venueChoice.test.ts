@@ -41,7 +41,7 @@ describe('RF-512: lo que dice una opción', () => {
     expect(venueChoiceText(venue())).toBe('Museo de Bellas Artes · Badajoz, España')
   })
 
-  /** Nunca un hueco: un blanco ahí se lee como «esta sede no tiene pueblo». */
+  /** Never a gap: a blank there reads as «this venue has no town». */
   it('RF-304: sin localidad ni país lo dice, en vez de dejar el sitio vacío', () => {
     expect(venueChoiceText(venue({ locality: '', country: '' }))).toBe(
       'Museo de Bellas Artes · sin localidad',
@@ -81,7 +81,7 @@ describe('RF-512: lo que se ofrece, y lo que no', () => {
     expect(rankVenues(venues, 'Casa').map((choice) => choice.venue.id)).toEqual(['casa'])
   })
 
-  /** Y por la localidad, porque es como se pregunta por una sede que no se recuerda. */
+  /** And by locality, because that is how a venue one does not remember gets asked about. */
   it('filtra por la localidad', () => {
     const venues = [venue({ id: 'museo' }), venue({ id: 'casa', name: 'Casa de Cultura', locality: 'Zafra' })]
     expect(rankVenues(venues, 'Zafra').map((choice) => choice.venue.id)).toEqual(['casa'])
@@ -156,7 +156,7 @@ describe('RF-304: el selector nunca se queda en blanco', () => {
     expect(noVenuesText(12, '  Zafra  ')).toContain('«Zafra»')
   })
 
-  /** Sin nada teclado no se inventan unas comillas vacías. */
+  /** With nothing typed, no empty quotation marks are invented. */
   it('sin nada teclado no pinta unas comillas con nada dentro', () => {
     const text = noVenuesText(12, '   ')
     expect(text).not.toContain('«»')

@@ -244,7 +244,7 @@ describe('RF-606: la búsqueda del listado', () => {
     expect(rankExhibitions(rows, 'zzzz')).toEqual([])
   })
 
-  /** Los índices son los que resaltan las letras encontradas. */
+  /** The indexes are the ones highlighting the letters found. */
   it('devuelve dónde cayeron las letras buscadas, dentro del texto que la fila muestra', () => {
     const entry = rankExhibitions(rows, 'Antológica')[0]
     expect(entry?.indices.length).toBeGreaterThan(0)
@@ -295,12 +295,12 @@ describe('RF-909: un título repetido se avisa, nunca se rechaza', () => {
     expect(similarTitleNotice([])).toBeNull()
   })
 
-  /** La frase nombra la que ya existe, para poder decidir si es la misma. */
+  /** The sentence names the one that already exists, so it can be decided whether it is the same. */
   it('el aviso nombra la exposición que ya existe, con sus fechas y su sede', () => {
     const text = similarTitleNotice([row()]) ?? ''
     expect(text).toContain('«Rotili. Obra reciente»')
     expect(text).toContain('Museo de Bellas Artes')
-    // Y no prohíbe: pulsar «Crear» de todas formas es un acto legítimo.
+    // And it does not forbid: pressing «Crear» anyway is a legitimate act.
     expect(text).toContain('Puede ser correcto')
   })
 
@@ -313,7 +313,7 @@ describe('RF-909: un título repetido se avisa, nunca se rechaza', () => {
     expect(similarTitleNotice(similarExhibitions(rows, 'Antológica'))).toContain('y 2 más')
   })
 
-  /** Y la que nombra es la más reciente, no la que llegó primera en el array. */
+  /** And the one it names is the most recent, not the one that came first in the array. */
   it('nombra la más reciente de las homónimas', () => {
     const rows = [
       row({ id: 'vieja', title: 'Antológica', year: 1985, start_date: '1985-03-12' }),

@@ -22,7 +22,7 @@ import {
  * la respuesta copiada, no una imitación.
  */
 
-/** La respuesta literal de la pasarela para un check de `exhibitions`. */
+/** The gateway's literal answer for an `exhibitions` check. */
 function check(name: string) {
   return {
     code: '23514',
@@ -45,7 +45,7 @@ describe('los ocho rechazos de la base, en español y con la consecuencia', () =
     )
   })
 
-  /** El mismo check para las dos mitades: cierre antes de la apertura, y cierre sin apertura. */
+  /** The same check for both halves: closing before opening, and closing with no opening. */
   it('fechas incoherentes, con las dos mitades en una frase', () => {
     const text = exhibitionFailureText(check('exhibitions_coherent_dates'), 'save')
     expect(text).toContain('cerraría antes de abrir')
@@ -112,7 +112,7 @@ describe('los ocho rechazos de la base, en español y con la consecuencia', () =
     expect(text).toContain('ya no está en el catálogo')
   })
 
-  /** Con la sesión del Lector. Lo que hace falta decir es «vuelve a entrar», no el nombre de una política. */
+  /** With the Reader's session. What needs saying is «vuelve a entrar», not a policy's name. */
   it('RF-103: una sesión que no puede escribir se lo dice sin nombrar políticas', () => {
     const text = exhibitionFailureText(
       { code: '42501', message: 'new row violates row-level security policy for table "exhibitions"' },
@@ -166,7 +166,7 @@ describe('los ocho rechazos de la base, en español y con la consecuencia', () =
     expect(text).toContain('Comprueba la conexión')
   })
 
-  /** La copia local de `isNetworkFailure` tiene que reconocer lo mismo que el original. */
+  /** The local copy of `isNetworkFailure` has to recognise the same things as the original. */
   it('reconoce las mismas caídas de red que las pantallas de Tablas', () => {
     for (const message of ['Failed to fetch', 'NetworkError when attempting', 'Load failed']) {
       expect(isNetworkFailure(message)).toBe(true)
@@ -229,7 +229,7 @@ describe('retirar una exposición dice a cuántas obras se lleva (RF-901, RF-905
     expect(text).toContain('se puede recuperar')
   })
 
-  /** Rellenar con «ninguna obra» entrenaría el ojo a saltarse justo la frase que importa. */
+  /** Padding it with «ninguna obra» would train the eye to skip precisely the sentence that matters. */
   it('sin obras dentro no hay impacto que anunciar', () => {
     expect(retireImpactText(0)).toBeNull()
     expect(retireImpactText(-4)).toBeNull()
@@ -275,7 +275,7 @@ describe('lo que el listado dice cuando no tiene filas (RF-304, RF-605)', () => 
     ).toBeNull()
   })
 
-  /** El catálogo empieza con cero exposiciones, así que este es el primer texto que se lee. */
+  /** The catalogue starts with zero exhibitions, so this is the first text read. */
   it('el catálogo vacío dice que lo está y dónde se da de alta la primera', () => {
     const text = exhibitionListNotice({ ...settled, total: 0, shown: 0 }) ?? ''
     expect(text).toContain('Todavía no hay ninguna exposición registrada')
@@ -287,7 +287,7 @@ describe('lo que el listado dice cuando no tiene filas (RF-304, RF-605)', () => 
     expect(text).toContain('«zafra»')
   })
 
-  /** Y avisa de que la papelera está fuera, que es la respuesta a la mitad de las búsquedas fallidas. */
+  /** And it warns that the wastebasket is out, which is the answer to half the failed searches. */
   it('con las retiradas escondidas, lo dice', () => {
     expect(exhibitionListNotice({ ...settled, total: 7, shown: 0 })).toContain(
       'Las retiradas no se están mostrando',
@@ -307,7 +307,7 @@ describe('el recuento del listado', () => {
     expect(exhibitionCountText(3)).toBe('3 exposiciones')
   })
 
-  /** El cero no se pinta nunca como recuento: en ese caso hay una frase. */
+  /** Zero is never painted as a count: in that case there is a sentence. */
   it('un cero se dice en plural, y la pantalla no lo usa', () => {
     expect(exhibitionCountText(0)).toBe('0 exposiciones')
     expect(exhibitionCountText(-2)).toBe('0 exposiciones')

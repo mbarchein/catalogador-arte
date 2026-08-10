@@ -98,8 +98,8 @@ export function ChangeHistorySection({ catalogId }: { catalogId: string }) {
                     <p className="text-stone-800">{changeSentence(entry)}</p>
                     <p className="text-xs text-stone-500">{whenText(entry.changedAt, now)}</p>
                     {detail !== null && (
-                      /* El antes y el después solo cuando el guardado tocó un campo:
-                         con varios sería una tabla, y esto es una lista que se lee. */
+                      /* The before and after only when the save touched one field:
+                         with several it would be a table, and this is a list that is read. */
                       <p className="mt-0.5 text-xs text-stone-600">
                         <span className="text-stone-400 line-through">{detail.before}</span>
                         {' → '}

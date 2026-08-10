@@ -17,13 +17,13 @@
  * y por eso está separada de la pantalla y probada.
  */
 
-/** Las dos cosas que se auditan. */
+/** The two things that are audited. */
 export type AuditedEntity = 'ARTWORK' | 'IMAGE'
 
-/** Qué se le hizo a la fila. */
+/** What was done to the row. */
 export type ChangeOperation = 'CREATE' | 'UPDATE' | 'DEACTIVATE' | 'RESTORE'
 
-/** Una fila del registro, tal como la devuelve la consulta. */
+/** One row of the log, just as the query returns it. */
 export interface ChangeLogRow {
   readonly id: number
   readonly change_id: string
@@ -35,7 +35,7 @@ export interface ChangeLogRow {
   readonly new_value: string | null
   readonly changed_at: string
   readonly changed_by: string | null
-  /** El perfil de quien lo hizo, incrustado por la consulta. Null si la fila no lo trae. */
+  /** The profile of whoever did it, embedded by the query. Null if the row does not carry it. */
   readonly author?: { readonly name: string | null; readonly email: string | null } | null
 }
 
@@ -53,7 +53,7 @@ export interface ChangeLogRow {
  * —quién y cuándo, que ya son el propio historial— y las columnas derivadas.
  */
 const FIELD_LABEL: Readonly<Record<string, string>> = {
-  // ── La obra: identificación ──────────────────────────────
+  // ── The artwork: identification ──────────────────────────
   artist: 'el artista',
   title: 'el título',
   attributed_title: 'si el título es del artista',
@@ -71,7 +71,7 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
   signed: 'si está firmada',
   signature_description: 'la descripción de la firma',
   dated_on_artwork: 'la fecha escrita en la obra',
-  // ── Fecha de ejecución (ADR-004) ─────────────────────────
+  // ── Date of execution (ADR-004) ──────────────────────────
   start_year: 'la fecha de ejecución',
   end_year: 'la fecha de ejecución',
   approximate_date: 'la fecha de ejecución',
@@ -84,12 +84,12 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
   physical_place_id: 'la ubicación',
   physical_location: 'la ubicación',
   photographed: 'si está fotografiada',
-  // ── Estado del proceso ───────────────────────────────────
+  // ── State of the process ─────────────────────────────────
   inventory_phase_completed: 'si el inventario está terminado',
   documentation_phase_completed: 'si la documentación está terminada',
   catalog_record_complete: 'si la ficha está completa',
   inventory_process_notes: 'las notas del proceso',
-  // ── El catálogo razonado ─────────────────────────────────
+  // ── The catalogue raisonné ───────────────────────────────
   provenance: 'la procedencia redactada',
   provenance_note: 'la nota de procedencia',
   rights_holder_party_id: 'quién tiene los derechos',
@@ -98,7 +98,7 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
   bibliography_status: 'el estado de la investigación bibliográfica',
   exhibition_history_status: 'el estado de la investigación de exposiciones',
   documentation_status: 'el estado de la investigación documental',
-  // ── La fotografía ────────────────────────────────────────
+  // ── The photograph ───────────────────────────────────────
   shot_type: 'el tipo de toma',
   photo_date: 'la fecha de la fotografía',
   photo_author: 'el autor de la fotografía',
@@ -118,7 +118,7 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
   corner_se_y: 'la corrección de perspectiva',
   corner_sw_x: 'la corrección de perspectiva',
   corner_sw_y: 'la corrección de perspectiva',
-  // ── El color de la fotografía ────────────────────────────
+  // ── The photograph's colour ──────────────────────────────
   color_temperature: 'la temperatura del color',
   color_tint: 'el matiz',
   color_exposure: 'la exposición',
@@ -135,7 +135,7 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
   color_inherited: 'si el color viene heredado',
   color_clipped_low: 'el detalle perdido en las sombras',
   color_clipped_high: 'el detalle perdido en las luces',
-  // ── Ficheros de la fotografía ────────────────────────────
+  // ── The photograph's files ───────────────────────────────
   master_path: 'el original de archivo',
   master_bytes: 'el tamaño del original',
   thumbnail_path: 'la miniatura',
