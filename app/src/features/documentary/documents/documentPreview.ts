@@ -1,53 +1,53 @@
 /**
- * Ver un documento del archivo sin bajárselo, cuando el formato lo permite
+ * Seeing an archive document without downloading it, when the format allows it
  * (RF-408, RF-411, RNF-106).
  *
- * ── EL PROBLEMA ─────────────────────────────────────────────
+ * ── THE PROBLEM ─────────────────────────────────────────────
  *
- * Hasta ahora un documento digitalizado solo tenía una salida: descargarlo. Y eso, con
- * una obra delante y en un almacén, es tres pasos para leer una carta —tocar, esperar,
- * buscar el fichero en las descargas del teléfono— y un fichero suelto en el móvil que
- * nadie va a borrar. Para una fotografía de archivo o un recorte escaneado en JPEG, que
- * el navegador pinta sin ayuda de nadie, es un camino absurdo.
+ * Until now a digitised document had only one way out: downloading it. And that, with
+ * an artwork in front and in a storeroom, is three steps to read a letter —tap, wait,
+ * hunt for the file in the phone's downloads— and a stray file on the phone that
+ * nobody is going to delete. For an archive photograph or a clipping scanned as JPEG, which
+ * the browser paints with nobody's help, it is an absurd path.
  *
- * ── LA FRONTERA, Y POR QUÉ NO ES «LO QUE EL NAVEGADOR SEPA» ──
+ * ── THE BOUNDARY, AND WHY IT IS NOT «WHATEVER THE BROWSER KNOWS» ──
  *
- * Solo se enseña dentro de la aplicación lo que **todos** los navegadores de la gama
- * declarada pintan en un `<img>`: JPEG, PNG, WebP, GIF y AVIF. Fuera se quedan dos que
- * parecen imágenes y no lo son a estos efectos:
+ * Only what **every** browser of the declared range paints in an `<img>` is shown inside
+ * the application: JPEG, PNG, WebP, GIF and AVIF. Left out are two that
+ * look like images and are not for these purposes:
  *
- *   · **TIFF**, que es el formato de un escaneado de archivo de verdad y que **ningún**
- *     navegador pinta. Ofrecer «Ver» sobre un TIFF daría un hueco negro con el icono de
- *     imagen rota, que es peor que no ofrecer nada.
- *   · **HEIC**, que Safari pinta y Chrome no. Un botón que funciona en un teléfono y no
- *     en el de al lado es un botón que se deja de usar en los dos.
+ *   · **TIFF**, which is the format of a real archive scan and which **no**
+ *     browser paints. Offering «Ver» over a TIFF would give a black gap with the
+ *     broken-image icon, which is worse than offering nothing.
+ *   · **HEIC**, which Safari paints and Chrome does not. A button that works on one phone and not
+ *     on the one next to it is a button that stops being used on both.
  *
- * Y el **PDF** —que es lo que más hay en el archivo, porque un expediente de varias
- * hojas se sube como un solo PDF (RF-408)— se abre **aparte**, en el visor del propio
- * navegador, y no dentro de la aplicación. Un `<iframe>` con un PDF en el Safari de un
- * iPhone enseña la primera página, escalada y sin poder pasar de ella: para un
- * expediente de doce hojas eso no es verlo, es aparentar que se ve. El visor del sistema
- * pasa páginas, busca texto y hace zoom, y esas tres cosas no se van a reimplementar
- * aquí.
+ * And the **PDF** —which is what there is most of in the archive, because a file of several
+ * pages is uploaded as a single PDF (RF-408)— opens **apart**, in the browser's own
+ * viewer, and not inside the application. An `<iframe>` with a PDF in an iPhone's
+ * Safari shows the first page, scaled and with no way past it: for a
+ * twelve-page file that is not seeing it, it is pretending to see it. The system's viewer
+ * turns pages, searches text and zooms, and those three things are not going to be reimplemented
+ * here.
  *
- * ── EL PESO SIGUE CONTANDO ──────────────────────────────────
+ * ── THE WEIGHT STILL COUNTS ─────────────────────────────────
  *
- * Verlo cuesta los mismos bytes que bajarlo, así que el aviso de peso vale igual para el
- * botón de ver. Lo decide `weightWarning`, que ya estaba.
+ * Seeing it costs the same bytes as downloading it, so the weight warning applies equally to the
+ * view button. `weightWarning` decides it, which was already there.
  *
- * Todo se decide sin navegador: la batería corre en node.
+ * Everything is decided with no browser: the suite runs in node.
  */
 
 import { storedExtension } from '../../artworks/archiveDownloads'
 
 /**
- * Cómo se puede ver este fichero sin descargarlo.
+ * How this file can be seen without downloading it.
  *
- * - `image`: la aplicación lo pinta ella misma, a pantalla completa y sin salir de la
- *   aplicación — que en la PWA instalada es la diferencia entre mirar un documento y
- *   perder de vista la ficha.
- * - `newTab`: lo abre el visor del navegador, que para un PDF hace tres cosas que esto
- *   no va a hacer.
+ * - `image`: the application paints it itself, full screen and without leaving the
+ *   application — which in the installed PWA is the difference between looking at a document and
+ *   losing sight of the record.
+ * - `newTab`: the browser's viewer opens it, which for a PDF does three things this
+ *   is not going to do.
  */
 export type DocumentPreviewKind = 'image' | 'newTab'
 
@@ -61,14 +61,14 @@ const INLINE_IMAGE_TYPES = new Set([
 ])
 
 /**
- * Las extensiones equivalentes, para cuando el tipo declarado no sirve.
+ * The equivalent extensions, for when the declared type is of no use.
  *
- * Hace falta de verdad y no es cinturón y tirantes: `mime_type` es lo que el navegador
- * dijo al subir el fichero, y hay caminos —algunos gestores de ficheros de Android, un
- * fichero llegado por Bluetooth, un adjunto reenviado— que declaran
- * `application/octet-stream` sobre un JPEG perfectamente normal. Con la extensión hay
- * respuesta; sin ella, el documento se quedaría con el botón de descargar por un dato
- * que no es suyo.
+ * It is genuinely needed and it is not belt and braces: `mime_type` is what the browser
+ * said on uploading the file, and there are paths —some Android file managers, a
+ * file arrived over Bluetooth, a forwarded attachment— that declare
+ * `application/octet-stream` over a perfectly normal JPEG. With the extension there is an
+ * answer; without it, the document would be left with the download button over a datum
+ * that is not its own.
  */
 const INLINE_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'])
 
@@ -79,11 +79,11 @@ function bareType(mime: string | null | undefined): string {
 }
 
 /**
- * Cómo se puede ver este documento, o null cuando la única salida es descargarlo.
+ * How this document can be seen, or null when the only way out is downloading it.
  *
- * El tipo declarado manda, y la extensión solo entra cuando el tipo no contesta: un
- * fichero que dice ser `image/tiff` y se llama `.jpg` es más probablemente un TIFF
- * renombrado que un JPEG mal declarado, y pintarlo daría la imagen rota.
+ * The declared type rules, and the extension only comes in when the type does not answer: a
+ * file claiming to be `image/tiff` and named `.jpg` is more likely a renamed TIFF
+ * than a badly declared JPEG, and painting it would give the broken image.
  */
 export function documentPreviewKind(file: {
   file_path: string | null
@@ -96,9 +96,9 @@ export function documentPreviewKind(file: {
   if (type !== '') {
     if (INLINE_IMAGE_TYPES.has(type)) return 'image'
     if (type === 'application/pdf') return 'newTab'
-    // Un tipo declarado que no está en ninguna de las dos listas es una respuesta, no
-    // un silencio: `image/tiff` y `image/heic` llegan aquí y se quedan sin «Ver» a
-    // propósito.
+    // A declared type that is in neither of the two lists is an answer, not
+    // a silence: `image/tiff` and `image/heic` arrive here and are left with no «Ver» on
+    // purpose.
     return null
   }
 
@@ -110,11 +110,11 @@ export function documentPreviewKind(file: {
 }
 
 /**
- * Lo que dice el botón de ver, con el peso dentro.
+ * What the view button says, with the weight inside.
  *
- * El peso va **en el botón** por lo mismo que en el de descargar: verlo se trae el
- * fichero entero, así que cuesta los mismos datos, y lo que cuesta tiene que leerse en
- * la misma mirada que lo que hace (RNF-106).
+ * The weight goes **in the button** for the same reason as in the download one: seeing it brings the
+ * whole file, so it costs the same data, and what it costs has to be read in
+ * the same glance as what it does (RNF-106).
  */
 export function previewLabel(kind: DocumentPreviewKind, sizeText: string | null): string {
   const verb = kind === 'image' ? 'Ver el documento' : 'Abrir el PDF'
@@ -122,11 +122,11 @@ export function previewLabel(kind: DocumentPreviewKind, sizeText: string | null)
 }
 
 /**
- * Lo que se lee debajo del botón de ver, o null cuando no hay nada que advertir.
+ * What is read below the view button, or null when there is nothing to warn about.
  *
- * El PDF se abre fuera, y decirlo antes evita el desconcierto de que la aplicación
- * desaparezca de la pantalla —en la PWA instalada, además, se va a otra ventana—. Para
- * una imagen no hay nada que avisar: se abre encima y se cierra con el botón de atrás.
+ * The PDF opens outside, and saying so beforehand avoids the bewilderment of the application
+ * disappearing from the screen —in the installed PWA, besides, it goes to another window—. For
+ * an image there is nothing to warn about: it opens on top and closes with the back button.
  */
 export function previewHint(kind: DocumentPreviewKind): string | null {
   if (kind === 'image') return null
@@ -134,22 +134,22 @@ export function previewHint(kind: DocumentPreviewKind): string | null {
 }
 
 /**
- * Lo que se dice cuando el visor del navegador no se ha abierto.
+ * What is said when the browser's viewer has not opened.
  *
- * Pasa de verdad: un bloqueador de ventanas emergentes puede pararlo, y el navegador no
- * avisa de nada. Sin esta frase el toque parece no haber hecho nada, y el camino que
- * siempre funciona —descargarlo— está justo al lado y no se ve.
+ * It really happens: a pop-up blocker can stop it, and the browser gives
+ * no warning. Without this sentence the tap looks like it did nothing, and the path that
+ * always works —downloading it— is right alongside and not visible.
  */
 export const PREVIEW_BLOCKED_TEXT =
   'El navegador no ha dejado abrir el visor: puede tener bloqueadas las ventanas nuevas. ' +
   'Descárgalo con el botón de al lado y se abrirá con el visor del teléfono.'
 
 /**
- * Lo que se dice cuando la imagen no se ha podido pintar, ya con el permiso concedido.
+ * What is said when the image could not be painted, with the permission already granted.
  *
- * Es el caso raro de verdad: el fichero está, la firma entró y el navegador no ha podido
- * con el contenido —un fichero corrupto, o un tipo declarado que miente—. Se manda a
- * descargarlo, que es la salida que no depende de que el navegador sepa pintarlo.
+ * It is the genuinely rare case: the file is there, the signature went in and the browser could not
+ * cope with the content —a corrupt file, or a declared type that lies—. It sends people to
+ * download it, which is the way out that does not depend on the browser knowing how to paint it.
  */
 export const PREVIEW_IMAGE_FAILED_TEXT =
   'Esta imagen no se ha podido mostrar aquí. Descárgala y ábrela con el visor del teléfono: ' +

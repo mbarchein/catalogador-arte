@@ -21,12 +21,12 @@ import {
 } from './documentUpload'
 
 /**
- * Subir el fichero escaneado de un documento de archivo y enlazarlo con la obra
+ * Uploading an archive document's scanned file and linking it to the artwork
  * (RF-408, RF-110, RF-516, RF-517).
  *
- * Todo se decide sin navegador, que es la única manera de que esta batería lo
- * verifique: `File` es un tipo del DOM y aquí se usa su forma, y los tres bordes
- * impuros —subir, insertar, vincular— se inyectan.
+ * Everything is decided with no browser, which is the only way for this suite to
+ * verify it: `File` is a DOM type and here its shape is used, and the three impure
+ * edges —uploading, inserting, linking— are injected.
  */
 
 function picked(over: Partial<PickedFile> = {}): PickedFile {
@@ -42,11 +42,11 @@ const DOCUMENT = { archive_code: 'AR-ARCH-0001', title: 'Carta de la galería' }
 
 describe('el límite del bucket, medido y no supuesto (RF-408)', () => {
   /**
-   * 62 914 560 bytes = 60 MiB, leídos de `storage.buckets` de la base en marcha, que
-   * es lo que puso `20260726010000_imagenes.sql` y no ha cambiado ninguna migración.
-   * El almacén contesta a un byte más con HTTP 400 y
+   * 62 914 560 bytes = 60 MiB, read from `storage.buckets` of the running base, which
+   * is what `20260726010000_imagenes.sql` set and no migration has changed.
+   * The store answers one byte more with HTTP 400 and
    * `{"statusCode":"413","message":"The object exceeded the maximum allowed size"}`,
-   * en inglés y sin decir el número: por eso el número está aquí.
+   * in English and without saying the number: that is why the number is here.
    */
   it('son 62 914 560 bytes, 60 MiB', () => {
     expect(BUCKET_FILE_LIMIT_BYTES).toBe(62_914_560)
@@ -85,9 +85,9 @@ describe('el límite del bucket, medido y no supuesto (RF-408)', () => {
   })
 
   /**
-   * El bucket no declara `allowed_mime_types` —comprobado— y el archivo guarda
-   * cartas, recortes, carteles y lo que aparezca. Una lista blanca aquí rechazaría
-   * justo el formato que nadie previó.
+   * The bucket does not declare `allowed_mime_types` —checked— and the archive keeps
+   * letters, clippings, posters and whatever turns up. A whitelist here would reject
+   * precisely the format nobody foresaw.
    */
   it('no se rechaza ningún tipo de fichero', () => {
     expect(documentFileProblem(picked({ name: 'cinta.wav', type: 'audio/wav' }))).toBeNull()
@@ -103,10 +103,10 @@ describe('dónde aterriza el fichero, que NUNCA es donde están las fotografías
   })
 
   /**
-   * EL ORIGINAL DE ARCHIVO DE UNA FOTOGRAFÍA ES INALTERABLE. Los ficheros de una
-   * foto cuelgan de `<CATALOG_ID>/…`; aquí no entra ningún identificador de
-   * catalogación, así que las dos familias de nombres no pueden coincidir por
-   * aritmética y no por cuidado.
+   * A PHOTOGRAPH'S ARCHIVE ORIGINAL IS UNALTERABLE. A photo's files
+   * hang from `<CATALOG_ID>/…`; here no cataloguing identifier comes in,
+   * so the two families of names cannot coincide by arithmetic and not by
+   * care.
    */
   it('ninguna ruta lleva el código de la obra, así que no puede pisar una foto', () => {
     const path = documentObjectPath(
@@ -195,9 +195,9 @@ describe('las cuatro columnas del fichero, juntas o ninguna', () => {
 
 describe('cuando el almacén dice no, medido contra el almacén local', () => {
   /**
-   * Los tres llegan como HTTP 400 con el estado de verdad dentro del cuerpo, que es
-   * por lo que el mapeo mira `statusCode` y no `status`. Provocados con el token de
-   * un Catalogador real y con el anónimo.
+   * All three arrive as HTTP 400 with the real status inside the body, which is
+   * why the mapping looks at `statusCode` and not `status`. Provoked with a real
+   * Cataloguer's token and with the anonymous one.
    */
   it('413 «The object exceeded the maximum allowed size» se lee con el número', () => {
     const said = describeStorageFailure({
@@ -270,9 +270,9 @@ const PLAN = {
 
 describe('subir, registrar y enlazar, en ese orden (RF-408, RF-516)', () => {
   /**
-   * El orden es el mismo que argumenta `uploadShot` y por lo mismo: un fichero
-   * suelto en el almacén no rompe nada y se puede limpiar; una fila que dice tener
-   * un fichero que no llegó es un botón de descarga que falla para siempre.
+   * The order is the same one `uploadShot` argues and for the same reason: a stray
+   * file in the store breaks nothing and can be cleaned up; a row claiming to have
+   * a file that never arrived is a download button that fails forever.
    */
   it('los bytes primero, la fila después y el vínculo al final', async () => {
     const { calls, base } = deps()

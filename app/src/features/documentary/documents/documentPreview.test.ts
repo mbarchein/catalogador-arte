@@ -63,9 +63,9 @@ describe('documentPreviewKind, qué se puede ver y qué solo se descarga', () =>
 
 describe('documentPreviewKind, cuando el tipo declarado no sirve', () => {
   it('sin tipo, la extensión contesta', () => {
-    // Pasa de verdad: hay caminos —un gestor de ficheros de Android, un adjunto
-    // reenviado— que declaran `application/octet-stream` sobre un JPEG normal, y sin
-    // esto el documento se quedaría sin «Ver» por un dato que no es suyo.
+    // It really happens: there are paths —an Android file manager, a forwarded
+    // attachment— that declare `application/octet-stream` over a normal JPEG, and without
+    // this the document would be left with no «Ver» over a datum that is not its own.
     expect(documentPreviewKind({ file_path: 'archivo/carta.JPG', mime_type: null })).toBe('image')
     expect(documentPreviewKind({ file_path: 'archivo/expediente.pdf', mime_type: '' })).toBe(
       'newTab',
