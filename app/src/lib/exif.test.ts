@@ -454,9 +454,9 @@ describe('RF-419: lo que no trae datos devuelve null y nunca lanza', () => {
     expect(readPhotoExif(jpeg([exifSegment(tiff)]))).toBeNull()
   })
 
-  // Un IFD que declara 500 entradas y trae una es el fichero cortado a 128 KB visto
-  // desde dentro: se lee lo que cupo, se para en la primera entrada que no cabe, y no
-  // se inventa nada con los bytes que hay detrás.
+  // An IFD declaring 500 entries and bringing one is the file cut to 128 KB seen
+  // from inside: what fitted is read, it stops at the first entry that does not fit, and
+  // nothing is invented with the bytes behind it.
   it('un IFD que declara más entradas de las que hay: lo que cupo, y para', () => {
     const tiff = tiffBlock([{ tag: TAG.MAKE, type: TYPE.ASCII, value: 'Xiaomi\u0000' }], null)
     new DataView(tiff.buffer).setUint16(8, 500, true)
@@ -466,10 +466,10 @@ describe('RF-419: lo que no trae datos devuelve null y nunca lanza', () => {
   })
 
   /**
-   * La frontera de los 128 KB, que es donde el diseño corta el fichero: una
-   * cabecera de marcador en los últimos 4-7 bytes. Con el guardián en `p + 4` en
-   * vez de `p + 8`, leer la firma «Exif» lanza RangeError justo aquí, y el editor
-   * se negaría a abrir la fotografía.
+   * The 128 KB boundary, which is where the design cuts the file: a
+   * marker header in the last 4-7 bytes. With the guard at `p + 4` instead
+   * of `p + 8`, reading the «Exif» signature throws RangeError right here, and the editor
+   * would refuse to open the photograph.
    */
   it('un marcador truncado en el límite del recorte, en cualquiera de sus longitudes', () => {
     const truncatable = bytesOf(
@@ -483,11 +483,11 @@ describe('RF-419: lo que no trae datos devuelve null y nunca lanza', () => {
   })
 
   /**
-   * El caso exacto que obliga a `p + 8`, y hay que construirlo con cuidado para que
-   * el fichero sea lo bastante largo como para llegar al recorrido de marcadores: un
-   * comentario completo delante, y detrás una cabecera de APP1 que se queda en los
-   * últimos 2 a 7 bytes. Confirmar el APP1 lee los cuatro bytes de la firma «Exif»,
-   * así que con el guardián en `p + 4` estas longitudes lanzan RangeError.
+   * The exact case that forces `p + 8`, and it has to be built carefully so that
+   * the file is long enough to reach the marker walk: a
+   * complete comment in front, and behind an APP1 header ending in the
+   * last 2 to 7 bytes. Confirming the APP1 reads the four bytes of the «Exif» signature,
+   * so with the guard at `p + 4` these lengths throw RangeError.
    */
   it('una cabecera de APP1 que se queda en los últimos bytes del recorte', () => {
     const head = concat([
@@ -530,9 +530,9 @@ describe('RF-419: lo que no trae datos devuelve null y nunca lanza', () => {
 
 describe('RF-419: PixelXDimension no son las dimensiones de la fotografía', () => {
   /**
-   * 16 másteres traen `Orientation = 6` con las dimensiones sin girar. Comparar
-   * `PixelXDimension` con el ancho decodificado marcaría 23 de 31 ficheros como
-   * recortados cuando solo lo están 7: el 70 % de falsos positivos.
+   * 16 masters carry `Orientation = 6` with the dimensions unrotated. Comparing
+   * `PixelXDimension` with the decoded width would mark 23 of 31 files as
+   * cropped when only 7 are: 70 % false positives.
    */
   const exif = readPhotoExif(
     jpegWithExif(

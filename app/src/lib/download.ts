@@ -80,12 +80,12 @@ export function downloadFailureKind(status: number): DownloadFailureKind {
 /**
  * `a` + `el documento` = `al documento`; `de` + `el original` = `del original`.
  *
- * Los dos artículos contractos del español, que aquí no son un detalle de estilo: los
- * nombres que llegan como `label` son frases —«el original», «la copia corregida», «el
- * documento «Carta de la galería»»— y una de cada dos empieza por «el». Sin esto, el
- * único aviso que lleva preposición delante decía «no se ha podido preparar la descarga
- * de el documento», y una frase mal escrita en un mensaje de error hace dudar del
- * programa entero justo cuando algo acaba de ir mal.
+ * Spanish's two contracted articles, which here are not a matter of style: the
+ * names arriving as `label` are phrases —«el original», «la copia corregida», «el
+ * documento «Carta de la galería»»— and one in every two starts with «el». Without this, the
+ * only warning carrying a preposition before it said «no se ha podido preparar la descarga
+ * de el documento», and a badly written sentence in an error message makes one doubt the
+ * whole program precisely when something has just gone wrong.
  */
 export function contracted(preposition: 'a' | 'de', label: string): string {
   // Only the masculine singular article contracts: «de la copia» and «de los originales»
@@ -102,10 +102,10 @@ export function downloadFailureText(
   const aside = detail === undefined || detail === '' ? '' : ` (${detail})`
   switch (kind) {
     case 'sign':
-      // «Acceder» y no «preparar la descarga»: firmar es el paso previo tanto de bajarse
-      // el fichero como de VERLO sin bajárselo, y un documento que se abre en el visor
-      // decía «no se ha podido preparar la descarga» de algo que nadie había pedido
-      // descargar. Lo que ha fallado es el permiso, y eso es lo mismo en los dos casos.
+      // «Acceder» and not «preparar la descarga»: signing is the step before both downloading
+      // the file and SEEING it without downloading it, and a document that opens in the viewer
+      // said «no se ha podido preparar la descarga» of something nobody had asked to
+      // download. What has failed is the permission, and that is the same in both cases.
       return (
         `No se ha podido acceder ${contracted('a', label)}: no ha llegado el permiso para ` +
         `entrar en el almacén de originales${aside}. Comprueba la conexión y vuelve a intentarlo.`

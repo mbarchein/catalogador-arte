@@ -85,9 +85,9 @@ const SAMPLE_EDITS: Partial<ColorEdit>[] = [
 
 describe('buildColorLuts, la cadena canónica (RF-414)', () => {
   it('el ajuste neutro es la identidad exacta en los 256 códigos y los tres canales', () => {
-    // Lo que garantiza que abrir el editor, mirar y aplicar no reescriba los
-    // ficheros: si la identidad no fuera exacta, `sameColor` diría que la
-    // fotografía ha cambiado y se generarían rutas nuevas en el bucket.
+    // What guarantees that opening the editor, looking and applying does not rewrite the
+    // files: if the identity were not exact, `sameColor` would say that the
+    // photograph has changed and new paths would be generated in the bucket.
     const luts = buildColorLuts(NO_COLOR)
     for (const lut of channels(luts)) {
       expect(lut).toHaveLength(256)
@@ -129,10 +129,10 @@ describe('buildColorLuts, la cadena canónica (RF-414)', () => {
   })
 
   it('el punto negro con medios tonos por debajo de 1 no produce NaN ni un canal en blanco', () => {
-    // El `max(0, …)` del paso 7. Sin él, los códigos por debajo del punto negro son
-    // negativos, `pow(negativo, 1/0,6)` es NaN, y un NaN guardado en un Uint8Array
-    // es un 0: la tabla saldría con el canal entero a cero y la fotografía con un
-    // canal en blanco, que se descubre en el bucket y no en el editor.
+    // Step 7's `max(0, …)`. Without it, the codes below the black point are
+    // negative, `pow(negative, 1/0.6)` is NaN, and a NaN stored in a Uint8Array
+    // is a 0: the table would come out with the whole channel at zero and the photograph with a
+    // blank channel, which is discovered in the bucket and not in the editor.
     const luts = buildColorLuts({ blackPoint: 40, gamma: 0.6 })
     for (const lut of channels(luts)) {
       expect(lut[255]).toBe(255)

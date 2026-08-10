@@ -247,12 +247,12 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
 
   it('RF-418: tres grises cercanos con escalones de sobra no son un testigo, porque les falta recorrido', () => {
     const photo = canvas()
-    // Tres estantes en tres grises claros de la misma pared. Los escalones son de 27
-    // y 28 códigos, holgadamente por encima de MIN_STEP, uniformes, alineados, del
-    // mismo tamaño y acromáticos: pasan TODAS las demás reglas. Lo único que los
-    // separa de un testigo es que del más claro al más oscuro solo hay una razón de
-    // 2,1 en luz lineal, y una carta va de blanco a negro. Este es el caso que hace
-    // que MIN_TONE_RATIO tenga dientes: sin él podría valer 1 y todo seguiría verde.
+    // Three shelves in three light greys of the same wall. The steps are of 27
+    // and 28 codes, comfortably above MIN_STEP, uniform, aligned, the
+    // same size and achromatic: they pass ALL the other rules. The only thing that
+    // separates them from a target is that from the lightest to the darkest there is only a ratio
+    // of 2.1 in linear light, and a chart goes from white to black. This is the case that makes
+    // MIN_TONE_RATIO have teeth: without it, it could be 1 and everything would stay green.
     targetOn(photo, { patches: [[140, 140, 140], [167, 167, 167], [195, 195, 195]] })
 
     const analysis = analyseGrayTarget(photo, CARD_OPTIONS)
@@ -262,9 +262,9 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
 
   it('RF-418: una secuencia de parches desiguales no es un testigo, porque una escala se dibuja con celdas iguales', () => {
     const photo = canvas()
-    // «Pared ancha, sombra estrecha, suelo ancho»: los tonos escalonan de blanco a
-    // negro y la cromaticidad concuerda, pero 26 y 6 píxeles no son la misma celda.
-    // Es la regla que la hoja imprimible del §4 tiene que respetar al dibujarse.
+    // «Wide wall, narrow shadow, wide floor»: the tones step from white to
+    // black and the chromaticity agrees, but 26 and 6 pixels are not the same cell.
+    // It is the rule §4's printable sheet has to respect when it is drawn.
     const widths = [26, 6, 26]
     let x = 10
     CARD.forEach((reflectance, i) => {
@@ -280,11 +280,11 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
 
   it('RF-418: parches que no concuerdan en cromaticidad no son un testigo, aunque ninguno tenga mucho color', () => {
     const photo = canvas()
-    // Crema, gris azulado y casi negro: escalonan de blanco a negro y ninguno lleva
-    // color suficiente para que lo tumbe MAX_CAST_SPREAD —el suyo se queda en 0,16 de
-    // los 0,35 que se toleran—, así que quien los rechaza es el acuerdo y no el techo.
-    // Lo que los delata: una luz multiplica los tres parches por los mismos tres
-    // números, luego una cromaticidad distinta en cada parche no la ha puesto la luz.
+    // Cream, bluish grey and almost black: they step from white to black and none carries
+    // enough colour for MAX_CAST_SPREAD to knock it out —theirs stays at 0.16 of
+    // the 0.35 tolerated—, so what rejects them is the agreement and not the ceiling.
+    // What gives them away: a light multiplies the three patches by the same three
+    // numbers, so a different chromaticity in each patch was not put there by the light.
     targetOn(photo, { patches: [[240, 232, 216], [116, 128, 138], [46, 44, 42]] })
 
     const analysis = analyseGrayTarget(photo, CARD_OPTIONS)
@@ -293,10 +293,10 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
   })
 
   it('RF-418: un testigo demasiado pequeño en el encuadre se descarta, y el mismo testigo mayor se detecta', () => {
-    // La regla es relativa al ráster, y el par de casos es lo que lo demuestra: los
-    // dos van sobre la MISMA imagen de 400x300, y lo único que cambia es el tamaño
-    // del testigo. Cinco píxeles de parche están por debajo de MIN_PATCH_SIDE y su
-    // mediana no significa nada; pedir otra fotografía es la respuesta honesta.
+    // The rule is relative to the raster, and the pair of cases is what proves it: both
+    // go over the SAME 400x300 image, and the only thing that changes is the target's
+    // size. Five pixels of patch are below MIN_PATCH_SIDE and their
+    // median means nothing; asking for another photograph is the honest answer.
     const far = canvas(400, 300)
     CARD.forEach((reflectance, i) => {
       fill(far, { x: 100 + i * 5, y: 100, width: 5, height: 5 }, tone(reflectance))
@@ -333,12 +333,12 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     const photo = canvas()
     const boxes = targetOn(photo)
     const middle = boxes[1]!
-    // La mitad inferior del parche medio, en sombra. El pliegue corre a lo LARGO de
-    // las líneas de barrido, así que cada línea sigue viendo tres parches de la misma
-    // anchura y con sus escalones: la escalera no se rompe. Lo que se rompe es que el
-    // parche sea una superficie plana, y eso solo se ve en la segunda dimensión —que
-    // es exactamente por lo que la uniformidad se mide sobre la caja y no sobre una
-    // línea. Sin este caso, la regla podría estar en 0,1 y nada lo diría.
+    // The lower half of the middle patch, in shade. The fold runs ALONG
+    // the scan lines, so each line still sees three patches of the same
+    // width and with their steps: the staircase does not break. What breaks is that
+    // the patch be a flat surface, and that is only visible in the second dimension —which
+    // is exactly why uniformity is measured over the box and not over a
+    // line. Without this case, the rule could be at 0.1 and nothing would say so.
     fill(
       photo,
       { x: middle.x, y: middle.y + PATCH.height / 2, width: PATCH.width, height: PATCH.height / 2 },
@@ -455,9 +455,9 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
   it('RF-418: un testigo fotografiado de verdad, con ruido y bordes blandos, se detecta', () => {
     const photo = canvas()
     const boxes = targetOn(photo, { gains: [1, 0.95, 0.88] })
-    // La frontera entre dos parches nunca es de un píxel en una fotografía: entre
-    // ellos hay una costura con el tono mezclado, y dejarla dentro la haría pasar
-    // por un parche más.
+    // The border between two patches is never one pixel wide in a photograph: between
+    // them there is a seam with the tone blended, and leaving it inside would make it pass
+    // for one more patch.
     for (let i = 1; i < boxes.length; i += 1) {
       const before = tone(CARD[i - 1]!)
       const after = tone(CARD[i]!)
