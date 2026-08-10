@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Crea los usuarios de prueba locales por la API de administración de GoTrue,
-# uno por cada rol, y les asigna el rol correspondiente.
+# Creates the local test users through GoTrue's administration API,
+# one for each role, and assigns them the corresponding role.
 set -euo pipefail
 
 API=${API:-http://localhost:${PUERTO_API:-8321}}
 
-# NO es un secreto: es el JWT de service_role del entorno local, firmado con el
-# secreto por omisión bien conocido de Supabase ("your-super-secret-jwt-token-
-# with-at-least-32-characters-long"). Solo sirve contra una instancia local que
-# use ese secreto; no concede nada en el proyecto de la nube, que tiene el suyo
-# privado. Se puede versionar sin riesgo.
+# It is NOT a secret: it is the local environment's service_role JWT, signed with
+# Supabase's well-known default secret ("your-super-secret-jwt-token-
+# with-at-least-32-characters-long"). It only works against a local instance that
+# uses that secret; it grants nothing in the cloud project, which has its own
+# private one. It can be versioned with no risk.
 SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UtbG9jYWwiLCJpYXQiOjE3MzU2ODk2MDAsImV4cCI6MjA4Mjc1ODQwMH0.hKugUZ3psc796Vm1pvDwNp_KGtbvF22bnuyE6pjGQFk"
 PSQL="docker compose exec -T -e PGPASSWORD=postgres db psql -U supabase_admin -h localhost -d postgres -v ON_ERROR_STOP=1"
 
@@ -27,8 +27,8 @@ crear_usuario "admin@local.test"       "Admin Local"
 crear_usuario "catalogador@local.test" "Pedro Catalogador"
 crear_usuario "lector@local.test"      "Luisa Lectora"
 
-# El rol se asigna aquí y no en el alta: el valor por omisión de la tabla es
-# READER, el de menor privilegio, y promover es un acto explícito.
+# The role is assigned here and not on registration: the table's default value is
+# READER, the least privileged one, and promoting is an explicit act.
 $PSQL <<'SQL' > /dev/null
 update public.profiles set role = 'SUPERUSER' where email = 'admin@local.test';
 update public.profiles set role = 'CATALOGER'  where email = 'catalogador@local.test';
@@ -43,10 +43,10 @@ echo "  lector@local.test       lector — solo consulta"
 echo
 echo "Entra en http://localhost:${PUERTO_APP:-5173}"
 
-# Realtime (solo local): el tenant se siembra con un secreto aleatorio, y sin
-# alinearlo con JWT_SECRET los canales rechazan los tokens de los usuarios y la
-# suscripción falla en silencio. Idempotente; el cifrado es el que espera la
-# imagen (aes-128-ecb con DB_ENC_KEY).
+# Realtime (local only): the tenant is seeded with a random secret, and without
+# aligning it with JWT_SECRET the channels reject the users' tokens and the
+# subscription fails in silence. Idempotent; the encryption is the one the
+# image expects (aes-128-ecb with DB_ENC_KEY).
 ENC=$(node -e 'const c=require("crypto").createCipheriv("aes-128-ecb",Buffer.from("supabaserealtime"),null);let e=c.update("your-super-secret-jwt-token-with-at-least-32-characters-long","utf8","base64");e+=c.final("base64");process.stdout.write(e)' 2>/dev/null)
 if [ -n "$ENC" ]; then
   $PSQL -c "update _realtime.tenants set jwt_secret='$ENC' where external_id='realtime-dev';" >/dev/null 2>&1 \

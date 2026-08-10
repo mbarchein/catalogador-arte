@@ -183,10 +183,10 @@ class TheArithmeticTraps(unittest.TestCase):
         self.assertEqual(luts.r[255], 255)
 
     def test_a_corrupt_value_reads_as_the_identity_and_not_as_the_nearest_end(self) -> None:
-        # La misma lectura que hace el navegador (`param` de imageColor.ts). Si aquí
-        # se leyera como el tope más cercano, la única fila en la que las dos
-        # implementaciones discrepan sería la que nadie puede explicar: la miniatura
-        # neutra y la copia de imprenta corregida, de los mismos números.
+        # The same reading the browser does (`param` in imageColor.ts). If here
+        # it were read as the nearest cap, the only row in which the two
+        # implementations disagree would be the one nobody can explain: the neutral
+        # thumbnail and the corrected print copy, from the same numbers.
         row = {
             "color_temperature": 900,
             "color_tint": None,
@@ -200,7 +200,7 @@ class TheArithmeticTraps(unittest.TestCase):
         look = look_from_row(row)
         self.assertEqual(look.temperature, 0)
         self.assertEqual(look.tint, 0)
-        # Una cadena con un número válido sí se lee: `numeric` puede llegar así.
+        # A string with a valid number IS read: `numeric` can arrive like that.
         self.assertAlmostEqual(look.exposure, 0.17)
         self.assertEqual(look.black_point, 0)
         self.assertEqual(look.white_point, 255)
@@ -208,8 +208,8 @@ class TheArithmeticTraps(unittest.TestCase):
         self.assertEqual(look.shoulder, 0)
 
     def test_a_row_with_every_colour_column_null_is_neutral(self) -> None:
-        # Null es la identidad y no lo desconocido: es lo que permite leer sin
-        # migrar las filas escritas antes de que esto existiera.
+        # Null is the identity and not the unknown: it is what allows reading without
+        # migrating the rows written before this existed.
         self.assertTrue(look_from_row({}).is_identity())
 
     def test_the_tables_never_decrease(self) -> None:
@@ -368,9 +368,9 @@ class ThePixelPath(unittest.TestCase):
         self.assertEqual(tool.apply_geometry(image, geometry).size, (300, 400))
 
     def test_a_row_with_no_corrections_does_not_become_a_duplicate_of_the_master(self) -> None:
-        # RF-420: si no hay ninguna corrección, no hay copia. Nulo, y no un duplicado
-        # del máster, que es lo que RF-411 ya entrega. No llega a mirar la imagen, así
-        # que no necesita ni API ni fichero.
+        # RF-420: if there is no correction, there is no copy. Null, and not a duplicate
+        # of the master, which is what RF-411 already delivers. It does not get to look at the image, so
+        # it needs neither the API nor the file.
         row = {
             "image_id": "AR-0001_v1",
             "catalog_id": "AR-0001",
@@ -382,9 +382,9 @@ class ThePixelPath(unittest.TestCase):
         self.assertIn("no hace falta", outcome.detail)
 
     def test_the_whole_flow_writes_the_row_and_never_the_master(self) -> None:
-        # El camino entero sin red: máster en el espejo local, geometría, color,
-        # subida firmada y escritura de la fila. Lo que se comprueba es lo que no se
-        # ve al leer el código: qué ruta se firma y qué se escribe en la fila.
+        # The whole route with no network: the master in the local mirror, geometry, colour,
+        # a signed upload and the writing of the row. What is checked is what is not
+        # visible on reading the code: which path is signed and what is written in the row.
         import tempfile
 
         class FakeApi:
@@ -433,7 +433,7 @@ class ThePixelPath(unittest.TestCase):
             self.assertEqual(api.written[0][0], "AR-0001_v1")
             self.assertEqual(api.written[0][1], api.signed[0])
             self.assertEqual(api.written[0][2], api.uploaded[0][1])
-            # §0.1: el máster se ha leído y se ha quedado exactamente igual.
+            # §0.1: the master has been read and has been left exactly the same.
             self.assertEqual(local.read_bytes(), before)
 
     def test_a_blank_copy_is_refused_before_being_uploaded(self) -> None:

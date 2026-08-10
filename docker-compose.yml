@@ -1,18 +1,18 @@
-# Stack local completo — sin la CLI de Supabase.
-# Servicios: Postgres, GoTrue (auth), PostgREST (API), pasarela nginx que emula
-# Kong (/auth/v1, /rest/v1), aplicador de migraciones y frontend con Vite.
+# Complete local stack — without Supabase's CLI.
+# Services: Postgres, GoTrue (auth), PostgREST (API), an nginx gateway that emulates
+# Kong (/auth/v1, /rest/v1), a migration applier and a frontend with Vite.
 #
-#   make up     → levanta todo (app :5173, API :8321, db :5433)
-#   make reset  → recrea la base aplicando migraciones y semilla
+#   make up     → raises everything (app :5173, API :8321, db :5433)
+#   make reset  → recreates the base applying migrations and seed
 #
-# Los puertos publicados están DELIBERADAMENTE por debajo de 32768, que es donde
-# empieza el rango de puertos efímeros de Linux (ver /proc/sys/net/ipv4/
-# ip_local_port_range). Publicar en 54321 o 54322, como es costumbre en Supabase,
-# hace que cualquier conexión saliente pueda quedarse con el puerto y que el
-# stack falle al arrancar con «address already in use» de forma intermitente y
-# desconcertante. Se pueden cambiar con PUERTO_* en .env.
+# The published ports are DELIBERATELY below 32768, which is where
+# Linux's ephemeral port range starts (see /proc/sys/net/ipv4/
+# ip_local_port_range). Publishing on 54321 or 54322, as is customary in Supabase,
+# makes any outgoing connection able to take the port and the
+# stack fail to start with «address already in use» intermittently and
+# bewilderingly. They can be changed with PUERTO_* in .env.
 #
-# Claves JWT: las públicas de demostración de Supabase self-host. SOLO LOCAL.
+# JWT keys: Supabase self-host's public demonstration ones. LOCAL ONLY.
 
 x-jwt: &jwt-env
   JWT_SECRET: &jwt-secret your-super-secret-jwt-token-with-at-least-32-characters-long
@@ -20,11 +20,11 @@ x-jwt: &jwt-env
   SERVICE_ROLE_KEY: &service-key eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UtbG9jYWwiLCJpYXQiOjE3MzU2ODk2MDAsImV4cCI6MjA4Mjc1ODQwMH0.hKugUZ3psc796Vm1pvDwNp_KGtbvF22bnuyE6pjGQFk
 
 services:
-  # La MISMA versión mayor que producción (PostgreSQL 17). No es cosmética: un
-  # volcado de la nube se hace con pg_dump 17 y su preámbulo incluye SET que no
-  # existen en la 15, así que `make db-load` fallaba contra un local más viejo.
-  # Y un fallo que solo aparece en la nube es lo que un stack local existe para
-  # evitar. Al cambiarla hay que recrear el volumen: `make clean && make up`.
+  # The SAME major version as production (PostgreSQL 17). It is not cosmetic: a
+  # dump from the cloud is made with pg_dump 17 and its preamble includes SETs that do not
+  # exist in 15, so `make db-load` failed against an older local one.
+  # And a failure that only appears in the cloud is what a local stack exists to
+  # avoid. On changing it the volume has to be recreated: `make clean && make up`.
   db:
     image: supabase/postgres:17.6.1.158
     ports:
@@ -60,12 +60,12 @@ services:
       GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
       GOTRUE_JWT_ADMIN_ROLES: service_role
       GOTRUE_JWT_AUD: authenticated
-      # RF-112: no hay registro abierto. Las cuentas las crea el superusuario.
-      # La API de administración (make seed-users) no pasa por esta puerta.
+      # RF-112: there is no open registration. The accounts are created by the superuser.
+      # The administration API (make seed-users) does not go through this door.
       GOTRUE_DISABLE_SIGNUP: "true"
       GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
       GOTRUE_MAILER_AUTOCONFIRM: "false"
-      # SMTP local → mailpit (buzón de pruebas, interfaz en el puerto PUERTO_CORREO).
+      # Local SMTP → mailpit (a test mailbox, interface on the PUERTO_CORREO port).
       GOTRUE_SMTP_HOST: mailpit
       GOTRUE_SMTP_PORT: "1025"
       GOTRUE_SMTP_USER: ""
@@ -85,7 +85,7 @@ services:
       timeout: 3s
       retries: 30
 
-  # Buzón local: recoge las invitaciones y los correos de recuperación.
+  # Local mailbox: it collects the invitations and the recovery emails.
   mailpit:
     image: axllent/mailpit:latest
     ports:
@@ -120,14 +120,14 @@ services:
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: *jwt-secret
-      # RF-604: el listado pagina. Un tope duro evita que un fallo de filtrado
-      # en el cliente se traiga el catálogo entero.
+      # RF-604: the listing paginates. A hard cap prevents a filtering failure
+      # in the client from fetching the whole catalogue.
       PGRST_DB_MAX_ROWS: "500"
 
-  # S3 local para los másters: emula a Backblaze B2 (misma API) para poder
-  # probar el flujo completo de firmas sin depender de un servicio externo.
-  # Puerto público porque las URL se firman contra el host del navegador: el
-  # PUT del máster va directo aquí, no a través de la pasarela.
+  # Local S3 for the masters: it emulates Backblaze B2 (the same API) so as to be able
+  # to test the complete signing flow without depending on an external service.
+  # A public port because the URLs are signed against the browser's host: the
+  # master's PUT goes straight here, not through the gateway.
   minio:
     image: minio/minio:latest
     command: server /data
@@ -144,7 +144,7 @@ services:
       timeout: 3s
       retries: 30
 
-  # Crea el bucket de másters al arrancar. Idempotente.
+  # It creates the masters' bucket on starting. Idempotent.
   minio-init:
     image: minio/mc:latest
     depends_on:
@@ -157,9 +157,9 @@ services:
       echo 'bucket masters-local listo'"
     restart: "no"
 
-  # Función Edge de firmas, en el mismo runtime que la nube (Deno). Firma contra
-  # el endpoint PÚBLICO de minio: la firma cubre el host, y quien la usa es el
-  # navegador, que no resuelve nombres internos de docker.
+  # Edge function for signing, in the same runtime as the cloud (Deno). It signs against
+  # minio's PUBLIC endpoint: the signature covers the host, and whoever uses it is the
+  # browser, which does not resolve docker's internal names.
   functions:
     image: denoland/deno:alpine
     working_dir: /functions/sign-file
@@ -177,8 +177,8 @@ services:
       S3_KEY_ID: minio-local
       S3_KEY_SECRET: minio-local-secreto
 
-  # WebSockets para las vistas en vivo (ADR-005): el mismo servicio que en la
-  # nube. La entrega respeta RLS — cada cliente solo recibe filas que puede leer.
+  # WebSockets for the live views (ADR-005): the same service as in the
+  # cloud. Delivery respects RLS — each client receives only rows it can read.
   realtime:
     image: supabase/realtime:v2.30.23
     depends_on:
@@ -202,17 +202,17 @@ services:
       SEED_SELF_HOST: "true"
       RUN_JANITOR: "true"
 
-  # Almacenamiento de ficheros. Es el mismo servicio que en la nube, no un
-  # simulacro: las rutas, las políticas y las URL firmadas se comportan igual, que
-  # es justo lo que hay que poder probar en local (ADR-002).
+  # File storage. It is the same service as in the cloud, not a
+  # mock-up: the paths, the policies and the signed URLs behave the same, which
+  # is exactly what has to be testable locally (ADR-002).
   storage:
     image: supabase/storage-api:v1.11.13
-    # Antes de migrate, no después: al arrancar, storage ejecuta SUS PROPIAS
-    # migraciones internas, que ponen al día el esquema `storage` que trae la
-    # imagen de Postgres (le añaden columnas como buckets.public). Nuestras
-    # migraciones escriben en ese esquema, así que necesitan que storage haya
-    # arrancado ya. Con el orden contrario todo funciona… hasta el primer
-    # volumen limpio, que es exactamente cuando nadie entiende qué pasa.
+    # Before migrate, not after: on starting, storage runs ITS OWN
+    # internal migrations, which bring up to date the `storage` schema that Postgres'
+    # image brings (they add columns like buckets.public to it). Our
+    # migrations write in that schema, so they need storage to have
+    # started already. With the opposite order everything works… until the first
+    # clean volume, which is exactly when nobody understands what is happening.
     depends_on:
       db:
         condition: service_healthy
@@ -223,23 +223,23 @@ services:
       PGRST_JWT_SECRET: *jwt-secret
       POSTGREST_URL: http://rest:3000
       DATABASE_URL: postgres://supabase_storage_admin:postgres@db:5432/postgres
-      # 60 MB: un máster de cámara ronda los 8-15 MB y un escaneo grande puede
-      # pasar de 30. El tope existe para que un fichero disparatado no llene el
-      # disco de un tirón, no para limitar el trabajo normal.
+      # 60 MB: a camera master is around 8-15 MB and a large scan can
+      # go past 30. The cap exists so that an absurd file does not fill the
+      # disk in one go, not to limit the normal work.
       FILE_SIZE_LIMIT: "62914560"
       STORAGE_BACKEND: file
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub
       REGION: local
       GLOBAL_S3_BUCKET: stub
-      # Las derivadas se generan en el navegador antes de subir (ADR-002), así que
-      # no hace falta el servicio de transformación de imágenes.
+      # The derivatives are generated in the browser before uploading (ADR-002), so
+      # the image transformation service is not needed.
       ENABLE_IMAGE_TRANSFORMATION: "false"
       DB_INSTALL_ROLES: "false"
     volumes:
       - storage_data:/var/lib/storage
     healthcheck:
-      # La imagen de storage no trae wget ni curl, pero sí node con fetch global.
+      # The storage image does not bring wget or curl, but it does bring node with global fetch.
       test:
         - CMD
         - node
@@ -274,14 +274,14 @@ services:
     ports:
       - "${PUERTO_APP:-5173}:5173"
     environment:
-      # DEV_HOST: pon la IP de tu máquina en la red local (ej. 192.168.1.50) en
-      # .env para catalogar desde el móvil. El móvil es el dispositivo del caso
-      # de uso principal (RNF-106), así que esto no es un extra: es como se prueba.
+      # DEV_HOST: put your machine's IP on the local network (e.g. 192.168.1.50) in
+      # .env in order to catalogue from the phone. The phone is the device of the main
+      # use case (RNF-106), so this is not an extra: it is how it is tested.
       VITE_SUPABASE_URL: http://${DEV_HOST:-localhost}:${PUERTO_API:-8321}
       VITE_SUPABASE_ANON_KEY: *anon-key
       VITE_APP_URL: http://${DEV_HOST:-localhost}:${PUERTO_APP:-5173}
 
-  # Vista previa de la compilación de producción: make preview
+  # Preview of the production build: make preview
   app-preview:
     profiles: ["preview"]
     build:

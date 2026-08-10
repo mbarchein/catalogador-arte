@@ -37,7 +37,7 @@ import sys
 import numpy as np
 from PIL import Image, ImageOps
 
-# Mismo valor que ANALYSIS_LONG_EDGE en app/src/lib/imageEdges.ts.
+# The same value as ANALYSIS_LONG_EDGE in app/src/lib/imageEdges.ts.
 LONG_EDGE = 700
 
 
@@ -92,9 +92,9 @@ def main() -> int:
             continue
         try:
             with Image.open(fichero) as im:
-                # La orientación EXIF, antes de cualquier otra cosa: medir sobre
-                # una fotografía tumbada distinta de la que se ve en pantalla
-                # sería medir otra cosa.
+                # The EXIF orientation, before anything else: measuring over
+                # a photograph lying differently from the one seen on screen
+                # would be measuring something else.
                 im = ImageOps.exif_transpose(im)
                 ancho, alto = compute_target(im.width, im.height, LONG_EDGE)
                 reducida = im.resize((ancho, alto), Image.Resampling.BOX)

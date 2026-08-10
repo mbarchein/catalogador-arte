@@ -25,9 +25,9 @@ import path from 'node:path'
 const RAIZ = path.resolve(import.meta.dirname, '../..')
 const CORPUS = path.join(RAIZ, 'corpus-bordes')
 
-// ── El detector real, agrupado ────────────────────────────────
-// Node no resuelve los imports sin extensión de TypeScript, así que se agrupa.
-// La entrada se escribe en un temporal y no en el repositorio.
+// ── The real detector, bundled ────────────────────────────────
+// Node does not resolve TypeScript's extensionless imports, so it is bundled.
+// The entry point is written to a temporary file and not to the repository.
 function cargarDetector() {
   const temporal = mkdtempSync(path.join(tmpdir(), 'bordes-'))
   const entrada = path.join(temporal, 'entrada.ts')
@@ -45,15 +45,15 @@ function cargarDetector() {
     '--log-level=warning',
   ])
 
-  // Las constantes se pueden mover desde la línea de órdenes, parcheando el
-  // agrupado y no el módulo: así se puede barrer un valor sin dejar el
-  // repositorio en un estado intermedio, y el detector que se mide sigue siendo
-  // el del repositorio con un número cambiado y no una reimplementación.
+  // The constants can be moved from the command line, by patching the
+  // bundle and not the module: this way a value can be swept without leaving the
+  // repository in an intermediate state, and the detector being measured goes on being
+  // the repository's with one number changed and not a reimplementation.
   //
   //   node scripts/bordes/medir.mjs --soporte=0 --prominencia=0.22
   //
-  // Con --soporte=0 el soporte de línea no rechaza nada, que es la forma de
-  // atribuir un silencio a su puerta.
+  // With --soporte=0 the line support rejects nothing, which is the way of
+  // attributing a silence to its door.
   const constantes = ['MIN_LINE_SUPPORT', 'LINE_STEP_FRACTION', 'PROMINENCE_FRACTION',
                       'MIN_EDGE_STRENGTH', 'MAX_AREA', 'MIN_AREA']
   const banderas = { soporte: 'MIN_LINE_SUPPORT', paso: 'LINE_STEP_FRACTION',
@@ -67,8 +67,8 @@ function cargarDetector() {
     const dado = process.argv.find((a) => a.startsWith(`--${bandera}=`))
     if (!dado) continue
     const valor = Number(dado.slice(bandera.length + 3))
-    // Se comprueba que el patrón CASA, no que la cadena cambie: pedir el mismo
-    // valor que ya tiene la constante es legítimo y dejaba el texto idéntico.
+    // It is checked that the pattern MATCHES, not that the string changes: asking for the same
+    // value the constant already has is legitimate and left the text identical.
     const patron = new RegExp(`(var ${constante} = )[0-9.]+`)
     if (!patron.test(fuente)) throw new Error(`no se encontró ${constante} en el agrupado`)
     fuente = fuente.replace(patron, `$1${valor}`)
@@ -86,9 +86,9 @@ const { analyseArtworkEdges } = await import(cargarDetector())
 
 const manifest = JSON.parse(readFileSync(path.join(CORPUS, 'manifest.json'), 'utf8'))
 
-// ── El recorte que ella guardó ────────────────────────────────
-// Se lee del volcado, de la línea COPY de `images`. Sin base de datos y sin
-// dependencias: el volcado es un fichero de texto.
+// ── The crop she stored ───────────────────────────────────────
+// It is read from the dump, from `images`' COPY line. With no database and no
+// dependencies: the dump is a text file.
 function recortesGuardados(volcado) {
   const sql = readFileSync(path.join(volcado, 'publico.sql'), 'utf8')
   const cabecera = sql.indexOf('COPY public.images (')
@@ -149,7 +149,7 @@ for (const foto of manifest.fotos) {
   const sugerencia = analisis.suggestion
 
   const guardado = guardados.get(foto.nombre)
-  // El candidato lleva la caja y, si el detector vio inclinación, el cuadrilátero.
+  // The candidate carries the box and, if the detector saw a tilt, the quadrilateral.
   const caja = sugerencia?.outer.box ?? null
   const area = caja ? caja.width * caja.height : null
   filas.push({
@@ -200,8 +200,8 @@ if (process.argv.includes('--json')) {
       `${n(filas.reduce((t, f) => t + f.ms, 0) / filas.length, 1)} ms de media`,
   )
 
-  // Los silencios agrupados por su motivo: es lo que dice si un silencio es la
-  // respuesta correcta o una regla que se está llevando por delante un borde.
+  // The silences grouped by their reason: it is what says whether a silence is the
+  // correct answer or a rule that is running a border over.
   const porMotivo = new Map()
   for (const f of silencios) porMotivo.set(f.motivo, (porMotivo.get(f.motivo) ?? 0) + 1)
   console.log('\nSilencios por motivo:')

@@ -64,9 +64,9 @@ def corrected_path(
     for a random one that will never come.
     """
     if not catalog_id:
-        # `ValueError` y no `MasterAtRisk`: no hay ningún máster en peligro, hay una
-        # fila que no dice de qué obra es. La excepción tiene que decir cuál de las
-        # dos cosas ha pasado.
+        # `ValueError` and not `MasterAtRisk`: there is no master at risk, there is a
+        # row that does not say which artwork it belongs to. The exception has to say which of
+        # the two things has happened.
         raise ValueError("No se puede nombrar la copia corregida sin id de catalogación")
     base = f"{catalog_id}/{catalog_id}_{suffix or random_suffix()}"
     path = f"{base}{CORRECTED_SUFFIX}.{CORRECTED_EXTENSION}"

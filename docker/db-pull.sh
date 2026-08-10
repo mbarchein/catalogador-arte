@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# Trae una copia de los DATOS de producción a volcados/.
+# Fetches a copy of production's DATA to volcados/.
 #
-# No trae el esquema, a propósito: el esquema local sale de
-# supabase/migrations, que es la única fuente de verdad y lo que CI aplica a la
-# nube. Mezclar ambas cosas convertiría cada importación en una pregunta sobre
-# qué versión del esquema manda; separándolas, la respuesta es siempre «la del
-# repositorio».
+# It does not fetch the schema, on purpose: the local schema comes from
+# supabase/migrations, which is the only source of truth and what CI applies to the
+# cloud. Mixing both things would turn every import into a question about
+# which version of the schema rules; by separating them, the answer is always «the
+# repository's».
 #
-# Tampoco trae los ficheros del bucket: las fotografías viven en el
-# almacenamiento, no en la base. Las fichas se importan con sus filas de
-# imágenes, pero sin los píxeles detrás (ver el aviso del final).
+# Nor does it fetch the bucket's files: the photographs live in the
+# storage, not in the base. The records are imported with their image
+# rows, but with no pixels behind them (see the warning at the end).
 #
-#   SUPABASE_DB_URL=... make db-pull     # o con la variable en .env
+#   SUPABASE_DB_URL=... make db-pull     # or with the variable in .env
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# .env es el sitio donde vive la URL: está en .gitignore y ya se usa para el
-# resto de la configuración local.
+# .env is where the URL lives: it is in .gitignore and it is already used for the
+# rest of the local configuration.
 if [ -f .env ]; then
   set -a
   # shellcheck disable=SC1091
@@ -50,32 +50,32 @@ case "$SUPABASE_DB_URL" in
     ;;
 esac
 
-# Las herramientas de cliente salen de la misma imagen que el stack local, que
-# ya está descargada y sirve para conectar y preguntar. Para volcar puede hacer
-# falta otra: ver más abajo.
+# The client tools come from the same image as the local stack, which
+# is already downloaded and serves to connect and query. For dumping another one may be
+# needed: see further below.
 IMAGEN_PG=${IMAGEN_PG:-supabase/postgres:17.6.1.158}
 
-# --entrypoint sh y no `bash -c`: la imagen del volcado puede ser una alpine,
-# que no lleva bash. Lo que se ejecuta dentro es sh corriente.
+# --entrypoint sh and not `bash -c`: the dump's image may be an alpine,
+# which does not carry bash. What is run inside is plain sh.
 en_imagen() {
   docker run --rm -i --entrypoint sh -e PGURL="$URL" -e PGCONNECT_TIMEOUT=15 "$1" -c "$2"
 }
 
-# La conexión directa de Supabase (db.<ref>.supabase.co) solo escucha en IPv6, y
-# muchas redes domésticas y de oficina no lo enrutan: el error es un «Network is
-# unreachable» contra una dirección 2a05:…. El camino IPv4 es el pooler en modo
-# sesión, que además cambia el usuario a postgres.<ref>. En vez de obligar a
-# saberlo, se prueban las dos y se usa la que conteste.
+# Supabase's direct connection (db.<ref>.supabase.co) listens only on IPv6, and
+# many home and office networks do not route it: the error is a «Network is
+# unreachable» against a 2a05:… address. The IPv4 route is the pooler in session
+# mode, which also changes the user to postgres.<ref>. Instead of forcing one
+# to know it, both are tried and the one that answers is used.
 #
-# Partir la URL a mano es seguro aquí porque la contraseña que genera Terraform
-# es alfanumérica a propósito (ver random_password.db en infra/supabase.tf): no
-# hay nada que escapar.
+# Splitting the URL by hand is safe here because the password Terraform generates
+# is alphanumeric on purpose (see random_password.db in infra/supabase.tf): there
+# is nothing to escape.
 candidatas=("$SUPABASE_DB_URL")
 ref=$(sed -nE 's#.*@db\.([a-z0-9]+)\.supabase\.co.*#\1#p' <<<"$SUPABASE_DB_URL")
 if [ -n "$ref" ]; then
   clave=$(sed -nE 's#.*://[^:]+:([^@]+)@.*#\1#p' <<<"$SUPABASE_DB_URL")
   region=${SUPABASE_REGION:-eu-west-3}
-  # El prefijo del pooler es aws-0 o aws-1 según cuándo se creó el proyecto.
+  # The pooler's prefix is aws-0 or aws-1 depending on when the project was created.
   for n in 0 1; do
     candidatas+=("postgresql://postgres.$ref:$clave@aws-$n-$region.pooler.supabase.com:5432/postgres")
   done
@@ -124,9 +124,9 @@ en_pg() {
   en_imagen "$IMAGEN_PG" "$1"
 }
 
-# La referencia del proyecto, para el endpoint S3 del almacenamiento. Vale
-# cualquiera de las dos formas de la URL: la directa lleva db.<ref>.supabase.co
-# y la del pooler, el usuario postgres.<ref>.
+# The project's reference, for the storage's S3 endpoint. Either of the two
+# forms of the URL will do: the direct one carries db.<ref>.supabase.co
+# and the pooler's, the user postgres.<ref>.
 REF=$(sed -nE 's#.*@db\.([a-z0-9]+)\.supabase\.co.*#\1#p; s#.*://postgres\.([a-z0-9]+):.*#\1#p' <<<"$URL" | head -1)
 
 echo "Consultando la versión del servidor…"
@@ -134,10 +134,10 @@ servidor=$(en_pg 'psql "$PGURL" -tAc "show server_version"' | tr -d '[:space:]')
 cliente=$(en_pg 'pg_dump --version' | grep -oE '[0-9]+' | head -1)
 mayor_servidor=${servidor%%.*}
 
-# pg_dump se niega a leer un servidor más nuevo que él, y la nube va por delante
-# de la imagen del stack local. Como la versión del servidor ya se conoce, no hay
-# nada que preguntar: se coge la imagen oficial de esa versión. psql sí conecta
-# hacia arriba, así que para lo demás vale la de siempre.
+# pg_dump refuses to read a server newer than itself, and the cloud is ahead
+# of the local stack's image. As the server's version is already known, there is
+# nothing to ask: the official image of that version is taken. psql does connect
+# upwards, so for everything else the usual one will do.
 IMAGEN_VOLCADO="$IMAGEN_PG"
 if [ "$mayor_servidor" -gt "$cliente" ]; then
   IMAGEN_VOLCADO="postgres:$mayor_servidor-alpine"
@@ -156,37 +156,37 @@ echo "Volcando los datos del esquema público…"
 en_volcado 'pg_dump "$PGURL" --data-only --schema=public --no-owner --no-privileges' \
   > "$destino/publico.sql"
 
-# Los usuarios hacen falta por integridad: perfiles referencia auth.users, y las
-# columnas de autoría de obras e imágenes referencian perfiles. Se traen solo
-# cuatro columnas, y NO el hash de la contraseña: es un secreto de una persona
-# real que no pinta nada en un portátil, y la carga local pone una conocida.
+# The users are needed for integrity: profiles references auth.users, and the
+# authorship columns of artworks and images reference profiles. Only
+# four columns are fetched, and NOT the password hash: it is a real person's
+# secret that has no business on a laptop, and the local load sets a known one.
 echo "Volcando las cuentas (sin contraseñas)…"
 en_volcado 'psql "$PGURL" --csv -c "select id, email, created_at, coalesce(raw_user_meta_data::text, '"'"'{}'"'"') as meta from auth.users order by created_at"' \
   > "$destino/usuarios.csv"
 
-# ── Las fotografías ─────────────────────────────────────────
+# ── The photographs ─────────────────────────────────────────
 #
-# Están en dos sitios y pesan órdenes de magnitud distintos, así que el
-# parámetro tiene dos niveles:
+# They are in two places and weigh different orders of magnitude, so the
+# parameter has two levels:
 #
-#   FOTOS=1     lo que la aplicación ENSEÑA: miniatura y derivada de cada toma,
-#               en el bucket «obras» de Supabase. Unos cientos de KB por toma.
-#   FOTOS=todo  además, los MÁSTERS de archivo, que están en B2 y rondan entre 8
-#               y 35 MB cada uno. Puede ser un gigabyte largo.
+#   FOTOS=1     what the application SHOWS: the thumbnail and derivative of each shot,
+#               in Supabase's «obras» bucket. A few hundred KB per shot.
+#   FOTOS=todo  also, the archive MASTERS, which are in B2 and range between 8
+#               and 35 MB each. It can be a good gigabyte.
 #
-# Se copia el bucket entero y no solo lo que citan las filas importadas: un
-# fichero huérfano en el bucket es justo la clase de cosa que se viene a
-# investigar con una copia local delante.
-# Con la CLI de AWS y no con mc, por dos razones que se descubren al usarlo: el
-# endpoint S3 de Supabase lleva ruta (…/storage/v1/s3) y mc solo acepta
-# scheme://host[:port]; y así las credenciales van por variables de entorno, sin
-# fichero de configuración montado que el contenedor deje escrito como root y
-# que después no haya forma de borrar desde el anfitrión.
+# The whole bucket is copied and not only what the imported rows cite: an
+# orphan file in the bucket is exactly the class of thing one comes to
+# investigate with a local copy in front.
+# With the AWS CLI and not with mc, for two reasons that are discovered on using it: Supabase's
+# S3 endpoint carries a path (…/storage/v1/s3) and mc only accepts
+# scheme://host[:port]; and this way the credentials go through environment variables, with no
+# mounted configuration file that the container leaves written as root and
+# that afterwards there is no way of deleting from the host.
 #
-# --user con el uid de quien llama, por lo mismo: lo descargado tiene que quedar
-# a nombre de su dueño y no de root, o `volcados/` se vuelve imborrable. HOME
-# apunta a /tmp porque la imagen quiere un sitio donde escribir aunque no haya
-# nada que guardar.
+# --user with the uid of whoever calls, for the same reason: what is downloaded has to end up
+# owned by its owner and not by root, or `volcados/` becomes undeletable. HOME
+# points at /tmp because the image wants somewhere to write even if there is
+# nothing to store.
 espejo() { # $1 endpoint  $2 clave  $3 secreto  $4 región  $5 bucket  $6 carpeta
   mkdir -p "$destino/$6"
   docker run --rm \
@@ -212,9 +212,9 @@ AYUDA
     exit 1
   fi
   echo "Trayendo miniaturas y derivadas del bucket obras…"
-  # El anfitrión que documenta Supabase para S3 es <ref>.storage.supabase.co, no
-  # el del proyecto. La región es la misma que se lee junto a la clave en el
-  # panel y por omisión la del proyecto en Terraform.
+  # The host Supabase documents for S3 is <ref>.storage.supabase.co, not
+  # the project's. The region is the same one read next to the key in the
+  # panel and by default the project's in Terraform.
   espejo "https://$REF.storage.supabase.co/storage/v1/s3" \
          "$SUPABASE_S3_KEY_ID" "$SUPABASE_S3_KEY_SECRET" \
          "${SUPABASE_S3_REGION:-${SUPABASE_REGION:-eu-west-3}}" obras obras

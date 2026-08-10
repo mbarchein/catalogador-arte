@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Carga en el stack local un volcado traído con db-pull.sh. DESTRUYE los datos
-# locales del catálogo.
+# Loads into the local stack a dump fetched with db-pull.sh. It DESTROYS the
+# catalogue's local data.
 #
-# El esquema NO se toca: sigue siendo el que aplicaron las migraciones. Lo que
-# se sustituye son las filas. Por eso `public._migraciones`, que es el registro
-# local de migraciones aplicadas, queda fuera de la limpieza: vaciarlo haría que
-# el aplicador las repitiera todas al siguiente arranque.
+# The schema is NOT touched: it goes on being the one the migrations applied. What
+# is replaced are the rows. That is why `public._migraciones`, which is the local
+# record of applied migrations, is left out of the cleanup: emptying it would make
+# the applier repeat them all on the next start-up.
 #
-#   make db-load                     # el volcado más reciente
-#   make db-load VOLCADO=ruta        # uno concreto
-#   make db-load CONFIRM=yes         # sin preguntar
+#   make db-load                     # the most recent dump
+#   make db-load VOLCADO=path        # a particular one
+#   make db-load CONFIRM=yes         # without asking
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -37,9 +37,9 @@ echo "Volcado:  $volcado"
 echo
 echo "Esto BORRA las obras, imágenes, vocabularios, perfiles y cuentas locales,"
 echo "y los sustituye por los de producción."
-# CONFIRM=yes se salta la pregunta. El valor es una palabra y no un 1 a
-# propósito: quien lo escribe en un guion tiene que decir que sí con todas las
-# letras, porque lo que hay al otro lado es un borrado.
+# CONFIRM=yes skips the question. The value is a word and not a 1 on
+# purpose: whoever writes it in a script has to say yes in full,
+# because what there is on the other side is a deletion.
 if [ "$(printf '%s' "${CONFIRM:-}" | tr '[:upper:]' '[:lower:]')" != "yes" ]; then
   read -r -p "¿Seguir? [s/N] " respuesta
   case "$respuesta" in
@@ -48,15 +48,15 @@ if [ "$(printf '%s' "${CONFIRM:-}" | tr '[:upper:]' '[:lower:]')" != "yes" ]; th
   esac
 fi
 
-# El vaciado va CON los triggers puestos, al contrario que la carga: borrar
-# cuentas tiene que arrastrar en cascada lo que GoTrue cuelga de ellas
-# —identidades, sesiones, testigos—, y con las réplicas activadas esa cascada no
-# se dispara. Una identidad huérfana no se ve en ninguna tabla del catálogo, pero
-# deja el alta de usuarios rota con un «Database error checking email» que no
-# dice nada de lo que pasa.
+# The emptying goes WITH the triggers in place, unlike the load: deleting
+# accounts has to cascade over what GoTrue hangs from them
+# —identities, sessions, tokens—, and with the replicas activated that cascade does not
+# fire. An orphan identity is not visible in any table of the catalogue, but
+# it leaves user registration broken with a «Database error checking email» that says
+# nothing about what is happening.
 #
-# El truncate nombra las cinco tablas juntas porque se referencian entre sí; así
-# no hace falta CASCADE, que borraría también lo que no se ha nombrado.
+# The truncate names the five tables together because they reference each other; this way
+# CASCADE is not needed, which would also delete what has not been named.
 echo
 echo "Vaciando el catálogo local…"
 $PSQL <<'SQL' > /dev/null
@@ -70,10 +70,10 @@ delete from auth.identities where user_id not in (select id from auth.users);
 commit;
 SQL
 
-# Los dos -c van en la MISMA sesión, y ese orden importa: sin apagar antes los
-# triggers, el de alta de usuario crea un perfil por cada cuenta que entra, y
-# luego el volcado choca con sus propios perfiles («duplicate key … profiles_pkey»).
-# Los perfiles buenos, con su rol, vienen en el volcado.
+# The two -c go in the SAME session, and that order matters: without switching off the
+# triggers first, the user-registration one creates a profile for every account that comes in, and
+# then the dump clashes with its own profiles («duplicate key … profiles_pkey»).
+# The good profiles, with their role, come in the dump.
 echo "Cargando las cuentas…"
 docker compose exec -T -e PGPASSWORD=postgres db \
   psql -U supabase_admin -h localhost -d postgres -v ON_ERROR_STOP=1 \
@@ -86,10 +86,10 @@ echo "Cargando el catálogo…"
   | docker compose exec -T -e PGPASSWORD=postgres db \
       psql -U supabase_admin -h localhost -d postgres -v ON_ERROR_STOP=1 > /dev/null
 
-# GoTrue necesita algo más que la fila para dejar entrar: el público, el rol y
-# el correo confirmado. Y una contraseña, que aquí es la misma de siempre — el
-# hash real no se ha traído, y trabajar en local con las contraseñas de personas
-# reales sería una mala idea aunque se pudiera.
+# GoTrue needs something more than the row in order to let one in: the audience, the role and
+# the confirmed email. And a password, which here is the usual one — the real
+# hash has not been fetched, and working locally with real people's passwords
+# would be a bad idea even if it were possible.
 echo "Preparando las cuentas para entrar en local…"
 $PSQL <<'SQL' > /dev/null
 set search_path = public, extensions;
@@ -127,17 +127,17 @@ where not exists (
 );
 SQL
 
-# ── Transitorio: el árbol de lugares de un volcado antiguo ──
-# Un volcado traído ANTES de que 20260801150000 llegara a producción no lleva
-# `physical_places` ni `physical_place_id`: solo el texto de la convención vieja.
-# Cargado tal cual, el catálogo local se quedaría sin ninguna ubicación, que
-# parece un fallo de la aplicación y no lo es.
+# ── Transitional: the tree of places of an old dump ─────────
+# A dump fetched BEFORE 20260801150000 reached production does not carry
+# `physical_places` nor `physical_place_id`: only the text of the old convention.
+# Loaded as it is, the local catalogue would be left with no location at all, which
+# looks like a failure of the application and is not.
 #
-# Esto repite el reparto por comas de esa migración a propósito y con su fecha de
-# caducidad puesta: se borra cuando se retire la columna `physical_location`, que
-# es cuando dejarán de existir volcados sin árbol. No se ha convertido en una
-# función del esquema para no dejar en producción, para siempre, una herramienta
-# de un solo uso.
+# This repeats that migration's splitting by commas on purpose and with its expiry
+# date set: it is deleted when the `physical_location` column is withdrawn, which
+# is when dumps with no tree will stop existing. It has not been turned into a
+# schema function so as not to leave in production, for ever, a single-use
+# tool.
 echo "Reconstruyendo el árbol de lugares (volcado sin ubicaciones)…"
 $PSQL <<'SQL' > /dev/null
 -- Con los triggers apagados, igual que la carga del volcado y por el mismo
@@ -195,12 +195,12 @@ begin
 end $$;
 SQL
 
-# ── Transitorio: tipos y series de un volcado antiguo ───────
-# Mismo caso que el árbol de lugares, y misma fecha de caducidad (ADR-007): un
-# volcado traído antes de 20260801160000 trae el tipo y la serie de cada obra
-# como texto y sin identificador, así que el catálogo local se quedaría sin tipo
-# ni serie en la ficha. Se emparejan por el texto recortado, que es lo que el
-# trigger de vocabulario ya exigía. Se borra cuando se retiren esas dos columnas.
+# ── Transitional: types and series of an old dump ───────────
+# The same case as the tree of places, and the same expiry date (ADR-007): a
+# dump fetched before 20260801160000 brings each artwork's type and series
+# as text and with no identifier, so the local catalogue would be left with no type
+# and no series in the record. They are paired by the trimmed text, which is what the
+# vocabulary trigger already required. It is deleted when those two columns are withdrawn.
 echo "Reconectando tipos y series (volcado sin identificadores)…"
 $PSQL <<'SQL' > /dev/null
 set session_replication_role = replica;
@@ -222,19 +222,19 @@ update public.artworks a
    and s.name = btrim(a.series);
 SQL
 
-# Las cuentas de prueba locales se recrean: se han borrado con las demás, y sin
-# ellas solo se podría entrar con un correo de producción.
+# The local test accounts are recreated: they have been deleted with the others, and without
+# them one could only log in with a production email.
 echo "Recreando las cuentas de prueba locales…"
 bash docker/seed-users.sh > /dev/null
 
-# ── Las fotografías, si el volcado las trae ─────────────────
-# Se suben por la API del almacenamiento y no copiando ficheros al volumen: es
-# storage-api quien lleva su propio registro en el esquema `storage`, y un
-# fichero que aparece en el disco sin su fila no existe para nadie.
+# ── The photographs, if the dump brings them ────────────────
+# They are uploaded through the storage API and not by copying files into the volume: it is
+# storage-api that keeps its own record in the `storage` schema, and a
+# file that appears on the disk without its row exists for nobody.
 if [ -d "$volcado/obras" ]; then
   API="http://localhost:${PUERTO_API:-8321}"
-  # El JWT de service_role del entorno local. No es un secreto: está en
-  # docker-compose.yml, firmado con la clave por omisión de Supabase self-host.
+  # The local environment's service_role JWT. It is not a secret: it is in
+  # docker-compose.yml, signed with Supabase self-host's default key.
   CLAVE="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UtbG9jYWwiLCJpYXQiOjE3MzU2ODk2MDAsImV4cCI6MjA4Mjc1ODQwMH0.hKugUZ3psc796Vm1pvDwNp_KGtbvF22bnuyE6pjGQFk"
 
   echo "Subiendo las fotografías al almacenamiento local…"
@@ -261,8 +261,8 @@ if [ -d "$volcado/obras" ]; then
 fi
 
 if [ -d "$volcado/masters" ]; then
-  # Misma herramienta que en la bajada, y por las mismas razones (ver db-pull).
-  # minio hace aquí de B2: la función de firmas local apunta a él.
+  # The same tool as in the download, and for the same reasons (see db-pull).
+  # minio acts as B2 here: the local signing function points at it.
   echo "Subiendo los másters a minio…"
   docker run --rm --network host \
     --user "$(id -u):$(id -g)" \

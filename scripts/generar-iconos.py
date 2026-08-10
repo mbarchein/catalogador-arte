@@ -53,12 +53,12 @@ def dibujar(lado: int, margen_rel: float) -> list[list[tuple[int, int, int]]]:
     x0, y0 = margen, margen
     x1, y1 = lado - margen - 1, lado - margen - 1
 
-    # Lienzo interior, un tono intermedio para que el marco se lea como marco.
+    # The inner canvas, an intermediate tone so that the frame reads as a frame.
     for y in range(y0 + grosor, y1 - grosor + 1):
         for x in range(x0 + grosor, x1 - grosor + 1):
             pixeles[y][x] = LIENZO
 
-    # Cuatro lados del marco.
+    # The frame's four sides.
     for y in range(y0, y1 + 1):
         for x in range(x0, x1 + 1):
             en_borde = (
@@ -73,12 +73,12 @@ def dibujar(lado: int, margen_rel: float) -> list[list[tuple[int, int, int]]]:
 def main() -> None:
     DESTINO.mkdir(parents=True, exist_ok=True)
 
-    # Iconos normales: margen justo, para que el dibujo llene el espacio.
+    # Normal icons: a tight margin, so that the drawing fills the space.
     for lado in (192, 512):
         escribir_png(DESTINO / f"icono-{lado}.png", dibujar(lado, 0.16))
 
-    # Maskable: el sistema puede recortar hasta un círculo inscrito, así que el
-    # dibujo se encoge para caber en la zona segura del 80 %.
+    # Maskable: the system may crop down to an inscribed circle, so the
+    # drawing shrinks to fit in the safe zone of 80 %.
     escribir_png(DESTINO / "icono-512-maskable.png", dibujar(512, 0.26))
 
     for f in sorted(DESTINO.iterdir()):

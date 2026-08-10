@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Aplicador de migraciones local: ejecuta supabase/migrations/*.sql en orden,
-# cada una una sola vez (registradas en la tabla _migraciones), y después seed.sql.
+# Local migration applier: it runs supabase/migrations/*.sql in order,
+# each one only once (recorded in the _migraciones table), and afterwards seed.sql.
 set -euo pipefail
 
 echo "Esperando a que GoTrue cree auth.users…"
@@ -11,8 +11,8 @@ for i in $(seq 1 60); do
   sleep 1
 done
 
-# RLS activado y ninguna política: la tabla de control no se expone por la API.
-# Se hace aquí y no en una migración porque esta tabla solo existe en local.
+# RLS enabled and no policy: the control table is not exposed through the API.
+# It is done here and not in a migration because this table exists only locally.
 psql -v ON_ERROR_STOP=1 -c "create table if not exists public._migraciones (nombre text primary key, aplicada_en timestamptz default now())"
 psql -v ON_ERROR_STOP=1 -c "alter table public._migraciones enable row level security"
 
@@ -27,16 +27,16 @@ for f in $(ls /migrations/*.sql | sort); do
   psql -v ON_ERROR_STOP=1 -c "insert into public._migraciones (nombre) values ('$nombre')"
 done
 
-# Privilegios del esquema `storage` que la plataforma concede en la nube y la
-# imagen self-host no. Sin ellos, storage-api no puede ni leer la fila del bucket
-# para comprobar el tamaño máximo, y responde a cualquier subida con «new row
-# violates row-level security policy»: un mensaje que manda a mirar las políticas
-# cuando lo que falta es un GRANT. El resultado era que subir una fotografía
-# funcionaba en la nube y fallaba en local, que es justo al revés de para lo que
-# existe un stack local.
+# Privileges of the `storage` schema that the platform grants in the cloud and the
+# self-host image does not. Without them, storage-api cannot even read the bucket's row
+# in order to check the maximum size, and answers any upload with «new row
+# violates row-level security policy»: a message that sends one to look at the policies
+# when what is missing is a GRANT. The result was that uploading a photograph
+# worked in the cloud and failed locally, which is exactly the reverse of what a
+# local stack exists for.
 #
-# Va aquí y no en una migración a propósito: en la nube ya están concedidos, y
-# una migración que los repita tocaría privilegios de producción sin necesidad.
+# It goes here and not in a migration on purpose: in the cloud they are already granted, and
+# a migration repeating them would touch production privileges unnecessarily.
 echo "→ privilegios de storage (solo local)"
 psql -v ON_ERROR_STOP=1 <<'SQL'
 grant select on storage.buckets to anon, authenticated, service_role;

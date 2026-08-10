@@ -1,9 +1,9 @@
-# Compilación de producción del frontend, servida por nginx. Solo se usa para
-# `make preview`: en producción el destino es Cloudflare Pages (ADR-001).
+# Production build of the frontend, served by nginx. It is used only for
+# `make preview`: in production the destination is Cloudflare Pages (ADR-001).
 #
-# Las variables VITE_ se incrustan en el JavaScript al compilar, así que son
-# argumentos de build y no variables de ejecución. La clave anónima es pública
-# por diseño; lo que protege los datos son las políticas RLS.
+# The VITE_ variables are embedded in the JavaScript on building, so they are
+# build arguments and not run-time variables. The anonymous key is public
+# by design; what protects the data are the RLS policies.
 FROM node:22-alpine AS build
 
 WORKDIR /app

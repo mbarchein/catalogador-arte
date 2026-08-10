@@ -185,13 +185,13 @@ y la base lo negaría sin ruido, devolviendo cero filas actualizadas.
 """
 
 
-# La función de firma solo firma rutas con forma de máster, y esto es lo que dice
-# cuando se le pide la de una copia corregida. Comprobado contra el stack local:
-# responde 400 «ruta no válida para un máster», porque su `VALID_PATH` exige el
-# sufijo `_master`. No es un fallo de esta herramienta y tampoco se arregla desde
-# aquí: la copia corregida es un fichero nuevo en una ruta nueva del mismo almacén
-# (RF-420), así que la función tiene que aceptar ese sufijo además del del máster
-# —y solo ese— o no hay forma de subirla, ni desde aquí ni desde el navegador.
+# The signing function only signs paths shaped like a master's, and this is what it says
+# when it is asked for a corrected copy's. Checked against the local stack:
+# it answers 400 «ruta no válida para un máster», because its `VALID_PATH` requires the
+# `_master` suffix. It is not a failure of this tool and it is not fixed from
+# here either: the corrected copy is a new file at a new path in the same store
+# (RF-420), so the function has to accept that suffix as well as the master's
+# —and only that one— or there is no way of uploading it, neither from here nor from the browser.
 HELP_SIGN_PATH = """\
 La función de firma ha rechazado la ruta de la copia corregida:
 
@@ -793,9 +793,9 @@ def process(
     look = look_from_row(row)
 
     if geometry.is_identity() and look.is_identity():
-        # «No hace falta» y «no se ha podido» son filas distintas, y esta es la
-        # primera: sin correcciones la copia corregida sería un duplicado del
-        # máster, y lo que RF-411 tiene que entregar es el máster.
+        # «Not needed» and «could not be done» are different rows, and this is the
+        # first one: with no corrections the corrected copy would be a duplicate of the
+        # master, and what RF-411 has to deliver is the master.
         return Outcome(
             image_id,
             "pending",
@@ -805,9 +805,9 @@ def process(
         )
 
     if row.get("provenance") not in (None, "OWN") and not look.is_identity():
-        # Se aplica lo que dice la fila, que es la fuente de verdad, pero se dice:
-        # el ajuste de color no se ofrece sobre una reproducción ajena (RF-417), así
-        # que una fila así no debería existir.
+        # What the row says is applied, which is the source of truth, but it is said:
+        # the colour adjustment is not offered over somebody else's reproduction (RF-417), so
+        # a row like that should not exist.
         print(
             f"    · aviso: procedencia {row.get('provenance')} con ajuste de color guardado",
             file=sys.stderr,
@@ -907,8 +907,8 @@ def main() -> int:
     rows = api.pending_images(args.only, args.limit)
 
     if not rows:
-        # Nunca una página en blanco, tampoco en un terminal: una cola vacía es una
-        # respuesta y se dice como tal.
+        # Never a blank page, not in a terminal either: an empty queue is an
+        # answer and it is stated as such.
         print("No hay ninguna copia corregida pendiente.")
         return 0
 
@@ -918,9 +918,9 @@ def main() -> int:
     if args.dry_run:
         print("Modo --dry-run: no se sube nada ni se escribe en la base.")
     if out_dir is not None:
-        # Se dice en voz alta y no en la ayuda solamente: lo que va a quedar en el
-        # disco son fotografías de obra real, y este repositorio es público
-        # (ADR-005). `volcados/` y `corpus-bordes/` están en .gitignore por lo mismo.
+        # It is said out loud and not only in the help: what is going to be left on the
+        # disk are photographs of real artworks, and this repository is public
+        # (ADR-005). `volcados/` and `corpus-bordes/` are in .gitignore for the same reason.
         print(f"Copias también en {out_dir}/ — no la versiones: son fotografías de obra real.")
     print()
 
@@ -933,8 +933,8 @@ def main() -> int:
         try:
             outcome = process(api, row, dump, upload=not args.dry_run, out_dir=out_dir)
         except (MasterAtRisk, RuntimeError, ValueError, OSError) as error:
-            # Una foto que no se puede procesar es un dato, no un motivo para parar:
-            # se dice, se cuenta y se sigue con las demás.
+            # A photo that cannot be processed is a datum, not a reason to stop:
+            # it is stated, it is counted and the rest are carried on with.
             pending.append(Outcome(image_id, "pending", str(error)))
             print(f"    ✗ {error}", file=sys.stderr)
             continue
@@ -953,12 +953,12 @@ def main() -> int:
         print(f"{generated} copia(s) generada(s) sin subir, por --dry-run.")
     print(f"{done} copia(s) subida(s) y registrada(s).")
     if pending:
-        # Lo que sigue pendiente se dice entero y por su nombre: una cola que se
-        # anuncia vacía y no lo está es peor que una cola llena.
+        # What is still pending is stated in full and by name: a queue that announces
+        # itself empty and is not is worse than a full queue.
         print(f"{len(pending)} sigue(n) pendiente(s):", file=sys.stderr)
         for outcome in pending:
             print(f"  · {outcome.image_id}: {outcome.detail}", file=sys.stderr)
-        # Salida distinta de cero, para quien haya llamado a esto desde otro sitio.
+        # A non-zero exit status, for whoever has called this from elsewhere.
         return 1
     return 0
 

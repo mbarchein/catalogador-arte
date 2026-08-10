@@ -1,9 +1,9 @@
 .DEFAULT_GOAL := help
 
-# Puertos publicados. Están por debajo de 32768 a propósito: ahí empieza el rango
-# de puertos efímeros de Linux, y publicar dentro de él (54321, 54322…) hace que
-# cualquier conexión saliente pueda quedarse con el puerto y que el stack falle al
-# arrancar de forma intermitente. Sobrescribibles desde .env.
+# Published ports. They are below 32768 on purpose: that is where Linux's
+# ephemeral port range starts, and publishing inside it (54321, 54322…) makes
+# any outgoing connection able to take the port and the stack fail to
+# start intermittently. Overridable from .env.
 PUERTO_APP    ?= 5173
 PUERTO_API    ?= 8321
 PUERTO_CORREO ?= 8325
@@ -11,10 +11,10 @@ PUERTO_DB     ?= 5433
 PUERTO_S3     ?= 9100
 export PUERTO_APP PUERTO_API PUERTO_CORREO PUERTO_DB PUERTO_S3
 
-# Host con el que la aplicacion esta REALMENTE configurada. Anunciar «localhost»
-# cuando DEV_HOST apunta a la red local hace perder el tiempo: la pagina carga en
-# el movil pero el login falla, porque el JavaScript le dice al telefono que llame
-# a su propio localhost.
+# The host the application is REALLY configured with. Announcing «localhost»
+# when DEV_HOST points at the local network wastes time: the page loads on
+# the phone but the login fails, because the JavaScript tells the phone to call
+# its own localhost.
 DEV_HOST_ENV := $(shell grep -E '^DEV_HOST=' .env 2>/dev/null | cut -d= -f2)
 HOST := $(if $(DEV_HOST_ENV),$(DEV_HOST_ENV),localhost)
 AVISO_HOST := $(if $(DEV_HOST_ENV),Configurado para la red local: abre http://$(DEV_HOST_ENV):$(PUERTO_APP) en el movil.,Para probar desde el movil: make movil)
@@ -73,9 +73,9 @@ movil: ## Explica cómo abrir la app desde el móvil en la red local
 	 echo; \
 	 echo "Instalar como aplicación: menú del navegador → «Añadir a pantalla de inicio»."
 
-# Copia de producción para trabajar en local. El esquema NO viaja: sale de las
-# migraciones, que son la fuente única. Lo que viaja son las filas, y con
-# FOTOS=1 también las fotografías (FOTOS=todo añade los másters de B2).
+# A copy of production for working locally. The schema does NOT travel: it comes from the
+# migrations, which are the single source. What travels are the rows, and with
+# FOTOS=1 the photographs too (FOTOS=todo adds B2's masters).
 db-pull: ## Descarga los datos de produccion a volcados/ (FOTOS=1 o FOTOS=todo)
 	FOTOS=$(FOTOS) bash docker/db-pull.sh
 
@@ -101,19 +101,19 @@ db-test: ## Tests de SQL: políticas RLS y reglas del esquema
 test: ## Tests del frontend
 	docker compose exec app npm test
 
-# No necesita el stack levantado: solo lee los ficheros del pipeline.
+# It does not need the stack up: it only reads the pipeline's files.
 pipeline-test: ## Tests de los invariantes del pipeline de despliegue
 	./.github/pipeline.test.sh
 
-# Ata las dos implementaciones de la cadena de color: la del navegador y la de la
-# herramienta local que genera las copias corregidas pendientes (RF-421). Regenera
-# el fichero de casos versionado —parámetros contra las tablas de 256 entradas que
-# producen— desde los tests del frontend, y con él verifica las tablas de Python.
+# It ties the two implementations of the colour chain: the browser's and that of the
+# local tool that generates the pending corrected copies (RF-421). It regenerates
+# the versioned case file —parameters against the 256-entry tables they
+# produce— from the frontend's tests, and with it verifies Python's tables.
 #
-# `make test` ya avisa cuando el fichero deja de coincidir con el código; esto es
-# lo que hay que ejecutar cuando avisa, y después mirar el diff: si el fichero
-# cambia, el color de la aplicación ha cambiado. Los tests de Python no necesitan
-# red ni base de datos.
+# `make test` already warns when the file stops matching the code; this is
+# what has to be run when it warns, and afterwards look at the diff: if the file
+# changes, the application's colour has changed. Python's tests need no
+# network and no database.
 casos-color: ## Regenera los casos de color y verifica la herramienta por lotes
 	docker compose exec -T -e UPDATE_COLOR_CASES=1 app \
 	  npx vitest run src/lib/imageColor.fixture.test.ts
@@ -147,8 +147,8 @@ permisos: ## Recupera la propiedad de los ficheros que el contenedor creó como 
 clean: ## Detiene todo y borra los volúmenes, base de datos incluida
 	docker compose --profile preview down -v
 
-# Los flujos de infraestructura viven en infra/Makefile (make -C infra help):
-# aquí solo se delega para no tener la lógica dos veces.
+# The infrastructure flows live in infra/Makefile (make -C infra help):
+# here it is only delegated so as not to have the logic twice.
 infra-check: ## Formato y validez del Terraform
 	$(MAKE) -C infra check
 
