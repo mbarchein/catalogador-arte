@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { anyWritten, draftDirty } from './formDirty'
 
 /**
- * La condición que enciende la pregunta de «tienes datos a medio meter».
+ * The condition that lights up the «you have half-entered data» question.
  *
- * Los dos errores posibles se pagan en direcciones opuestas: quedarse corto pierde datos
- * —la incidencia de la que viene todo esto— y pasarse convierte la pregunta en un cartel
- * que se despacha sin leer, y entonces el día que importa tampoco se lee. Cada regla de
- * abajo está a un lado o al otro de esa raya.
+ * The two possible mistakes are paid for in opposite directions: falling short loses data
+ * —the incident all this comes from— and overshooting turns the question into a sign
+ * dismissed unread, and then on the day it matters it is not read either. Every rule
+ * below is on one side or the other of that line.
  */
 
 interface Campos {

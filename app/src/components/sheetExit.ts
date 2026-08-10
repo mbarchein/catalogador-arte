@@ -1,35 +1,35 @@
 /**
- * Salir de una hoja sin perder lo que se estaba escribiendo (RF-304, RNF-106).
+ * Leaving a sheet without losing what was being written (RF-304, RNF-106).
  *
- * ── LO QUE PASÓ ─────────────────────────────────────────────
+ * ── WHAT HAPPENED ───────────────────────────────────────────
  *
- * Una hoja se cerraba por cinco caminos —el fondo oscuro, la ✕, Escape, el botón de atrás
- * del móvil y el «Cancelar» del pie— y los cinco eran inmediatos. Con la hoja ocupando tres cuartos de la
- * pantalla, el fondo queda justo donde se apoya el pulgar al desplazarse por un
- * formulario largo, y un roce ahí borraba diez minutos de tecleo sin preguntar. Ha pasado
- * dos veces, con datos dentro.
+ * A sheet closed by five paths —the dark backdrop, the ✕, Escape, the phone's back
+ * button and the footer's «Cancelar»— and all five were immediate. With the sheet taking up three quarters of the
+ * screen, the backdrop is exactly where the thumb rests when scrolling through a long
+ * form, and a brush there erased ten minutes of typing with no question asked. It has happened
+ * twice, with data inside.
  *
- * Y lo que se escribe **se apunta además en el teléfono** y se ofrece a la vuelta
- * (`useFormDraft`), que es lo único que cubre las salidas que no se pueden preguntar:
- * recargar, que el móvil mate la pestaña, quedarse sin batería. Eso cambia lo que esta
- * pregunta significa, y por eso `discardText` tiene dos redacciones.
+ * And what is written **is also noted down on the phone** and offered on returning
+ * (`useFormDraft`), which is the only thing covering the exits that cannot be asked about:
+ * reloading, the phone killing the tab, running out of battery. That changes what this
+ * question means, and that is why `discardText` has two wordings.
  *
- * ── LAS DOS DECISIONES, Y POR QUÉ SON DOS ───────────────────
+ * ── THE TWO DECISIONS, AND WHY THEY ARE TWO ─────────────────
  *
- * **El fondo deja de cerrar en las hojas que son un formulario**, y no solo cuando hay
- * algo escrito: la salida de un formulario está siempre en el mismo sitio —la ✕, arriba a
- * la derecha— y el pulgar la aprende. Una superficie que cierra unas veces y otras pide
- * confirmación es peor que una que no cierra nunca. En las hojas que son ELEGIR algo —un
- * sitio, una sede, un estado de investigación— el fondo sigue cerrando: ahí no hay nada
- * que perder y quitarlo sería quitar comodidad sin ganar nada.
+ * **The backdrop stops closing on the sheets that are a form**, and not only when there is
+ * something written: a form's exit is always in the same place —the ✕, top
+ * right— and the thumb learns it. A surface that closes sometimes and asks for
+ * confirmation other times is worse than one that never closes. On the sheets that are CHOOSING something —a
+ * place, a venue, a research state— the backdrop still closes: there is nothing there
+ * to lose and removing it would remove convenience while gaining nothing.
  *
- * **Y las otras cuatro salidas preguntan cuando hay algo que perder.** Preguntar siempre
- * —también sobre un formulario en blanco— es la forma más rápida de que la pregunta se
- * despache sin leerla, y entonces deja de proteger. Así que la condición es «hay algo
- * escrito que se perdería», que la calcula cada hoja porque solo ella sabe qué es un dato
- * suyo y qué es una búsqueda a medio teclear.
+ * **And the other four exits ask when there is something to lose.** Always asking
+ * —including about a blank form— is the quickest way for the question to be
+ * dismissed unread, and then it stops protecting. So the condition is «there is something
+ * written that would be lost», which each sheet calculates because only it knows what is a datum
+ * of its own and what is a half-typed search.
  *
- * Todo aquí es puro: la batería corre en node.
+ * Everything here is pure: the suite runs in node.
  */
 
 /** Which way out is being attempted. The four paths, named. */
@@ -43,11 +43,11 @@ export type SheetExit =
   | 'back'
 
 /**
- * Qué hacer con un intento de salir.
+ * What to do with an attempt to leave.
  *
- * - `close`: se cierra, que es lo que ha pasado siempre.
- * - `confirm`: se pregunta antes, porque hay algo escrito.
- * - `ignore`: no se hace nada, porque ese camino no es una salida de esta hoja.
+ * - `close`: it closes, which is what has always happened.
+ * - `confirm`: it asks first, because there is something written.
+ * - `ignore`: nothing is done, because that path is not an exit of this sheet.
  */
 export type SheetExitAction = 'close' | 'confirm' | 'ignore'
 

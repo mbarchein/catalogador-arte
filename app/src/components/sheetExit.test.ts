@@ -9,15 +9,15 @@ import {
 } from './sheetExit'
 
 /**
- * Salir de una hoja sin perder lo escrito.
+ * Leaving a sheet without losing what was written.
  *
- * Esta batería existe por una incidencia real y contada dos veces: un roce en el fondo
- * oscuro —que con la hoja a tres cuartos de pantalla cae justo donde se apoya el pulgar al
- * desplazarse— cerraba el formulario y se perdían diez minutos de tecleo, sin preguntar.
+ * This suite exists because of a real incident reported twice: a brush on the dark
+ * backdrop —which with the sheet at three quarters of the screen falls exactly where the thumb rests when
+ * scrolling— closed the form and ten minutes of typing were lost, with no question asked.
  *
- * Lo que fija, y que es donde una confirmación se convierte en decorado: **que no se
- * pregunte sobre un formulario en blanco** —una pregunta que sale siempre se despacha sin
- * leerla— y **que con la pregunta delante no haya ningún camino que salga sin decirlo**.
+ * What it pins down, and it is where a confirmation turns into scenery: **that no question
+ * is asked about a blank form** —a question that always comes up is dismissed
+ * unread— and **that with the question in front there is no path that leaves without saying so**.
  */
 
 const EXITS: SheetExit[] = ['backdrop', 'close', 'escape', 'back']
@@ -93,9 +93,9 @@ describe('lo que dice la pregunta', () => {
   })
 
   it('el que se queda dice que se queda, y el que sale no promete una pérdida que no hay', () => {
-    // «Salir sin guardar» y no «Salir y perderlo»: con el borrador apuntado el tecleo no se
-    // pierde, y un botón que dice «perderlo» sobre algo que no se pierde enseña a no
-    // creerse los avisos. Lo que es verdad de las dos formas es que no se guarda.
+    // «Salir sin guardar» and not «Salir y perderlo»: with the draft noted down the typing is not
+    // lost, and a button saying «perderlo» about something that is not lost teaches people not to
+    // believe the warnings. What is true either way is that it is not stored.
     expect(DISCARD_KEEP_LABEL).toBe('Seguir rellenando')
     expect(DISCARD_LEAVE_LABEL).toBe('Salir sin guardar')
     expect(DISCARD_LEAVE_LABEL).not.toContain('perder')

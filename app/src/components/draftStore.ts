@@ -128,13 +128,13 @@ export function readDraft<T>(
 }
 
 /**
- * Un resumen de la fila guardada, para saber si ha cambiado desde que se apuntó el
- * borrador.
+ * A summary of the stored row, to know whether it has changed since the draft was
+ * noted down.
  *
- * Los valores en orden y separados por una barra vertical: no es criptografía, es una
- * cadena que cambia cuando cambia cualquiera de los campos. Se le pasan los MISMOS campos
- * que el formulario edita, y no la fila entera: si otra sesión ha tocado algo que este
- * formulario no escribe, el borrador sigue siendo válido y avisar sería avisar de nada.
+ * The values in order and separated by a vertical bar: it is not cryptography, it is a
+ * string that changes when any of the fields changes. It is passed the SAME fields
+ * the form edits, and not the whole row: if another session has touched something this
+ * form does not write, the draft is still valid and warning would be warning about nothing.
  */
 export function draftFingerprint(values: readonly (string | number | boolean | null | undefined)[]): string {
   return values.map((value) => (value == null ? '' : String(value).trim())).join('|')
@@ -145,9 +145,9 @@ export function draftFingerprint(values: readonly (string | number | boolean | n
 /**
  * «hace un momento», «hace 20 minutos», «ayer»…
  *
- * En palabras y no con la hora exacta porque la pregunta que contesta es «¿esto es de
- * ahora mismo o de otro día?», y para eso «hace 20 minutos» dice más que «15:42». A partir
- * de dos días entra la fecha, que es cuando la cuenta de días deja de significar nada.
+ * In words and not with the exact time because the question it answers is «is this from
+ * right now or from another day?», and for that «hace 20 minutos» says more than «15:42». From
+ * two days on the date comes in, which is when the day count stops meaning anything.
  */
 export function draftAgeText(at: Date, now: Date): string {
   const ms = Math.max(0, now.getTime() - at.getTime())
@@ -163,14 +163,14 @@ export function draftAgeText(at: Date, now: Date): string {
 }
 
 /**
- * Lo que se lee al ofrecer el borrador, o null cuando no hay ninguno que ofrecer.
+ * What is read when the draft is offered, or null when there is none to offer.
  *
- * El caso `stale` **no se calla y no esconde el borrador**: decir solo «tenías esto a
- * medio escribir» sobre una ficha que otra sesión ha corregido llevaría a aceptarlo sin
- * mirar y a revertir esa corrección en silencio. Y esconderlo sería perder el trabajo por
- * segunda vez. Así que se ofrece, se dice lo que ha pasado, y decide quien mira.
+ * The `stale` case **does not keep quiet and does not hide the draft**: saying only «you had this
+ * half-written» about a record another session has corrected would lead to accepting it without
+ * looking and to silently reverting that correction. And hiding it would be losing the work a
+ * second time. So it is offered, what happened is said, and whoever looks decides.
  *
- * @param filesLost El formulario llevaba un fichero, que no se ha podido apuntar.
+ * @param filesLost The form carried a file, which could not be noted down.
  */
 export function draftOfferText(input: {
   status: DraftStatus
