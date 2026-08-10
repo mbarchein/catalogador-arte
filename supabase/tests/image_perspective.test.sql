@@ -1,14 +1,14 @@
--- RF-409, RF-410: las cuatro esquinas de la obra y la procedencia del encuadre.
+-- RF-409, RF-410: the artwork's four corners and the framing's provenance.
 --
--- Lo que se comprueba es lo que el `check` puede comprobar y el cliente no debe
--- volver a comprobar: que media perspectiva no existe, que una esquina no se va a
--- cualquier parte, que el cuadrilátero no se cruza consigo mismo —rectificar un
--- lazo da una imagen doblada, y eso solo se descubre al abrir la ficha— y que el
--- recorte y las esquinas conviven, que es lo que permite desplegar en una fase.
+-- What is checked is what the `check` can check and the client must not
+-- check again: that half a perspective does not exist, that a corner does not go
+-- anywhere, that the quadrilateral does not cross itself —rectifying a
+-- bow tie gives a folded image, and that is only discovered on opening the record— and that the
+-- crop and the corners coexist, which is what allows deploying in one phase.
 \set ON_ERROR_STOP on
 begin;
 
--- Fixtures: un catalogador, una obra y una imagen suya.
+-- Fixtures: one cataloguer, one artwork and one image of its own.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b1', 'cat-perspectiva@test.local');
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000b1';
@@ -24,9 +24,9 @@ begin
   values (v_obra, 'p/min.webp', 'p/der.webp', 'p/master.jpg', 'GENERAL');
 end $$;
 
--- ── 1. Las ocho o ninguna ────────────────────────────────────
--- Media perspectiva no es «un poco corregida»: es un cuadrilátero que nadie puede
--- dibujar, y llegaría así al pipeline del catálogo impreso.
+-- ── 1. All eight or none ─────────────────────────────────────
+-- Half a perspective is not «a bit corrected»: it is a quadrilateral nobody can
+-- draw, and it would arrive that way at the printed catalogue's pipeline.
 do $$
 declare v_id text;
 begin
@@ -39,7 +39,7 @@ begin
     raise notice 'OK: media perspectiva se rechaza';
   end;
 
-  -- Y las ocho juntas entran.
+  -- And all eight together go in.
   update public.images set
     corner_nw_x = 0.10, corner_nw_y = 0.12,
     corner_ne_x = 0.88, corner_ne_y = 0.08,
@@ -49,10 +49,10 @@ begin
   raise notice 'OK: las ocho esquinas juntas entran';
 end $$;
 
--- ── 2. Una esquina puede salirse de la foto, pero no irse ────
--- En cinco fotografías del lote los lados de la obra no están dentro del
--- encuadre, y arrastrar la esquina fuera del borde es la única forma de
--- rectificarlas. Lo que no vale es irse a cualquier parte.
+-- ── 2. A corner can go outside the photo, but not run off ────
+-- In five photographs of the batch the artwork's sides are not inside the
+-- frame, and dragging the corner outside the edge is the only way of
+-- rectifying them. What does not do is running off anywhere.
 do $$
 declare v_id text;
 begin
@@ -71,16 +71,16 @@ begin
   update public.images set corner_nw_x = 0.10, corner_nw_y = 0.12 where image_id = v_id;
 end $$;
 
--- ── 3. El cuadrilátero no se cruza consigo mismo ─────────────
--- Sale de arrastrar una esquina por encima de su vecina, y rectificarlo produce
--- una imagen doblada. El área con signo lo caza sin necesidad de trigonometría.
+-- ── 3. The quadrilateral does not cross itself ───────────────
+-- It comes from dragging a corner over its neighbour, and rectifying it produces
+-- a folded image. The signed area catches it with no need for trigonometry.
 do $$
 declare v_id text;
 begin
   select image_id into v_id from public.images where master_path = 'p/master.jpg';
 
   begin
-    -- Las dos esquinas de arriba cruzadas: NE a la izquierda de NW.
+    -- The two top corners crossed: NE to the left of NW.
     update public.images set
       corner_nw_x = 0.9, corner_nw_y = 0.1,
       corner_ne_x = 0.1, corner_ne_y = 0.1
@@ -91,10 +91,10 @@ begin
   end;
 
   begin
-    -- El caso que la primera versión de la restricción ACEPTABA: cruza dos lados y
-    -- conserva 0,332 de área con signo, porque un polígono autointersectado mantiene
-    -- área positiva cuando gana su lóbulo mayor. El área nunca fue una prueba de que
-    -- no se cruce; la convexidad sí (20260801180000).
+    -- The case the constraint's first version ACCEPTED: it crosses two sides and
+    -- keeps 0.332 of signed area, because a self-intersecting polygon keeps
+    -- a positive area when its larger lobe wins. The area was never a proof that
+    -- it does not cross; convexity is (20260801180000).
     update public.images set
       corner_nw_x = 0.95, corner_nw_y = 0.16,
       corner_ne_x = 0.70, corner_ne_y = 0.15,
@@ -107,7 +107,7 @@ begin
   end;
 
   begin
-    -- Y uno degenerado: las cuatro esquinas en el mismo punto.
+    -- And a degenerate one: the four corners at the same point.
     update public.images set
       corner_nw_x = 0.5, corner_nw_y = 0.5, corner_ne_x = 0.5, corner_ne_y = 0.5,
       corner_se_x = 0.5, corner_se_y = 0.5, corner_sw_x = 0.5, corner_sw_y = 0.5

@@ -295,15 +295,15 @@ begin
     end if;
   end;
 
-  -- Y el camino degradado: quitarle el máster a una fila que ya tiene copia no
-  -- falla y no se lleva la copia por delante. Es el caso de una fotografía cuyo
-  -- máster se reubica cuando la copia ya está subida.
+  -- And the degraded path: taking the master away from a row that already has a copy does not
+  -- fail and does not take the copy with it. It is the case of a photograph whose
+  -- master is relocated when the copy is already uploaded.
   --
-  -- Este aserto **no** distingue `is distinct from` de un `<>` en la restricción, y
-  -- se dice para que nadie lo cuente como que sí: con la guarda `corrected_path is
-  -- null` delante, las dos formas admiten las mismas filas —con el máster nulo,
-  -- `<>` da nulo y el `check` pasa igual—. Lo que se verifica aquí es la conducta
-  -- que la ficha necesita, no la sintaxis con que está escrita.
+  -- This assertion does **not** distinguish `is distinct from` from a `<>` in the constraint, and
+  -- it is said so nobody counts it as if it did: with the `corrected_path is
+  -- null` guard in front, both forms admit the same rows —with a null master,
+  -- `<>` gives null and the `check` passes all the same—. What is verified here is the behaviour
+  -- the record needs, not the syntax it is written with.
   update public.images set master_path = null where image_id = 'AR-9602_v1';
   select master_path, corrected_path into v_master, v_copia
     from public.images where image_id = 'AR-9602_v1';
@@ -316,8 +316,8 @@ begin
   raise notice 'OK: la ruta de la copia corregida nunca es la del máster, en las dos direcciones';
 end $$;
 
--- Y lo mismo sobre todas las filas de la base, que es donde la regla tiene que
--- valer de verdad: ninguna fila tiene la copia en la ruta de su máster.
+-- And the same over every row of the base, which is where the rule has to
+-- really hold: no row has the copy at its master's path.
 do $$
 declare v_malas int;
 begin
@@ -330,21 +330,21 @@ begin
   raise notice 'OK: ninguna fila de la base tiene la copia sobre su máster';
 end $$;
 
--- ── 6. Nada se ha rellenado hacia atrás ──────────────────────
--- Las filas que ya existían se quedan sin copia y sin deuda: no hay copia porque
--- nadie ha aplicado una corrección desde que este nivel existe, y no falta ninguna
--- porque tampoco hacía falta. Marcarlas pendientes en la migración habría creado
--- 39 tareas que nadie pidió; darles una ruta habría inventado 39 ficheros que no
--- están en el almacén, y la ficha ofrecería descargar un 404.
+-- ── 6. Nothing has been filled backwards ─────────────────────
+-- The rows that already existed are left with no copy and no debt: there is no copy because
+-- nobody has applied a correction since this level exists, and none is missing
+-- because none was needed either. Marking them pending in the migration would have created
+-- 39 tasks nobody asked for; giving them a path would have invented 39 files that are not
+-- in the store, and the record would offer to download a 404.
 --
--- Se cuentan TODAS las filas y no solo las activas: las dadas de baja siguen ahí
--- —nunca un borrado real— y una baja lógica con una copia corregida inventada
--- seguiría siendo un dato inventado, además de un fichero fantasma que nadie
--- volvería a mirar.
+-- ALL the rows are counted and not only the active ones: the withdrawn ones are still there
+-- —never a real delete— and a logical deletion with an invented corrected copy
+-- would still be an invented datum, besides a ghost file nobody
+-- would look at again.
 --
--- Sobre una base recién migrada no hay filas y el aserto no dice nada, y es
--- correcto que no lo diga: este test mide la base cargada con el volcado, donde
--- son 39 activas de 44.
+-- Over a freshly migrated base there are no rows and the assertion says nothing, and it is
+-- right that it says nothing: this test measures the base loaded with the dump, where
+-- they are 39 active out of 44.
 do $$
 declare v_total int; v_con_copia int; v_pendientes int;
 begin
@@ -369,10 +369,10 @@ begin
   raise notice 'OK: las % filas heredadas siguen sin copia corregida y sin deuda', v_total;
 end $$;
 
--- Y siguen admitiendo una escritura que ignora las columnas nuevas, que es
--- literalmente lo que hace el frontend viejo durante el despliegue: si alguna de
--- las restricciones nuevas rechazara una fila heredada, esa fila se quedaría sin
--- poder guardarse hasta que alguien la arreglara a mano.
+-- And they still admit a write that ignores the new columns, which is
+-- literally what the old frontend does during the deployment: if any of
+-- the new constraints rejected an inherited row, that row would be left unable
+-- to be stored until somebody fixed it by hand.
 do $$
 declare v_total int; v_tocadas int;
 begin
@@ -388,26 +388,26 @@ begin
   raise notice 'OK: las % filas heredadas se siguen escribiendo sin las columnas nuevas', v_total;
 end $$;
 
--- ── 7. Lo que la base NO prohíbe, a propósito ────────────────
--- Está aquí para que la ausencia de estas dos restricciones se lea como una
--- decisión y no como un olvido: quien las añada mañana romperá este test y leerá
--- por qué.
+-- ── 7. What the base does NOT forbid, on purpose ─────────────
+-- It is here so that the absence of these two constraints reads as a
+-- decision and not as an oversight: whoever adds them tomorrow will break this test and will read
+-- why.
 do $$
 begin
-  -- Una copia corregida sin máster en la fila. Hoy no se puede llegar ahí porque
-  -- sin máster el color se prohíbe en el cliente, pero la regla es de renderizado
-  -- y vive allí: escribirla en la base impediría guardar el caso de una copia ya
-  -- generada cuyo máster se reubique, y lo impediría cuando ya no hay nada que
-  -- hacer.
+  -- A corrected copy with no master in the row. Today it cannot be reached because
+  -- with no master the colour is forbidden in the client, but the rule is about rendering
+  -- and lives there: writing it in the base would prevent storing the case of a copy already
+  -- generated whose master gets relocated, and it would prevent it when there is nothing left to
+  -- do.
   update public.images
      set master_path = null,
          corrected_path = 'q/AR-9602_ef56_corr.jpg', corrected_bytes = 1048576
    where image_id = 'AR-9602_v1';
 
-  -- Y una fila marcada pendiente sin ninguna corrección que aplicar. Es inofensivo
-  -- —quien lo lea reintentará y dejará el trabajo hecho— y un `check` que exigiera
-  -- «hay algo que aplicar» tendría que repetir aquí la definición de las cuatro
-  -- correcciones y se desalinearía la primera vez que hubiera una quinta.
+  -- And a row marked pending with no correction to apply. It is harmless
+  -- —whoever reads it will retry and will leave the work done— and a `check` requiring
+  -- «there is something to apply» would have to repeat here the definition of the four
+  -- corrections and would fall out of step the first time there was a fifth.
   update public.images
      set corrected_path = null, corrected_bytes = null, corrected_pending = true,
          rotation = 0, crop_x = null, crop_y = null, crop_width = null, crop_height = null,
@@ -417,28 +417,28 @@ begin
   raise notice 'OK: la base no exige máster para la copia ni correcciones para la deuda';
 end $$;
 
--- ── 8. Quién escribe la copia y quién solo la descarga ───────
+-- ── 8. Who writes the copy and who only downloads it ─────────
 -- RF-106, RF-411, RF-420.
 --
--- Las tres columnas son superficie nueva de escritura, y CLAUDE.md pone las
--- políticas RLS por delante de todo lo demás: no hay backend, la clave anónima
--- viaja en el cliente y estas políticas son el único perímetro que hay. No se ha
--- escrito ninguna política nueva para ellas, y es deliberado —quien puede editar
--- una fotografía puede editar su copia corregida—, así que lo que hay que
--- demostrar es que la `images_update` que ya existe (`can_edit()`) alcanza a las
--- tres. Leer la migración no demuestra nada: esto se autentica de verdad.
+-- The three columns are new write surface, and CLAUDE.md puts the RLS
+-- policies ahead of everything else: there is no backend, the anonymous key
+-- travels in the client and these policies are the only perimeter there is. No
+-- new policy has been written for them, and it is deliberate —whoever can edit
+-- a photograph can edit its corrected copy—, so what has to be
+-- demonstrated is that the `images_update` that already exists (`can_edit()`) reaches all
+-- three. Reading the migration demonstrates nothing: this authenticates for real.
 --
--- La cobertura está aquí y no en `rls_role_matrix.test.sql` porque ese fichero
--- pertenece a otro trabajo en curso y hoy cubre las columnas de color y no
--- estas. Vale en cualquiera de los dos sitios; lo que no vale es en ninguno.
+-- The coverage is here and not in `rls_role_matrix.test.sql` because that file
+-- belongs to other work in progress and today covers the colour columns and not
+-- these. It works in either of the two places; what does not work is in neither.
 --
--- Y aquí se comprueba la asimetría de RF-411, que es la que se puede romper sin
--- que nadie se entere: el Lector **descarga** la copia corregida —para eso
--- existe— y por tanto tiene que poder LEER `corrected_path` y
--- `corrected_bytes`, pero no puede escribir ninguna de las tres. Una política
--- que le negara la lectura no daría ningún error: dejaría el botón de descarga
--- sin ruta que firmar, y la ficha entregaría el máster sin corregir creyendo que
--- no había copia.
+-- And here RF-411's asymmetry is checked, which is the one that can be broken without
+-- anybody finding out: the Reader **downloads** the corrected copy —that is what it
+-- exists for— and therefore has to be able to READ `corrected_path` and
+-- `corrected_bytes`, but cannot write any of the three. A policy
+-- denying them the read would give no error: it would leave the download button
+-- with no path to sign, and the record would hand over the uncorrected master believing that
+-- there was no copy.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000096c1', 'cat-corr@test.local'),
   ('00000000-0000-0000-0000-0000000096d1', 'lec-corr@test.local');
@@ -448,8 +448,8 @@ update public.profiles set role = 'CATALOGER'
 update public.profiles set role = 'READER'
  where id = '00000000-0000-0000-0000-0000000096d1';
 
--- Estado de partida limpio y explícito: el bloque anterior dejó la fila sin
--- máster y con deuda a propósito, y lo que se mide ahora es otra cosa.
+-- A clean and explicit starting state: the previous block left the row with no
+-- master and with debt on purpose, and what is measured now is something else.
 update public.images
    set master_path = 'q/AR-9602_ab12_master.jpg',
        corrected_path = null, corrected_bytes = null, corrected_pending = false
@@ -462,8 +462,8 @@ begin
     '{"sub":"00000000-0000-0000-0000-0000000096c1","role":"authenticated"}';
   set local role authenticated;
 
-  -- Los dos estados que un catalogador escribe de verdad. Primero la copia
-  -- hecha, que es lo que ocurre cuando el dispositivo ha podido generarla.
+  -- The two states a cataloguer really writes. First the copy
+  -- done, which is what happens when the device has managed to generate it.
   update public.images
      set corrected_path = 'q/AR-9602_ab12_corr.jpg', corrected_bytes = 3145728
    where image_id = 'AR-9602_v1'
@@ -473,9 +473,9 @@ begin
     raise exception 'FAIL: el catalogador no ha podido escribir la copia corregida';
   end if;
 
-  -- Y después la deuda, que es lo que ocurre cuando no ha podido: si can_edit()
-  -- no alcanzara esta tercera columna, el móvil no podría ni dejar constancia de
-  -- que la copia falta, que es justo para lo que existe.
+  -- And then the debt, which is what happens when it has not: if can_edit()
+  -- did not reach this third column, the phone could not even leave a record
+  -- that the copy is missing, which is precisely what it exists for.
   update public.images
      set corrected_path = null, corrected_bytes = null, corrected_pending = true
    where image_id = 'AR-9602_v1'
@@ -490,7 +490,7 @@ end $$;
 
 reset role;
 
--- La fila queda con copia, que es el estado en el que el Lector la descarga.
+-- The row is left with a copy, which is the state the Reader downloads it in.
 update public.images
    set corrected_pending = false,
        corrected_path = 'q/AR-9602_ab12_corr.jpg', corrected_bytes = 3145728
@@ -503,25 +503,25 @@ begin
     '{"sub":"00000000-0000-0000-0000-0000000096d1","role":"authenticated"}';
   set local role authenticated;
 
-  -- RF-411: el Lector LEE la ruta y el tamaño. Es lo que la ficha necesita para
-  -- pedir la URL firmada y para anunciar el peso de lo que se va a descargar.
+  -- RF-411: the Reader READS the path and the size. It is what the record needs in order to
+  -- ask for the signed URL and to announce the weight of what is going to be downloaded.
   select corrected_path, corrected_bytes into v_ruta, v_bytes
     from public.images where image_id = 'AR-9602_v1';
   if v_ruta is null or v_bytes is null then
     raise exception 'FAIL: el Lector no ve la copia corregida y no puede descargarla (RF-411)';
   end if;
 
-  -- RF-106: y no escribe la ruta ni el tamaño. Un `update` que la política USING
-  -- esconde no falla: no afecta a ninguna fila. Ese silencio es lo que hay que
-  -- afirmar, porque sin afirmarlo el test pasaría igual sobre una tabla sin
-  -- ninguna política.
+  -- RF-106: and does not write the path or the size. An `update` the USING policy
+  -- hides does not fail: it affects no row. That silence is what has to be
+  -- asserted, because without asserting it the test would pass all the same over a table with
+  -- no policy at all.
   --
-  -- Los valores elegidos son válidos para las cuatro restricciones a propósito
-  -- —pareja completa, tamaño positivo y ruta distinta de la del máster—, y eso es
-  -- parte del test y no un descuido: si la escritura del Lector rompiera además un
-  -- `check`, el rechazo podría venir del `check` en vez de la política y este
-  -- bloque dejaría de medir la política, que es lo único que aquí se mide. Con la
-  -- política abierta esta escritura entraría sin una queja.
+  -- The values chosen are valid for the four constraints on purpose
+  -- —complete pair, positive size and a path different from the master's—, and that is
+  -- part of the test and not an oversight: if the Reader's write also broke a
+  -- `check`, the rejection could come from the `check` instead of the policy and this
+  -- block would stop measuring the policy, which is the only thing measured here. With the
+  -- policy open this write would go in without a complaint.
   update public.images
      set corrected_path = 'q/robada_corr.jpg', corrected_bytes = 1
    where image_id = 'AR-9602_v1';
@@ -532,9 +532,9 @@ begin
     raise exception 'FAIL: el Lector ha modificado la copia corregida de % fila(s)', v_afectadas;
   end if;
 
-  -- Y la fila sigue con lo que escribió el catalogador, comprobado ya fuera de la
-  -- sesión del Lector: `row_count` a solas no cazaría una política que dejara
-  -- pasar la escritura y escondiera la fila después.
+  -- And the row still has what the cataloguer wrote, checked from outside the
+  -- Reader's session: `row_count` on its own would not catch a policy that let
+  -- the write through and hid the row afterwards.
   select * into v_row from public.images where image_id = 'AR-9602_v1';
   if v_row.corrected_path <> 'q/AR-9602_ab12_corr.jpg'
      or v_row.corrected_bytes <> 3145728 or v_row.corrected_pending then
@@ -546,10 +546,10 @@ end $$;
 
 reset role;
 
--- La tercera columna aparte, y por la misma razón: para que `corrected_pending`
--- se pueda atacar sin romper `images_corrected_pending_exclusive`, la fila tiene
--- que quedar primero sin copia. Así el único motivo posible de que la escritura
--- no entre es la política.
+-- The third column apart, and for the same reason: for `corrected_pending`
+-- to be attackable without breaking `images_corrected_pending_exclusive`, the row has
+-- to be left with no copy first. This way the only possible reason for the write
+-- not going in is the policy.
 update public.images
    set corrected_path = null, corrected_bytes = null, corrected_pending = false
  where image_id = 'AR-9602_v1';
@@ -580,8 +580,8 @@ end $$;
 
 reset role;
 
--- Y tampoco cuela una copia por una fotografía nueva, que es el camino que queda
--- cuando el `update` no le sirve.
+-- And a copy does not slip through via a new photograph either, which is the path left
+-- when the `update` is of no use to them.
 do $$
 begin
   set local request.jwt.claims =
