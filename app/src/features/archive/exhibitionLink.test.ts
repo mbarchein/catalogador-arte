@@ -11,18 +11,18 @@ import {
 } from './exhibitionLink'
 
 /**
- * Enlazar un documento del archivo con una exposición (RF-516, RF-517).
+ * Linking an archive document to an exhibition (RF-516, RF-517).
  *
- * `exhibition_documents` y `document_exhibition` estaban en el esquema desde la migración
- * del archivo, con su `grant execute` y con su prueba de que restauran el vínculo
- * retirado. **No las llamaba nadie**, así que el cartel de una muestra no se podía
- * enlazar con la muestra desde ninguna pantalla.
+ * `exhibition_documents` and `document_exhibition` had been in the schema since the archive's
+ * migration, with their `grant execute` and with their proof that they restore the withdrawn
+ * link. **Nobody called them**, so a show's poster could not be
+ * linked to the show from any screen.
  *
- * Lo que fijan estos tests es la frontera del selector, que es donde este proyecto ya se
- * ha equivocado antes: **la retirada y la ya enlazada NO se tratan igual**. Una
- * exposición retirada se deja fuera —ofrecerla la devolvería a circulación por la puerta
- * de atrás— y una ya enlazada se sigue listando, marcada, porque esconderla hace teclear
- * el mismo título una y otra vez.
+ * What these tests pin down is the selector's boundary, which is where this project has already
+ * got it wrong before: **the withdrawn one and the already linked one are NOT treated the same**. A
+ * withdrawn exhibition is left out —offering it would bring it back into circulation through the back
+ * door— and an already linked one is still listed, marked, because hiding it makes people type
+ * the same title over and over.
  */
 
 function exhibition(over: Partial<ExhibitionRow> = {}): ExhibitionRow {
@@ -79,10 +79,10 @@ describe('rankExhibitionLinkOptions, la frontera del selector (RF-609, RF-901)',
   })
 
   it('la opción lleva el título a secas además de la línea de la lista', () => {
-    // La línea lleva el año y la sede porque ahí hacen falta para distinguir dos
-    // itinerancias del mismo título. El aviso de que el vínculo entró, no: pasarle la
-    // línea entera le lee «Muestra de Zafra · 1985 · Sede sin identificar», que es el
-    // relleno de una lista y no el nombre de nada.
+    // The line carries the year and the venue because there they are needed to tell two
+    // tourings of the same title apart. The warning that the link went in, no: passing it the
+    // whole line reads out «Muestra de Zafra · 1985 · Sede sin identificar», which is
+    // a list's padding and not the name of anything.
     const [option] = rankExhibitionLinkOptions([exhibition({ venue_note: '' })], '', new Set())
     expect(option?.item.title).toBe('Muestra de Zafra')
     expect(option?.item.text).toContain('1985')
@@ -97,9 +97,9 @@ describe('rankExhibitionLinkOptions, la frontera del selector (RF-609, RF-901)',
 
 describe('linkedExhibitionIds, qué cuenta como ya enlazada', () => {
   it('solo los vínculos vivos', () => {
-    // Un vínculo retirado no es un vínculo, y marcarlo como «ya enlazada» esconderría la
-    // única forma de recuperarlo: volver a enlazar, que es lo que hace la función de la
-    // base (RF-517).
+    // A withdrawn link is not a link, and marking it as «already linked» would hide the
+    // only way of recovering it: linking again, which is what the base's function
+    // does (RF-517).
     const ids = linkedExhibitionIds([
       { exhibition_id: 'vivo', active: true },
       { exhibition_id: 'retirado', active: false },
@@ -141,9 +141,9 @@ describe('lo que se dice al enlazar y al quitar', () => {
 
 describe('el bloque vacío, que ya no puede decir lo de antes', () => {
   it('quien puede escribir lee que se enlaza ahí mismo', () => {
-    // La frase anterior decía que no se hacía desde ninguna pantalla, y era verdad.
-    // Dejarla después de construir el botón es la deriva que la tarjeta de la ficha de
-    // obra ha pagado seis veces.
+    // The previous sentence said it was not done from any screen, and it was true.
+    // Leaving it there after building the button is the drift the artwork record's
+    // card has paid for six times.
     expect(NO_LINKED_EXHIBITIONS_WRITABLE).toContain('enlázalo con ella aquí abajo')
     expect(NO_LINKED_EXHIBITIONS_WRITABLE).not.toContain('ninguna pantalla')
   })

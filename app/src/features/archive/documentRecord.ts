@@ -1,22 +1,22 @@
 /**
- * La ficha de un documento del archivo, con las obras Y las exposiciones que lo tienen
- * enlazado (RF-309, RF-515, RF-516, RF-609).
+ * The record of an archive document, with the artworks AND the exhibitions that have it
+ * linked (RF-309, RF-515, RF-516, RF-609).
  *
- * Puro y sin React: la batería corre en node, así que el orden de los bloques, lo que
- * dice cada línea y lo que se lee donde no hay filas se verifican aquí.
+ * Pure and without React: the suite runs in node, so the blocks' order, what
+ * each line says and what is read where there are no rows are verified here.
  *
- * ── DOS BLOQUES, Y NO UNO ───────────────────────────────────
+ * ── TWO BLOCKS, AND NOT ONE ─────────────────────────────────
  *
- * Es la diferencia con la ficha de una referencia bibliográfica, que solo mira a las
- * obras. **La relación de un documento es de muchos a muchos con las obras y con las
- * exposiciones** (RF-516): un recorte de prensa habla de tres piezas, y un díptico o
- * una nota de prensa cuelgan de la muestra y de ninguna pieza en particular. Fundir los
- * dos bloques en una lista mezclaría códigos de catalogación con títulos de exposición
- * en la misma columna, y el documento que solo cuelga de una muestra —que es el caso
- * que hizo falta esta pantalla— saldría bajo un encabezado que dice «obras».
+ * It is the difference from a bibliographic reference's record, which only looks at the
+ * artworks. **A document's relationship is many-to-many with the artworks and with the
+ * exhibitions** (RF-516): a press clipping speaks of three pieces, and a leaflet or
+ * a press release hang from the show and from no piece in particular. Merging the
+ * two blocks into one list would mix cataloguing codes with exhibition titles
+ * in the same column, and the document that only hangs from a show —which is the case
+ * that made this screen necessary— would come out under a heading that says «obras».
  *
- * Y son dos tablas puente de verdad, con su propia nota cada una: lo que un cartel dice
- * de la exposición no es lo que dice de una obra suya.
+ * And they are two real bridge tables, each with its own note: what a poster says
+ * about the exhibition is not what it says about one of its artworks.
  */
 
 import type { ArtworkDocument, ExhibitionDocument } from '../../lib/types'
@@ -24,12 +24,12 @@ import { displayExhibitionDates } from '../documentary/documentaryFormat'
 import type { ArtworkRef } from '../documentary/documentaryRows'
 
 /**
- * Las columnas de la ficha: el documento entero con sus dos maestras incrustadas.
+ * The record's columns: the whole document with its two master tables embedded.
  *
- * Son las mismas que ya pide el bloque de la ficha de obra —el documento incrustado de
- * `DOCUMENT_LINK_COLUMNS`— escritas aquí porque allí van dentro de un `document:(…)` y
- * esta consulta las pide a nivel de la tabla. Es la misma lista de nombres y el mismo
- * criterio: la ficha necesita las doce columnas que el formulario de corrección escribe.
+ * They are the same ones the artwork record's block already asks for —the document embedded in
+ * `DOCUMENT_LINK_COLUMNS`— written here because there they go inside a `document:(…)` and
+ * this query asks for them at table level. It is the same list of names and the same
+ * criterion: the record needs the twelve columns the correction form writes.
  */
 export const DOCUMENT_RECORD_COLUMNS =
   'id, archive_code, artist_fund, document_type_id, title, archive_series_id, ' +
@@ -88,9 +88,9 @@ export interface LinkedArtworkView {
 }
 
 /**
- * El orden: por identificador de catalogación, como el bloque de obras citadas de una
- * referencia y por lo mismo — el documento no tiene un orden propio que imponerle a las
- * obras, y lo que se busca es «¿está AR-0042?».
+ * The order: by cataloguing identifier, like a reference's block of cited artworks and
+ * for the same reason — the document has no order of its own to impose on the
+ * artworks, and what is being looked for is «is AR-0042 there?».
  */
 export function linkedArtworkViews(rows: readonly LinkedArtworkRow[]): LinkedArtworkView[] {
   return rows
@@ -140,10 +140,10 @@ export interface LinkedExhibitionView {
 }
 
 /**
- * El orden: **de lo más reciente a lo más antiguo**, el mismo que el listado de
- * exposiciones y por el mismo motivo — una muestra se busca por su año, y la que se
- * tiene en la cabeza es más probablemente de esta década. Las que no se pueden leer van
- * al final, porque no hay fecha con la que colocarlas.
+ * The order: **from the most recent to the oldest**, the same as the exhibition
+ * listing and for the same reason — a show is looked for by its year, and the one
+ * in mind is more likely from this decade. The ones that cannot be read go
+ * last, because there is no date to place them with.
  */
 export function linkedExhibitionViews(
   rows: readonly LinkedExhibitionRow[],
@@ -193,12 +193,12 @@ export function linkedExhibitionViews(
 // ── What is read above and instead of the rows ───────────────
 
 /**
- * De qué está colgando el documento, en una frase y contando las dos mitades.
+ * What the document is hanging from, in one sentence and counting both halves.
  *
- * Es el dato que esta ficha añade y que no se puede leer en ningún otro sitio: desde la
- * ficha de una obra solo se ve que el documento cuelga de ELLA. Y es el que convierte a
- * un documento en «suelto»: cero y cero es exactamente la fila que este listado se
- * construyó para poder encontrar.
+ * It is the datum this record adds and that cannot be read anywhere else: from the
+ * record of an artwork only the document's hanging from THAT ONE is visible. And it is the one that turns
+ * a document into a «standalone» one: zero and zero is exactly the row this listing
+ * was built to be able to find.
  */
 export function documentReachSummary(input: {
   artworks: number
@@ -225,16 +225,16 @@ export type ReachSegment =
   | { kind: 'link'; text: string; to: string }
 
 /**
- * El mismo aviso, pero **nombrando lo que hay al otro lado y pudiendo ir**.
+ * The same warning, but **naming what is at the other end and being able to go there**.
  *
- * «Enlazado con una obra» obliga a bajar hasta el bloque de abajo para saber cuál
- * es, y a bajar otra vez para llegar. Nombrarlas es lo que hace útil la frase: el
- * identificador de catalogación es lo que se busca —«¿está AR-0042?»— y el título
- * de la muestra es como se la llama.
+ * «Enlazado con una obra» forces one to go down to the block below to find out which
+ * it is, and to go down again to get there. Naming them is what makes the sentence useful: the
+ * cataloguing identifier is what is looked for —«is AR-0042 there?»— and the show's
+ * title is what it is called.
  *
- * Una ficha que no se puede leer desde aquí se nombra igual pero **sin enlace**:
- * un enlace que lleva a una pantalla que dirá que no existe es peor que decirlo
- * aquí. `linked` es quien lo decide, y ya viene calculado en la vista.
+ * A record that cannot be read from here is named the same but **with no link**:
+ * a link leading to a screen that will say it does not exist is worse than saying it
+ * here. `linked` is the one that decides, and it already arrives computed in the view.
  */
 export function documentReachSegments(input: {
   artworks: readonly Pick<LinkedArtworkView, 'catalogId' | 'linked'>[]
@@ -302,11 +302,11 @@ export const NO_LINKED_ARTWORKS =
   'Ninguna obra lo tiene enlazado. Se enlaza desde la documentación de una obra.'
 
 /*
- * El bloque vacío de las exposiciones dice algo distinto del de las obras, y vive en
- * `exhibitionLink.ts` porque ya son dos frases y no una: enlazar con una exposición se
- * hace en esta misma pantalla, así que quien puede escribir lee que se hace aquí abajo y
- * quien solo consulta no lee una instrucción que no puede seguir. Están en
- * `NO_LINKED_EXHIBITIONS_WRITABLE` y `NO_LINKED_EXHIBITIONS_READONLY`.
+ * The exhibitions' empty block says something different from the artworks' one, and lives in
+ * `exhibitionLink.ts` because they are already two sentences and not one: linking to an exhibition is
+ * done on this very screen, so whoever can write reads that it is done down here and
+ * whoever only consults does not read an instruction they cannot follow. They are in
+ * `NO_LINKED_EXHIBITIONS_WRITABLE` and `NO_LINKED_EXHIBITIONS_READONLY`.
  */
 
 /** What is read when the address matches no document. */

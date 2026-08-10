@@ -1,30 +1,30 @@
 /**
- * Enlazar un documento del archivo con una exposición, y quitarle el vínculo
+ * Linking an archive document to an exhibition, and removing the link
  * (RF-516, RF-517).
  *
- * Puro y sin React: lo que se ofrece, lo que se excluye y lo que se dice cuando la base
- * se niega se verifican aquí.
+ * Pure and without React: what is offered, what is excluded and what is said when the base
+ * refuses are verified here.
  *
- * ── EL HUECO ────────────────────────────────────────────────
+ * ── THE GAP ─────────────────────────────────────────────────
  *
- * `exhibition_documents` y su función `document_exhibition` están en el esquema desde la
- * migración del archivo, con su `grant execute` al rol autenticado y con su prueba de
- * que restaura el vínculo retirado en vez de chocar contra la unicidad. **No las llamaba
- * nadie.** Así que el cartel de una muestra, su díptico o su nota de prensa —que son
- * documentos que no hablan de una pieza en concreto— no se podían enlazar con la muestra
- * desde ninguna pantalla, y la ficha del documento lo decía en voz alta en su bloque
- * vacío. Esto es quien la llama.
+ * `exhibition_documents` and its function `document_exhibition` have been in the schema since the
+ * archive's migration, with their `grant execute` to the authenticated role and with their proof
+ * that it restores the withdrawn link instead of clashing against uniqueness. **Nobody
+ * called them.** So a show's poster, its leaflet or its press release —which are
+ * documents that do not speak of a particular piece— could not be linked to the show
+ * from any screen, and the document's record said so out loud in its empty
+ * block. This is what calls it.
  *
- * ── POR QUÉ VIVE EN LA FICHA DEL DOCUMENTO ──────────────────
+ * ── WHY IT LIVES IN THE DOCUMENT'S RECORD ───────────────────
  *
- * La ficha del archivo se declaró de solo lectura, y esta es la excepción razonada: es
- * la única escritura que no se puede hacer en ningún otro sitio. Subir, corregir y
- * digitalizar viven en la documentación de una obra porque allí está la obra que el
- * documento describe; una exposición no tiene bloque de documentos, así que el único
- * sitio donde las dos cosas están a la vez es la ficha del documento.
+ * The archive's record was declared read-only, and this is the reasoned exception: it is
+ * the only write that cannot be done anywhere else. Uploading, correcting and
+ * digitising live in an artwork's documentation because that is where the artwork the
+ * document describes is; an exhibition has no document block, so the only
+ * place where both things are together at once is the document's record.
  *
- * Y lleva su retirada: un vínculo que se puede crear y no quitar es una trampa, y en
- * este proyecto nada se borra pero todo se retira.
+ * And it carries its withdrawal: a link that can be created and not removed is a trap, and in
+ * this project nothing is deleted but everything is withdrawn.
  */
 
 import { fuzzyRankBy, type RankedItem } from '../../lib/vocabulary'
@@ -37,29 +37,29 @@ export interface ExhibitionLinkOption {
   /** `Muestra de Zafra · 1985 · Casa de Cultura`, the same as the artwork record offers. */
   text: string
   /**
-   * El título a secas, para nombrar la muestra en el aviso de que el vínculo entró.
+   * The bare title, to name the show in the warning that the link went in.
    *
-   * Va aparte de `text` a propósito: la línea del selector lleva el año y la sede porque
-   * ahí hacen falta para distinguir dos itinerancias del mismo título, pero un aviso que
-   * dijera «Documento enlazado con «Muestra de Zafra · 1985 · Sede sin identificar»» le
-   * está leyendo a la catalogadora el relleno de una lista.
+   * It goes apart from `text` on purpose: the selector's line carries the year and the venue because
+   * there they are needed to tell two tourings of the same title apart, but a warning that
+   * said «Documento enlazado con «Muestra de Zafra · 1985 · Sede sin identificar»» is
+   * reading a list's padding out to the cataloguer.
    */
   title: string
   /**
-   * Este documento ya está enlazado con ella. La fila **se sigue listando** y no se
-   * ofrece: esconderla haría que la catalogadora teclee el mismo título una y otra vez
-   * preguntándose dónde se ha metido. Es el mismo criterio del selector de citas.
+   * This document is already linked to it. The row **is still listed** and is not
+   * offered: hiding it would make the cataloguer type the same title over and over
+   * wondering where it has got to. It is the citation selector's same criterion.
    */
   alreadyLinked: boolean
 }
 
 /**
- * Las exposiciones que el selector ofrece, la mejor coincidencia primero.
+ * The exhibitions the selector offers, the best match first.
  *
- * **Las retiradas se dejan fuera y no se marcan**, al contrario que las ya enlazadas:
- * esto es una lista para ELEGIR, y ofrecer algo que el catálogo ha retirado lo devolvería
- * a la circulación por la puerta de atrás. Es el mismo criterio, y con la misma frontera,
- * que el selector de exposiciones de la ficha de una obra.
+ * **The withdrawn ones are left out and not marked**, unlike the already linked ones:
+ * this is a list for CHOOSING, and offering something the catalogue has withdrawn would bring it back
+ * into circulation through the back door. It is the same criterion, and with the same boundary,
+ * as the exhibition selector of an artwork's record.
  */
 export function rankExhibitionLinkOptions(
   exhibitions: readonly ExhibitionRow[],
@@ -111,10 +111,10 @@ export function exhibitionLinkedNotice(exhibitionTitle: string): string {
 }
 
 /**
- * Lo que se pregunta antes de quitar el vínculo, y **lo que NO pasa**, que es la mitad
- * que importa: el documento se queda en el archivo con su fichero, y lo siguen viendo
- * las obras y las demás exposiciones enlazadas. Dos toques, como en el resto del
- * proyecto: en una pantalla táctil, uno solo y desaparece lo que alguien investigó.
+ * What is asked before removing the link, and **what does NOT happen**, which is the half
+ * that matters: the document stays in the archive with its file, and it is still seen by
+ * the artworks and the other linked exhibitions. Two taps, as in the rest of the
+ * project: on a touch screen, one alone and what somebody researched disappears.
  */
 export function retireExhibitionLinkText(exhibitionTitle: string): string {
   const clean = exhibitionTitle.trim()

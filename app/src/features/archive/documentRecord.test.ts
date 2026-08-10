@@ -165,9 +165,9 @@ describe('documentReachSummary, de qué está colgando (RF-516)', () => {
   })
 
   it('y con cero y cero dice dónde está el documento suelto', () => {
-    // La frase que justifica la pantalla entera: es la fila a la que no se llegaba
-    // desde ningún sitio. Dice qué pasa y dónde se encuentra, sin defenderse de
-    // una acusación que nadie ha hecho.
+    // The sentence that justifies the whole screen: it is the row that was not reachable
+    // from anywhere. It says what happens and where it is found, without defending itself against
+    // an accusation nobody has made.
     const text = documentReachSummary({ artworks: 0, exhibitions: 0 })
     expect(text).toContain('No lo tiene enlazado nada')
     expect(text).toContain('Solo se llega a él desde aquí')
@@ -253,9 +253,9 @@ describe('linkedBlockNotice, nunca un hueco (RF-304)', () => {
   })
 
   it('la frase del bloque vacío pasa tal cual, que es lo que deja decir dos cosas distintas', () => {
-    // El bloque de exposiciones dice una cosa a quien puede escribir y otra a quien solo
-    // consulta, y las dos las decide la pantalla. Aquí se fija que el aviso no las
-    // reescribe: viven en `exhibitionLink.ts`, con sus propios tests.
+    // The exhibition block says one thing to whoever can write and another to whoever only
+    // consults, and the screen decides both. Here it is pinned that the warning does not
+    // rewrite them: they live in `exhibitionLink.ts`, with their own tests.
     expect(
       linkedBlockNotice({ loading: false, error: null, count: 0, empty: 'Lo que sea' }),
     ).toBe('Lo que sea')
