@@ -392,16 +392,16 @@ begin
   raise notice 'OK: revisado sin cambios se guarda aunque no haya ningún número';
 end $$;
 
--- ── 8. Los dos porcentajes de recorte y su techo ──────────────
--- Son la consecuencia del ajuste y no la decisión: dicen cuánto detalle de sombra
--- y de alta luz se sacrificó al aplicarlo. No llevan `check` por especificación, y
--- el techo lo pone el propio tipo: `numeric(4,2)` llega a 99,99 y un 100,00 no
--- cabe. Un ajuste que empasta la fotografía entera es alcanzable —punto negro alto
--- sobre una toma oscura—, así que quien escribe satura en 99,99, y satura sin
--- perder nada: entre «99,99 % empastado» y «100 %» no hay ninguna decisión
--- distinta que tomar. El test fija el techo para que el cliente sepa contra qué
--- satura, y para que ese «numeric field overflow» —que la usuaria no debe ver
--- nunca— no aparezca un día en su pantalla.
+-- ── 8. The two clipping percentages and their ceiling ─────────
+-- They are the adjustment's consequence and not the decision: they say how much shadow
+-- and highlight detail was sacrificed on applying it. They carry no `check` by specification, and
+-- the ceiling is set by the type itself: `numeric(4,2)` reaches 99.99 and a 100.00 does not
+-- fit. An adjustment that crushes the whole photograph is reachable —a high black point
+-- over a dark shot—, so whoever writes saturates at 99.99, and saturates without
+-- losing anything: between «99.99 % crushed» and «100 %» there is no different
+-- decision to take. The test pins the ceiling so the client knows what it
+-- saturates against, and so that «numeric field overflow» —which the user must never
+-- see— does not appear on her screen one day.
 do $$
 begin
   update public.images set color_clipped_low = 0.00, color_clipped_high = 0.00
@@ -419,16 +419,16 @@ begin
   raise notice 'OK: los porcentajes de recorte llegan a 99,99 y ahí topan';
 end $$;
 
--- ── 9. Lo que la base NO prohíbe, a propósito ─────────────────
--- Una fotografía ajena con color guardado se admite, aunque el ajuste no se
--- ofrezca en las ajenas (RF-417). Si la base lo prohibiera, reclasificar como
--- ajena una fotografía ya corregida fallaría al guardar, y sería justo el caso en
--- el que más importa poder anotar la procedencia correcta. La regla vive en la
--- interfaz, que no ofrece el ajuste, y en `composeEdits`, que lanza.
+-- ── 9. What the base does NOT forbid, on purpose ──────────────
+-- Somebody else's photograph with colour stored is admitted, even though the adjustment is not
+-- offered on other people's (RF-417). If the base forbade it, reclassifying as
+-- somebody else's a photograph already corrected would fail on saving, and it would be precisely the case in
+-- which being able to note the right provenance matters most. The rule lives in the
+-- interface, which does not offer the adjustment, and in `composeEdits`, which throws.
 --
--- El test está aquí para que la ausencia de esa restricción se lea como una
--- decisión y no como un olvido: quien la añada mañana romperá este test y leerá
--- por qué.
+-- The test is here so that the absence of that constraint reads as a
+-- decision and not as an oversight: whoever adds it tomorrow will break this test and will read
+-- why.
 do $$
 begin
   update public.images set
@@ -438,9 +438,9 @@ begin
   raise notice 'OK: reclasificar como ajena una fotografía ya corregida no falla';
 end $$;
 
--- Tampoco hay nada que ligue la referencia neutra a la procedencia del ajuste: un
--- ajuste puede empezar en un preset, seguir con el cuentagotas sobre un cartón y
--- acabar retocado a mano.
+-- Nor is there anything tying the neutral reference to the adjustment's provenance: an
+-- adjustment can start in a preset, go on with the eyedropper over a card and
+-- end up retouched by hand.
 do $$
 begin
   update public.images set
@@ -451,20 +451,20 @@ begin
   raise notice 'OK: fuente, referencia, preset y herencia conviven sin ligaduras';
 end $$;
 
--- ── 10. Nada se rellena hacia atrás ni por omisión ────────────
--- Ninguna de las columnas de color tiene valor por omisión, y eso es el dato: un
--- `default 'MANUAL'` en color_source, o un `default 0` en la temperatura, sería
--- inventar el dato justo en las columnas que existen para no inventarlo, y lo
--- inventaría en cada fila nueva sin que nada fallara. Las tres únicas omisiones
--- son deliberadas y se comprueban una por una: los dos interruptores, cuyo valor
--- identidad es «apagado», y la procedencia, que empieza en «propia» porque con
--- nulo la regla «el color solo se ofrece en las propias» llegaría apagada para las
--- 39 filas.
+-- ── 10. Nothing is filled backwards or by default ─────────────
+-- None of the colour columns has a default value, and that is the datum: a
+-- `default 'MANUAL'` in color_source, or a `default 0` in the temperature, would be
+-- inventing the datum precisely in the columns that exist in order not to invent it, and it would
+-- invent it in every new row with nothing failing. The only three defaults
+-- are deliberate and are checked one by one: the two switches, whose identity
+-- value is «off», and the provenance, which starts at «our own» because with
+-- null the rule «colour is only offered on our own» would arrive off for the
+-- 39 rows.
 --
--- Se comprueba contra el catálogo y no contando filas de la base. Contar filas
--- sería más vistoso y sería un test que se rompe solo: en cuanto se ajuste de
--- verdad el color de una fotografía, esa fila tendría color y el aserto fallaría
--- sin que nada estuviera mal.
+-- It is checked against the catalogue and not by counting rows of the base. Counting rows
+-- would be showier and would be a test that breaks on its own: as soon as a photograph's
+-- colour is really adjusted, that row would have colour and the assertion would fail
+-- with nothing being wrong.
 do $$
 declare r record; v_esperado text; v_sobran text;
 begin
@@ -489,11 +489,11 @@ begin
   raise notice 'OK: solo tienen omisión los dos interruptores y la procedencia';
 end $$;
 
--- Y las filas que ya existían sobreviven a una escritura que ignora las columnas
--- nuevas, que es literalmente lo que hace el frontend viejo durante el despliegue:
--- si alguna de las restricciones nuevas rechazara una fila heredada, esa fila se
--- quedaría sin poder guardarse hasta que alguien la arreglara a mano. Sobre una
--- base recién migrada no hay filas y el aserto no dice nada, que es correcto.
+-- And the rows that already existed survive a write that ignores the new
+-- columns, which is literally what the old frontend does during the deployment:
+-- if any of the new constraints rejected an inherited row, that row would
+-- be left unable to be stored until somebody fixed it by hand. Over a freshly
+-- migrated base there are no rows and the assertion says nothing, which is right.
 do $$
 declare v_total int; v_tocadas int;
 begin

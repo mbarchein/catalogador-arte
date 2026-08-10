@@ -1,34 +1,34 @@
--- RF-420, RF-411: la copia corregida a resolución completa, el cuarto nivel de
--- fichero de una fotografía.
+-- RF-420, RF-411: the full-resolution corrected copy, a photograph's fourth
+-- file level.
 --
--- Lo que se comprueba es lo que el `check` puede comprobar y el cliente no debe
--- volver a comprobar por su cuenta: que no entra un tamaño que no es un tamaño,
--- que media descripción de un fichero no existe, que «la copia está» y «la copia
--- falta» no pueden ser verdad en la misma fila, y —la razón de ser de todo el
--- fichero— que **la ruta de la copia corregida nunca es la del máster**. El máster
--- no se reescribe jamás (ADR-002), y la forma realista de romper esa regla no es
--- un `update` malicioso: es derivar la ruta de la copia de la del máster y que un
--- día coincidan.
+-- What is checked is what the `check` can check and the client must not
+-- check again on its own: that a size that is not a size does not go in,
+-- that half a file description does not exist, that «the copy is there» and «the copy
+-- is missing» cannot both be true in the same row, and —the whole file's
+-- reason to exist— that **the corrected copy's path is never the master's**. The master
+-- is never rewritten (ADR-002), and the realistic way of breaking that rule is not
+-- a malicious `update`: it is deriving the copy's path from the master's and having them
+-- coincide one day.
 --
--- Y tres cosas que no son sobre valores: que una fila escrita **sin ninguna de las
--- columnas nuevas** sigue siendo válida —es lo que hace el frontend viejo durante
--- los segundos en que las dos versiones están en el aire, y es lo que permite
--- desplegar en una fase—, que `corrected_pending` nace en falso, y que ninguna de
--- las filas que ya existen se ha rellenado sola.
+-- And three things that are not about values: that a row written **with none of the
+-- new columns** is still valid —it is what the old frontend does during
+-- the seconds in which both versions are in the air, and it is what allows
+-- deploying in one phase—, that `corrected_pending` is born false, and that none of
+-- the rows that already exist has filled itself in.
 --
--- Cada rechazo se comprueba **por el nombre de la restricción que lo rechaza**, que
--- es la razón por la que la migración escribió una restricción por regla en vez de
--- un `check` grande: lo único que Postgres dice al rechazar es ese nombre.
+-- Every rejection is checked **by the name of the constraint that rejects it**, which
+-- is the reason the migration wrote one constraint per rule instead of
+-- one big `check`: the only thing Postgres says on rejecting is that name.
 \set ON_ERROR_STOP on
 begin;
 
 insert into public.artworks (catalog_id, artist, title, attributed_title)
 values ('AR-9602', 'ROTILI', 'Obra que se manda a la imprenta', 'UNCONFIRMED');
 
--- ── 1. Una fila sin ninguna columna nueva sigue siendo válida ─
--- Garantía del despliegue de una sola fase: se escribe exactamente lo que escribe
--- el frontend que no conoce estas columnas. Y de paso queda fijado el único valor
--- por omisión de las tres, que es «no falta ninguna copia».
+-- ── 1. A row with none of the new columns is still valid ─────
+-- The single-phase deployment's guarantee: exactly what the frontend that does not know
+-- these columns writes is written. And incidentally the only default value of the three
+-- is pinned down, which is «no copy is missing».
 do $$
 declare v_row public.images;
 begin
@@ -41,11 +41,11 @@ begin
       v_row.corrected_path, v_row.corrected_bytes;
   end if;
 
-  -- Falso y no nulo, y el motivo es que aquí falso SÍ es un hecho: significa «no
-  -- falta ninguna copia», que es cierto de una fotografía recién subida y sin
-  -- correcciones. Nulo dejaría la pregunta abierta en las 39 filas y en todas las
-  -- nuevas, y entonces «pendiente» no distinguiría nada, que es justo lo único
-  -- que esta columna existe para hacer.
+  -- False and not null, and the reason is that here false IS a fact: it means «no
+  -- copy is missing», which is true of a freshly uploaded photograph with no
+  -- corrections. Null would leave the question open in the 39 rows and in every
+  -- new one, and then «pending» would distinguish nothing, which is precisely the only thing
+  -- this column exists to do.
   if v_row.corrected_pending is null then
     raise exception 'FAIL: corrected_pending nace en nulo y tenía que nacer en falso';
   end if;
@@ -56,9 +56,9 @@ begin
   raise notice 'OK: una fila sin las columnas nuevas es válida y nace sin copia y sin deuda';
 end $$;
 
--- Y el valor por omisión está declarado en la tabla, no solo conseguido por la
--- forma de este `insert`: las otras dos no tienen ninguno, porque un valor por
--- omisión en la ruta o en el tamaño sería inventar un fichero.
+-- And the default value is declared in the table, not only achieved by the
+-- shape of this `insert`: the other two have none, because a default
+-- value in the path or in the size would be inventing a file.
 do $$
 declare r record; v_esperado text;
 begin
@@ -75,8 +75,8 @@ begin
     end if;
   end loop;
 
-  -- Y `corrected_pending` es `not null`: una fila donde no se sepa si la copia
-  -- falta es la misma ambigüedad que la columna vino a quitar.
+  -- And `corrected_pending` is `not null`: a row where it is not known whether the copy
+  -- is missing is the same ambiguity the column came to remove.
   select is_nullable into v_esperado
     from information_schema.columns
    where table_schema = 'public' and table_name = 'images'
@@ -88,9 +88,9 @@ begin
   raise notice 'OK: solo corrected_pending tiene omisión, es falso, y no admite nulo';
 end $$;
 
--- ── 2. Un tamaño que no es un tamaño ─────────────────────────
--- Cero bytes es un fichero vacío y un negativo es una cuenta mal hecha. Los dos
--- llegarían a la ficha como una descarga que promete algo que no está.
+-- ── 2. A size that is not a size ─────────────────────────────
+-- Zero bytes is an empty file and a negative is a badly done sum. Both
+-- would reach the record as a download promising something that is not there.
 do $$
 declare r record; v_constraint text;
 begin
@@ -118,21 +118,21 @@ begin
     end;
   end loop;
 
-  -- Un solo byte entra: el tope de abajo es 1 y no un mínimo inventado. Nadie sabe
-  -- cuál es el JPEG más pequeño que un dispositivo raro puede producir, y ponerle
-  -- un suelo a ojo rechazaría una copia legítima sin ganar nada.
+  -- A single byte goes in: the lower cap is 1 and not an invented minimum. Nobody knows
+  -- what the smallest JPEG a strange device can produce is, and putting a
+  -- floor by eye would reject a legitimate copy while gaining nothing.
   update public.images
      set corrected_path = 'q/AR-9602_ab12_corr.jpg', corrected_bytes = 1
    where image_id = 'AR-9602_v1';
 
-  -- Y el tamaño real de la peor de las fotografías del lote: 19 MB. El techo lo
-  -- pone `integer`, que llega a 2 GB.
+  -- And the real size of the worst of the batch's photographs: 19 MB. The ceiling is set
+  -- by `integer`, which reaches 2 GB.
   update public.images set corrected_bytes = 19922944 where image_id = 'AR-9602_v1';
 
   raise notice 'OK: el tamaño de la copia es positivo, y 1 byte y 19 MB entran';
 end $$;
 
--- ── 3. La ruta y el tamaño son un fichero, no dos datos ──────
+-- ── 3. The path and the size are one file, not two data ──────
 do $$
 declare r record; v_constraint text;
 begin
@@ -141,11 +141,11 @@ begin
 
   for r in
     select * from (values
-      -- Ruta sin tamaño: obliga a quien la lee a preguntarle el tamaño al almacén,
-      -- que es el viaje que la columna existe para ahorrar.
+      -- Path with no size: it forces whoever reads it to ask the store for the size,
+      -- which is the trip the column exists to save.
       ('corrected_path = ''q/AR-9602_ab12_corr.jpg'', corrected_bytes = null',
        'images_corrected_copy_pair'),
-      -- Tamaño sin ruta: un número que no describe ningún fichero.
+      -- Size with no path: a number that describes no file.
       ('corrected_path = null, corrected_bytes = 3145728',
        'images_corrected_copy_pair')
     ) as t(asignacion, restriccion)
@@ -164,9 +164,9 @@ begin
     end;
   end loop;
 
-  -- Los dos juntos entran, y ninguno de los dos también: «no hay copia corregida»
-  -- es el estado normal de una fotografía sin correcciones, y no un hueco que haya
-  -- que rellenar.
+  -- Both together go in, and neither of the two too: «there is no corrected copy»
+  -- is the normal state of a photograph with no corrections, and not a gap that has
+  -- to be filled.
   update public.images
      set corrected_path = 'q/AR-9602_ab12_corr.jpg', corrected_bytes = 3145728
    where image_id = 'AR-9602_v1';
@@ -176,18 +176,18 @@ begin
   raise notice 'OK: la copia son ruta y tamaño juntos, o ninguno de los dos';
 end $$;
 
--- ── 4. Pendiente y presente son excluyentes ──────────────────
--- Si la copia está, no está pendiente. Una fila que dijera las dos cosas obligaría
--- a quien la lee a elegir a cuál creer, y la interfaz enseñaría a la vez el botón
--- de descargar la copia y el aviso de que falta.
+-- ── 4. Pending and present are mutually exclusive ────────────
+-- If the copy is there, it is not pending. A row saying both things would force
+-- whoever reads it to choose which to believe, and the interface would show at once the button
+-- for downloading the copy and the warning that it is missing.
 do $$
 declare v_constraint text; v_pendiente boolean; v_ruta text;
 begin
-  -- Pendiente a secas: el estado que la columna existe para poder escribir. Este es
-  -- el dispositivo que no ha podido con el lienzo, y consta.
+  -- Pending on its own: the state the column exists to be able to write. This is
+  -- the device that could not cope with the canvas, and it is recorded.
   update public.images set corrected_pending = true where image_id = 'AR-9602_v1';
 
-  -- Y desde ahí, añadirle una ruta se rechaza.
+  -- And from there, adding a path to it is rejected.
   begin
     update public.images
        set corrected_path = 'q/AR-9602_ab12_corr.jpg', corrected_bytes = 2097152
@@ -201,8 +201,8 @@ begin
     end if;
   end;
 
-  -- El `update` rechazado no deja nada escrito: la fila sigue pendiente y sin
-  -- ruta, que es lo que tiene que pasar cuando la generación falla otra vez.
+  -- The rejected `update` leaves nothing written: the row is still pending and with no
+  -- path, which is what has to happen when the generation fails again.
   select corrected_pending, corrected_path into v_pendiente, v_ruta
     from public.images where image_id = 'AR-9602_v1';
   if not v_pendiente or v_ruta is not null then
@@ -210,8 +210,8 @@ begin
       v_pendiente, v_ruta;
   end if;
 
-  -- Y por el otro lado: marcar pendiente una fila que ya tiene copia también se
-  -- rechaza. Es el orden en que lo haría un reintento mal escrito.
+  -- And from the other side: marking as pending a row that already has a copy is also
+  -- rejected. It is the order a badly written retry would do it in.
   update public.images
      set corrected_pending = false,
          corrected_path = 'q/AR-9602_ab12_corr.jpg', corrected_bytes = 2097152
@@ -228,8 +228,8 @@ begin
     end if;
   end;
 
-  -- La transición legítima de «pendiente» a «hecha» es una sola escritura, y entra:
-  -- es la que hace el ordenador que sí ha podido generar la copia.
+  -- The legitimate transition from «pending» to «done» is a single write, and it goes in:
+  -- it is the one the computer that did manage to generate the copy makes.
   update public.images set corrected_path = null, corrected_bytes = null,
                            corrected_pending = true
    where image_id = 'AR-9602_v1';
@@ -241,14 +241,14 @@ begin
   raise notice 'OK: pendiente y presente se excluyen, y la transición entre los dos entra';
 end $$;
 
--- ── 5. La copia NUNCA comparte ruta con el máster (RF-411) ────
--- Es la regla que protege el documento de archivo. El máster se sube una vez con
--- los bytes originales y no se vuelve a escribir nunca (ADR-002); lo que se manda a
--- una imprenta o a un comisario es la copia corregida, y son dos ficheros
--- distintos porque responden a dos preguntas distintas.
+-- ── 5. The copy NEVER shares a path with the master (RF-411) ──
+-- It is the rule that protects the archive document. The master is uploaded once with
+-- the original bytes and is never written again (ADR-002); what is sent to
+-- a print shop or to a curator is the corrected copy, and they are two different
+-- files because they answer two different questions.
 --
--- Se comprueba por construcción y por restricción, en las dos direcciones: mover la
--- copia sobre el máster y mover el máster sobre la copia.
+-- It is checked by construction and by constraint, in both directions: moving the
+-- copy over the master and moving the master over the copy.
 do $$
 declare v_master text; v_copia text; v_constraint text;
 begin
@@ -267,9 +267,9 @@ begin
     raise exception 'FAIL: la copia corregida ha quedado en la ruta del máster (%)', v_master;
   end if;
 
-  -- Dirección 1: llevar la copia a la ruta del máster. Es lo que pasaría el día en
-  -- que alguien derivara la ruta de la copia de la del máster reutilizando su base
-  -- y su extensión.
+  -- Direction 1: taking the copy to the master's path. It is what would happen the day
+  -- somebody derived the copy's path from the master's reusing its base
+  -- and its extension.
   begin
     update public.images set corrected_path = v_master where image_id = 'AR-9602_v1';
     raise exception 'FAIL: la copia corregida ha podido apuntar al máster';
@@ -281,9 +281,9 @@ begin
     end if;
   end;
 
-  -- Dirección 2: llevar el máster a la ruta de la copia. La restricción es simétrica
-  -- a propósito: la que importa es que las dos columnas no coincidan, y da igual
-  -- cuál de las dos se mueva para hacerlas coincidir.
+  -- Direction 2: taking the master to the copy's path. The constraint is symmetric
+  -- on purpose: what matters is that the two columns do not coincide, and it does not matter
+  -- which of the two is moved to make them coincide.
   begin
     update public.images set master_path = v_copia where image_id = 'AR-9602_v1';
     raise exception 'FAIL: el máster ha podido apuntar a la copia corregida';
