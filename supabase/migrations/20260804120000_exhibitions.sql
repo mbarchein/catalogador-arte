@@ -1,65 +1,65 @@
 -- ============================================================
--- Exposiciones, sus sedes y la participación de cada obra
+-- Exhibitions, their venues and each artwork's participation
 -- (RF-512, RF-501, RF-502, RF-503, RF-505, RF-513, RF-517, RF-218).
 --
--- Son las tablas 4 y 5 del esquema de campos v11 —«Exposiciones» y la puente
--- «Obra_Exposicion»—, más la maestra de sedes que v11 no tiene: allí el sitio
--- donde ocurrió una muestra son dos textos sueltos, `lugar` e `institucion`.
+-- They are tables 4 and 5 of the v11 field schema —«Exposiciones» and the bridge
+-- «Obra_Exposicion»—, plus the master table of venues that v11 does not have: there the site
+-- where a show happened is two loose texts, `lugar` and `institucion`.
 --
--- POR QUÉ DESPUÉS DE LA BIBLIOGRAFÍA, aunque v11 numere esta tabla como la 4 y
--- aquella como la 6: la flecha apunta en aquel sentido. RF-503 decide que el
--- catálogo de una exposición no tiene tabla propia —es una publicación como
--- cualquier otra— y por eso `catalogue_reference_id` sale de aquí y entra en
--- `bibliography`. Construir en el orden del documento habría dejado esta
--- migración con una clave ajena a una tabla inexistente.
+-- WHY AFTER THE BIBLIOGRAPHY, even though v11 numbers this table as 4 and
+-- that one as 6: the arrow points that way. RF-503 decides that an
+-- exhibition's catalogue has no table of its own —it is a publication like
+-- any other— and that is why `catalogue_reference_id` leaves here and enters
+-- `bibliography`. Building in the document's order would have left this
+-- migration with a foreign key to a non-existent table.
 --
--- Lo que este grupo cambia sobre v11, y por qué:
+-- What this group changes over v11, and why:
 --
---   • La SEDE es una tabla maestra con clave sustituta y NO dos textos. Con dos
---     textos, corregir el nombre de un museo es tocar todas sus exposiciones,
---     que es exactamente el problema que ADR-006 ya resolvió una vez para los
---     lugares del almacén.
---   • Y NO es el árbol de lugares. Son dos tablas y la razón no es de
---     comodidad: `physical_places` contesta «dónde está la obra hoy», sus nodos
---     son contenedores con `parent_id`, regla anticiclos y la prohibición de
---     retirar un lugar con algo dentro; una sede contesta «dónde ocurrió una
---     muestra en 1985», es histórica —una sala que cerró en 1988 tiene que
---     seguir existiendo para siempre—, tiene localidad y país propios y no
---     contiene nada. Fundirlas pondría «Balda 2» en el selector de sedes y el
---     Museo del Prado en el árbol del almacén.
---   • NO se crea el código `EXPO-0001` que v11 proponía. A diferencia de
---     `catalog_id`, ese código no está impreso en nada ni pegado a ningún objeto
---     del mundo: ADR-007 fija clave sustituta, y un segundo identificador sin
---     uso es una columna más que mantener coherente.
---   • Se DESHACE la fusión que v11 hizo en v7: `catalogue_number` vuelve a ser
---     columna aparte de la nota, con el criterio que el propio v11 escribió en
---     v9 para NO fusionar `paginas` —dato estructurado de uso recurrente y
---     citable de forma exacta— y con la advertencia que v7 dejó escrita de lo
---     que se perdía: «la posibilidad de buscar o filtrar por número de catálogo
---     de exposición». «cat. 12 bis» se cita en el ensayo del catálogo razonado.
---     Revisa RF-501.
---   • La puente TIENE papelera (RF-517, que revisa RF-903), por lo mismo que la
---     de bibliografía: con el número de catálogo dentro, la premisa de RF-903
---     —«no tienen etiqueta física ni número citable y basta con volver a
---     crearlas»— deja de sostenerse.
+--   • The VENUE is a master table with a surrogate key and NOT two texts. With two
+--     texts, correcting a museum's name is touching all its exhibitions,
+--     which is exactly the problem ADR-006 already solved once for the
+--     store's places.
+--   • And it is NOT the tree of places. They are two tables and the reason is not one of
+--     convenience: `physical_places` answers «where is the artwork today», its nodes
+--     are containers with `parent_id`, an anti-cycle rule and the prohibition on
+--     withdrawing a place with something inside; a venue answers «where did a
+--     show happen in 1985», it is historical —a room that closed in 1988 has to
+--     go on existing for ever—, it has its own locality and country and it does not
+--     contain anything. Merging them would put «Balda 2» in the venue selector and the
+--     Museo del Prado in the store's tree.
+--   • The `EXPO-0001` code v11 proposed is NOT created. Unlike
+--     `catalog_id`, that code is not printed on anything nor stuck to any object
+--     in the world: ADR-007 fixes a surrogate key, and a second identifier with no
+--     use is one more column to keep coherent.
+--   • The merger v11 did in v7 is UNDONE: `catalogue_number` goes back to being
+--     a column separate from the note, with the criterion v11 itself wrote in
+--     v9 for NOT merging `paginas` —a structured datum of recurrent use and
+--     citable exactly— and with the warning v7 left written of what
+--     was lost: «la posibilidad de buscar o filtrar por número de catálogo
+--     de exposición». «cat. 12 bis» is cited in the catalogue raisonné's essay.
+--     It revises RF-501.
+--   • The bridge HAS a wastebasket (RF-517, which revises RF-903), for the same reason as the
+--     bibliography's: with the catalogue number inside, RF-903's premise
+--     —«they have no physical label nor citable number and it is enough to
+--     create them again»— stops holding.
 --
--- Las POLÍTICAS RLS de las tres tablas van en la migración siguiente. Lo que SÍ
--- se hace aquí es activar RLS y revocar los privilegios, porque una tabla que
--- existe un solo despliegue sin RLS es una tabla publicada. Con RLS activado y
--- sin ninguna política, la tabla está cerrada para todo el mundo salvo el
--- acceso administrativo directo, que es el estado seguro para esperar.
+-- The RLS POLICIES of the three tables go in the next migration. What IS
+-- done here is enabling RLS and revoking the privileges, because a table that
+-- exists for a single deployment with no RLS is a published table. With RLS enabled and
+-- no policy, the table is closed to everybody except direct
+-- administrative access, which is the safe state to wait in.
 -- ============================================================
 
 
--- ── Un enumerado, y por qué no es una maestra ───────────────
+-- ── One enumerated type, and why it is not a master table ───
 --
--- El criterio del esquema es si el CÓDIGO mira el valor. Aquí lo mira: de él
--- depende cómo se redacta la línea del historial expositivo (una individual se
--- escribe con el nombre del artista implícito, una colectiva no) y es la
--- distinción que el catálogo razonado usa para separar los dos bloques. Son dos
--- valores que no crecen, más el «Sin revisar» de RF-205 — que aquí sí procede,
--- al contrario que en `party_type`: al anotar una exposición de un recorte de
--- prensa se sabe el título y no siempre si fue individual o colectiva.
+-- The schema's criterion is whether the CODE looks at the value. Here it does look at it: on it
+-- depends how the exhibition history's line is worded (a solo show is
+-- written with the artist's name implicit, a group one is not) and it is the
+-- distinction the catalogue raisonné uses to separate the two blocks. They are two
+-- values that do not grow, plus RF-205's «Sin revisar» — which here is appropriate,
+-- unlike in `party_type`: on noting an exhibition from a press clipping
+-- the title is known and not always whether it was solo or group.
 create type public.exhibition_type_value as enum (
   'INDIVIDUAL',  -- Individual
   'COLLECTIVE',  -- Colectiva
@@ -70,39 +70,39 @@ comment on type public.exhibition_type_value is
   'Individual o colectiva (v11, tabla 4). Con «Sin revisar» (RF-205): de un recorte de prensa se saca el título antes que el carácter de la muestra.';
 
 
--- ── La sede: dónde ocurrió la muestra (RF-512) ──────────────
+-- ── The venue: where the show happened (RF-512) ─────────────
 --
--- Patrón de las maestras de vocabulario tras ADR-007: clave sustituta, el nombre
--- como atributo, papelera y autoría de alta. Sin `updated_at`/`updated_by` y sin
--- `restored_at`, como `publication_types` y `artwork_types`: es vocabulario que
--- cuelga de las fichas, no una ficha con pantalla de papelera propia (RF-901
--- enumera las tablas que sí la tienen y las sedes no están en esa lista).
+-- The vocabulary master tables' pattern after ADR-007: surrogate key, the name
+-- as an attribute, wastebasket and creation authorship. With no `updated_at`/`updated_by` and no
+-- `restored_at`, like `publication_types` and `artwork_types`: it is vocabulary that
+-- hangs from the records, not a record with a wastebasket screen of its own (RF-901
+-- enumerates the tables that do have one and the venues are not on that list).
 
 create table public.exhibition_venues (
   id uuid primary key default gen_random_uuid(),
 
-  -- Tal cual se escribe, con sus mayúsculas y sus tildes. Lo que se normaliza es
-  -- la clave de comparación, no el dato.
+  -- Just as it is written, with its capitals and its accents. What is normalised is
+  -- the comparison key, not the datum.
   name text not null,
 
-  -- Localidad y país sueltos, y no una dirección en un texto: RF-502 compone
-  -- «[año], [fechas], [título], [institución], [lugar]» y necesita el lugar
-  -- aparte para escribirlo sin analizar nada.
+  -- Locality and country loose, and not an address in one text: RF-502 composes
+  -- «[año], [fechas], [título], [institución], [lugar]» and it needs the place
+  -- separately in order to write it without parsing anything.
   locality text not null default '',
   country text not null default '',
 
-  -- La institución que hay detrás, opcional. Opcional a propósito: una casa de
-  -- cultura o una sala municipal son sedes reales sin ficha de institución
-  -- detrás, y obligar a crearla llenaría `parties` de filas sin contacto ni
-  -- procedencia. Cuando la hay, el contacto del museo no se duplica.
-  -- `restrict` por coherencia con el resto del esquema: nadie tiene DELETE, y si
-  -- alguna vez se borrara una parte a mano esto avisa en vez de dejar la sede
-  -- apuntando al vacío.
+  -- The institution behind it, optional. Optional on purpose: a cultural
+  -- centre or a municipal hall are real venues with no institution record
+  -- behind them, and forcing one to be created would fill `parties` with rows with no contact and no
+  -- provenance. When there is one, the museum's contact is not duplicated.
+  -- `restrict` for coherence with the rest of the schema: nobody has DELETE, and if
+  -- a party were ever deleted by hand this warns instead of leaving the venue
+  -- pointing at nothing.
   party_id uuid references public.parties (id) on delete restrict,
 
   note text not null default '',
 
-  -- RF-901: nada se borra, se retira.
+  -- RF-901: nothing is deleted, it is withdrawn.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
@@ -110,8 +110,8 @@ create table public.exhibition_venues (
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
 
-  -- Una sede en blanco no sitúa nada, y una con espacios alrededor rompería la
-  -- comparación de duplicados sin que se vea en pantalla.
+  -- A blank venue situates nothing, and one with spaces around it would break the
+  -- duplicate comparison without it being visible on screen.
   constraint exhibition_venues_name_not_blank
     check (btrim(name) <> '' and name = btrim(name))
 );
@@ -124,129 +124,129 @@ comment on column public.exhibition_venues.party_id is
 comment on column public.exhibition_venues.locality is
   'Localidad, suelta porque RF-502 la imprime aparte del nombre de la institución.';
 
--- Nombre Y localidad, no el nombre solo: hay una «Casa de Cultura» en cada
--- pueblo y una «Sala de Exposiciones» en cada capital, y con la unicidad por el
--- nombre a secas la segunda sería un error incomprensible. Comparado con
--- `place_key`, que es la clave de comparación de nombres de todo el esquema: dos
--- sedes que solo difieren en una tilde son la misma sede, y descubrirlo cuando
--- ya hay dos filas cuesta repasar todas las exposiciones.
+-- Name AND locality, not the name alone: there is a «Casa de Cultura» in every
+-- village and a «Sala de Exposiciones» in every provincial capital, and with uniqueness by the
+-- name on its own the second would be an incomprehensible error. Compared with
+-- `place_key`, which is the whole schema's comparison key for names: two
+-- venues differing only in an accent are the same venue, and discovering it when
+-- there are already two rows costs going through every exhibition.
 --
--- El índice cubre también las sedes retiradas, como en las demás maestras:
--- volver a dar de alta una que está en la papelera tiene que poder encontrarla.
+-- The index also covers the withdrawn venues, as in the other master tables:
+-- registering again one that is in the wastebasket has to be able to find it.
 create unique index exhibition_venues_name_unique
   on public.exhibition_venues (public.place_key(name), public.place_key(locality));
 
 create index exhibition_venues_party_idx on public.exhibition_venues (party_id);
 create index exhibition_venues_active_idx on public.exhibition_venues (active);
 
--- Autoría y papelera con la función genérica de RF-804. Sin `restored_at`, la
--- función deja la fila como si nunca se hubiera retirado, que es lo que ya hacen
--- los lugares y las maestras de vocabulario.
+-- Authorship and wastebasket with RF-804's generic function. With no `restored_at`, the
+-- function leaves the row as if it had never been withdrawn, which is what the
+-- places and the vocabulary master tables already do.
 create trigger exhibition_venue_row_audit
   before insert or update on public.exhibition_venues
   for each row execute function public.tg_row_audit();
 
 
--- ── La exposición ───────────────────────────────────────────
+-- ── The exhibition ──────────────────────────────────────────
 
 create table public.exhibitions (
-  -- Clave sustituta (ADR-007). Ver la cabecera: no se crea `EXPO-0001`.
+  -- Surrogate key (ADR-007). See the header: `EXPO-0001` is not created.
   id uuid primary key default gen_random_uuid(),
 
   title text not null,
 
   exhibition_type public.exhibition_type_value not null default 'UNREVIEWED',
 
-  -- La sede, opcional, y la nota para cuando consta sin identificar. Las dos
-  -- juntas: un recorte que dice «expuesta en una galería de Madrid» es un dato,
-  -- y obligar a crear la ficha de una galería que no se sabe cuál es llenaría la
-  -- maestra de sedes inventadas.
+  -- The venue, optional, and the note for when it is on record without being identified. Both
+  -- together: a clipping saying «expuesta en una galería de Madrid» is a datum,
+  -- and forcing the creation of the record of a gallery nobody knows which it is would fill the
+  -- venue master table with invented ones.
   venue_id uuid references public.exhibition_venues (id) on delete restrict,
   venue_note text not null default '',
 
-  -- El año es el eje del historial expositivo: RF-502 lo imprime primero y
-  -- ordena por él. Nulo mientras no haya ni año ni fechas... que es un caso que
-  -- el check de más abajo no permite: una exposición sin fecha ninguna no se
-  -- puede colocar en un historial cronológico, y colocarla al final «porque no
-  -- se sabe» sería inventar el dato.
+  -- The year is the axis of the exhibition history: RF-502 prints it first and
+  -- orders by it. Null while there is neither a year nor dates... which is a case
+  -- the check further below does not allow: an exhibition with no date at all cannot
+  -- be placed in a chronological history, and placing it at the end «because it is not
+  -- known» would be inventing the datum.
   year smallint,
 
-  -- Las fechas exactas, opcionales. Es la diferencia con la forma estructurada
-  -- de ADR-004, que se usa en la obra y en los eslabones de procedencia: una
-  -- exposición no fue «hacia 1985», tuvo unas fechas de apertura y cierre que o
-  -- se conocen o no. Lo aproximado de una exposición es su año, y para eso está
-  -- `year` suelto.
+  -- The exact dates, optional. It is the difference from ADR-004's structured
+  -- shape, which is used in the artwork and in the provenance links: an
+  -- exhibition was not «hacia 1985», it had opening and closing dates that either
+  -- are known or are not. What is approximate about an exhibition is its year, and that is what
+  -- `year` on its own is for.
   start_date date,
   end_date date,
   date_note text not null default '',
 
-  -- «Sin revisar» no es «no», literal: que no conste catálogo no es que no lo
-  -- hubiera. Se reutiliza el enumerado que ya existe en vez de crear un cuarto
-  -- tri-estado igual.
+  -- «Sin revisar» is not «no», literally: no catalogue being on record is not the same as there not
+  -- having been one. The enumerated type that already exists is reused instead of creating a fourth
+  -- identical tri-state.
   catalogue_published public.tri_state not null default 'UNREVIEWED',
 
-  -- RF-503: el catálogo de una exposición no tiene tabla propia, es una
-  -- publicación como cualquier otra y vive en `bibliography`.
+  -- RF-503: an exhibition's catalogue has no table of its own, it is a
+  -- publication like any other and it lives in `bibliography`.
   catalogue_reference_id uuid references public.bibliography (id) on delete restrict,
 
-  -- El `nota_exposicion` de v11 v6: comisariado, contexto, circunstancias de la
-  -- muestra como conjunto. Distinto de la nota de la puente, que recoge las
-  -- circunstancias de UNA obra dentro de esta exposición.
+  -- v11 v6's `nota_exposicion`: curatorship, context, circumstances of the
+  -- show as a whole. Different from the bridge's note, which gathers the
+  -- circumstances of ONE artwork inside this exhibition.
   note text not null default '',
 
-  -- RF-804: trazabilidad completa, sellada por `tg_row_audit`.
+  -- RF-804: complete traceability, stamped by `tg_row_audit`.
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-901 y RF-902: la exposición es una ficha con nombre propio y de las que
-  -- el requisito enumera, así que lleva papelera completa: la restauración se
-  -- sella y NO borra la traza de la baja anterior.
+  -- RF-901 and RF-902: the exhibition is a record with a name of its own and one of those
+  -- the requirement enumerates, so it carries a complete wastebasket: the restoration is
+  -- stamped and does NOT erase the previous withdrawal's trace.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
   restored_at timestamptz,
   restored_by uuid references public.profiles (id),
 
-  -- Una exposición sin título no se puede citar en un historial. Como en la
-  -- bibliografía, NO se exige además que esté recortado: aquí no hay clave de
-  -- comparación que un espacio pueda romper, y un título se pega de un PDF.
+  -- An exhibition with no title cannot be cited in a history. As in the
+  -- bibliography, it is NOT also required to be trimmed: here there is no comparison
+  -- key a space could break, and a title is pasted from a PDF.
   constraint exhibitions_title_not_blank check (btrim(title) <> ''),
 
-  -- Un año fuera de rango plausible es una errata, no una fecha (ADR-004).
+  -- A year outside a plausible range is a typo, not a date (ADR-004).
   constraint exhibitions_plausible_year check (
     year is null or year between 1000 and 2100
   ),
 
-  -- Al menos una de las dos formas de fechar. Con el trigger de más abajo
-  -- rellenando el año desde la fecha de inicio, en la práctica esto exige que
-  -- toda exposición tenga año: es lo que hace que el historial cronológico de
-  -- RF-502 se pueda ordenar entero y no a trozos.
+  -- At least one of the two ways of dating. With the trigger further below
+  -- filling in the year from the start date, in practice this requires that
+  -- every exhibition have a year: it is what makes RF-502's chronological history
+  -- orderable whole and not in pieces.
   constraint exhibitions_dated check (
     year is not null or start_date is not null
   ),
 
-  -- Un cierre anterior a la apertura es una errata. Y un cierre SIN apertura es
-  -- media fecha: se rechaza también, con el mismo criterio de todo-o-nada con el
-  -- que `images` trata el fichero corregido. Un `end_date >= start_date` a secas
-  -- lo habría dejado pasar, porque una comparación con nulo no es falsa.
+  -- A closing earlier than the opening is a typo. And a closing WITH NO opening is
+  -- half a date: it is rejected too, with the same all-or-nothing criterion with
+  -- which `images` treats the corrected file. An `end_date >= start_date` on its own
+  -- would have let it through, because a comparison with null is not false.
   constraint exhibitions_coherent_dates check (
     end_date is null
     or (start_date is not null and end_date >= start_date)
   ),
 
-  -- Y el año no puede contradecir a la fecha de inicio. Sin esto, una corrección
-  -- de la fecha que olvide el año deja la exposición ordenada por 1985 e impresa
-  -- como de 1986.
+  -- And the year cannot contradict the start date. Without this, a correction
+  -- of the date that forgets the year leaves the exhibition ordered by 1985 and printed
+  -- as being from 1986.
   constraint exhibitions_year_matches_start_date check (
     start_date is null or year is null
     or extract(year from start_date)::smallint = year
   ),
 
-  -- RF-503: si hay ficha del catálogo, entonces consta que hubo catálogo. Al
-  -- revés no: un catálogo puede constar publicado y no estar todavía dado de
-  -- alta en la bibliografía, que es el estado normal mientras se investiga.
+  -- RF-503: if there is a catalogue record, then it is on record that there was a catalogue. The
+  -- other way round, no: a catalogue may be on record as published and not yet be
+  -- registered in the bibliography, which is the normal state while research goes on.
   constraint exhibitions_catalogue_reference_needs_catalogue check (
     catalogue_reference_id is null or catalogue_published = 'YES'
   )
@@ -266,15 +266,15 @@ comment on column public.exhibitions.catalogue_reference_id is
 comment on column public.exhibitions.note is
   'Nota de la muestra como conjunto (comisariado, contexto). Distinta de la nota de la participación de una obra concreta.';
 
--- SIN unicidad sobre el título, a propósito y por lo mismo que en la
--- bibliografía: dos muestras itinerantes de años distintos se llaman igual, y
--- «Alberto Rotili. Antológica» en Badajoz y en Cáceres son dos exposiciones. Los
--- duplicados se resuelven por revisión del equipo (RF-909).
+-- WITHOUT uniqueness over the title, on purpose and for the same reason as in the
+-- bibliography: two travelling shows of different years are called the same, and
+-- «Alberto Rotili. Antológica» in Badajoz and in Cáceres are two exhibitions. The
+-- duplicates are resolved by the team's review (RF-909).
 
--- El orden del historial expositivo de RF-502, que es ascendente y por fecha: la
--- de inicio cuando se conoce, y el 1 de enero del año cuando no. La expresión no
--- puede dar nulo —el check `exhibitions_dated` y el trigger del año lo
--- garantizan— así que el índice ordena la tabla entera y no una parte.
+-- The order of RF-502's exhibition history, which is ascending and by date: the
+-- start one when it is known, and the 1st of January of the year when it is not. The expression
+-- cannot give null —the `exhibitions_dated` check and the year's trigger
+-- guarantee it— so the index orders the whole table and not a part.
 create index exhibitions_chronology_idx
   on public.exhibitions ((coalesce(start_date, make_date(year::integer, 1, 1))));
 
@@ -284,17 +284,17 @@ create index exhibitions_catalogue_reference_idx
 create index exhibitions_active_idx on public.exhibitions (active);
 
 
--- ── El año se deduce de la fecha, nunca al revés ────────────
+-- ── The year is deduced from the date, never the other way round ──
 --
--- Escribir las fechas exactas y además el año sería pedir dos veces el mismo
--- dato y garantizar que un día no coincidan. El check
--- `exhibitions_year_matches_start_date` impide que se contradigan; este trigger
--- evita además que la interfaz tenga que calcularlo, que es donde ese cálculo se
--- olvida.
+-- Writing the exact dates and the year as well would be asking twice for the same
+-- datum and guaranteeing that one day they will not match. The
+-- `exhibitions_year_matches_start_date` check prevents them from contradicting each other; this trigger
+-- also spares the interface from having to compute it, which is where that computation gets
+-- forgotten.
 --
--- Al revés NO: de un año suelto no se inventa un 1 de enero. La fecha exacta
--- ausente es un dato que no se conoce, y rellenarlo sería publicar una apertura
--- que nadie ha documentado.
+-- The other way round, NO: from a loose year a 1st of January is not invented. The absent exact
+-- date is a datum that is not known, and filling it in would be publishing an opening
+-- nobody has documented.
 create function public.tg_exhibition_year_from_dates()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -320,13 +320,13 @@ create trigger exhibition_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── Una sede que sostiene una muestra no se retira ──────────
+-- ── A venue that holds up a show is not withdrawn ───────────
 --
--- Misma regla que `tg_publication_type_deactivation`, `tg_series_deactivation` y
--- `tg_physical_place_deactivation`: retirar la sede no la retira, deja el
--- historial expositivo apuntando a algo que la interfaz ya no ofrece. Una
--- exposición en la papelera no cuenta, como en las demás: exigir vaciar la
--- papelera antes de retirar una sede sería hacer que la papelera estorbe.
+-- Same rule as `tg_publication_type_deactivation`, `tg_series_deactivation` and
+-- `tg_physical_place_deactivation`: withdrawing the venue does not withdraw it, it leaves the
+-- exhibition history pointing at something the interface no longer offers. An
+-- exhibition in the wastebasket does not count, as in the others: requiring the
+-- wastebasket to be emptied before withdrawing a venue would be making the wastebasket get in the way.
 create function public.tg_exhibition_venue_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -348,22 +348,22 @@ create trigger exhibition_venue_deactivation
   for each row execute function public.tg_exhibition_venue_deactivation();
 
 
--- ── Y una parte que hay detrás de una sede, tampoco ─────────
+-- ── And nor is a party that is behind a venue ───────────────
 --
--- La comprobación que la migración de la procedencia dejó anunciada por escrito
--- («las sedes de exposición añadirán su comprobación aquí con `create or
--- replace` cuando existan») y que sin este grupo se quedaría a medias: hoy se
--- podría retirar el Museo de Bellas Artes de Badajoz teniendo una sede que
--- apunta a él, y la sede quedaría con el contacto colgando de una ficha que la
--- interfaz ya no ofrece.
+-- The check the provenance's migration left announced in writing
+-- («the exhibition venues will add their check here with `create or
+-- replace` when they exist») and which without this group would be left half done: today the
+-- Museo de Bellas Artes de Badajoz could be withdrawn while having a venue that
+-- points at it, and the venue would be left with the contact hanging from a record the
+-- interface no longer offers.
 --
--- `create or replace` reemplaza la definición entera, así que los dos bloques
--- anteriores —eslabón de procedencia y titular de derechos— se repiten aquí
--- literalmente. Un reemplazo que se los coma no rompería nada visible, y por eso
--- el test comprueba los tres.
+-- `create or replace` replaces the whole definition, so the two previous
+-- blocks —provenance link and rights holder— are repeated here
+-- literally. A replacement that eats them would break nothing visible, and that is why
+-- the test checks all three.
 --
--- `set search_path = public` se repite por lo mismo: `create or replace`
--- reemplaza también la configuración de la función.
+-- `set search_path = public` is repeated for the same reason: `create or replace`
+-- also replaces the function's configuration.
 create or replace function public.tg_party_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -402,29 +402,29 @@ comment on function public.tg_party_deactivation is
   'Impide retirar una persona o institución que aparece en una cadena de procedencia activa, que es titular de derechos o que está detrás de una sede de exposición activa (RF-511, RF-512, revisa RF-905).';
 
 
--- ── La participación de una obra en la muestra (RF-501) ─────
+-- ── An artwork's participation in the show (RF-501) ─────────
 --
--- La tabla puente 5 de v11. Registra el HECHO de que una obra concreta participó
--- en una exposición concreta, independientemente de si hubo catálogo.
+-- v11's bridge table 5. It records the FACT that a particular artwork took part
+-- in a particular exhibition, regardless of whether there was a catalogue.
 
 create table public.artwork_exhibitions (
   id uuid primary key default gen_random_uuid(),
 
-  -- Misma forma que `images`, `provenance_events` y `artwork_bibliography`: `on
-  -- update cascade` porque el identificador de catalogación es texto, y sin `on
-  -- delete` porque de `artworks` no se borra nada (RF-901).
+  -- Same shape as `images`, `provenance_events` and `artwork_bibliography`: `on
+  -- update cascade` because the cataloguing identifier is text, and with no `on
+  -- delete` because nothing is deleted from `artworks` (RF-901).
   catalog_id text not null references public.artworks (catalog_id) on update cascade,
 
   exhibition_id uuid not null references public.exhibitions (id) on delete restrict,
 
-  -- DOS COLUMNAS, deshaciendo la fusión de v11 v7. El número con el que la obra
-  -- apareció en el catálogo o en las cartelas es dato estructurado de uso
-  -- recurrente y citable de forma exacta —«cat. 12 bis» se cita en el ensayo del
-  -- catálogo razonado y se busca—, y la nota es prosa: préstamo por un tercero,
-  -- estado en el momento de la muestra, diferencias con la ficha actual. El
-  -- propio v7 dejó escrito lo que se perdía al fundirlos, y v9 fijó el criterio
-  -- para no repetirlo con `paginas`. Es texto y no un número porque «12 bis»,
-  -- «s/n» y «II.4» son números de catálogo reales.
+  -- TWO COLUMNS, undoing v11 v7's merger. The number with which the artwork
+  -- appeared in the catalogue or on the labels is a structured datum of recurrent
+  -- use and citable exactly —«cat. 12 bis» is cited in the catalogue raisonné's
+  -- essay and it is searched—, and the note is prose: a loan by a third party,
+  -- state at the time of the show, differences from the current record. v7
+  -- itself left written what was lost on merging them, and v9 fixed the criterion
+  -- so as not to repeat it with `paginas`. It is text and not a number because «12 bis»,
+  -- «s/n» and «II.4» are real catalogue numbers.
   catalogue_number text not null default '',
   note text not null default '',
 
@@ -434,25 +434,25 @@ create table public.artwork_exhibitions (
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-517, que REVISA RF-903, igual que en la puente de bibliografía: con el
-  -- número de catálogo dentro, la premisa del requisito —«no tienen etiqueta
-  -- física ni número citable y basta con volver a crearlas»— deja de sostenerse.
-  -- La fila lleva trabajo de investigación y quién la retiró es traza que
-  -- interesa. Y hay una razón de perímetro además de la documental:
-  -- `rls_default_deny` lanza excepción ante cualquier política DELETE en
-  -- `public`, así que el borrado real exigiría debilitar el guardarraíl que ha
-  -- cazado errores reales.
+  -- RF-517, which REVISES RF-903, just as in the bibliography's bridge: with the
+  -- catalogue number inside, the requirement's premise —«they have no physical
+  -- label nor citable number and it is enough to create them again»— stops holding.
+  -- The row carries research work and who withdrew it is a trace that
+  -- matters. And there is a perimeter reason besides the documentary one:
+  -- `rls_default_deny` throws an exception on any DELETE policy in
+  -- `public`, so the real deletion would require weakening the guardrail that has
+  -- caught real mistakes.
   --
-  -- Sin `restored_at`: esta fila se restaura desde la ficha de la que cuelga y
-  -- no desde una pantalla de papelera, así que volver a añadirla la deja como si
-  -- nunca se hubiera retirado.
+  -- With no `restored_at`: this row is restored from the record it hangs from and
+  -- not from a wastebasket screen, so adding it again leaves it as if
+  -- it had never been withdrawn.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
 
-  -- Una obra expuesta dos veces en la misma muestra es una participación con dos
-  -- números dentro, no dos filas. La restricción cubre también las retiradas,
-  -- que es lo que permite que volver a añadir restaure en vez de duplicar (ver
+  -- An artwork exhibited twice in the same show is one participation with two
+  -- numbers inside, not two rows. The constraint also covers the withdrawn ones,
+  -- which is what allows adding again to restore instead of duplicating (see
   -- `exhibit_artwork`).
   constraint artwork_exhibitions_unique unique (catalog_id, exhibition_id)
 );
@@ -465,9 +465,9 @@ comment on column public.artwork_exhibitions.catalogue_number is
 comment on column public.artwork_exhibitions.note is
   'Circunstancias de ESTA participación: préstamo por un tercero, estado en el momento, diferencias con la ficha actual.';
 
--- El bloque «Obras participantes» de la ficha de exposición (RF-505) se lee por
--- este lado; el historial expositivo de la ficha de obra usa el índice único,
--- que ya empieza por `catalog_id`.
+-- The exhibition record's «Obras participantes» block (RF-505) is read from
+-- this side; the artwork record's exhibition history uses the unique index,
+-- which already starts with `catalog_id`.
 create index artwork_exhibitions_exhibition_idx
   on public.artwork_exhibitions (exhibition_id);
 
@@ -476,20 +476,20 @@ create trigger artwork_exhibition_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── Añadir una participación retirada la RESTAURA ───────────
+-- ── Adding a withdrawn participation RESTORES it ────────────
 --
--- Mismo caso y misma solución que `cite_artwork`: con la unicidad cubriendo
--- también las participaciones retiradas, un `insert` de una pareja que está en
--- la papelera choca contra el índice, y la interfaz convertiría un «Añadir» en
--- una violación de unicidad incomprensible.
+-- Same case and same solution as `cite_artwork`: with the uniqueness also covering
+-- the withdrawn participations, an `insert` of a pair that is in
+-- the wastebasket clashes against the index, and the interface would turn an «Añadir» into
+-- an incomprehensible uniqueness violation.
 --
--- Función y no un trigger `before insert` que devuelva `null`: un trigger así
--- deja el `insert` sin filas afectadas y quien llame desde la API pidiendo la
--- fila creada no recibirá ninguna. La función devuelve siempre la fila.
+-- A function and not a `before insert` trigger returning `null`: a trigger like that
+-- leaves the `insert` with no affected rows and whoever calls from the API asking for the
+-- created row will receive none. The function always returns the row.
 --
--- Sin SECURITY DEFINER: las políticas siguen en vigor y un Lector no escribe
--- aquí. La comprobación explícita solo convierte el silencioso «no ha cambiado
--- nada» en un error legible, y en español porque lo lee ella.
+-- With no SECURITY DEFINER: the policies remain in force and a Reader does not write
+-- here. The explicit check only turns the silent «nothing has
+-- changed» into a legible error, and in Spanish because she reads it.
 create function public.exhibit_artwork(
   p_catalog_id text,
   p_exhibition_id uuid,
@@ -513,10 +513,10 @@ begin
           coalesce(p_catalogue_number, ''), coalesce(p_note, ''))
   on conflict (catalog_id, exhibition_id) do update
      set active = true,
-         -- Lo que no se manda no se borra: añadir una participación que ya
-         -- existía no puede vaciar el número de catálogo que alguien
-         -- investigó, porque el formulario de «Añadir» viene en blanco.
-         -- Cambiarlo a vacío es editar la participación, que es otra operación.
+         -- What is not sent is not deleted: adding a participation that already
+         -- existed cannot empty the catalogue number somebody
+         -- researched, because the «Añadir» form comes in blank.
+         -- Changing it to empty is editing the participation, which is another operation.
          catalogue_number = case when btrim(excluded.catalogue_number) <> ''
                                  then excluded.catalogue_number
                                  else artwork_exhibitions.catalogue_number end,
@@ -532,7 +532,7 @@ comment on function public.exhibit_artwork is
   'Añade la participación de una obra en una exposición, o RESTAURA la que estuviera retirada en vez de chocar contra la unicidad (RF-501, RF-517).';
 
 
--- ── Lo que la obra gana (RF-218) ────────────────────────────
+-- ── What the artwork gains (RF-218) ─────────────────────────
 
 alter table public.artworks
   add column exhibition_history_status public.research_status not null default 'UNREVIEWED';
@@ -541,32 +541,32 @@ comment on column public.artworks.exhibition_history_status is
   'Estado de investigación del historial expositivo de la obra (RF-218). Es el caso que da nombre a la regla: una obra sin participaciones registradas no es una obra que no se expuso.';
 
 
--- ── «Sin revisar» no es «no», también en exposiciones ───────
+-- ── «Sin revisar» is not «no», in exhibitions too ───────────
 --
--- Tercer reemplazo de la misma función: la creó la procedencia, la bibliografía
--- le añadió su bloque y este le añade el suyo. Los tres se comprueban en el
--- test, porque un `create or replace` puede comerse un bloque anterior sin que
--- nada avise — la migración que lo escribió se aplicó hace rato y su test pasa
--- igual, porque comprueba la función que hay y no la que había.
+-- Third replacement of the same function: the provenance created it, the bibliography
+-- added its block and this one adds its own. All three are checked in the
+-- test, because a `create or replace` can eat a previous block with
+-- nothing warning — the migration that wrote it was applied a while ago and its test passes
+-- just the same, because it checks the function that is there and not the one that was.
 --
--- Se comprueba por las DOS puertas, como en los dos grupos anteriores: ni se
--- declara «investigado sin resultado» en una obra con participaciones activas,
--- ni se añade o restaura una participación en una obra declarada así.
+-- It is checked through BOTH doors, as in the two previous groups: neither is
+-- «investigado sin resultado» declared on an artwork with active participations,
+-- nor is a participation added or restored on an artwork declared that way.
 --
--- `set search_path = public` se repite porque `create or replace` reemplaza la
--- definición entera y con ella su configuración.
+-- `set search_path = public` is repeated because `create or replace` replaces the
+-- whole definition and with it its configuration.
 --
--- Los `if` que miran `old` van dentro de su propio `if tg_op = 'UPDATE'` por el
--- detalle de plpgsql que las versiones anteriores documentan: en un trigger de
--- INSERT el registro `old` no está asignado, y una expresión que lo nombre falla
--- aunque el `and` de la izquierda ya sea falso.
+-- The `if`s that look at `old` go inside their own `if tg_op = 'UPDATE'` because of the
+-- plpgsql detail the previous versions document: in an INSERT
+-- trigger the `old` record is not assigned, and an expression naming it fails
+-- even if the `and` on the left is already false.
 create or replace function public.tg_artwork_research_status_coherent()
 returns trigger language plpgsql
 set search_path = public as $$
 declare
-  -- En un alta todo es un cambio. En una edición, solo lo que cambia se
-  -- comprueba: así una fila que ya estuviera en un estado imposible se puede
-  -- arreglar en vez de bloquear cualquier otra edición de la obra.
+  -- On a creation everything is a change. On an edit, only what changes is
+  -- checked: this way a row that was already in an impossible state can be
+  -- fixed instead of blocking any other edit of the artwork.
   v_provenance_changed boolean := true;
   v_bibliography_changed boolean := true;
   v_exhibition_changed boolean := true;

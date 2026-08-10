@@ -219,7 +219,7 @@ create table public.bibliography (
         and bibtex_key !~ '[[:space:],{}]')
   ),
 
-  -- Un año fuera de rango plausible es una errata, no una fecha (ADR-004).
+  -- A year outside a plausible range is a typo, not a date (ADR-004).
   constraint bibliography_plausible_year check (
     year is null or year between 1000 and 2100
   )
@@ -237,17 +237,17 @@ comment on column public.bibliography.authors is
 comment on column public.bibliography.year is
   'Año de publicación. Nulo es «sin fecha», que en bibliografía es un dato y no un hueco.';
 
--- Única por clave de comparación, y solo donde hay clave: `place_key` es
--- `strict`, así que devuelve nulo para las referencias sin clave y el índice
--- las ignora — que es lo que permite tener muchas sin clave y ninguna
--- duplicada.
+-- Unique by comparison key, and only where there is a key: `place_key` is
+-- `strict`, so it returns null for the references with no key and the index
+-- ignores them — which is what allows having many with no key and none
+-- duplicated.
 create unique index bibliography_bibtex_key_unique
   on public.bibliography (public.place_key(bibtex_key));
 
--- SIN unicidad sobre el título, a propósito: dos referencias distintas se
--- llaman igual («Alberto Rotili») y son dos entradas legítimas del catálogo.
--- Los duplicados se resuelven por revisión del equipo (RF-909), que es lo que
--- el proyecto ya decidió para el resto de las altas.
+-- WITHOUT uniqueness over the title, on purpose: two different references are
+-- called the same («Alberto Rotili») and they are two legitimate entries of the catalogue.
+-- The duplicates are resolved by the team's review (RF-909), which is what
+-- the project already decided for the rest of the creations.
 
 create index bibliography_publication_type_idx
   on public.bibliography (publication_type_id);
@@ -258,27 +258,27 @@ create trigger bibliography_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── La cita de una obra en una referencia (RF-504) ──────────
+-- ── The citation of an artwork in a reference (RF-504) ──────
 --
--- La tabla puente 7 de v11. Registra en qué páginas de qué referencia aparece
--- mencionada o reproducida cada obra.
+-- v11's bridge table 7. It records on which pages of which reference each artwork
+-- appears mentioned or reproduced.
 
 create table public.artwork_bibliography (
   id uuid primary key default gen_random_uuid(),
 
-  -- Misma forma que `images` y que `provenance_events`: `on update cascade`
-  -- porque el identificador de catalogación es texto, y sin `on delete` porque
-  -- de `artworks` no se borra nada (RF-901).
+  -- Same shape as `images` and as `provenance_events`: `on update cascade`
+  -- because the cataloguing identifier is text, and with no `on delete` because
+  -- nothing is deleted from `artworks` (RF-901).
   catalog_id text not null references public.artworks (catalog_id) on update cascade,
 
   bibliography_id uuid not null references public.bibliography (id) on delete restrict,
 
-  -- DOS COLUMNAS y no una nota fundida, siguiendo a v11 v9, que ya revirtió esa
-  -- fusión con el argumento correcto: la página es un dato de uso recurrente y
-  -- citable de forma exacta —se cita en el ensayo del catálogo razonado y se
-  -- busca—, mientras que la nota es prosa («reproducida en color», «mencionada
-  -- en pie de foto, sin reproducir»). Es texto y no un número porque «34-36»,
-  -- «s/p» y «lám. XII» son páginas reales.
+  -- TWO COLUMNS and not one merged note, following v11 v9, which already reverted that
+  -- merger with the correct argument: the page is a datum of recurrent use and
+  -- citable exactly —it is cited in the catalogue raisonné's essay and it is
+  -- searched—, whereas the note is prose («reproducida en color», «mencionada
+  -- en pie de foto, sin reproducir»). It is text and not a number because «34-36»,
+  -- «s/p» and «lám. XII» are real pages.
   pages text not null default '',
   note text not null default '',
 
@@ -288,28 +288,28 @@ create table public.artwork_bibliography (
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-517, que REVISA RF-903. El requisito justificaba el borrado real de las
-  -- puente en que «no tienen etiqueta física ni número citable y basta con
-  -- volver a crearlas»; con `pages` dentro, esa premisa no se sostiene: la fila
-  -- lleva trabajo de investigación y quién la retiró es traza que interesa. Y
-  -- hay una razón de perímetro además de la documental: `rls_default_deny`
-  -- lanza excepción ante cualquier política DELETE en `public`, así que el
-  -- borrado real de dos tablas exigiría debilitar el guardarraíl que ha cazado
-  -- errores reales.
+  -- RF-517, which REVISES RF-903. The requirement justified the real deletion of the
+  -- bridge tables on the grounds that they «have no physical label nor citable number and it is enough to
+  -- create them again»; with `pages` inside, that premise does not hold: the row
+  -- carries research work and who withdrew it is a trace that matters. And
+  -- there is a perimeter reason besides the documentary one: `rls_default_deny`
+  -- throws an exception on any DELETE policy in `public`, so the
+  -- real deletion of two tables would require weakening the guardrail that has caught
+  -- real mistakes.
   --
-  -- Sin `restored_at`: como en las maestras de vocabulario, una cita que se
-  -- vuelve a añadir queda como si nunca se hubiera retirado. La papelera
-  -- completa de RF-902 es de las fichas con nombre propio; esta fila se
-  -- restaura desde la ficha de la que cuelga y no desde una pantalla de
-  -- papelera.
+  -- With no `restored_at`: as in the vocabulary master tables, a citation that is
+  -- added again is left as if it had never been withdrawn. RF-902's complete
+  -- wastebasket is for the records with a name of their own; this row is
+  -- restored from the record it hangs from and not from a wastebasket
+  -- screen.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
 
-  -- Una obra citada dos veces en la misma referencia es una sola cita con dos
-  -- páginas dentro («34, 51»), no dos filas. La restricción cubre también las
-  -- citas retiradas, que es lo que permite que volver a añadir una restaure en
-  -- vez de duplicar (ver `cite_artwork`).
+  -- An artwork cited twice in the same reference is a single citation with two
+  -- pages inside («34, 51»), not two rows. The constraint also covers the
+  -- withdrawn citations, which is what allows adding one again to restore
+  -- instead of duplicating (see `cite_artwork`).
   constraint artwork_bibliography_unique unique (catalog_id, bibliography_id)
 );
 
@@ -319,9 +319,9 @@ comment on table public.artwork_bibliography is
 comment on column public.artwork_bibliography.pages is
   'Páginas donde aparece la obra en esa referencia. Columna aparte de la nota por ser dato citable de forma exacta (RF-504, v11 v9). Texto: «34-36», «s/p» y «lám. XII» son páginas.';
 
--- El bloque «Obras citadas» de la ficha bibliográfica (RF-506) se lee por este
--- lado; el bloque de bibliografía de la ficha de obra usa el índice único, que
--- ya empieza por `catalog_id`.
+-- The bibliographic record's «Obras citadas» block (RF-506) is read from this
+-- side; the artwork record's bibliography block uses the unique index, which
+-- already starts with `catalog_id`.
 create index artwork_bibliography_reference_idx
   on public.artwork_bibliography (bibliography_id);
 
@@ -330,24 +330,24 @@ create trigger artwork_bibliography_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── Añadir una cita retirada la RESTAURA ────────────────────
+-- ── Adding a withdrawn citation RESTORES it ─────────────────
 --
--- Con la unicidad cubriendo también las citas retiradas, un `insert` de una
--- pareja que está en la papelera choca contra el índice, y la interfaz
--- convertiría un «Añadir» en una violación de unicidad incomprensible. Es
--- exactamente el caso que `masterTables.test.ts` ya cubre para el vocabulario,
--- y aquí se resuelve en la base para que no dependa de que el cliente lo
--- recuerde.
+-- With the uniqueness also covering the withdrawn citations, an `insert` of a
+-- pair that is in the wastebasket clashes against the index, and the interface
+-- would turn an «Añadir» into an incomprehensible uniqueness violation. It is
+-- exactly the case `masterTables.test.ts` already covers for the vocabulary,
+-- and here it is resolved in the base so that it does not depend on the client
+-- remembering it.
 --
--- Se hace con una función y no con un trigger `before insert` que devuelva
--- `null`: un trigger así deja el `insert` sin filas afectadas, y quien llame
--- desde la API pidiendo la fila creada no recibirá ninguna. La función
--- devuelve siempre la fila, exista ya o no.
+-- It is done with a function and not with a `before insert` trigger returning
+-- `null`: a trigger like that leaves the `insert` with no affected rows, and whoever calls
+-- from the API asking for the created row will receive none. The function
+-- always returns the row, whether it already exists or not.
 --
--- Sin SECURITY DEFINER, como `reorder_provenance_events`: las políticas siguen
--- en vigor y un Lector no escribe aquí. La comprobación explícita solo convierte
--- el silencioso «no ha cambiado nada» en un error legible, y en español porque
--- lo lee ella.
+-- With no SECURITY DEFINER, like `reorder_provenance_events`: the policies remain
+-- in force and a Reader does not write here. The explicit check only turns
+-- the silent «nothing has changed» into a legible error, and in Spanish because
+-- she reads it.
 create function public.cite_artwork(
   p_catalog_id text,
   p_bibliography_id uuid,
@@ -370,10 +370,10 @@ begin
           coalesce(p_pages, ''), coalesce(p_note, ''))
   on conflict (catalog_id, bibliography_id) do update
      set active = true,
-         -- Lo que no se manda no se borra: añadir una cita que ya existía no
-         -- puede vaciar las páginas que alguien investigó, porque el formulario
-         -- de «Añadir» viene en blanco. Cambiarlas a vacío es editar la cita,
-         -- que es otra operación.
+         -- What is not sent is not deleted: adding a citation that already existed cannot
+         -- empty the pages somebody researched, because the «Añadir»
+         -- form comes in blank. Changing them to empty is editing the citation,
+         -- which is another operation.
          pages = case when btrim(excluded.pages) <> ''
                       then excluded.pages
                       else artwork_bibliography.pages end,
@@ -389,7 +389,7 @@ comment on function public.cite_artwork is
   'Añade la cita de una obra en una referencia, o RESTAURA la que estuviera retirada en vez de chocar contra la unicidad (RF-504, RF-517).';
 
 
--- ── Lo que la obra gana (RF-218) ────────────────────────────
+-- ── What the artwork gains (RF-218) ─────────────────────────
 
 alter table public.artworks
   add column bibliography_status public.research_status not null default 'UNREVIEWED';
@@ -398,31 +398,31 @@ comment on column public.artworks.bibliography_status is
   'Estado de investigación de la bibliografía de la obra (RF-218). Una obra sin citas registradas no es una obra que nadie ha publicado.';
 
 
--- ── «Sin revisar» no es «no», también en bibliografía ───────
+-- ── «Sin revisar» is not «no», in bibliography too ──────────
 --
--- La migración de la procedencia dejó escrito que los grupos siguientes
--- REEMPLAZAN esta función con `create or replace` para añadir su bloque, y que
--- el trigger se declara sin lista de columnas para no tener que recrearlo. Esto
--- es ese reemplazo.
+-- The provenance's migration left it written that the following groups
+-- REPLACE this function with `create or replace` in order to add their block, and that
+-- the trigger is declared with no column list so as not to have to recreate it. This
+-- is that replacement.
 --
--- Se comprueba por las DOS puertas, como allí: ni se declara «investigado sin
--- resultado» en una obra con citas activas, ni se añade o restaura una cita en
--- una obra declarada así.
+-- It is checked through BOTH doors, as there: neither is «investigado sin
+-- resultado» declared on an artwork with active citations, nor is a citation added or restored on
+-- an artwork declared that way.
 --
--- `set search_path = public` se repite porque `create or replace` reemplaza la
--- definición entera y con ella su configuración.
+-- `set search_path = public` is repeated because `create or replace` replaces the
+-- whole definition and with it its configuration.
 --
--- Los `if` que miran `old` van dentro de su propio `if tg_op = 'UPDATE'` por el
--- detalle de plpgsql que la versión anterior documenta: en un trigger de INSERT
--- el registro `old` no está asignado, y una expresión que lo nombre falla
--- aunque el `and` de la izquierda ya sea falso.
+-- The `if`s that look at `old` go inside their own `if tg_op = 'UPDATE'` because of the
+-- plpgsql detail the previous version documents: in an INSERT trigger
+-- the `old` record is not assigned, and an expression naming it fails
+-- even if the `and` on the left is already false.
 create or replace function public.tg_artwork_research_status_coherent()
 returns trigger language plpgsql
 set search_path = public as $$
 declare
-  -- En un alta todo es un cambio. En una edición, solo lo que cambia se
-  -- comprueba: así una fila que ya estuviera en un estado imposible se puede
-  -- arreglar en vez de bloquear cualquier otra edición de la obra.
+  -- On a creation everything is a change. On an edit, only what changes is
+  -- checked: this way a row that was already in an impossible state can be
+  -- fixed instead of blocking any other edit of the artwork.
   v_provenance_changed boolean := true;
   v_bibliography_changed boolean := true;
 begin
@@ -455,9 +455,9 @@ end $$;
 comment on function public.tg_artwork_research_status_coherent is
   'Impide declarar un bloque documental «investigado sin resultado» cuando ya tiene filas debajo (RF-218). Cubre procedencia y bibliografía; los grupos siguientes añaden su bloque.';
 
--- La otra puerta. Lo que SÍ se permite, y es intencionado: citas en una obra
--- cuyo estado sigue en «Sin revisar». Tener un dato no es haber hecho la
--- investigación, así que la regla es de un solo sentido.
+-- The other door. What IS allowed, and it is intentional: citations on an artwork
+-- whose state is still on «Sin revisar». Having a datum is not having done the
+-- research, so the rule is one-way.
 create function public.tg_artwork_citation_status_coherent()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -479,17 +479,17 @@ create trigger artwork_citation_status_coherent
   for each row execute function public.tg_artwork_citation_status_coherent();
 
 
--- ── RLS y privilegios ───────────────────────────────────────
+-- ── RLS and privileges ──────────────────────────────────────
 --
--- Se revoca primero y se concede después, uno a uno: la plataforma concede por
--- omisión todos los privilegios de cada tabla nueva a los roles anónimo y
--- autenticado, incluido `delete` (RF-113).
+-- It is revoked first and granted afterwards, one by one: the platform grants by
+-- default all the privileges of every new table to the anonymous and
+-- authenticated roles, `delete` included (RF-113).
 --
--- Sin DELETE en ninguna de las tres: ni privilegio ni política, nunca (RF-901,
--- RF-517). Retirar una cita es un update de `active`.
+-- No DELETE in any of the three: neither privilege nor policy, ever (RF-901,
+-- RF-517). Withdrawing a citation is an update of `active`.
 --
--- Las políticas van en la migración siguiente. Hasta que existan, estas tablas
--- no las lee ni las escribe nadie con sesión: RLS activado sin política niega.
+-- The policies go in the next migration. Until they exist, nobody with a session
+-- reads or writes these tables: RLS enabled with no policy denies.
 
 alter table public.publication_types enable row level security;
 alter table public.bibliography enable row level security;
@@ -503,13 +503,13 @@ grant select, insert, update on public.publication_types to authenticated;
 grant select, insert, update on public.bibliography to authenticated;
 grant select, insert, update on public.artwork_bibliography to authenticated;
 
--- Explícito, como en 20260801140000, 20260804090000 y 20260804100000: en esta
--- plataforma una función nueva nace con EXECUTE para PUBLIC pese al `alter
--- default privileges`, y quien lo caza es `function_privileges.test.sql`.
+-- Explicit, as in 20260801140000, 20260804090000 and 20260804100000: on this
+-- platform a new function is born with EXECUTE for PUBLIC despite the `alter
+-- default privileges`, and what catches it is `function_privileges.test.sql`.
 revoke all on function public.tg_publication_type_deactivation() from public;
 revoke all on function public.tg_artwork_citation_status_coherent() from public;
--- `create or replace` conserva los privilegios de la función anterior, pero se
--- repite para que la migración no dependa de ese detalle.
+-- `create or replace` keeps the previous function's privileges, but it is
+-- repeated so that the migration does not depend on that detail.
 revoke all on function public.tg_artwork_research_status_coherent() from public;
 
 revoke all on function public.cite_artwork(text, uuid, text, text) from public, anon;
