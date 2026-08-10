@@ -164,11 +164,11 @@ export function retiredReferenceCount(rows: readonly ReferenceRow[]): number {
 }
 
 /**
- * Lo que se lee encima de la lista: cuántas hay, y cuántas se están enseñando
- * cuando la búsqueda ha recortado.
+ * What is read above the list: how many there are, and how many are being shown
+ * when the search has narrowed it.
  *
- * Se dice el número porque es la información que decide si merece la pena seguir
- * teclando o si lo que se busca no está en el catálogo.
+ * The number is said because it is the information that decides whether it is worth going on
+ * typing or whether what is being looked for is not in the catalogue.
  */
 export function referenceCountText(input: {
   total: number
@@ -182,11 +182,11 @@ export function referenceCountText(input: {
 }
 
 /**
- * Lo que va donde irían las filas cuando no hay ninguna, o null cuando sí hay.
+ * What goes where the rows would go when there are none, or null when there are.
  *
- * **Nunca una página en blanco**, que es criterio del proyecto y no de esta
- * pantalla: una búsqueda sin resultados devuelve la misma página con el motivo, y no
- * una lista vacía que se lee como un catálogo vacío.
+ * **Never a blank page**, which is a criterion of the project and not of this
+ * screen: a search with no results returns the same page with the reason, and not
+ * an empty list that reads as an empty catalogue.
  */
 export function bibliographyListNotice(input: {
   loading: boolean

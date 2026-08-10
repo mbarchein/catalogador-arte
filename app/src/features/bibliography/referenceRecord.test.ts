@@ -9,23 +9,23 @@ import {
 } from './referenceRecord'
 
 /**
- * La ficha de una referencia y su bloque «Obras citadas» (RF-506, RF-504, RF-609).
+ * A reference's record and its «Obras citadas» block (RF-506, RF-504, RF-609).
  *
- * Lo que estos tests fijan es lo que la ficha añade y que no existía en ningún sitio:
- * leer la referencia POR EL OTRO LADO, es decir qué obras la citan y en qué página de
- * ella sale cada una. Y las tres cosas que un bloque así hace mal sin que se note:
- * enseñar una cita que su propia obra ya no cuenta, tirar la fila de una obra que no
- * se puede leer —lo que acortaría la lista en silencio—, y dejar un hueco donde
- * debería decir que a esta referencia no la cita nadie, que es precisamente la fila
- * que el listado se construyó para poder encontrar.
+ * What these tests pin down is what the record adds and did not exist anywhere:
+ * reading the reference FROM THE OTHER SIDE, that is, which artworks cite it and on which of its
+ * pages each one appears. And the three things a block like this does wrong unnoticed:
+ * showing a citation its own artwork no longer counts, throwing away the row of an artwork that
+ * cannot be read —which would shorten the list in silence—, and leaving a gap where
+ * it should say that nobody cites this reference, which is precisely the row
+ * the listing was built to be able to find.
  */
 
 /**
- * Una cita, con el código de la obra incrustada SIGUIENDO al de la fila puente salvo
- * que se diga otra cosa: la clave ajena obliga a que coincidan, y un fixture en el
- * que no coinciden prueba un caso que la base no permite. Lo aprendí escribiéndolo
- * mal: el test del orden pasaba filas con dos códigos distintos y leía siempre el de
- * la obra.
+ * A citation, with the embedded artwork's code FOLLOWING the bridge row's unless
+ * stated otherwise: the foreign key forces them to coincide, and a fixture in
+ * which they do not coincide tests a case the base does not allow. I learnt it by writing it
+ * wrong: the order test passed rows with two different codes and always read the
+ * artwork's.
  */
 function cited(over: Partial<CitedArtworkRow> = {}): CitedArtworkRow {
   const catalogId = over.catalog_id ?? 'AR-0042'
@@ -101,9 +101,9 @@ describe('citedArtworkView, una fila del bloque', () => {
   })
 
   it('la página sin anotar es null, que NO es «s/p»', () => {
-    // «s/p» es alguien afirmando que la publicación no tiene paginación; el campo
-    // vacío es que nadie la ha anotado. La distinción sobre la que va todo el
-    // catálogo.
+    // «s/p» is somebody stating that the publication has no pagination; the empty
+    // field is that nobody has noted it. The distinction the whole
+    // catalogue rests on.
     expect(citedArtworkView(cited({ pages: '' })).pages).toBeNull()
     expect(citedArtworkView(cited({ pages: '   ' })).pages).toBeNull()
   })
@@ -145,9 +145,9 @@ describe('citedArtworkView, una fila del bloque', () => {
 
 describe('citedArtworkViews, el bloque entero', () => {
   it('las citas retiradas no salen', () => {
-    // Una cita retirada salió del historial de su obra (RF-901): enseñarla aquí
-    // contaría una cita que la ficha de la obra ya no cuenta, y las dos pantallas
-    // dirían cosas distintas del mismo hecho.
+    // A withdrawn citation left its artwork's history (RF-901): showing it here
+    // would count a citation the artwork's record no longer counts, and the two screens
+    // would say different things about the same fact.
     const rows = [cited({ id: 'viva' }), cited({ id: 'retirada', active: false })]
     expect(citedArtworkViews(rows).map((v) => v.id)).toEqual(['viva'])
   })
@@ -192,10 +192,10 @@ describe('citedArtworksNotice, nunca un hueco (RF-304)', () => {
   })
 
   it('sin ninguna cita se cuenta, y se dice desde dónde se cita', () => {
-    // Una referencia sin citas es exactamente la fila que el listado se construyó
-    // para poder encontrar. Se dice qué pasa y qué se puede hacer; que no sea un
-    // dato pendiente ya no se argumenta, porque a quien cataloga no le hacía falta
-    // esa distinción para nada.
+    // A reference with no citations is exactly the row the listing was built
+    // to be able to find. What happens and what can be done is said; that it is not a
+    // pending datum is no longer argued, because whoever catalogues did not need
+    // that distinction for anything.
     const text = citedArtworksNotice({ loading: false, error: null, count: 0 })
     expect(text).toContain('Ninguna obra la cita')
     expect(text).toContain('bibliografía de cualquier obra')

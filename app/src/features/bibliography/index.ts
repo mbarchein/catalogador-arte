@@ -1,12 +1,12 @@
 /**
- * El listado de la bibliografía y su búsqueda (RF-506, RF-606, RF-609).
+ * The bibliography's listing and its search (RF-506, RF-606, RF-609).
  *
- * El hueco: una referencia se creaba y se corregía **solo desde una obra que la
- * citara**, así que una referencia a la que no le quedaba ninguna cita seguía en el
- * catálogo —ocupando su clave BibTeX— y no se podía encontrar desde ningún sitio. La
- * ficha de obra lo declaraba en su tarjeta de «lo que aún no se puede hacer aquí».
+ * The gap: a reference was created and corrected **only from an artwork that
+ * cited it**, so a reference with no citations left was still in the
+ * catalogue —taking up its BibTeX key— and could not be found from anywhere. The
+ * artwork record declared it in its «what still cannot be done here» card.
  *
- * Una ruta y ninguna más. Se monta en `App.tsx`:
+ * One route and no more. It is mounted in `App.tsx`:
  *
  * ```tsx
  * import { BibliographyPage, ReferencePage } from './features/bibliography'
@@ -15,17 +15,17 @@
  * <Route path="/bibliography/:id" element={<ReferencePage />} />
  * ```
  *
- * La lee cualquiera que pueda leer, como el listado de exposiciones: una referencia
- * es contenido del catálogo y no una lista de mantenimiento. Y **no tiene alta**: una
- * referencia existe porque algo la cita, así que se crea citándola desde una obra.
+ * It is read by anybody who can read, like the exhibition listing: a reference
+ * is catalogue content and not a maintenance list. And **it has no creation**: a
+ * reference exists because something cites it, so it is created by citing it from an artwork.
  *
- * La ficha (RF-506) trae lo que no existía en ningún sitio: **la referencia leída por
- * el otro lado**, con las obras que la citan y la página de cada cita. Se corrige con
- * el mismo panel que abre la ficha de una obra, no con una copia.
+ * The record (RF-506) brings what did not exist anywhere: **the reference read from
+ * the other side**, with the artworks that cite it and each citation's page. It is corrected with
+ * the same panel an artwork's record opens, not with a copy.
  *
- * Lo que sigue sin estar, y no se finge: retirar una referencia o recuperarla se hace
- * desde la papelera, y darla de alta desde la bibliografía de una obra. Las dos cosas
- * las dice la pantalla en vez de dejar buscar el botón.
+ * What is still missing, and is not pretended: withdrawing a reference or recovering it is done
+ * from the wastebasket, and creating it from an artwork's bibliography. The screen says both
+ * things instead of letting the button be hunted for.
  */
 
 export { BibliographyPage } from './BibliographyPage'

@@ -1,25 +1,25 @@
 /**
- * La bibliografía del catálogo, cargada entera (RF-506, RF-606).
+ * The catalogue's bibliography, loaded whole (RF-506, RF-606).
  *
- * **Entera y buscada en el cliente**, por lo mismo que las exposiciones: un catálogo
- * razonado de dos artistas tiene decenas o cientos de referencias, no cientos de
- * miles; una consulta pequeña contesta a cada pulsación sin viaje de ida y vuelta,
- * que es lo que hace la búsqueda usable con mala cobertura en un almacén. El día que
- * esta tabla pase de unos miles de filas, la búsqueda se va al servidor y el ranking
- * puro se queda donde está.
+ * **Whole and searched in the client**, for the same reason as the exhibitions: a catalogue
+ * raisonné of two artists has tens or hundreds of references, not hundreds of
+ * thousands; a small query answers every keystroke with no round trip,
+ * which is what makes the search usable with poor coverage in a storeroom. The day
+ * this table goes beyond a few thousand rows, the search goes to the server and the pure ranking
+ * stays where it is.
  *
- * **Las retiradas se cargan, y las esconde la pantalla.** La RLS decide qué llega —a
- * un Lector solo le llegan las vivas— así que para un Catalogador la lista trae
- * también la papelera, que es el único sitio desde el que una referencia retirada
- * puede volver. Filtrarlas aquí esconderría la única salida; el filtro es decisión
- * del índice (`rankReferences`), donde es puro y está probado.
+ * **The withdrawn ones are loaded, and the screen hides them.** The RLS decides what arrives —a
+ * Reader only receives the live ones— so for a Cataloguer the list also brings
+ * the wastebasket, which is the only place from which a withdrawn reference
+ * can come back. Filtering them here would hide the only way out; the filter is the
+ * index's decision (`rankReferences`), where it is pure and tested.
  *
- * **Una sola escritura, y ninguna de alta**: corregir. Una referencia se CREA
- * citándola desde una obra —existe porque algo la cita— y eso sigue igual; lo que su
- * ficha propia añade es poder corregirla desde ella, con el mismo panel y el mismo
- * planificador que usa la ficha de obra. Y la corrección necesita justamente la lista
- * entera que este hook ya carga: el choque de la clave BibTeX se comprueba contra las
- * demás referencias, y sin ellas no se podría comprobar.
+ * **A single write, and none for creation**: correcting. A reference is CREATED
+ * by citing it from an artwork —it exists because something cites it— and that stays the same; what its
+ * own record adds is being able to correct it from there, with the same panel and the same
+ * planner the artwork record uses. And the correction needs precisely the whole
+ * list this hook already loads: the BibTeX key clash is checked against the
+ * other references, and without them it could not be checked.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -39,14 +39,14 @@ export interface ReferencesQuery {
   error: string | null
   reload: () => Promise<void>
   /**
-   * Corrige una referencia del catálogo. Responde null cuando entró —también cuando no
-   * había nada que cambiar— y la frase que mostrar cuando no.
+   * Corrects a reference of the catalogue. Answers null when it went in —also when there
+   * was nothing to change— and the sentence to show when it did not.
    *
-   * Es la MISMA operación que la ficha de una obra, con el mismo `planReferenceEdit`:
-   * lo que corrige el catálogo compartido no puede depender de por qué pantalla se
-   * entró. Nada que teclear significa ninguna petición y, sobre todo, ninguna traza de
-   * auditoría sobre una corrección que nadie ha hecho en una fila que lee todo el
-   * catálogo.
+   * It is the SAME operation as an artwork's record, with the same `planReferenceEdit`:
+   * what corrects the shared catalogue cannot depend on which screen it was
+   * entered by. Nothing to type means no request and, above all, no audit
+   * trace over a correction nobody has made in a row the whole catalogue
+   * reads.
    */
   updateReference: (id: string, draft: ReferenceEdit) => Promise<string | null>
 }

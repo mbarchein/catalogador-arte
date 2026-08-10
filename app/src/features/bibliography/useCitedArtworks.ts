@@ -1,18 +1,18 @@
 /**
- * Las obras que citan una referencia (RF-506, RF-504).
+ * The artworks that cite a reference (RF-506, RF-504).
  *
- * Es la consulta simétrica de la que hace la ficha de una obra: aquella pide las
- * citas de un `catalog_id` con la referencia incrustada, y esta pide las citas de una
- * referencia con la obra incrustada. Dos consultas y no una, porque son dos preguntas
- * distintas y cada una incrusta el extremo que la otra ya tiene.
+ * It is the mirror query of the one an artwork's record makes: that one asks for the
+ * citations of a `catalog_id` with the reference embedded, and this one asks for the citations of a
+ * reference with the artwork embedded. Two queries and not one, because they are two different
+ * questions and each one embeds the end the other already has.
  *
- * **Sin miniaturas, y no por ahorrar**: lo dice RF-506. Aquí la fila responde «¿en qué
- * página sale?», que es una pregunta de texto; en la ficha de una exposición sí las
- * hay porque allí lo que se reconoce es la pared. De paso, esta pantalla no firma
- * ninguna URL ni descarga un byte de imagen.
+ * **With no thumbnails, and not to save**: RF-506 says so. Here the row answers «on which
+ * page does it appear?», which is a question of text; in an exhibition's record there ARE
+ * some because there what is recognised is the wall. Incidentally, this screen signs
+ * no URL and downloads not a byte of image.
  *
- * Qué se enseña y en qué orden lo decide `referenceRecord.ts`, que es puro y tiene
- * tests. Aquí está el cable.
+ * What is shown and in what order is decided by `referenceRecord.ts`, which is pure and has
+ * tests. Here is the wiring.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
