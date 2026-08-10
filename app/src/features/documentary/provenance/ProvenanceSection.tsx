@@ -102,10 +102,10 @@ export function ProvenanceSection({
   const spec = sectionSpec('provenance')
   const { rows, loading, error, reload } = useProvenanceEvents(catalogId)
   const { canEdit } = useAuth()
-  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
-  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
-  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
-  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  // RF-308: **writing lives in the editing area and not in the view.** The record that
+  // is read is read-only, so no control of this block offers to change
+  // a datum unless the page says it is editing. `canWrite` is still
+  // necessary —the permission rules over the mode— but it is no longer sufficient.
   const canWrite = canWriteBlock(writable, canEdit)
   const edits = useProvenanceEdits(catalogId, reload)
 

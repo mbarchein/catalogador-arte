@@ -26,14 +26,14 @@ import { blockState } from '../researchState'
 import { sectionSpec } from '../sections'
 
 /**
- * RF-509, RF-510 y la regla que decide si esta pantalla sirve: un HUECO en la
- * cadena no es un tramo investigado sin resultado.
+ * RF-509, RF-510 and the rule that decides whether this screen is any use: a GAP in the
+ * chain is not a stretch researched with no result.
  *
- * Una procedencia se juzga por lo que NO dice. Que entre 1971 y 1984 no haya
- * ningún eslabón no significa que la obra se quedara donde estaba, ni que no
- * cambiara de manos: significa que nadie lo ha documentado. Confundir las dos
- * cosas es publicar una afirmación que ningún investigador ha hecho, y es
- * exactamente lo que un comisario mira primero.
+ * A provenance is judged by what it does NOT say. That between 1971 and 1984 there is
+ * no link does not mean the artwork stayed where it was, nor that it did not
+ * change hands: it means nobody has documented it. Confusing the two
+ * things is publishing a statement no researcher has made, and it is
+ * exactly what a curator looks at first.
  */
 
 // ── Working material ─────────────────────────────────────────
@@ -150,8 +150,8 @@ describe('un eslabón de la cadena (RF-509)', () => {
 })
 
 /**
- * RF-205 y RF-218 dentro de una fila: dos etiquetas que dijeran «Sin revisar» a
- * secas no dicen cuál de las dos preguntas está sin contestar.
+ * RF-205 and RF-218 inside a row: two labels saying a bare «Sin revisar»
+ * do not say which of the two questions is unanswered.
  */
 describe('«sin revisar» no es «no», dentro del eslabón (RF-205)', () => {
   it('cada «sin revisar» lleva su pregunta, y no son la misma etiqueta', () => {
@@ -231,9 +231,9 @@ describe('el hueco en la cadena (RF-509)', () => {
   })
 
   /**
-   * Un eslabón sin año final no dice que la obra se quedara allí hasta el
-   * siguiente: dice que no consta hasta cuándo. Es un hueco de otra clase y se
-   * cuenta de otra manera.
+   * A link with no final year does not say the artwork stayed there until the
+   * next one: it says it is not recorded until when. It is a gap of another kind and it is
+   * told in another way.
    */
   it('un eslabón sin año final abre un hueco distinto del que nadie cubre', () => {
     const rows = [
@@ -249,9 +249,9 @@ describe('el hueco en la cadena (RF-509)', () => {
   })
 
   /**
-   * Un solape no se denuncia: un propietario que conserva la titularidad
-   * mientras un museo tiene la obra en depósito son dos eslabones verdaderos a
-   * la vez, y para eso existe la calidad de tenencia.
+   * An overlap is not denounced: an owner keeping title
+   * while a museum has the artwork on loan are two true links at
+   * once, and that is what the quality of tenure exists for.
    */
   it('un solape no es un error y no se señala', () => {
     const rows = [
@@ -262,10 +262,10 @@ describe('el hueco en la cadena (RF-509)', () => {
   })
 
   /**
-   * El caso que obliga a medir la cadena y no las parejas de vecinos: con un
-   * propietario hasta 1995 y un depósito que se cierra en 1990 debajo, comparar
-   * cada eslabón con el anterior inventaría un hueco desde 1991 teniendo la
-   * línea del propietario justo al lado diciendo lo contrario.
+   * The case that forces measuring the chain and not the pairs of neighbours: with an
+   * owner until 1995 and a loan closing in 1990 below, comparing
+   * each link with the previous one would invent a gap from 1991 with the
+   * owner's line right alongside saying the opposite.
    */
   it('lo que cubre un eslabón anterior cuenta, aunque otro se cierre antes', () => {
     const rows = [
@@ -348,9 +348,9 @@ describe('el hueco en la cadena (RF-509)', () => {
   })
 
   /**
-   * Basta UN eslabón sin año final para que la cadena no se cierre: esa tenencia
-   * puede seguir corriendo, y afirmar un hueco hasta hoy por encima de ella sería
-   * cerrar una cadena que nadie ha cerrado.
+   * ONE link with no final year is enough for the chain not to close: that tenure
+   * may still be running, and stating a gap up to today over it would be
+   * closing a chain nobody has closed.
    */
   it('con un eslabón abierto en medio, no se afirma hueco hasta hoy', () => {
     const rows = [
@@ -413,8 +413,8 @@ describe('la continuidad de la cadena entera', () => {
   })
 
   /**
-   * La distinción que salva la pantalla de mentir: no hay huecos MEDIBLES no es
-   * lo mismo que no hay huecos.
+   * The distinction that saves the screen from lying: there are no MEASURABLE gaps is not
+   * the same as there are no gaps.
    */
   it('una cadena sin fechas no es una cadena continua: dice que no se puede medir', () => {
     const rows = [link({ position: 1 }), link({ position: 2 })]
@@ -548,8 +548,8 @@ describe('la línea de procedencia compuesta (RF-510)', () => {
   })
 
   /**
-   * La línea es un borrador de algo publicable, y «Sin revisar» es una nota
-   * sobre el trabajo del catálogo, no sobre la obra: no se publica.
+   * The line is a draft of something publishable, and «Sin revisar» is a note
+   * about the catalogue's work, not about the artwork: it is not published.
    */
   it('no publica «sin revisar» ni «en propiedad»', () => {
     const rows = [
@@ -665,9 +665,9 @@ describe('la cadena se lee como una historia, no como una tabla (RF-509)', () =>
   })
 
   it('ningún hueco se pierde: uno que no encaja en su sitio cierra la lectura', () => {
-    // Defensivo, y es la razón por la que existe la salvaguarda: un hueco que la
-    // pantalla decidiera no pintar sería la pantalla afirmando una continuidad
-    // que nadie ha documentado.
+    // Defensive, and it is the reason the safeguard exists: a gap the
+    // screen decided not to paint would be the screen stating a continuity
+    // nobody has documented.
     const rows = [link({ position: 1, start_year: 1970 })]
     const orphan: ChainGap = {
       afterId: 'event-fantasma',
@@ -724,9 +724,9 @@ describe('la cadena se lee como una historia, no como una tabla (RF-509)', () =>
   })
 
   /**
-   * El año de hoy no se imprime: cambia solo, y puesto ahí hace que la ficha
-   * parezca afirmar algo sobre este año cuando lo que afirma es «desde 1986 no
-   * consta».
+   * This year is not printed: it changes on its own, and put there it makes the record
+   * seem to state something about this year when what it states is «since 1986 it is
+   * not recorded».
    */
   it('el hueco que llega hasta hoy dice «hoy» y no el año en curso', () => {
     const rows = [link({ position: 1, start_year: 1980, end_year: 1985 })]
@@ -795,9 +795,9 @@ describe('procedencia redactada sin eslabones todavía (RF-510)', () => {
   const spec = sectionSpec('provenance')
 
   /**
-   * La procedencia de medio fondo llegó como un párrafo mucho antes de que nadie
-   * la partiera en eslabones fechados. Sin esto, ese párrafo —que es lo que se
-   * publica— quedaría escondido detrás de «nadie ha buscado todavía».
+   * Half the fund's provenance arrived as a paragraph long before anybody
+   * split it into dated links. Without this, that paragraph —which is what gets
+   * published— would end up hidden behind «nobody has looked yet».
    */
   it('el relato se enseña, y la explicación de la cadena vacía pasa por encima', () => {
     const empty = blockState(spec, 'UNREVIEWED', 0)

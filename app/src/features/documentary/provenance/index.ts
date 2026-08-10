@@ -1,8 +1,8 @@
 /**
- * El bloque «Procedencia» de la ficha de obra (RF-303, RF-509, RF-510).
+ * The artwork record's «Procedencia» block (RF-303, RF-509, RF-510).
  *
- * Se monta con la fila documental de la obra, que la ficha carga UNA vez para los
- * cinco bloques, y con el año de ejecución, que es donde empieza una procedencia:
+ * It is mounted with the artwork's documentary row, which the record loads ONCE for the
+ * five blocks, and with the year of execution, which is where a provenance starts:
  *
  * ```tsx
  * const documentary = useArtworkDocumentary(artwork.catalog_id)
@@ -16,12 +16,12 @@
  * />
  * ```
  *
- * `originYear` es opcional y conviene pasarlo: sin él no se puede contar el tramo
- * que va del artista al primer eslabón documentado, y no se inventa nada en su
- * lugar. La versión que hace la consulta documental por su cuenta
- * (`StandaloneProvenanceSection`) es para una pantalla que solo muestre la cadena,
- * no para la ficha: cinco bloques pidiendo la misma fila serían cuatro consultas
- * de más.
+ * `originYear` is optional and it is worth passing: without it the stretch
+ * from the artist to the first documented link cannot be told, and nothing is invented in
+ * its place. The version that makes the documentary query on its own
+ * (`StandaloneProvenanceSection`) is for a screen that only shows the chain,
+ * not for the record: five blocks asking for the same row would be four queries
+ * too many.
  */
 
 export { ProvenanceSection, StandaloneProvenanceSection } from './ProvenanceSection'

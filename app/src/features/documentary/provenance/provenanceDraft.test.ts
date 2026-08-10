@@ -18,13 +18,13 @@ import {
 import type { ProvenanceEventRow } from '../documentaryRows'
 
 /**
- * RF-509 desde el lado de quien escribe la cadena.
+ * RF-509 from the side of whoever writes the chain.
  *
- * Cada negativa de aquí es el espejo de una restricción de
- * `provenance_events`. La base sigue siendo la autoridad —su mensaje se enseña
- * tal cual cuando habla—, pero un formulario que solo se entera al guardar
- * obliga a rellenar el eslabón dos veces, y en un almacén con el móvil eso es
- * lo que hace que un eslabón no se registre.
+ * Every refusal here mirrors a constraint of
+ * `provenance_events`. The base is still the authority —its message is shown
+ * as is when it speaks—, but a form that only finds out on saving
+ * forces the link to be filled in twice, and in a storeroom with a phone that is
+ * what makes a link not get registered.
  */
 
 function draft(over: Partial<ProvenanceDraft> = {}): ProvenanceDraft {

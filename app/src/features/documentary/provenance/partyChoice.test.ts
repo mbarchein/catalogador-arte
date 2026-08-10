@@ -58,9 +58,9 @@ describe('las fichas que se ofrecen para un eslabón', () => {
   })
 
   /**
-   * Salvo la que el eslabón ya usa: quitarla de la lista haría que el formulario
-   * pareciera haber perdido el dato, y guardar borraría un propietario
-   * documentado.
+   * Except the one the link already uses: removing it from the list would make the form
+   * look as if it had lost the datum, and saving would erase a documented
+   * owner.
    */
   it('la retirada que el eslabón ya usa sigue ahí, marcada como retirada', () => {
     const retired = party({ id: 'b', name: 'Galería cerrada', active: false })
@@ -79,9 +79,9 @@ describe('las fichas que se ofrecen para un eslabón', () => {
 
 describe('cuando el buscador no ofrece nada (RF-304)', () => {
   /**
-   * «No hay ninguna ficha» es una afirmación sobre el catálogo. Dicha mientras la
-   * consulta viaja, es falsa, y es justo lo que hace que se cree una segunda
-   * ficha de un museo que ya la tiene.
+   * «There is no record» is a statement about the catalogue. Said while the
+   * query travels, it is false, and it is precisely what makes people create a second
+   * record for a museum that already has one.
    */
   it('mientras las fichas llegan no dice que no haya ninguna', () => {
     expect(noChoicesText({ loading: true, error: null, query: '' })).toBe('Cargando las fichas…')
