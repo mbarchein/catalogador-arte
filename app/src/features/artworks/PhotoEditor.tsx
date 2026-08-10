@@ -301,12 +301,12 @@ export function PhotoEditor({
   onApply: (edit: PhotoEdit, cropSource: CropSource) => void
   onCancel: () => void
 }) {
-  // El editor se queda al tamaño de letra normal, aunque el perfil haya pedido letra
-  // grande, y es la excepción razonada del ajuste: aquí se mide el lienzo en píxeles y se
-  // calcula la posición de los tiradores de recorte y perspectiva contra el rectángulo real
-  // del elemento, así que escalarlo es pedirle problemas a la única pantalla del proyecto
-  // donde un par de puntos de desviación se ven. Y ocupa la pantalla entera, así que
-  // mientras está abierto no hay ningún otro texto que leer.
+  // The editor stays at the normal text size, even if the profile has asked for large
+  // text, and it is the reasoned exception to that setting: here the canvas is measured in pixels and
+  // the position of the crop and perspective handles is computed against the element's real
+  // rectangle, so scaling it is asking for trouble in the one screen of the project
+  // where a couple of points of deviation are visible. And it takes up the whole screen, so
+  // while it is open there is no other text to read.
   useBaseTextScaleHere()
 
   const [url, setUrl] = useState<string | null>(null)
@@ -624,9 +624,9 @@ export function PhotoEditor({
   function close(applied: boolean) {
     if (applied) cropSourceRef.current = currentCropSource()
     appliedRef.current = applied
-    // La ✕, «Cancelar» y «Aplicar» son la salida del editor y no un peldaño de la
-    // escalera: se ven también con un panel abierto, y desde ahí «Aplicar» tiene
-    // que aplicar. Sin esta marca cerraría el panel y se quedaría dentro.
+    // The ✕, «Cancelar» and «Aplicar» are the editor's exit and not a rung of the
+    // ladder: they are visible with a panel open too, and from there «Aplicar» has
+    // to apply. Without this mark it would close the panel and stay inside.
     leavingRef.current = true
     window.history.back()
   }

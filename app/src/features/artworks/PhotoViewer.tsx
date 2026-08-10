@@ -32,24 +32,24 @@ export function PhotoViewer({
   catalogId: string
   onClose: () => void
 }) {
-  // El botón de atrás cierra el visor, con la entrada de historia que empuja al
-  // abrirse. Vive en `useCloseOnBack` y no aquí porque es la misma salida que
-  // tienen las hojas y el editor: teniéndola cada uno por su lado, un «atrás» con
-  // dos modales abiertos cerraba los dos.
+  // The back button closes the viewer, with the history entry it pushes on
+  // opening. It lives in `useCloseOnBack` and not here because it is the same exit
+  // the sheets and the editor have: with each one having its own, a «back» with
+  // two modals open closed both.
   useCloseOnBack(onClose)
 
-  // Lo que las flechas necesitan saber vive en un ref para que el listener de
-  // teclado se registre una sola vez: volver a registrarlo en cada render podría
-  // perderse una pulsación.
+  // What the arrows need to know lives in a ref so the keyboard
+  // listener is registered only once: registering it again on every render could
+  // miss a keypress.
   const paso = useRef({ images, viewId, onView })
   paso.current = { images, viewId, onView }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // «f» cierra igual que Escape: la misma tecla que abre es la que sale, sin
-      // tener que recordar otra. Y sale por el mismo camino que todo lo demás
-      // —consumir la entrada de historia— para que el botón de atrás del móvil
-      // y el teclado no lleven la cuenta por separado.
+      // «f» closes just like Escape: the same key that opens is the one that leaves, with no
+      // need to remember another. And it leaves by the same path as everything else
+      // —consuming the history entry— so that the phone's back button
+      // and the keyboard do not keep separate counts.
       if (e.key === 'Escape' || e.key === 'f' || e.key === 'F') {
         if (e.metaKey || e.ctrlKey || e.altKey) return
         e.preventDefault()
@@ -57,11 +57,11 @@ export function PhotoViewer({
         return
       }
 
-      // Con el visor abierto, las flechas mueven entre las FOTOGRAFÍAS de esta
-      // obra y no entre obras: lo que se está mirando es la galería, y pasar de
-      // ficha desde aquí dejaría al visor enseñando fotos de otra pieza. Quien
-      // navega el listado es la ficha de debajo, y se aparta mientras esto está
-      // abierto (ver el guardián de ArtworkPage).
+      // With the viewer open, the arrows move among this artwork's
+      // PHOTOGRAPHS and not among artworks: what is being looked at is the gallery, and moving between
+      // records from here would leave the viewer showing another piece's photos. The one that
+      // navigates the listing is the record underneath, and it steps aside while this is
+      // open (see ArtworkPage's guard).
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
       if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
 
@@ -96,10 +96,10 @@ export function PhotoViewer({
       role="dialog"
       aria-modal="true"
       aria-label={`Fotografías de ${catalogId} a pantalla completa`}
-      // Con qué la ficha de debajo sabe que el visor está abierto y no debe
-      // atender a las flechas. Un atributo en el DOM y no un estado compartido:
-      // el visor es de la galería, y subir el estado hasta la página para que
-      // esta se aparte sería más cableado del que el problema pide.
+      // What the record underneath knows the viewer is open by and that it must not
+      // attend to the arrows. An attribute in the DOM and not shared state:
+      // the viewer belongs to the gallery, and lifting the state up to the page so that
+      // it steps aside would be more wiring than the problem asks for.
       data-photo-viewer
       className="fixed inset-0 z-50 flex flex-col bg-black"
     >

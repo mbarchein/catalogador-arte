@@ -47,13 +47,13 @@ import {
 } from './batch'
 
 /**
- * Los fondos que se ofrecen al abrir una tanda (ADR-007, segunda entrega).
+ * The funds offered on opening a batch (ADR-007, second delivery).
  *
- * Salen de la tabla y no de una lista escrita a mano: renombrar un fondo se hace
- * una vez y se ve aquí, y retirarlo deja de ofrecerlo sin tocar nada de lo ya
- * catalogado. `ARTIST_LABEL` se queda como el nombre de último recurso mientras la
- * tabla llega — un selector en blanco al abrir la pantalla sería peor que un
- * nombre que se corrige medio segundo después.
+ * They come from the table and not from a hand-written list: renaming a fund is done
+ * once and is seen here, and withdrawing it stops offering it without touching anything already
+ * catalogued. `ARTIST_LABEL` stays as the last-resort name while the
+ * table arrives — a blank selector on opening the screen would be worse than a
+ * name corrected half a second later.
  */
 function fundOptions(entries: readonly ArtistFundEntry[]) {
   if (entries.length === 0) {
@@ -133,16 +133,16 @@ export function CapturePage() {
   const [uploading, setUploading] = useState<string | null>(null)
 
   /**
-   * Aquí se pregunta por la subida, y NO por las fotografías preparadas (RNF-106).
+   * Here the question is about the upload, and NOT about the staged photographs (RNF-106).
    *
-   * La cola de esta pantalla se apunta en el teléfono en cuanto cambia, así que una
-   * recarga la devuelve entera: avisar de algo que se recupera solo es la clase de
-   * diálogo que se aprende a despachar sin leer, y entonces tampoco se lee cuando hay
-   * una subida a medias, que es lo que no vuelve.
+   * This screen's queue is noted down on the phone as soon as it changes, so a
+   * reload gives it back whole: warning about something that recovers itself is the kind of
+   * dialogue learnt to be dismissed unread, and then it is not read either when there is
+   * a half-done upload, which is what does not come back.
    *
-   * Lo que sí se pierde son los campos de la obra que se esté rellenando. Es barato de
-   * volver a teclear al lado de una subida de megabytes, y se acepta a cambio de que el
-   * aviso siga significando algo.
+   * What is lost are the fields of the artwork being filled in. It is cheap to
+   * type again next to an upload of megabytes, and it is accepted in exchange for the
+   * warning still meaning something.
    */
   useUnloadGuard(uploading !== null || saving)
 

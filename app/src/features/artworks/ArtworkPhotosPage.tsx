@@ -317,29 +317,29 @@ export function ArtworkPhotosPage() {
   const savedRef = useRef(savedData)
   savedRef.current = savedData
   useEffect(() => {
-    // Se reinicia al pasar a otra toma —el borrador de una no es el de la otra— y
-    // también cuando cambia lo guardado, que son dos momentos: al terminar de
-    // guardar, y cuando el detalle de la fotografía llega de la base unos
-    // milisegundos después de abrir el panel. Sin lo segundo, el borrador se quedaba
-    // con la procedencia por omisión y la pantalla anunciaba cambios sin guardar que
-    // nadie había hecho.
+    // It is reset on moving to another shot —one's draft is not the other's— and
+    // also when what is stored changes, which are two moments: on finishing
+    // saving, and when the photograph's detail arrives from the base a few
+    // milliseconds after opening the panel. Without the second, the draft was left
+    // with the default provenance and the screen announced unsaved changes
+    // nobody had made.
     setDataDraft(savedRef.current)
   }, [selectedId, savedKey])
   const dataDirty =
     dataDraft !== null && savedData !== null && photoDataDirty(dataDraft, savedData)
 
   /**
-   * Una recarga sin querer aquí se lleva trabajo de verdad (RNF-106).
+   * An accidental reload here takes real work away (RNF-106).
    *
-   * Con una subida en marcha se pierde lo enviado y los segundos de generar la copia a
-   * tamaño completo. Y con fotografías preparadas se pierden LAS FOTOGRAFÍAS: al
-   * contrario que la pantalla de captura, que apunta su cola en el teléfono, aquí están
-   * solo en memoria — se eligieron del carrete o se hicieron con la cámara, se les puso
-   * el tipo de toma y quizá se recortaron, y de eso no queda nada.
+   * With an upload under way, what was sent and the seconds spent generating the full-size copy are
+   * lost. And with staged photographs THE PHOTOGRAPHS are lost: unlike
+   * the capture screen, which notes its queue down on the phone, here they are
+   * only in memory — they were chosen from the roll or taken with the camera, they were given
+   * their kind of shot and perhaps cropped, and none of that is left.
    *
-   * Y desde que los datos de la toma tienen «Guardar» propio, lo escrito y sin
-   * guardar también se pierde: son cuatro campos, pero uno de ellos es de dónde salió
-   * una fotografía ajena, que no se vuelve a averiguar en un minuto.
+   * And since the shot's data has its own «Guardar», what was written and not
+   * saved is lost too: they are four fields, but one of them is where
+   * somebody else's photograph came from, which is not worked out again in a minute.
    */
   useUnloadGuard(uploading !== null || staged.length > 0 || dataDirty)
   useAutoClear(notice, () => setNotice(null))
@@ -461,11 +461,11 @@ export function ArtworkPhotosPage() {
   }
 
   /**
-   * Los datos de la toma, guardados a la vez y solo al pulsar (RF-417).
+   * The shot's data, stored all at once and only on pressing (RF-417).
    *
-   * Antes eran tres escrituras sueltas —los chips al tocarlos y el texto al salir
-   * del campo— y esa última es medio invisible en un móvil. Ahora es un formulario:
-   * nada se escribe hasta que se pulsa, y la pantalla dice si queda algo pendiente.
+   * They used to be three separate writes —the chips on being touched and the text on leaving
+   * the field— and that last one is half invisible on a phone. Now it is a form:
+   * nothing is written until it is pressed, and the screen says whether anything is pending.
    */
   async function savePhotoData(imageId: string, draft: PhotoDataDraft) {
     setSaving(true)
@@ -892,9 +892,9 @@ export function ArtworkPhotosPage() {
 
                   <PhotoAction
                     corner="bottom-right"
-                    // Mientras trabaja, el rótulo es lo que está pasando y su
-                    // porcentaje: quien mira la fotografía no lee la línea de abajo,
-                    // y un lector de pantalla no ve girar nada.
+                    // While it works, the label is what is happening and its
+                    // percentage: whoever is looking at the photograph does not read the line below,
+                    // and a screen reader does not see anything spinning.
                     label={
                       stage.work === null
                         ? EDIT_ACTION
@@ -1180,16 +1180,16 @@ const CORNER = {
 } as const
 
 /**
- * Uno de los mandos que van sobre la fotografía.
+ * One of the controls that go over the photograph.
  *
- * Todos iguales —44 puntos, redondo, oscuro translúcido— porque son la misma clase
- * de cosa y lo único que los distingue tiene que ser el dibujo y el sitio. El
- * rótulo va en `aria-label` **y** en `title`: sin palabra al lado, es lo único que
- * dice qué hace, y `title` es lo que lo cuenta en un ratón.
+ * All alike —44 points, round, translucent dark— because they are the same kind
+ * of thing and the only thing distinguishing them has to be the drawing and the place. The
+ * label goes in `aria-label` **and** in `title`: with no word alongside, it is the only thing that
+ * says what it does, and `title` is what tells it with a mouse.
  *
- * Deshabilitado se queda a la vista, más apagado, en vez de desaparecer: un mando
- * que aparece y desaparece según la fotografía mueve a los demás de sitio, y
- * entonces ya no se puede ir a por uno sin mirar.
+ * Disabled it stays in sight, dimmer, instead of disappearing: a control
+ * that appears and disappears depending on the photograph moves the others about, and
+ * then one can no longer reach for one without looking.
  */
 function PhotoAction({
   corner,
@@ -1224,16 +1224,16 @@ function PhotoAction({
 }
 
 /**
- * Qué es esta toma: tipo, procedencia y de quién es (RF-417, RF-405).
+ * What this shot is: kind, provenance and whose it is (RF-417, RF-405).
  *
- * Un formulario de verdad, con su borrador y su «Guardar»: nada se escribe hasta
- * pulsarlo. Antes eran tres escrituras sueltas —dos al tocar un chip y una al
- * salir del campo de texto— y esa mezcla es lo que hacía imposible saber si algo
- * quedaba pendiente. La aritmética está en `photoData.ts`, con sus tests; aquí
- * solo se pinta.
+ * A real form, with its draft and its «Guardar»: nothing is written until it is
+ * pressed. They used to be three separate writes —two on touching a chip and one on
+ * leaving the text field— and that mixture is what made it impossible to know whether anything
+ * was pending. The arithmetic is in `photoData.ts`, with its tests; here
+ * it is only painted.
  *
- * El `key` de quien lo monta es el identificador de la fotografía, así que pasar a
- * otra toma trae sus datos y no el borrador a medias de la anterior.
+ * The `key` of whoever mounts it is the photograph's identifier, so moving to
+ * another shot brings its data and not the previous one's half-done draft.
  */
 function PhotoDataForm({
   draft,

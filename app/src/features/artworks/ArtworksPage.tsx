@@ -127,9 +127,9 @@ export function ArtworksPage() {
     [placesLoading, placeTree, view.places],
   )
 
-  // Los fondos y, de ellos, los que apartan sus obras (ADR-007, segunda entrega).
-  // Se leen aquí y no dentro del hook de las obras porque la lista de fondos es de
-  // la pantalla: también se usa para decir en voz alta lo que se está apartando.
+  // The funds and, of them, the ones that set their artworks aside (ADR-007, second delivery).
+  // They are read here and not inside the artworks hook because the fund list belongs to
+  // the screen: it is also used to say out loud what is being set aside.
   const { entries: funds } = useArtistFunds()
   const hidden = useMemo(() => funds.filter((f) => f.hideArtworks), [funds])
   const hiddenFunds = useMemo(
@@ -316,11 +316,11 @@ export function ArtworksPage() {
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         title="Filtros y orden"
-        // Quitar los filtros, arriba y con la cuenta dentro. Antes vivía al pie de
-        // la hoja, debajo de cinco secciones de opciones: para encontrarlo había que
-        // recorrer justo lo que se quería deshacer. Y el número no es adorno — es lo
-        // que hace falta para decidir si se pulsa, porque con la hoja abierta las
-        // secciones que tienen algo puesto no se ven todas a la vez.
+        // Removing the filters, at the top and with the count inside. It used to live at the foot of
+        // the sheet, below five sections of options: to find it one had to
+        // go through exactly what one wanted to undo. And the number is not an ornament — it is what
+        // is needed to decide whether to press it, because with the sheet open the
+        // sections that have something set are not all visible at once.
         headerAction={
           activeCount > 0 ? (
             <button

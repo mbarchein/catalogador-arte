@@ -489,9 +489,9 @@ describe('RF-418 · el testigo se ofrece, nunca se aplica solo', () => {
 
 describe('§7 · el filtro de previsualización está puesto ANTES del primer arrastre', () => {
   it('con el panel abierto está puesto aunque el ajuste sea neutro', () => {
-    // Las tiras escriben las tablas directamente en el DOM: un filtro que React todavía no
-    // hubiera pintado dejaría el primer arrastre de una foto sin tocar sin previsualizar
-    // nada. La tabla neutra es la identidad exacta, así que tenerlo puesto no cambia nada.
+    // The strips write the tables directly into the DOM: a filter React had not painted
+    // yet would leave the first drag of an untouched photo previewing
+    // nothing. The neutral table is the exact identity, so having it in place changes nothing.
     expect(showsColorFilter(true, NO_COLOR)).toBe(true)
     expect(showsColorFilter(true, null)).toBe(true)
   })
