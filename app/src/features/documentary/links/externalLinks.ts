@@ -1,23 +1,23 @@
 /**
- * Los enlaces a sitios externos de una ficha, convertidos en algo que se lee y
- * se pulsa (RF-1401 a RF-1408).
+ * A record's links to external sites, turned into something that is read and
+ * pressed (RF-1401 to RF-1408).
  *
- * Este módulo es la mitad de LECTURA: qué se ve de cada enlace, en qué orden,
- * agrupado cómo, y qué dice el bloque cuando no hay ninguno. La mitad de
- * ESCRITURA —validar, guardar y explicar un rechazo— vive en `linkDraft.ts`.
+ * This module is the READING half: what is seen of each link, in what order,
+ * grouped how, and what the block says when there is none. The WRITING
+ * half —validating, storing and explaining a rejection— lives in `linkDraft.ts`.
  *
- * Aquí no hay React ni red, y no es aseo: la batería corre en node y no puede
- * abrir un componente, así que todo lo que decide algo tiene que ser alcanzable
- * sin DOM. Lo que queda en el JSX es maquetación.
+ * There is no React or network here, and it is not tidiness: the suite runs in node and cannot
+ * open a component, so everything that decides something has to be reachable
+ * without a DOM. What is left in the JSX is layout.
  *
- * ── LO QUE ESTE MÓDULO NO HACE, Y ES UN REQUISITO ───────────
+ * ── WHAT THIS MODULE DOES NOT DO, AND IT IS A REQUIREMENT ───
  *
- * No trae NADA del sitio enlazado (RF-1404): ni icono, ni título, ni
- * previsualización, ni comprobación automática. Cada una de esas cosas le
- * contaría a un tercero qué obra se está catalogando y desde qué dirección. Y sin
- * servidor de aplicación un rastreador además mentiría: lo que un navegador puede
- * comprobar desde el cliente es «me han dejado pedir esto», no «esa página sigue
- * mostrando lo que documentaba».
+ * It brings NOTHING from the linked site (RF-1404): no icon, no title, no
+ * preview, no automatic check. Each of those things would
+ * tell a third party which artwork is being catalogued and from what address. And with no
+ * application server a crawler would also lie: what a browser can
+ * check from the client is «I have been allowed to request this», not «that page still
+ * shows what it documented».
  */
 
 import {
@@ -32,11 +32,11 @@ import {
 } from '../../../lib/types'
 
 /**
- * Un enlace tal como lo devuelve la consulta del bloque.
+ * A link as the block's query returns it.
  *
- * `created_at` no está en `ExternalLink` porque la ficha no lo enseña, y aquí sí
- * hace falta: el orden dentro de un tipo es el de alta (la tabla no lleva
- * `sort_order` a propósito, y reordenar a mano no lo ha pedido nadie).
+ * `created_at` is not in `ExternalLink` because the record does not show it, and here it is
+ * needed: the order within a type is the creation order (the table deliberately does not carry
+ * `sort_order`, and nobody has asked for reordering by hand).
  */
 export interface ExternalLinkRow extends ExternalLink {
   readonly created_at: string
@@ -54,27 +54,27 @@ export interface PhotoRef {
 // ── The destination, seen before touching (RF-1408) ──────────
 
 /**
- * El nombre del sitio, y **el mismo trozo de la dirección que miró la base**.
+ * The site's name, and **the same piece of the address the base looked at**.
  *
- * `is_web_url` extrae la autoridad con `^https?://([^/?#]*)`, así que esta
- * función corta por ahí y no por su cuenta. Importa que sea el mismo corte: si
- * aquí se enseñara como dominio una parte distinta de la que la base validó,
- * la pantalla estaría afirmando un destino que no es el destino. Esa es
- * exactamente la suplantación que la lista blanca de la base existe para cerrar
- * —`https://macvac.es@evil.example/` se lee como del MACVA y va a otro sitio—, y
- * repetirla en la capa de dibujo la reabriría por el otro lado.
+ * `is_web_url` extracts the authority with `^https?://([^/?#]*)`, so this
+ * function cuts there and not on its own. It matters that it be the same cut: if
+ * here a different part from the one the base validated were shown as the domain,
+ * the screen would be stating a destination that is not the destination. That is
+ * exactly the impersonation the base's whitelist exists to close
+ * —`https://macvac.es@evil.example/` reads as MACVA's and goes somewhere else—, and
+ * repeating it in the drawing layer would reopen it from the other side.
  *
- * Devuelve cadena vacía cuando no reconoce un nombre de sitio llano. Es
- * deliberado y es el lado seguro: quien llama enseña entonces la dirección
- * entera, que es larga y fea pero verdadera. **Esto no valida nada** y no decide
- * si un enlace se puede guardar: eso solo lo dice `is_web_url` en la base.
+ * It returns an empty string when it does not recognise a plain site name. It is
+ * deliberate and it is the safe side: the caller then shows the whole
+ * address, which is long and ugly but true. **This validates nothing** and does not decide
+ * whether a link can be stored: only `is_web_url` in the base says that.
  */
 export function linkDomain(url: string): string {
   const authority = /^https?:\/\/([^/?#]*)/i.exec(url)?.[1] ?? ''
   const host = authority.toLowerCase()
-  // La misma forma que exige la base: etiquetas ASCII separadas por puntos, un
-  // dominio de primer nivel de dos letras o más y un puerto opcional. Si no
-  // encaja, no se enseña un dominio inventado.
+  // The same shape the base requires: ASCII labels separated by dots, a
+  // top-level domain of two letters or more and an optional port. If it does not
+  // fit, no invented domain is shown.
   if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}(:\d{1,5})?$/.test(host)) {
     return ''
   }
@@ -84,12 +84,12 @@ export function linkDomain(url: string): string {
 }
 
 /**
- * Lo que se lee del enlace, y **nunca un hueco** (RF-304, RF-1408).
+ * What is read of the link, and **never a gap** (RF-304, RF-1408).
  *
- * El título si lo tiene; si no, el dominio, que es la única pregunta que se hace
- * antes de pulsar. La dirección entera solo como último recurso, cuando ni
- * siquiera se reconoce un dominio: en la pantalla de un móvil ocupa tres líneas,
- * pero es la verdad, y callarse dejaría un enlace sin nada que tocar.
+ * The title if it has one; if not, the domain, which is the only question asked
+ * before pressing. The whole address only as a last resort, when not
+ * even a domain is recognised: on a phone screen it takes three lines,
+ * but it is the truth, and keeping quiet would leave a link with nothing to touch.
  */
 export function linkLabel(link: Pick<ExternalLinkRow, 'title' | 'url'>): string {
   const title = link.title.trim()
@@ -99,12 +99,12 @@ export function linkLabel(link: Pick<ExternalLinkRow, 'title' | 'url'>): string 
 }
 
 /**
- * Lo que se enseña DEBAJO de la etiqueta para que el destino se vea antes de
- * tocar.
+ * What is shown BELOW the label so that the destination is visible before
+ * touching.
  *
- * Devuelve null cuando la etiqueta ya es el destino —un enlace sin título se
- * llama por su dominio— porque repetirlo dos veces en dos tamaños de letra no
- * añade información y roba una línea.
+ * It returns null when the label is already the destination —a link with no title is
+ * called by its domain— because repeating it twice in two text sizes
+ * adds no information and steals a line.
  */
 export function linkDestination(link: Pick<ExternalLinkRow, 'title' | 'url'>): string | null {
   const domain = linkDomain(link.url)
@@ -122,9 +122,9 @@ export function linkTypeText(type: ExternalLinkType | null): string {
 /**
  * `3 enlaces`, `1 enlace`, `Ninguno registrado`.
  *
- * El recuento va en la cabecera del bloque plegado, así que es lo ÚNICO que se
- * lee antes de decidir si abrirlo, y el caso vacío es una frase y no un cero:
- * «0 enlaces» se lee como una respuesta sobre la obra, y no lo es.
+ * The count goes in the folded block's heading, so it is the ONLY thing
+ * read before deciding whether to open it, and the empty case is a sentence and not a zero:
+ * «0 enlaces» reads as an answer about the artwork, and it is not.
  */
 export function linkCountText(count: number): string {
   if (count <= 0) return 'Ninguno registrado'
@@ -132,12 +132,12 @@ export function linkCountText(count: number): string {
 }
 
 /**
- * Lo que dice el bloque cuando no hay ningún enlace.
+ * What the block says when there is no link at all.
  *
- * Como el bloque de obras relacionadas, este **no lleva estado de investigación**
- * en `artworks`, y el texto del vacío tiene que cargar con eso: aquí nadie puede
- * declarar «investigado, sin resultados», así que la frase no puede insinuar que
- * la ausencia signifique que no hay nada en internet sobre esta obra.
+ * Like the related-artworks block, this one **carries no research state**
+ * in `artworks`, and the empty text has to bear that: here nobody can
+ * declare «investigado, sin resultados», so the sentence cannot imply that
+ * the absence means there is nothing on the internet about this artwork.
  */
 export const EMPTY_TEXT =
   'Sin enlaces registrados. Este bloque no lleva estado de investigación: que esté vacío no ' +
@@ -163,12 +163,12 @@ export interface CheckBadge {
 }
 
 /**
- * A partir de cuántos días una comprobación deja de decir mucho.
+ * From how many days a check stops saying much.
  *
- * Un año, y el número tiene argumento: una página de museo que lleva doce meses
- * sin mirarse no es una página rota —decir eso sería inventar el dato que RF-1405
- * protege— pero tampoco es un «funciona» de hoy. Lo que se hace con el aviso es
- * ordenar el trabajo de quien revisa, no afirmar nada sobre el sitio.
+ * A year, and the number has an argument: a museum page that has gone twelve months
+ * without being looked at is not a broken page —saying that would be inventing the datum RF-1405
+ * protects— but it is not a «it works» of today either. What is done with the warning is
+ * to order the work of whoever reviews, not to state anything about the site.
  */
 export const STALE_DAYS = 365
 
@@ -193,17 +193,17 @@ export function agoText(days: number): string {
 }
 
 /**
- * El estado de comprobación de un enlace, tal como se lee en la ficha.
+ * A link's check state, as it is read in the record.
  *
- * **«Sin comprobar» es el cuarto estado y no es «roto».** Va en tono neutro y no
- * en rojo, y lo dice con palabras: un enlace recién pegado no está roto, es que
- * nadie ha vuelto a abrirlo. Pintar de rojo el estado en el que nace todo enlace
- * enseña al ojo a saltárselo, que es como se pierde el aviso del que sí está
- * roto.
+ * **«Sin comprobar» is the fourth state and it is not «broken».** It goes in a neutral tone and not
+ * in red, and it says so with words: a freshly pasted link is not broken, it is that
+ * nobody has opened it again. Painting red the state every link is born in
+ * teaches the eye to skip it, which is how the warning about the one that IS
+ * broken gets lost.
  *
- * `CHANGED` es ámbar y no rojo por lo mismo: la página carga, así que el enlace
- * lleva a algún sitio; lo que ha cambiado es lo que documentaba, y eso es trabajo
- * pendiente y no un error.
+ * `CHANGED` is amber and not red for the same reason: the page loads, so the link
+ * leads somewhere; what has changed is what it documented, and that is pending
+ * work and not an error.
  */
 export function checkBadge(
   link: Pick<ExternalLinkRow, 'check_status' | 'checked_at'>,
@@ -221,9 +221,9 @@ export function checkBadge(
   const label = LINK_CHECK_STATUS_LABEL[link.check_status]
   const tone: CheckTone =
     link.check_status === 'WORKING' ? 'working' : link.check_status === 'CHANGED' ? 'changed' : 'broken'
-  // La base garantiza el par —resultado y fecha van juntos o no van
-  // (`external_links_check_pair`)—, así que una fecha ilegible aquí es un dato
-  // corrupto y no un caso normal: se dice en vez de callarlo.
+  // The base guarantees the pair —result and date go together or not at all
+  // (`external_links_check_pair`)—, so an unreadable date here is corrupt
+  // data and not a normal case: it is said instead of kept quiet.
   if (days === null) {
     return { label, tone, detail: 'Comprobado en una fecha que no se ha podido leer.', stale: false }
   }
@@ -249,13 +249,13 @@ export function retiredNotice(link: Pick<ExternalLinkRow, 'active'>): string | n
 // ── The order and the groups ─────────────────────────────────
 
 /**
- * El orden de los tipos en pantalla, que es el del enumerado de la base y no el
- * alfabético del español: agrupa por cercanía —museo, catálogo, base de datos—
- * antes que por la letra con la que empieza la traducción.
+ * The order of the types on screen, which is the base's enum's and not
+ * Spanish alphabetical: it groups by closeness —museum, catalogue, database—
+ * rather than by the letter the translation starts with.
  *
- * «Sin clasificar» va al final, después de `OTHER`: son los que están esperando
- * que alguien los mire, y ese es el sitio de una tarea pendiente en una lista que
- * se lee de arriba abajo.
+ * «Sin clasificar» goes last, after `OTHER`: they are the ones waiting for
+ * somebody to look at them, and that is the place of a pending task in a list
+ * read from top to bottom.
  */
 export const TYPE_ORDER: readonly ExternalLinkType[] = [
   'MUSEUM_PAGE',
@@ -269,14 +269,14 @@ export const TYPE_ORDER: readonly ExternalLinkType[] = [
 ]
 
 /**
- * Las nueve opciones de clase que se ofrecen al guardar, y la primera es la
- * ausencia.
+ * The nine kind options offered on saving, and the first one is the
+ * absence.
  *
- * «Sin clasificar» ES una opción y va PRIMERA porque es el valor con el que nace
- * un enlace pegado con una mano: exigir clasificar al pegar rompe la captura
- * (RNF-106, RF-1408). Y no es «Otro»: `OTHER` significa que alguien lo miró y no
- * encajaba, que es un dato (RF-1402, y la excepción a RF-205 que el documento de
- * requisitos ya recoge).
+ * «Sin clasificar» IS an option and goes FIRST because it is the value a link pasted
+ * with one hand is born with: requiring classification on pasting breaks capture
+ * (RNF-106, RF-1408). And it is not «Otro»: `OTHER` means somebody looked at it and it
+ * did not fit, which is a datum (RF-1402, and the exception to RF-205 the requirements
+ * document already records).
  */
 export function linkTypeChoices(): readonly { value: ExternalLinkType | ''; text: string }[] {
   return [
@@ -292,12 +292,12 @@ function typeRank(type: ExternalLinkType | null): number {
 }
 
 /**
- * Los enlaces ordenados: **lo activo antes que lo retirado**, luego por tipo y
- * luego por fecha de alta.
+ * The links sorted: **the active before the withdrawn**, then by type and
+ * then by creation date.
  *
- * Lo retirado al final y no intercalado, aunque solo lo vea quien edita: una
- * lista donde lo vigente y lo retirado se alternan obliga a leer la etiqueta de
- * cada línea para saber qué consta hoy.
+ * The withdrawn last and not interleaved, even though only whoever edits sees it: a
+ * list where the current and the withdrawn alternate forces one to read every line's
+ * label to know what is recorded today.
  */
 export function sortLinks(rows: readonly ExternalLinkRow[]): readonly ExternalLinkRow[] {
   return [...rows].sort((a, b) => {

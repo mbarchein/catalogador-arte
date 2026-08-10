@@ -87,9 +87,9 @@ export function LinkForm({
     setTwin(null)
   }
 
-  // Anclar es una decisión del alta y no de la corrección: mover un enlace de la
-  // obra a una fotografía es cambiar de qué ficha cuelga, no corregir una
-  // dirección. El formulario de corrección enseña el ancla y no la ofrece.
+  // Anchoring is a decision of the creation and not of the correction: moving a link from the
+  // artwork to a photograph is changing which record it hangs from, not correcting an
+  // address. The correction form shows the anchor and does not offer it.
   const anchorOptions: { value: string; text: string; hint?: string }[] = [
     { value: 'ARTWORK', text: 'De la obra', hint: 'Documenta la obra entera' },
     ...photos

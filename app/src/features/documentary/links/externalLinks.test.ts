@@ -22,18 +22,18 @@ import {
 } from './externalLinks'
 
 /**
- * RF-1401 a RF-1408: un enlace es un dato propio que se pulsa, y lo que decide
- * esta mitad del bloque es **qué se lee antes de pulsarlo**.
+ * RF-1401 to RF-1408: a link is a datum of its own that gets pressed, and what decides
+ * this half of the block is **what is read before pressing it**.
  *
- * Dos cosas de aquí son de seguridad y no de estética, y por eso llevan sus casos
- * uno a uno:
+ * Two things here are about security and not about looks, and that is why they carry their cases
+ * one by one:
  *
- *  · El DOMINIO que se enseña tiene que ser el trozo de la dirección que la base
- *    validó. Si la pantalla enseñara como dominio otra cosa, estaría afirmando un
- *    destino que no es el destino, que es justo la suplantación que la lista
- *    blanca de `is_web_url` existe para cerrar.
- *  · «Sin comprobar» NO es «roto» (RF-1405). Es el estado en el que nace todo
- *    enlace, y confundirlos convierte el aviso del que sí está roto en ruido.
+ *  · The DOMAIN shown has to be the piece of the address the base
+ *    validated. If the screen showed something else as the domain, it would be stating a
+ *    destination that is not the destination, which is precisely the impersonation
+ *    `is_web_url`'s whitelist exists to close.
+ *  · «Sin comprobar» is NOT «broken» (RF-1405). It is the state every
+ *    link is born in, and confusing them turns the warning about the one that IS broken into noise.
  */
 
 // ── Fixtures ─────────────────────────────────────────────────
