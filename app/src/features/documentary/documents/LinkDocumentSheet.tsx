@@ -98,9 +98,9 @@ export function LinkDocumentSheet({
           />
 
           {error !== null ? (
-            /* El buscador se apaga y se dice por qué: sin la lista no hay forma de
-               saber si el documento ya está en el archivo, y subirlo otra vez
-               dejaría dos copias del mismo PDF en el almacén. */
+            /* The finder goes off and the reason is said: without the list there is no way of
+               knowing whether the document is already in the archive, and uploading it again
+               would leave two copies of the same PDF in the store. */
             <p role="alert" className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-800">
               {error}
             </p>

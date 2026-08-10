@@ -73,21 +73,21 @@ export async function createArchiveDocument(
 }
 
 /**
- * Corrige los datos del documento en el archivo: signatura, título, tipo, serie,
- * fondo, fecha, sitio del papel y su nota.
+ * Corrects the document's data in the archive: shelfmark, title, type, series,
+ * fund, date, the paper's place and its note.
  *
- * Toca `archive_documents` y no la tabla puente, así que lo que cambia se lee desde
- * TODAS las fichas enlazadas con él (RF-516). Quién puede hacerlo lo decide
- * `archive_documents_update`, que está en el esquema desde el primer día: lo que
- * faltaba era esta llamada y la pantalla que la usa.
+ * It touches `archive_documents` and not the bridge table, so what changes is read from
+ * ALL the records linked to it (RF-516). Who can do it is decided by
+ * `archive_documents_update`, which has been in the schema since day one: what
+ * was missing was this call and the screen that uses it.
  *
- * Las cuatro columnas del fichero no viajan nunca por aquí —`documentDraftPayload`
- * no las produce— y eso es lo que impide que una corrección de la signatura mande
- * tres de las cuatro y choque con `archive_documents_file_all_or_nothing`.
+ * The file's four columns never travel through here —`documentDraftPayload`
+ * does not produce them— and that is what prevents a shelfmark correction from sending
+ * three of the four and clashing with `archive_documents_file_all_or_nothing`.
  *
- * `select('id')` por el motivo que ya aprendieron las pantallas de mantenimiento: una
- * actualización que las políticas deniegan vuelve 204 sin error, y cero filas
- * afectadas significa que no se escribió, sea por lo que sea.
+ * `select('id')` for the reason the maintenance screens already learnt: an
+ * update the policies deny comes back 204 with no error, and zero rows
+ * affected means it was not written, whatever the reason.
  */
 export async function updateArchiveDocument(
   id: string,
@@ -104,15 +104,15 @@ export async function updateArchiveDocument(
 }
 
 /**
- * Anota el escaneo en un documento que se registró sin él.
+ * Notes the scan down on a document that was registered without one.
  *
- * **`.is('file_path', null)` es la mitad de esta función.** Sin esa condición, dos
- * personas añadiendo el escaneo del mismo expediente a la vez —o la misma persona
- * desde dos fichas enlazadas— dejarían el primer fichero suelto en el almacén y sin
- * nadie que lo nombre, con la ficha anunciando un peso que no es el del fichero que
- * queda. Con ella, el segundo intento no escribe nada y se cuenta como lo que es: ya
- * estaba hecho. Es la misma disciplina de contar filas afectadas, usada esta vez para
- * ganar una condición de carrera y no solo para detectar una negativa.
+ * **`.is('file_path', null)` is half of this function.** Without that condition, two
+ * people adding the same file's scan at once —or the same person
+ * from two linked records— would leave the first file loose in the store with
+ * nobody naming it, with the record announcing a weight that is not that of the file that
+ * remains. With it, the second attempt writes nothing and is counted as what it is: it was
+ * already done. It is the same discipline of counting affected rows, used this time to
+ * win a race condition and not only to detect a refusal.
  */
 export async function attachDocumentFile(
   id: string,

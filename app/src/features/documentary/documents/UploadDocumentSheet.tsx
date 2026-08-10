@@ -86,14 +86,14 @@ export function UploadDocumentSheet({
   // is the only thing here that has to be hunted down on the phone again.
   const dirty = draftDirty(draft, emptyNewDocumentDraft()) || file !== null
 
-  // Lo escrito se apunta en el teléfono y se ofrece a la vuelta. Aquí es donde más se
-  // nota: es el formulario más largo del proyecto, se rellena de pie en un almacén, y las
-  // salidas que ninguna confirmación puede tapar —recargar, que el móvil mate la pestaña—
-  // son exactamente las que se comen media hora de trabajo.
+  // What is written is noted down on the phone and offered on returning. Here it shows most:
+  // it is the longest form in the project, it is filled in standing up in a storeroom, and the
+  // exits no confirmation can cover —reloading, the phone killing the tab—
+  // are exactly the ones that eat half an hour of work.
   //
-  // El ámbito lleva el código de la obra: dos documentos a medio subir desde dos fichas
-  // son dos borradores, y compartir clave haría que el de una se ofreciera en la otra. Sin
-  // huella, que aquí no hay fila guardada con la que chocar: es un alta.
+  // The scope carries the artwork's code: two half-uploaded documents from two records
+  // are two drafts, and sharing a key would make one's be offered in the other. With no
+  // fingerprint, since there is no stored row here to clash with: it is a creation.
   const stored = useFormDraft({
     scope: `documento-subir:${catalogId}`,
     draft,
@@ -192,10 +192,10 @@ export function UploadDocumentSheet({
             </button>
           </p>
         ) : (
-          /* Esta advertencia existía porque el escaneo no se podía añadir más tarde y
-             prometer lo contrario dejaba documentos sin fichero para siempre. Ya se
-             puede, y lo que se dice ahora es dónde — sin quitarle el «súbelo ahora si
-             lo tienes», que sigue siendo el consejo: el fichero está en la mano una vez. */
+          /* This warning existed because the scan could not be added later and
+             promising otherwise left documents with no file forever. Now it
+             can, and what is said now is where — without taking away the «upload it now if
+             you have it», which is still the advice: the file is in hand once. */
           <p className="mt-1 text-xs text-stone-500">
             El PDF o el escaneo. Sin fichero constará «sin digitalizar», y se añade después.
           </p>

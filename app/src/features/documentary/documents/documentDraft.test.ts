@@ -13,12 +13,12 @@ import {
 } from './documentDraft'
 
 /**
- * La ficha de un documento de archivo mientras se escribe (RF-515, RF-408, RF-218).
+ * An archive document's record while it is being written (RF-515, RF-408, RF-218).
  *
- * Los problemas espejan una a una las restricciones de `archive_documents`, y los
- * mensajes de la base están MEDIDOS: se provocaron con BEGIN/ROLLBACK contra la base
- * local y se leyeron. Los que llegan en inglés nombrando una restricción se
- * traducen; el que un trigger ya escribió en español se muestra tal cual.
+ * The problems mirror `archive_documents`' constraints one by one, and the
+ * base's messages are MEASURED: they were provoked with BEGIN/ROLLBACK against the local
+ * base and read. The ones arriving in English naming a constraint are
+ * translated; the one a trigger already wrote in Spanish is shown as is.
  */
 
 function draft(over: Partial<NewDocumentDraft> = {}): NewDocumentDraft {
@@ -27,9 +27,9 @@ function draft(over: Partial<NewDocumentDraft> = {}): NewDocumentDraft {
 
 describe('un documento nuevo no trae ningún dato inventado', () => {
   /**
-   * `artist_fund` es nulable a propósito: un recorte sobre una colectiva de los dos
-   * artistas no pertenece a un solo fondo. Arrancarlo en el fondo de la obra que se
-   * está catalogando sería el atajo tentador y metería un dato falso.
+   * `artist_fund` is nullable on purpose: a clipping about a group show of the two
+   * artists does not belong to a single fund. Starting it on the fund of the artwork being
+   * catalogued would be the tempting shortcut and would put in a false datum.
    */
   it('el fondo del artista arranca vacío, que es una respuesta y no un hueco', () => {
     expect(emptyNewDocumentDraft().artistFund).toBeNull()
@@ -82,8 +82,8 @@ describe('lo que impide guardar, espejo de las restricciones (medidas)', () => {
   })
 
   /**
-   * Una carpeta de correspondencia abierta y cerrada el mismo año es un rango real:
-   * aquí la base comprueba `>=`, al contrario que la fecha de ejecución de una obra.
+   * A correspondence folder opened and closed the same year is a real range:
+   * here the base checks `>=`, unlike an artwork's date of execution.
    */
   it('un tramo que empieza y acaba el mismo año es legítimo', () => {
     expect(documentDraftIsSaveable(draft({ startYear: 1985, endYear: 1985 }))).toBe(true)
@@ -98,9 +98,9 @@ describe('lo que impide guardar, espejo de las restricciones (medidas)', () => {
   })
 
   /**
-   * A propósito NO se estrecha a la ventana de los dos artistas: el archivo guarda
-   * documentos de contexto más antiguos que ellos, y refusarlos desde el formulario
-   * sería rechazar algo que el catálogo acepta.
+   * On purpose it is NOT narrowed to the two artists' window: the archive keeps
+   * context documents older than them, and refusing them from the form
+   * would be rejecting something the catalogue accepts.
    */
   it('un documento de contexto del siglo XIX cabe', () => {
     expect(documentDraftIsSaveable(draft({ startYear: 1843 }))).toBe(true)
@@ -124,9 +124,9 @@ describe('la vista previa de la fecha coincide con lo que se guarda (ADR-004)', 
   })
 
   /**
-   * `structuredDateText` y no `composeDate`: aquel recorta un rango cuyo final iguala
-   * el principio, que es lo correcto en `artworks` y falso aquí, porque la base
-   * guardaría «1985-1985».
+   * `structuredDateText` and not `composeDate`: that one trims a range whose end equals
+   * the start, which is right in `artworks` and false here, because the base
+   * would store «1985-1985».
    */
   it('un rango de un solo año se muestra como la base lo guardará', () => {
     expect(documentDatePreview(draft({ startYear: 1985, endYear: 1985 }))).toBe('1985-1985')
@@ -179,8 +179,8 @@ describe('lo que viaja a la base', () => {
   })
 
   /**
-   * Quitar el año de un documento marcado «c.» no puede mandar una combinación que la
-   * base rechaza: las banderas se normalizan contra el año en vez de creerse.
+   * Removing the year from a document marked «c.» cannot send a combination the
+   * base rejects: the flags are normalised against the year instead of being believed.
    */
   it('sin año, las banderas y el año final se apagan solos', () => {
     const payload = documentDraftPayload(

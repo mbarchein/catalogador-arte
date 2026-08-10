@@ -21,27 +21,27 @@ import {
 import { useDocumentUsage } from './useDocumentUsage'
 
 /**
- * Corregir los datos de un documento del archivo, desde la ficha de una obra
- * enlazada con él (RF-515, RF-516).
+ * Correcting the data of an archive document, from the record of an artwork
+ * linked to it (RF-515, RF-516).
  *
- * **Se corrige desde donde se usa, y no desde una ficha propia**, que es la misma
- * decisión que tomó el panel de la referencia bibliográfica y por el mismo motivo: el
- * documento no tiene todavía pantalla suya, y esperar a tenerla dejaba la signatura
- * mal copiada dentro del catálogo para siempre. El día que la tenga, este panel es su
- * zona de edición y no hay nada que reescribir.
+ * **It is corrected from where it is used, and not from a record of its own**, which is the same
+ * decision the bibliographic reference panel took and for the same reason: the
+ * document does not have its own screen yet, and waiting to have one left the shelfmark
+ * badly copied inside the catalogue forever. The day it has one, this panel is its
+ * editing area and there is nothing to rewrite.
  *
- * Lo que el panel tiene que decir antes de que se toque un campo es que **esto no es
- * un dato de esta obra**: el aviso de arriba lo dice con el alcance contado —cuántas
- * otras obras y cuántas exposiciones leen lo mismo— porque «lo verán las demás» no
- * cambia ninguna decisión y «lo verán las otras tres obras» sí.
+ * What the panel has to say before a field is touched is that **this is not
+ * a datum of this artwork**: the warning above says so with the scope counted —how many
+ * other artworks and how many exhibitions read the same thing— because «the others will see it» does not
+ * change any decision and «the other three artworks will see it» does.
  *
- * La nota del vínculo va en el mismo panel y aparte, con su propio título: es la única
- * cosa de aquí que SÍ es de esta obra. Estaban las dos sin ninguna pantalla —la
- * operación que la guarda existía y no la llamaba nadie— y separarlas en dos hojas
- * habría sido pedir dos gestos para corregir un documento que se está mirando una vez.
+ * The link's note goes in the same panel and apart, with its own title: it is the only
+ * thing here that IS this artwork's. Both were without any screen —the
+ * operation that stores it existed and nobody called it— and separating them into two sheets
+ * would have been asking for two gestures to correct a document being looked at once.
  *
- * Nada de aquí decide nada: los campos son `DocumentFieldsForm`, y qué ha cambiado, qué
- * se manda y qué se dice lo contesta `documentEdit.ts`, que la batería alcanza.
+ * Nothing here decides anything: the fields are `DocumentFieldsForm`, and what has changed, what
+ * is sent and what is said are answered by `documentEdit.ts`, which the suite reaches.
  */
 export function EditDocumentSheet({
   catalogId,
@@ -99,18 +99,18 @@ export function EditDocumentSheet({
       return
     }
     if (plan.action === 'unchanged' && !noteChanged) {
-      // No es un error y no se pinta como uno. Y sobre todo no se guarda: escribir la
-      // fila movería `updated_at` y dejaría una entrada del historial de un cambio que
-      // nadie ha hecho (RF-1501).
+      // It is not an error and it is not painted as one. And above all it is not stored: writing the
+      // row would move `updated_at` and would leave a history entry for a change
+      // nobody has made (RF-1501).
       setUnchanged(true)
       return
     }
 
     setSaving(true)
-    // Primero el documento y después la nota, y las dos por separado a propósito: son
-    // dos tablas y no hay transacción que las una desde el cliente. Si la segunda
-    // falla, la primera está hecha y hay que decirlo, porque volver a intentarlo
-    // guardaría lo mismo otra vez.
+    // First the document and then the note, and both separately on purpose: they are
+    // two tables and there is no transaction joining them from the client. If the second
+    // fails, the first is done and it has to be said, because trying again
+    // would store the same thing over.
     if (plan.action === 'update') {
       const problem = await onSave(plan.payload)
       if (problem !== null) {
@@ -141,16 +141,16 @@ export function EditDocumentSheet({
     onClose()
   }
 
-  // La corrección sin guardar, por los dos lados que esta hoja escribe: los campos del
-  // documento —contra la fila guardada, que es de donde salió el borrador— y la nota del
-  // vínculo con esta obra.
+  // The unsaved correction, on both sides this sheet writes: the document's fields
+  // —against the stored row, which is where the draft came from— and the note of the
+  // link with this artwork.
   const dirty = draftDirty(draft, documentEditDraft(document)) || note.trim() !== linkNote.trim()
 
-  // Lo escrito se apunta y se ofrece a la vuelta. Con huella de la fila guardada: si otra
-  // sesión ha corregido el documento mientras esto esperaba, recuperar el borrador
-  // revertiría esa corrección, y eso se dice antes en vez de dejarlo pasar en silencio.
-  // Solo con los campos que ESTE formulario escribe: si han tocado algo que no toca, el
-  // borrador sigue siendo válido y avisar sería avisar de nada.
+  // What was written is noted down and offered on returning. With the stored row's fingerprint: if another
+  // session has corrected the document while this was waiting, recovering the draft
+  // would revert that correction, and that is said beforehand instead of letting it pass in silence.
+  // Only with the fields THIS form writes: if they have touched something it does not touch, the
+  // draft is still valid and warning would be warning about nothing.
   const stored = useFormDraft({
     scope: `documento-editar:${document.id}:${catalogId}`,
     draft: { ...draft, linkNote: note },
