@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""La cadena canónica de color, transcrita fuera del navegador (RF-414, RF-421).
+"""The canonical colour chain, transcribed outside the browser (RF-414, RF-421).
 
-Esto NO decide nada sobre el color: lo decide `app/src/lib/imageColor.ts`, que es
-la definición normativa. Aquí se transcribe paso por paso para poder aplicarla
-desde un portátil a los másteres cuyas copias corregidas quedaron pendientes
-(RF-420, ADR-010), y la igualdad con el navegador **no se supone**: se comprueba
-contra `app/src/lib/__fixtures__/color-luts.json`, que generan los tests del
-frontend, en `test_corrected_copies.py`.
+This decides NOTHING about the colour: `app/src/lib/imageColor.ts` decides it, which is
+the normative definition. Here it is transcribed step by step so as to be able to apply it
+from a laptop to the masters whose corrected copies were left pending
+(RF-420, ADR-010), and equality with the browser **is not assumed**: it is checked
+against `app/src/lib/__fixtures__/color-luts.json`, which the frontend's tests
+generate, in `test_corrected_copies.py`.
 
-Ese fichero de casos es el motivo de que este módulo exista separado y **sin más
-dependencias que la biblioteca estándar**: su test tiene que poder pasar en
-cualquier máquina, sin numpy, sin PIL y sin red, porque es el que impide que la
-miniatura y la copia a resolución completa de la misma obra salgan de distinto
-color. Lo que necesita PIL vive en `generate_copies.py`.
+That case file is the reason this module exists separately and **with no more
+dependencies than the standard library**: its test has to be able to pass on
+any machine, with no numpy, no PIL and no network, because it is the one that prevents the
+thumbnail and the full-resolution copy of the same artwork from coming out a different
+colour. What needs PIL lives in `generate_copies.py`.
 
-Si esta transcripción y `imageColor.ts` se separan, el test falla y dice cuál es
-la entrada que difiere. Regenerar el fichero de casos —`make casos-color`— es
-el paso consciente que hay que dar al cambiar la cadena, en los dos lados.
+If this transcription and `imageColor.ts` drift apart, the test fails and says which is
+the input that differs. Regenerating the case file —`make casos-color`— is
+the conscious step that has to be taken on changing the chain, on both sides.
 """
 
 from __future__ import annotations

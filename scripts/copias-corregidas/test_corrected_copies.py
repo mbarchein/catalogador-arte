@@ -1,31 +1,30 @@
 #!/usr/bin/env python3
-"""Tests de la herramienta local de copias corregidas (RF-414, RF-420, RF-421).
+"""Tests of the local corrected-copies tool (RF-414, RF-420, RF-421).
 
-El corazón de este fichero es el primer bloque: comprueba que **las tablas de 256
-entradas que reconstruye Python son idénticas, entrada por entrada, a las que
-produce el navegador**, leyendo el fichero de casos que generan los tests del
-frontend:
+The heart of this file is the first block: it checks that **the 256-entry
+tables Python rebuilds are identical, entry by entry, to those the
+browser produces**, reading the case file the frontend's tests generate:
 
     app/src/lib/__fixtures__/color-luts.json
 
-Sin esa comprobación, la forma en que la divergencia se descubre es la peor de
-todas: la miniatura y la copia a resolución completa de la misma obra salen de
-distinto color, y eso se nota mirando dos imágenes, que es como no notarlo.
+Without that check, the way the divergence is discovered is the worst of
+them all: the thumbnail and the full-resolution copy of the same artwork come out a
+different colour, and that shows by looking at two images, which is the same as not showing.
 
-Se ejecuta sin red, sin base de datos, sin numpy y sin PIL:
+It runs with no network, no database, no numpy and no PIL:
 
     python3 scripts/copias-corregidas/test_corrected_copies.py
 
-y `make casos-color` lo ejecuta justo después de regenerar el fichero de casos,
-que es el orden que importa. Los tests que sí necesitan numpy y PIL —los que
-aplican la tabla y la geometría a un montón de píxeles— se saltan solos si no
-están, para que la comprobación que ata las dos implementaciones no dependa de
-ninguna dependencia.
+and `make casos-color` runs it right after regenerating the case file,
+which is the order that matters. The tests that do need numpy and PIL —those that
+apply the table and the geometry to a lot of pixels— skip themselves if they are not
+there, so that the check that ties the two implementations does not depend on
+any dependency.
 
-Si falla porque el fichero de casos ha cambiado a propósito, el orden es: cambiar
-`app/src/lib/imageColor.ts`, regenerar el fichero con `make casos-color`, y
-traer aquí el mismo cambio hasta que este test vuelva a pasar. Al revés no: la
-definición del color vive en TypeScript.
+If it fails because the case file has changed on purpose, the order is: change
+`app/src/lib/imageColor.ts`, regenerate the file with `make casos-color`, and
+bring the same change here until this test passes again. Not the other way round: the
+colour's definition lives in TypeScript.
 """
 
 from __future__ import annotations
@@ -71,7 +70,7 @@ def load_fixture() -> dict:
 
 
 class ColorTablesMatchTheBrowser(unittest.TestCase):
-    """RF-421: las tablas de Python son las del navegador, entrada por entrada."""
+    """RF-421: Python's tables are the browser's, entry by entry."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -147,7 +146,7 @@ class ColorTablesMatchTheBrowser(unittest.TestCase):
 
 
 class TheArithmeticTraps(unittest.TestCase):
-    """Las trampas concretas de transcribir JavaScript a Python (RF-414)."""
+    """The particular traps of transcribing JavaScript to Python (RF-414)."""
 
     def test_rounding_is_half_up_and_not_half_to_even(self) -> None:
         # `Math.round(0.5)` is 1 and `round(0.5)` is 0. On 8-bit codes this is not
@@ -227,7 +226,7 @@ class TheArithmeticTraps(unittest.TestCase):
 
 
 class TheMasterIsNeverTouched(unittest.TestCase):
-    """ADR-002 y §0.1: la copia corregida jamás escribe en la ruta de un máster."""
+    """ADR-002 and §0.1: the corrected copy never writes at a master's path."""
 
     def test_a_fresh_path_is_not_the_master_and_says_what_it_is(self) -> None:
         path = corrected_path("AR-0001", "AR-0001/AR-0001_ab12cd34_master.jpg")
@@ -271,12 +270,12 @@ except ImportError:  # pragma: no cover — measured by whether the block below 
 
 @unittest.skipUnless(PIXELS_AVAILABLE, "necesita numpy y PIL, que solo hacen falta para los píxeles")
 class ThePixelPath(unittest.TestCase):
-    """Lo que aplica la tabla y la geometría a un montón de píxeles (RF-420).
+    """What applies the table and the geometry to a lot of pixels (RF-420).
 
-    Separado y saltable a propósito: el test de las tablas es el que no puede
-    depender de nada, porque es el que ata las dos implementaciones. Este comprueba
-    que el camino rápido —numpy sobre franjas— da exactamente lo mismo que la
-    aritmética escalar que ya está comparada con el navegador.
+    Separate and skippable on purpose: the tables' test is the one that cannot
+    depend on anything, because it is the one that ties the two implementations. This one checks
+    that the fast path —numpy over strips— gives exactly the same as the
+    scalar arithmetic that is already compared with the browser.
     """
 
     def test_applying_the_tables_over_an_image_is_the_scalar_table(self) -> None:

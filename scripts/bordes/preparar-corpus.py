@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
-"""Prepara el corpus de luminancia con el que se mide el detector de bordes.
+"""Prepares the luminance corpus with which the edge detector is measured.
 
-El detector solo estaba probado con imágenes sintéticas, porque el entorno de
-test no tiene canvas. Esto reproduce fuera del navegador la cadena de
-`app/src/lib/imageEdges.ts` sobre las fotografías maestras de un volcado, para
-poder ejecutar el detector real contra ellas y medir lo que acierta.
+The detector was only tested with synthetic images, because the test
+environment has no canvas. This reproduces outside the browser the chain of
+`app/src/lib/imageEdges.ts` over the master photographs of a dump, so as to be
+able to run the real detector against them and measure what it gets right.
 
-Lo que sale son ficheros `.raw` de un byte por píxel y un `manifest.json`, que es
-lo que come `medir.mjs`.
+What comes out are `.raw` files of one byte per pixel and a `manifest.json`, which is
+what `medir.mjs` eats.
 
     python3 scripts/bordes/preparar-corpus.py volcados/20260801-1142
 
-**El corpus no entra en el repositorio y el volcado tampoco**: son fotografías de
-obra real y el repositorio es público (ADR-005). Lo versionado es este script,
-que las regenera.
+**The corpus does not go into the repository and neither does the dump**: they are photographs of
+real artworks and the repository is public (ADR-005). What is versioned is this script,
+which regenerates them.
 
-La cadena que reproduce, paso a paso y en este orden, es la de `imageEdges.ts`:
+The chain it reproduces, step by step and in this order, is that of `imageEdges.ts`:
 
-  1. orientación EXIF aplicada antes de nada — es el `imageOrientation:
-     'from-image'` de `createImageBitmap`;
-  2. reducción al tamaño que da `computeTarget(w, h, 700)`, con su redondeo;
-  3. luminancia Rec. 709 sobre los valores sRGB tal cual, sin linealizar, y
-     TRUNCADA a entero, porque el `| 0` de JavaScript trunca y no redondea.
+  1. the EXIF orientation applied before anything else — it is the `imageOrientation:
+     'from-image'` of `createImageBitmap`;
+  2. reduction to the size `computeTarget(w, h, 700)` gives, with its rounding;
+  3. Rec. 709 luminance over the sRGB values as they are, without linearising, and
+     TRUNCATED to an integer, because JavaScript's `| 0` truncates and does not round.
 
-El filtro de remuestreo es BOX y la elección está medida, no supuesta: contra las
-respuestas de navegador real disponibles el residuo es de 0,14 px sobre la copia
-de 700 px, y entre los filtros probados el veredicto del detector solo cambia en
-2 de 44 fotos, nunca hacia o desde el silencio. Cambiarlo aquí invalida cualquier
-comparación con las cifras del informe archivado.
+The resampling filter is BOX and the choice is measured, not assumed: against the
+available real-browser responses the residual is 0.14 px over the 700 px
+copy, and among the filters tested the detector's verdict changes in only
+2 of 44 photos, never towards or away from silence. Changing it here invalidates any
+comparison with the figures of the archived report.
 """
 
 import json
@@ -42,12 +42,12 @@ LONG_EDGE = 700
 
 
 def compute_target(width: int, height: int, long_edge: int) -> tuple[int, int]:
-    """Aritmética exacta de `computeTarget` en app/src/lib/images.ts.
+    """The exact arithmetic of `computeTarget` in app/src/lib/images.ts.
 
-    Nunca amplía, y redondea cada lado por separado con `round`. La coincidencia
-    con la versión de TypeScript se comprobó en 2020 tamaños sin una sola
-    discrepancia; si esta función y aquella se separan, todas las medidas del
-    banco dejan de decir nada sobre lo que hace la aplicación.
+    It never enlarges, and it rounds each side separately with `round`. The match
+    with the TypeScript version was checked over 2020 sizes without a single
+    discrepancy; if this function and that one drift apart, all the bench's
+    measurements stop saying anything about what the application does.
     """
     largest = max(width, height)
     if largest <= long_edge:
@@ -60,12 +60,12 @@ def compute_target(width: int, height: int, long_edge: int) -> tuple[int, int]:
 
 
 def luminance(image: Image.Image) -> np.ndarray:
-    """Rec. 709 sobre sRGB sin linealizar, truncada como hace `| 0`.
+    """Rec. 709 over sRGB without linearising, truncated as `| 0` does.
 
-    Truncar y no redondear no es un detalle: con `round` el 42 % de los píxeles
-    de una fotografía cualquiera se queda a un nivel de distancia, y el gradiente
-    de Sobel amplifica esa diferencia justo en los bordes, que es lo único que
-    este corpus existe para medir.
+    Truncating and not rounding is not a detail: with `round` 42 % of the pixels
+    of any photograph are left one level away, and Sobel's gradient
+    amplifies that difference precisely at the edges, which is the only thing
+    this corpus exists to measure.
     """
     rgb = np.asarray(image.convert("RGB"), dtype=np.float64)
     y = 0.2126 * rgb[:, :, 0] + 0.7152 * rgb[:, :, 1] + 0.0722 * rgb[:, :, 2]

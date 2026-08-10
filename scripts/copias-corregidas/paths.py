@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Cómo se llama la copia corregida, y por qué nunca puede llamarse como el máster.
+"""What the corrected copy is called, and why it can never be called what the master is.
 
-El máster se sube una vez con los bytes originales y no se reescribe jamás
-(ADR-002). La forma realista de romper eso no es un borrado: es **derivar la ruta
-de la copia corregida de la del máster** —cambiarle la extensión, reutilizar la
-base— y que un día coincidan. La base de datos lo defiende con la restricción
-`images_corrected_not_master`, pero para cuando la base dice no ya se ha subido el
-fichero: aquí hay una comprobación que se hace antes de firmar nada.
+The master is uploaded once with the original bytes and is never rewritten
+(ADR-002). The realistic way of breaking that is not a deletion: it is **deriving the
+corrected copy's path from the master's** —changing its extension, reusing the
+base— and having them coincide one day. The database defends it with the
+`images_corrected_not_master` constraint, but by the time the base says no the
+file has already been uploaded: here there is a check that is made before signing anything.
 
-Módulo aparte y sin dependencias para que su test corra sin PIL, junto al de las
-tablas de color.
+A separate module with no dependencies so that its test runs without PIL, alongside that of the
+colour tables.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ CORRECTED_CONTENT_TYPE = "image/jpeg"
 
 
 class MasterAtRisk(Exception):
-    """La ruta calculada tocaría un máster. Se aborta antes de firmar nada."""
+    """The computed path would touch a master. It aborts before signing anything."""
 
 
 def random_suffix(length: int = _SUFFIX_LENGTH) -> str:

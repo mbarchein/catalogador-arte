@@ -1,54 +1,54 @@
 #!/usr/bin/env python3
-"""Vacía la cola de copias corregidas a resolución completa que quedaron pendientes.
+"""Empties the queue of full-resolution corrected copies that were left pending.
 
-RF-420 y RF-421, ADR-010. Cuando la catalogadora aplica una corrección, el
-navegador genera la copia a resolución completa con **todas** las correcciones
-—giro, recorte, perspectiva y color— y la sube. Cuando el dispositivo no puede
-—el área máxima de un lienzo la limita el teléfono, y en un almacén con mala
-cobertura no se suben 19 MB—, la fila queda marcada como pendiente. Esto es lo que
-la vacía desde un ordenador.
+RF-420 and RF-421, ADR-010. When the cataloguer applies a correction, the
+browser generates the full-resolution copy with **all** the corrections
+—rotation, crop, perspective and colour— and uploads it. When the device cannot
+—a canvas's maximum area is limited by the phone, and in a store with bad
+coverage 19 MB do not get uploaded—, the row is left marked as pending. This is what
+empties it from a computer.
 
     python3 scripts/copias-corregidas/generate_copies.py volcados/20260801-1142
     python3 scripts/copias-corregidas/generate_copies.py --dry-run --out copias/
 
-No tiene objetivo en el Makefile a propósito, igual que `scripts/bordes`: se
-ejecuta a mano, con un volcado delante, y lo que sí tiene objetivo es la
-comprobación que la ata al navegador (`make casos-color`).
+It has no Makefile target on purpose, just like `scripts/bordes`: it is
+run by hand, with a dump in front, and what does have a target is the
+check that ties it to the browser (`make casos-color`).
 
-Lo que hace, en este orden y no en otro:
+What it does, in this order and no other:
 
-  1. pregunta a la base qué filas tienen la copia pendiente;
-  2. lee el máster de cada una —del espejo local que deja `make db-pull FOTOS=todo`
-     o, si no está, por URL firmada de descarga—;
-  3. aplica la **geometría** (orientación EXIF, giro, y perspectiva o recorte), se
-     queda a **resolución completa** y aplica el **color** al final, que es el
-     orden canónico que declara la migración;
-  4. sube la copia a Backblaze B2 por la función de firma que ya existe, en una
-     ruta propia que nunca es la del máster;
-  5. escribe `corrected_path` y `corrected_bytes` y apaga `corrected_pending`.
+  1. it asks the base which rows have the copy pending;
+  2. it reads each one's master —from the local mirror `make db-pull FOTOS=todo` leaves
+     or, if it is not there, by a signed download URL—;
+  3. it applies the **geometry** (EXIF orientation, rotation, and perspective or crop), stays
+     at **full resolution** and applies the **colour** at the end, which is the
+     canonical order the migration declares;
+  4. it uploads the copy to Backblaze B2 through the signing function that already exists, at a
+     path of its own that is never the master's;
+  5. it writes `corrected_path` and `corrected_bytes` and switches off `corrected_pending`.
 
-**El máster no se toca jamás** (ADR-002, §0.1). Se descarga, se lee y se deja
-igual: no se reescribe, no se recomprime, no se le arregla el EXIF y no se firma
-ninguna subida contra su ruta. Hay una comprobación explícita antes de firmar, en
-`paths.py`, y su test.
+**The master is never touched** (ADR-002, §0.1). It is downloaded, read and left
+the same: it is not rewritten, not recompressed, its EXIF is not fixed and no
+upload is signed against its path. There is an explicit check before signing, in
+`paths.py`, and its test.
 
-**Y no reimplementa el criterio del color.** Reconstruye la misma tabla de 256
-entradas por canal desde los mismos parámetros (`color_chain.py`), y que sea la
-misma se comprueba contra el fichero de casos que generan los tests del frontend
-(`test_corrected_copies.py`). Sin eso, la miniatura y la copia a resolución
-completa de la misma obra saldrían de distinto color.
+**And it does not reimplement the colour criterion.** It rebuilds the same 256-entry
+table per channel from the same parameters (`color_chain.py`), and that it be the
+same is checked against the case file the frontend's tests generate
+(`test_corrected_copies.py`). Without that, the thumbnail and the full-resolution
+copy of the same artwork would come out a different colour.
 
-Configuración, en `.env` como el resto del stack local:
+Configuration, in `.env` like the rest of the local stack:
 
-  VITE_SUPABASE_URL       la del proyecto (`terraform -chdir=infra output -raw
-                          supabase_url`) o la del stack local
-  VITE_SUPABASE_ANON_KEY  la clave anónima, que es pública por diseño: panel del
-                          proyecto → Project Settings → API
-  SUPABASE_EMAIL          cuenta de Catalogadora o Superusuaria: quien escriba
-  SUPABASE_PASSWORD       estas columnas tiene que poder editar (`can_edit()`)
+  VITE_SUPABASE_URL       the project's (`terraform -chdir=infra output -raw
+                          supabase_url`) or the local stack's
+  VITE_SUPABASE_ANON_KEY  the anonymous key, which is public by design: the project's
+                          panel → Project Settings → API
+  SUPABASE_EMAIL          a Cataloguer or Superuser account: whoever writes
+  SUPABASE_PASSWORD       these columns has to be able to edit (`can_edit()`)
 
-No hay credenciales de escritura de B2 aquí y no debe haberlas: la subida se firma
-con la función Edge, con la sesión de esa cuenta, igual que la aplicación.
+There are no B2 write credentials here and there must not be: the upload is signed
+with the Edge function, with that account's session, just like the application.
 """
 
 from __future__ import annotations
@@ -240,12 +240,12 @@ def read_config(env: dict[str, str]) -> Config:
 
 
 class Api:
-    """La base y la firma de subida, con la sesión de una cuenta de verdad.
+    """The base and the upload signature, with a real account's session.
 
-    No hay clave de servicio y no debe haberla: esta herramienta entra por donde
-    entra la aplicación, así que las políticas RLS valen igual y una cuenta de solo
-    consulta no puede escribir nada por aquí. Es también lo que permite firmar la
-    subida con la función Edge sin llevar encima credenciales de B2.
+    There is no service key and there must not be: this tool comes in where
+    the application comes in, so the RLS policies hold just the same and a consultation-only
+    account cannot write anything through here. It is also what allows signing the
+    upload with the Edge function without carrying B2 credentials.
     """
 
     def __init__(self, config: Config) -> None:
@@ -298,7 +298,7 @@ class Api:
         return str(token)
 
     def pending_images(self, only: str | None, limit: int | None) -> list[dict]:
-        """Las filas con la copia pendiente. Solo activas: una imagen retirada no se regenera."""
+        """The rows with the copy pending. Active only: a withdrawn image is not regenerated."""
         query = (
             f"{self.config.base_url}/rest/v1/images"
             f"?select={COLUMNS}&corrected_pending=is.true&active=is.true&order=image_id"
@@ -311,7 +311,7 @@ class Api:
         return list(rows) if isinstance(rows, list) else []
 
     def signed_upload(self, path: str) -> str:
-        """URL firmada de subida, por la función Edge. El único camino de escritura a B2."""
+        """A signed upload URL, through the Edge function. The only write path to B2."""
         try:
             data = self._json(
                 f"{self.config.base_url}/functions/v1/sign-file",
@@ -339,15 +339,15 @@ class Api:
         return str(url)
 
     def put_object(self, url: str, content: bytes) -> None:
-        """El PUT tiene que repetir exactamente el Content-Type firmado o la firma no valida."""
+        """The PUT has to repeat exactly the signed Content-Type or the signature does not validate."""
         self._request(url, method="PUT", body=content, headers={"Content-Type": CORRECTED_CONTENT_TYPE})
 
     def mark_generated(self, image_id: str, path: str, size: int) -> None:
-        """Escribe la copia en la fila y apaga el pendiente, y comprueba que de verdad se escribió.
+        """It writes the copy in the row and switches off the pending flag, and checks that it really was written.
 
-        `return=representation` no es un adorno: si la cuenta no puede editar, la
-        política RLS no da error, devuelve **cero filas**. Sin mirar la respuesta,
-        la herramienta diría que ha vaciado una cola que sigue entera.
+        `return=representation` is not an ornament: if the account cannot edit, the
+        RLS policy gives no error, it returns **zero rows**. Without looking at the response,
+        the tool would say it has emptied a queue that is still full.
         """
         rows = self._json(
             f"{self.config.base_url}/rest/v1/images?image_id=eq.{image_id}",
@@ -421,7 +421,7 @@ def is_convex_quadrilateral(corners: dict[str, tuple[float, float]]) -> bool:
 
 
 def geometry_from_row(row: dict) -> Geometry:
-    """El encuadre que lleva la fila. Las esquinas manda sobre el rectángulo, como en la fila."""
+    """The framing the row carries. The corners rule over the rectangle, as in the row."""
     # Any multiple of 90, positive or negative, brought into 0/90/180/270, as
     # `normalizeRotation` does.
     quarters = round_half_up(float(row.get("rotation") or 0) / 90)
@@ -463,7 +463,7 @@ def clamp_crop(crop: tuple[float, float, float, float]) -> tuple[float, float, f
 def crop_rect_in_pixels(
     crop: tuple[float, float, float, float], size: tuple[int, int]
 ) -> tuple[int, int, int, int]:
-    """Transcripción de `cropRectInPixels`. El redondeo es el de JavaScript (medios arriba)."""
+    """A transcription of `cropRectInPixels`. The rounding is JavaScript's (halves up)."""
     safe = clamp_crop(crop)
     width = max(1, round_half_up(size[0]))
     height = max(1, round_half_up(size[1]))
@@ -548,7 +548,7 @@ def homography_from_unit_square(
 
 
 def rotate_clockwise(image: Image.Image, rotation: int) -> Image.Image:
-    """El giro en cuartos, sin remuestrear: `transpose` mueve píxeles, no los interpola."""
+    """The rotation in quarters, without resampling: `transpose` moves pixels, it does not interpolate them."""
     if rotation == 90:
         return image.transpose(Image.Transpose.ROTATE_270)
     if rotation == 180:
@@ -749,7 +749,7 @@ def read_master(api: Api, row: dict, dump: pathlib.Path | None) -> bytes:
 
 
 def newest_dump() -> pathlib.Path | None:
-    """El volcado más reciente que traiga másters, si hay alguno."""
+    """The most recent dump that brings masters, if there is one."""
     root = REPO / "volcados"
     if not root.is_dir():
         return None

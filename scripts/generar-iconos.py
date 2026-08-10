@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Genera los iconos PNG de la PWA sin depender de librerías externas.
+"""Generates the PWA's PNG icons without depending on external libraries.
 
-El manifiesto exige PNG en 192 y 512, más una variante «maskable» con zona de
-seguridad, y un manifiesto que apunte a ficheros inexistentes hace que la
-aplicación no sea instalable. Se dibuja un marco, que es el motivo evidente para
-un catálogo de obra.
+The manifest requires PNGs at 192 and 512, plus a «maskable» variant with a safe
+zone, and a manifest pointing at non-existent files makes the
+application not installable. A frame is drawn, which is the obvious motif for
+a catalogue of artworks.
 
-Uso:  python3 scripts/generar-iconos.py
+Usage:  python3 scripts/generar-iconos.py
 """
 import struct
 import zlib
@@ -20,7 +20,7 @@ DESTINO = Path(__file__).resolve().parent.parent / "app" / "public" / "icons"
 
 
 def escribir_png(ruta: Path, pixeles: list[list[tuple[int, int, int]]]) -> None:
-    """Escribe un PNG RGB de 8 bits."""
+    """Writes an 8-bit RGB PNG."""
     alto = len(pixeles)
     ancho = len(pixeles[0])
 
@@ -45,7 +45,7 @@ def escribir_png(ruta: Path, pixeles: list[list[tuple[int, int, int]]]) -> None:
 
 
 def dibujar(lado: int, margen_rel: float) -> list[list[tuple[int, int, int]]]:
-    """Marco centrado. `margen_rel` es la fracción del lado que queda libre."""
+    """A centred frame. `margen_rel` is the fraction of the side left free."""
     pixeles = [[FONDO] * lado for _ in range(lado)]
 
     margen = int(lado * margen_rel)
