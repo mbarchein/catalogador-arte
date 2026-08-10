@@ -1,10 +1,10 @@
--- RF-215, RF-802, RF-901 (ADR-006): la obra colgada del árbol de lugares.
+-- RF-215, RF-802, RF-901 (ADR-006): the artwork hung from the place tree.
 --
--- El árbol en sí lo cubre physical_places.test.sql. Aquí se comprueba lo que
--- aparece al unirlo con las obras: que renombrar un sitio lo vea el catálogo
--- entero sin tocar una sola obra —el requisito que ordena toda la decisión—, que
--- mover una obra sí cuente como haberla tenido delante, y que un lugar con obras
--- dentro no se pueda retirar.
+-- The tree itself is covered by physical_places.test.sql. Here what appears
+-- on joining it with the artworks is checked: that renaming a place is seen by the whole
+-- catalogue without touching a single artwork —the requirement that orders the whole decision—, that
+-- moving an artwork does count as having had it in front, and that a place with artworks
+-- inside cannot be withdrawn.
 \set ON_ERROR_STOP on
 begin;
 

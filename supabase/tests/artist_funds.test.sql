@@ -1,15 +1,15 @@
--- El fondo como tabla maestra (ADR-007, segunda entrega).
+-- The fund as a master table (ADR-007, second delivery).
 --
--- Lo que se fija aquí es lo que separa esta tabla de las demás maestras, que es
--- justo lo que se puede perder en una revisión distraída: que el código y el
--- prefijo NO se pueden cambiar —son lo que guardan las obras y lo que está
--- impreso en la etiqueta del cuadro—, que no se puede quedar sin ningún fondo
--- activo, que no hay forma de crear ni de borrar uno, y que retirar un fondo no
--- lo hace invisible.
+-- What is pinned down here is what separates this table from the other master tables, which is
+-- precisely what can be lost in a distracted review: that the code and the
+-- prefix CANNOT be changed —they are what the artworks store and what is
+-- printed on the painting's label—, that it cannot be left with no active
+-- fund, that there is no way of creating or deleting one, and that withdrawing a fund does not
+-- make it invisible.
 \set ON_ERROR_STOP on
 begin;
 
--- ── Los tres, con su prefijo ────────────────────────────────
+-- ── The three, with their prefix ────────────────────────────
 do $$
 declare v_rows int;
 begin
@@ -18,8 +18,8 @@ begin
     raise exception 'FAIL: se esperaban los tres fondos, hay %', v_rows;
   end if;
 
-  -- El prefijo tiene que ser el que ya sostienen los identificadores guardados:
-  -- si aquí dijera otra cosa, la tabla contradiría las etiquetas de las obras.
+  -- The prefix has to be the one the stored identifiers already hold up:
+  -- if it said something else here, the table would contradict the artworks' labels.
   if (select prefix from public.artist_funds where code = 'ROTILI') <> 'AR'
      or (select prefix from public.artist_funds where code = 'RUIZ_CAMPINS') <> 'RC'
      or (select prefix from public.artist_funds where code = 'TEST') <> 'TS' then
@@ -28,12 +28,12 @@ begin
   raise notice 'OK: los tres fondos, con el prefijo que ya usan sus obras';
 end $$;
 
--- ── El prefijo de la tabla es el que genera la base ─────────
+-- ── The table's prefix is the one the base generates ────────
 --
--- Los dos sitios donde vive la correspondencia fondo→prefijo son esta tabla y el
--- `case` de `next_catalog_id`. Mientras sean dos, esto es lo que los ata: si
--- alguien añade un fondo al enumerado y se olvida de la función, o al revés, el
--- identificador siguiente saldría con el prefijo equivocado y se imprimiría.
+-- The two places where the fund→prefix correspondence lives are this table and
+-- `next_catalog_id`'s `case`. While they are two, this is what ties them: if
+-- somebody adds a fund to the enum and forgets the function, or the other way round, the
+-- next identifier would come out with the wrong prefix and would get printed.
 do $$
 declare
   t_fund record;
@@ -49,10 +49,10 @@ begin
   raise notice 'OK: el prefijo de la tabla es el que genera next_catalog_id';
 end $$;
 
--- ── Todos los valores del enumerado tienen su fila ──────────
+-- ── Every value of the enum has its row ─────────────────────
 --
--- Añadir un valor al enumerado sin darle fila aquí dejaría obras cuyo fondo no
--- tiene nombre en ninguna parte.
+-- Adding a value to the enum without giving it a row here would leave artworks whose fund
+-- has no name anywhere.
 do $$
 declare v_missing text[];
 begin
@@ -66,7 +66,7 @@ begin
   raise notice 'OK: cada valor del enumerado tiene su fondo';
 end $$;
 
--- ── El código y el prefijo no se cambian ────────────────────
+-- ── The code and the prefix are not changed ─────────────────
 do $$
 declare v_failed boolean;
 begin
@@ -92,7 +92,7 @@ begin
   raise notice 'OK: el código y el prefijo son inmutables';
 end $$;
 
--- ── El nombre sí se corrige ─────────────────────────────────
+-- ── The name is corrected ───────────────────────────────────
 do $$
 declare v_name text;
 begin
@@ -103,7 +103,7 @@ begin
   end if;
   update public.artist_funds set name = 'Alberto Rotili' where code = 'ROTILI';
 
-  -- Y en blanco no: un fondo sin nombre no nombra nada.
+  -- And blank it is not: a fund with no name names nothing.
   begin
     update public.artist_funds set name = '   ' where code = 'ROTILI';
     raise exception 'FAIL: se ha aceptado un nombre en blanco';
@@ -113,18 +113,18 @@ begin
   raise notice 'OK: el nombre se corrige, y no se queda en blanco';
 end $$;
 
--- ── Los dos interruptores son independientes ────────────────
+-- ── The two switches are independent ────────────────────────
 do $$
 declare v_active boolean; v_hidden boolean;
 begin
-  -- Apartar las obras SIN retirar el fondo: sigue ofreciéndose.
+  -- Setting the artworks aside WITHOUT withdrawing the fund: it is still offered.
   update public.artist_funds set hide_artworks = true where code = 'TEST'
   returning active, hide_artworks into v_active, v_hidden;
   if not v_active or not v_hidden then
     raise exception 'FAIL: ocultar las obras ha tocado si el fondo se ofrece';
   end if;
 
-  -- Y retirarlo sin apartar sus obras.
+  -- And withdrawing it without setting its artworks aside.
   update public.artist_funds set hide_artworks = false, active = false where code = 'TEST'
   returning active, hide_artworks into v_active, v_hidden;
   if v_active or v_hidden then
@@ -133,7 +133,7 @@ begin
   raise notice 'OK: retirar y apartar son dos cosas distintas';
 end $$;
 
--- ── La baja la sella la base ────────────────────────────────
+-- ── The withdrawal is stamped by the base ───────────────────
 do $$
 declare v_at timestamptz;
 begin
@@ -150,7 +150,7 @@ begin
   raise notice 'OK: la baja y la restauración las sella la base';
 end $$;
 
--- ── No se puede dejar el catálogo sin fondos ────────────────
+-- ── The catalogue cannot be left with no funds ──────────────
 do $$
 declare v_failed boolean;
 begin
@@ -168,11 +168,11 @@ begin
   raise notice 'OK: siempre queda un fondo que ofrecer';
 end $$;
 
--- ── Ni alta ni borrado: no hay privilegio ───────────────────
+-- ── Neither creation nor deletion: there is no privilege ────
 --
--- La plataforma concede todos los privilegios de una tabla nueva a los roles
--- anónimo y autenticado. El test de cierre por omisión avisa de la parte de RLS,
--- no de los `grant`, así que esto se comprueba aquí.
+-- The platform grants every privilege of a new table to the anonymous
+-- and authenticated roles. The closed-by-default test warns about the RLS part,
+-- not about the `grant`s, so this is checked here.
 do $$
 declare v_extra text[];
 begin
@@ -188,11 +188,11 @@ begin
   raise notice 'OK: sobre los fondos solo se puede leer y corregir';
 end $$;
 
--- ── Un fondo retirado SE SIGUE LEYENDO ──────────────────────
+-- ── A withdrawn fund IS STILL READ ──────────────────────────
 --
--- Es donde esta tabla se aparta de las demás maestras, y a propósito: el fondo lo
--- lleva toda obra, así que esconder la fila retirada dejaría sin nombre al fondo
--- de cada obra que abriera quien solo consulta.
+-- It is where this table departs from the other master tables, and on purpose: every artwork
+-- carries its fund, so hiding the withdrawn row would leave the fund of every artwork
+-- opened by whoever only consults with no name.
 do $$
 declare v_using text;
 begin
