@@ -120,8 +120,8 @@ export function ArtworkPage() {
   const sequence = useArtworkSequence(view, id, placeScope)
   const { artwork, loading, error, reload } = useArtwork(id, sequence.rows)
   const { canEdit } = useAuth()
-  // La zona de edición necesita la tercera respuesta —«todavía no se sabe»— y la
-  // vista no: ver el guardián de más abajo.
+  // The edit area needs the third answer —«todavía no se sabe»— and the view does not:
+  // see the guard further down.
   const editAccess = useEditingAccess()
   const navigate = useNavigate()
   // Editing lives in the URL (/artwork/:id/edit), not in local state (see the

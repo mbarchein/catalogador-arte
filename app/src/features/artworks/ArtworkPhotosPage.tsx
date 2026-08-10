@@ -133,7 +133,7 @@ async function fetchPhotoDetail(imageId: string): Promise<PhotoDetailRow | null>
  * which asks twice). That is why this is not part of the edit form: a
  * "Cancelar" that cannot undo would promise what it cannot keep.
  */
-/** Lo que hace el icono que va sobre la fotografía, escrito una sola vez. */
+/** What the icon over the photograph does, written once. */
 const EDIT_ACTION = 'Girar, recortar y color'
 
 export function ArtworkPhotosPage() {
@@ -191,10 +191,10 @@ export function ArtworkPhotosPage() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   /** What the reframing is doing right now, so the screen is never half done. */
   const [working, setWorking] = useState<PhotoWork | null>(null)
-  // Cuánto lleva viajado el fichero de `working`, o null cuando no se sabe.
+  // How far `working`'s file has travelled, or null when it is unknown.
   const [transfer, setTransfer] = useState<UploadProgressEvent | null>(null)
-  // Null mientras no se sepa el total: entonces el anillo gira en vez de mentir.
-  // Y el 100 % tampoco se enseña: ver `photoStage`, que es donde está el porqué.
+  // Null while the total is unknown: then the ring spins instead of lying. And 100 % is not
+  // shown either: see `photoStage`, which is where the why lives.
   const stage = photoStage(
     working,
     transfer === null ? null : uploadPercent(transfer.loaded, transfer.total),
@@ -276,8 +276,8 @@ export function ArtworkPhotosPage() {
   // the summary of a photograph with a correction and no colour column read would
   // announce «sin ajuste de color» over a photograph that plainly shows one.
   const selectedEdit = photoEdit(selected, selectedDetail)
-  // Su sitio en el orden empezando en 1, que es como lo cuentan los mandos y como
-  // se lee bajo la fotografía. Cero cuando no hay ninguna abierta.
+  // Its place in the order starting at 1, which is how the controls count it and how it is
+  // read under the photograph. Zero when none is open.
   const position = selected ? ordered.findIndex((i) => i.image_id === selected.image_id) + 1 : 0
   const mainState = mainButtonState(
     selected?.image_id === mainId && mainId !== null,
@@ -313,7 +313,7 @@ export function ArtworkPhotosPage() {
   // bucle.
   const savedKey = savedData === null ? '' : JSON.stringify(savedData)
   const [dataDraft, setDataDraft] = useState<PhotoDataDraft | null>(savedData)
-  // Lo guardado, alcanzable desde dentro del efecto sin estar en sus dependencias.
+  // What is stored, reachable from inside the effect without being in its dependencies.
   const savedRef = useRef(savedData)
   savedRef.current = savedData
   useEffect(() => {
@@ -1094,16 +1094,16 @@ export function ArtworkPhotosPage() {
                 {uploading}
               </p>
             ) : uploadError ? (
-              // El motivo, donde se pulsó el botón. Y las fotos siguen preparadas
-              // debajo, con su tipo de toma elegido, listas para volver a intentarlo.
+              // The reason, where the button was pressed. And the photos are still staged
+              // below, with their shot type chosen, ready to try again.
               <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-800">
                 {uploadError}
               </p>
             ) : staged.length > 0 ? (
               <p className="text-xs text-stone-600">{pendingUploadNotice(staged.length)}</p>
             ) : (
-              // Lo pendiente se dice, además de encender el botón: un botón que
-              // cambia de color no se ve cuando lo que se mira es la fotografía.
+              // What is pending is said, as well as lighting the button: a button changing
+              // colour is not seen when what is being looked at is the photograph.
               <p className="text-xs text-amber-800">{pendingDataNotice(dataDirty)}</p>
             )
           }
@@ -1161,20 +1161,20 @@ export function ArtworkPhotosPage() {
   )
 }
 
-/** El título de cada bloque del panel, con la misma voz que los del filtro. */
+/** The title of each block of the panel, in the same voice as the filter's. */
 function SectionTitle({ children }: { children: string }) {
   return (
     <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">{children}</h3>
   )
 }
 
-/** Dónde va cada mando sobre la fotografía. */
+/** Where each control goes over the photograph. */
 const CORNER = {
   'top-right': 'right-2 top-2',
   'bottom-right': 'bottom-2 right-2',
   'bottom-left': 'bottom-2 left-2',
-  // A media altura y centrados de verdad, que con `top-1/2` a secas quedan
-  // medio botón por debajo del centro.
+  // At mid-height and really centred: with a bare `top-1/2` they end up half a button
+  // below the centre.
   left: 'left-2 top-1/2 -translate-y-1/2',
   right: 'right-2 top-1/2 -translate-y-1/2',
 } as const

@@ -84,7 +84,7 @@ export function CapturePage() {
 
   // Locations already used, as loose suggestions while typing (free text).
   const { tree: placeTree, ensurePlace, addPlaceInside } = usePhysicalPlaces()
-  // Los fondos, para ofrecer los activos con el nombre que tengan hoy.
+  // The funds, to offer the active ones under whatever name they have today.
   const { entries: funds } = useArtistFunds()
 
   const [batch, setBatch] = useState<Batch>(() => readBatch())

@@ -88,8 +88,8 @@ describe('RF-414 · lo que la tira dice y lo que la cabecera dice es la misma fr
       shoulder: 20,
     }
     for (const param of COLOR_PARAM_ORDER) {
-      // colorSummary omite lo que está en su valor de identidad, así que con un solo
-      // parámetro movido su salida es exactamente la frase de esa tira.
+      // colorSummary omits whatever sits at its identity value, so with a single parameter
+      // moved its output is exactly that slider's sentence.
       expect(colorSummary({ [param]: samples[param] })).toBe(colorParamText(param, samples[param]))
     }
   })
@@ -109,8 +109,8 @@ describe('RF-414 · la tira solo puede producir valores que la fila acepta', () 
   it('cada muesca de cada tira sobrevive a normalizeColor sin moverse', () => {
     for (const param of COLOR_PARAM_ORDER) {
       for (const value of notches(param)) {
-        // Si la tira produjera 0,4137 EV donde la columna guarda 0,41, la
-        // previsualización y el fichero serían dos fotografías distintas en las sombras.
+        // If the slider produced 0.4137 EV where the column stores 0.41, the preview and
+        // the file would be two different photographs in the shadows.
         expect(normalizeColor({ [param]: value })[param]).toBe(value)
       }
     }
@@ -123,8 +123,8 @@ describe('RF-414 · la tira solo puede producir valores que la fila acepta', () 
       expect(stripValue(param, 1)).toBe(range.max)
       expect(stripValue(param, -3)).toBe(range.min)
       expect(stripValue(param, 4)).toBe(range.max)
-      // Un ratio que no es un número es un rectángulo de ancho cero: se lee como el mínimo
-      // y no como NaN, que llegaría a la tabla como un canal en blanco.
+      // A ratio that is not a number is a rectangle of zero width: it reads as the minimum
+      // and not as NaN, which would reach the table as a blank channel.
       expect(stripValue(param, Number.NaN)).toBe(range.min)
     }
   })
@@ -136,15 +136,15 @@ describe('RF-414 · la tira solo puede producir valores que la fila acepta', () 
       }
       expect(stripRatio(param, COLOR_RANGES[param].min)).toBe(0)
       expect(stripRatio(param, COLOR_RANGES[param].max)).toBe(1)
-      // Y nunca se sale del carril, aunque le llegue un valor corrupto.
+      // And it never leaves the rails, however corrupt the value it is handed.
       expect(stripRatio(param, -1e6)).toBe(0)
       expect(stripRatio(param, 1e6)).toBe(1)
     }
   })
 
   it('la posición se ajusta a la muesca y no a cualquier número intermedio', () => {
-    // Un sexto de paso es la muesca de la exposición y 0,17 es lo que cabe en numeric(3,2).
-    // Un tercio de muesca por encima del centro sigue siendo el centro.
+    // A sixth of a stop is the exposure notch and 0.17 is what fits in numeric(3,2). A third
+    // of a notch above the centre is still the centre.
     expect(stripValue('exposure', 0.5 + (1 / 6 / 4) * 0.3)).toBe(0)
     expect(stripValue('exposure', 0.5 + (1 / 6 / 4) * 0.8)).toBe(0.17)
     expect(stripValue('exposure', 1 / 6 / 4)).toBe(-1.83)
@@ -173,13 +173,13 @@ describe('§7 · ningún gesto es el único camino: el teclado llega a todo', ()
   it('PáginaArriba y PáginaAbajo dan un salto grande, para una escala de 120 muescas', () => {
     expect(keyValue('temperature', 0, 'PageUp')).toBe(12)
     expect(keyValue('temperature', 0, 'PageDown')).toBe(-12)
-    // Nunca menos que una muesca: en una escala corta el salto grande sigue moviendo algo.
+    // Never less than a notch: on a short scale the big jump still moves something.
     expect(keyValue('gamma', 1, 'PageUp')).toBeGreaterThan(1)
   })
 
   it('una tecla que no es de la tira no la mueve, para que el editor la siga viendo', () => {
-    // Escape tiene que llegar al editor: con el panel abierto cierra el panel, y si la
-    // tira se lo comiera no habría forma de salir sin el ratón.
+    // Escape has to reach the editor: with the panel open it closes the panel, and if the
+    // slider swallowed it there would be no way out without a mouse.
     expect(keyValue('temperature', 0, 'Escape')).toBeNull()
     expect(keyValue('temperature', 0, 'Enter')).toBeNull()
     expect(keyValue('temperature', 0, 'a')).toBeNull()
@@ -247,7 +247,7 @@ describe('RF-414 · el automático mide el encuadre y no la pared de alrededor',
   })
 
   it('con recorte devuelve exactamente los píxeles del rectángulo', () => {
-    // Cada píxel lleva su columna en el rojo y su fila en el verde.
+    // Every pixel carries its column in the red and its row in the green.
     const source = raster(4, 4, (x, y) => [x * 10, y * 10, 0])
     const pixels = framePixels(source, {
       rotation: 0,
@@ -262,7 +262,7 @@ describe('RF-414 · el automático mide el encuadre y no la pared de alrededor',
 
   it('deshace el giro: el recorte vive en fracciones de la imagen YA GIRADA', () => {
     const source = raster(4, 2, (x, y) => [x * 10, y * 100, 0])
-    // La mitad izquierda de la imagen girada 90° es la fila de abajo de la imagen decodificada.
+    // The left half of the image rotated 90° is the bottom row of the decoded image.
     const pixels = framePixels(source, {
       rotation: 90,
       crop: { x: 0, y: 0, width: 0.5, height: 1 },
@@ -289,7 +289,7 @@ describe('RF-414 · el automático mide el encuadre y no la pared de alrededor',
   })
 
   it('una caja envolvente que se sale de la imagen se mete dentro, no se rechaza', () => {
-    // Las esquinas pueden estar legítimamente fuera del encuadre (CORNER_REACH).
+    // The corners can legitimately sit outside the crop (CORNER_REACH).
     const source = raster(4, 4, (x, y) => [x * 10, y * 10, 0])
     const pixels = framePixels(source, {
       rotation: 0,
@@ -317,12 +317,12 @@ describe('RF-418 · el cuentagotas mide los píxeles crudos del punto que se toc
   })
 
   it('deshace el giro, porque el punto vive en fracciones de la imagen ya girada', () => {
-    // Mitad izquierda gris claro, mitad derecha gris oscuro, sin girar.
+    // Left half light grey, right half dark grey, unrotated.
     const source = raster(40, 40, (x) => (x < 20 ? [200, 200, 200] : [60, 60, 60]))
-    // Sin girar, tocar a la izquierda da el claro.
+    // Unrotated, touching on the left gives the light one.
     expect(sampleAt(source, 0, { x: 0.25, y: 0.5 })?.r).toBe(200)
-    // Girada 90°, la mitad izquierda de la imagen decodificada aparece ARRIBA: tocar
-    // arriba tiene que dar el claro y tocar a la izquierda ya no.
+    // Rotated 90°, the left half of the decoded image appears at the TOP: touching at the
+    // top has to give the light one and touching on the left no longer does.
     expect(sampleAt(source, 90, { x: 0.5, y: 0.25 })?.r).toBe(200)
     expect(sampleAt(source, 90, { x: 0.5, y: 0.75 })?.r).toBe(60)
   })
@@ -347,8 +347,8 @@ describe('RF-418 · el cuentagotas mide los píxeles crudos del punto que se toc
     for (const source of [blown, buried]) {
       const sample = sampleAt(source, 0, { x: 0.5, y: 0.5 })
       expect(sample).not.toBeNull()
-      // La negativa es de neutralFromSample: aquí lo que se comprueba es que la cadena
-      // completa —parche, mediana, muestra— llega a ella y no la esquiva.
+      // The refusal comes from neutralFromSample: what is checked here is that the whole
+      // chain —patch, median, sample— reaches it and does not sidestep it.
       expect(withNeutralPick(NO_COLOR, sample, { x: 0.5, y: 0.5 })).toBeNull()
     }
   })

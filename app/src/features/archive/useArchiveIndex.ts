@@ -102,7 +102,7 @@ export interface DocumentRecordQuery {
   loading: boolean
   /** A failure while reading the document. */
   error: string | null
-  /** Un fallo al leer lo que cuelga de él: la ficha se lee igual, y el bloque lo dice. */
+  /** A failure reading what hangs off it: the record reads the same, and the block says so. */
   linksError: string | null
   reload: () => Promise<void>
 }

@@ -41,7 +41,7 @@ import { useArtworkTypes } from './useArtworkTypes'
 import { usePhysicalPlaces } from './usePhysicalPlaces'
 import { useSeries } from './useSeries'
 
-/** Los de siempre, mientras la tabla de fondos llega. */
+/** The usual ones, while the funds table arrives. */
 const FALLBACK_FUND_OPTIONS = ARTIST_FUNDS.map((v) => ({ value: v, text: FUND_LABEL[v] }))
 
 const STATUS_OPTIONS = (Object.keys(STATUS_FILTER_LABEL) as StatusFilter[]).map((v) => ({
@@ -134,7 +134,7 @@ export function ArtworksPage() {
   const hidden = useMemo(() => funds.filter((f) => f.hideArtworks), [funds])
   const hiddenFunds = useMemo(
     () => new Set(hidden.map((f) => f.code)),
-    // Por el código y no por el objeto: la lista es nueva en cada carga.
+    // By the code and not by the object: the list is new on every load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [hidden.map((f) => f.code).join(' ')],
   )
