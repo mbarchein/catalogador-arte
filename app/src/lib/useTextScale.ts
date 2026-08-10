@@ -1,16 +1,16 @@
 /**
- * El tamaño de letra elegido, aplicado y compartido (RNF-106).
+ * The chosen text size, applied and shared (RNF-106).
  *
- * Lo que decide está en `textScale.ts`, que es puro. Aquí están los dos bordes que
- * necesitan un navegador —`localStorage` y el estilo de la raíz— y la sincronización, que
- * hace falta de verdad: el perfil lo cambia y el editor de fotografía lo suspende mientras
- * vive, así que hay dos sitios tocando el mismo dato y **el último en hablar no puede
- * ganar por accidente**. Un almacén externo con `useSyncExternalStore`, el mismo patrón que
- * ya usa el aviso de instalación.
+ * What decides is in `textScale.ts`, which is pure. Here are the two edges that
+ * need a browser —`localStorage` and the root's style— and the synchronisation, which
+ * is genuinely needed: the profile changes it and the photograph editor suspends it while
+ * it lives, so there are two places touching the same datum and **the last to speak cannot
+ * win by accident**. An external store with `useSyncExternalStore`, the same pattern
+ * the install prompt already uses.
  *
- * El valor inicial NO se aplica desde aquí: lo hace el `<script>` de `index.html`, antes de
- * que React monte, para que la primera pantalla no se pinte al tamaño normal y salte.
- * Esto lo lee y lo cambia; el arranque lo pone.
+ * The initial value is NOT applied from here: `index.html`'s `<script>` does that, before
+ * React mounts, so the first screen is not painted at the normal size and does not jump.
+ * This reads it and changes it; the boot sets it.
  */
 
 import { useEffect, useSyncExternalStore } from 'react'
@@ -36,18 +36,18 @@ function readStored(): TextScale {
 }
 
 /**
- * Escribe el tamaño en la raíz.
+ * Writes the size on the root.
  *
- * `document.documentElement` y no una clase de Tailwind: es un valor calculado de tres
- * posibles y no una variante, y ponerlo aquí es lo que hace que **el `rem` de toda la
- * aplicación** —texto, relleno, objetivos de toque— se mueva a la vez.
+ * `document.documentElement` and not a Tailwind class: it is a computed value out of three
+ * possible ones and not a variant, and putting it here is what makes **the `rem` of the whole
+ * application** —text, padding, touch targets— move at once.
  */
 function apply(scale: TextScale): void {
   const root = document.documentElement
   if (scale === 'NORMAL') {
-    // Se quita en vez de fijarse en 16px: dejarlo puesto clavaría el tamaño contra quien lo
-    // haya agrandado desde el sistema, y eso el navegador ya lo sabía hacer antes de que
-    // existiera este ajuste.
+    // It is removed instead of set to 16px: leaving it in place would nail the size against whoever has
+    // enlarged it from the system, and the browser already knew how to do that before
+    // this setting existed.
     root.style.removeProperty('font-size')
     return
   }
@@ -64,9 +64,9 @@ export function setTextScale(scale: TextScale): void {
   try {
     window.localStorage.setItem(TEXT_SCALE_KEY, scale)
   } catch {
-    // Sin sitio o sin permiso: el tamaño se aplica en esta sesión y no se recuerda. Se
-    // prefiere eso a no hacer nada, y no hay nada que avisar — es una avería sobre la que
-    // la catalogadora no puede actuar.
+    // No room or no permission: the size is applied in this session and is not remembered. That
+    // is preferred to doing nothing, and there is nothing to warn about — it is a breakdown the
+    // cataloguer cannot act upon.
   }
   apply(scale)
   emit()
@@ -87,17 +87,17 @@ export function useTextScale(): TextScale {
 }
 
 /**
- * Devuelve la raíz al tamaño base mientras este componente viva, y la restituye al salir.
+ * Returns the root to the base size while this component lives, and restores it on leaving.
  *
- * Para el **editor de fotografía**, que es la excepción razonada al ajuste: mide su lienzo
- * en píxeles y calcula la posición de los tiradores de recorte y perspectiva contra el
- * rectángulo real del elemento, así que escalarlo es pedirle problemas a la única pantalla
- * del proyecto donde un par de puntos de desviación se ven. Y como ocupa la pantalla
- * entera, mientras está abierto no hay nada más que leer: devolver la raíz entera al tamaño
- * normal es coherente y no necesita ningún truco de `zoom` sobre coordenadas.
+ * For the **photograph editor**, which is the reasoned exception to the setting: it measures its canvas
+ * in pixels and computes the position of the crop and perspective handles against the
+ * element's real rectangle, so scaling it is asking for trouble in the one screen
+ * of the project where a couple of points of deviation are visible. And since it takes up the whole
+ * screen, while it is open there is nothing else to read: returning the whole root to the normal
+ * size is coherent and needs no `zoom` trick over coordinates.
  *
- * Restituye leyendo el almacén, no un valor capturado al montar: si alguien cambiara el
- * ajuste con el editor abierto, salir del editor tiene que dejar el tamaño nuevo.
+ * It restores by reading the store, not a value captured on mounting: if somebody changed the
+ * setting with the editor open, leaving the editor has to leave the new size.
  */
 export function useBaseTextScaleHere(): void {
   useEffect(() => {

@@ -9,20 +9,20 @@ import {
 } from './textScale'
 
 /**
- * El script de arranque de `index.html` y el módulo dicen lo mismo.
+ * `index.html`'s boot script and the module say the same thing.
  *
- * ── POR QUÉ ESTE TEST EXISTE ────────────────────────────────
+ * ── WHY THIS TEST EXISTS ────────────────────────────────────
  *
- * El tamaño de letra elegido se aplica **antes de que React monte**, en un `<script>` de
- * `index.html`: en un efecto, la primera pantalla se pintaría al tamaño normal y saltaría
- * al elegido delante de quien la está mirando. Ese script no puede importar nada, así que
- * repite a mano la clave, los escalones y los tamaños.
+ * The chosen text size is applied **before React mounts**, in a `<script>` of
+ * `index.html`: in an effect, the first screen would be painted at the normal size and would jump
+ * to the chosen one in front of whoever is looking at it. That script cannot import anything, so
+ * it repeats the key, the steps and the sizes by hand.
  *
- * Una duplicación sin vigilar es la que se queda vieja: el día que se añada un escalón o se
- * mueva un porcentaje, el módulo cambiará y `index.html` se quedará atrás, y el síntoma
- * será un salto de tamaño al cargar que nadie va a relacionar con esto. Este test es la
- * vigilancia, y es el mismo criterio con el que se comprueba el `pipeline` en YAML: leer el
- * fichero y afirmar sobre lo que dice.
+ * An unwatched duplication is the one that goes stale: the day a step is added or a
+ * percentage moved, the module will change and `index.html` will fall behind, and the symptom
+ * will be a size jump on loading that nobody is going to relate to this. This test is the
+ * watch, and it is the same criterion the `pipeline` in YAML is checked with: read the
+ * file and assert about what it says.
  */
 
 const HTML = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
@@ -38,9 +38,9 @@ function bootScript(): string {
 
 describe('el script de arranque de index.html', () => {
   it('lee exactamente la clave que escribe la aplicación', () => {
-    // Con la clave desparejada no se rompe nada: simplemente el ajuste deja de aplicarse
-    // al cargar y la letra salta al montar React, que es un síntoma que nadie relaciona
-    // con esto.
+    // With the key mismatched nothing breaks: the setting simply stops being applied
+    // on loading and the text jumps when React mounts, which is a symptom nobody relates
+    // to this.
     expect(bootScript()).toContain(`'${TEXT_SCALE_KEY}'`)
   })
 
@@ -68,9 +68,9 @@ describe('el script de arranque de index.html', () => {
   })
 
   it('no toca la raíz cuando el escalón es el normal', () => {
-    // Dejar `font-size: 16px` puesto a mano no cambiaría nada hoy, pero clavaría el tamaño
-    // contra quien lo haya agrandado desde el sistema — y el navegador ya sabía hacer eso
-    // antes de que existiera este ajuste.
+    // Leaving `font-size: 16px` set by hand would change nothing today, but it would nail the size
+    // against whoever has enlarged it from the system — and the browser already knew how to do that
+    // before this setting existed.
     expect(bootScript()).toMatch(/!==\s*16|===\s*16|!= 16/)
   })
 
@@ -96,9 +96,9 @@ describe('el tamaño de los campos de formulario', () => {
   const CSS = readFileSync(new URL('./../index.css', import.meta.url), 'utf8')
 
   it('crece con la escala y nunca baja de 16px', () => {
-    // Estaba clavado en 16px para que iOS no hiciera zoom al enfocar un campo con la obra
-    // delante. Con la raíz escalada, los campos serían LO ÚNICO que no crece — y son justo
-    // donde se teclea. `max(1rem, 16px)` hace las dos cosas: crece y no baja del umbral.
+    // It was nailed at 16px so iOS would not zoom on focusing a field with the artwork
+    // in front. With the root scaled, the fields would be THE ONLY thing that does not grow — and they are precisely
+    // where typing happens. `max(1rem, 16px)` does both things: it grows and does not fall below the threshold.
     const rule = CSS.slice(CSS.indexOf('input,'))
     expect(rule).toMatch(/font-size:\s*max\(1rem,\s*16px\)/)
   })
@@ -106,10 +106,10 @@ describe('el tamaño de los campos de formulario', () => {
 
 describe('ningún tamaño de letra clavado en píxeles', () => {
   it('las etiquetas pequeñas están en rem, o no crecerían con las demás', async () => {
-    // Eran 28 —`text-[11px]` y `text-[10px]`, las insignias de «En la papelera» y
-    // compañía— y se habrían quedado clavadas mientras todo lo demás crecía, que es
-    // exactamente el detalle que hace que un ajuste de accesibilidad parezca a medio
-    // hacer. Viven ahora en la escala de Tailwind, como `text-2xs` y `text-3xs`.
+    // There were 28 —`text-[11px]` and `text-[10px]`, the «En la papelera» badges and
+    // company— and they would have stayed nailed while everything else grew, which is
+    // exactly the detail that makes an accessibility setting look half
+    // done. They now live in Tailwind's scale, as `text-2xs` and `text-3xs`.
     const { globSync } = await import('node:fs')
     const files = globSync('src/**/*.tsx')
     const offenders: string[] = []

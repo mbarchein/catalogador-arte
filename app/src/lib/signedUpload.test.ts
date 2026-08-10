@@ -123,9 +123,9 @@ describe('putSignedFile', () => {
   })
 
   it('devuelve la ETag de la respuesta, que es lo que termina una subida por partes', async () => {
-    // Solo se lee de fuera porque el bucket expone la cabecera. Sin ella, cada parte
-    // sube bien y la subida no se puede cerrar: el fichero se queda a medias en el
-    // almacén y nadie tiene con qué juntarlo.
+    // It is only read from outside because the bucket exposes the header. Without it, every part
+    // uploads fine and the upload cannot be closed: the file stays half-done in the
+    // store and nobody has anything to join it with.
     const xhr = installFake()
     const promise = putSignedFile('https://b2.example/x', blob(), 'image/jpeg')
     xhr().responseHeaders['ETag'] = '"9b2cf5c1"'

@@ -12,12 +12,12 @@ import {
 } from './textScale'
 
 /**
- * El tamaño de letra de toda la aplicación.
+ * The text size of the whole application.
  *
- * Lo que fija esta batería y no se ve mirando la pantalla: **que un valor guardado que no
- * se reconozca no pueda dejar la aplicación en un tamaño absurdo**. Esto se ejecuta antes
- * de que React monte, en el script de `index.html`, así que es el único sitio del proyecto
- * donde un dato de `localStorage` corrupto podría impedir que la pantalla se pinte.
+ * What this suite pins down and is not visible looking at the screen: **that a stored value that is not
+ * recognised cannot leave the application at an absurd size**. This runs before
+ * React mounts, in `index.html`'s script, so it is the only place in the project
+ * where a corrupt `localStorage` datum could prevent the screen from being painted.
  */
 
 describe('normalizeTextScale, lo guardado no manda a ciegas', () => {
@@ -48,9 +48,9 @@ describe('textScaleFontSize, lo que se le pone a la raíz', () => {
   })
 
   it('en PÍXELES y no en porcentaje, que es lo que lo hace igual en dos teléfonos', () => {
-    // Un porcentaje se mide contra el tamaño que el navegador ya tenga, que puede venir
-    // cambiado por el sistema: dos móviles con «Grande» elegido enseñarían tamaños
-    // distintos, y el ajuste dejaría de significar algo.
+    // A percentage is measured against whatever size the browser already has, which may come
+    // changed by the system: two phones with «Grande» chosen would show
+    // different sizes, and the setting would stop meaning anything.
     for (const scale of TEXT_SCALES) {
       expect(textScaleFontSize(scale)).toMatch(/^[\d.]+px$/)
     }
@@ -65,9 +65,9 @@ describe('textScaleFontSize, lo que se le pone a la raíz', () => {
 
 describe('los escalones, tal como se leen', () => {
   it('tres, y de menor a mayor', () => {
-    // Tres y no cuatro: caben en una fila de botones sin desplegable, que es un gesto
-    // menos. Y hasta 130 %, que es donde las rejillas de dos columnas se quedan sin sitio
-    // en una pantalla de 390 puntos.
+    // Three and not four: they fit in a row of buttons with no dropdown, which is one gesture
+    // fewer. And up to 130 %, which is where two-column grids run out of room
+    // on a 390-point screen.
     expect(TEXT_SCALES).toEqual(['NORMAL', 'LARGE', 'LARGER'])
     const percents = TEXT_SCALES.map((s) => TEXT_SCALE_PERCENT[s])
     expect(percents).toEqual([100, 115, 130])
@@ -100,9 +100,9 @@ describe('textScaleNotice, la consecuencia que no se ve desde el perfil', () => 
 
 describe('la clave de localStorage', () => {
   it('sigue la forma de las demás de la aplicación', () => {
-    // `catalogador.batch`, `catalogador.photo-source`… Una clave que ya está puesta en el
-    // navegador de alguien no se renombra sin decidir la compatibilidad, así que conviene
-    // nacer con la forma correcta.
+    // `catalogador.batch`, `catalogador.photo-source`… A key that is already set in
+    // somebody's browser is not renamed without deciding compatibility, so it is best
+    // to be born with the right shape.
     expect(TEXT_SCALE_KEY).toBe('catalogador.text-scale')
   })
 })

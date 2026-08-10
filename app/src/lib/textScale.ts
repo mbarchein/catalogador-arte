@@ -1,43 +1,43 @@
 /**
- * El tamaño de letra de toda la aplicación (RNF-106, RF-1205).
+ * The text size of the whole application (RNF-106, RF-1205).
  *
- * ── POR QUÉ HACE FALTA ──────────────────────────────────────
+ * ── WHY IT IS NEEDED ────────────────────────────────────────
  *
- * Un navegador ya sabe agrandar el texto, y esta aplicación está preparada para eso: todo
- * está dimensionado en `rem`, así que el zoom del sistema funciona. **Pero en la PWA
- * instalada no hay barra de navegador** —y el móvil instalado es el dispositivo principal
- * de este proyecto—, así que ahí no hay forma de tocarlo. Este ajuste es ese hueco.
+ * A browser already knows how to enlarge text, and this application is ready for that: everything
+ * is dimensioned in `rem`, so the system's zoom works. **But in the installed
+ * PWA there is no browser bar** —and the installed phone is this project's primary
+ * device—, so there is no way of touching it there. This setting is that gap.
  *
- * ── CÓMO ESCALA ─────────────────────────────────────────────
+ * ── HOW IT SCALES ───────────────────────────────────────────
  *
- * **Una sola variable: el tamaño de letra de la raíz.** Tailwind lo mide todo en `rem`
- * —`text-sm` son 0,875rem, `p-4` es 1rem, el objetivo de toque mínimo son 2,75rem—, así
- * que mover la raíz escala texto, botones, tarjetas y separaciones a la vez. Y eso es lo
- * que se quiere y no solo el texto: **quien necesita la letra más grande necesita también
- * el botón más grande**. Agrandar solo las letras las sacaría de botones pensados para el
- * tamaño pequeño y dejaría los objetivos de toque igual de pequeños, que es el problema.
+ * **A single variable: the root's font size.** Tailwind measures everything in `rem`
+ * —`text-sm` is 0.875rem, `p-4` is 1rem, the minimum touch target is 2.75rem—, so
+ * moving the root scales text, buttons, cards and spacing at once. And that is what
+ * is wanted and not only the text: **whoever needs the text bigger also needs
+ * the button bigger**. Enlarging only the letters would take them out of buttons designed for the
+ * small size and would leave the touch targets just as small, which is the problem.
  *
- * ── TRES ESCALONES, Y HASTA 130 % ───────────────────────────
+ * ── THREE STEPS, AND UP TO 130 % ────────────────────────────
  *
- * No es timidez: a partir de ahí, en una pantalla de 390 puntos, las rejillas de dos
- * columnas —los pares «Seguir rellenando / Salir sin guardar»— se quedan sin sitio, y una
- * aplicación descolocada no se lee mejor por tener la letra más grande. Tres escalones
- * caben en una fila de botones sin desplegable, que es un gesto menos.
+ * It is not timidity: beyond that, on a 390-point screen, two-column
+ * grids —the «Seguir rellenando / Salir sin guardar» pairs— run out of room, and an
+ * application knocked out of place does not read better for having bigger text. Three steps
+ * fit in a row of buttons with no dropdown, which is one gesture fewer.
  *
- * ── LO QUE NO ESCALA, Y POR QUÉ ─────────────────────────────
+ * ── WHAT DOES NOT SCALE, AND WHY ────────────────────────────
  *
- * El **editor de fotografía** (recorte, perspectiva, color) se queda al tamaño de siempre.
- * Mide su lienzo en píxeles y calcula las posiciones de los tiradores contra el rectángulo
- * real del elemento; y como ocupa la pantalla entera, mientras está abierto no hay nada
- * más que leer. Se hace devolviendo la raíz a su tamaño base mientras vive, que evita
- * cualquier truco de `zoom` sobre coordenadas — ver `useTextScale`.
+ * The **photograph editor** (crop, perspective, colour) stays at the usual size.
+ * It measures its canvas in pixels and computes the handles' positions against the element's
+ * real rectangle; and since it takes up the whole screen, while it is open there is nothing
+ * else to read. It is done by returning the root to its base size while it lives, which avoids
+ * any `zoom` trick over coordinates — see `useTextScale`.
  *
- * Todo lo que decide algo está aquí y es puro: la batería corre en node.
+ * Everything that decides anything is here and is pure: the suite runs in node.
  */
 
 /**
- * Los tres escalones. Valores en inglés, como todo identificador del proyecto, y con la
- * forma de un enum de la base por si algún día esto sube a una columna de `profiles`.
+ * The three steps. Values in English, like every identifier in the project, and with the
+ * shape of a base enum in case this ever goes up to a `profiles` column.
  */
 export type TextScale = 'NORMAL' | 'LARGE' | 'LARGER'
 
@@ -57,45 +57,45 @@ export const TEXT_SCALE_LABEL: Record<TextScale, string> = {
 }
 
 /**
- * El tamaño de letra base, en píxeles.
+ * The base font size, in pixels.
  *
- * 16 y no otro: es el que evita que iOS haga zoom solo al enfocar un campo, que es
- * desorientador con la obra delante durante la captura. `index.css` lo explica donde lo
- * fija, y de ahí sale el suelo de los campos — `max(1rem, 16px)`, que crece con la escala
- * y nunca baja del umbral.
+ * 16 and not another: it is the one that prevents iOS from zooming by itself on focusing a field, which is
+ * disorienting with the artwork in front during capture. `index.css` explains it where it
+ * sets it, and from there comes the fields' floor — `max(1rem, 16px)`, which grows with the scale
+ * and never falls below the threshold.
  */
 export const BASE_FONT_PX = 16
 
 /**
- * La clave de `localStorage`.
+ * The `localStorage` key.
  *
- * Con la forma que ya usan las demás de la aplicación (`catalogador.batch`,
- * `catalogador.photo-source`). La de los borradores tiene otra —con dos puntos y versión—
- * y se queda como está: renombrar una clave que ya está puesta en el navegador de alguien
- * exige decidir la compatibilidad, y aquí no hay nada que ganar con eso.
+ * With the shape the application's others already use (`catalogador.batch`,
+ * `catalogador.photo-source`). The drafts' one has another —with a colon and a version—
+ * and stays as it is: renaming a key that is already set in somebody's browser
+ * requires deciding compatibility, and there is nothing to gain from that here.
  */
 export const TEXT_SCALE_KEY = 'catalogador.text-scale'
 
 /**
- * Lee un escalón de lo que hubiera guardado.
+ * Reads a step from whatever was stored.
  *
- * **Cualquier cosa que no se reconozca es `NORMAL`**, y sin excepciones: esto se ejecuta
- * antes de que arranque la aplicación —en el script de `index.html`— así que un valor de
- * otra versión, de una extensión del navegador o de un guardado a medias no puede dejar la
- * pantalla en un tamaño absurdo ni impedir que se pinte.
+ * **Anything that is not recognised is `NORMAL`**, with no exceptions: this runs
+ * before the application starts —in `index.html`'s script— so a value from
+ * another version, from a browser extension or from a half-done save cannot leave the
+ * screen at an absurd size or prevent it from being painted.
  */
 export function normalizeTextScale(raw: string | null | undefined): TextScale {
   return TEXT_SCALES.includes(raw as TextScale) ? (raw as TextScale) : 'NORMAL'
 }
 
 /**
- * El valor que se le pone a `html { font-size }`.
+ * The value given to `html { font-size }`.
  *
- * En píxeles y no en porcentaje: un porcentaje sobre la raíz se mide contra el tamaño de
- * letra que el navegador ya tenga —que puede venir cambiado por el propio sistema— y
- * entonces dos teléfonos con el mismo escalón elegido enseñarían tamaños distintos. Con
- * píxeles, «Grande» es lo mismo en todas partes; quien además haya agrandado el texto del
- * sistema no pierde nada, porque este ajuste está justo para cuando eso no se puede tocar.
+ * In pixels and not as a percentage: a percentage over the root is measured against the font
+ * size the browser already has —which may come changed by the system itself— and
+ * then two phones with the same step chosen would show different sizes. With
+ * pixels, «Grande» is the same everywhere; whoever has also enlarged the system's text
+ * loses nothing, because this setting is precisely for when that cannot be touched.
  */
 export function textScaleFontSize(scale: TextScale): string {
   const px = (BASE_FONT_PX * TEXT_SCALE_PERCENT[scale]) / 100
@@ -109,12 +109,12 @@ export function textScaleOptionText(scale: TextScale): string {
 }
 
 /**
- * Lo que se lee debajo de los tres botones, según el que esté puesto.
+ * What is read below the three buttons, according to which one is set.
  *
- * Con `NORMAL` no se dice nada de más —el ajuste sin tocar no necesita explicarse— y con
- * los otros dos se cuenta la consecuencia práctica, que es lo que no se ve mirando la
- * pantalla del perfil: cabe menos por pantalla, hay que desplazarse más, y el editor de
- * fotografía se queda como estaba.
+ * With `NORMAL` nothing extra is said —the untouched setting does not need explaining— and with
+ * the other two the practical consequence is told, which is what is not visible looking at the
+ * profile's screen: less fits per screen, one has to scroll more, and the photograph
+ * editor stays as it was.
  */
 export function textScaleNotice(scale: TextScale): string | null {
   if (scale === 'NORMAL') return null

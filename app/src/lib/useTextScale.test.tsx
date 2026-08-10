@@ -6,14 +6,14 @@ import { TEXT_SCALE_KEY, textScaleFontSize } from './textScale'
 import { setTextScale, useBaseTextScaleHere, useTextScale } from './useTextScale'
 
 /**
- * El tamaño de letra aplicado de verdad.
+ * The text size really applied.
  *
- * Lo que decide está en `textScale.test.ts`, en node. Aquí se comprueba lo que ningún test
- * de lógica alcanza: que la raíz cambia —que es lo que mueve el `rem` de toda la
- * aplicación—, que se recuerda, y sobre todo **que el editor de fotografía se queda al
- * tamaño normal y lo restituye al salir**. Esa exención es la parte que puede romperse en
- * silencio: si no restituyera, agrandar la letra y abrir una fotografía la dejaría pequeña
- * para el resto de la sesión.
+ * What decides is in `textScale.test.ts`, in node. Here what no logic test
+ * reaches is checked: that the root changes —which is what moves the `rem` of the whole
+ * application—, that it is remembered, and above all **that the photograph editor stays at the
+ * normal size and restores it on leaving**. That exemption is the part that can break in
+ * silence: if it did not restore, enlarging the text and opening a photograph would leave it small
+ * for the rest of the session.
  */
 
 function Muestra() {
@@ -124,8 +124,8 @@ describe('useBaseTextScaleHere, la exención del editor de fotografía', () => {
   })
 
   it('y restituye el tamaño de AHORA, no el que había al abrirlo', async () => {
-    // Cambiar el ajuste con el editor abierto es raro, pero capturar el valor al montar
-    // dejaría el editor deshaciendo el cambio al salir, que es peor que raro: es
+    // Changing the setting with the editor open is rare, but capturing the value on mounting
+    // would leave the editor undoing the change on leaving, which is worse than rare: it is
     // inexplicable.
     const user = userEvent.setup()
     render(<Muestra />)

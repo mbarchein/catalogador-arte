@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { usagePage, MAX_USAGE_PAGES } from '../../../supabase/functions/sign-file/usage'
 
 /**
- * La lectura del listado del almacén (RF-1202).
+ * Reading the store's listing (RF-1202).
  *
- * Se cubre desde aquí porque en la función Edge no hay forma de ejecutar tests, y
- * este módulo se escribió sin Deno justo para eso — igual que `multipart.ts`.
+ * It is covered from here because in the Edge function there is no way of running tests, and
+ * this module was written without Deno precisely for that — same as `multipart.ts`.
  *
- * Lo que se fija es lo único que puede fallar en silencio: contar de menos, y dar
- * por terminado un listado que sigue. Las dos producen una cifra creíble y más
- * pequeña que la real, en la pantalla que sirve para no quedarse sin sitio.
+ * What is pinned down is the only thing that can fail in silence: undercounting, and taking
+ * as finished a listing that continues. Both produce a believable figure that is
+ * smaller than the real one, on the screen that serves to avoid running out of room.
  */
 
 const page = (rows: string, extra = '') => `<?xml version="1.0" encoding="UTF-8"?>

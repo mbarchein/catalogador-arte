@@ -51,10 +51,10 @@ describe('rutas que la función de firma acepta (RF-411, RF-420)', () => {
   })
 
   it('la copia corregida nunca es la ruta del máster (RF-420)', () => {
-    // Lo mismo que defiende `images_corrected_not_master` en la base, comprobado
-    // aquí porque para cuando la base dice no, el fichero ya se ha subido. Las dos
-    // salen de la MISMA base en la misma llamada, que es el caso en que una
-    // colisión sería posible.
+    // The same thing `images_corrected_not_master` defends in the base, checked
+    // here because by the time the base says no, the file has already been uploaded. Both
+    // come from the SAME base in the same call, which is the case in which a
+    // collision would be possible.
     const four = paths(CATALOG, new File([], 'foto.jpg', { type: 'image/jpeg' }))
     expect(four.corrected).not.toBe(four.master)
   })

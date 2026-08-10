@@ -2,17 +2,17 @@ import { afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 /**
- * Lo que necesitan los tests de pantalla, y solo ellos.
+ * What the screen tests need, and only they.
  *
- * `cleanup` desmonta lo que cada test montó. Sin esto, el segundo test de un
- * fichero busca su botón en un documento que todavía tiene el del primero, y lo que
- * falla no es el aserto: es un «se han encontrado varios elementos» que manda a
- * buscar el fallo donde no está.
+ * `cleanup` unmounts whatever each test mounted. Without this, a file's second test
+ * looks for its button in a document that still has the first one's, and what
+ * fails is not the assertion: it is a «several elements were found» that sends one to
+ * look for the failure where it is not.
  *
- * Este fichero lo cargan TAMBIÉN los tests de lógica pura, que corren en node, así
- * que no debe tener nada más: importar aquí algo que necesite un DOM rompería los
- * ochenta y pico ficheros que hoy no lo necesitan. `cleanup` sin nada montado no
- * hace nada y no molesta.
+ * This file is ALSO loaded by the pure-logic tests, which run in node, so
+ * it must have nothing else: importing something here that needs a DOM would break the
+ * eighty-odd files that do not need one today. `cleanup` with nothing mounted does
+ * nothing and gets in nobody's way.
  */
 afterEach(() => {
   cleanup()
