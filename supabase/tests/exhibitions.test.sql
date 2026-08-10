@@ -1,37 +1,37 @@
--- RF-512: las sedes de exposición son maestra propia con clave sustituta,
---         distinta del árbol de lugares, y una sede en uso no se retira.
--- RF-501: la participación de una obra en una muestra es una fila de la puente,
---         única por pareja, con su número de catálogo y su nota.
--- RF-502: el historial expositivo se ordena de forma ascendente aunque la fecha
---         exacta no se conozca, y el año no puede contradecir a la fecha.
--- RF-503: el catálogo de una exposición no tiene tabla propia: enlaza con la
---         bibliografía, y el enlace es navegable en los dos sentidos.
--- RF-513: el número de catálogo de la muestra es columna aparte de la nota.
--- RF-517, RF-903: una participación se retira, no se borra, y volver a añadirla
---         la restaura en vez de chocar contra la unicidad.
--- RF-218: «Sin revisar» no es «no», llevado del campo al bloque documental. Es
---         el caso que da nombre a la regla: una obra sin participaciones
---         registradas no es una obra que no se expuso.
--- RF-205: lo pendiente nace pendiente.
--- RF-901, RF-902: nada se borra, y la baja deja traza.
--- RF-909: los duplicados se resuelven por revisión, no por unicidad del título.
--- RF-111, RF-113: las tres tablas nacen cerradas y nadie tiene DELETE.
+-- RF-512: exhibition venues are their own master table with a surrogate key,
+--         different from the place tree, and a venue in use is not withdrawn.
+-- RF-501: an artwork's participation in a show is a row of the bridge,
+--         unique per pair, with its catalogue number and its note.
+-- RF-502: the exhibition history is ordered ascending even if the exact
+--         date is not known, and the year cannot contradict the date.
+-- RF-503: an exhibition's catalogue has no table of its own: it links to the
+--         bibliography, and the link is navigable in both directions.
+-- RF-513: the show's catalogue number is a column apart from the note.
+-- RF-517, RF-903: a participation is withdrawn, not deleted, and adding it again
+--         restores it instead of clashing against uniqueness.
+-- RF-218: «Sin revisar» is not «no», carried from the field to the documentary block. It is
+--         the case that gives the rule its name: an artwork with no registered
+--         participations is not an artwork that was not exhibited.
+-- RF-205: what is pending is born pending.
+-- RF-901, RF-902: nothing is deleted, and the withdrawal leaves a trace.
+-- RF-909: duplicates are resolved by review, not by uniqueness of the title.
+-- RF-111, RF-113: the three tables are born closed and nobody has DELETE.
 --
--- Lo que se comprueba es lo que el cliente no debe volver a comprobar: que una
--- exposición sin fecha ninguna no entra, que el año se deduce de la fecha y
--- nunca la contradice, que media fecha no existe, que una sede se distingue por
--- nombre Y localidad porque hay una «Casa de Cultura» en cada pueblo, que una
--- ficha de catálogo no puede colgar de una muestra que consta sin catálogo, que
--- volver a añadir una participación retirada la recupera con su número, y que
--- la columna de estado de investigación no puede mentir por ninguna de sus dos
--- puertas — ni la nueva, ni las dos que este grupo REEMPLAZA y podría haberse
--- comido sin que nada avisara.
+-- What is checked is what the client must not check again: that an
+-- exhibition with no date at all does not go in, that the year is derived from the date and
+-- never contradicts it, that half a date does not exist, that a venue is distinguished by
+-- name AND locality because there is a «Casa de Cultura» in every town, that a
+-- catalogue record cannot hang from a show recorded as having no catalogue, that
+-- adding a withdrawn participation again recovers it with its number, and that
+-- the research-state column cannot lie through either of its two
+-- doors — neither the new one, nor the two this group REPLACES and could have
+-- swallowed with nothing warning about it.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
--- Un catalogador, un lector y dos obras. Los perfiles los crea el trigger de
--- auth.users.
+-- One cataloguer, one reader and two artworks. The profiles are created by the
+-- auth.users trigger.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b1', 'cat-expo@test.local'),
   ('00000000-0000-0000-0000-0000000000b2', 'lec-expo@test.local');
@@ -42,11 +42,11 @@ insert into public.artworks (catalog_id, artist, title, attributed_title) values
   ('AR-9800', 'ROTILI', 'La muy expuesta', 'UNCONFIRMED'),
   ('AR-9801', 'ROTILI', 'La que no salió del estudio', 'UNCONFIRMED');
 
--- ── 1. Una sede mínima entra, y lo pendiente queda vacío ─────
--- El nombre y nada más: lo que se sabe al anotar una muestra de un recorte de
--- prensa. La institución detrás es opcional a propósito — una casa de cultura
--- es una sede real sin ficha de institución, y obligar a crearla llenaría
--- `parties` de fichas sin contacto ni procedencia.
+-- ── 1. A minimal venue goes in, and what is pending stays empty ─
+-- The name and nothing else: what is known on noting down a show from a press
+-- clipping. The institution behind is optional on purpose — a house of culture
+-- is a real venue with no institution record, and forcing one to create it would fill
+-- `parties` with records with no contact and no provenance.
 do $$
 declare v_fila public.exhibition_venues%rowtype;
 begin
@@ -68,11 +68,11 @@ begin
   raise notice 'OK: una sede mínima entra y la institución detrás es opcional (RF-512)';
 end $$;
 
--- ── 2. Una sede se distingue por nombre Y localidad ──────────
--- Hay una «Casa de Cultura» en cada pueblo y una «Sala de Exposiciones» en cada
--- capital: con la unicidad por el nombre a secas, la segunda sería un error
--- incomprensible. Y comparadas con la clave de comparación de nombres del
--- esquema, porque dos sedes que solo difieren en una tilde son la misma sede.
+-- ── 2. A venue is distinguished by name AND locality ─────────
+-- There is a «Casa de Cultura» in every town and a «Sala de Exposiciones» in every
+-- capital: with uniqueness by the bare name, the second would be an
+-- incomprehensible error. And compared with the schema's name comparison
+-- key, because two venues differing only in an accent are the same venue.
 do $$
 begin
   insert into public.exhibition_venues (name, locality) values ('Casa de Cultura', 'Olivenza');
@@ -101,9 +101,9 @@ begin
   end;
 end $$;
 
--- ── 3. Una exposición mínima entra ───────────────────────────
--- El título y el año: lo que consta en la primera línea de un recorte. Todo lo
--- demás nace pendiente y explícito (RF-205).
+-- ── 3. A minimal exhibition goes in ──────────────────────────
+-- The title and the year: what appears in a clipping's first line. Everything
+-- else is born pending and explicit (RF-205).
 do $$
 declare v_fila public.exhibitions%rowtype;
 begin
@@ -131,9 +131,9 @@ begin
   raise notice 'OK: una exposición mínima entra y lo pendiente queda pendiente (RF-205)';
 end $$;
 
--- ── 4. Sin título no se cita; sin fecha no se ordena ─────────
--- Una exposición sin fecha ninguna no se puede colocar en un historial
--- cronológico, y colocarla al final «porque no se sabe» sería inventar el dato.
+-- ── 4. With no title it is not cited; with no date it is not ordered ─
+-- An exhibition with no date at all cannot be placed in a chronological
+-- history, and placing it last «because it is not known» would be inventing the datum.
 do $$
 begin
   begin
@@ -165,9 +165,9 @@ begin
   end;
 end $$;
 
--- ── 5. El año se deduce de la fecha, nunca al revés ──────────
--- Escribir las fechas exactas y además el año sería pedir dos veces el mismo
--- dato y garantizar que un día no coincidan.
+-- ── 5. The year is derived from the date, never the other way round ─
+-- Writing the exact dates and the year as well would be asking twice for the same
+-- datum and guaranteeing that one day they do not match.
 do $$
 declare v_fila public.exhibitions%rowtype;
 begin
@@ -180,7 +180,7 @@ begin
   end if;
   raise notice 'OK: el año se rellena solo desde la fecha de inicio (RF-502)';
 
-  -- Y al revés no: de un año suelto no se inventa un 1 de enero.
+  -- And the other way round no: from a lone year no 1 January is invented.
   if (select start_date from public.exhibitions where title = 'Rotili. Pinturas de prueba')
      is not null then
     raise exception 'FAIL: se ha inventado una fecha de apertura a partir del año';
@@ -195,7 +195,7 @@ begin
     raise notice 'OK: el año no puede contradecir a la fecha de inicio';
   end;
 
-  -- Y corregir la fecha olvidando el año es el mismo error por la otra puerta.
+  -- And correcting the date forgetting the year is the same mistake through the other door.
   begin
     update public.exhibitions set start_date = date '1986-03-14'
      where title = 'Rotili en la Casa de Cultura';
@@ -205,10 +205,10 @@ begin
   end;
 end $$;
 
--- ── 6. Media fecha no existe ─────────────────────────────────
--- Un cierre anterior a la apertura es una errata; un cierre SIN apertura es
--- media fecha, y un `end_date >= start_date` a secas la habría dejado pasar
--- porque una comparación con nulo no es falsa.
+-- ── 6. Half a date does not exist ────────────────────────────
+-- A closing earlier than the opening is a typo; a closing WITH NO opening is
+-- half a date, and a bare `end_date >= start_date` would have let it through
+-- because a comparison with null is not false.
 do $$
 begin
   begin
@@ -227,13 +227,13 @@ begin
     raise notice 'OK: un cierre sin apertura se rechaza: media fecha no existe';
   end;
 
-  -- Y una muestra de un solo día es legítima: abre y cierra el mismo día.
+  -- And a one-day show is legitimate: it opens and closes the same day.
   insert into public.exhibitions (title, start_date, end_date)
   values ('Muestra de un día', date '1990-05-18', date '1990-05-18');
   raise notice 'OK: una muestra que abre y cierra el mismo día entra';
 end $$;
 
--- ── 7. Los dos enumerados son cerrados ───────────────────────
+-- ── 7. Both enums are closed ─────────────────────────────────
 do $$
 begin
   begin

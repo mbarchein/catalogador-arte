@@ -291,11 +291,11 @@ end $$;
 reset role;
 
 
--- ── 2. El control: con todo activo, el Lector sí lo ve ───────
+-- ── 2. The control: with everything active, the Reader does see it ─
 --
--- RF-105. Sin este bloque, una política que negara siempre —o un `exists` con la
--- columna equivocada, que no encuentra nunca nada— pasaría el bloque 1 y dejaría
--- el catálogo en blanco. Es la mitad del fichero que no habla de la fuga.
+-- RF-105. Without this block, a policy that always denied —or an `exists` with the
+-- wrong column, which never finds anything— would pass block 1 and would leave
+-- the catalogue blank. It is the half of the file that does not talk about the leak.
 do $$
 declare v_n integer;
 begin
@@ -338,9 +338,9 @@ begin
       'FAIL: el lector no ve el documento de una exposición activa (% filas)', v_n;
   end if;
 
-  -- Y el contacto del propietario de una obra activa SÍ se lee: RF-105 lo decide
-  -- expresamente, y este aserto es lo que impide que el arreglo se convierta en
-  -- un recorte de columna que nadie pidió.
+  -- And the contact of an active artwork's owner IS read: RF-105 decides it
+  -- expressly, and this assertion is what prevents the fix from turning into
+  -- a column trim nobody asked for.
   if not exists (select 1 from public.parties p
                    join public.provenance_events e on e.party_id = p.id
                   where e.catalog_id = 'AR-9820' and p.contact <> '') then
@@ -353,13 +353,13 @@ end $$;
 reset role;
 
 
--- ── 3. Los dos extremos de cada puente ──────────────────────
+-- ── 3. Both ends of each bridge ─────────────────────────────
 --
--- La obra está ACTIVA en las cuatro filas de este bloque: lo retirado es la
--- ficha del otro lado. Una puente modela un dato que solo existe por la
--- combinación de dos fichas —«p. 99» no es una cita, es la página de una cita—,
--- así que enseñarla con un extremo escondido no es enseñar menos catálogo, es
--- enseñar un hueco.
+-- The artwork is ACTIVE in all four rows of this block: what is withdrawn is the
+-- record on the other side. A bridge models a datum that only exists through the
+-- combination of two records —«p. 99» is not a citation, it is a citation's page—,
+-- so showing it with one end hidden is not showing less catalogue, it is
+-- showing a gap.
 do $$
 declare v_n integer;
 begin
@@ -402,13 +402,13 @@ end $$;
 reset role;
 
 
--- ── 4. La papelera del Catalogador, completa ─────────────────
+-- ── 4. The Cataloguer's wastebasket, complete ────────────────
 --
--- RF-906, y es lo único que este arreglo no puede romper: si la visibilidad
--- heredada escondiera al Catalogador las filas documentales de una obra
--- retirada, restaurarla devolvería una ficha vacía y el trabajo estaría perdido
--- sin que nada avisara. Lo que lo hace gratis es que la subconsulta se evalúa
--- bajo `artworks_select`, donde `can_edit()` es verdadero.
+-- RF-906, and it is the only thing this fix cannot break: if the inherited
+-- visibility hid from the Cataloguer the documentary rows of a withdrawn
+-- artwork, restoring it would give back an empty record and the work would be lost
+-- with nothing warning. What makes it free is that the subquery is evaluated
+-- under `artworks_select`, where `can_edit()` is true.
 do $$
 declare v_n integer;
 begin
@@ -436,8 +436,8 @@ begin
     raise exception 'FAIL: el catalogador debería ver las 2 relaciones de la obra retirada, ve %', v_n;
   end if;
 
-  -- Y las puentes con el otro extremo en la papelera, que son las que restaura
-  -- al restaurar la referencia, la exposición o el documento.
+  -- And the bridges with the other end in the wastebasket, which are the ones it restores
+  -- on restoring the reference, the exhibition or the document.
   select count(*) into v_n from public.artwork_bibliography
    where id = '9a000005-0000-4000-8000-00000000000b';
   if v_n <> 1 then raise exception 'FAIL: el catalogador no ve la cita de una referencia retirada'; end if;
@@ -448,8 +448,8 @@ begin
     raise exception 'FAIL: el catalogador debería ver los 2 expedientes con un extremo retirado, ve %', v_n;
   end if;
 
-  -- Y el contacto del tercero: quien puede editar la papelera tiene que poder
-  -- reconstruir la procedencia de lo que restaura.
+  -- And the third party's contact: whoever can edit the wastebasket has to be able to
+  -- reconstruct the provenance of what they restore.
   if not exists (select 1 from public.parties p
                    join public.provenance_events e on e.party_id = p.id
                   where e.catalog_id = 'AR-9805') then
@@ -462,15 +462,15 @@ end $$;
 reset role;
 
 
--- ── 5. El documento con dos anclas que discrepan ─────────────
+-- ── 5. The document with two anchors that disagree ───────────
 --
--- El criterio escrito en 20260805130000, ejercido: el documento cuelga de la
--- obra RETIRADA y de una exposición ACTIVA. Desaparece EL PUENTE de la obra, y
--- siguen visibles la ficha del documento y su puente con la exposición.
+-- The criterion written in 20260805130000, exercised: the document hangs from the
+-- WITHDRAWN artwork and from an ACTIVE exhibition. THE BRIDGE of the artwork disappears, and
+-- the document's record and its bridge with the exhibition stay visible.
 --
--- Al revés sería peor: esconder la ficha del documento por culpa de una de sus
--- obras retiradas lo borraría del expediente de una muestra que no tiene nada
--- que ver, y haría depender el estado de una ficha compartida del de su vecina.
+-- The other way round would be worse: hiding the document's record because of one of its
+-- withdrawn artworks would erase it from the file of a show that has nothing
+-- to do with it, and would make a shared record's state depend on its neighbour's.
 do $$
 declare v_n integer;
 begin
@@ -504,12 +504,12 @@ end $$;
 reset role;
 
 
--- ── 6. Y el rol anónimo sigue sin llegar a ninguna ──────────
+-- ── 6. And the anonymous role still reaches none ────────────
 --
--- RF-101, RF-113. La clave anónima viaja en el cliente de todo el mundo, y la
--- visibilidad heredada se ha escrito tocando seis políticas: el aserto está aquí
--- para que un `revoke` que se cayera al reescribirlas se vea en este fichero y
--- no solo en el de al lado.
+-- RF-101, RF-113. The anonymous key travels in everybody's client, and the
+-- inherited visibility has been written touching six policies: the assertion is here
+-- so that a `revoke` that fell over on rewriting them is visible in this file and
+-- not only in the one next door.
 do $$
 declare
   v_tables constant text[] := array[
@@ -535,15 +535,15 @@ end $$;
 reset role;
 
 
--- ── 7. Y la forma de la política, para que no se pierda ─────
+-- ── 7. And the policy's shape, so it does not get lost ──────
 --
--- Lo funcional de arriba es lo que verifica. Esto es la red que avisa el día que
--- alguien reescriba una de las seis políticas y se deje la herencia por el
--- camino: se mide contra las DEPENDENCIAS que PostgreSQL registra de la política
--- a sus anclas y a sus propias columnas, que es lo que distingue «hereda de los
--- dos extremos» de «hereda de uno». Es el mismo bloque que corre dentro de la
--- migración, repetido desde fuera a propósito: allí protege la transacción que
--- la aplica, aquí protege el esquema que ya está aplicado.
+-- The functional part above is what verifies. This is the net that warns the day
+-- somebody rewrites one of the six policies and leaves the inheritance behind
+-- on the way: it is measured against the DEPENDENCIES PostgreSQL records from the policy
+-- to its anchors and to its own columns, which is what distinguishes «inherits from both
+-- ends» from «inherits from one». It is the same block that runs inside the
+-- migration, repeated from outside on purpose: there it protects the transaction that
+-- applies it, here it protects the schema that is already applied.
 do $$
 declare
   v_expected constant text[][] := array[
@@ -607,28 +607,28 @@ begin
 end $$;
 
 
--- ── 8. La fotografía, que era el último hueco ───────────────
+-- ── 8. The photograph, which was the last hole ──────────────
 --
--- `images` tenía el mismo hueco y 20260805130000 no lo cerró: el Lector veía la
--- fila —y con ella las tres rutas del almacén— de la fotografía de una obra
--- retirada. Se midió el 4 de agosto de 2026 (1 fila) y lo cierra
+-- `images` had the same hole and 20260805130000 did not close it: the Reader saw the
+-- row —and with it the store's three paths— of the photograph of a withdrawn
+-- artwork. It was measured on 4 August 2026 (1 row) and it is closed by
 -- 20260805150000.
 --
--- **Este bloque estuvo escrito AL REVÉS**, afirmando que la fuga seguía ahí para
--- ponerse rojo el día que se cerrara. Era una mala idea y por eso ya no está: un
--- rojo tiene que significar siempre «algo se ha roto», y si además puede
--- significar «alguien ha arreglado algo», el color deja de informar. Lo que está
--- pendiente se anota en el plan de pruebas, no en un aserto.
+-- **This block was written BACKWARDS**, stating that the leak was still there so as to
+-- go red the day it was closed. It was a bad idea and that is why it is no longer there: a
+-- red has to mean always «something has broken», and if it can also
+-- mean «somebody has fixed something», the colour stops informing. What is
+-- pending is noted in the test plan, not in an assertion.
 --
--- Se comprueban las TRES cosas, porque cerrar de más aquí rompe la papelera:
--- que el Lector no la vea, que el Catalogador sí —restaurar una obra devuelve
--- sus fotografías dentro (RF-905) y la papelera enseña lo retirado (RF-906)— y
--- que lo que cuelga de la fotografía hereda el cierre sin que nadie lo repita.
+-- ALL THREE things are checked, because closing too much here breaks the wastebasket:
+-- that the Reader does not see it, that the Cataloguer does —restoring an artwork gives back
+-- its photographs inside (RF-905) and the wastebasket shows what is withdrawn (RF-906)— and
+-- that what hangs from the photograph inherits the closure without anybody repeating it.
 insert into public.images (image_id, catalog_id, thumbnail_path, derivative_path, master_path, shot_type)
 values ('AR-9805_v1', 'AR-9805', 'r/min.webp', 'r/der.webp', 'r/master.jpg', 'GENERAL');
 
--- Lo que cuelga de la fotografía: un enlace de «de dónde salió esta
--- reproducción» y una línea de historia con la fotografía como fila.
+-- What hangs from the photograph: a «where this reproduction came from» link
+-- and a history line with the photograph as the row.
 insert into public.external_links (id, image_id, url, title) values
   ('9a000010-0000-4000-8000-000000000001', 'AR-9805_v1',
    'https://ejemplo.es/de-donde-salio', 'De dónde salió esta reproducción');
@@ -646,16 +646,16 @@ begin
       v_n;
   end if;
 
-  -- La vista lleva `security_invoker = true`, así que era el otro camino a la
-  -- misma fila: si heredara mal, la fuga seguiría abierta por aquí.
+  -- The view carries `security_invoker = true`, so it was the other path to the
+  -- same row: if it inherited badly, the leak would still be open through here.
   select count(*) into v_n from public.representative_image where catalog_id = 'AR-9805';
   if v_n <> 0 then
     raise exception
       'FAIL: el lector alcanza la fotografía de una obra retirada por la vista representative_image (% filas)', v_n;
   end if;
 
-  -- Y lo que cuelga de la fotografía, que hereda de `images` por su propia
-  -- política y no por una copia de la regla.
+  -- And what hangs from the photograph, which inherits from `images` through its own
+  -- policy and not through a copy of the rule.
   select count(*) into v_n from public.external_links
    where id = '9a000010-0000-4000-8000-000000000001';
   if v_n <> 0 then
@@ -669,7 +669,7 @@ end $$;
 
 reset role;
 
--- Y el Catalogador sí, que es la mitad que se rompe si se cierra de más.
+-- And the Cataloguer does, which is the half that breaks if too much is closed.
 do $$
 declare v_n integer;
 begin
