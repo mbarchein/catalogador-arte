@@ -17,9 +17,9 @@ import {
 import type { ExhibitionVenue } from '../../lib/types'
 
 /**
- * RF-512: la sede de una exposición es una entrada de vocabulario con clave
- * propia, única por nombre Y localidad, y NO es el árbol de lugares del almacén.
- * RF-1106: se mantiene desde la sección «Tablas».
+ * RF-512: an exhibition's venue is a vocabulary entry with its own key,
+ * unique by name AND locality, and it is NOT the store's place tree.
+ * RF-1106: it is maintained from the «Tablas» section.
  */
 
 function venue(over: Partial<ExhibitionVenue> = {}): ExhibitionVenue {
@@ -55,8 +55,8 @@ describe('el sitio de una sede', () => {
   })
 
   /**
-   * RF-512: hay una «Casa de Cultura» en cada pueblo, así que una fila sin
-   * localidad es la única que hace ambigua la lista. Nunca un hueco (RF-304).
+   * RF-512: there is a «Casa de Cultura» in every town, so a row with no
+   * locality is the only one that makes the list ambiguous. Never a gap (RF-304).
    */
   it('una sede sin sitio lo dice, en vez de dejar la línea en blanco', () => {
     expect(venuePlaceNotice(venue({ locality: '', country: '' }))).toBe('Sin localidad')
@@ -90,8 +90,8 @@ describe('la clave de comparación de una sede', () => {
   })
 
   /**
-   * La misma casa de cultura en dos pueblos son dos sedes: es la razón de que el
-   * índice único lleve la localidad dentro.
+   * The same house of culture in two towns is two venues: it is the reason the
+   * unique index carries the locality inside.
    */
   it('la misma sede en dos localidades son dos claves', () => {
     expect(venueKey({ name: 'Casa de Cultura', locality: 'Zafra' })).not.toBe(
@@ -155,8 +155,8 @@ describe('lo que impide escribir una sede', () => {
   })
 
   /**
-   * RF-512: un recorte que dice «Galería Rayuela» y nada más es un dato. Exigir la
-   * localidad pararía el registro justo cuando se hace.
+   * RF-512: a clipping that says «Galería Rayuela» and nothing else is a datum. Requiring the
+   * locality would stop the registration precisely when it is being done.
    */
   it('no la falta de localidad, aunque sea media identidad', () => {
     expect(venueDraftProblem({ name: 'Galería Rayuela', locality: '', country: '', note: '' })).toBe(
@@ -182,9 +182,9 @@ describe('lo que impide escribir una sede', () => {
 
 describe('lo que viaja a la base', () => {
   /**
-   * La base exige que el nombre YA venga sin espacios (`name = btrim(name)`), y
-   * dejarlos pasar contesta con el nombre de una restricción en inglés: comprobado
-   * contra la base, « Sala Probeta » devuelve 23514, el mismo código que el vacío.
+   * The base requires the name to arrive ALREADY without spaces (`name = btrim(name)`), and
+   * letting them through answers with the name of a constraint in English: checked
+   * against the base, « Sala Probeta » returns 23514, the same code as the empty one.
    */
   it('recorta los cuatro campos, porque el nombre lo exige la base', () => {
     expect(
@@ -236,9 +236,9 @@ describe('añadir una sede', () => {
   })
 
   /**
-   * RF-901: escribir el nombre de una sede retirada es querer que vuelva. La base
-   * contestaría 23505 —el índice único cubre las retiradas— y tratarlo como éxito
-   * diría «añadida» dejándola escondida.
+   * RF-901: writing the name of a withdrawn venue means wanting it back. The base
+   * would answer 23505 —the unique index covers the withdrawn ones— and treating it as success
+   * would say «added» while leaving it hidden.
    */
   it('la que está retirada vuelve, en vez de fallar por duplicada', () => {
     const plan = planVenueAddition([venue({ id: 'v7', active: false })], {
@@ -338,9 +338,9 @@ describe('guardar una sede editada', () => {
   })
 
   /**
-   * El índice único cubre las retiradas, así que el choque puede ser con una fila
-   * que la lista muestra en gris: decir «ya hay una» sin decir que está retirada
-   * parecería mentira.
+   * The unique index covers the withdrawn ones, so the clash can be with a row
+   * the list shows in grey: saying «there is already one» without saying it is withdrawn
+   * would look like a lie.
    */
   it('si la que choca está retirada, propone recuperarla', () => {
     const rows = [

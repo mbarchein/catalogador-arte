@@ -1,32 +1,32 @@
 /**
- * Los fondos del catálogo, mantenidos desde Tablas (ADR-007, segunda entrega).
+ * The catalogue's funds, maintained from Tablas (ADR-007, second delivery).
  *
- * ── QUÉ ES UN FONDO Y POR QUÉ NO ES UNA MAESTRA MÁS ─────────
+ * ── WHAT A FUND IS AND WHY IT IS NOT JUST ANOTHER MASTER TABLE ──
  *
- * Un fondo es el conjunto de obra de un artista, y es el dato del que cuelga todo
- * lo demás: la numeración (`AR-0001`), las series, los documentos del archivo. Por
- * eso esta pantalla hace MENOS que las otras cinco maestras y no más:
+ * A fund is an artist's body of work, and it is the datum everything
+ * else hangs from: the numbering (`AR-0001`), the series, the archive documents. That is
+ * why this screen does LESS than the other five master tables and not more:
  *
- *   · **no crea.** Un fondo nuevo trae un prefijo nuevo, y ese prefijo entra en la
- *     generación de identificadores, en la restricción que ata prefijo y fondo, y
- *     en la lista blanca de la función que firma los ficheros del archivo. Es una
- *     decisión de esquema con su migración, no una fila que se teclea;
- *   · **no borra**, como ninguna (RF-901) — y aquí menos que en ninguna: borrar un
- *     fondo dejaría sin nombre a todas sus obras;
- *   · **no cambia el prefijo.** Está impreso en la etiqueta pegada al cuadro.
+ *   · **it does not create.** A new fund brings a new prefix, and that prefix enters the
+ *     generation of identifiers, the constraint tying prefix and fund, and
+ *     the whitelist of the function that signs the archive's files. It is a
+ *     schema decision with its migration, not a row that gets typed;
+ *   · **it does not delete**, like none of them (RF-901) — and here less than in any: deleting a
+ *     fund would leave all its artworks with no name;
+ *   · **it does not change the prefix.** It is printed on the label stuck to the painting.
  *
- * Lo que sí hace: renombrar, retirar y apartar.
+ * What it does do: rename, withdraw and set aside.
  *
- * ── LOS DOS INTERRUPTORES ───────────────────────────────────
+ * ── THE TWO SWITCHES ────────────────────────────────────────
  *
- * Son distintos y la pantalla tiene que dejarlo claro, porque el caso que los pidió
- * es el fondo de pruebas y ahí se quieren los dos a la vez — pero no siempre:
+ * They are different and the screen has to make it clear, because the case that asked for them
+ * is the test fund and there both are wanted at once — but not always:
  *
- *   · **retirado** es que deja de ofrecerse al dar de alta y en los selectores. Sus
- *     obras siguen donde estaban y su nombre se sigue leyendo en cada una;
- *   · **apartado** es que sus obras no salen en el listado por omisión. No es un
- *     borrado ni una papelera: la obra se abre por su enlace y se encuentra
- *     filtrando por su fondo.
+ *   · **withdrawn** is that it stops being offered when creating and in the selectors. Its
+ *     artworks stay where they were and its name is still read in each one;
+ *   · **set aside** is that its artworks do not show up in the listing by default. It is not a
+ *     delete or a wastebasket: the artwork opens through its link and is found
+ *     by filtering by its fund.
  */
 
 import type { ArtistFund } from '../../lib/types'
@@ -54,23 +54,23 @@ export function fundPrefixText(prefix: string): string {
 }
 
 /**
- * Cómo se rotula cada interruptor.
+ * How each switch is labelled.
  *
- * Los dos nombran el estado NORMAL, y encendido es ese estado. Así se lee
- * siempre igual —encendido es «esto está como debe»— y no hay que resolver un
- * doble negativo para saber qué pasa al apagar «retirado».
+ * Both name the NORMAL state, and on is that state. This way it reads
+ * the same always —on is «this is as it should be»— and there is no
+ * double negative to resolve to know what happens on turning «retirado» off.
  */
 export const OFFERED_LABEL = 'Se ofrece al dar de alta'
 export const LISTED_LABEL = 'Sus obras salen en el listado'
 
 /**
- * Lo que se lee bajo cada interruptor: **qué pasa ahora**, no qué pasaría.
+ * What is read under each switch: **what happens now**, not what would happen.
  *
- * Antes había una frase fija que describía los dos estados a la vez, y por eso
- * la pantalla no se entendía: había que averiguar cuál de las dos mitades
- * aplicaba mirando el control. Ahora el subtexto solo cuenta el estado en el que
- * se está, y el apagado carga además con la mitad que evita el susto —qué NO se
- * ha hecho—, que es justo cuando hace falta.
+ * There used to be a fixed sentence describing both states at once, and that is why
+ * the screen was not understood: one had to work out which of the two halves
+ * applied by looking at the control. Now the subtext only tells the state one
+ * is in, and the off one also bears the half that avoids the fright —what has NOT
+ * been done—, which is precisely when it is needed.
  */
 export function fundOfferedHint(active: boolean): string {
   return active
@@ -86,11 +86,11 @@ export function fundListedHint(listed: boolean): string {
 }
 
 /**
- * Por qué no se puede retirar este fondo, o null cuando sí.
+ * Why this fund cannot be withdrawn, or null when it can.
  *
- * La base lo niega —y lo dice— pero un control que va a ser rechazado tiene que
- * decirlo ANTES de pulsarse: quien cataloga está de pie, y un viaje de ida y vuelta
- * para que le digan que no es peor que un botón que se explica.
+ * The base refuses it —and says so— but a control that is going to be rejected has to
+ * say so BEFORE being pressed: whoever catalogues is on their feet, and a round trip
+ * just to be told no is worse than a button that explains itself.
  */
 export function retireFundBlockedReason(
   entry: ArtistFundEntry,
@@ -122,14 +122,14 @@ export function fundHiddenNotice(name: string, hidden: boolean): string {
 }
 
 /**
- * El distintivo del fondo apartado, en la lista de fondos del panel de filtros.
+ * The badge of the fund set aside, in the funds list of the filter panel.
  *
- * **Nunca un hueco en silencio**, pero dicho donde se puede hacer algo con ello.
- * Antes era un aviso sobre el listado —«no se muestran las obras de X»— y estaba
- * en el sitio equivocado dos veces: encima de una lista que ya es larga, y lejos
- * del interruptor que lo arregla. Marcarlo en la fila del fondo, dentro del
- * panel donde se filtra, lo pone justo donde se va a actuar: marcar ese fondo es
- * exactamente lo que hace aparecer sus obras.
+ * **Never a gap in silence**, but said where something can be done about it.
+ * It used to be a warning over the listing —«las obras de X no se muestran»— and it was
+ * in the wrong place twice: above a list that is already long, and far
+ * from the switch that fixes it. Marking it in the fund's row, inside the
+ * panel where filtering happens, puts it right where action will be taken: ticking that fund is
+ * exactly what makes its artworks appear.
  */
 export const HIDDEN_FUND_BADGE = 'Apartado'
 

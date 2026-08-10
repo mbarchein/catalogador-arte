@@ -15,12 +15,12 @@ import {
 } from './artistFunds'
 
 /**
- * ADR-007, segunda entrega: el fondo como tabla maestra.
+ * ADR-007, second delivery: the fund as a master table.
  *
- * Lo que se fija es la diferencia entre los DOS interruptores, que es donde esta
- * pantalla puede engañar sin que se note: «retirado» deja de ofrecerlo y no toca
- * nada de lo catalogado; «apartado» saca sus obras del listado y no retira nada.
- * Confundirlos es esconder obra sin querer, o creer que se ha escondido y no.
+ * What is pinned down is the difference between the TWO switches, which is where this
+ * screen can mislead unnoticed: «retirado» stops offering it and touches
+ * nothing of what is catalogued; «apartado» takes its artworks out of the listing and withdraws nothing.
+ * Confusing them means hiding work by accident, or believing it has been hidden when it has not.
  */
 
 const fund = (over: Partial<ArtistFundEntry> = {}): ArtistFundEntry => ({
@@ -51,9 +51,9 @@ describe('el orden y lo que identifica a un fondo', () => {
 })
 
 describe('el subtexto cuenta el estado en el que se está', () => {
-  // Lo que hacía ilegible la pantalla era un subtexto fijo que describía los dos
-  // estados a la vez: había que averiguar cuál aplicaba mirando el control. Cada
-  // interruptor dice ahora lo que pasa AHORA, y solo eso.
+  // What made the screen illegible was a fixed subtext describing both
+  // states at once: one had to work out which applied by looking at the control. Each
+  // switch now says what happens NOW, and only that.
 
   it('encendido dice lo que ocurre, sin hablar de lo que no ocurre', () => {
     expect(fundOfferedHint(true)).toBe('Aparece entre los fondos al dar de alta una obra.')
@@ -69,9 +69,9 @@ describe('el subtexto cuenta el estado en el que se está', () => {
   })
 
   it('y los dos apagados siguen diciendo cosas distintas', () => {
-    // Es la confusión que esta pantalla puede provocar: retirar no esconde obra,
-    // y apartar no retira el fondo. Si las dos frases se parecieran, daría igual
-    // que los interruptores fueran dos.
+    // It is the confusion this screen can cause: withdrawing does not hide work,
+    // and setting aside does not withdraw the fund. If the two sentences looked alike, it would not matter
+    // that the switches were two.
     expect(fundOfferedHint(false)).not.toBe(fundListedHint(false))
     expect(fundOfferedHint(false)).toContain('siguen en el listado')
     expect(fundListedHint(false)).toContain('no aparecen en el listado')
@@ -118,10 +118,10 @@ describe('lo que se ofrece para elegir', () => {
 })
 
 describe('el filtro señala el fondo apartado', () => {
-  // Nunca un hueco en silencio, pero dicho donde se puede hacer algo con ello:
-  // en la fila del fondo dentro del panel de filtros, que es justo el sitio
-  // donde marcarlo hace aparecer sus obras. Antes era un aviso encima del
-  // listado, lejos del control que lo arregla.
+  // Never a gap in silence, but said where something can be done about it:
+  // in the fund's row inside the filter panel, which is exactly the place
+  // where ticking it makes its artworks appear. It used to be a warning above the
+  // listing, far from the control that fixes it.
 
   it('el apartado lleva distintivo, y dice qué implica', () => {
     const rows = fundFilterOptions([
