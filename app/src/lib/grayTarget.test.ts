@@ -496,8 +496,8 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
 
   it('RF-418: una escalera que sube justo detrás de un objeto claro no se pierde en el valle', () => {
     const photo = canvas()
-    // Un objeto claro, y pegada a él la escalera al revés: el parche oscuro es a la
-    // vez el final de un escalón hacia abajo y el principio de la escalera buena.
+    // A light object, and stuck to it the staircase backwards: the dark patch is at the
+    // same time the end of a step going down and the start of the good staircase.
     targetOn(photo, {
       x: 8,
       patches: [tone(CARD[0]), tone(CARD[2]), tone(CARD[1]), tone(CARD[0])],
@@ -510,14 +510,14 @@ describe('grayTarget: la escalera de un testigo de gris (RF-418, §4)', () => {
     expect(candidate.patches.map((patch) => patch.tone.r)).toEqual(
       CARD.map((reflectance) => toneCode(reflectance)),
     )
-    // La escalera empieza en el parche oscuro, no en el objeto claro de la izquierda.
+    // The staircase starts at the dark patch, not at the light object on the left.
     expect(candidate.box.x).toBeCloseTo((8 + PATCH.width) / WIDTH, 6)
   })
 
   it('RF-418: tres franjas de luz en la pared no son un testigo, porque ocupan el encuadre', () => {
     const photo = canvas()
-    // Uniformes, contiguas, alineadas, del mismo tamaño, acromáticas y en escalón:
-    // cumplen todo menos ser un objeto pequeño al lado de la obra.
+    // Uniform, contiguous, aligned, the same size, achromatic and stepped:
+    // they meet everything except being a small object next to the artwork.
     CARD.forEach((reflectance, i) => {
       fill(photo, { x: 0, y: 6 + i * 16, width: WIDTH, height: 16 }, tone(reflectance))
     })

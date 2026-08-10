@@ -148,8 +148,8 @@ describe('buildColorLuts, la cadena canónica (RF-414)', () => {
   })
 
   it('el balance de blancos nunca lleva un canal a 255 si no lo estaba', () => {
-    // Las ganancias están normalizadas a max(gain) = 1, así que corregir la
-    // dominante solo puede oscurecer y nunca recorta altas luces por sí solo.
+    // The gains are normalised to max(gain) = 1, so correcting the
+    // cast can only darken and never clips highlights on its own.
     for (const temperature of [-60, -37, -1, 0, 1, 25, 60]) {
       for (const tint of [-40, -9, 0, 14, 40]) {
         const gains = gainsFromNeutral({ temperature, tint })
@@ -179,7 +179,7 @@ describe('buildColorLuts, la cadena canónica (RF-414)', () => {
     for (const lut of channels(luts)) {
       expect(Math.abs(lut[128]! - expected)).toBeLessThanOrEqual(1)
     }
-    // Y −1 EV lo devuelve al centro: la exposición es una multiplicación de luz.
+    // And −1 EV returns it to the centre: exposure is a multiplication of light.
     const back = buildColorLuts({ exposure: -1 })
     for (const lut of channels(back)) {
       expect(Math.abs(lut[128]! - Math.round(linearToSrgb(srgbToLinear(128 / 255) / 2) * 255)))
@@ -190,13 +190,13 @@ describe('buildColorLuts, la cadena canónica (RF-414)', () => {
   it('las altas luces suaves comprimen sin escalones y sin llegar a blanco', () => {
     const luts = buildColorLuts({ shoulder: 100 })
     for (const lut of channels(luts)) {
-      // Por debajo de la rodilla no toca nada.
+      // Below the knee it touches nothing.
       expect(lut[64]).toBe(64)
-      // Y por encima comprime: el blanco baja, que es la consecuencia buscada.
+      // And above it compresses: white comes down, which is the intended consequence.
       expect(lut[255]!).toBeLessThan(255)
       expect(lut[255]!).toBeGreaterThan(230)
     }
-    // Con el parámetro a 0 no hay compresión ninguna.
+    // With the parameter at 0 there is no compression at all.
     const off = buildColorLuts({ shoulder: 0 })
     for (const lut of channels(off)) expect(lut[255]).toBe(255)
   })
@@ -214,7 +214,7 @@ describe('buildColorLuts, la cadena canónica (RF-414)', () => {
     for (const lut of channels(garbage)) {
       for (let i = 0; i < 256; i += 1) expect(lut[i]).toBe(i)
     }
-    // Y lo que sí produce un gesto —pasarse del tope— se recorta, no se descarta.
+    // And what a gesture does produce —going past the cap— is clamped, not discarded.
     expect(clampColorParam('temperature', 90)).toBe(60)
     expect(clampColorParam('gamma', 0.2)).toBe(0.6)
     expect(clampColorParam('exposure', Number.NaN)).toBe(0)
@@ -234,7 +234,7 @@ describe('el paso de blanco y negro (RF-414)', () => {
       ) * 255,
     )
     expect(applied.r).toBe(expected)
-    // Y no es la media de los códigos, que es el error que aplasta los verdes.
+    // And it is not the mean of the codes, which is the mistake that crushes the greens.
     expect(applied.r).not.toBe(Math.round((200 + 100 + 50) / 3))
   })
 
@@ -289,7 +289,7 @@ describe('colorSvgTables, la previsualización (RF-414)', () => {
         expect(Math.round(parsed[i]! * 255)).toBe(lut[i])
       }
     }
-    // Y la identidad se escribe como tal, empezando en 0 y acabando en 1.
+    // And the identity is written as such, starting at 0 and ending at 1.
     const identity = colorSvgTables(NO_COLOR).r.split(' ')
     expect(identity[0]).toBe('0')
     expect(identity[1]).toBe('0.00392')
@@ -346,21 +346,21 @@ describe('neutralFromSample, el cuentagotas (RF-414, RF-418)', () => {
     const corrected = applyColorToRgb(luts, sample.r, sample.g, sample.b)
     expect(Math.abs(corrected.r - corrected.g)).toBeLessThan(2)
     expect(Math.abs(corrected.g - corrected.b)).toBeLessThan(2)
-    // Y queda registrado de dónde salió el gris (RF-418).
+    // And where the grey came from is recorded (RF-418).
     expect(picked?.source).toBe('NEUTRAL_PICKED')
     expect(picked?.reference).toBe('SCENE')
     expect(picked?.neutral).toEqual({ x: 0.25, y: 0.75 })
   })
 
   it('corrige en el sentido que toca y las dos dominantes', () => {
-    // Una muestra cálida se enfría: temperatura negativa.
+    // A warm sample cools down: negative temperature.
     expect(neutralFromSample({ r: 150, g: 128, b: 100 })!.temperature).toBeLessThan(0)
-    // Una muestra fría se calienta.
+    // A cool sample warms up.
     expect(neutralFromSample({ r: 100, g: 128, b: 150 })!.temperature).toBeGreaterThan(0)
-    // Una muestra verdosa se va hacia el magenta, que es el matiz positivo.
+    // A greenish sample moves towards magenta, which is the positive tint.
     expect(neutralFromSample({ r: 120, g: 140, b: 120 })!.tint).toBeGreaterThan(0)
     expect(neutralFromSample({ r: 140, g: 120, b: 140 })!.tint).toBeLessThan(0)
-    // Un gris no mueve nada.
+    // A grey moves nothing.
     expect(neutralFromSample({ r: 128, g: 128, b: 128 })).toEqual({ temperature: 0, tint: 0 })
   })
 
@@ -375,13 +375,13 @@ describe('neutralFromSample, el cuentagotas (RF-414, RF-418)', () => {
     expect(neutralFromSample({ r: 249, g: 200, b: 200 })).not.toBeNull()
     expect(neutralFromSample(null)).toBeNull()
     expect(neutralFromSample({ r: Number.NaN, g: 128, b: 128 })).toBeNull()
-    // Y el editor se entera: la acción no cambia nada y lo puede decir.
+    // And the editor finds out: the action changes nothing and it can say so.
     expect(withNeutralPick(NO_COLOR, { r: 255, g: 255, b: 255 }, { x: 0.5, y: 0.5 })).toBeNull()
   })
 
   it('el parche se resume por la mediana y no por la media', () => {
-    // Ochenta píxeles de gris y uno especular: la media se iría con el especular,
-    // la mediana no se mueve.
+    // Eighty pixels of grey and one specular: the mean would go off with the specular one,
+    // the median does not move.
     const patch = new Uint8ClampedArray(81 * 4)
     for (let i = 0; i < 81; i += 1) {
       patch[i * 4] = 128
@@ -399,8 +399,8 @@ describe('neutralFromSample, el cuentagotas (RF-414, RF-418)', () => {
   it('el gris de una hoja impresa en casa no se cree como dominante (RF-418)', () => {
     expect(referenceTrustsGray('TARGET_CARD')).toBe(true)
     expect(referenceTrustsGray('SCENE')).toBe(true)
-    // La tinta doméstica no es neutra: sirve para el patrón y para los puntos
-    // negro y blanco, no como referencia de dominante.
+    // Domestic ink is not neutral: it serves for the pattern and for the black
+    // and white points, not as a cast reference.
     expect(referenceTrustsGray('TARGET_PRINT')).toBe(false)
     expect(referenceTrustsGray('NONE')).toBe(false)
     expect(referenceTrustsGray(null)).toBe(false)
@@ -411,12 +411,12 @@ describe('neutralFromSample, el cuentagotas (RF-414, RF-418)', () => {
 
 describe('autoColorFrom, el ajuste automático (RF-414)', () => {
   it('respeta los cuatro topes', () => {
-    // Una fotografía uniforme y clara: el percentil 0,1 está muy por encima de 64 y
-    // el 99,9 muy por debajo de 192, así que los dos topes tienen que morder.
+    // A uniform, light photograph: the 0.1 percentile is well above 64 and
+    // the 99.9 well below 192, so both caps have to bite.
     const flat = autoColorFrom(greys([{ code: 100, count: 400 }]))
     expect(flat.color.blackPoint).toBe(COLOR_RANGES.blackPoint.max)
     expect(flat.color.whitePoint).toBe(COLOR_RANGES.whitePoint.min)
-    // Y una muy oscura: la exposición se para en 1 EV, la mitad del rango manual.
+    // And a very dark one: the exposure stops at 1 EV, half the manual range.
     const dark = autoColorFrom(greys([{ code: 10, count: 400 }]))
     expect(dark.color.exposure).toBe(1)
     expect(dark.color.exposure).toBeLessThanOrEqual(1)
@@ -428,7 +428,7 @@ describe('autoColorFrom, el ajuste automático (RF-414)', () => {
   })
 
   it('no propone nada ante un histograma ya centrado, y lo dice', () => {
-    // Llega al negro y al blanco y su mediana ya está en el gris medio codificado.
+    // It reaches black and white and its median is already at the encoded middle grey.
     const centered = autoColorFrom(
       greys([
         { code: 0, count: 5 },
@@ -442,13 +442,13 @@ describe('autoColorFrom, el ajuste automático (RF-414)', () => {
     expect(centered.color.blackPoint).toBe(0)
     expect(centered.color.whitePoint).toBe(255)
     expect(isNoColor(centered.color)).toBe(true)
-    // Nunca un hueco: si el automático no hace nada, la ayuda cuenta por qué.
+    // Never a gap: if the automatic does nothing, the help says why.
     expect(centered.notice).toMatch(/negro y al blanco/)
   })
 
   it('calla en el balance de blancos cuando no hay grises creíbles', () => {
-    // Un encuadre entero de color, sin un píxel acromático: el automático no toca
-    // la dominante y lo dice en la ayuda.
+    // A whole frame of colour, without one achromatic pixel: the automatic does not touch
+    // the cast and says so in the help.
     const colored = autoColorFrom(field({ r: 150, g: 100, b: 100 }, 400))
     expect(colored.movedWhiteBalance).toBe(false)
     expect(colored.color.temperature).toBe(0)
@@ -465,7 +465,7 @@ describe('autoColorFrom, el ajuste automático (RF-414)', () => {
     expect(warm.color.source).toBe('AUTO')
     expect(warm.color.reference).toBe('SCENE')
     expect(warm.notice).toBeNull()
-    // Y corrige de verdad: el gris teñido sale gris.
+    // And it corrects for real: the tinted grey comes out grey.
     const corrected = applyColorToRgb(buildColorLuts(warm.color), 131, 128, 125)
     expect(Math.abs(corrected.r - corrected.g)).toBeLessThan(2)
     expect(Math.abs(corrected.g - corrected.b)).toBeLessThan(2)
@@ -476,14 +476,14 @@ describe('autoColorFrom, el ajuste automático (RF-414)', () => {
     expect(isNoColor(empty.color)).toBe(true)
     expect(empty.notice).not.toBeNull()
     expect(empty.detail.pixels).toBe(0)
-    // Y un búfer transparente tampoco vota con su negro invisible.
+    // And a transparent buffer does not vote with its invisible black either.
     const transparent = new Uint8ClampedArray(16)
     expect(autoColorFrom(transparent).detail.pixels).toBe(0)
   })
 
   it('mide el encuadre que se le da y no una foto entera', () => {
-    // Dos encuadres del mismo tamaño y distinta luz dan propuestas distintas: es la
-    // garantía de que la pared alrededor de la obra no fija el punto negro.
+    // Two frames of the same size and different light give different proposals: it is the
+    // guarantee that the wall around the artwork does not set the black point.
     const dark = autoColorFrom(greys([{ code: 40, count: 400 }]))
     const light = autoColorFrom(greys([{ code: 200, count: 400 }]))
     expect(dark.color.exposure).toBeGreaterThan(light.color.exposure)
@@ -525,16 +525,16 @@ describe('los presets de tipo de luz (RF-414)', () => {
   it('son punto de partida: mueven el balance de blancos y nada más', () => {
     const base = normalizeColor({ exposure: 0.5, blackPoint: 10, gamma: 0.9, gray: true })
     const bulb = colorFromLightPreset(base, 'INCANDESCENT')
-    // La luz no dice nada de la exposición ni del rango, y no los toca.
+    // The light says nothing about the exposure or the range, and does not touch them.
     expect(bulb.exposure).toBe(0.5)
     expect(bulb.blackPoint).toBe(10)
     expect(bulb.gamma).toBe(0.9)
     expect(bulb.gray).toBe(true)
-    // La bombilla es lo más cálido de la lista, así que la corrección enfría.
+    // The bulb is the warmest thing on the list, so the correction cools.
     expect(bulb.temperature).toBeLessThan(0)
     expect(bulb.source).toBe('PRESET')
     expect(bulb.light).toBe('INCANDESCENT')
-    // Y no es una medición: no se apunta ninguna referencia de gris.
+    // And it is not a measurement: no grey reference is noted down.
     expect(bulb.reference).toBe('NONE')
     expect(bulb.neutral).toBeNull()
   })
@@ -568,8 +568,8 @@ describe('normalizeColor, isNoColor y sameColor (RF-414)', () => {
       y: 0.5,
     })
     expect(normalizeColor({ neutral: { x: 0.5, y: Number.NaN } }).neutral).toBeNull()
-    // Fuera de la imagen se descarta en vez de pegarse al borde: apuntaría a un
-    // píxel que nadie muestreó.
+    // Outside the image it is discarded instead of stuck to the edge: it would point at a
+    // pixel nobody sampled.
     expect(normalizeColor({ neutral: { x: 1.4, y: 0.5 } }).neutral).toBeNull()
   })
 
@@ -628,8 +628,8 @@ describe('las columnas del color (RF-414, RF-418)', () => {
   })
 
   it('nulo es identidad: el ajuste neutro no escribe ningún número', () => {
-    // Es lo que permite el despliegue de una sola fase y lo que hace que una fila
-    // anterior a la migración se lea como neutra.
+    // It is what allows the single-phase deployment and what makes a row
+    // predating the migration read as neutral.
     expect(colorToColumns(NO_COLOR)).toEqual({
       color_temperature: null,
       color_tint: null,
@@ -648,7 +648,7 @@ describe('las columnas del color (RF-414, RF-418)', () => {
     })
     expect(colorFromColumns({})).toEqual(NO_COLOR)
     expect(colorFromColumns(null)).toEqual(NO_COLOR)
-    // Una fila de antes de la migración: solo las columnas que ya existían.
+    // A row from before the migration: only the columns that already existed.
     expect(isNoColor(colorFromColumns({ color_gray: false }))).toBe(true)
   })
 
@@ -673,7 +673,7 @@ describe('las columnas del color (RF-414, RF-418)', () => {
     expect(broken.source).toBeNull()
     expect(broken.reference).toBeNull()
     expect(broken.light).toBeNull()
-    // Medio punto neutro no es un punto: la fila lo prohíbe y aquí se ignora.
+    // Half a neutral point is not a point: the row forbids it and here it is ignored.
     expect(broken.neutral).toBeNull()
   })
 

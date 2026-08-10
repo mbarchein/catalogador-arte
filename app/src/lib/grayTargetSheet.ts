@@ -229,8 +229,8 @@ export const GRAY_TARGET_SHEET_TEXT = {
   values: 'Los números son el gris de cada parche, de 0 (negro) a 255 (blanco).',
   notes: [
     'El gris de una impresora no es neutro: vale de patrón y para los puntos negro y blanco.',
-    // En su propia línea, y no al final de la anterior: el PDF parte por líneas y
-    // una frase a caballo de dos no se lee de un vistazo en papel.
+    // On its own line, and not at the end of the previous one: the PDF breaks by lines and
+    // a sentence straddling two of them is not read at a glance on paper.
     'Para la dominante hace falta una carta de gris comprada.',
     'Al lado de la obra, nunca encima, en el mismo plano y con la misma luz.',
     `Que salga entera en la fotografía y ocupando al menos el ${framePercent}% del ancho: por debajo de eso los parches traen muy pocos píxeles para medirse.`,

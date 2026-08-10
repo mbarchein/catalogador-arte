@@ -161,7 +161,7 @@ describe('clampCrop', () => {
 })
 
 describe('rotateEdit: todo lo dibujado sobre la foto gira con ella (RF-410)', () => {
-  // Un cuadro torcido, que es cuando hay cuatro esquinas y no un rectángulo.
+  // A crooked painting, which is when there are four corners and not a rectangle.
   const corners = {
     nw: { x: 0.175, y: 0.1 },
     ne: { x: 0.875, y: 0.18 },
@@ -177,8 +177,8 @@ describe('rotateEdit: todo lo dibujado sobre la foto gira con ella (RF-410)', ()
     const turned = rotateEdit({ rotation: 0, crop: null, corners }, 90)
     expect(turned.rotation).toBe(90)
     expect(turned.corners).not.toBeNull()
-    // Un cuarto de vuelta en el sentido del reloj: (x, y) → (1 − y, x), y el nombre
-    // corre — la que era noroeste aparece al nordeste.
+    // A quarter turn clockwise: (x, y) → (1 − y, x), and the name
+    // travels — the one that was north-west turns up at the north-east.
     expect(turned.corners!.ne.x).toBeCloseTo(1 - corners.nw.y, 6)
     expect(turned.corners!.ne.y).toBeCloseTo(corners.nw.x, 6)
   })
@@ -546,7 +546,7 @@ describe('moveCrop (dragging the whole rectangle)', () => {
   })
 })
 
-/** Las ocho columnas de esquina en nulo: lo que escribe un encuadre sin perspectiva. */
+/** The eight corner columns null: what a frame with no perspective writes. */
 const SIN_ESQUINAS = {
   corner_nw_x: null,
   corner_nw_y: null,
@@ -559,7 +559,7 @@ const SIN_ESQUINAS = {
 }
 
 describe('el encuadre por esquinas (RF-410)', () => {
-  /** Un trapecio: el lado de arriba más estrecho que el de abajo. */
+  /** A trapezium: the top side narrower than the bottom one. */
   const trapecio = {
     nw: { x: 0.3, y: 0.15 },
     ne: { x: 0.7, y: 0.15 },
@@ -618,8 +618,8 @@ describe('el encuadre por esquinas (RF-410)', () => {
   })
 
   it('una fila con un cuadrilátero cruzado se lee sin enderezar', () => {
-    // Enderezar un lazo da una imagen doblada sobre sí misma. Mostrar la fotografía
-    // sin corregir es siempre mejor que eso.
+    // Straightening a bow tie gives an image folded over itself. Showing the photograph
+    // uncorrected is always better than that.
     const back = editFromColumns({
       rotation: 0,
       corner_nw_x: 0.8, corner_nw_y: 0.2,
@@ -632,7 +632,7 @@ describe('el encuadre por esquinas (RF-410)', () => {
   })
 
   it('el tamaño de salida es el rectángulo enderezado', () => {
-    // El trapecio mide 0,4 arriba y 0,7 abajo: la media es 0,55 del ancho.
+    // The trapezium measures 0.4 at the top and 0.7 at the bottom: the mean is 0.55 of the width.
     const size = editedSize({ width: 2000, height: 1000 }, { rotation: 0, crop: null, corners: trapecio })
     expect(size.width).toBe(Math.round(0.55 * 2000))
   })
@@ -657,8 +657,8 @@ describe('el encuadre por esquinas (RF-410)', () => {
     // dejaría de decir la verdad sobre el máster.
     const horneado: PhotoEdit = { rotation: 0, crop: { x: 0.1, y: 0.1, width: 0.6, height: 0.6 } }
     expect(() => composeEdits(horneado, { rotation: 0, crop: null, corners: trapecio })).toThrow()
-    // Y sobre una base ya enderezada, cualquier cosa: no hay forma de expresar un
-    // encuadre sobre el máster partiendo de una imagen rectificada.
+    // And over an already straightened base, anything: there is no way of expressing a
+    // frame over the master starting from a rectified image.
     expect(() => composeEdits({ rotation: 0, crop: null, corners: trapecio }, NO_EDIT)).toThrow()
   })
 
@@ -680,11 +680,11 @@ describe('el encuadre por esquinas (RF-410)', () => {
   it('la perspectiva sola ya es un cambio, y omitir las esquinas es lo que lo silenciaba', () => {
     const soloPerspectiva: PhotoEdit = { rotation: 0, crop: null, corners: trapecio }
     expect(editSummary(soloPerspectiva)).not.toBeNull()
-    // Lo que veía la usuaria: el mismo encuadre sin el campo de las esquinas no
-    // describe nada, y la cabecera lo pinta como «Sin cambios».
+    // What the user was seeing: the same frame without the corners field
+    // describes nothing, and the heading paints it as «Sin cambios».
     expect(editSummary({ rotation: soloPerspectiva.rotation, crop: soloPerspectiva.crop })).toBeNull()
-    // Y lo que se muestra describe lo que se guarda: el resumen de la edición en
-    // curso y el de su forma canónica son el mismo texto.
+    // And what is shown describes what is stored: the summary of the edit in
+    // progress and that of its canonical form are the same text.
     expect(editSummary(soloPerspectiva)).toBe(editSummary(normalizeEdit(soloPerspectiva)))
   })
 })
@@ -809,7 +809,7 @@ describe('el original siempre se puede recuperar', () => {
     expect(isNoEdit({ rotation: 0, crop: fullCrop() })).toBe(true)
   })
 
-  // ── Modo degradado: la copia de consulta ya trae el recorte ──
+  // ── Degraded mode: the reference copy already carries the crop ──
   it('desde la copia de consulta el recorte solo puede encoger', () => {
     const relative: PhotoEdit = { rotation: 0, crop: { x: 0, y: 0, width: 1, height: 1 } }
     // Asking for the whole (degraded) image keeps the stored crop untouched:
@@ -827,7 +827,7 @@ describe('el original siempre se puede recuperar', () => {
   })
 })
 
-/* ================================================================= el color */
+/* ================================================================= colour */
 
 /**
  * Un ajuste real de los que salen de un almacén con bombilla: dominante cálida
@@ -847,7 +847,7 @@ const AJUSTE: ColorEdit = normalizeColor({
   light: 'INCANDESCENT',
 })
 
-/** Un cuadro torcido, para comprobar que el color convive con las esquinas. */
+/** A crooked painting, to check that colour coexists with the corners. */
 const TORCIDO = {
   nw: { x: 0.3, y: 0.15 },
   ne: { x: 0.7, y: 0.15 },
@@ -859,8 +859,8 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
   it('NO_EDIT trae el color neutro, y una edición sin color se lee igual', () => {
     expect(NO_EDIT.color).toEqual(NO_COLOR)
     expect(isNoEdit(NO_EDIT)).toBe(true)
-    // Sin el campo y con el campo neutro son lo mismo: los mismos píxeles y la misma
-    // fila, que es lo que evita reescribir ficheros por una diferencia que no se ve.
+    // Without the field and with the field neutral are the same thing: the same pixels and the same
+    // row, which is what avoids rewriting files over a difference that cannot be seen.
     expect(normalizeEdit({ rotation: 0, crop: null }).color).toEqual(NO_COLOR)
     expect(sameEdit({ rotation: 0, crop: null }, NO_EDIT)).toBe(true)
   })
@@ -874,7 +874,7 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
     // «no», y anularlo aquí borraría justo eso.
     const reviewed = normalizeEdit({ rotation: 0, crop: null, color: { source: 'REVIEWED_UNCHANGED' } })
     expect(reviewed.color.source).toBe('REVIEWED_UNCHANGED')
-    // Y, para los píxeles, sigue sin ser un cambio: no se regenera ningún fichero.
+    // And, for the pixels, it is still not a change: no file gets regenerated.
     expect(isNoEdit(reviewed)).toBe(true)
   })
 
@@ -909,7 +909,7 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
         { ...encuadre, color: { ...AJUSTE, temperature: AJUSTE.temperature + 1 } },
       ),
     ).toBe(false)
-    // Un solo mando, y el paso más pequeño que hay: un sexto de EV.
+    // A single control, and the smallest step there is: a sixth of an EV.
     expect(
       sameEdit(
         { rotation: 0, crop: null, color: { exposure: 0 } },
@@ -917,8 +917,8 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
       ),
     ).toBe(false)
     expect(sameEdit(NO_EDIT, { rotation: 0, crop: null, color: { gray: true } })).toBe(false)
-    // Y dos formas de escribir el mismo ajuste siguen siendo el mismo: abrir el editor,
-    // mirar y aplicar no reescribe ningún fichero.
+    // And two ways of writing the same adjustment are still the same: opening the editor,
+    // looking and applying rewrites no file.
     expect(
       sameEdit({ rotation: 0, crop: null, color: AJUSTE }, { rotation: 0, crop: null, color: { ...AJUSTE } }),
     ).toBe(true)
@@ -931,9 +931,9 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
       crop: null,
       color: { ...AJUSTE, neutral: { x: 0.9, y: 0.9 }, source: 'MANUAL' },
     }
-    // Los mismos píxeles: no hay derivadas que regenerar.
+    // The same pixels: there are no derivatives to regenerate.
     expect(sameEdit(a, b)).toBe(true)
-    // Pero no la misma fila, y quien necesite saber si cambió compara las columnas.
+    // But not the same row, and whoever needs to know whether it changed compares the columns.
     expect(editToColumns(a)).not.toEqual(editToColumns(b))
     expect(editToColumns(b).color_neutral_x).toBeCloseTo(0.9, 5)
   })
@@ -943,11 +943,11 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
     expect(summary).toContain('Girada 90°')
     expect(summary).toContain(COLOR_RANGES.temperature.label)
     expect(summary).toContain('Exposición +0,33 EV')
-    // Sin color no se inventa ninguna coletilla.
+    // With no colour no tag line is invented.
     expect(editSummary({ rotation: 90, crop: null })).toBe('Girada 90°')
     expect(editSummary({ rotation: 0, crop: null, color: { gray: true } })).toContain(GRAY_LABEL)
-    // Un ajuste que no hace nada no es un cambio que anunciar, ni cuando consta que se
-    // revisó: eso se lee en la ficha, no en la línea de «lo que se ha hecho».
+    // An adjustment that does nothing is not a change to announce, not even when it is recorded that it
+    // was reviewed: that is read in the record, not in the line of «what has been done».
     expect(editSummary({ rotation: 0, crop: null, color: { source: 'REVIEWED_UNCHANGED' } })).toBeNull()
   })
 
