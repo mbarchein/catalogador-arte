@@ -76,7 +76,7 @@ describe('la fecha estructurada de ADR-004', () => {
   })
 
   it('el `date_text` de la base manda sobre el espejo cuando la consulta lo trajo', () => {
-    // Fila imposible a propósito: si el espejo se usara, saldría «1978».
+    // An impossible row on purpose: if the mirror were used, «1978» would come out.
     expect(displayStructuredDate(dated({ start_year: 1978, date_text: 'c. 1930 [?]' }))).toBe(
       'c. 1930 [?]',
     )
@@ -133,8 +133,8 @@ describe('las fechas de una exposición (RF-502)', () => {
   })
 
   it('la fecha no se desplaza un día por el huso horario de quien la lee', () => {
-    // Un 1 de enero en Madrid, leído como UTC, sería 31 de diciembre del año
-    // anterior si se construyera con `new Date(iso)` y se formateara en local.
+    // A 1 January in Madrid, read as UTC, would be 31 December of the previous
+    // year if it were built with `new Date(iso)` and formatted in local time.
     expect(exhibitionDatesText(shown({ year: 1986, start_date: '1986-01-01' }))).toBe(
       '1 de enero de 1986',
     )

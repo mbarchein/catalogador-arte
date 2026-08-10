@@ -88,8 +88,8 @@ describe('RF-304 · el aviso va donde se va a leer', () => {
   })
 
   it('con el bloque VACÍO se añade a la frase del hueco, que es lo único que se pinta', () => {
-    // `DocumentarySection` pinta el texto de vacío EN LUGAR de las filas: un
-    // aviso entre las filas no se vería justo en el caso que importa.
+    // `DocumentarySection` paints the empty text INSTEAD OF the rows: a warning
+    // among the rows would not be seen in precisely the case that matters.
     const state = bibliographyBlockState(blockState(spec, null, 0), 'AVISO')
     expect(state.emptyText).toContain('AVISO')
     expect(state.emptyText).toContain('Sin referencias bibliográficas registradas')
@@ -102,8 +102,8 @@ describe('RF-304 · el aviso va donde se va a leer', () => {
   })
 
   it('no tapa el aviso que ya traía el bloque: se suman', () => {
-    // «Hay datos y el bloque sigue sin revisar» es otra advertencia, y perderla
-    // sería cambiar un dato por otro.
+    // «There is data and the block is still unreviewed» is another warning, and losing
+    // it would be swapping one datum for another.
     const partial = blockState(spec, 'UNREVIEWED', 2)
     expect(partial.partialText).not.toBeNull()
     const state = bibliographyBlockState(partial, 'AVISO')
@@ -123,7 +123,7 @@ describe('RF-218 · citar sobre un bloque investigado sin resultados', () => {
   it('se dice antes de pulsar, no después del viaje de ida y vuelta', () => {
     const reason = citeBlockedReason('NONE_FOUND')
     expect(reason).not.toBeNull()
-    // Sigue la pista que da la base, sin escribir una segunda versión de la regla.
+    // It follows the lead the base gives, without writing a second version of the rule.
     expect(reason).toContain('Investigación en curso')
     expect(reason).toContain('Investigación completa')
   })

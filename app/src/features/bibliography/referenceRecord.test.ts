@@ -129,11 +129,11 @@ describe('citedArtworkView, una fila del bloque', () => {
     const view = citedArtworkView(cited({ artwork: null }))
     expect(view.unavailable).toBe(true)
     expect(view.title).toContain('no se puede leer')
-    // El código sí se enseña: está en la fila puente y es real.
+    // The code is shown: it is on the bridge row and it is real.
     expect(view.catalogId).toBe('AR-0042')
-    // Y no se enlaza a una ficha que no se va a poder abrir.
+    // And it does not link to a record that will not open.
     expect(view.linked).toBe(false)
-    // La página sí, porque también es de la fila puente.
+    // The page does, because it also belongs to the bridge row.
     expect(view.pages).toBe('pág. 34')
   })
 

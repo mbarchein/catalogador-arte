@@ -62,8 +62,8 @@ export function useReferences(enabled = true): ReferencesQuery {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Se puede salir de la pantalla con la consulta en el aire, y escribir estado
-  // sobre un componente que ya no está es un aviso sobre el que nadie puede actuar.
+  // The screen can be left with the query in the air, and writing state on a component
+  // that is gone is a warning nobody can act upon.
   const alive = useRef(true)
   useEffect(() => {
     alive.current = true

@@ -121,8 +121,8 @@ describe('RF-504 · la lista que se pinta', () => {
   })
 
   it('«Sin clasificar» va el último, y nunca se esconde', () => {
-    // Esconderlo es como un bloque acaba pareciendo completo sin que nadie haya
-    // clasificado nada.
+    // Hiding it is how a block ends up looking complete without anybody having
+    // classified anything.
     const list = citationList([citation(null), citation(PRESS), citation(PRESS), citation(PRESS)])
     expect(list.groups.at(-1)?.key).toBe(UNCLASSIFIED_GROUP)
     expect(list.groups.at(-1)?.title).toBe(UNCLASSIFIED_TITLE)

@@ -65,22 +65,22 @@ export function sortCitedArtworks(rows: readonly CitedArtworkRow[]): CitedArtwor
   return rows.slice().sort((a, b) => a.catalog_id.localeCompare(b.catalog_id))
 }
 
-/** Una fila del bloque, lista para pintar. */
+/** One row of the block, ready to paint. */
 export interface CitedArtworkView {
-  /** La fila puente: lo que una retirada de la cita actuaría sobre. */
+  /** The bridge row: what withdrawing the citation would act upon. */
   id: string
   catalogId: string
-  /** El título de la obra, o lo que se dice cuando no se puede leer. Nunca un hueco. */
+  /** The artwork's title, or what is said when it cannot be read. Never a gap. */
   title: string
-  /** `pág. 34`, `págs. 34-36`, `lám. XII`… o null cuando nadie la ha anotado. */
+  /** `pág. 34`, `págs. 34-36`, `lám. XII`… or null when nobody has noted it. */
   pages: string | null
-  /** Lo que la cita dice de esta obra en concreto. */
+  /** What the citation says about this artwork in particular. */
   note: string | null
-  /** La obra está en la papelera, detrás de una cita que no lo está (RF-901). */
+  /** The artwork is in the wastebasket, behind a citation that is not (RF-901). */
   retired: boolean
-  /** La obra no se puede leer: la fila se queda y lo dice. */
+  /** The artwork cannot be read: the row stays and says so. */
   unavailable: boolean
-  /** Si la fila lleva a algún sitio. Una obra que no se puede leer no se enlaza. */
+  /** Whether the row leads anywhere. An artwork that cannot be read is not linked. */
   linked: boolean
 }
 
@@ -95,8 +95,8 @@ export function citedArtworkView(row: CitedArtworkRow): CitedArtworkView {
     return {
       id: row.id,
       catalogId: row.catalog_id,
-      // El código SÍ se enseña, porque está en la fila puente y es real: lo que no
-      // se enseña es nada de la obra, para no inventar lo que no se puede leer.
+      // The code IS shown, because it is on the bridge row and it is real: what is not
+      // shown is anything of the artwork, so as not to invent what cannot be read.
       title: 'Esta obra no se puede leer desde aquí',
       pages: citationPagesText(row.pages),
       note: written(row.note),
@@ -161,6 +161,6 @@ export function citedArtworksNotice(input: {
   )
 }
 
-/** Lo que se lee cuando la dirección no corresponde a ninguna referencia. */
+/** What is read when the address matches no reference. */
 export const REFERENCE_MISSING_TEXT =
   'Esa referencia no está en el catálogo. Búscala en el listado, por si está retirada.'

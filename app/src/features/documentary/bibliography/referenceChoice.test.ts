@@ -86,8 +86,8 @@ describe('RF-504 · qué referencias se ofrecen para citar', () => {
   })
 
   it('las que esta obra ya cita se ofrecen marcadas, no desaparecen', () => {
-    // Desaparecer sin explicación deja a la catalogadora tecleando el mismo
-    // título una y otra vez.
+    // Disappearing with no explanation leaves the cataloguer typing the same
+    // title over and over.
     const options = referenceOptions([reference({ id: 'a' })], new Set(['a']))
     expect(options).toHaveLength(1)
     expect(options[0]?.alreadyCited).toBe(true)
@@ -207,8 +207,8 @@ describe('RF-504 · escribir una referencia nueva', () => {
     )
     expect(payload.title).toBe('Zafra 1985')
     expect(payload.authors).toBe('VV. AA.')
-    // Null es «nadie lo ha clasificado», que no es la entrada «Otro» del
-    // vocabulario (RF-514).
+    // Null is «nobody has classified it», which is not the vocabulary's «Otro»
+    // entry (RF-514).
     expect(payload.publication_type_id).toBeNull()
   })
 })
@@ -242,13 +242,13 @@ describe('RF-504 · no crear dos filas para el mismo libro', () => {
   })
 
   it('si la que ya hay está retirada se dice, porque la cita saldrá con su aviso', () => {
-    // Reusar una viva es el buen resultado invisible; reusar una retirada le
-    // entrega una cita con una advertencia que no ha pedido.
+    // Reusing a live one is the invisible good outcome; reusing a withdrawn one
+    // hands over a citation with a warning nobody asked for.
     const notice = equivalentReferenceNotice(reference({ title: 'Zafra', active: false }))
     expect(notice).toContain('retirada')
     expect(notice).toContain('papelera')
-    // Y no se recupera por la puerta de atrás: eso es de la ficha de la
-    // referencia (RF-309).
+    // And it is not recovered through the back door: that belongs to the
+    // reference's own record (RF-309).
     expect(notice).toContain('su propia ficha')
   })
 
@@ -265,8 +265,8 @@ describe('RF-304 · el buscador nunca se queda en blanco sin explicar por qué',
   })
 
   it('con todas las referencias retiradas se dice eso, y no que no coincide nada', () => {
-    // Decirle que no coincide lo que ha escrito la deja tecleando variantes de
-    // un título que sí está en el catálogo.
+    // Telling her that what she wrote does not match leaves her typing variants of
+    // a title that is in the catalogue.
     const text = noReferenceOptionsText(0, 4, 'zafra')
     expect(text).toContain('retiradas')
     expect(text).not.toContain('coincide')

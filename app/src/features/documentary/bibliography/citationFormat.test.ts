@@ -144,8 +144,8 @@ describe('RF-504 · la página, que es dato citable y no una nota', () => {
   })
 
   it('null cuando nadie ha escrito la página, que NO es «s/p»', () => {
-    // «s/p» es alguien afirmando que la publicación no tiene paginación; el
-    // campo vacío es que nadie la ha anotado. La distinción de todo el catálogo.
+    // «s/p» is somebody stating that the publication has no pagination; the empty
+    // field is that nobody has noted it. The whole catalogue's distinction.
     expect(citationPagesText('')).toBeNull()
     expect(citationPagesText('   ')).toBeNull()
     expect(citationPagesText('s/p')).not.toBeNull()
@@ -184,8 +184,8 @@ describe('RF-504 · la cita entera, lista para pintar', () => {
   })
 
   it('el identificador que se retira es el de la FILA PUENTE, no el de la referencia', () => {
-    // Quitar una cita saca esta obra de esa publicación; la referencia la
-    // comparten las demás obras que la citan.
+    // Removing a citation takes this artwork out of that publication; the reference
+    // is shared by the other artworks citing it.
     const view = citationView(citation({ id: 'ab-9', bibliography_id: 'bib-7' }))
     expect(view.id).toBe('ab-9')
     expect(view.referenceId).toBe('bib-7')
@@ -209,8 +209,8 @@ describe('RF-504 · la cita entera, lista para pintar', () => {
   })
 
   it('sin referencia legible, la cita se muestra igual y con la página (RF-304)', () => {
-    // La política deja ver la fila puente y no la referencia retirada. Ocultar
-    // la fila le escondería al lector que esta obra está publicada.
+    // The policy lets the bridge row be seen and not the withdrawn reference. Hiding
+    // the row would hide from the reader that this artwork is published.
     const view = citationView(citation({ pages: '12', reference: null }))
     expect(view.unavailable).toBe(true)
     expect(view.unavailableText).not.toBeNull()
@@ -226,8 +226,8 @@ describe('RF-504 · la cita entera, lista para pintar', () => {
 
 describe('RF-504 · corregir una cita ya registrada', () => {
   it('devuelve la página CRUDA, sin la abreviatura que añade la ficha', () => {
-    // Reabrir con «págs. 34-36» y guardar dejaría el prefijo dentro de la
-    // columna, y crecería uno más en cada edición.
+    // Reopening with «págs. 34-36» and saving would leave the prefix inside the
+    // column, and one more would grow on every edit.
     const edit = citationEdit(citation({ pages: '34-36', note: 'Reproducida' }))
     expect(edit.pages).toBe('34-36')
     expect(edit.note).toBe('Reproducida')

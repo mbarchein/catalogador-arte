@@ -133,18 +133,18 @@ describe('RF-504 · lo que la base rechazaría se dice antes de ir a preguntar',
     expect(referenceEditProblem(draft({ year: 2101 }))).toContain('2100')
     expect(referenceEditProblem(draft({ year: 1000 }))).toBeNull()
     expect(referenceEditProblem(draft({ year: 2100 }))).toBeNull()
-    // Sin año es legítimo: media colección de recortes de prensa no lleva fecha.
+    // No year is legitimate: half a press-clipping collection carries no date.
     expect(referenceEditProblem(draft({ year: null }))).toBeNull()
   })
 
   it('la clave BibTeX no admite espacios, comas ni llaves', () => {
-    // Son los caracteres que parten una entrada de un fichero `.bib`, que es para
-    // lo que sirve el asa. Medido: 23514 sobre `bibliography_bibtex_key_shape`.
+    // These are the characters that break an entry of a `.bib` file, which is what
+    // the handle is for. Measured: 23514 on `bibliography_bibtex_key_shape`.
     expect(referenceEditProblem(draft({ bibtexKey: 'zafra 1985' }))).toContain('espacios')
     expect(referenceEditProblem(draft({ bibtexKey: 'zafra,1985' }))).not.toBeNull()
     expect(referenceEditProblem(draft({ bibtexKey: '{zafra}' }))).not.toBeNull()
     expect(referenceEditProblem(draft({ bibtexKey: 'zafra1985muba' }))).toBeNull()
-    // Vacía es «no tiene clave», que es lo normal, no un error.
+    // Empty is «it has no key», which is the norm, not an error.
     expect(referenceEditProblem(draft({ bibtexKey: '  ' }))).toBeNull()
   })
 
@@ -159,7 +159,7 @@ describe('ADR-007 · guardar la corrección de una fila que comparte el catálog
     reference({ id: 'bib-2', title: 'Zafra 1985', bibtex_key: 'zafra1985' }),
   ]
 
-  /** El borrador tal como lo abre el panel sobre la referencia del catálogo. */
+  /** The draft as the panel opens it over the catalogue's reference. */
   function open(over: Partial<ReferenceEdit> = {}): ReferenceEdit {
     return { ...referenceEdit(catalog[0]!), ...over }
   }
@@ -207,8 +207,8 @@ describe('ADR-007 · guardar la corrección de una fila que comparte el catálog
   })
 
   it('las claves no distinguen mayúsculas ni tildes, igual que el índice de la base', () => {
-    // Medido: pasar la clave a «PRUEBAMEDIDA1990» con otra referencia en
-    // «pruebamedida1990» contesta 23505. El índice es sobre `place_key`.
+    // Measured: changing the key to «PRUEBAMEDIDA1990» with another reference on
+    // «pruebamedida1990» answers 23505. The index is on `place_key`.
     const plan = planReferenceEdit(catalog, 'bib-1', open({ bibtexKey: 'ZAFRA1985' }))
     expect(plan.action).toBe('duplicate')
     if (plan.action !== 'duplicate') return
@@ -229,7 +229,7 @@ describe('ADR-007 · guardar la corrección de una fila que comparte el catálog
     const plan = planReferenceEdit(withRetired, 'bib-1', open({ bibtexKey: 'recorte1972' }))
     expect(plan.action).toBe('duplicate')
     if (plan.action !== 'duplicate') return
-    // Sin esta mitad, el aviso parece mentir sobre una lista que no la muestra.
+    // Without this half, the warning seems to lie about a list that does not show it.
     expect(plan.message).toContain('retirada')
   })
 
@@ -329,8 +329,8 @@ describe('lo que hay que decir ANTES de guardar: la fila es del catálogo', () =
   })
 
   it('sin poder contar NO se dice que no la cita nadie más', () => {
-    // Es el caso peligroso: el almacén con una barra de cobertura. Un cero
-    // inventado le dice que está corrigiendo algo privado.
+    // This is the dangerous case: the storeroom with a coverage bar. An invented
+    // zero tells her she is correcting something private.
     const notice = referenceReachNotice(null)
     expect(notice).toContain('No se ha podido contar')
     expect(notice).not.toContain('ninguna otra obra')
@@ -345,8 +345,8 @@ describe('RF-901 · corregir una referencia retirada no la recupera', () => {
   it('una retirada avisa de que sigue retirada y de dónde se recupera', () => {
     const notice = referenceRetiredNotice(reference({ active: false }))
     expect(notice).toContain('seguirá retirada')
-    // Volver a ponerla en circulación es de su propia ficha (RF-309), no un
-    // efecto secundario de arreglarle una errata.
+    // Putting it back in circulation belongs to its own record (RF-309), not a
+    // side effect of fixing a typo in it.
     expect(notice).toContain('su propia ficha')
   })
 })
@@ -373,8 +373,8 @@ describe('cuando la base dice no (mensajes medidos por la pasarela REST)', () =>
   })
 
   it('el mismo 23514 sobre el año nombra el año y su ventana', () => {
-    // Tres erratas distintas llegan con el mismo código: una sola frase para las
-    // tres nombraría el campo equivocado.
+    // Three different typos arrive with the same code: a single sentence for the
+    // three would name the wrong field.
     const text = referenceFailureText({
       code: '23514',
       message:
@@ -420,7 +420,7 @@ describe('cuando la base dice no (mensajes medidos por la pasarela REST)', () =>
       details: 'Key is not present in table "publication_types".',
     })
     expect(text).toContain('tipo de publicación')
-    // El `details` de la base viene en inglés: no se muestra.
+    // The base's `details` comes in English: it is not shown.
     expect(text).not.toContain('Key is not present')
   })
 
@@ -436,7 +436,7 @@ describe('cuando la base dice no (mensajes medidos por la pasarela REST)', () =>
   it('sin código no es una negativa, es que no contesta nadie, y se dice en español', () => {
     const text = referenceFailureText({ message: 'Failed to fetch' })
     expect(text).toContain('conexión')
-    // Y la mitad que importa: lo escrito no se ha perdido.
+    // And the half that matters: what was written has not been lost.
     expect(text).toContain('no se ha perdido')
     expect(text).not.toContain('Failed to fetch')
   })

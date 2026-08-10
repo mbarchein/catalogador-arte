@@ -233,8 +233,8 @@ function selectsEveryField(columns: string, row: object, embeds: Record<string, 
       expect(columns, `la incrustación de ${field}`).toContain(embed)
       continue
     }
-    // Con límites de palabra: `id` no debe darse por bueno porque exista
-    // `catalog_id`.
+    // With word boundaries: `id` must not be taken as good just because
+    // `catalog_id` exists.
     expect(columns, `la columna ${field}`).toMatch(new RegExp(`\\b${field}\\b`))
   }
 }

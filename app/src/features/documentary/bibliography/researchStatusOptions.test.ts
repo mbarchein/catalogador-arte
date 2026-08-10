@@ -42,8 +42,8 @@ describe('RF-218 · «Investigado, sin resultados» sobre un bloque con referenc
   })
 
   it('con referencias dentro no se puede, y se dice por qué en vez de esconderlo', () => {
-    // Esconderlo dejaría un estado que nadie puede alcanzar y que nadie sabe que
-    // existe.
+    // Hiding it would leave a state nobody can reach and nobody knows
+    // exists.
     const none = researchStatusOptions('UNREVIEWED', 2).find((o) => o.value === 'NONE_FOUND')
     expect(none).toBeDefined()
     expect(none?.available).toBe(false)
@@ -56,8 +56,8 @@ describe('RF-218 · «Investigado, sin resultados» sobre un bloque con referenc
   })
 
   it('la contradicción que la base impide se muestra marcada aunque no esté disponible', () => {
-    // Es el caso que `blockState` pinta en rojo: un selector sin nada marcado
-    // encima parecería que el bloque no tiene estado ninguno.
+    // This is the case `blockState` paints red: a selector with nothing marked
+    // above it would look as if the block had no state at all.
     const none = researchStatusOptions('NONE_FOUND', 3).find((o) => o.value === 'NONE_FOUND')
     expect(none?.current).toBe(true)
     expect(none?.available).toBe(false)

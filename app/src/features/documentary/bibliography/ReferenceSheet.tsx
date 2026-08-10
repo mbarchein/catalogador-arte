@@ -90,8 +90,8 @@ export function ReferenceSheet({
     onClose()
   }
 
-  // No perder la corrección por un roce. Contra la fila guardada, que es de donde salió
-  // el borrador: esta referencia la leen todas las obras que la citan.
+  // Not losing the correction to a brush. Against the stored row, which is where the draft
+  // came from: this reference is read by every artwork that cites it.
   const dirty = draftDirty(draft, referenceEdit(reference))
 
   // Y apuntada, con huella: esta fila la corrigen desde la ficha de la referencia y desde

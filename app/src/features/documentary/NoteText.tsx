@@ -9,8 +9,8 @@ import { noteSegments } from './noteText'
  */
 export function NoteText({ text }: { text: string }) {
   return (
-    // `whitespace-pre-line`: la nota se escribió con sus saltos de línea y así se
-    // lee. `break-words` para lo que aun acortado no quepa.
+    // `whitespace-pre-line`: the note was written with its line breaks and that is how it
+    // reads. `break-words` for whatever still does not fit once shortened.
     <span className="block whitespace-pre-line break-words">
       {noteSegments(text).map((segment, at) =>
         segment.href === null ? (
@@ -21,7 +21,7 @@ export function NoteText({ text }: { text: string }) {
             href={segment.href}
             target="_blank"
             rel="noopener noreferrer"
-            // La dirección entera, para quien pase el ratón o use lector.
+            // The whole address, for whoever hovers or uses a screen reader.
             title={segment.href}
             className="underline"
           >

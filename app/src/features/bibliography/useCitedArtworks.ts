@@ -56,8 +56,8 @@ export function useCitedArtworks(bibliographyId: string): CitedArtworksQuery {
       return
     }
     setError(null)
-    // Sin `order` en la consulta: el orden del bloque es el del identificador de
-    // catalogación y se decide en `sortCitedArtworks`, donde es puro y está probado.
+    // No `order` in the query: the block's order is that of the cataloguing identifier
+    // and it is decided in `sortCitedArtworks`, where it is pure and tested.
     setRows((data ?? []) as unknown as CitedArtworkRow[])
   }, [bibliographyId])
 

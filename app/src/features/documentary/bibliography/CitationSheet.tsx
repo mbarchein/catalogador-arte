@@ -156,8 +156,8 @@ export function CitationSheet({
     note.trim() !== (editing?.note ?? '').trim() ||
     (creating && draftDirty(draft, EMPTY_REFERENCE_DRAFT))
 
-  // Y apuntado. El ámbito distingue corregir una cita de añadir una nueva, y lleva el
-  // código de la obra: una cita a medio escribir en AR-0042 no se ofrece al citar en otra.
+  // And noted down. The scope tells correcting a citation from adding a new one, and carries
+  // the artwork's code: a half-written citation in AR-0042 is not offered when citing in another.
   const stored = useFormDraft({
     scope: `cita:${catalogId}:${target?.id ?? 'nueva'}`,
     draft: { pages, note, reference: draft, creating },
