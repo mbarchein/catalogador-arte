@@ -1,10 +1,10 @@
 /**
- * Los enlaces a sitios externos de una ficha (RF-1400).
+ * A record's links to external sites (RF-1400).
  *
- * La ficha monta el bloque y nada más; todo lo demás es interior de la pieza. Lo
- * puro se exporta también porque es lo que la batería prueba y lo que otra
- * pantalla reutilizaría el día que una exposición o una publicación reciban su
- * propia ancla.
+ * The record mounts the block and nothing else; everything else is the piece's interior. The
+ * pure part is also exported because it is what the suite tests and what another
+ * screen would reuse the day an exhibition or a publication receives its
+ * own anchor.
  */
 export { ExternalLinksSection } from './ExternalLinksSection'
 export { LinkForm } from './LinkForm'

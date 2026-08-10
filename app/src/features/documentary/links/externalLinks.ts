@@ -305,9 +305,9 @@ export function sortLinks(rows: readonly ExternalLinkRow[]): readonly ExternalLi
     const rank = typeRank(a.link_type) - typeRank(b.link_type)
     if (rank !== 0) return rank
     if (a.created_at !== b.created_at) return a.created_at < b.created_at ? -1 : 1
-    // Empate exacto de fecha —las dos filas que trasladó la migración de notas
-    // comparten `now()`—: la dirección decide, para que el orden no dependa de lo
-    // que la base devuelva primero.
+    // Exact date tie —the two rows the notes migration moved
+    // share `now()`—: the address decides, so the order does not depend on what
+    // the base returns first.
     return a.url < b.url ? -1 : a.url > b.url ? 1 : 0
   })
 }
@@ -332,11 +332,11 @@ export interface LinkGroups {
 }
 
 /**
- * Cómo se nombra una fotografía en este bloque: «Foto 2 · Reverso».
+ * How a photograph is named in this block: «Foto 2 · Reverso».
  *
- * El número es el de la galería (`sort_order`) y no el identificador del fichero:
- * `RC-0004_v7` no le dice nada a quien está mirando la obra, y el orden en el que
- * se ven las fotos sí.
+ * The number is the gallery's (`sort_order`) and not the file's identifier:
+ * `RC-0004_v7` says nothing to whoever is looking at the artwork, and the order in which
+ * the photos are seen does.
  */
 export function photoTitle(photo: PhotoRef): string {
   return `Foto ${photo.sort_order} · ${SHOT_TYPE_LABEL[photo.shot_type]}`
@@ -351,18 +351,18 @@ export function photoNotice(photo: PhotoRef): string | null {
 }
 
 /**
- * Reparte los enlaces de la ficha entre la obra y sus fotografías.
+ * Distributes the record's links between the artwork and its photographs.
  *
- * Las dos anclas que existen HOY en la base son `artwork_id` e `image_id`, y el
- * arco es exclusivo: exactamente una de las dos. Las demás —exposición,
- * publicación, parte, documento de archivo— llegan en su propia migración, y
- * cuando lleguen esto crece por aquí.
+ * The two anchors that exist TODAY in the base are `artwork_id` and `image_id`, and the
+ * arc is exclusive: exactly one of the two. The rest —exhibition,
+ * publication, party, archive document— arrive in their own migration, and
+ * when they arrive this grows here.
  *
- * Un enlace cuya fotografía no está en la lista de tomas **no se pierde**: se
- * agrupa igualmente y se nombra por su identificador. Pasa de verdad —la política
- * de `images` esconde al Lector las tomas retiradas mientras la de los enlaces
- * puede seguir dejando ver el enlace— y tirar la fila sería que un dato del
- * catálogo desapareciera de la pantalla sin que nadie lo retirara.
+ * A link whose photograph is not in the list of shots **is not lost**: it is
+ * grouped all the same and named by its identifier. It really happens —`images`' policy
+ * hides withdrawn shots from the Reader while the links' policy
+ * may still let the link be seen— and throwing the row away would mean a catalogue
+ * datum disappearing from the screen without anybody having withdrawn it.
  */
 export function groupLinks(
   rows: readonly ExternalLinkRow[],
@@ -415,16 +415,16 @@ export function groupLinks(
 // ── The pair that closes RF-1407 ─────────────────────────────
 
 /**
- * Las reproducciones que no dicen de dónde salieron.
+ * The reproductions that do not say where they came from.
  *
- * Es la mitad que faltaba de RF-417: `provenance` podía decir que una fotografía
- * venía de otro catálogo, pero no DE CUÁL, y una procedencia sin origen es media
- * respuesta —justo la mitad que se necesita para volver a la fuente o para pedir
- * permiso de reproducción—. Con el ancla de fotografía ya se puede cerrar, y esta
- * función es la que lo pone delante de los ojos en vez de esperar a que alguien
- * se acuerde.
+ * It is RF-417's missing half: `provenance` could say that a photograph
+ * came from another catalogue, but not WHICH ONE, and a provenance with no source is half
+ * an answer —precisely the half needed to go back to the source or to ask for
+ * reproduction permission—. With the photograph anchor it can now be closed, and this
+ * function is the one that puts it in front of one's eyes instead of waiting for somebody
+ * to remember.
  *
- * Solo cuenta el enlace ACTIVO: uno retirado no documenta nada.
+ * Only the ACTIVE link counts: a withdrawn one documents nothing.
  */
 export function reproductionsWithoutSource(
   photos: readonly PhotoRef[],
@@ -441,10 +441,10 @@ export function reproductionsWithoutSource(
 }
 
 /**
- * El aviso de las reproducciones sin origen, o null si no hay ninguna.
+ * The warning about reproductions with no source, or null if there is none.
  *
- * Se nombra cada toma, porque la acción que sigue es abrir esa foto y buscar de
- * dónde salió, y «hay 2 reproducciones sin origen» obliga a averiguar cuáles.
+ * Each shot is named, because the action that follows is opening that photo and looking for where
+ * it came from, and «hay 2 reproducciones sin origen» forces one to work out which ones.
  */
 export function missingSourceNotice(photos: readonly PhotoRef[]): string | null {
   if (photos.length === 0) return null

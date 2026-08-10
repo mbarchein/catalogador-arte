@@ -22,21 +22,21 @@ import {
 import type { ExternalLinkRow } from './externalLinks'
 
 /**
- * RF-1403 y RF-1406: **la regla de la dirección vive en la base y el cliente la
- * llama**; lo que se prueba aquí es la otra mitad, la de contar en español por qué
- * la base ha dicho que no.
+ * RF-1403 and RF-1406: **the address's rule lives in the base and the client
+ * calls it**; what is tested here is the other half, that of saying in Spanish why
+ * the base has said no.
  *
- * Las dos direcciones que sostienen la seguridad de este bloque están medidas
- * contra la base local, y las dos son casos que un patrón nuevo escrito a mano
- * habría dejado pasar:
+ * The two addresses that hold up this block's security are measured
+ * against the local base, and both are cases a new hand-written pattern
+ * would have let through:
  *
  *   select is_web_url('https://evil.example\.ejemplo.es/')  → false
  *   select is_web_url('https://macvac\u200b.es/')            → false   (U+200B)
  *
- * Por eso `describeUrlRefusal` **no decide nada**: no tiene ninguna rama que
- * devuelva «vale». Se llama solo cuando la base ya ha rechazado, y si ninguna
- * pista encaja devuelve la frase general. Ese contrato es lo primero que se
- * comprueba aquí.
+ * That is why `describeUrlRefusal` **decides nothing**: it has no branch that
+ * returns «fine». It is called only when the base has already rejected, and if no
+ * hint fits it returns the general sentence. That contract is the first thing
+ * checked here.
  */
 
 // ── Fixtures ─────────────────────────────────────────────────
@@ -85,9 +85,9 @@ describe('trimDraft · lo que se valida es lo que se guarda', () => {
   })
 
   it('recortar NO cuela nada: un esquema prohibido sigue siendo prohibido', () => {
-    // « javascript:alert(1)» con un espacio delante lo ejecuta el navegador, que
-    // recorta. Aquí se recorta ANTES de preguntar, así que lo que la base ve —y
-    // rechaza por su lista blanca de esquemas— es exactamente lo que se mandaría.
+    // « javascript:alert(1)» with a leading space is executed by the browser, which
+    // trims. Here it is trimmed BEFORE asking, so what the base sees —and
+    // rejects by its scheme whitelist— is exactly what would be sent.
     const clean = trimDraft(draft({ url: ' javascript:alert(1) ' }))
     expect(clean.url).toBe('javascript:alert(1)')
     expect(describeUrlRefusal(clean.url)).toContain('no es una dirección de un sitio web')
@@ -322,9 +322,9 @@ describe('describeUrlRefusal · no decide, explica (RF-1403)', () => {
   })
 
   it('NUNCA devuelve nada que se pueda leer como una aceptación', () => {
-    // El contrato del módulo: esta función se llama sobre lo ya rechazado, así que
-    // no puede tener una rama que diga que vale. Ni siquiera con una dirección
-    // perfectamente válida —que aquí no llega nunca— dice que sea válida.
+    // The module's contract: this function is called over what has already been rejected, so
+    // it cannot have a branch that says it is fine. Not even with a
+    // perfectly valid address —which never gets here— does it say it is valid.
     const message = describeUrlRefusal('https://www.macvac.es/obra/')
     expect(message).toBe(REFUSAL_GENERAL)
     expect(message).toContain('no acepta')

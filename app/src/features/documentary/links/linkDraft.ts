@@ -1,24 +1,24 @@
 /**
- * Escribir un enlace: qué se manda, qué se puede decir antes de mandarlo, y qué
- * frase en español corresponde a cada respuesta de la base (RF-1401 a RF-1406).
+ * Writing a link: what is sent, what can be said before sending it, and what
+ * sentence in Spanish corresponds to each answer of the base (RF-1401 to RF-1406).
  *
- * ── LA REGLA DE LA DIRECCIÓN NO ESTÁ AQUÍ, Y ESO ES EL PUNTO ─
+ * ── THE ADDRESS'S RULE IS NOT HERE, AND THAT IS THE POINT ────
  *
- * `is_web_url` es la única línea del sistema que dice que NO a una dirección, vive
- * en la base y **el cliente la llama** (`grant execute ... to authenticated`, y
- * comprobado por HTTP contra la base local). Este módulo no lleva ni un patrón de
- * URL propio, y no por elegancia: la función de la base cierra dos ataques que un
- * patrón nuevo volvería a dejar pasar —la BARRA INVERTIDA en el anfitrión, que el
- * navegador trata como barra (`https://evil.example\.ejemplo.es/`), y los
- * caracteres de ancho cero dentro del nombre del sitio, que `[[:space:]]` no
- * caza— y una segunda copia de la regla es una copia que se queda atrás. Un `check`
- * que llama a una función tampoco revalida las filas viejas cuando la función
- * cambia, así que el día que la base se endurezca la pantalla no tiene nada que
- * seguir.
+ * `is_web_url` is the only line in the system that says NO to an address, it lives
+ * in the base and **the client calls it** (`grant execute ... to authenticated`, and
+ * checked over HTTP against the local base). This module carries not one URL
+ * pattern of its own, and not out of elegance: the base's function closes two attacks a
+ * new pattern would let through again —the BACKSLASH in the host, which the
+ * browser treats as a slash (`https://evil.example\.ejemplo.es/`), and the
+ * zero-width characters inside the site's name, which `[[:space:]]` does not
+ * catch— and a second copy of the rule is a copy that falls behind. A `check`
+ * that calls a function does not revalidate the old rows when the function
+ * changes either, so the day the base gets stricter the screen has nothing to
+ * follow.
  *
- * Lo que sí es de este lado es **contar por qué**: PostgreSQL contesta
- * `violates check constraint "external_links_url_is_web"`, y eso no se le muestra
- * a nadie. Ver `describeUrlRefusal`.
+ * What does belong to this side is **saying why**: PostgreSQL answers
+ * `violates check constraint "external_links_url_is_web"`, and that is not shown
+ * to anybody. See `describeUrlRefusal`.
  */
 
 import type { ExternalLinkType, LinkCheckStatus } from '../../../lib/types'
@@ -63,22 +63,22 @@ export function draftFrom(link: ExternalLinkRow): LinkDraft {
 }
 
 /**
- * El borrador con los espacios de los extremos quitados, que es lo que se valida
- * **y** lo que se guarda.
+ * The draft with the spaces at the ends removed, which is what is validated
+ * **and** what is stored.
  *
- * Que sean el mismo texto no es un detalle. La base RECHAZA una dirección con
- * espacios en los extremos en vez de recortarla, y su migración dice por qué: «
- * javascript:alert(1)» con un espacio delante lo ejecuta el navegador, que
- * recorta, y lo deja pasar cualquier comparación ingenua que no recorte antes. Del
- * lado del cliente el recorte es del CAMPO —pegar en un móvil arrastra un salto de
- * línea con una facilidad asombrosa— y se hace ANTES de preguntar a la base, así
- * que lo que se valida es exactamente lo que se manda. Nada se cuela por aquí:
- * después del recorte, «javascript:alert(1)» sigue siendo rechazado por la lista
- * blanca de esquemas, que es de la base.
+ * That they be the same text is not a detail. The base REJECTS an address with
+ * spaces at the ends instead of trimming it, and its migration says why: «
+ * javascript:alert(1)» with a leading space is executed by the browser, which
+ * trims, and any naive comparison that does not trim first lets it through. On the
+ * client side the trimming belongs to the FIELD —pasting on a phone drags in a line
+ * break with astonishing ease— and it is done BEFORE asking the base, so
+ * what is validated is exactly what is sent. Nothing slips through here:
+ * after trimming, «javascript:alert(1)» is still rejected by the scheme
+ * whitelist, which is the base's.
  *
- * El título se recorta porque la base lo exige (`external_links_title_trimmed`);
- * la nota, porque es lo que hace cualquier campo de texto de este proyecto. De
- * ninguno de los dos se toca el interior.
+ * The title is trimmed because the base requires it (`external_links_title_trimmed`);
+ * the note, because it is what any text field in this project does. Of
+ * neither of the two is the interior touched.
  */
 export function trimDraft(draft: LinkDraft): LinkDraft {
   return {
@@ -105,12 +105,12 @@ export function insertPayload(draft: LinkDraft): Record<string, string | null> {
 }
 
 /**
- * Lo que viaja al `update`.
+ * What travels to the `update`.
  *
- * **El ancla no va**, y no es un olvido: mover un enlace de una obra a una
- * fotografía es cambiar de qué ficha cuelga, y eso no es corregir una dirección.
- * Si alguna vez hace falta, se retira y se añade donde toca, que además deja la
- * traza de las dos cosas.
+ * **The anchor does not go**, and it is not an oversight: moving a link from an artwork to a
+ * photograph is changing which record it hangs from, and that is not correcting an address.
+ * If it is ever needed, it is withdrawn and added where it belongs, which besides leaves
+ * the trace of both things.
  */
 export function updatePayload(draft: LinkDraft): Record<string, string | null> {
   const { artwork_id: _artwork, image_id: _image, ...rest } = insertPayload(draft)
@@ -120,28 +120,28 @@ export function updatePayload(draft: LinkDraft): Record<string, string | null> {
 // ── What can be said without asking the base ─────────────────
 
 /**
- * El único problema que este lado decide solo: que no hay dirección.
+ * The only problem this side decides on its own: that there is no address.
  *
- * No es una regla sobre la forma de una URL —de eso no hay ni una línea aquí—,
- * es que el campo está vacío. Sirve para tener el botón apagado en vez de mandar
- * una petición que ya se sabe que no lleva nada.
+ * It is not a rule about a URL's shape —there is not one line about that here—,
+ * it is that the field is empty. It serves to have the button off instead of sending
+ * a request already known to carry nothing.
  */
 export function missingUrl(draft: LinkDraft): boolean {
   return trimDraft(draft).url === ''
 }
 
 /**
- * La misma dirección, otra vez, en la misma ficha (RF-1406).
+ * The same address, again, in the same record (RF-1406).
  *
- * Se predice con lo que el bloque ya tiene cargado para poder contarlo en el acto
- * y con lo que hay que hacer, en vez de esperar el `23505` de la base. La base
- * sigue siendo la que manda —el índice único es la red de seguridad, y hay una
- * carrera real entre dos personas editando la misma ficha—, así que el mismo
- * choque se cuenta con LA MISMA FRASE desde los dos lados: ver
+ * It is predicted with what the block already has loaded so it can be said on the spot
+ * and with what has to be done, instead of waiting for the base's `23505`. The base
+ * is still the one in charge —the unique index is the safety net, and there is a
+ * real race between two people editing the same record—, so the same
+ * clash is told with THE SAME SENTENCE from both sides: see
  * `duplicateMessage`.
  *
- * `exceptId` es el enlace que se está corrigiendo: chocar consigo mismo no es
- * chocar.
+ * `exceptId` is the link being corrected: clashing with itself is not
+ * clashing.
  */
 export function duplicateOf(
   draft: LinkDraft,
@@ -162,14 +162,14 @@ export function duplicateOf(
 }
 
 /**
- * Lo mismo, pero entre los RETIRADOS: volver a añadir el que se retiró es una
- * operación legítima y lo que hace es devolverlo (RF-1406).
+ * The same, but among the WITHDRAWN ones: adding again the one that was withdrawn is a
+ * legitimate operation and what it does is give it back (RF-1406).
  *
- * Importa distinguirlos porque el índice único es parcial sobre `active`: contra
- * un retirado el `insert` NO falla, y crearía dos filas con la misma dirección en
- * la misma ficha, una activa y otra en la papelera. Recuperar la que ya está es
- * lo correcto —conserva su nota, su historia y su comprobación— y es lo que hace
- * `restore`.
+ * It matters to distinguish them because the unique index is partial on `active`: against
+ * a withdrawn one the `insert` does NOT fail, and it would create two rows with the same address in
+ * the same record, one active and the other in the wastebasket. Recovering the one that is already there is
+ * the right thing —it keeps its note, its history and its check— and it is what
+ * `restore` does.
  */
 export function retiredTwin(
   draft: LinkDraft,
@@ -200,8 +200,8 @@ export function duplicateMessage(twin: ExternalLinkRow | null): string {
 export type UrlVerdict = 'ACCEPTED' | 'REFUSED' | 'UNKNOWN'
 
 /**
- * La frase general de un rechazo. Dice lo que SÍ se admite, que es lo único que
- * se puede corregir.
+ * A rejection's general sentence. It says what IS accepted, which is the only thing that
+ * can be corrected.
  */
 export const REFUSAL_GENERAL =
   'La base no acepta esa dirección. Tiene que empezar por http:// o https://, sin espacios.'
