@@ -46,7 +46,7 @@ export function ArtistFundsPage() {
   if (access === 'loading') return <LoadingNotice />
   if (access === 'denied') return <Navigate to="/" replace />
 
-  /** Corre la acción y deja dicho lo que ha pasado. `run` contesta si entró. */
+  /** Runs the action and leaves what happened stated. `run` answers whether it went in. */
   async function act(said: string, write: () => Promise<string | null>) {
     setNotice(null)
     if (await run(write)) setNotice(said)

@@ -80,8 +80,8 @@ export function ArchiveSeriesPage() {
   const summary = useMemo(() => summarizeSeriesTree(tree), [tree])
   const notice = seriesListNotice({ loading, error, count: rows.length })
 
-  // La espera importa: el rol llega después de la sesión, así que decidir en el
-  // primer render echaría a quien sí puede. Ver useEditingAccess.
+  // The wait matters: the role arrives after the session, so deciding on the
+  // first render would throw out whoever can. See useEditingAccess.
   if (access === 'loading') return <LoadingNotice />
   if (access === 'denied') return <Navigate to="/" replace />
 

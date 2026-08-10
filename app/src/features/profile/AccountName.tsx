@@ -31,7 +31,7 @@ export function AccountName() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  // It confirms something that already happened, so it leaves on its own: see `useAutoClear`.
   useAutoClear(notice, () => setNotice(null))
 
   async function save(value: string) {
@@ -44,16 +44,16 @@ export function AccountName() {
     setNotice(null)
 
     if (!nameChanged(value, current)) {
-      // Sin cambio no se manda nada, y se dice: un «Guardado» tras no hacer nada
-      // enseña que el botón miente, y a partir de ahí no se cree ninguno.
+      // With no change nothing is sent, and it is said: a «Guardado» after doing nothing
+      // teaches that the button lies, and from then on none of them is believed.
       setDraft(null)
       return
     }
 
     setSaving(true)
     const clean = cleanFullName(value)
-    // `select('id')` por lo mismo que las pantallas de mantenimiento: una
-    // actualización que la política deniega vuelve sin error y sin filas.
+    // `select('id')` for the same reason as the maintenance screens: an
+    // update the policy denies comes back with no error and with no rows.
     const { data, error: failure } = await supabase
       .from('profiles')
       .update({ name: clean })

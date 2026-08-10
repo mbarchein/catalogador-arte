@@ -103,8 +103,8 @@ export function PartiesPage() {
   })
   const count = summarizeParties(parties)
 
-  // La espera importa: el rol llega después de la sesión, así que decidir en el
-  // primer render echaría a quien sí puede. Ver useEditingAccess.
+  // The wait matters: the role arrives after the session, so deciding on the
+  // first render would throw out whoever can. See useEditingAccess.
   if (access === 'loading') return <LoadingNotice />
   if (access === 'denied') return <Navigate to="/" replace />
 
@@ -385,8 +385,8 @@ function PartyRow({
                 void onSave(editing.opened, editing.draft).then((worked) => {
                   if (worked) {
                     setEditing(null)
-                    // Lo revelado se olvida al cerrar: el contacto no se queda en
-                    // pantalla porque se haya editado la ficha.
+                    // What was revealed is forgotten on closing: the contact does not stay on
+                    // screen just because the record has been edited.
                     setRevealed(null)
                   }
                 })

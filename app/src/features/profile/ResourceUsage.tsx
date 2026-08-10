@@ -102,7 +102,7 @@ export function ResourceUsage() {
   )
 }
 
-/** El color de la barra. Solo hay tres estados y se ven de un vistazo. */
+/** The bar's colour. There are only three states and they are seen at a glance. */
 const BAR: Record<UsageLevel, string> = {
   ok: 'bg-stone-700',
   warning: 'bg-amber-500',
@@ -120,7 +120,7 @@ function Gauge({
   detail: string
   used: number
   limit: number
-  /** Algo que matiza la cifra, cuando lo hay. */
+  /** Something qualifying the figure, when there is any. */
   notice?: string | null
 }) {
   const percent = usedPercent(used, limit)

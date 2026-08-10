@@ -21,8 +21,8 @@ describe('un nombre que se pueda guardar', () => {
   it('en blanco, no, y se dice por qué', () => {
     const said = validateFullName('   ') ?? ''
     expect(said).toContain('no puede quedarse en blanco')
-    // El motivo, no solo la prohibición: es lo que hace que no se lea como una
-    // pega del formulario.
+    // The reason, not just the prohibition: it is what keeps it from reading as a
+    // quibble of the form.
     expect(said).toContain('cada obra que corriges')
   })
 
@@ -38,13 +38,13 @@ describe('un nombre que se pueda guardar', () => {
 
 describe('lo que se guarda de verdad', () => {
   it('va recortado', () => {
-    // Un espacio delante ordena distinto en cualquier lista y no se ve al mirarlo.
+    // A leading space sorts differently in any list and is not visible on looking at it.
     expect(cleanFullName('  Mario  ')).toBe('Mario')
   })
 
   it('y los espacios de más no cuentan como cambio', () => {
-    // Sin esto, abrir el campo y cerrarlo mandaría un guardado que no guarda nada
-    // y movería la traza de la fila por nada.
+    // Without this, opening the field and closing it would send a save that saves nothing
+    // and would move the row's trace for nothing.
     expect(nameChanged(' Mario ', 'Mario')).toBe(false)
     expect(nameChanged('Mario B.', 'Mario')).toBe(true)
   })

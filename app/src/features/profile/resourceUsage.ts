@@ -26,16 +26,16 @@
  * que la cifra tiene un supuesto detrás.
  */
 
-/** Base de datos del tramo gratuito de Supabase. */
+/** Database of Supabase's free tier. */
 export const DATABASE_LIMIT_BYTES = 500_000_000
 
-/** Almacén de ficheros del tramo gratuito de Supabase. */
+/** File store of Supabase's free tier. */
 export const STORAGE_LIMIT_BYTES = 1_000_000_000
 
-/** Almacenamiento del tramo gratuito de Backblaze B2. */
+/** Storage of Backblaze B2's free tier. */
 export const MASTERS_LIMIT_BYTES = 10_000_000_000
 
-/** El plan del que hablan esos límites, dicho en la pantalla. */
+/** The plan those limits speak of, said on the screen. */
 export const PLAN_NOTICE =
   'Los límites son los del plan gratuito de cada servicio.'
 
@@ -56,8 +56,8 @@ export function bytesText(bytes: number): string {
     value /= 1000
     unit += 1
   }
-  // Sin decimales en bytes y kilobytes, donde no dicen nada; uno a partir de ahí,
-  // que es donde la diferencia entre 1,2 y 1,9 GB importa.
+  // No decimals in bytes and kilobytes, where they say nothing; one from there on,
+  // which is where the difference between 1.2 and 1.9 GB matters.
   const digits = unit <= 1 ? 0 : 1
   return `${value.toLocaleString('es-ES', {
     minimumFractionDigits: digits,
@@ -65,13 +65,13 @@ export function bytesText(bytes: number): string {
   })} ${UNITS[unit]}`
 }
 
-/** Qué parte del límite se lleva usada, de 0 a 100. */
+/** What part of the limit is used up, from 0 to 100. */
 export function usedPercent(used: number, limit: number): number {
   if (!Number.isFinite(used) || !Number.isFinite(limit) || limit <= 0) return 0
   return Math.min(100, Math.max(0, Math.round((used / limit) * 100)))
 }
 
-/** Cuántos bytes quedan, nunca negativo: pasarse del límite no es espacio de sobra. */
+/** How many bytes are left, never negative: going over the limit is not spare room. */
 export function freeBytes(used: number, limit: number): number {
   if (!Number.isFinite(used) || !Number.isFinite(limit)) return 0
   return Math.max(0, limit - used)
@@ -92,7 +92,7 @@ export function freeText(used: number, limit: number): string {
   return `Quedan ${bytesText(free)} libres de ${bytesText(limit)}`
 }
 
-/** Cómo de apurado va esto, para decirlo antes de que sea un problema. */
+/** How tight this is getting, to say it before it becomes a problem. */
 export type UsageLevel = 'ok' | 'warning' | 'full'
 
 export function usageLevel(used: number, limit: number): UsageLevel {
@@ -131,13 +131,13 @@ export function truncatedNotice(truncated: boolean): string | null {
     : null
 }
 
-/** Cuántos ficheros hay, dicho sin que un cero parezca una avería. */
+/** How many files there are, said without a zero looking like a breakdown. */
 export function objectsText(objects: number): string {
   if (!Number.isFinite(objects) || objects <= 0) return 'Todavía sin ficheros'
   return objects === 1 ? '1 fichero' : `${objects.toLocaleString('es-ES')} ficheros`
 }
 
-/** Cuándo se miró esto por última vez. */
+/** When this was last looked at. */
 export function measuredText(at: Date | null): string {
   if (at === null) return 'Sin medir todavía'
   return `Medido a las ${at.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`

@@ -36,7 +36,7 @@ export interface ChangeLogState {
   readonly rows: readonly ChangeLogRow[]
   readonly loading: boolean
   readonly error: string | null
-  /** Si la base tenía más filas de las que caben en una página. */
+  /** Whether the base had more rows than fit on one page. */
   readonly hasMore: boolean
   readonly loadMore: () => void
   readonly reload: () => void
@@ -69,8 +69,8 @@ export function useChangeLog(catalogId: string | undefined, enabled: boolean): C
       if (!catalogId) return
       setLoading(true)
       setError(null)
-      // Se pide UNA fila más de las que se van a mostrar: es cómo se sabe que hay
-      // más sin pagar un `count` exacto sobre una tabla que solo crece.
+      // ONE row more than will be shown is asked for: it is how having more is known
+      // without paying for an exact `count` over a table that only grows.
       const { data, error: failure } = await supabase
         .from('change_log')
         .select(COLUMNS)
@@ -86,7 +86,7 @@ export function useChangeLog(catalogId: string | undefined, enabled: boolean): C
       const all = (data ?? []) as unknown as ChangeLogRow[]
       const page = all.slice(0, take)
 
-      // Los autores que de verdad salen en esta página, y solo esos.
+      // The authors who really appear on this page, and only those.
       const ids = [...new Set(page.map((r) => r.changed_by).filter((v): v is string => v !== null))]
       let authors = new Map<string, { name: string | null; email: string | null }>()
       if (ids.length > 0) {

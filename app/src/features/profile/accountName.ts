@@ -22,12 +22,12 @@
  */
 export const NAME_MAX_LENGTH = 120
 
-/** Lo que se explica junto al campo, que es para qué sirve esto. */
+/** What is explained next to the field, which is what this is for. */
 export const NAME_HINT =
   'Es el nombre con el que apareces en cada obra que corriges, en «actualizado por» y en la ' +
   'traza de lo retirado.'
 
-/** El error, o null cuando el nombre se puede guardar. */
+/** The error, or null when the name can be saved. */
 export function validateFullName(name: string): string | null {
   const clean = name.trim()
   if (clean === '') {
@@ -49,12 +49,12 @@ export function cleanFullName(name: string): string {
   return name.trim()
 }
 
-/** Si esto cambia algo, para no mandar un guardado que no guarda nada. */
+/** Whether this changes anything, so as not to send a save that saves nothing. */
 export function nameChanged(draft: string, current: string): boolean {
   return cleanFullName(draft) !== cleanFullName(current)
 }
 
-/** Lo que se dice al terminar. */
+/** What is said on finishing. */
 export function nameSavedNotice(name: string): string {
   return `Ahora apareces como «${cleanFullName(name)}» en todo el catálogo.`
 }

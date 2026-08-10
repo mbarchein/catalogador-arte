@@ -24,7 +24,7 @@ export interface ResourceUsage {
   storageObjects: number
 }
 
-/** Lo que devuelve la función SQL, con sus nombres de columna. */
+/** What the SQL function returns, with its column names. */
 interface UsageRow {
   database_bytes: number | string
   storage_bytes: number | string
@@ -34,7 +34,7 @@ interface UsageRow {
 export interface MastersUsage {
   bytes: number
   objects: number
-  /** El recuento se quedó en el tope de páginas: lo de arriba es un mínimo. */
+  /** The count stopped at the page cap: the figure above is a minimum. */
   truncated: boolean
 }
 
@@ -63,8 +63,8 @@ export function useResourceUsage() {
       const { data, error } = fromDatabase.value
       const row = (data as UsageRow[] | null)?.[0]
       if (error || !row) {
-        // El mensaje de la base se enseña tal cual cuando lo hay: el de esta
-        // función habla español y dice qué se ha negado.
+        // The base's message is shown as is when there is one: this function's
+        // speaks Spanish and says what has been denied.
         setUsageError(
           error?.message?.trim()
             ? `No se ha podido medir la base de datos: ${error.message}`
@@ -104,7 +104,7 @@ export function useResourceUsage() {
   return { usage, masters, usageError, mastersError, loading, measuredAt, refresh }
 }
 
-/** Pide la medida una vez al montar. Se usa cuando la sección ya está a la vista. */
+/** Asks for the measurement once on mount. Used when the section is already in view. */
 export function useResourceUsageOnMount() {
   const state = useResourceUsage()
   const { refresh } = state

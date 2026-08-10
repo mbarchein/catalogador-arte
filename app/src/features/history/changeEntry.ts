@@ -163,18 +163,18 @@ export function fieldLabel(column: string | null | undefined): string {
   return FIELD_LABEL[column] ?? `un dato (${column})`
 }
 
-/** Quién hizo el cambio, tal como se firma en pantalla. */
+/** Who made the change, as it is signed on screen. */
 export function authorName(row: ChangeLogRow): string {
   const name = row.author?.name?.trim()
   if (name) return name
   const email = row.author?.email?.trim()
   if (email) return email
-  // Sin autor es lo que escribe una migración o un trigger, no un descuido: se
-  // dice, porque «alguien» sugeriría que se ha perdido el dato.
+  // With no author is what a migration or a trigger writes, not an oversight: it is
+  // said, because «somebody» would suggest the datum has been lost.
   return 'El sistema'
 }
 
-/** Un guardado: todas las filas que comparten `change_id`. */
+/** One save: every row sharing a `change_id`. */
 export interface ChangeEntry {
   readonly changeId: string
   readonly entity: AuditedEntity
@@ -182,9 +182,9 @@ export interface ChangeEntry {
   readonly operation: ChangeOperation
   readonly changedAt: string
   readonly author: string
-  /** Los campos que cambió, en español, sin repetidos y en el orden en que llegaron. */
+  /** The fields it changed, in Spanish, without repeats and in the order they arrived. */
   readonly fields: readonly string[]
-  /** La fila con el `id` más alto del grupo, para ordenar y para la clave de React. */
+  /** The row with the highest `id` of the group, for sorting and for React's key. */
   readonly lastId: number
 }
 
@@ -233,7 +233,7 @@ export function groupChanges(rows: readonly ChangeLogRow[]): readonly ChangeEntr
   return order.map((id) => byChange.get(id)!.entry)
 }
 
-/** Une los campos en una enumeración española: «el alto, el ancho y la técnica». */
+/** Joins the fields into a Spanish enumeration: «el alto, el ancho y la técnica». */
 export function joinFields(fields: readonly string[]): string {
   const last = fields[fields.length - 1]
   if (last === undefined) return ''
@@ -262,8 +262,8 @@ export function changeSentence(entry: ChangeEntry): string {
       return esFoto ? `${quien} recuperó una fotografía` : `${quien} recuperó la ficha`
     case 'UPDATE': {
       const que = joinFields(entry.fields)
-      // Un cambio sin campos anotados no debería existir —la base lo impide— pero
-      // si llegara, se dice que hubo un cambio en vez de una frase a medias.
+      // A change with no fields noted should not exist —the base prevents it— but
+      // if one arrived, it is said that there was a change instead of half a sentence.
       if (que === '') return esFoto ? `${quien} cambió una fotografía` : `${quien} cambió la ficha`
       return esFoto ? `${quien} cambió ${que} de una fotografía` : `${quien} cambió ${que}`
     }
