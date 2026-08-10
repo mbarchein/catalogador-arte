@@ -699,8 +699,8 @@ begin
     raise notice 'OK: segunda puerta — no se expone una obra declarada sin historial: %', sqlerrm;
   end;
 
-  -- Restaurar una participación retirada es la misma puerta, y es el camino que
-  -- la interfaz usará de verdad.
+  -- Restoring a withdrawn participation is the same door, and it is the path
+  -- the interface will really use.
   begin
     update public.artwork_exhibitions set active = true
      where catalog_id = 'AR-9800'
@@ -710,19 +710,19 @@ begin
     raise notice 'OK: restaurar una participación pasa por la misma puerta';
   end;
 
-  -- Y una edición cualquiera de la obra no se bloquea por un estado que no
-  -- cambia: la comprobación solo hace trabajo cuando el estado se mueve.
+  -- And any edit of the artwork is not blocked by a state that does not
+  -- change: the check only does work when the state moves.
   update public.artworks set exhibition_history_status = 'IN_PROGRESS' where catalog_id = 'AR-9800';
   update public.artwork_exhibitions set active = true where catalog_id = 'AR-9800';
   raise notice 'OK: con el estado corregido, las participaciones vuelven';
 end $$;
 
--- ── 20. Y las dos puertas anteriores siguen en pie ───────────
+-- ── 20. And the two previous doors still stand ───────────────
 --
--- Este grupo REEMPLAZA `tg_artwork_research_status_coherent` por tercera vez, y
--- un reemplazo puede comerse los bloques anteriores sin que nada avise: los
--- tests de la procedencia y de la bibliografía pasan igual, porque comprueban la
--- función que hay y no la que había.
+-- This group REPLACES `tg_artwork_research_status_coherent` for the third time, and
+-- a replacement can swallow the previous blocks with nothing warning: the
+-- provenance's and the bibliography's tests pass all the same, because they check the
+-- function that is there and not the one that was.
 do $$
 declare v_ref uuid;
 begin
@@ -752,9 +752,9 @@ begin
     raise notice 'OK: la puerta de la bibliografía sigue en pie tras el tercer reemplazo (RF-218)';
   end;
 
-  -- Y los tres bloques son independientes: cada uno mira SUS filas. Retirado el
-  -- eslabón, la procedencia se declara aunque la obra siga teniendo cita y
-  -- participación.
+  -- And the three blocks are independent: each one looks at ITS rows. With the
+  -- link withdrawn, the provenance is declared even if the artwork still has a citation and
+  -- a participation.
   update public.provenance_events set active = false where catalog_id = 'AR-9801';
   update public.artworks set provenance_status = 'NONE_FOUND' where catalog_id = 'AR-9801';
 
@@ -767,7 +767,7 @@ begin
   raise notice 'OK: los tres bloques documentales se declaran por separado (RF-218)';
 end $$;
 
--- ── 21. El estado de investigación es un enumerado cerrado ───
+-- ── 21. The research state is a closed enum ──────────────────
 do $$
 begin
   update public.artworks set exhibition_history_status = 'PENDIENTE' where catalog_id = 'AR-9801';
@@ -776,14 +776,14 @@ exception when invalid_text_representation then
   raise notice 'OK: el estado del historial expositivo no admite texto libre';
 end $$;
 
--- ── 22. La papelera de cada una ──────────────────────────────
+-- ── 22. Each one's wastebasket ───────────────────────────────
 --
--- La exposición es una ficha con nombre propio y de las que RF-901 enumera:
--- lleva papelera completa y restaurar NO borra la traza de la baja anterior
--- (RF-902). La sede y la participación cuelgan de otra ficha y no tienen
--- pantalla de papelera propia, así que restaurarlas las deja como si nunca se
--- hubieran retirado — y por eso se comprueba, para que la diferencia sea
--- deliberada y no un olvido.
+-- The exhibition is a record with a name of its own and one of those RF-901 enumerates:
+-- it carries a complete wastebasket and restoring does NOT erase the trace of the previous withdrawal
+-- (RF-902). The venue and the participation hang from another record and have no
+-- wastebasket screen of their own, so restoring them leaves them as if they had never
+-- been withdrawn — and that is why it is checked, so the difference is
+-- deliberate and not an oversight.
 do $$
 declare
   v_expo uuid; v_sede uuid; v_part uuid;
@@ -843,11 +843,11 @@ begin
   raise notice 'OK: la exposición guarda las dos trazas; la sede y la participación vuelven limpias';
 end $$;
 
--- ── 23. La autoría la sella la base ──────────────────────────
--- RF-803 y RF-804 con la función genérica: quién y cuándo salen de la sesión, no
--- de lo que mande el cliente. Se comprueba mandando una fecha falsa y viendo que
--- el trigger la pisa; comparar dos instantes no valdría, porque dentro de una
--- transacción `now()` no avanza.
+-- ── 23. The authorship is stamped by the base ────────────────
+-- RF-803 and RF-804 with the generic function: who and when come from the session, not
+-- from what the client sends. It is checked by sending a false date and seeing that
+-- the trigger overrides it; comparing two instants would not do, because inside a
+-- transaction `now()` does not advance.
 do $$
 declare
   v_id uuid; v_creado uuid; v_actualizado uuid; v_cuando timestamptz;
@@ -878,9 +878,9 @@ begin
     raise exception 'FAIL: «actualizado por» la ha puesto el cliente (%)', v_actualizado;
   end if;
 
-  -- Y en la sede, que no tiene columnas de actualización: la función genérica
-  -- toca solo las columnas que la fila tenga, y una tabla sin ellas funciona
-  -- igual (RF-804).
+  -- And in the venue, which has no update columns: the generic function
+  -- touches only the columns the row has, and a table with none of them works
+  -- just the same (RF-804).
   insert into public.exhibition_venues (name, locality, created_by)
   values ('Ateneo de Prueba', 'Cáceres', '00000000-0000-0000-0000-0000000000b2');
   if (select created_by from public.exhibition_venues where name = 'Ateneo de Prueba')
@@ -891,11 +891,11 @@ begin
   raise notice 'OK: la autoría y la fecha de actualización las sella la base (RF-801, RF-803, RF-804)';
 end $$;
 
--- ── 24. Nadie borra de verdad, y las tres nacen cerradas ─────
--- RF-901, RF-111, RF-113. Las políticas las escribe la migración siguiente; con
--- RLS activado y sin política, la tabla está cerrada, que es el estado seguro
--- para esperar. Lo que no puede pasar nunca es lo contrario: privilegios
--- concedidos sin RLS.
+-- ── 24. Nobody really deletes, and all three are born closed ─
+-- RF-901, RF-111, RF-113. The policies are written by the next migration; with
+-- RLS enabled and no policy, the table is closed, which is the safe state
+-- to wait in. What can never happen is the opposite: privileges
+-- granted with no RLS.
 do $$
 declare v_tabla text;
 begin

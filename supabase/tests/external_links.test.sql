@@ -1,28 +1,28 @@
--- Enlaces a sitios externos: RF-1401 a RF-1408.
--- Y, por delante de todo, el perímetro: RF-101, RF-105, RF-106, RF-109, RF-111,
+-- Links to external sites: RF-1401 to RF-1408.
+-- And, ahead of everything, the perimeter: RF-101, RF-105, RF-106, RF-109, RF-111,
 -- RF-113, RF-609, RF-901, RF-902.
 --
--- Lo que este fichero defiende de verdad es UNA LÍNEA: la validación de la
--- dirección. Todo lo que entre en `url` acabará dentro de un `href` en la ficha
--- que ve todo el equipo, no hay backend que se interponga y la clave anónima
--- viaja en el cliente. Por eso la lista hostil está entera y escrita caso a caso
--- —incluidos los tres que la primera versión del patrón dejaba pasar: la barra
--- invertida, el espacio de ancho cero y las credenciales antes del anfitrión— y
--- por eso se pasa DOS VECES, contra `url` y contra `archive_url`. Si alguien
--- afloja el patrón, esto se pone rojo.
+-- What this file really defends is ONE LINE: the address's validation.
+-- Everything that goes into `url` will end up inside an `href` in the record
+-- the whole team sees, there is no backend standing in between and the anonymous key
+-- travels in the client. That is why the hostile list is complete and written case by case
+-- —including the three the pattern's first version let through: the backslash,
+-- the zero-width space and the credentials before the host— and
+-- that is why it is run TWICE, against `url` and against `archive_url`. If somebody
+-- loosens the pattern, this goes red.
 --
--- Los caracteres invisibles y de control se escriben con `chr()` a propósito: un
--- byte invisible pegado dentro del fichero no se ve al revisarlo y se pierde en
--- el primer copiar y pegar, que es justo el fallo que se está probando.
+-- The invisible and control characters are written with `chr()` on purpose: an
+-- invisible byte stuck inside the file is not visible on review and is lost in
+-- the first copy and paste, which is precisely the failure being tested.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
 --
--- Un catalogador y un lector de verdad; los perfiles los crea el trigger de
--- auth.users. Dos obras —una activa y otra retirada— y dos fotografías de la
--- activa —una activa y otra retirada—, que es el mínimo para ejercer la
--- visibilidad heredada en las dos anclas.
+-- A real cataloguer and a real reader; the profiles are created by the
+-- auth.users trigger. Two artworks —one active and one withdrawn— and two photographs of the
+-- active one —one active and one withdrawn—, which is the minimum for exercising the
+-- inherited visibility in both anchors.
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b1', 'cat-enlaces@test.local'),
@@ -43,11 +43,11 @@ update public.images  set active = false where image_id  = 'AR-9700_v2';
 update public.artworks set active = false where catalog_id = 'AR-9701';
 
 
--- ── 1. La tabla nace cerrada (RF-111, RF-113, RF-901) ────────
+-- ── 1. The table is born closed (RF-111, RF-113, RF-901) ─────
 --
--- Prioridad absoluta y antes que nada: sin backend, estas políticas son el único
--- perímetro. Se mide el catálogo del sistema, que es donde se ve la tabla a la
--- que se le olvidó un `revoke`.
+-- Absolute priority and before anything else: with no backend, these policies are the only
+-- perimeter. The system catalogue is measured, which is where the table that
+-- forgot a `revoke` is visible.
 do $$
 declare v_privilegios text[];
 begin
@@ -66,9 +66,9 @@ begin
     raise exception 'FAIL: alguien tiene privilegio de DELETE sobre los enlaces (RF-901)';
   end if;
 
-  -- El rol anónimo, ni un privilegio: ni de tabla ni de columna. Revocar de
-  -- `anon` no deshace lo que PUBLIC concede, así que lo que se mira es el
-  -- resultado.
+  -- The anonymous role, not one privilege: neither table nor column. Revoking from
+  -- `anon` does not undo what PUBLIC grants, so what is looked at is the
+  -- result.
   select coalesce(array_agg(distinct table_name || ' (' || privilege_type || ')'), '{}')
     into v_privilegios
     from information_schema.table_privileges
@@ -78,7 +78,7 @@ begin
       array_to_string(v_privilegios, ', ');
   end if;
 
-  -- Y el autenticado, exactamente tres y no cuatro.
+  -- And the authenticated one, exactly three and not four.
   select coalesce(array_agg(distinct privilege_type order by privilege_type), '{}')
     into v_privilegios
     from information_schema.table_privileges
@@ -91,7 +91,7 @@ begin
   raise notice 'OK: RLS activado, sin DELETE por ninguna de las dos puertas, y el anónimo sin nada (RF-111, RF-113, RF-901)';
 end $$;
 
--- El anónimo, atacando de verdad.
+-- The anonymous one, really attacking.
 do $$
 begin
   set local role anon;
@@ -106,9 +106,9 @@ end $$;
 
 reset role;
 
--- Y un DELETE autenticado tiene que fallar por FALTA DE PRIVILEGIO y no por
--- falta de filas: si fallara por falta de filas, el día que alguien concediera
--- el privilegio esto seguiría pasando.
+-- And an authenticated DELETE has to fail for LACK OF PRIVILEGE and not for
+-- lack of rows: if it failed for lack of rows, the day somebody granted
+-- the privilege this would go on passing.
 do $$
 begin
   set local role authenticated;
@@ -124,11 +124,11 @@ end $$;
 reset role;
 
 
--- ── 2. El arco exclusivo (RF-1401) ───────────────────────────
+-- ── 2. The exclusive arc (RF-1401) ───────────────────────────
 --
--- Se comprueba el NOMBRE de la restricción y no solo que falle: lo que
--- PostgreSQL devuelve al rechazar es el nombre, y es lo que la interfaz traduce
--- al español.
+-- The constraint's NAME is checked and not only that it fails: what
+-- PostgreSQL returns on rejecting is the name, and it is what the interface translates
+-- into Spanish.
 do $$
 declare v_restriccion text;
 begin
@@ -156,7 +156,7 @@ begin
   raise notice 'OK: ni cero anclas ni dos: exactamente una (RF-1401)';
 end $$;
 
--- Y las dos formas con una sola ancla entran.
+-- And both forms with a single anchor go in.
 do $$
 begin
   insert into public.external_links (artwork_id, url) values
@@ -166,9 +166,9 @@ begin
   raise notice 'OK: un enlace de obra y un enlace de fotografía entran (RF-1401)';
 end $$;
 
--- La clave ajena es declarada, no polimórfica: un identificador inventado no
--- entra, y eso es exactamente lo que una columna de texto con el tipo al lado no
--- podría impedir.
+-- The foreign key is declared, not polymorphic: an invented identifier does not
+-- go in, and that is exactly what a text column with the type alongside would
+-- not be able to prevent.
 do $$
 begin
   begin
@@ -188,12 +188,12 @@ begin
   raise notice 'OK: las dos claves ajenas rechazan un identificador inexistente (RF-1401)';
 end $$;
 
--- `on delete restrict`: nadie tiene DELETE, pero si algún día se borrara una
--- fila a mano desde acceso administrativo, esto avisa en vez de dejar enlaces
--- colgando del vacío.
--- El bloque anidado es la única forma de deshacer un intento dentro de PL/pgSQL:
--- cada `begin ... exception` es una subtransacción, y `savepoint` a mano no se
--- admite aquí.
+-- `on delete restrict`: nobody has DELETE, but if a row were ever deleted
+-- by hand from administrative access, this warns instead of leaving links
+-- hanging from nothing.
+-- The nested block is the only way of undoing an attempt inside PL/pgSQL:
+-- each `begin ... exception` is a subtransaction, and a hand-written `savepoint` is not
+-- admitted here.
 do $$
 begin
   begin
@@ -205,14 +205,14 @@ begin
 end $$;
 
 
--- ── 3. La dirección: la lista hostil entera (RF-1403) ────────
+-- ── 3. The address: the whole hostile list (RF-1403) ─────────
 --
--- Cada cadena con el ataque que representa. La lista se pasa contra `url` y
--- después, sin quitar ni una, contra `archive_url`.
+-- Each string with the attack it represents. The list is run against `url` and
+-- afterwards, without removing a single one, against `archive_url`.
 --
--- El caso del byte NUL del diseño original no está: PostgreSQL no admite \x00
--- dentro de un `text` y la propia cadena literal falla antes de llegar al
--- `check`, así que probarlo sería probar el analizador léxico.
+-- The original design's NUL byte case is not here: PostgreSQL does not admit \x00
+-- inside a `text` and the literal string itself fails before reaching the
+-- `check`, so testing it would be testing the lexer.
 create temporary table hostiles (n integer generated always as identity, u text, porque text);
 
 insert into hostiles (u, porque) values
@@ -286,9 +286,9 @@ begin
     (select count(*) from hostiles);
 end $$;
 
--- 3b. Contra `archive_url`, la lista entera otra vez. La copia archivada acaba
--- en un `href` igual que la original, así que la regla es exactamente la misma y
--- no una versión relajada.
+-- 3b. Against `archive_url`, the whole list again. The archived copy ends up
+-- in an `href` just like the original, so the rule is exactly the same and
+-- not a relaxed version.
 do $$
 declare r record; v_restriccion text;
 begin
@@ -309,9 +309,9 @@ begin
     (select count(*) from hostiles);
 end $$;
 
--- 3c. Y las buenas entran, por las dos columnas. Sin este bloque el patrón
--- podría endurecerse hasta no admitir nada y los dos anteriores seguirían
--- pasando.
+-- 3c. And the good ones go in, through both columns. Without this block the pattern
+-- could be hardened until it admitted nothing and the two previous ones would go on
+-- passing.
 do $$
 declare r record;
 begin
@@ -329,8 +329,8 @@ end $$;
 
 delete from public.external_links where artwork_id = 'AR-9702';
 
--- 3d. El título se guarda recortado y no con espacios alrededor: un título con
--- espacios rompe la comparación sin que se vea en pantalla.
+-- 3d. The title is stored trimmed and not with spaces around it: a title with
+-- spaces breaks the comparison without it being visible on screen.
 do $$
 declare v_restriccion text;
 begin
@@ -348,11 +348,11 @@ begin
 end $$;
 
 
--- ── 4. La forma de la fila, y el despliegue en una fase ──────
+-- ── 4. The row's shape, and the single-phase deployment ──────
 --
--- Una fila con solo el ancla y la dirección es válida: nace sin título, sin
--- tipo, sin nota, sin comprobar y activa. Nada obliga a que exista la columna del
--- tipo, así que un cliente que no la conozca sigue funcionando.
+-- A row with only the anchor and the address is valid: it is born with no title, no
+-- type, no note, unchecked and active. Nothing requires the type's column to exist,
+-- so a client that does not know it goes on working.
 do $$
 declare v_fila public.external_links%rowtype;
 begin
@@ -380,7 +380,7 @@ begin
   raise notice 'OK: una fila con solo el ancla y la dirección es válida y nace sin comprobar (RF-1402, RF-1405, RF-1408)';
 end $$;
 
--- «Sin clasificar» y OTHER no son lo mismo, y el enumerado no admite texto libre.
+-- «Sin clasificar» and OTHER are not the same, and the enum admits no free text.
 do $$
 begin
   update public.external_links set link_type = 'OTHER'
