@@ -28,15 +28,15 @@ describe('cómo se lee una dirección', () => {
   })
 
   it('el dominio NUNCA se recorta', () => {
-    // Es la parte que contesta «¿de quién es esto?». Recortarla es lo que
-    // convierte un acortado en una suplantación.
+    // It is the part that answers «whose is this?». Trimming it is what
+    // turns a shortening into an impersonation.
     const said = shortLinkText('https://www.macvac.es/' + 'x'.repeat(200), 12)
     expect(said.startsWith('macvac.es')).toBe(true)
   })
 
   it('una dirección que no se reconoce se enseña entera', () => {
-    // Larga y fea, pero verdadera. Cortar «https://macvac.es@evil.example/x»
-    // dejaría a la vista un principio que se lee como del MACVA y no lo es.
+    // Long and ugly, but true. Cutting «https://macvac.es@evil.example/x»
+    // would leave in sight a beginning that reads as MACVA's and is not.
     const trampa = 'https://www.macvac.es@evil.example/obra/saliente-en-el-espacio/'
     expect(shortLinkText(trampa)).toBe(trampa)
   })
@@ -56,7 +56,7 @@ describe('partir una nota', () => {
 
     expect(link?.href).toBe(REAL)
     expect(link?.text.length).toBeLessThanOrEqual(NOTE_LINK_MAX)
-    // El texto de alrededor no se toca ni se pierde.
+    // The surrounding text is neither touched nor lost.
     expect(parts.map((p) => p.text).join('')).toContain('en la web del MACVA.')
     expect(parts.map((p) => p.text).join('')).toContain('la ficha de la obra RC-0005')
   })
@@ -67,8 +67,8 @@ describe('partir una nota', () => {
   })
 
   it('el punto que cierra la frase no se lleva al enlace', () => {
-    // «Véase https://macvac.es/obra.» acaba en punto, y el punto es de la frase:
-    // metido en el enlace, llevaría a una dirección que nadie escribió.
+    // «Véase https://macvac.es/obra.» ends in a full stop, and the stop belongs to the sentence:
+    // put inside the link, it would lead to an address nobody wrote.
     const parts = noteSegments('Véase https://macvac.es/obra.')
     const link = parts.find((p) => p.href !== null)
     expect(link?.href).toBe('https://macvac.es/obra')

@@ -36,7 +36,7 @@ import { sectionSpec } from '../sections'
  * exactamente lo que un comisario mira primero.
  */
 
-// ── Material de trabajo ──────────────────────────────────────
+// ── Working material ─────────────────────────────────────────
 
 function party(over: Partial<PartyRef> = {}): PartyRef {
   return {
@@ -52,7 +52,7 @@ function party(over: Partial<PartyRef> = {}): PartyRef {
 
 let counter = 0
 
-/** Un eslabón con lo mínimo, y sus años cuando se le pasan. */
+/** A link with the minimum, and its years when they are passed in. */
 function link(over: Partial<ProvenanceEventRow> = {}): ProvenanceEventRow {
   counter += 1
   const row: ProvenanceEventRow = {
@@ -74,8 +74,8 @@ function link(over: Partial<ProvenanceEventRow> = {}): ProvenanceEventRow {
     party: null,
     ...over,
   }
-  // `date_text` es columna generada: el material de prueba imita lo que la base
-  // devolvería, para que la ficha no lea una fecha que la base no compondría.
+  // `date_text` is a generated column: the test material imitates what the base
+  // would return, so the record does not read a date the base would not compose.
   if (over.date_text === undefined) {
     row.date_text =
       row.date_note !== ''
@@ -89,7 +89,7 @@ function link(over: Partial<ProvenanceEventRow> = {}): ProvenanceEventRow {
   return row
 }
 
-// ── Los eslabones, uno a uno ─────────────────────────────────
+// ── The links, one by one ────────────────────────────────────
 
 describe('un eslabón de la cadena (RF-509)', () => {
   it('con ficha, se lee por su nombre y su localidad', () => {
@@ -119,7 +119,7 @@ describe('un eslabón de la cadena (RF-509)', () => {
     expect(one?.detail).toBe('Propiedad de la tía de Almudena Hormeño')
   })
 
-  /** RF-901: una ficha retirada sigue nombrando el eslabón; se apaga, no se quita. */
+  /** RF-901: a withdrawn record still names the link; it goes dim, it is not removed. */
   it('una ficha retirada se marca, pero el nombre no desaparece', () => {
     const [one] = chainLinks([
       link({ party_id: 'party-1', party: party({ active: false }), party_note: '' }),
@@ -128,7 +128,7 @@ describe('un eslabón de la cadena (RF-509)', () => {
     expect(one?.name).toBe('Museo de Bellas Artes de Badajoz')
   })
 
-  /** RF-304: nunca un hueco en pantalla. */
+  /** RF-304: never a gap on screen. */
   it('un eslabón sin fecha lo dice, en vez de dejar el sitio en blanco', () => {
     const [one] = chainLinks([link()])
     expect(one?.dates).toBe('Sin fecha')
@@ -179,13 +179,13 @@ describe('«sin revisar» no es «no», dentro del eslabón (RF-205)', () => {
   })
 })
 
-// ── Los huecos, que son el motivo de todo esto ───────────────
+// ── The gaps, which are the reason for all this ──────────────
 
 describe('el hueco en la cadena (RF-509)', () => {
   it('los años que un eslabón cubre salen de la estructura, no del texto', () => {
     expect(linkSpan(link({ start_year: 1985, end_year: 1990 }))).toEqual({ from: 1985, to: 1990 })
     expect(linkSpan(link({ start_year: 1985 }))).toEqual({ from: 1985, to: null })
-    // «finales de los setenta» se imprime y no se puede medir.
+    // «finales de los setenta» gets printed and cannot be measured.
     expect(linkSpan(link({ date_note: 'finales de los setenta' }))).toBeNull()
   })
 
@@ -288,7 +288,7 @@ describe('el hueco en la cadena (RF-509)', () => {
       open: false,
       holderId: owner.id,
     })
-    // Un eslabón sin año final deja la cadena abierta: nadie ha dicho que saliera de ahí.
+    // A link with no final year leaves the chain open: nobody has said it left there.
     const open = link({ position: 3, start_year: 1995 })
     const reach = chainReach([owner, deposit, open])
     expect(reach.open).toBe(true)
@@ -330,7 +330,7 @@ describe('el hueco en la cadena (RF-509)', () => {
     expect(chainGaps(rows, { originYear: 1968, currentYear: 1970 })).toEqual([])
   })
 
-  /** El hueco que primero se pregunta: ¿y dónde está ahora? */
+  /** The gap asked about first: and where is it now? */
   it('una cadena que se cierra en el pasado deja un hueco hasta hoy', () => {
     const rows = [link({ position: 1, start_year: 1985, end_year: 1990 })]
     const gaps = chainGaps(rows, { currentYear: 2026 })
@@ -454,7 +454,7 @@ describe('la continuidad de la cadena entera', () => {
   })
 })
 
-// ── Quién la tiene ahora ─────────────────────────────────────
+// ── Who has it now ───────────────────────────────────────────
 
 describe('el último eslabón (RF-509)', () => {
   it('es el de la posición más alta, aunque las filas lleguen desordenadas', () => {
@@ -518,7 +518,7 @@ describe('el último eslabón (RF-509)', () => {
   })
 })
 
-// ── El relato publicable (RF-510) ────────────────────────────
+// ── The publishable account (RF-510) ─────────────────────────
 
 describe('la línea de procedencia compuesta (RF-510)', () => {
   it('encadena los eslabones con punto y coma, con su sitio y sus años', () => {
@@ -607,10 +607,10 @@ describe('de dónde sale la procedencia que se imprime (RF-510)', () => {
   })
 })
 
-// ── La cadena como una sola lectura ──────────────────────────
+// ── The chain as a single reading ────────────────────────────
 
 describe('la cadena se lee como una historia, no como una tabla (RF-509)', () => {
-  /** Una obra de 1968 con un hueco de 1972 a 1984 en medio. */
+  /** A 1968 artwork with a gap from 1972 to 1984 in the middle. */
   function chainWithGap() {
     const rows = [
       link({ position: 1, party_note: 'Antonio Rotili', start_year: 1968, end_year: 1971 }),
@@ -686,8 +686,8 @@ describe('la cadena se lee como una historia, no como una tabla (RF-509)', () =>
     const { timeline } = chainWithGap()
     const keys = timeline.map((entry) => entry.key)
     expect(new Set(keys).size).toBe(keys.length)
-    // La clave del eslabón es su identificador: reordenar la cadena mueve la
-    // fila y no la vuelve a crear.
+    // The link's key is its identifier: reordering the chain moves the
+    // row and does not create it again.
     expect(keys[0]).toContain('event-')
   })
 
@@ -735,7 +735,7 @@ describe('la cadena se lee como una historia, no como una tabla (RF-509)', () =>
   })
 })
 
-// ── Las dos consultas que alimentan el bloque ────────────────
+// ── The two queries that feed the block ──────────────────────
 
 describe('lo que el bloque puede decir mientras llega (RF-304, RF-218)', () => {
   const spec = sectionSpec('provenance')
@@ -773,7 +773,7 @@ describe('lo que el bloque puede decir mientras llega (RF-304, RF-218)', () => {
   })
 
   it('el aviso ocupa el sitio del texto vacío cuando no hay eslabones', () => {
-    // Es el caso que importa: es justo cuando el vacío se puede leer como un «no».
+    // This is the case that matters: it is exactly when the emptiness can be read as a «no».
     const state = chainBlockState(blockState(spec, 'UNREVIEWED', 0), 'No se sabe si alguien miró.')
     expect(state.emptyText).toBe('No se sabe si alguien miró.')
     expect(state.partialText).toBeNull()

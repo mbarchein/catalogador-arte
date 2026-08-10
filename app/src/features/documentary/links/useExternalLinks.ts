@@ -131,7 +131,7 @@ export function useExternalLinks(catalogId: string, enabled = true): ExternalLin
 }
 
 export interface LinkActions {
-  /** Una escritura está en vuelo. Los controles se apagan con ella. */
+  /** A write is in flight. The controls go dark with it. */
   readonly saving: boolean
   /**
    * Pregunta a la base si acepta esta dirección (RF-1403).
@@ -149,11 +149,11 @@ export interface LinkActions {
    * puede añadir.
    */
   readonly verifyUrl: (url: string) => Promise<UrlVerdict>
-  /** Añade el enlace (RF-1401). Null si ha ido bien; la frase en español si no. */
+  /** Adds the link (RF-1401). Null if it went well; the sentence in Spanish if not. */
   readonly add: (draft: LinkDraft) => Promise<string | null>
-  /** Corrige la dirección, el título, la clase o la nota. El ancla no se mueve. */
+  /** Corrects the address, the title, the kind or the note. The anchor does not move. */
   readonly save: (linkId: string, draft: LinkDraft) => Promise<string | null>
-  /** Retira o recupera (RF-1406). Nunca un `delete`: no hay privilegio y no va a haberlo. */
+  /** Withdraws or recovers (RF-1406). Never a `delete`: there is no privilege and there is not going to be. */
   readonly setActive: (linkId: string, active: boolean) => Promise<string | null>
   /**
    * Sella la comprobación a mano (RF-1405) por la RPC `record_link_check`, que es
@@ -178,7 +178,7 @@ export function useLinkActions(): LinkActions {
   const verifyUrl = useCallback(async (url: string): Promise<UrlVerdict> => {
     const { data, error } = await supabase.rpc('is_web_url', { p_url: url })
     if (error) return 'UNKNOWN'
-    // La función es `strict`: con nulo devuelve nulo, y eso no es un «sí».
+    // The function is `strict`: with null it returns null, and that is not a «yes».
     return data === true ? 'ACCEPTED' : data === false ? 'REFUSED' : 'UNKNOWN'
   }, [])
 

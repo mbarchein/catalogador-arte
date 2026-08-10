@@ -98,8 +98,8 @@ export function ProvenanceLinkForm({
     stored.clear()
   }
 
-  // Contra el punto de partida, que sirve igual para el eslabón nuevo —el borrador llega
-  // vacío— y para el que se está corrigiendo.
+  // Against the starting point, which serves both the new link —the draft arrives
+  // empty— and the one being corrected.
   const dirty = draftDirty(draft, initial)
 
   // Y apuntado. El ámbito distingue el eslabón nuevo del que se corrige: `nuevo` es uno
@@ -130,8 +130,8 @@ export function ProvenanceLinkForm({
           const recovered = stored.accept()
           if (recovered === null) return
           setDraft(recovered)
-          // El interruptor de «hasta» se recoloca con lo recuperado: dejarlo apagado sobre
-          // un borrador que traía año de cierre esconderría ese año en un campo invisible.
+          // The «hasta» switch is repositioned with what was recovered: leaving it off over
+          // a draft carrying a closing year would hide that year in an invisible field.
           setRanged(recovered.endYear !== null)
         }}
         onDiscard={stored.discard}

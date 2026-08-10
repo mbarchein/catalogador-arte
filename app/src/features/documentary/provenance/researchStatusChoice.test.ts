@@ -3,7 +3,7 @@ import { RESEARCH_STATUS_ORDER, researchStatusOptions, statusUnknownNotice } fro
 import { sectionSpec } from '../sections'
 import { RESEARCH_STATUS_DESCRIPTION } from '../../../lib/types'
 
-/** RF-218 desde el lado de quien declara: qué se puede decir de la procedencia. */
+/** RF-218 from the declarer's side: what can be said about the provenance. */
 
 const spec = sectionSpec('provenance')
 

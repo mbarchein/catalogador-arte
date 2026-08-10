@@ -38,7 +38,7 @@ function artwork(over: Partial<ArtworkRef> = {}): ArtworkRef {
   }
 }
 
-/** «Estudio previo de» / «Obra final de», el par asimétrico del catálogo. */
+/** «Estudio previo de» / «Obra final de», the catalogue's asymmetric pair. */
 const STUDY = {
   id: 'type-study',
   name: 'Estudio previo de',

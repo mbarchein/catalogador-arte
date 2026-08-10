@@ -128,7 +128,7 @@ export function PartyPicker({
               <span className="block text-xs text-stone-500">Sin ficha, escrito a mano</span>
             </>
           ) : (
-            /* RF-304: nunca un hueco. El control dice qué falta. */
+            /* RF-304: never a gap. The control says what is missing. */
             <span className="block text-sm text-stone-500">
               Sin elegir: toca para buscar una ficha o escribirlo a mano
             </span>

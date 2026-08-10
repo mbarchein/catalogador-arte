@@ -80,7 +80,7 @@ function artwork(over: Partial<ArtworkRef> = {}): ArtworkRef {
   }
 }
 
-// ── El sentido ───────────────────────────────────────────────
+// ── The direction ────────────────────────────────────────────
 
 describe('RF-217: qué sentido tiene la relación', () => {
   it('un tipo asimétrico ofrece las DOS lecturas, con los dos códigos escritos', () => {
@@ -129,7 +129,7 @@ describe('RF-217: qué sentido tiene la relación', () => {
   })
 })
 
-// ── Lo que se le pasa a `relate_artworks` ────────────────────
+// ── What gets passed to `relate_artworks` ────────────────────
 
 describe('la llamada que registra la relación (RF-517)', () => {
   it('lleva los dos extremos, el tipo y la nota, con los nombres de la función', () => {
@@ -160,7 +160,7 @@ describe('la llamada que registra la relación (RF-517)', () => {
   })
 })
 
-// ── Las negativas, dichas antes de pulsar ────────────────────
+// ── The refusals, said before pressing ───────────────────────
 
 describe('lo que no se puede registrar, y por qué', () => {
   it('sin obra elegida se pide la obra, no se manda una fila a medias', () => {
@@ -208,8 +208,8 @@ describe('lo que no se puede registrar, y por qué', () => {
       from_catalog_id: 'AR-0003',
       to_catalog_id: 'AR-0012',
     })
-    // La fila guardada nombra AR-0003 primero porque la base canonicaliza; la
-    // catalogadora la está escribiendo desde AR-0012 y en el otro orden.
+    // The stored row names AR-0003 first because the base canonicalises; the
+    // cataloguer is writing it from AR-0012 and in the other order.
     const plan = planRelation(
       draft({ catalogId: 'AR-0012', otherCatalogId: 'AR-0003', type: PAIR }),
       [canonical],
@@ -219,8 +219,8 @@ describe('lo que no se puede registrar, y por qué', () => {
   })
 
   it('dos tipos distintos entre las mismas dos obras SÍ conviven', () => {
-    // El anverso y el reverso de una tabla pueden ser además parte del mismo
-    // políptico: la unicidad de la base cubre la terna, no la pareja.
+    // The front and the back of a panel can also be part of the same
+    // polyptych: the base's uniqueness covers the triple, not the pair.
     const plan = planRelation(draft({ type: PAIR, otherCatalogId: 'AR-0013' }), [stored()])
     expect(plan.ok).toBe(true)
   })
@@ -231,7 +231,7 @@ describe('lo que no se puede registrar, y por qué', () => {
   })
 })
 
-// ── Elegir la otra obra ──────────────────────────────────────
+// ── Choosing the other artwork ───────────────────────────────
 
 describe('el buscador de la otra obra', () => {
   const catalog: ArtworkRef[] = [

@@ -22,13 +22,13 @@
 
 import { linkDomain } from './links/externalLinks'
 
-/** Cuántos caracteres de dirección se enseñan antes de cortar. */
+/** How many characters of an address are shown before cutting. */
 export const NOTE_LINK_MAX = 34
 
-/** Un trozo de nota: texto corriente, o una dirección con su destino. */
+/** A piece of a note: plain text, or an address with its destination. */
 export interface NoteSegment {
   text: string
-  /** La dirección completa a la que va, o null si es texto corriente. */
+  /** The full address it goes to, or null if it is plain text. */
   href: string | null
 }
 
@@ -58,7 +58,7 @@ export function shortLinkText(url: string, max: number = NOTE_LINK_MAX): string 
   const whole = domain + rest
   if (whole.length <= max) return whole
 
-  // El dominio nunca se recorta: es la parte que contesta «¿de quién es esto?».
+  // The domain is never trimmed: it is the part that answers «whose is this?».
   const room = Math.max(0, max - domain.length - 1)
   return `${domain}${rest.slice(0, room)}…`
 }
@@ -76,7 +76,7 @@ export function noteSegments(note: string): NoteSegment[] {
   for (const found of note.matchAll(URL_IN_TEXT)) {
     const raw = found[0]
     const start = found.index
-    // El signo de cierre pegado a la dirección es de la frase, no del enlace.
+    // The closing mark stuck to the address belongs to the sentence, not to the link.
     const trailing = TRAILING.exec(raw)?.[0] ?? ''
     const url = raw.slice(0, raw.length - trailing.length)
     if (url === '') continue

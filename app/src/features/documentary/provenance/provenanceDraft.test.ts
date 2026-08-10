@@ -50,7 +50,7 @@ describe('un eslabón nuevo', () => {
   it('con ficha, o con nota libre, ya dice de quién habla', () => {
     expect(draftIsSaveable(draft({ partyId: 'party-1', partyNote: '' }))).toBe(true)
     expect(draftIsSaveable(draft({ partyNote: 'Colección privada, España' }))).toBe(true)
-    // Una nota de solo espacios no nombra a nadie, igual que en la base.
+    // A note of only spaces names nobody, same as in the base.
     expect(draftIsSaveable(draft({ partyNote: '   ' }))).toBe(false)
   })
 })
@@ -248,8 +248,8 @@ describe('añadir un eslabón donde la base no lo va a aceptar (RF-218)', () => 
     expect(addBlockedReason('UNREVIEWED')).toBeNull()
     expect(addBlockedReason('IN_PROGRESS')).toBeNull()
     expect(addBlockedReason('COMPLETE')).toBeNull()
-    // Nulo es «no se ha podido leer el estado», y eso no se convierte en una
-    // prohibición: la base es la que manda y ya contestará.
+    // Null is «the state could not be read», and that does not turn into a
+    // prohibition: the base is in charge and will answer in due course.
     expect(addBlockedReason(null)).toBeNull()
   })
 })
@@ -284,8 +284,8 @@ describe('retirar un eslabón (RF-517, RF-901)', () => {
   })
 
   it('avisa de que la cadena se recompone y puede abrirse un hueco', () => {
-    // Es la consecuencia que nadie espera: se está mirando una cadena continua
-    // mientras se pulsa.
+    // It is the consequence nobody expects: a continuous chain is being looked at
+    // while the button is pressed.
     expect(retireConfirmText(row())).toContain('hueco')
   })
 

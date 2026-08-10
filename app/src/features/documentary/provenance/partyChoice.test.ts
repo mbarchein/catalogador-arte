@@ -9,7 +9,7 @@ import {
 } from './partyChoice'
 import type { PartyRef } from '../documentaryFormat'
 
-/** RF-508: elegir la persona o la institución de la que habla un eslabón. */
+/** RF-508: choosing the person or the institution a link speaks of. */
 
 function party(over: Partial<PartyRef> = {}): PartyRef {
   return {
@@ -51,7 +51,7 @@ describe('las fichas que se ofrecen para un eslabón', () => {
     expect(choice?.hint).toBe('Persona')
   })
 
-  /** RF-901: una ficha retirada está en la papelera y no se cuelga de un eslabón nuevo. */
+  /** RF-901: a withdrawn record is in the wastebasket and is not hung from a new link. */
   it('una ficha retirada no se ofrece', () => {
     const rows = [party({ id: 'a' }), party({ id: 'b', name: 'Galería cerrada', active: false })]
     expect(partyChoices(rows, '').map((choice) => choice.party.id)).toEqual(['a'])
@@ -123,8 +123,8 @@ describe('crear una ficha sin salir del eslabón (RF-508)', () => {
   it('solo exige el nombre, que es lo único que exige la base', () => {
     expect(newPartyProblem({ ...emptyNewParty(), name: '  ' })).toContain('Escribe el nombre')
     expect(newPartyProblem({ ...emptyNewParty(), name: 'Familia Hormeño' })).toBeNull()
-    // Sin localidad se crea igual: negarse por eso pararía una cadena que se
-    // está escribiendo con el documento delante.
+    // With no locality it is created all the same: refusing over that would stop a chain
+    // being written with the document in front.
     expect(
       newPartyProblem({ name: 'Familia Hormeño', party_type: 'PERSON', locality: '', country: '' }),
     ).toBeNull()
