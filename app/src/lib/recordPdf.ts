@@ -189,17 +189,17 @@ export async function loadRecordPhoto(catalogId: string): Promise<RecordPhoto | 
 }
 
 /**
- * Convierte un rectángulo de la página en un enlace a `url`.
+ * Turns a rectangle of the page into a link to `url`.
  *
- * pdf-lib no tiene API para esto, así que se escribe la anotación a mano: es un
- * `/Annot` de subtipo `/Link` con una acción `/URI`, que es lo que cualquier lector
- * entiende desde PDF 1.1. El borde va a cero por las tres vías —`Border`, `BS` y `C`—
- * porque los lectores no se ponen de acuerdo en cuál miran, y el que mire la que falte
- * pintaría un recuadro azul en una hoja pensada para pegarse a un cuadro.
+ * pdf-lib has no API for this, so the annotation is written by hand: it is an
+ * `/Annot` of subtype `/Link` with a `/URI` action, which is what any reader
+ * has understood since PDF 1.1. The border goes to zero by all three routes —`Border`, `BS` and `C`—
+ * because readers do not agree on which one they look at, and one looking at whichever is missing
+ * would paint a blue box on a sheet meant to be stuck to a painting.
  *
- * Las anotaciones que la página ya tuviera se conservan: escribir `Annots` de nuevas
- * borraría un enlace anterior, y esa es la clase de fallo que no se ve hasta que
- * alguien pulsa lo que ya no lleva a ningún sitio.
+ * The annotations the page already had are kept: writing `Annots` anew
+ * would erase a previous link, and that is the kind of failure that is not visible until
+ * somebody presses what no longer leads anywhere.
  */
 function linkTo(
   doc: PDFDocument,
@@ -246,17 +246,17 @@ const COLUMN_GAP = 14
 export const QR_SIDE = 108
 
 /**
- * El pie del código, debajo del propio código (RF-1003).
+ * The code's caption, below the code itself (RF-1003).
  *
- * Estaba al pie de la hoja, con el resto de lo que la hoja dice de sí misma, y por eso
- * empezaba nombrando dónde estaba el código: «El código QR de la cabecera abre…». Un
- * pie de foto no tiene que decir de qué foto es, así que al ponerlo donde toca la
- * primera mitad de la frase sobra.
+ * It used to be at the foot of the sheet, with the rest of what the sheet says about itself, and that is why
+ * it started by naming where the code was: «El código QR de la cabecera abre…». A
+ * caption does not have to say which photo it belongs to, so on putting it where it belongs the
+ * sentence's first half is superfluous.
  *
- * Más pequeño que el resto de las notas —6 pt frente a 8— porque no es una nota de la
- * ficha: es la etiqueta de un elemento, y compite con el código, que es lo único de
- * esta hoja que no puede ceder sitio. Con su aire por encima, para que no parezca
- * parte del dibujo del código y no le coma el margen blanco que el lector necesita.
+ * Smaller than the other notes —6 pt against 8— because it is not a note of the
+ * record: it is an element's label, and it competes with the code, which is the only thing on
+ * this sheet that cannot give up room. With its air above, so it does not look like
+ * part of the code's drawing and does not eat the white margin the reader needs.
  */
 export const QR_CAPTION = 'Abre esta ficha en la aplicación, al día.'
 export const QR_CAPTION_SIZE = 6
@@ -264,13 +264,13 @@ const QR_CAPTION_LEAD = 7.5
 /** The air between the code and its caption: the code itself carries no white margin. */
 const QR_CAPTION_PAD = 8
 /**
- * Alto de la columna del código: el código, su aire y **una** línea de pie.
+ * Height of the code's column: the code, its air and **one** caption line.
  *
- * Una y no «las que salgan»: de esta altura sale el sitio que le queda a la
- * fotografía, y eso lo calcula `photoBoxSide`, que es una función pura y no tiene las
- * medidas de la tipografía a mano. Así que el pie cabe en una línea y hay un test que
- * lo mide con la tipografía de verdad — si alguien lo alarga, se pone rojo ahí en vez
- * de salir pisando la raya de la cabecera en una hoja impresa.
+ * One and not «as many as come out»: from this height comes the room left for the
+ * photograph, and that is computed by `photoBoxSide`, which is a pure function and does not have the
+ * typography's measurements at hand. So the caption fits in one line and there is a test that
+ * measures it with the real typeface — if somebody lengthens it, it goes red there instead
+ * of coming out treading on the heading's rule in a printed sheet.
  */
 const QR_CAPTION_LINES = 1
 const QR_BLOCK = QR_SIDE + QR_CAPTION_PAD + QR_CAPTION_LINES * QR_CAPTION_LEAD
@@ -367,15 +367,15 @@ export async function generateRecordPdf(
   const qrX = width - margin - QR_SIDE
   const qrBottom = y - QR_SIDE
   page.drawImage(qrImage, { x: qrX, y: qrBottom, width: QR_SIDE, height: QR_SIDE })
-  // Y el código es además un enlace: en la pantalla de un ordenador no hay cámara con
-  // la que apuntarle, y el mismo cuadrado que en el almacén se escanea con el móvil
-  // aquí se pulsa. Sin marco: un recuadro azul alrededor de un código de barras es
-  // ruido impreso, y lo que se imprime se imprime para siempre.
+  // And the code is also a link: on a computer screen there is no camera to
+  // point at it with, and the same square scanned with the phone in the storeroom
+  // is pressed here. With no frame: a blue box around a barcode is
+  // printed noise, and what is printed is printed forever.
   linkTo(doc, page, url, { x: qrX, y: qrBottom, width: QR_SIDE, height: QR_SIDE })
 
-  // El pie, debajo del código y centrado bajo él. Recortado a dos líneas porque de
-  // dos líneas es la altura que `photoBoxSide` ha reservado: una tercera se metería
-  // en la banda de los datos.
+  // The caption, below the code and centred under it. Trimmed to two lines because two
+  // lines is the height `photoBoxSide` has reserved: a third would go
+  // into the data band.
   let captionY = qrBottom - QR_CAPTION_PAD - QR_CAPTION_SIZE
   const captionBottom = qrBottom - QR_CAPTION_PAD - QR_CAPTION_LINES * QR_CAPTION_LEAD
   for (const line of wrapLines(QR_CAPTION, normal, QR_CAPTION_SIZE, QR_SIDE).slice(
@@ -480,9 +480,9 @@ export async function generateRecordPdf(
     x: margin, y: margin, size: 6.5, font: normal, color: GRAY,
   })
 
-  // La fecha de generación, anclada al alto de la caja reservada y no a la imagen:
-  // una fotografía horizontal es más baja que su caja y el texto se iría con ella.
-  // Lo que el código hace lo dice su propio pie, arriba, junto al código.
+  // The generation date, anchored to the height of the reserved box and not to the image:
+  // a landscape photograph is shorter than its box and the text would go with it.
+  // What the code does is said by its own caption, above, next to the code.
   page.drawText(
     `Ficha generada el ${new Date().toLocaleDateString('es-ES')}`,
     { x: margin, y: margin + 12 + photoBox - 8, size: 8, font: normal, color: GRAY },

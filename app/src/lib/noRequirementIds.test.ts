@@ -56,9 +56,9 @@ describe('ningún identificador de requisito en la interfaz', () => {
   })
 
   it('y sí siguen en los comentarios, que es donde sirven', () => {
-    // El contrapeso: si esta comprobación se «arreglara» quitándolos de todas partes, se
-    // perdería la trazabilidad entre el código y los documentos de requisitos, que es lo
-    // que permite detectar un requisito sin cubrir.
+    // The counterweight: if this check were «fixed» by removing them from everywhere, the
+    // traceability between the code and the requirements documents would be lost, which is what
+    // makes it possible to detect an uncovered requirement.
     const total = globSync('src/**/*.{ts,tsx}')
       .map((file) => readFileSync(file, 'utf8'))
       .join('\n')

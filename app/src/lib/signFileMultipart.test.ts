@@ -11,13 +11,13 @@ import {
 } from '../../../supabase/functions/sign-file/multipart'
 
 /**
- * El perímetro de la subida por partes, comprobado desde aquí.
+ * The multipart upload's perimeter, checked from here.
  *
- * Igual que `signFilePaths.test.ts`, y por el mismo motivo: no hay Deno en este
- * entorno, así que lo que se quede dentro de la función Edge no lo verifica nadie —
- * y esta es la ruta por la que se escribe el máster, que es el documento de archivo.
- * Lo que decide y lo que construye vive en un módulo sin API de Deno para que la
- * batería que sí corre pueda cubrirlo.
+ * Same as `signFilePaths.test.ts`, and for the same reason: there is no Deno in this
+ * environment, so whatever stays inside the Edge function is verified by nobody —
+ * and this is the route the master is written by, which is the archive document.
+ * What decides and what builds lives in a module with no Deno API so the
+ * suite that does run can cover it.
  */
 
 describe('lo que se acepta de fuera', () => {
@@ -33,10 +33,10 @@ describe('lo que se acepta de fuera', () => {
   })
 
   it('el identificador de subida se comprueba, no se escapa', () => {
-    // Vuelve del almacén y va derecho a una cadena de consulta y al cuerpo XML de la
-    // terminación. Esta función firma con credenciales que el cliente no ve nunca, así
-    // que un identificador con «&» o con «<» sería una forma de moldear una petición
-    // desde fuera. Los de verdad son testigos opacos: el juego se deja estrecho.
+    // It comes back from the store and goes straight into a query string and into the XML body of the
+    // completion. This function signs with credentials the client never sees, so
+    // an identifier with «&» or with «<» would be a way of shaping a request
+    // from outside. The real ones are opaque tokens: the set is kept narrow.
     expect(validUploadId('4_z27c88f1d182b150597c105_f200ec353a2184825_d2019')).toBe(true)
     expect(validUploadId('a.b~c-d_e')).toBe(true)
     expect(validUploadId('')).toBe(false)
@@ -57,9 +57,9 @@ describe('la lista de partes que se manda a terminar', () => {
   })
 
   it('rechaza un hueco, que es un fichero truncado con buena pinta', () => {
-    // Terminar con la parte 2 perdida guarda un objeto más corto que el original y lo
-    // deja registrado como almacenado. Para el documento de archivo es el peor final
-    // posible de todo este camino, porque no se nota.
+    // Finishing with part 2 lost stores an object shorter than the original and
+    // leaves it recorded as stored. For the archive document it is the worst possible ending
+    // of this whole path, because it is not noticed.
     expect(partsInOrder([part(1), part(3)])).toBeNull()
   })
 
@@ -99,11 +99,11 @@ describe('lo que contesta el almacén', () => {
   })
 
   it('UN 200 CON UN <Error> DENTRO NO ES UNA TERMINACIÓN CORRECTA', () => {
-    // S3 mantiene la conexión abierta mientras ensambla el objeto y solo entonces
-    // escribe el cuerpo, así que la línea de estado ya salió cuando se sabe el
-    // resultado: un fallo llega como un documento <Error> bajo un 200. Fiarse del
-    // estado aquí es cómo un máster truncado o inexistente queda registrado como
-    // guardado, y eso no se nota hasta que alguien abre el fichero años después.
+    // S3 keeps the connection open while it assembles the object and only then
+    // writes the body, so the status line has already gone out when the result is
+    // known: a failure arrives as an <Error> document under a 200. Trusting the
+    // status here is how a truncated or non-existent master ends up recorded as
+    // stored, and that is not noticed until somebody opens the file years later.
     expect(
       completedOk(200, '<?xml version="1.0"?><Error><Code>InternalError</Code></Error>'),
     ).toBe(false)
@@ -145,9 +145,9 @@ describe('el peso del fichero ya montado', () => {
 
 describe('el tamaño mínimo de parte', () => {
   it('es 5 MiB, que satisface a la vez a Backblaze y a AWS', () => {
-    // Backblaze documenta 5 MB y AWS 5 MiB. Se coge el mayor: quedarse corto produce
-    // subidas que el almacén rechaza AL TERMINAR, cuando ya se han mandado todos los
-    // bytes, que es el peor momento posible para enterarse.
+    // Backblaze documents 5 MB and AWS 5 MiB. The larger is taken: falling short produces
+    // uploads the store rejects ON FINISHING, when every byte has already been
+    // sent, which is the worst possible moment to find out.
     expect(MULTIPART_MIN_PART_BYTES).toBe(5_242_880)
     expect(MULTIPART_MIN_PART_BYTES).toBeGreaterThanOrEqual(5_000_000)
   })

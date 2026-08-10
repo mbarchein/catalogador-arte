@@ -235,11 +235,11 @@ const withPhoto = async () => ({ jpeg: SMALL_JPEG, shotType: 'GENERAL' }) as Rec
  * photograph is scaled to fit its box without ever being deformed.
  */
 /**
- * Dónde se dibuja un texto, leído del flujo de contenido.
+ * Where a text is drawn, read from the content stream.
  *
- * pdf-lib abre cada texto con `BT`, coloca la matriz —`1 0 0 1 x y Tm`, sin rotación
- * ni escala— y escribe la cadena en hexadecimal seguida de `Tj`. Se busca el hexadecimal
- * y se lee hacia atrás la última matriz: es la de esa línea.
+ * pdf-lib opens each text with `BT`, places the matrix —`1 0 0 1 x y Tm`, with no rotation
+ * or scale— and writes the string in hexadecimal followed by `Tj`. The hexadecimal is searched for
+ * and the last matrix is read backwards: it is that line's.
  */
 async function textPlacement(
   bytes: Uint8Array,
@@ -256,10 +256,10 @@ async function textPlacement(
 }
 
 /**
- * Los enlaces de la página, leídos de sus anotaciones.
+ * The page's links, read from its annotations.
  *
- * No pasan por el flujo de contenido —una anotación es un objeto del documento— así que
- * se leen del diccionario de la página, que es donde un lector de PDF los busca.
+ * They do not go through the content stream —an annotation is an object of the document— so
+ * they are read from the page's dictionary, which is where a PDF reader looks for them.
  */
 async function linkAnnotations(bytes: Uint8Array) {
   const doc = await PDFDocument.load(bytes)
@@ -421,13 +421,13 @@ describe('the arrangement of the sheet', () => {
 })
 
 /**
- * El pie del código y el enlace que el código es (RF-202, RF-1003).
+ * The code's caption and the link the code is (RF-202, RF-1003).
  *
- * La nota que explica el código vivía al pie de la hoja, y por eso empezaba diciendo
- * dónde estaba el código —«El código QR de la cabecera abre…»—. Puesta debajo del
- * propio código, esa primera mitad sobra: un pie de foto no dice de qué foto es.
+ * The note explaining the code used to live at the foot of the sheet, and that is why it started by saying
+ * where the code was —«El código QR de la cabecera abre…»—. Placed below the
+ * code itself, that first half is superfluous: a caption does not say which photo it belongs to.
  *
- * Y el código es además un enlace: en un ordenador no hay cámara con la que apuntarle.
+ * And the code is also a link: on a computer there is no camera to point at it with.
  */
 describe('el pie del código y su enlace', () => {
   it('el pie va debajo del código, con su aire, y no pisa la raya de la cabecera', async () => {
@@ -450,9 +450,9 @@ describe('el pie del código y su enlace', () => {
   })
 
   /**
-   * Una línea, porque de una línea es el sitio que `photoBoxSide` le reserva. Si
-   * alguien alarga la frase, esto se pone rojo aquí en vez de salir pisando la raya
-   * de la cabecera en una hoja ya impresa.
+   * One line, because one line is the room `photoBoxSide` reserves for it. If
+   * somebody lengthens the sentence, this goes red here instead of coming out treading on the
+   * heading's rule in an already printed sheet.
    */
   it('cabe en una línea del ancho del código, medido con la tipografía de verdad', async () => {
     const doc = await PDFDocument.create()
@@ -484,8 +484,8 @@ describe('el pie del código y su enlace', () => {
   })
 
   /**
-   * Sin recuadro. Un lector que mire el borde que falte pintaría un marco azul
-   * alrededor de un código de barras, y lo impreso no se corrige.
+   * With no box. A reader looking at whichever border is missing would paint a blue frame
+   * around a barcode, and what is printed cannot be corrected.
    */
   it('el enlace no pinta ningún marco', async () => {
     const { bytes } = await pdfOf(withPhoto)

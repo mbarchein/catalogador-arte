@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { ringLabel, ringOffset, RING_CIRCUMFERENCE } from './progressRing'
 
 /**
- * El anillo de progreso (RNF-106).
+ * The progress ring (RNF-106).
  *
- * **Un progreso que miente es peor que no tener ninguno**: quien lo mira decide
- * por él si espera o desiste, con la obra delante y en un almacén. Lo que se fija
- * aquí es que el arco no pueda dibujarse al revés ni llenarse antes de tiempo.
+ * **A progress that lies is worse than having none**: whoever looks at it decides
+ * by it whether to wait or give up, with the artwork in front and in a storeroom. What is pinned down
+ * here is that the arc cannot be drawn backwards or fill up ahead of time.
  */
 
 describe('cuánto del anillo queda por pintar', () => {
@@ -20,9 +20,9 @@ describe('cuánto del anillo queda por pintar', () => {
   })
 
   it('un total mal medido no lo dibuja al revés', () => {
-    // Pasarse del 100 % daría un desplazamiento negativo, y el navegador pinta
-    // entonces el arco hacia el otro lado: el anillo parecería vaciarse mientras
-    // la subida avanza.
+    // Going over 100 % would give a negative offset, and the browser then paints
+    // the arc the other way: the ring would seem to empty while
+    // the upload advances.
     expect(ringOffset(140)).toBe(0)
     expect(ringOffset(-20)).toBeCloseTo(RING_CIRCUMFERENCE)
   })

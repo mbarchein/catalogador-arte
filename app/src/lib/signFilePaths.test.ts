@@ -41,9 +41,9 @@ describe('rutas que la función de firma acepta (RF-411, RF-420)', () => {
   it('de las cuatro rutas de una toma solo se firman dos', () => {
     const four = paths(CATALOG, new File([], 'foto.jpg', { type: 'image/jpeg' }))
 
-    // La miniatura y la derivada viven en Supabase Storage y NO se firman aquí:
-    // esta función es la puerta de lo que está fuera, y firmarlas ampliaría el
-    // perímetro sin motivo.
+    // The thumbnail and the derivative live in Supabase Storage and are NOT signed here:
+    // this function is the door of what is outside, and signing them would widen the
+    // perimeter for no reason.
     expect(isSignablePath(four.thumbnail)).toBe(false)
     expect(isSignablePath(four.derivative)).toBe(false)
     expect(isSignablePath(four.master)).toBe(true)
