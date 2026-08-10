@@ -1,34 +1,34 @@
--- RF-414, RF-416, RF-417, RF-418: el ajuste de color de una fotografía, la fecha
--- que trae el fichero, el tamaño del original y la procedencia.
+-- RF-414, RF-416, RF-417, RF-418: a photograph's colour adjustment, the date
+-- the file carries, the original's size and the provenance.
 --
--- Lo que se comprueba es lo que el `check` puede comprobar y el cliente no debe
--- volver a comprobar por su cuenta: que ningún mando entra fuera de su escala
--- —una escala mal convertida en el cliente escribiría un ajuste que después nadie
--- podría volver a abrir—, que la curva no se puede invertir ni colapsar, que medio
--- punto y medio tamaño no existen, y que una fecha del fichero sin decir si es
--- exacta no entra, porque en esa columna la duda es justo el dato.
+-- What is checked is what the `check` can check and the client must not
+-- check again on its own: that no control goes in outside its scale
+-- —a scale badly converted in the client would write an adjustment nobody
+-- could reopen afterwards—, that the curve cannot be inverted or collapsed, that half
+-- a point and half a size do not exist, and that a file date with no statement of whether it is
+-- exact does not go in, because in that column the doubt is precisely the datum.
 --
--- Y dos cosas que no son sobre valores sino sobre el despliegue y sobre el
--- criterio del proyecto: que una fila escrita **sin ninguna de las columnas
--- nuevas** sigue siendo válida —es lo que hace el frontend viejo durante los
--- segundos en que las dos versiones están en el aire, y es lo que permite
--- desplegar en una fase— y que nulo no es «revisado y dejado igual», que para eso
--- existe REVIEWED_UNCHANGED.
+-- And two things that are not about values but about the deployment and about the
+-- project's criterion: that a row written **with none of the new
+-- columns** is still valid —it is what the old frontend does during the
+-- seconds in which both versions are in the air, and it is what allows
+-- deploying in one phase— and that null is not «reviewed and left alone», which is what
+-- REVIEWED_UNCHANGED exists for.
 --
--- Además, cada rechazo se comprueba **por el nombre de la restricción que lo
--- rechaza**. Es la razón por la que la migración escribió una restricción por
--- parámetro en vez de un `check` grande: lo único que Postgres dice al rechazar es
--- ese nombre, y si todos los rangos compartieran restricción, un ajuste rechazado
--- no diría qué mando se fue de la escala.
+-- Besides, every rejection is checked **by the name of the constraint that
+-- rejects it**. It is the reason the migration wrote one constraint per
+-- parameter instead of one big `check`: the only thing Postgres says on rejecting is
+-- that name, and if every range shared a constraint, a rejected adjustment
+-- would not say which control went off scale.
 \set ON_ERROR_STOP on
 begin;
 
 insert into public.artworks (catalog_id, artist, title, attributed_title)
 values ('AR-9601', 'ROTILI', 'Obra fotografiada con luz de bombilla', 'UNCONFIRMED');
 
--- ── 1. Una fila sin ninguna columna nueva sigue siendo válida ─
--- Es la garantía del despliegue de una sola fase, y se comprueba escribiendo
--- exactamente lo que escribe el frontend que no conoce estas columnas.
+-- ── 1. A row with none of the new columns is still valid ─────
+-- It is the single-phase deployment's guarantee, and it is checked by writing
+-- exactly what the frontend that does not know these columns writes.
 do $$
 declare v_row public.images;
 begin
@@ -47,8 +47,8 @@ begin
     raise exception 'FAIL: una foto nueva nace con algún parámetro de color puesto';
   end if;
 
-  -- Nulo es identidad, no desconocido: los dos interruptores nacen apagados
-  -- porque apagados es su valor identidad, no porque se ignore su valor.
+  -- Null is identity, not unknown: both switches are born off
+  -- because off is their identity value, not because their value is unknown.
   if v_row.color_gray then
     raise exception 'FAIL: una foto nueva nace en blanco y negro';
   end if;
@@ -56,16 +56,16 @@ begin
     raise exception 'FAIL: una foto nueva nace con el color heredado';
   end if;
 
-  -- Y la única columna de color donde nulo NO es identidad: «sin revisar» no es
-  -- «no». Un valor por omisión aquí sería inventar el dato que esta columna
-  -- existe para no inventar.
+  -- And the one colour column where null is NOT identity: «sin revisar» is not
+  -- «no». A default value here would be inventing the datum this column
+  -- exists in order not to invent.
   if v_row.color_source is not null then
     raise exception 'FAIL: la procedencia del ajuste nace inventada (%)', v_row.color_source;
   end if;
 
-  -- RF-417: la procedencia sí tiene omisión, y es «propia», que es lo que son 35
-  -- de las 39. Con nulo, la regla «el color solo se ofrece en las propias»
-  -- llegaría apagada para todas.
+  -- RF-417: the provenance does have a default, and it is «our own», which is what 35
+  -- of the 39 are. With null, the rule «colour is only offered on our own»
+  -- would arrive off for all of them.
   if v_row.provenance <> 'OWN' then
     raise exception 'FAIL: la procedencia por omisión no es propia (%)', v_row.provenance;
   end if;
@@ -73,15 +73,15 @@ begin
   raise notice 'OK: una fila sin columnas nuevas es válida, nace neutra y nace propia';
 end $$;
 
--- ── 2. Cada mando, fuera de escala por arriba y por abajo ─────
--- Los rangos son los de la especificación y los mismos que los de los mandos de
--- la interfaz. Se comprueba también QUÉ restricción rechaza cada valor: es lo que
--- hace útil el mensaje de la base cuando un cliente escribe en otra escala.
+-- ── 2. Each control, off scale above and below ────────────────
+-- The ranges are the specification's and the same as the interface's controls'.
+-- WHICH constraint rejects each value is also checked: it is what
+-- makes the base's message useful when a client writes in another scale.
 --
--- Todas las columnas de color están en nulo al empezar, y siguen estándolo: un
--- `update` que la restricción rechaza no deja nada escrito. Importa porque así
--- cada valor de la lista viola una sola restricción y el nombre que se comprueba
--- no es ambiguo.
+-- Every colour column is null at the start, and stays so: an
+-- `update` the constraint rejects leaves nothing written. It matters because this way
+-- each value in the list violates a single constraint and the name that is checked
+-- is not ambiguous.
 do $$
 declare
   r record;
@@ -122,8 +122,8 @@ begin
   raise notice 'OK: los siete mandos rechazan su fuera de escala, y cada uno se nombra';
 end $$;
 
--- Y los topes de cada escala entran, los dos extremos, porque un rango que
--- rechaza su propio tope deja un mando que no llega al final de su recorrido.
+-- And each scale's caps go in, both extremes, because a range that
+-- rejects its own cap leaves a control that does not reach the end of its travel.
 do $$
 begin
   update public.images set
@@ -139,30 +139,30 @@ begin
   raise notice 'OK: los topes de las siete escalas se admiten';
 end $$;
 
--- ── 3. La curva no se invierte ni colapsa ─────────────────────
--- Entre el punto negro y el punto blanco quedan al menos 128 de los 256 códigos.
+-- ── 3. The curve is neither inverted nor collapsed ────────────
+-- Between the black point and the white point at least 128 of the 256 codes remain.
 do $$
 declare v_constraint text;
 begin
-  -- El par más apretado que los dos rangos permiten cae exactamente en el límite,
-  -- y tiene que entrar: una restricción que rechaza su propio borde deja un ajuste
-  -- legítimo sin poder guardarse.
+  -- The tightest pair the two ranges allow falls exactly on the limit,
+  -- and it has to go in: a constraint that rejects its own edge leaves a legitimate
+  -- adjustment unable to be stored.
   update public.images set color_black = 64, color_white = 192
    where image_id = 'AR-9601_v1';
 
-  -- Con nulos por medio la regla sigue valiendo, y vale porque nulo es identidad:
-  -- solo el negro tocado es «negro 64, blanco 255», y solo el blanco tocado es
-  -- «negro 0, blanco 192». Los dos son ajustes aplicables y los dos entran.
+  -- With nulls in between the rule still holds, and it holds because null is identity:
+  -- only the black touched is «black 64, white 255», and only the white touched is
+  -- «black 0, white 192». Both are applicable adjustments and both go in.
   update public.images set color_black = 64, color_white = null where image_id = 'AR-9601_v1';
   update public.images set color_black = null, color_white = 192 where image_id = 'AR-9601_v1';
   update public.images set color_black = null, color_white = null where image_id = 'AR-9601_v1';
 
-  -- Que la restricción existe de verdad y no es solo una frase: hoy no hay ningún
-  -- par que la viole sin violar antes uno de los dos rangos —con el negro tope en
-  -- 64 y el blanco tope en 192 la diferencia nunca baja de 128—, así que para verla
-  -- morder hay que ensanchar uno de los dos rangos, que es exactamente el futuro
-  -- por el que la migración la escribió aunque fuera redundante. Se ensancha aquí
-  -- dentro, en una transacción que acaba en `rollback`.
+  -- That the constraint really exists and is not just a phrase: today there is no
+  -- pair violating it without first violating one of the two ranges —with black capped at
+  -- 64 and white capped at 192 the difference never falls below 128—, so to see it
+  -- bite one of the two ranges has to be widened, which is exactly the future
+  -- the migration wrote it for even though it was redundant. It is widened here
+  -- inside, in a transaction that ends in `rollback`.
   alter table public.images drop constraint images_color_black_range;
   begin
     update public.images set color_black = 100, color_white = 200
@@ -181,20 +181,20 @@ begin
   raise notice 'OK: el recorrido de la curva se respeta, con nulos y sin ellos';
 end $$;
 
--- ── 4. El gris del cuentagotas es un sitio, no dos números ────
+-- ── 4. The eyedropper's grey is a place, not two numbers ─────
 do $$
 declare r record; v_constraint text;
 begin
   for r in
     select * from (values
-      -- Media coordenada no es medio punto: es ningún punto, y quien lo leyera
-      -- tendría que adivinar la otra mitad.
+      -- Half a coordinate is not half a point: it is no point, and whoever read it
+      -- would have to guess the other half.
       ('color_neutral_x = 0.5, color_neutral_y = null', 'images_color_neutral_pair'),
       ('color_neutral_x = null, color_neutral_y = 0.5', 'images_color_neutral_pair'),
-      -- Fuera del encuadre no hay píxeles de donde leer un gris. Estos dos valores
-      -- serían legítimos en una esquina —la obra se sale de la toma en cinco
-      -- fotografías del lote y hay que poder arrastrar la esquina fuera del
-      -- borde—, y aquí no lo son: son casos distintos y la base los distingue.
+      -- Outside the frame there are no pixels to read a grey from. These two values
+      -- would be legitimate in a corner —the artwork goes outside the shot in five
+      -- photographs of the batch and one has to be able to drag the corner outside the
+      -- edge—, and here they are not: they are different cases and the base distinguishes them.
       ('color_neutral_x = -0.2, color_neutral_y = 0.5', 'images_color_neutral_inside_image'),
       ('color_neutral_x = 0.5, color_neutral_y = 1.2',  'images_color_neutral_inside_image')
     ) as t(asignacion, restriccion)
@@ -213,8 +213,8 @@ begin
     end;
   end loop;
 
-  -- Las dos juntas entran, incluidas las dos esquinas del encuadre, y las dos en
-  -- nulo también: no haber tocado ningún gris es el caso normal.
+  -- Both together go in, including the frame's two corners, and both
+  -- null too: not having touched any grey is the normal case.
   update public.images set color_neutral_x = 0.41250, color_neutral_y = 0.68000
    where image_id = 'AR-9601_v1';
   update public.images set color_neutral_x = 0, color_neutral_y = 0
@@ -227,9 +227,9 @@ begin
   raise notice 'OK: el punto del cuentagotas va en pareja y dentro de la fotografía';
 end $$;
 
--- ── 5. El tamaño del original: los dos lados o ninguno ────────
--- Un ancho sin alto no es un tamaño, y un cero sería una fotografía sin píxeles,
--- dato que solo puede venir de una cuenta mal hecha.
+-- ── 5. The original's size: both sides or neither ────────────
+-- A width with no height is not a size, and a zero would be a photograph with no pixels,
+-- a datum that can only come from a badly done sum.
 do $$
 declare r record; v_constraint text;
 begin
@@ -263,11 +263,11 @@ begin
   raise notice 'OK: el tamaño del original son los dos lados, positivos, o ninguno';
 end $$;
 
--- ── 6. La fecha del fichero, y si es exacta (RF-416) ──────────
--- De los 44 másteres, 21 traen DateTimeOriginal y los 14 críticos de 2022 solo
--- traen el DateTime del IFD0, que por especificación es la fecha de modificación
--- del fichero y por tanto solo se aproxima a la de la toma. Guardar «2022-10-09, y
--- quién sabe» en una sola columna es lo que la aplicación no puede permitirse.
+-- ── 6. The file's date, and whether it is exact (RF-416) ─────
+-- Of the 44 masters, 21 carry DateTimeOriginal and the 14 critical ones from 2022 only
+-- carry the IFD0's DateTime, which by specification is the file's modification date
+-- and therefore only approximates the shooting date. Storing «2022-10-09, and
+-- who knows» in a single column is what the application cannot afford.
 do $$
 declare v_constraint text; v_ficha date; v_fichero date; v_exacta boolean;
 begin
@@ -282,7 +282,7 @@ begin
     end if;
   end;
 
-  -- Los dos grados de confianza entran, y se distinguen.
+  -- Both degrees of confidence go in, and they are distinguished.
   update public.images
      set file_photo_date = '2022-10-09', file_photo_date_exact = true
    where image_id = 'AR-9601_v1';
@@ -290,10 +290,10 @@ begin
      set file_photo_date = '2022-10-09', file_photo_date_exact = false
    where image_id = 'AR-9601_v1';
 
-  -- Y la fecha del fichero NO pisa la de la ficha: son dos hechos distintos, uno
-  -- lo que dice el fichero y otro lo que declara quien cataloga, y hoy difieren
-  -- las 39 filas activas. Que puedan convivir con valores distintos en la misma
-  -- fila es la decisión, y aquí es donde queda verificada.
+  -- And the file's date does NOT override the record's: they are two different facts, one
+  -- what the file says and the other what whoever catalogues declares, and today the 39
+  -- active rows differ. That they can coexist with different values in the same
+  -- row is the decision, and this is where it is verified.
   update public.images set photo_date = '2026-08-03' where image_id = 'AR-9601_v1';
   select photo_date, file_photo_date, file_photo_date_exact
     into v_ficha, v_fichero, v_exacta
@@ -303,10 +303,10 @@ begin
       v_ficha, v_fichero, v_exacta;
   end if;
 
-  -- La precisión sin fecha sí se admite, y a propósito: la restricción prohíbe la
-  -- fecha huérfana de su confianza, que es la que engaña, y no al revés. Un
-  -- `file_photo_date_exact` suelto es un dato inútil pero no una mentira, y
-  -- prohibirlo obligaría a ordenar dos escrituras que salen del mismo sitio.
+  -- The precision with no date is admitted, and on purpose: the constraint forbids the
+  -- date orphaned from its confidence, which is the one that misleads, and not the other way round. A
+  -- lone `file_photo_date_exact` is a useless datum but not a lie, and
+  -- forbidding it would force ordering two writes that come from the same place.
   update public.images
      set file_photo_date = null, file_photo_date_exact = true
    where image_id = 'AR-9601_v1';
@@ -317,11 +317,11 @@ begin
   raise notice 'OK: la fecha del fichero declara su confianza y no pisa la de la ficha';
 end $$;
 
--- ── 7. Los cuatro enumerados son cerrados ─────────────────────
--- Un enumerado y no un texto: lo que aquí entra son los estados que el proyecto
--- decidió, y no las variantes que cada versión del cliente se invente. Un
--- 'TARGET' o un 'CARTA' entrando por texto libre haría inútil la columna que
--- existe justo para poder creerse —o no— el gris de una fotografía.
+-- ── 7. The four enums are closed ─────────────────────────────
+-- An enum and not a text: what goes in here are the states the project
+-- decided, and not the variants each version of the client invents. A
+-- 'TARGET' or a 'CARTA' coming in through free text would make useless the column that
+-- exists precisely to be able to believe —or not— a photograph's grey.
 do $$
 declare r record;
 begin
@@ -351,8 +351,8 @@ begin
   raise notice 'OK: los cuatro enumerados rechazan el texto libre';
 end $$;
 
--- Y los valores completos de cada enumerado entran, uno por uno: un valor que se
--- declara y no se puede escribir es peor que no declararlo.
+-- And each enum's complete values go in, one by one: a value that is
+-- declared and cannot be written is worse than not declaring it.
 do $$
 declare v_valor text;
 begin
@@ -375,8 +375,8 @@ begin
   raise notice 'OK: todos los valores declarados de los cuatro enumerados se admiten';
 end $$;
 
--- «Sin revisar» no es «no»: haber mirado el color con la obra delante y haberlo
--- dejado igual es trabajo hecho, y no puede leerse igual que no haberlo mirado.
+-- «Sin revisar» is not «no»: having looked at the colour with the artwork in front and having
+-- left it alone is work done, and it cannot read the same as not having looked at it.
 do $$
 declare v_source public.color_source;
 begin

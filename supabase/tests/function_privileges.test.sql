@@ -117,14 +117,14 @@ begin
   raise notice 'OK: los triggers disparan sin que nadie tenga EXECUTE sobre ellos (%)', v_id;
 end $$;
 
--- ── 6. Un lector legítimo sigue leyendo ─────────────────────
--- Es el riesgo real de revocar: can_read() se evalúa DENTRO de la política, con
--- el privilegio de quien consulta. Si se le quitara el EXECUTE a authenticated,
--- las consultas de un usuario con sesión fallarían con «permission denied» en
--- vez de aplicar la política.
+-- ── 6. A legitimate reader goes on reading ──────────────────
+-- It is the real risk of revoking: can_read() is evaluated INSIDE the policy, with
+-- the privilege of whoever queries. If EXECUTE were taken away from authenticated,
+-- the queries of a user with a session would fail with «permission denied» instead
+-- of applying the policy.
 --
--- Al anónimo no hay que concederle nada: no tiene privilegio sobre ninguna
--- tabla, y sin él la política ni se evalúa. Eso lo cubre rls_default_deny.
+-- The anonymous one needs nothing granted: it has no privilege over any
+-- table, and without it the policy is not even evaluated. That is covered by rls_default_deny.
 do $$
 declare
   v_filas int;
@@ -143,15 +143,15 @@ exception when insufficient_privilege then
   raise exception 'FAIL: revocar EXECUTE ha roto la evaluación de la política para un usuario con sesión';
 end $$;
 
--- ── 7. El esquema público no está abierto a PUBLIC ──────────
--- Mismo malentendido que en las funciones: `revoke ... from anon` no deshace lo
--- que PUBLIC concede. Aquí se comprueba el resultado, que es lo que importa.
+-- ── 7. The public schema is not open to PUBLIC ──────────────
+-- The same misunderstanding as in the functions: `revoke ... from anon` does not undo what
+-- PUBLIC grants. Here the result is checked, which is what matters.
 do $$
 begin
   if has_schema_privilege('anon', 'public', 'usage') then
     raise exception 'FAIL: anon tiene USAGE sobre el esquema público';
   end if;
-  -- Y los que la API necesita, que sin esto se queda sin arrancar.
+  -- And the ones the API needs, which without this is left unable to start.
   if not has_schema_privilege('authenticated', 'public', 'usage')
      or not has_schema_privilege('authenticator', 'public', 'usage')
   then
