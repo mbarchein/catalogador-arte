@@ -2,6 +2,22 @@
 
 ### Interfaz
 
+**Las fotografías de una ficha ya vista no se vuelven a pedir**
+
+- Los ficheros de imagen ya se guardaban en el teléfono. Lo que seguía viajando era **el permiso
+  para verlos**: el almacén es privado, cada imagen se pinta con una dirección firmada, y la ficha
+  firmaba cada fotografía por separado, con una hora de validez y sin guardarla. Abrir una ficha de
+  cuatro fotos eran siete idas y venidas, cada vez.
+- Lo que se notaba no era el tráfico: **sin cobertura, una ficha ya vista no enseñaba sus fotos**
+  aunque estuvieran en el teléfono, porque sin el permiso no hay nada que buscar. Se quedaba en
+  «Cargando…».
+- Ahora se piden **todas de una vez**, valen **una semana** y se guardan. Volver a una ficha visitada
+  esta semana no pide nada: las fotos salen puestas, también sin cobertura. Es lo que el listado de
+  obras ya hacía con sus miniaturas.
+- Se renuevan seis horas antes de caducar, para que a nadie se le queden las fotos a medias con la
+  aplicación abierta toda la mañana. Y **se borran al cerrar sesión**, como el resto del catálogo
+  guardado: en un móvil compartido, quien entre después no se encuentra las obras.
+
 **El código QR de la ficha impresa: con su pie, y pulsable**
 
 - La frase que explicaba el código estaba **al pie de la hoja**, con la fecha de generación, y por
