@@ -36,7 +36,7 @@ export function DocumentFileActions({
   className = 'mt-1.5',
 }: {
   offer: DocumentFileOffer
-  /** El título del documento, para el visor. */
+  /** The document's title, for the viewer. */
   title: string
   className?: string
 }) {
@@ -44,13 +44,13 @@ export function DocumentFileActions({
   const [opening, setOpening] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  // It confirms something that already happened, so it leaves on its own: see `useAutoClear`.
   useAutoClear(notice, () => setNotice(null))
   const [viewing, setViewing] = useState(false)
 
   function clear() {
-    // Los dos, antes de empezar: una franja roja de un intento anterior encima de una
-    // descarga que acaba de funcionar es la pantalla contradiciéndose.
+    // Both, before starting: a red band from an earlier attempt on top of a
+    // download that has just worked is the screen contradicting itself.
     setError(null)
     setNotice(null)
   }
@@ -61,8 +61,8 @@ export function DocumentFileActions({
     try {
       setNotice(await runDocumentDownload(offer, { onStep: setBusy }))
     } catch (cause) {
-      // `DownloadFailure` ya trae la frase que mostrar; cualquier otra cosa es un fallo
-      // del programa y se enseña tal cual antes que tragárselo, que un botón mudo es peor.
+      // `DownloadFailure` already carries the sentence to show; anything else is a program
+      // failure and is shown as is rather than swallowed, since a mute button is worse.
       setError(
         cause instanceof DownloadFailure || cause instanceof Error ? cause.message : String(cause),
       )
@@ -97,8 +97,8 @@ export function DocumentFileActions({
       const url = await signDocumentFile(offer)
       win.location.replace(url)
     } catch (cause) {
-      // La pestaña en blanco no se queda ahí: cerrarla es parte de contar el fallo, o el
-      // aviso queda en una pantalla que ya no se está mirando.
+      // The blank tab does not stay there: closing it is part of reporting the failure, or the
+      // warning lands on a screen nobody is looking at any more.
       win.close()
       setError(
         cause instanceof DownloadFailure || cause instanceof Error ? cause.message : String(cause),

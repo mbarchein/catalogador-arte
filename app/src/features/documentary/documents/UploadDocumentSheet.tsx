@@ -82,8 +82,8 @@ export function UploadDocumentSheet({
 
   const busy = step !== null
   const blocked = problems.length > 0 || fileProblem !== null
-  // Lo que se perdería al cerrar: el formulario entero y, sobre todo, el fichero — que
-  // es lo único de aquí que hay que volver a buscar en el teléfono.
+  // What would be lost on closing: the whole form and, above all, the file — which
+  // is the only thing here that has to be hunted down on the phone again.
   const dirty = draftDirty(draft, emptyNewDocumentDraft()) || file !== null
 
   // Lo escrito se apunta en el teléfono y se ofrece a la vuelta. Aquí es donde más se
@@ -131,7 +131,7 @@ export function UploadDocumentSheet({
     onClose()
   }
 
-  // El formulario más largo del proyecto y el más caro de repetir.
+  // The longest form in the project and the most expensive to repeat.
   const guard = useSheetGuard({
     onClose: busy ? () => {} : onClose,
     dirty,

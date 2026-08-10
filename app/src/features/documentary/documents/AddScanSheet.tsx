@@ -39,7 +39,7 @@ export function AddScanSheet({
   onDone,
 }: {
   document: EditableDocument & { title: string }
-  /** Los dos bordes impuros, inyectados por la sección: subir y anotar. */
+  /** The two impure edges, injected by the section: upload and note down. */
   onAdd: Pick<AddScanDeps, 'upload' | 'attach'>
   onClose: () => void
   onDone: (notice: string) => Promise<void>
@@ -76,8 +76,8 @@ export function AddScanSheet({
     onClose()
   }
 
-  // Aquí lo que se pierde no es tecleo: es haber encontrado el fichero en el teléfono,
-  // que es lo más engorroso de repetir de toda la hoja.
+  // What is lost here is not typing: it is having found the file on the phone,
+  // which is the most tiresome thing on the whole sheet to repeat.
   const guard = useSheetGuard({
     onClose: busy ? () => {} : onClose,
     dirty: file !== null,

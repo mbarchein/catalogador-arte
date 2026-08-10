@@ -52,9 +52,9 @@ function document(over: Partial<EditableDocument> = {}): EditableDocument {
 describe('documentEditDraft, la fila como el formulario la escribe', () => {
   it('abre los nulos de texto a cadena vacía y conserva los de las claves', () => {
     const draft = documentEditDraft(document({ archive_code: null, archive_series_id: null }))
-    // Un `input` controlado con null es un campo que React da por no controlado.
+    // A controlled `input` with null is a field React takes as uncontrolled.
     expect(draft.archiveCode).toBe('')
-    // Aquí el nulo ES la respuesta —«sin clasificar»— y no un hueco.
+    // Here null IS the answer —«sin clasificar»— and not a gap.
     expect(draft.archiveSeriesId).toBeNull()
     expect(draft.artistFund).toBe('ROTILI')
     expect(draft.startYear).toBe(1985)
@@ -73,11 +73,11 @@ describe('planDocumentEdit, qué hacer con lo que hay en el formulario (RF-1501)
     expect(plan.action).toBe('update')
     if (plan.action !== 'update') return
     expect(plan.payload.title).toBe('Carta de la galería Juana Mordó')
-    // Las cuatro columnas del fichero NO viajan en una corrección: mandarlas a medias
-    // choca con `archive_documents_file_all_or_nothing`.
+    // The file's four columns do NOT travel in a correction: sending them half-filled
+    // clashes with `archive_documents_file_all_or_nothing`.
     expect(plan.payload).not.toHaveProperty('file_path')
     expect(plan.payload).not.toHaveProperty('file_size_bytes')
-    // `date_text` es columna generada: cualquier valor que se mande es un error.
+    // `date_text` is a generated column: any value sent is an error.
     expect(plan.payload).not.toHaveProperty('date_text')
   })
 
@@ -95,7 +95,7 @@ describe('planDocumentEdit, qué hacer con lo que hay en el formulario (RF-1501)
     const plan = planDocumentEdit(row, { ...draftOf(row), archiveCode: '' })
     expect(plan.action).toBe('update')
     if (plan.action !== 'update') return
-    // Vacía va como NULL y no como '': la columna admite nulo y el CHECK rechaza «».
+    // Empty goes as NULL and not as '': the column admits null and the CHECK rejects «».
     expect(plan.payload.archive_code).toBeNull()
   })
 
@@ -158,8 +158,8 @@ describe('documentReachNotice, el alcance de la corrección medido (RF-516)', ()
   })
 
   it('cuenta las exposiciones, que no son obras', () => {
-    // RF-516: un cartel enlazado con la muestra y con ninguna obra más sigue siendo un
-    // cartel que otra ficha lee.
+    // RF-516: a poster linked to the show and to no other artwork is still a
+    // poster that another record reads.
     const text = documentReachNotice({ otherArtworks: 0, exhibitions: 1 })
     expect(text).toContain('una exposición')
     expect(text).not.toContain('no lo tiene enlazado nada más')

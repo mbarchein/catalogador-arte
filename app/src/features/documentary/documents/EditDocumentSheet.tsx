@@ -58,15 +58,15 @@ export function EditDocumentSheet({
 }: {
   catalogId: string
   document: EditableDocument & { title: string }
-  /** Lo que este documento dice de ESTA obra, de la fila puente. */
+  /** What this document says about THIS artwork, from the bridge row. */
   linkNote: string
   documentTypes: readonly DocumentTypeEntry[]
   seriesTree: SeriesTree
   placeTree: PlaceTree
   mastersError: string | null
-  /** Escribe `archive_documents`. Responde null cuando entró, o la frase que mostrar. */
+  /** Writes `archive_documents`. Answers null when it went in, or the sentence to show. */
   onSave: (payload: Record<string, unknown>) => Promise<string | null>
-  /** Escribe la nota de la fila puente. Solo se llama si cambió. */
+  /** Writes the bridge row's note. Only called if it changed. */
   onSaveLinkNote: (note: string) => Promise<string | null>
   onClose: () => void
   onDone: (notice: string) => Promise<void>
@@ -93,8 +93,8 @@ export function EditDocumentSheet({
     const noteChanged = note.trim() !== linkNote.trim()
 
     if (plan.action === 'problems') {
-      // Los avisos ya están pintados junto a cada campo por el formulario
-      // compartido; lo que falta aquí es que el botón diga por qué no ha hecho nada.
+      // The warnings are already painted next to each field by the shared
+      // form; what is missing here is the button saying why it has done nothing.
       setFailure('Revisa lo que está marcado más arriba: la base rechazaría el documento así.')
       return
     }

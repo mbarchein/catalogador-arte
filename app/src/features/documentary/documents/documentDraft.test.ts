@@ -50,7 +50,7 @@ describe('un documento nuevo no trae ningún dato inventado', () => {
 })
 
 describe('lo que impide guardar, espejo de las restricciones (medidas)', () => {
-  /** `archive_documents_title_not_blank`. Es lo único imprescindible. */
+  /** `archive_documents_title_not_blank`. It is the only indispensable thing. */
   it('sin título no hay documento, y se dice para qué sirve el título', () => {
     const problems = problemsOf(documentDraftProblems(draft({ title: '   ' })), 'title')
     expect(problems[0]?.text).toContain('no se vuelve a encontrar')
@@ -60,13 +60,13 @@ describe('lo que impide guardar, espejo de las restricciones (medidas)', () => {
     expect(documentDraftIsSaveable(draft())).toBe(true)
   })
 
-  /** `archive_documents_code_shape`: una signatura de espacios sería un hueco con índice único. */
+  /** `archive_documents_code_shape`: a shelfmark of spaces would be a gap with a unique index. */
   it('una signatura de solo espacios se rechaza; vacía no', () => {
     expect(problemsOf(documentDraftProblems(draft({ archiveCode: '   ' })), 'code')).toHaveLength(1)
     expect(problemsOf(documentDraftProblems(draft({ archiveCode: '' })), 'code')).toHaveLength(0)
   })
 
-  /** `archive_documents_coherent_range`: y es `>=`, no `>`. */
+  /** `archive_documents_coherent_range`: and it is `>=`, not `>`. */
   it('un final sin principio es media fecha', () => {
     const problems = problemsOf(documentDraftProblems(draft({ endYear: 1985 })), 'years')
     expect(problems[0]?.text).toContain('empezar en algún sitio')
@@ -89,7 +89,7 @@ describe('lo que impide guardar, espejo de las restricciones (medidas)', () => {
     expect(documentDraftIsSaveable(draft({ startYear: 1985, endYear: 1985 }))).toBe(true)
   })
 
-  /** `archive_documents_plausible_years`, que aquí es 1000..2100 y no la ventana de las obras. */
+  /** `archive_documents_plausible_years`, which here is 1000..2100 and not the artworks' window. */
   it('un año imposible es una errata', () => {
     expect(problemsOf(documentDraftProblems(draft({ startYear: 999 })), 'years')).toHaveLength(1)
     expect(
@@ -108,7 +108,7 @@ describe('lo que impide guardar, espejo de las restricciones (medidas)', () => {
     expect(DOCUMENT_MAX_YEAR).toBe(2100)
   })
 
-  /** `archive_documents_flags_require_year`: «[?]» a secas no dice nada. */
+  /** `archive_documents_flags_require_year`: «[?]» on its own says nothing. */
   it('«aproximada» y «sin confirmar» hablan de un año que tiene que existir', () => {
     const problems = problemsOf(documentDraftProblems(draft({ approximate: true })), 'flags')
     expect(problems[0]?.text).toContain('sin año')
@@ -164,7 +164,7 @@ describe('lo que viaja a la base', () => {
     expect(JSON.stringify(payload)).not.toContain('página 3')
   })
 
-  /** La columna permite nulo para un recorte que nadie ha archivado; `''` lo rechaza el check. */
+  /** The column allows null for a clipping nobody has filed; `''` is rejected by the check. */
   it('una signatura vacía va como NULL y no como cadena vacía', () => {
     expect(documentDraftPayload(draft({ archiveCode: '   ' })).archive_code).toBeNull()
     expect(documentDraftPayload(draft({ archiveCode: '  AR-ARCH-0001 ' })).archive_code).toBe(

@@ -73,8 +73,8 @@ export function LinkDocumentSheet({
     onClose()
   }
 
-  // La nota del vínculo es lo único que se teclea aquí, y lo único que se perdería. La
-  // búsqueda no cuenta.
+  // The link's note is the only thing typed here, and the only thing that would be lost. The
+  // search does not count.
   const guard = useSheetGuard({ onClose, dirty: anyWritten(note) })
 
   return (
@@ -107,8 +107,8 @@ export function LinkDocumentSheet({
           ) : loading ? (
             <p className="mt-2 p-2 text-sm text-stone-600">Cargando el archivo…</p>
           ) : choices.length === 0 ? (
-            /* Nunca una lista vacía sin explicación, y esta además tiene que decir
-               dónde se sube lo que no está. */
+            /* Never an empty list with no explanation, and this one also has to say
+               where whatever is missing gets uploaded. */
             <p className="mt-2 p-2 text-sm text-stone-600">
               {noDocumentOptionsText(documents.length, query)}
             </p>

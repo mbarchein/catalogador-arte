@@ -242,8 +242,8 @@ function selectsEveryField(columns: string, row: object, embeds: Record<string, 
 describe('las columnas que pide cada bloque', () => {
   it('la procedencia pide sus catorce columnas y la ficha de la parte (RF-509)', () => {
     selectsEveryField(PROVENANCE_COLUMNS, link(), { party: 'party:parties(' })
-    // La columna generada de ADR-004: sin ella, cada pantalla compondría la fecha
-    // por su cuenta y podrían no coincidir.
+    // ADR-004's generated column: without it, every screen would compose the date
+    // on its own and they could disagree.
     expect(PROVENANCE_COLUMNS).toContain('date_text')
   })
 
@@ -253,7 +253,7 @@ describe('las columnas que pide cada bloque', () => {
     selectsEveryField(CITATION_COLUMNS, row.reference!, {
       publication_type: 'publication_type:publication_types(',
     })
-    // «34-36», «s/p» y «lám. XII» son páginas: columna propia y citable (RF-504).
+    // «34-36», «s/p» and «lám. XII» are pages: their own column and citable (RF-504).
     expect(CITATION_COLUMNS).toMatch(/\bpages\b/)
   })
 
@@ -264,7 +264,7 @@ describe('las columnas que pide cada bloque', () => {
       venue: 'venue:exhibition_venues(',
     })
     selectsEveryField(PARTICIPATION_COLUMNS, row.exhibition!.venue!, { party: 'party:parties(' })
-    // El número histórico en catálogo se cita exacto y se busca (RF-513).
+    // The historical catalogue number is cited verbatim and searched (RF-513).
     expect(PARTICIPATION_COLUMNS).toMatch(/\bcatalogue_number\b/)
   })
 
@@ -275,8 +275,8 @@ describe('las columnas que pide cada bloque', () => {
       document_type: 'document_type:document_types(',
       archive_series: 'archive_series:archive_series(',
     })
-    // Sin las cuatro columnas del fichero no hay manera de saber si el documento
-    // está digitalizado: no hay bandera, es `file_path !== null`.
+    // Without the file's four columns there is no way to know whether the document
+    // is digitised: there is no flag, it is `file_path !== null`.
     for (const column of ['file_path', 'file_size_bytes', 'mime_type', 'uploaded_at']) {
       expect(DOCUMENT_LINK_COLUMNS).toMatch(new RegExp(`\\b${column}\\b`))
     }
@@ -289,8 +289,8 @@ describe('las columnas que pide cada bloque', () => {
       from_artwork: 'from_artwork:artworks!artwork_relationships_from_catalog_id_fkey(',
       to_artwork: 'to_artwork:artworks!artwork_relationships_to_catalog_id_fkey(',
     })
-    // `inverse_name` es la etiqueta que enseña la obra del otro extremo: sin ella
-    // la ficha inversa no puede decir nada.
+    // `inverse_name` is the label the artwork at the other end shows: without it
+    // the inverse record can say nothing.
     expect(RELATIONSHIP_COLUMNS).toMatch(/\binverse_name\b/)
     expect(RELATIONSHIP_COLUMNS).toMatch(/\bis_symmetric\b/)
   })
@@ -339,7 +339,7 @@ describe('el orden de la bibliografía (RF-504)', () => {
     expect(sortCitations(rows).map((row) => row.id)).toEqual(['a', 'b', 'c'])
   })
 
-  /** «s.f.» es un dato, pero no es una fecha: no puede encabezar la cronología. */
+  /** «s.f.» is a datum, but it is not a date: it cannot head the chronology. */
   it('las referencias sin año van al final, no al principio', () => {
     const rows = [citation({ id: 'sf' }, null), citation({ id: '1972' }, 1972)]
     expect(sortCitations(rows).map((row) => row.id)).toEqual(['1972', 'sf'])
@@ -352,7 +352,7 @@ describe('el orden de la bibliografía (RF-504)', () => {
     ]
     rows[0]!.reference!.authors = 'Zamora, Ana'
     rows[1]!.reference!.authors = 'Álvarez, Juan'
-    // Con la colación por omisión de la base, «Álvarez» se iría detrás de la z.
+    // With the base's default collation, «Álvarez» would go behind the z.
     expect(sortCitations(rows).map((row) => row.id)).toEqual(['a', 'z'])
   })
 

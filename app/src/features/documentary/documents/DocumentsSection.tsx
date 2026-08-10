@@ -107,7 +107,7 @@ export function DocumentsSection({
     { kind: 'link' | 'upload' } | { kind: 'edit' | 'scan'; linkId: string } | null
   >(null)
   const [notice, setNotice] = useState<string | null>(null)
-  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  // It confirms something that already happened, so it leaves on its own: see `useAutoClear`.
   useAutoClear(notice, () => setNotice(null))
   const [actionError, setActionError] = useState<string | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
@@ -118,7 +118,7 @@ export function DocumentsSection({
   // peticiones por cada obra que se pasa con el pulgar.
   const archive = useArchiveCatalog(canWrite && panel !== null)
 
-  /** La fila que abrió una hoja de documento, si sigue estando. */
+  /** The row that opened a document sheet, if it is still there. */
   const acting = panel !== null && 'linkId' in panel ? rows.find((row) => row.id === panel.linkId) : undefined
   const actingDocument = acting?.document ?? null
 
@@ -152,8 +152,8 @@ export function DocumentsSection({
 
   async function remove(id: string) {
     setRemoving(null)
-    // Baja lógica del VÍNCULO (RF-517, RF-901): el documento se queda en el
-    // archivo, con su fichero, y lo siguen viendo las demás obras enlazadas.
+    // Logical deletion of the LINK (RF-517, RF-901): the document stays in the
+    // archive, with its file, and the other linked artworks keep seeing it.
     await afterWrite(await setDocumentLinkActive(id, false))
   }
 

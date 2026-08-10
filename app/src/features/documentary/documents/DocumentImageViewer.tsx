@@ -33,7 +33,7 @@ export function DocumentImageViewer({
   onClose,
 }: {
   offer: DocumentFileOffer
-  /** El título del documento, para saber qué se está mirando. */
+  /** The document's title, to know what is being looked at. */
   title: string
   onClose: () => void
 }) {
@@ -43,8 +43,8 @@ export function DocumentImageViewer({
   const [error, setError] = useState<string | null>(null)
   const [zoomed, setZoomed] = useState(false)
 
-  // La firma se pide al abrir y una sola vez: el permiso del bucket privado dura una
-  // hora (RF-110), y volver a pedirlo en cada render sería una petición por pulsación.
+  // The signature is asked for on opening and only once: the private bucket's permission lasts
+  // an hour (RF-110), and asking again on every render would be one request per keystroke.
   useEffect(() => {
     let alive = true
     signDocumentFile(offer)
@@ -69,13 +69,13 @@ export function DocumentImageViewer({
       if (event.key !== 'Escape') return
       if (event.metaKey || event.ctrlKey || event.altKey) return
       event.preventDefault()
-      // Por el mismo camino que el botón de atrás —consumir la entrada de historia— para
-      // que el teclado y el móvil no lleven la cuenta por separado.
+      // Down the same path as the back button —consuming the history entry— so that
+      // the keyboard and the phone do not keep separate counts.
       window.history.back()
     }
     window.addEventListener('keydown', onKey)
 
-    // La página de debajo no se desplaza con el visor abierto.
+    // The page underneath does not scroll with the viewer open.
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
@@ -121,15 +121,15 @@ export function DocumentImageViewer({
             {error}
           </p>
         ) : url === null ? (
-          /* Nunca una pantalla en negro sin explicación: pedir el permiso del bucket
-             tarda, y sin esta línea el visor parece haberse quedado colgado. */
+          /* Never a black screen with no explanation: asking for the bucket's permission
+             takes a while, and without this line the viewer looks stuck. */
           <p className="text-sm text-stone-400">Pidiendo permiso…</p>
         ) : (
           <img
             src={url}
             alt={title}
-            // Doble toque sobre la propia imagen además del botón: en un móvil, el
-            // pulgar ya está sobre la imagen y no en la barra de arriba.
+            // Double tap on the image itself besides the button: on a phone, the
+            // thumb is already on the image and not on the top bar.
             onDoubleClick={() => setZoomed((value) => !value)}
             onError={() => setError(PREVIEW_IMAGE_FAILED_TEXT)}
             className={

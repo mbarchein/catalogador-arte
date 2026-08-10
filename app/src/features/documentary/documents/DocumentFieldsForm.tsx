@@ -42,7 +42,7 @@ export function DocumentFieldsForm({
   placeTree,
   mastersError,
 }: {
-  /** Prefijo de los `id`, para que dos formularios montados a la vez no compartan `label`. */
+  /** Prefix for the `id`s, so two forms mounted at once do not share a `label`. */
   idPrefix: string
   draft: DocumentFields
   onChange: (patch: Partial<DocumentFields>) => void
@@ -50,7 +50,7 @@ export function DocumentFieldsForm({
   documentTypes: readonly DocumentTypeEntry[]
   seriesTree: SeriesTree
   placeTree: PlaceTree
-  /** Por qué falta una lista maestra, ya en español. No impide guardar. */
+  /** Why a master list is missing, already in Spanish. It does not prevent saving. */
   mastersError: string | null
 }) {
   const problems = documentDraftProblems(draft)

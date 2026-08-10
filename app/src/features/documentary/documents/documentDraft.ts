@@ -260,7 +260,7 @@ export function documentDraftPayload(
   }
 }
 
-// ── Cuando la base dice no ────────────────────────────────────
+// ── When the base says no ─────────────────────────────────────
 
 /** What this block can be refused for. */
 export type DocumentAction =
@@ -273,9 +273,9 @@ export type DocumentAction =
   | 'edit'
   /** Giving a document that was registered «sin digitalizar» its scan. */
   | 'addFile'
-  /** Enlazar el documento con una exposición: el cartel o el díptico de una muestra (RF-516). */
+  /** Link the document to an exhibition: a show's poster or leaflet (RF-516). */
   | 'linkExhibition'
-  /** Quitarlo de una exposición. Baja lógica del vínculo, como en las obras (RF-517). */
+  /** Take it out of an exhibition. Logical deletion of the link, as in artworks (RF-517). */
   | 'retireExhibition'
 
 /**
