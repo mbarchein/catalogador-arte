@@ -253,7 +253,7 @@ export function StarIcon({
   )
 }
 
-/** Quitar de la ficha. La tapa aparte, que es lo que lo hace legible a 20 px. */
+/** Removing from the record. The lid apart, which is what makes it legible at 20 px. */
 export function TrashIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>
@@ -325,7 +325,7 @@ export function ProgressRing({
   percent,
   className = 'h-5 w-5',
 }: {
-  /** De 0 a 100, o null cuando no se conoce el total. */
+  /** 0 to 100, or null when the total is unknown. */
   percent: number | null
   className?: string
 }) {
@@ -348,9 +348,9 @@ export function ProgressRing({
         {...common}
         stroke="currentColor"
         strokeDasharray={RING_CIRCUMFERENCE}
-        // Indeterminado: un cuarto de vuelta girando. Determinado: lo que falta.
+        // Indeterminate: a quarter turn, spinning. Determinate: what is left.
         strokeDashoffset={percent === null ? RING_CIRCUMFERENCE * 0.75 : ringOffset(percent)}
-        // Empieza arriba, como un reloj, y no a las tres.
+        // It starts at the top, like a clock, not at three o'clock.
         transform="rotate(-90 12 12)"
       />
     </svg>
@@ -672,7 +672,7 @@ export function InfoNote({
   children,
   className = '',
 }: {
-  /** De qué se está explicando. Es el título de la hoja. */
+  /** What is being explained. It is the sheet's title. */
   title: string
   children: ReactNode
   className?: string
@@ -1254,8 +1254,8 @@ export function BottomSheet({
    */
   guard?: SheetGuard
 }) {
-  // Sin guardián, cerrar es cerrar: es lo que ha sido siempre y lo que necesita una hoja
-  // de elegir.
+  // With no guard, closing is closing: it is what it has always been and what a chooser
+  // sheet needs.
   const requestClose = useCallback(
     (exit: 'backdrop' | 'close' | 'escape' | 'back') => {
       if (guard === undefined) {
@@ -1276,7 +1276,7 @@ export function BottomSheet({
   const onBack = useCallback(() => requestClose('back'), [requestClose])
   useCloseOnBack(onBack, open)
 
-  // Escape cierra, como cualquier diálogo. Registrado solo con la hoja abierta.
+  // Escape closes, like any dialog. Registered only while the sheet is open.
   useEffect(() => {
     if (!open) return
     function onKeyDown(e: KeyboardEvent) {
@@ -1651,7 +1651,7 @@ export function SheetFooter({ children }: { children: ReactNode }) {
   )
 }
 
-// ── El aviso flotante ────────────────────────────────────────
+// ── The floating notice ──────────────────────────────────────
 
 /**
  * La confirmación de algo que acaba de pasar, flotando arriba (RNF-106).

@@ -75,8 +75,8 @@ describe('useFormDraft, el cableado del borrador', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<Caso />)
     await user.type(screen.getByLabelText('título'), 'Carta')
-    // Recién teclado no hay nada: un `setItem` por pulsación es síncrono y bloquea el
-    // hilo de la interfaz, que en un móvil modesto se nota al escribir.
+    // Right after typing there is nothing: a `setItem` per keystroke is synchronous and
+    // blocks the interface thread, which on a modest phone is felt while typing.
     expect(window.localStorage.getItem(KEY)).toBeNull()
 
     await vi.advanceTimersByTimeAsync(600)
@@ -92,8 +92,8 @@ describe('useFormDraft, el cableado del borrador', () => {
     await vi.advanceTimersByTimeAsync(600)
     expect(window.localStorage.getItem(KEY)).not.toBeNull()
 
-    // Dejarlo puesto haría que la hoja ofreciera a la vuelta lo que se acaba de quitar
-    // a propósito.
+    // Leaving it in place would make the sheet offer on return what was just deliberately
+    // taken away.
     await user.clear(screen.getByLabelText('título'))
     await waitFor(() => expect(window.localStorage.getItem(KEY)).toBeNull())
   })
@@ -109,8 +109,8 @@ describe('useFormDraft, el cableado del borrador', () => {
   })
 
   it('y se ofrece ya en el PRIMER pintado, no un instante después', () => {
-    // Con un efecto, el formulario se pintaría vacío y la oferta aparecería de golpe: en
-    // ese hueco cabe empezar a teclear encima.
+    // With an effect, the form would paint empty and the offer would appear afterwards: in
+    // that gap there is room to start typing over it.
     window.localStorage.setItem(
       KEY,
       packDraft({ draft: { title: 'Carta' }, at: new Date(), fingerprint: null }),
@@ -144,8 +144,8 @@ describe('useFormDraft, el cableado del borrador', () => {
   })
 
   it('lo que se acaba de teclear NO se ofrece a sí mismo', async () => {
-    // El fallo que tendría una relectura por render: se guarda lo teclado, se vuelve a
-    // leer, y la hoja pregunta si quieres recuperar lo que tienes delante.
+    // The failure a re-read per render would have: what was typed is stored, read back,
+    // and the sheet asks whether to recover what is already on screen.
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<Caso />)
     await user.type(screen.getByLabelText('título'), 'Carta')

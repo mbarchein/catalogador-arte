@@ -26,7 +26,7 @@
  * asterisco de más en el fichero no puede convertirse en marcado.
  */
 
-/** Un trozo de texto de un párrafo, con su énfasis. */
+/** A piece of a paragraph's text, with its emphasis. */
 export interface Span {
   text: string
   /** `**así**` en el fichero: el arranque en negrita con el que empieza cada novedad. */

@@ -33,7 +33,7 @@ export function ChangelogSection() {
 
   useEffect(() => {
     let alive = true
-    // El `?raw` lo resuelve Vite: el fichero entra como texto en un trozo aparte.
+    // Vite resolves the `?raw`: the file comes in as text, in a chunk of its own.
     import('../../../../CHANGELOG.md?raw')
       .then((module) => {
         if (!alive) return
@@ -93,7 +93,7 @@ function Entry({ entry, open }: { entry: ChangelogEntry; open: boolean }) {
 
 function Block({ block }: { block: ChangelogBlock }) {
   if (block.kind === 'date') {
-    // No llega ninguno: `groupChangelog` se los queda como encabezado de cada entrada.
+    // None arrive: `groupChangelog` keeps them as the heading of each entry.
     return <h3 className="mt-3 font-medium">{block.text}</h3>
   }
   if (block.kind === 'section') {
@@ -114,8 +114,8 @@ function Block({ block }: { block: ChangelogBlock }) {
       </ul>
     )
   }
-  // El titular de cada novedad: un párrafo que es solo negrita. Se pinta como encabezado
-  // para que las viñetas que lo siguen se lean colgando de él y no a su misma altura.
+  // The headline of each item: a paragraph that is bold and nothing else. It is painted as a
+  // heading so the bullets that follow read as hanging off it and not at its own level.
   if (isHeadline(block)) {
     return <h4 className="mb-1 mt-3 text-sm font-medium text-stone-900 first:mt-0">{block.spans[0]!.text}</h4>
   }

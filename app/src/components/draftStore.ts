@@ -32,10 +32,10 @@
  * Todo aquí es puro, `now` incluido: la batería corre en node.
  */
 
-/** El sobre que se guarda. Con versión, que es lo que permite cambiarlo sin sustos. */
+/** The envelope that gets stored. With a version, which is what allows changing it safely. */
 interface StoredDraft {
   v: 1
-  /** Cuándo se apuntó, en ISO. */
+  /** When it was noted down, in ISO. */
   at: string
   /**
    * Cómo estaba lo guardado cuando se apuntó, o null en un formulario de alta —donde no
@@ -57,10 +57,10 @@ export function draftStorageKey(scope: string): string {
   return `catalogador:borrador:v1:${scope}`
 }
 
-/** Desde cuándo un borrador ya no se ofrece: siete días. */
+/** From when a draft is no longer offered: seven days. */
 export const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
-/** Lo que se guarda, ya en texto. `null` cuando no hay nada que guardar. */
+/** What gets stored, already as text. `null` when there is nothing to store. */
 export function packDraft(input: {
   draft: unknown
   at: Date
@@ -77,19 +77,19 @@ export function packDraft(input: {
 
 /** En qué estado llega un borrador guardado. */
 export type DraftStatus =
-  /** No hay ninguno, o lo que hay no se puede leer. */
+  /** There is none, or what is there cannot be read. */
   | 'none'
-  /** Hay uno, pero de hace demasiado. Se tira. */
+  /** There is one, but too old. It is thrown away. */
   | 'expired'
-  /** Hay uno, y lo guardado ha cambiado desde entonces. Se ofrece, diciéndolo. */
+  /** There is one, and what is stored has changed since. It is offered, saying so. */
   | 'stale'
   | 'ready'
 
 export interface DraftRead<T> {
   status: DraftStatus
-  /** El borrador, solo cuando se puede ofrecer (`ready` o `stale`). */
+  /** The draft, only when it can be offered (`ready` or `stale`). */
   draft: T | null
-  /** Cuándo se apuntó, para poder decirlo. */
+  /** When it was noted down, so it can be said. */
   at: Date | null
 }
 
@@ -119,8 +119,8 @@ export function readDraft<T>(
   const at = new Date(stored.at)
   if (Number.isNaN(at.getTime())) return empty
   const age = options.now.getTime() - at.getTime()
-  // Un borrador con fecha futura es un reloj mal puesto, no un borrador del futuro: se
-  // acepta, que tirarlo por eso sería perder trabajo por una hora de diferencia horaria.
+  // A draft dated in the future is a clock set wrong, not a draft from the future: it is
+  // accepted, since throwing it away would lose work over an hour of time-zone difference.
   if (age > DRAFT_MAX_AGE_MS) return { status: 'expired', draft: null, at }
 
   const stale = stored.fp !== null && options.fingerprint !== null && stored.fp !== options.fingerprint
@@ -140,7 +140,7 @@ export function draftFingerprint(values: readonly (string | number | boolean | n
   return values.map((value) => (value == null ? '' : String(value).trim())).join('|')
 }
 
-// ── Lo que se lee al ofrecerlo ───────────────────────────────
+// ── What is read when offering it ────────────────────────────
 
 /**
  * «hace un momento», «hace 20 minutos», «ayer»…

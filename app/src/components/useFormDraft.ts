@@ -30,22 +30,22 @@ import {
   type DraftStatus,
 } from './draftStore'
 
-/** Lo que hay guardado y se puede ofrecer. */
+/** What is stored and can be offered. */
 export interface DraftOffer<T> {
   draft: T
   status: DraftStatus
-  /** La frase que se lee, ya en español y con el «hace…» dentro. */
+  /** The sentence that is read, already in Spanish and with the «hace…» inside. */
   text: string
-  /** Lo guardado ha cambiado desde que se apuntó: hay que mirarlo antes de guardar. */
+  /** What is stored has changed since it was noted: look at it before saving. */
   stale: boolean
 }
 
 export interface FormDraft<T> {
-  /** El borrador que hay para ofrecer, o null. */
+  /** The draft there is to offer, or null. */
   offer: DraftOffer<T> | null
-  /** Lo acepta: devuelve el borrador y retira la oferta. La hoja lo mete en su estado. */
+  /** Accepts it: returns the draft and withdraws the offer. The sheet puts it in its state. */
   accept: () => T | null
-  /** Lo descarta y lo borra: «empezar de cero». */
+  /** Discards and deletes it: «empezar de cero». */
   discard: () => void
   /**
    * Lo borra sin ruido. Se llama **al guardar de verdad**: si no, la hoja ofrecería a la
@@ -61,29 +61,29 @@ export function useFormDraft<T extends object>(input: {
    * segundo se ofreciera al abrir el primero.
    */
   scope: string
-  /** El borrador vivo, tal cual está en el estado de la hoja. */
+  /** The live draft, exactly as it stands in the sheet's state. */
   draft: T
-  /** Hay algo escrito. Sin esto se guardaría un borrador vacío en cada apertura. */
+  /** Something has been typed. Without this an empty draft would be stored on every open. */
   dirty: boolean
   /**
    * Cómo está la fila guardada, con `draftFingerprint`. Null en un formulario de alta.
    * Sirve para avisar si otra sesión la ha corregido mientras esto esperaba.
    */
   fingerprint?: string | null
-  /** El formulario llevaba un fichero, que no se puede apuntar. Se dice al ofrecerlo. */
+  /** The form carried a file, which cannot be noted down. It is said when offering it. */
   filesLost?: boolean
 }): FormDraft<T> {
   const { scope, draft, dirty, fingerprint = null, filesLost = false } = input
   const key = draftStorageKey(scope)
 
-  // La lectura, una sola vez y en el primer render: `useState` con función y no un efecto,
-  // porque un efecto pintaría el formulario vacío antes de saber que hay algo que ofrecer.
+  // The read, once and on the first render: `useState` with a function and not an effect,
+  // because an effect would paint the form empty before knowing there is something to offer.
   const [offer, setOffer] = useState<DraftOffer<T> | null>(() => {
     const now = new Date()
     const read = readDraft<T>(safeRead(key), { now, fingerprint })
     if (read.draft === null) {
-      // Un borrador caducado se limpia al pasar por aquí. No hace falta un barrido: la
-      // hoja que lo dejó es la que vuelve a abrirse.
+      // An expired draft is cleared on the way through here. No sweep is needed: the sheet
+      // that left it is the one that opens again.
       if (read.status === 'expired') safeRemove(key)
       return null
     }
@@ -92,8 +92,8 @@ export function useFormDraft<T extends object>(input: {
     return { draft: read.draft, status: read.status, text, stale: read.status === 'stale' }
   })
 
-  // Lo que el temporizador necesita, en un ref: así el efecto de guardar no se reprograma
-  // en cada tecla y el retardo cuenta de verdad desde la última.
+  // What the timer needs, in a ref: that way the saving effect is not rescheduled on every
+  // keystroke and the delay really counts from the last one.
   const latest = useRef({ draft, dirty, fingerprint, key })
   latest.current = { draft, dirty, fingerprint, key }
 
@@ -121,8 +121,8 @@ export function useFormDraft<T extends object>(input: {
       )
     }, 500)
     return () => window.clearTimeout(timer)
-    // `serialised` y no `draft`: un objeto nuevo con el mismo contenido —lo que devuelve
-    // cualquier `setDraft({ ...was, ...patch })` que no cambie nada— no reprograma nada.
+    // `serialised` and not `draft`: a new object with the same content —what any
+    // `setDraft({ ...was, ...patch })` that changes nothing returns— reschedules nothing.
   }, [serialised, dirty, key, offer])
 
   const accept = useCallback(() => {
@@ -161,8 +161,8 @@ function safeWrite(key: string, value: string): void {
   try {
     window.localStorage.setItem(key, value)
   } catch {
-    // Sin sitio o sin permiso. Nada que hacer y nada que decir: avisar de esto a la
-    // catalogadora sería contarle una avería sobre la que no puede actuar.
+    // No room or no permission. Nothing to do and nothing to say: telling the cataloger
+    // about this would be reporting a breakage she cannot act on.
   }
 }
 

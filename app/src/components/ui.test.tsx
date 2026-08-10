@@ -32,8 +32,8 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
         <p>contenido</p>
       </BottomSheet>,
     )
-    // Cerrada de verdad y no escondida con CSS: el contenido no está en el
-    // documento, así que no lo lee un lector de pantalla ni lo alcanza el tabulador.
+    // Really closed and not hidden with CSS: the content is not in the document, so a
+    // screen reader does not read it and the tab key does not reach it.
     expect(screen.queryByText('contenido')).toBeNull()
   })
 
@@ -81,8 +81,8 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
     // comprueba que la hoja —el modal que comparten catorce pantallas— lo usa.
     window.history.pushState({ screen: 'ficha' }, '')
     const onClose = vi.fn()
-    // Con su estado, como la usa cualquier pantalla: cerrar la hoja es dejar de
-    // pasarle `open`, y sin eso el test no probaría el caso real.
+    // With its state, the way any screen uses it: closing the sheet is stopping passing
+    // `open`, and without that the test would not exercise the real case.
     function Ficha() {
       const [open, setOpen] = useState(true)
       return (
@@ -104,8 +104,7 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
     expect(screen.queryByText('contenido')).toBeNull()
-    // Y no se ha salido de la ficha: lo que el «atrás» ha consumido es la entrada
-    // de la hoja.
+    // And the record was not left: what «back» consumed is the sheet's entry.
     expect(window.history.state).toEqual({ screen: 'ficha' })
   })
 
@@ -135,7 +134,7 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
         <p>contenido</p>
       </BottomSheet>,
     )
-    // Hay dos «Cerrar»: el fondo y el botón de la cabecera. El fondo es el primero.
+    // There are two «Cerrar»: the backdrop and the header button. The backdrop is first.
     const [fondo] = screen.getAllByRole('button', { name: 'Cerrar' })
     await userEvent.click(fondo!)
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -159,7 +158,7 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
     const accion = screen.getByRole('button', { name: 'Quitar filtros' })
     const cierre = screen.getAllByRole('button', { name: 'Cerrar' }).at(-1)!
     expect(accion).not.toBeNull()
-    // Ambos cuelgan del mismo contenedor y la acción va antes que el cierre.
+    // Both hang off the same container and the action goes before the close.
     expect(accion.parentElement).toBe(cierre.parentElement)
     expect(
       accion.compareDocumentPosition(cierre) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -172,8 +171,8 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
         <p>contenido</p>
       </BottomSheet>,
     )
-    // El fondo y el cierre, y nada más: es lo que garantiza que la ranura vacía no
-    // deja un hueco pulsable.
+    // The backdrop and the close, and nothing else: that is what guarantees the empty slot
+    // leaves no pressable gap.
     expect(screen.getAllByRole('button')).toHaveLength(2)
   })
 })
@@ -195,8 +194,8 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
   it('en un formulario, el fondo deja de ser un botón: ni cierra ni se anuncia', () => {
     const onClose = vi.fn()
     render(<Guarded onClose={onClose} />)
-    // Un solo «Cerrar», el de la cabecera: el fondo no se anuncia como salida a un
-    // lector de pantalla porque ya no lo es.
+    // A single «Cerrar», the header one: the backdrop is not announced as an exit to a
+    // screen reader because it no longer is one.
     expect(screen.getAllByRole('button', { name: 'Cerrar' })).toHaveLength(1)
     expect(onClose).not.toHaveBeenCalled()
   })
@@ -206,7 +205,7 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
     render(<Guarded onClose={onClose} />)
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
     expect(onClose).not.toHaveBeenCalled()
-    // Y lo escrito sigue ahí detrás: preguntar no desmonta el formulario.
+    // And what was typed is still there behind: asking does not unmount the form.
     expect(screen.getByText('contenido')).not.toBeNull()
     expect(screen.getByRole('alertdialog')).not.toBeNull()
   })
@@ -241,8 +240,8 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
 
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('alertdialog')).toBeNull()
-    // Lo importante: el segundo Escape NO ha salido. Un atrás de más con el cartel
-    // delante no puede ser la pulsación que pierde los datos.
+    // The point: the second Escape did NOT leave. One back too many with the dialog in
+    // front cannot be the press that loses the data.
     expect(onClose).not.toHaveBeenCalled()
   })
 
@@ -258,8 +257,8 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
     window.history.back()
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeNull())
     expect(onClose).not.toHaveBeenCalled()
-    // Repuesta: la hoja sigue tapando una entrada propia, así que el atrás siguiente
-    // vuelve aquí y no a la pantalla anterior.
+    // Restored: the sheet still covers an entry of its own, so the next back returns here
+    // and not to the previous screen.
     await waitFor(() => expect(window.history.state?.modalKey).toBeTruthy())
 
     window.history.back()
@@ -281,8 +280,8 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
   })
 
   it('si lo escrito desaparece, la pregunta no se queda hablando de nada', async () => {
-    // Pasa cuando el guardado termina y limpia el borrador con la pregunta en pantalla:
-    // un cartel que dice «vas a perder lo escrito» sobre un formulario vacío es ruido.
+    // It happens when the save finishes and clears the draft with the question on screen:
+    // a dialog saying «vas a perder lo escrito» over an empty form is noise.
     function Caso() {
       const [dirty, setDirty] = useState(true)
       return (

@@ -25,7 +25,7 @@
  * que no.
  */
 
-/** Segundos que la pantalla obliga a esperar entre dos envíos. */
+/** Seconds the screen makes you wait between two sends. */
 export const RESEND_COOLDOWN_SECONDS = 60
 
 /**
@@ -38,7 +38,7 @@ export const RESEND_COOLDOWN_SECONDS = 60
 export const RECOVERY_NOTICE =
   'Si esa dirección tiene cuenta, llegará un correo con el enlace. Mira también el spam.'
 
-/** El único caso que se cuenta aparte, porque no habla de cuentas sino de la red. */
+/** The one case told apart, because it is not about accounts but about the network. */
 export const UNREACHABLE_NOTICE =
   'No se ha podido contactar con el servidor. Comprueba la conexión y vuelve a intentarlo.'
 
@@ -52,7 +52,7 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
-/** Lo que puede pasar al pedir el enlace. Dos casos, y solo dos. */
+/** What can happen when asking for the link. Two cases, and only two. */
 export type RecoveryOutcome = 'requested' | 'unreachable'
 
 /**
@@ -72,7 +72,7 @@ export function recoveryOutcome(failure: { status?: number } | null): RecoveryOu
   return failure.status === undefined || failure.status === 0 ? 'unreachable' : 'requested'
 }
 
-/** El texto que corresponde a cada resultado. */
+/** The text for each outcome. */
 export function recoveryText(outcome: RecoveryOutcome): string {
   return outcome === 'unreachable' ? UNREACHABLE_NOTICE : RECOVERY_NOTICE
 }
@@ -89,7 +89,7 @@ export function secondsLeft(sentAt: number | null, now: number): number {
   return Math.max(0, RESEND_COOLDOWN_SECONDS - elapsed)
 }
 
-/** Lo que dice el botón mientras hay que esperar. */
+/** What the button says while there is a wait. */
 export function resendText(left: number): string {
   return left > 0 ? `Volver a enviarlo en ${left} s` : 'Enviarme el enlace'
 }

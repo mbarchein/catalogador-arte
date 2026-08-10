@@ -42,8 +42,8 @@ export function ResetPasswordPage() {
     // convertiría un éxito en un mensaje de error, así que se deja pasar.
     await supabase.auth.signOut({ scope: 'others' }).catch(() => undefined)
 
-    // Y con la contraseña elegida, la recuperación deja de estar a medias: la
-    // aplicación vuelve a dejar salir de esta pantalla.
+    // And with the password chosen, the recovery is no longer half done: the application
+    // lets this screen be left again.
     finishPasswordRecovery()
     setDone(true)
     // The confirmation gets a moment to be read before returning to the

@@ -32,14 +32,14 @@
  * Todo aquí es puro: la batería corre en node.
  */
 
-/** Por dónde se está intentando salir. Los cuatro caminos, nombrados. */
+/** Which way out is being attempted. The four paths, named. */
 export type SheetExit =
-  /** El fondo oscuro de detrás de la hoja. El que se toca sin querer. */
+  /** The dark backdrop behind the sheet. The one touched by accident. */
   | 'backdrop'
-  /** La ✕ de la cabecera. */
+  /** The ✕ in the header. */
   | 'close'
   | 'escape'
-  /** El botón de atrás del móvil, o el del navegador. */
+  /** The phone's back button, or the browser's. */
   | 'back'
 
 /**
@@ -52,10 +52,10 @@ export type SheetExit =
 export type SheetExitAction = 'close' | 'confirm' | 'ignore'
 
 export function sheetExitAction(input: {
-  /** Hay algo escrito que se perdería. Lo decide la hoja. */
+  /** There is something typed that would be lost. The sheet decides. */
   dirty: boolean
   exit: SheetExit
-  /** El fondo cierra. Falso en las hojas que son un formulario. */
+  /** The backdrop closes. False in the sheets that are a form. */
   backdropCloses: boolean
 }): SheetExitAction {
   if (input.exit === 'backdrop' && !input.backdropCloses) return 'ignore'
@@ -71,12 +71,12 @@ export function sheetExitAction(input: {
  * pulsación que los pierde. Para salir hay que decirlo con el botón que lo dice.
  */
 export function confirmingExitAction(exit: SheetExit): 'dismiss' | 'ignore' {
-  // El fondo no retira la pregunta: taparla con un roce dejaría a la hoja como estaba,
-  // que no es dañino, pero es el mismo roce del que veníamos huyendo.
+  // The backdrop does not withdraw the question: covering it with a brush would leave the
+  // sheet as it was, which is not harmful, but it is the same brush we were fleeing from.
   return exit === 'backdrop' ? 'ignore' : 'dismiss'
 }
 
-// ── Lo que dice la pregunta ──────────────────────────────────
+// ── What the question says ───────────────────────────────────
 
 export const DISCARD_TITLE = 'Tienes datos a medio meter'
 
@@ -106,7 +106,7 @@ export function discardText(extra?: string | null, kept = false): string {
   return clean === '' ? base : `${base} ${clean}`
 }
 
-/** El botón que NO destruye va primero, que es donde cae el pulgar sin apuntar. */
+/** The button that does NOT destroy goes first, which is where the thumb lands unaimed. */
 export const DISCARD_KEEP_LABEL = 'Seguir rellenando'
 
 /**

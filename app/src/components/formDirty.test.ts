@@ -31,8 +31,8 @@ describe('draftDirty, ¿se ha escrito algo?', () => {
   })
 
   it('un espacio NO es trabajo', () => {
-    // Cerrar por un roce después de haber tocado la barra espaciadora no merece un
-    // cartel, y ese espacio no llega a la base tampoco: todo se recorta antes de escribir.
+    // Closing on a brush after touching the space bar does not deserve a dialog, and that
+    // space does not reach the database either: everything is trimmed before writing.
     expect(draftDirty({ ...VACIO, title: '   ' }, VACIO)).toBe(false)
     expect(draftDirty({ ...VACIO, title: ' Carta ' }, { ...VACIO, title: 'Carta' })).toBe(false)
   })
@@ -44,13 +44,13 @@ describe('draftDirty, ¿se ha escrito algo?', () => {
   })
 
   it('y sirve igual para «¿hay una corrección sin guardar?»', () => {
-    // La misma pregunta desde el otro lado: el punto de partida es la fila guardada. Una
-    // hoja de alta y una de corrección no pueden proteger cosas distintas.
+    // The same question from the other side: the starting point is the stored row. A sheet
+    // for creating and one for correcting cannot protect different things.
     const guardado = { title: 'Carta de la galería', year: 1985, approximate: false, note: '' }
     expect(draftDirty({ ...guardado }, guardado)).toBe(false)
     expect(draftDirty({ ...guardado, year: 1986 }, guardado)).toBe(true)
-    // Vaciar un campo que tenía dato también es una corrección, y de las que más duele
-    // perder: es la que cuesta decidirse a hacer.
+    // Emptying a field that held a datum is a correction too, and one of the most painful
+    // to lose: it is the one that takes some deciding.
     expect(draftDirty({ ...guardado, title: '' }, guardado)).toBe(true)
   })
 

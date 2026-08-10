@@ -18,7 +18,7 @@ function Guarded({ active }: { active: boolean }) {
   return null
 }
 
-/** Dispara un `beforeunload` cancelable y dice si alguien lo paró. */
+/** Fires a cancelable `beforeunload` and says whether anyone stopped it. */
 function tryToLeave(): boolean {
   const event = new Event('beforeunload', { cancelable: true })
   window.dispatchEvent(event)
@@ -32,15 +32,15 @@ describe('useUnloadGuard', () => {
   })
 
   it('no pregunta cuando no lo hay', () => {
-    // Es la mitad que hace que la otra sirva: un aviso permanente se despacha por
-    // reflejo, y a partir de ahí ya no avisa de nada.
+    // This is the half that makes the other one useful: a permanent warning gets dismissed
+    // by reflex, and from then on it warns about nothing.
     render(<Guarded active={false} />)
     expect(tryToLeave()).toBe(false)
   })
 
   it('se desarma en cuanto el trabajo está a salvo', () => {
-    // La subida termina y las fotos dejan de estar preparadas: salir tiene que volver a
-    // ser salir, sin un diálogo por medio.
+    // The upload finishes and the photos are no longer staged: leaving has to go back to
+    // being leaving, with no dialog in the way.
     const { rerender } = render(<Guarded active />)
     expect(tryToLeave()).toBe(true)
     rerender(<Guarded active={false} />)
@@ -54,7 +54,7 @@ describe('useUnloadGuard', () => {
   })
 
   it('quita el oyente al desmontarse', () => {
-    // Sin esto, salir de la pantalla dejaría el diálogo puesto en toda la aplicación.
+    // Without this, leaving the screen would keep the dialog armed across the whole application.
     const { unmount } = render(<Guarded active />)
     unmount()
     expect(tryToLeave()).toBe(false)

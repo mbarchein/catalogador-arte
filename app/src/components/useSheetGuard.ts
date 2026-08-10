@@ -21,19 +21,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { confirmingExitAction, sheetExitAction, type SheetExit } from './sheetExit'
 
 export interface SheetGuard {
-  /** El fondo oscuro cierra. Falso en las hojas que son un formulario. */
+  /** The dark backdrop closes. False in the sheets that are a form. */
   backdropCloses: boolean
-  /** Lo que esta hoja añade a la pregunta, para lo que la frase general no sabe. */
+  /** What this sheet adds to the question, for what the general sentence cannot know. */
   discardNotice: string | null
-  /** La hoja apunta el borrador y lo ofrece a la vuelta: la pregunta lo promete. */
+  /** The sheet notes the draft down and offers it on return: the question promises it. */
   draftKept: boolean
-  /** La pregunta está en pantalla. */
+  /** The question is on screen. */
   confirming: boolean
-  /** Un intento de salir por un camino. Lo llaman la hoja y sus cuatro salidas. */
+  /** An attempt to leave by one path. Called by the sheet and its four exits. */
   request: (exit: SheetExit) => void
-  /** «Seguir rellenando»: retira la pregunta y deja el formulario como estaba. */
+  /** «Seguir rellenando»: withdraws the question and leaves the form as it was. */
   dismiss: () => void
-  /** «Salir sin guardar»: cierra de verdad. Lo escrito puede seguir apuntado, ver `draftKept`. */
+  /** «Salir sin guardar»: really closes. What was typed may still be noted, see `draftKept`. */
   leave: () => void
   /**
    * La quinta salida: el «Cancelar» que el formulario pinta al pie.
@@ -53,7 +53,7 @@ export function useSheetGuard(input: {
    * aprende a despachar sin leerla, y el día que importa tampoco se lee.
    */
   dirty: boolean
-  /** Cierra la hoja de verdad. Lo que la hoja pasaría a `BottomSheet` sin guardián. */
+  /** Really closes the sheet. What the sheet would pass to `BottomSheet` with no guard. */
   onClose: () => void
   /**
    * El fondo cierra. **Por omisión NO**, que es lo que necesita un formulario: con la
@@ -89,8 +89,8 @@ export function useSheetGuard(input: {
   const request = useCallback((exit: SheetExit) => {
     const now = state.current
     if (now.confirming) {
-      // Con la pregunta delante no se sale por ningún camino: se retira y se vuelve al
-      // formulario con lo escrito intacto.
+      // With the question in front, no path leaves: it is withdrawn and the form comes back
+      // with what was typed untouched.
       if (confirmingExitAction(exit) === 'dismiss') setConfirming(false)
       return
     }
@@ -114,8 +114,8 @@ export function useSheetGuard(input: {
   }, [])
   const cancel = useCallback(() => request('close'), [request])
 
-  // Si lo escrito desaparece mientras la pregunta está en pantalla —se vacía el campo, o
-  // el guardado termina y limpia el borrador— la pregunta se queda hablando de nada.
+  // If what was typed disappears while the question is on screen —the field is emptied, or
+  // the save finishes and clears the draft— the question is left talking about nothing.
   useEffect(() => {
     if (!dirty) setConfirming(false)
   }, [dirty])

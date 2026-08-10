@@ -52,8 +52,8 @@ describe('readDraft, lo que se ofrece y lo que no', () => {
   })
 
   it('pasados siete días se tira, y NO se ofrece', () => {
-    // Un borrador de hace tres semanas sobre una ficha tocada cinco veces desde entonces
-    // no es ayuda: se acepta sin mirar y se sobreescriben cinco correcciones.
+    // A draft from three weeks ago about a record touched five times since is no help: it
+    // gets accepted without looking and five corrections are overwritten.
     const viejo = new Date(AHORA.getTime() - DRAFT_MAX_AGE_MS - 1)
     const read = readDraft<Campos>(
       packDraft({ draft: BORRADOR, at: viejo, fingerprint: null }),
@@ -74,8 +74,8 @@ describe('readDraft, lo que se ofrece y lo que no', () => {
   })
 
   it('si lo guardado ha cambiado, se ofrece pero marcado', () => {
-    // No se esconde —sería perder el trabajo por segunda vez— y no se calla: aceptarlo a
-    // ciegas revertiría la corrección de la otra sesión.
+    // It is not hidden —that would be losing the work a second time— and not kept quiet:
+    // accepting it blindly would revert the other session's correction.
     const read = readDraft<Campos>(
       packDraft({ draft: BORRADOR, at: HACE_10_MIN, fingerprint: 'a|1985' }),
       { now: AHORA, fingerprint: 'a|1986' },
@@ -85,7 +85,7 @@ describe('readDraft, lo que se ofrece y lo que no', () => {
   })
 
   it('un formulario de alta no tiene fila con la que chocar', () => {
-    // Sin huella no hay nada que comparar, y eso no es «ha cambiado»: es que no aplica.
+    // With no fingerprint there is nothing to compare, and that is not «it changed»: it does not apply.
     expect(
       readDraft(packDraft({ draft: BORRADOR, at: HACE_10_MIN, fingerprint: null }), {
         now: AHORA,
@@ -95,8 +95,8 @@ describe('readDraft, lo que se ofrece y lo que no', () => {
   })
 
   it('un reloj mal puesto no tira el trabajo', () => {
-    // Una fecha en el futuro es un huso horario o un reloj sin sincronizar. Tirar el
-    // borrador por eso sería perder tecleo por una hora de diferencia.
+    // A date in the future is a time zone or an unsynchronized clock. Throwing the draft
+    // away for that would be losing typing over an hour's difference.
     const futuro = new Date(AHORA.getTime() + 3 * 60 * 60 * 1000)
     expect(
       readDraft(packDraft({ draft: BORRADOR, at: futuro, fingerprint: null }), {

@@ -19,7 +19,7 @@ export function LoginPage() {
   const [sentAt, setSentAt] = useState<number | null>(null)
   const [waiting, setWaiting] = useState(0)
 
-  // La cuenta atrás del reenvío. Un segundo basta: lo que se pinta son segundos.
+  // The resend countdown. One second is enough: what is painted is seconds.
   useEffect(() => {
     if (sentAt === null) return
     const tick = () => setWaiting(secondsLeft(sentAt, Date.now()))
@@ -74,14 +74,14 @@ export function LoginPage() {
     // tiene acceso al catálogo.
     const outcome = recoveryOutcome(error)
     if (outcome === 'unreachable') {
-      // En rojo, porque es un problema y hay que volver a intentarlo. No filtra
-      // nada: que la red esté caída se contesta igual para cualquier dirección.
+      // In red, because it is a problem and has to be tried again. It leaks nothing: a
+      // network that is down answers the same for any address.
       setError(recoveryText(outcome))
       return
     }
     setNotice(recoveryText(outcome))
-    // La espera solo empieza cuando la petición llegó a salir: con la red caída,
-    // obligar a esperar un minuto castigaría el intento que no se hizo.
+    // The wait only starts once the request got out: with the network down, forcing a
+    // minute's wait would punish the attempt that never happened.
     setSentAt(Date.now())
   }
 

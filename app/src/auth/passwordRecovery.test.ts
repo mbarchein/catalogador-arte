@@ -21,8 +21,8 @@ import {
 
 describe('nada distingue una cuenta que existe de una que no', () => {
   it('el servidor conteste lo que conteste, se dice lo mismo', () => {
-    // Un rechazo por ritmo, una dirección sin cuenta, una plantilla mal
-    // configurada. Los tres traen `status`, y los tres se leen igual.
+    // A rate refusal, an address with no account, a badly configured template. All three
+    // carry a `status`, and all three read the same.
     expect(recoveryOutcome(null)).toBe('requested')
     expect(recoveryOutcome({ status: 400 })).toBe('requested')
     expect(recoveryOutcome({ status: 429 })).toBe('requested')
@@ -38,8 +38,8 @@ describe('nada distingue una cuenta que existe de una que no', () => {
   })
 
   it('el aviso va en condicional, no afirmando un envío', () => {
-    // Afirmar «te lo hemos enviado» sería mentira la mitad de las veces, y quien
-    // teclee mal su propia dirección esperaría un correo que nadie mandó.
+    // Claiming «te lo hemos enviado» would be a lie half the time, and whoever mistypes
+    // their own address would wait for a mail nobody sent.
     expect(RECOVERY_NOTICE).toContain('Si esa dirección tiene cuenta')
     expect(RECOVERY_NOTICE).not.toContain('Te hemos enviado')
   })
@@ -47,8 +47,8 @@ describe('nada distingue una cuenta que existe de una que no', () => {
 
 describe('la única excepción es la red, y no habla de cuentas', () => {
   it('sin llegar a salir la petición, se dice', () => {
-    // Sin esta rama, estar sin cobertura en un almacén se leería como «ya está
-    // enviado» y se esperaría un mensaje que no va a llegar nunca.
+    // Without this branch, being out of coverage in a storeroom would read as «already
+    // sent» and a message that will never arrive would be waited for.
     expect(recoveryOutcome({})).toBe('unreachable')
     expect(recoveryOutcome({ status: 0 })).toBe('unreachable')
     expect(recoveryText('unreachable')).toBe(UNREACHABLE_NOTICE)
@@ -61,7 +61,7 @@ describe('la única excepción es la red, y no habla de cuentas', () => {
 
 describe('la dirección que se manda', () => {
   it('va recortada y en minúsculas', () => {
-    // Un espacio pegado al copiar de otra aplicación es la causa más tonta de
+    // A space stuck on while copying from another application is the silliest cause of
     // «no me llega».
     expect(normalizeEmail('  Mario@Ejemplo.ES ')).toBe('mario@ejemplo.es')
   })
@@ -85,8 +85,8 @@ describe('la espera entre envíos', () => {
   })
 
   it('y el botón dice cuánto falta en vez de solo no funcionar', () => {
-    // Un botón apagado sin explicación se lee como una avería y se pulsa otras
-    // diez veces.
+    // A disabled button with no explanation reads as a breakage and gets pressed ten more
+    // times.
     expect(resendText(42)).toBe('Volver a enviarlo en 42 s')
     expect(resendText(0)).toBe('Enviarme el enlace')
   })

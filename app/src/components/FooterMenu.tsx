@@ -47,8 +47,8 @@ function ExhibitionsIcon() {
   )
 }
 
-// Estanterías apiladas: las tablas maestras son las listas de las que se elige,
-// y el icono tenía que distinguirse de la cuadrícula de obras.
+// Stacked shelves: the master tables are the lists things are chosen from, and the icon
+// had to be told apart from the grid of artworks.
 function TablesIcon() {
   return (
     <svg {...svg}>
@@ -103,8 +103,8 @@ export function FooterMenu() {
     { to: '/exhibitions', end: false, text: 'Exposiciones', Icon: ExhibitionsIcon },
     // RF-1104: capture only exists for whoever can edit.
     ...(canEdit ? [{ to: '/capture', end: false, text: 'Añadir', Icon: AddIcon }] : []),
-    // RF-1106: el mantenimiento de las listas maestras es del Catalogador, y no
-    // vive dentro del formulario de ninguna obra.
+    // RF-1106: maintaining the master lists belongs to the Cataloger, and does not live
+    // inside any artwork's form.
     ...(canEdit ? [{ to: '/tables', end: false, text: 'Tablas', Icon: TablesIcon }] : []),
     { to: '/profile', end: false, text: 'Mi perfil', Icon: ProfileIcon },
   ]

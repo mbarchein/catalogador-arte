@@ -52,8 +52,8 @@ describe('parseSpans, el énfasis dentro de una línea', () => {
   })
 
   it('un asterisco suelto no es negrita, y se lee tal cual', () => {
-    // Y sobre todo: NO produce marcado. Esto devuelve datos y la pantalla los pinta con
-    // elementos, así que no hay forma de que el fichero inyecte nada.
+    // And above all: it produces NO markup. This returns data and the screen paints it with
+    // elements, so there is no way for the file to inject anything.
     expect(parseSpans('un * suelto')).toEqual([{ text: 'un * suelto' }])
     expect(parseSpans('2 ** 3')).toEqual([{ text: '2 ** 3' }])
   })
@@ -72,8 +72,8 @@ describe('parseChangelog, la estructura del fichero', () => {
   })
 
   it('las líneas seguidas de un párrafo se unen', () => {
-    // El fichero está ajustado a cien columnas para leerlo en un editor; respetar esos
-    // cortes en un móvil daría un texto roto en escalera.
+    // The file is wrapped at a hundred columns to be read in an editor; honoring those
+    // breaks on a phone would give text broken into a staircase.
     const blocks = parseChangelog('Una frase que sigue\nen la línea de abajo.')
     expect(blocks).toHaveLength(1)
     expect(blocks[0]).toEqual({
@@ -118,8 +118,8 @@ describe('parseChangelog, la estructura del fichero', () => {
   })
 
   it('y una lista corta el párrafo de antes, no se lo traga', () => {
-    // El fallo típico de un lector mínimo: la viñeta se pega al párrafo anterior y la
-    // lista desaparece sin que nadie lo note.
+    // The typical failure of a minimal reader: the bullet sticks to the previous paragraph
+    // and the list disappears without anyone noticing.
     const blocks = parseChangelog('Un párrafo.\n- una viñeta')
     expect(blocks.map((b) => b.kind)).toEqual(['paragraph', 'list'])
   })
@@ -135,8 +135,8 @@ describe('parseChangelog, la estructura del fichero', () => {
   })
 
   it('la regla horizontal no se pinta', () => {
-    // El fichero separa entradas con `---`. En pantalla cada fecha ya viene en su caja
-    // plegable, así que la regla no aporta nada y se leía como un «---» suelto.
+    // The file separates entries with `---`. On screen each date already comes in its own
+    // collapsible box, so the rule adds nothing and read as a stray «---».
     expect(parseChangelog('Uno.\n\n---\n\nDos.').map((b) => b.kind)).toEqual([
       'paragraph',
       'paragraph',
@@ -161,14 +161,14 @@ describe('groupChangelog, una entrada por fecha', () => {
   })
 
   it('lo que venga antes de la primera fecha no se tira', () => {
-    // Perder texto en silencio porque el fichero no empiece como se esperaba es peor que
-    // enseñarlo con una etiqueta rara.
+    // Losing text silently because the file does not start as expected is worse than
+    // showing it with an odd label.
     const entries = groupChangelog(parseChangelog('Un prólogo.\n\n## Agosto\n\nUno.'))
     expect(entries.map((e) => e.date)).toEqual(['Sin fechar', 'Agosto'])
   })
 
   it('una fecha sin nada debajo no se ofrece', () => {
-    // Sería un botón de desplegar que no abre nada.
+    // It would be an expand button that opens nothing.
     expect(groupChangelog(parseChangelog('## Agosto\n\n## Julio\n\nUno.'))).toHaveLength(1)
   })
 })
@@ -207,7 +207,7 @@ describe('el CHANGELOG.md de verdad', () => {
     // Palabra por palabra y en orden, que es la única comprobación que no se puede
     // aprobar por casualidad: contar bloques dejaría pasar un párrafo entero perdido.
     const delFichero = MARKDOWN.split('\n')
-      // Las reglas horizontales no se pintan, así que tampoco se cuentan.
+      // Horizontal rules are not painted, so they are not counted either.
       .filter((line) => !/^-{3,}$/.test(line.trim()))
       .map((line) => line.replace(/^#{2,3}\s+/, '').replace(/^\s*-\s+/, ''))
       .join(' ')
@@ -216,8 +216,8 @@ describe('el CHANGELOG.md de verdad', () => {
       .split(/\s+/)
       .filter((word) => word !== '')
 
-    // Los trozos de un párrafo son CONTIGUOS —`**aplicación**,` da «aplicación» y «,»—
-    // así que dentro de un bloque se unen sin espacio, y solo los bloques se separan.
+    // The pieces of a paragraph are CONTIGUOUS —`**aplicación**,` gives «aplicación» and «,»—
+    // so within a block they join with no space, and only blocks are separated.
     const leidas = blocks
       .flatMap((block) => {
         if (block.kind === 'date' || block.kind === 'section') return [block.text]
@@ -233,7 +233,7 @@ describe('el CHANGELOG.md de verdad', () => {
 
   it('tiene las fechas que tiene, y la primera es la más reciente', () => {
     const fechas = (MARKDOWN.match(/^## /gm) ?? []).length
-    // «En marcha» es un encabezado de fecha más a efectos de estructura, y se lee igual.
+    // «En marcha» is one more date heading as far as structure goes, and reads the same.
     expect(entries).toHaveLength(fechas)
     expect(entries[0]?.date).toMatch(/de \d{4}$/)
   })
@@ -265,7 +265,7 @@ describe('el CHANGELOG.md de verdad', () => {
   })
 
   it('y ningún trozo sale con las marcas de Markdown dentro', () => {
-    // Si algo se colara sin interpretar, se leería «**El archivo**» con los asteriscos.
+    // If something slipped through uninterpreted, it would read «**El archivo**» with the asterisks.
     for (const block of blocks) {
       const spans = block.kind === 'paragraph' ? block.spans : block.kind === 'list' ? block.items.flat() : []
       for (const span of spans) {

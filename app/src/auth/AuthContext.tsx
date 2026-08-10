@@ -48,7 +48,7 @@ interface AuthContextValue {
    * ser, porque vive para siempre en una bandeja de entrada.
    */
   passwordRecovery: boolean
-  /** Se llama al terminar de elegir la contraseña nueva. */
+  /** Called once the new password has been chosen. */
   finishPasswordRecovery: () => void
   signOut: () => Promise<void>
 }
@@ -68,8 +68,8 @@ function readRecoveryFlag(): boolean {
   try {
     return sessionStorage.getItem(RECOVERY_KEY) === '1'
   } catch {
-    // Almacenamiento denegado (navegación privada de algunos navegadores). Sin
-    // marca no hay confinamiento, pero tampoco puede romperse la entrada.
+    // Storage denied (private browsing in some browsers). With no mark there is no
+    // confinement, but signing in cannot break either.
     return false
   }
 }
@@ -79,7 +79,7 @@ function writeRecoveryFlag(active: boolean) {
     if (active) sessionStorage.setItem(RECOVERY_KEY, '1')
     else sessionStorage.removeItem(RECOVERY_KEY)
   } catch {
-    // Igual que arriba: no poder apuntarlo no puede impedir usar la aplicación.
+    // Same as above: not being able to record it cannot stop the application being used.
   }
 }
 
@@ -158,8 +158,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canEdit,
         refreshProfile: async () => {
           const data = await readProfile()
-          // Solo se pisa lo que hay si la lectura trajo algo: un fallo de red al
-          // refrescar no puede dejar la pantalla sin nombre ni sin rol.
+          // What is there is only overwritten when the read brought something: a network
+          // failure on refresh cannot leave the screen with no name and no role.
           if (data !== null) setProfile(data)
         },
         passwordRecovery,

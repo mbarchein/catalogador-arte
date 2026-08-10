@@ -24,23 +24,23 @@ const EXITS: SheetExit[] = ['backdrop', 'close', 'escape', 'back']
 
 describe('sheetExitAction, qué hacer con un intento de salir', () => {
   it('en una hoja de elegir, los cuatro caminos cierran', () => {
-    // Elegir un sitio o una sede no acumula nada que perder, y quitarle el fondo sería
-    // quitar comodidad sin ganar nada.
+    // Choosing a place or a venue accumulates nothing to lose, and taking its backdrop
+    // away would remove convenience for no gain.
     for (const exit of EXITS) {
       expect(sheetExitAction({ dirty: false, exit, backdropCloses: true })).toBe('close')
     }
   })
 
   it('en un formulario, el fondo deja de ser una salida — también en blanco', () => {
-    // No solo cuando hay algo escrito: una superficie que unas veces cierra y otras
-    // pregunta es peor que una que no cierra nunca. La salida está siempre en la ✕.
+    // Not only when something has been typed: a surface that sometimes closes and
+    // sometimes asks is worse than one that never closes. The exit is always the ✕.
     expect(sheetExitAction({ dirty: false, exit: 'backdrop', backdropCloses: false })).toBe('ignore')
     expect(sheetExitAction({ dirty: true, exit: 'backdrop', backdropCloses: false })).toBe('ignore')
   })
 
   it('y en blanco, los otros tres cierran sin preguntar', () => {
-    // Preguntar sobre un formulario vacío es lo que hace que la pregunta se aprenda a
-    // despachar sin leerla, y entonces el día que importa tampoco se lee.
+    // Asking over an empty form is what teaches the question to be dismissed unread, and
+    // then on the day it matters it goes unread too.
     for (const exit of ['close', 'escape', 'back'] as const) {
       expect(sheetExitAction({ dirty: false, exit, backdropCloses: false })).toBe('close')
     }
@@ -53,8 +53,8 @@ describe('sheetExitAction, qué hacer con un intento de salir', () => {
   })
 
   it('y una hoja de elegir con algo escrito también pregunta por esos tres', () => {
-    // El selector que además deja escribir una nota del vínculo es un formulario a
-    // medias: el fondo le sigue cerrando, pero lo escrito no se tira sin preguntar.
+    // The chooser that also lets a link note be typed is half a form: the backdrop still
+    // closes it, but what was typed is not thrown away without asking.
     expect(sheetExitAction({ dirty: true, exit: 'back', backdropCloses: true })).toBe('confirm')
     expect(sheetExitAction({ dirty: true, exit: 'backdrop', backdropCloses: true })).toBe('confirm')
   })
@@ -62,8 +62,8 @@ describe('sheetExitAction, qué hacer con un intento de salir', () => {
 
 describe('confirmingExitAction, con la pregunta ya en pantalla', () => {
   it('el atrás y Escape retiran la pregunta: NUNCA salen', () => {
-    // Un atrás de más, con un cartel delante que dice que se van a perder los datos, no
-    // puede ser justo la pulsación que los pierde.
+    // One back too many, with a dialog in front saying the data is about to be lost,
+    // cannot be the very press that loses it.
     expect(confirmingExitAction('back')).toBe('dismiss')
     expect(confirmingExitAction('escape')).toBe('dismiss')
     expect(confirmingExitAction('close')).toBe('dismiss')
@@ -105,10 +105,10 @@ describe('lo que dice la pregunta', () => {
     const kept = discardText(null, true)
     expect(kept).toContain('se queda apuntado')
     expect(kept).toContain('se ofrece al volver a abrirla')
-    // Sin apuntarlo, no se promete: la frase de siempre.
+    // Not recorded, not promised: the usual sentence.
     expect(discardText()).toContain('no se guarda')
     expect(discardText()).not.toContain('se queda apuntado')
-    // Y lo que la hoja añada entra en las dos.
+    // And whatever the sheet adds goes into both.
     expect(discardText('El fichero habría que volver a elegirlo.', true)).toContain('fichero')
   })
 })

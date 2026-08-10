@@ -48,7 +48,7 @@ function Modal({
   return null
 }
 
-/** Deja el historial en una entrada conocida, como la pantalla que hay debajo. */
+/** Leaves history on a known entry, like the screen underneath. */
 function onScreen(name: string) {
   window.history.pushState({ screen: name }, '')
 }
@@ -61,8 +61,8 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
     render(<Modal onClose={() => {}} />)
 
     expect(window.history.length).toBe(largo + 1)
-    // La dirección no cambia: el enrutador no ve ninguna navegación, así que la
-    // pantalla de debajo no se vuelve a pintar ni pierde su desplazamiento.
+    // The address does not change: the router sees no navigation, so the screen underneath
+    // is not repainted and does not lose its scroll.
     expect(window.location.href).toBe(url)
   })
 
@@ -74,7 +74,7 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
     window.history.back()
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
-    // Se ha consumido la entrada del modal y se ha quedado en la ficha.
+    // The modal's entry has been consumed and it stayed on the record.
     expect(window.history.state).toEqual({ screen: 'ficha' })
   })
 
@@ -85,11 +85,11 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
     const { unmount } = render(<Modal onClose={onClose} />)
 
     unmount()
-    // Sin consumir aquí la entrada que se empujó al abrir, el «atrás» siguiente no
-    // haría nada visible y la usuaria lo daría por averiado.
+    // Without consuming here the entry pushed on opening, the next «back» would do nothing
+    // visible and would be taken for broken.
     await waitFor(() => expect(window.history.state).toEqual({ screen: 'ficha' }))
 
-    // Y con la hoja ya cerrada, el «atrás» hace lo que hace siempre: salir.
+    // And with the sheet already closed, «back» does what it always does: leave.
     window.history.back()
     await waitFor(() => expect(window.history.state).toEqual({ screen: 'listado' }))
     expect(onClose).not.toHaveBeenCalled()
@@ -103,8 +103,8 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
   })
 
   it('el «atrás» cierra solo el modal de encima, no los dos anidados', async () => {
-    // La hoja de procedencia con el selector de personas dentro: el caso real, y
-    // el fallo que sale si cada modal montado atiende a cada «atrás» por su cuenta.
+    // The provenance sheet with the party chooser inside: the real case, and the failure
+    // that shows up if every mounted modal answers every «back» on its own.
     onScreen('ficha')
     const cerrarHoja = vi.fn()
     const cerrarSelector = vi.fn()
@@ -152,7 +152,7 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
 
     window.history.back()
     await waitFor(() => expect(ocupada).toHaveBeenCalledTimes(2))
-    // Se sigue en la ficha, con la hoja abierta: es lo que la negativa pide.
+    // Still on the record, with the sheet open: which is what the refusal asks for.
     expect(window.history.state).toMatchObject({ screen: 'ficha' })
   })
 
@@ -177,10 +177,10 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
       </StrictMode>,
     )
 
-    // Un turno para que corran los temporizadores del doble montaje.
+    // One turn so the double-mount timers can run.
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(onClose).not.toHaveBeenCalled()
-    // Y la entrada sigue puesta: es la que el «atrás» tiene que consumir.
+    // And the entry is still there: it is the one «back» has to consume.
     expect(window.history.state).toMatchObject({ modalKey: expect.any(String) })
 
     window.history.back()
@@ -204,7 +204,7 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
 
     window.history.back()
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
-    // Un solo «atrás» ha devuelto a la ficha, no a una entrada intermedia.
+    // A single «back» returned to the record, not to an intermediate entry.
     expect(window.history.state).toEqual({ screen: 'ficha' })
   })
 
@@ -218,7 +218,7 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
      * parecía roto. Medido en Chromium antes de arreglarlo.
      */
     onScreen('ficha')
-    // La entrada que dejó la carga anterior, con la forma que tendría.
+    // The entry the previous load left behind, with the shape it would have.
     window.history.pushState({ screen: 'ficha', modalKey: 'modal-1' }, '')
     const onClose = vi.fn()
     render(<Modal onClose={onClose} />)
@@ -232,8 +232,8 @@ describe('useCloseOnBack, el «atrás» del móvil sobre un modal (RNF-106)', ()
     onScreen('ficha')
     const { unmount } = render(<Modal onClose={() => {}} />)
 
-    // Un enlace dentro del modal: el enrutador empuja su entrada y la del modal
-    // queda enterrada. Consumirla a ciegas sacaría de la pantalla recién abierta.
+    // A link inside the modal: the router pushes its entry and the modal's is buried.
+    // Consuming it blindly would leave the screen that just opened.
     onScreen('otra')
     unmount()
 

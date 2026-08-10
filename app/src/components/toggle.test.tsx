@@ -31,8 +31,8 @@ describe('el interruptor apagado del todo', () => {
   })
 
   it('sin pedirlo se pulsa y contesta lo contrario de lo que está', async () => {
-    // El caso normal, que es el que protege de que `disabled` se quede pegado
-    // por omisión: sería una pantalla entera de controles muertos.
+    // The normal case, which is what guards against `disabled` getting stuck on by
+    // default: it would be a whole screen of dead controls.
     const onChange = vi.fn()
     render(<Toggle label="Sus obras salen en el listado" active onChange={onChange} />)
 

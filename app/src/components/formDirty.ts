@@ -44,8 +44,8 @@ export function draftDirty<T extends object>(current: T, initial: T): boolean {
 
 function sameValue(a: unknown, b: unknown): boolean {
   if (typeof a === 'string' && typeof b === 'string') return a.trim() === b.trim()
-  // Null y undefined son el mismo «sin dato» para un formulario: un campo que la fila
-  // trae a null y el borrador deja sin poner no es una corrección.
+  // Null and undefined are the same «no datum» for a form: a field the row brings as null
+  // and the draft leaves unset is not a correction.
   if (a == null && b == null) return true
   return Object.is(a, b)
 }
