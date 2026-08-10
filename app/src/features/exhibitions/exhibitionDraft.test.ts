@@ -51,10 +51,10 @@ function row(over: Partial<Exhibition> = {}): Exhibition {
 
 describe('el borrador en blanco (RF-218)', () => {
   /**
-   * Ni «Individual» ni «Sin catálogo» por omisión: un recorte de prensa da el
-   * título de una muestra mucho antes de decir si el artista expuso solo, y que no
-   * conste catálogo no es que no lo hubiera. Arrancar en cualquiera de esas dos
-   * publicaría una respuesta que nadie ha dado.
+   * Neither «Individual» nor «Sin catálogo» by default: a press clipping gives the
+   * title of a show long before saying whether the artist exhibited alone, and a catalogue
+   * not being recorded is not the same as there not having been one. Starting on either of those two would
+   * publish an answer nobody has given.
    */
   it('RF-218: arranca sin revisar el carácter y sin revisar el catálogo', () => {
     const blank = emptyExhibitionDraft()
@@ -81,10 +81,10 @@ describe('el borrador de una ficha que ya existe', () => {
   })
 
   /**
-   * Con fecha de apertura, el año es la derivación de la base
-   * (`tg_exhibition_year_from_dates`) y no un dato que se escriba: ofrecerlo
-   * sería ofrecer una contradicción que `exhibitions_year_matches_start_date`
-   * rechaza.
+   * With an opening date, the year is the base's derivation
+   * (`tg_exhibition_year_from_dates`) and not a datum that gets written: offering it
+   * would be offering a contradiction that `exhibitions_year_matches_start_date`
+   * rejects.
    */
   it('el año no se ofrece cuando hay fecha de apertura, y sí cuando es lo único que hay', () => {
     expect(exhibitionDraft(row()).year).toBe('')
@@ -114,8 +114,8 @@ describe('lo que impide guardar (RF-502)', () => {
   })
 
   /**
-   * `exhibitions_coherent_dates`, la mitad que un `end_date >= start_date` a secas
-   * habría dejado pasar: una comparación con nulo no es falsa.
+   * `exhibitions_coherent_dates`, the half a bare `end_date >= start_date`
+   * would have let through: a comparison with null is not false.
    */
   it('una fecha de cierre sin apertura es media fecha, y se dice qué hacer', () => {
     const message = exhibitionDraftProblem(draft({ endDate: '1985-05-04' }))
@@ -157,9 +157,9 @@ describe('lo que impide guardar (RF-502)', () => {
   })
 
   /**
-   * `exhibitions_catalogue_reference_needs_catalogue`. Al revés SÍ se permite, y es
-   * el estado normal mientras se investiga: un catálogo puede constar publicado y no
-   * estar todavía dado de alta en la bibliografía.
+   * `exhibitions_catalogue_reference_needs_catalogue`. The other way round IS allowed, and it is
+   * the normal state while research goes on: a catalogue may be recorded as published and not
+   * yet be registered in the bibliography.
    */
   it('RF-503: con ficha del catálogo en la bibliografía, no se puede decir que no lo hubo', () => {
     const withRecord = draft({ hasCatalogueRecord: true, cataloguePublished: 'NO' })
@@ -219,10 +219,10 @@ describe('lo que viaja a la base', () => {
   })
 
   /**
-   * La razón entera está en la cabecera del módulo: el trigger deriva el año de la
-   * fecha y nunca al revés, así que mandar los dos es pedir que la base rechace
-   * `exhibitions_year_matches_start_date` antes o después. Mandando solo uno, ese
-   * check no se puede alcanzar desde esta pantalla.
+   * The whole reason is in the module's heading: the trigger derives the year from the
+   * date and never the other way round, so sending both is asking the base to reject
+   * `exhibitions_year_matches_start_date` sooner or later. By sending only one, that
+   * check cannot be reached from this screen.
    */
   it('nunca manda el año al lado de una fecha de apertura', () => {
     const payload = exhibitionPayload(draft({ year: '1986', startDate: '1985-03-12' }))
@@ -243,10 +243,10 @@ describe('lo que viaja a la base', () => {
   })
 
   /**
-   * `catalogue_reference_id` NO está en la carga, y su ausencia es intencionada:
-   * esta pantalla no puede elegir la ficha bibliográfica del catálogo, y un guardado
-   * que la vaciara tiraría un enlace hecho en otro sitio. «Lo que no se manda no se
-   * borra».
+   * `catalogue_reference_id` is NOT in the payload, and its absence is intentional:
+   * this screen cannot choose the catalogue's bibliographic record, and a save
+   * that emptied it would throw away a link made somewhere else. «What is not sent is not
+   * erased».
    */
   it('no toca la ficha bibliográfica del catálogo', () => {
     expect('catalogue_reference_id' in exhibitionPayload(draft())).toBe(false)
@@ -260,10 +260,10 @@ describe('crear una exposición (RF-909)', () => {
   })
 
   /**
-   * Sin comprobación de duplicados, y no es un olvido: `exhibitions` no tiene
-   * índice único sobre el título, a propósito y escrito en la migración —dos
-   * itinerantes de años distintos se llaman igual—. Una pantalla que rechazara la
-   * segunda rechazaría una muestra real; lo que hace es avisar (ver
+   * With no duplicate check, and it is not an oversight: `exhibitions` has no
+   * unique index on the title, on purpose and written in the migration —two
+   * touring shows from different years are called the same—. A screen that rejected the
+   * second would reject a real show; what it does is warn (see
    * `exhibitionIndex.similarTitleNotice`).
    */
   it('un título repetido no impide crearla: es un dato legítimo', () => {
@@ -278,9 +278,9 @@ describe('corregir una exposición (RF-804)', () => {
   })
 
   /**
-   * `tg_row_audit` sella quién y cuándo en cada `update`. Abrir la ficha, leerla y
-   * pulsar «Guardar» sellaría un cambio que no cambió nada, y el historial de
-   * cambios enseñaría una edición que no ocurrió.
+   * `tg_row_audit` stamps who and when on every `update`. Opening the record, reading it and
+   * pressing «Guardar» would stamp a change that changed nothing, and the change
+   * history would show an edit that did not happen.
    */
   it('RF-1501: abrir y guardar sin tocar nada no escribe', () => {
     const current = row()
@@ -288,9 +288,9 @@ describe('corregir una exposición (RF-804)', () => {
   })
 
   /**
-   * El caso que la comparación ingenua habría dado por cambiado: la base derivó el
-   * año 1985 de la fecha de apertura, el borrador no lo lleva porque con fecha no se
-   * ofrece, y comparar los borradores en crudo diría que 1985 se ha borrado.
+   * The case the naive comparison would have taken as changed: the base derived the
+   * year 1985 from the opening date, the draft does not carry it because with a date it is not
+   * offered, and comparing the drafts raw would say that 1985 has been erased.
    */
   it('el año que derivó la base no cuenta como un cambio', () => {
     const current = row({ year: 1985, start_date: '1985-03-12' })

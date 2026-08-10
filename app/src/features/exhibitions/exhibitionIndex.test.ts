@@ -12,12 +12,12 @@ import {
 } from './exhibitionIndex'
 
 /**
- * El listado de exposiciones: qué se pide, en qué orden se lee, qué caza la
- * búsqueda y qué dice cada fila (RF-502, RF-606, RF-609, RF-909).
+ * The exhibition listing: what is asked for, in what order it is read, what the
+ * search catches and what each row says (RF-502, RF-606, RF-609, RF-909).
  *
- * La batería corre en node y no abre ningún JSX, así que el orden de una lista y
- * las palabras de una fila se verifican aquí o no se verifican en ninguna parte.
- * `ExhibitionsPage` no decide nada: pinta lo que estas funciones devuelven.
+ * The suite runs in node and opens no JSX, so a list's order and
+ * a row's words are verified here or they are not verified anywhere.
+ * `ExhibitionsPage` decides nothing: it paints what these functions return.
  */
 
 function venue(over: Partial<VenueRow> = {}): VenueRow {
@@ -56,10 +56,10 @@ function row(over: Partial<ExhibitionRow> = {}): ExhibitionRow {
 
 describe('lo que se le pide a la base', () => {
   /**
-   * La copia de una lista de columnas es el fallo que las esquinas de una
-   * fotografía ya costaron una vez: un campo que la consulta olvida llega como
-   * `undefined` mientras el tipo promete un valor. Este aserto es el que impide
-   * que las dos listas se separen.
+   * Copying a column list is the failure a photograph's corners
+   * already cost once: a field the query forgets arrives as
+   * `undefined` while the type promises a value. This assertion is the one that prevents
+   * the two lists from drifting apart.
    */
   it('el listado pide exactamente las columnas del selector de la ficha, sin una segunda copia', () => {
     expect(EXHIBITION_COLUMNS).toBe(EXHIBITION_OPTION_COLUMNS)
@@ -71,8 +71,8 @@ describe('lo que se le pide a la base', () => {
   })
 
   /**
-   * La búsqueda caza lo que la fila enseña. Una lista que responde a un texto que
-   * no muestra parece arbitraria.
+   * The search catches what the row shows. A list that responds to a text it
+   * does not show looks arbitrary.
    */
   it('RF-606: la búsqueda caza el título, el año y la sede, que es lo que se ve', () => {
     const text = exhibitionSearchText(row())
@@ -84,10 +84,10 @@ describe('lo que se le pide a la base', () => {
 
 describe('RF-502: el orden del listado es el más reciente primero', () => {
   /**
-   * Al revés que el historial de una obra, y las dos cosas son verdad a la vez: el
-   * historial de una obra se lee como una carrera y sube por los años; un listado
-   * se abre para ENCONTRAR la muestra cuyo catálogo está encima de la mesa, y esa
-   * es mucho más probable que sea de esta década que de 1978.
+   * The other way round from an artwork's history, and both things are true at once: an
+   * artwork's history reads like a career and goes up through the years; a listing
+   * is opened to FIND the show whose catalogue is on the table, and that
+   * one is far more likely to be from this decade than from 1978.
    */
   it('ordena por la fecha de apertura, descendente', () => {
     const ordered = sortExhibitions([
@@ -109,10 +109,10 @@ describe('RF-502: el orden del listado es el más reciente primero', () => {
   })
 
   /**
-   * LA FILA QUE NO PUEDE ENCABEZAR EL LISTADO. `exhibitions_dated` prohíbe una
-   * exposición sin ninguna fecha, pero si una llegara igual, una clave vacía la
-   * pondría en el primer puesto y se leería como la muestra más reciente del
-   * catálogo. Va última.
+   * THE ROW THAT CANNOT HEAD THE LISTING. `exhibitions_dated` forbids an
+   * exhibition with no date at all, but if one arrived anyway, an empty key would
+   * put it in first place and it would read as the catalogue's most recent
+   * show. It goes last.
    */
   it('una exposición sin ninguna fecha va al final y no al principio', () => {
     const ordered = sortExhibitions([
@@ -152,9 +152,9 @@ describe('RF-609: las retiradas no están en el listado salvo que se pidan', () 
   })
 
   /**
-   * Y se pueden pedir, porque esconderlas siempre esconde la única salida: el
-   * listado es el único sitio desde el que se llega a una exposición retirada
-   * para recuperarla.
+   * And they can be asked for, because always hiding them hides the only way out: the
+   * listing is the only place from which a withdrawn exhibition is reached
+   * in order to recover it.
    */
   it('pidiéndolas salen, y la fila lo DICE en vez de solo pintarse en gris', () => {
     const entries = rankExhibitions(rows, '', { includeRetired: true })
@@ -199,8 +199,8 @@ describe('cada fila del listado, y ni un hueco (RF-304, RF-502)', () => {
   })
 
   /**
-   * Y cuando la fuente solo dijo «una galería de Madrid», eso ES el dato: se
-   * imprime tal cual en vez de tacharlo de sede desconocida.
+   * And when the source only said «una galería de Madrid», that IS the datum: it is
+   * printed as is instead of being written off as an unknown venue.
    */
   it('la sede que solo consta como texto libre se imprime tal cual', () => {
     const entry = rankExhibitions(
