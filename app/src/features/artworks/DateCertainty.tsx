@@ -1,17 +1,17 @@
 import { InfoNote } from '../../components/ui'
 
 /**
- * Las dos marcas de la fecha, dichas en una línea y explicadas detrás del icono
+ * The two marks of the date, said in one line and explained behind the icon
  * (ADR-004, RNF-106).
  *
- * Son dos casillas que se parecen y **no significan lo mismo**, y elegir la que no
- * es cambia lo que imprime el catálogo. Eso es justo lo que justifica el icono: la
- * línea de fuera dice qué sale impreso, que es lo que se comprueba de un vistazo, y
- * dentro está la diferencia con un ejemplo, que es lo que hace falta la primera vez
- * y ya nunca más.
+ * They are two checkboxes that look alike and **do not mean the same thing**, and picking
+ * the wrong one changes what the catalog prints. That is exactly what justifies the icon:
+ * the line outside says what comes out printed, which is what is checked at a glance, and
+ * inside is the difference with an example, which is what is needed the first time and
+ * never again.
  *
- * En dos pantallas —la ficha y la captura— y por eso aquí: el mismo campo con dos
- * explicaciones distintas es cómo empiezan a divergir.
+ * On two screens —the record and capture— and that is why it lives here: the same field
+ * with two different explanations is how they start to diverge.
  */
 export function DateCertainty() {
   return (

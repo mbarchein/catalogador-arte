@@ -1,27 +1,27 @@
 /**
- * La geometría del anillo de progreso (RNF-106).
+ * The geometry of the progress ring (RNF-106).
  *
- * Un círculo SVG se rellena con `stroke-dasharray` y `stroke-dashoffset`: el trazo
- * mide toda la circunferencia y el desplazamiento decide cuánto queda por pintar.
- * Es aritmética de una línea y por eso está aquí y no dentro del componente: mal
- * calculada dibuja un arco que avanza al revés, o uno que se llena antes de que la
- * subida termine, y **un progreso que miente es peor que no tener ninguno** —quien
- * lo mira decide si esperar o desistir por lo que ve—.
+ * An SVG circle is filled with `stroke-dasharray` and `stroke-dashoffset`: the stroke
+ * measures the whole circumference and the offset decides how much is left unpainted.
+ * It is one line of arithmetic and that is why it lives here and not inside the
+ * component: computed wrong it draws an arc that runs backwards, or one that fills
+ * before the upload ends, and **progress that lies is worse than no progress at all**
+ * —whoever looks at it decides whether to wait or give up by what they see—.
  */
 
-/** El radio y el grosor del anillo, en las unidades del `viewBox` de 24. */
+/** The radius and the thickness of the ring, in the units of the 24 `viewBox`. */
 export const RING_RADIUS = 9
 export const RING_STROKE = 2.5
 
-/** La vuelta entera, que es lo que mide el trazo. */
+/** The full turn, which is what the stroke measures. */
 export const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
 /**
- * Cuánto del trazo queda SIN pintar, para un porcentaje dado.
+ * How much of the stroke is left UNPAINTED, for a given percentage.
  *
- * Cero es el anillo completo y la circunferencia entera es el anillo vacío. Se
- * recorta a [0, 100]: un total mal medido puede dar un 103 %, y sin recortar el
- * desplazamiento se volvería negativo y el navegador pintaría el arco al revés.
+ * Zero is the complete ring and the whole circumference is the empty one. It is clamped
+ * to [0, 100]: a badly measured total can give 103 %, and unclamped the offset would go
+ * negative and the browser would paint the arc backwards.
  */
 export function ringOffset(percent: number, circumference = RING_CIRCUMFERENCE): number {
   if (!Number.isFinite(percent)) return circumference
@@ -30,10 +30,10 @@ export function ringOffset(percent: number, circumference = RING_CIRCUMFERENCE):
 }
 
 /**
- * Lo que se le dice a quien no ve el anillo.
+ * What is said to whoever cannot see the ring.
  *
- * Un dibujo que solo informa por su forma no informa a nadie que use lector de
- * pantalla, y aquí el dibujo ES el dato.
+ * A drawing that informs only by its shape informs nobody using a screen reader, and
+ * here the drawing IS the datum.
  */
 export function ringLabel(action: string, percent: number | null): string {
   return percent === null ? `${action}…` : `${action}: ${percent}%`

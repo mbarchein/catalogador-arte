@@ -54,18 +54,18 @@ export function useArtworkImages(catalogId: string) {
   const [loading, setLoading] = useState(true)
 
   const reload = useCallback(async () => {
-    // ── LAS DOS A LA VEZ, NO UNA DETRÁS DE OTRA ─────────────────
+    // ── BOTH AT ONCE, NOT ONE AFTER THE OTHER ───────────────────
     //
-    // Qué fotografías hay y cuál es la portada son dos preguntas independientes:
-    // la vista `representative_image` no necesita nada de la primera consulta. En
-    // serie eran dos idas y venidas seguidas, y con datos móviles en un almacén
-    // eso son entre medio segundo y tres segundos de ficha con el texto puesto y
-    // los huecos de las fotos vacíos — que es lo que se veía, porque los datos de
-    // la obra sí se pintan al instante desde el espejo del listado.
+    // Which photographs there are and which one is the cover are two independent
+    // questions: the `representative_image` view needs nothing from the first query. In
+    // series they were two round trips back to back, and on mobile data in a storeroom
+    // that is between half a second and three seconds of a record with its text painted
+    // and the photo gaps empty — which is what was seen, because the artwork's data does
+    // paint instantly, off the list's mirror.
     //
-    // Las firmas ya no cuestan red (ver `signPaths`), así que esta espera era
-    // **toda** la espera. Lo único que no arregla es la primera visita a una
-    // ficha: ahí sigue haciendo falta preguntar, pero una vez y no dos.
+    // The signatures no longer cost network (see `signPaths`), so this wait was **all**
+    // the wait. The one thing it does not fix is the first visit to a record: there it
+    // still has to ask, but once and not twice.
     const [imagesAnswer, repAnswer] = await Promise.all([
       supabase
         .from('images')
@@ -98,11 +98,11 @@ export function useArtworkImages(catalogId: string) {
     setMainId(representative?.image_id ?? null)
     setManuallyChosen(representative?.manually_chosen ?? false)
 
-    // Una sola petición para todas, y ninguna si ya estaban firmadas: `signPaths`
-    // guarda las firmas por ruta y con una semana de validez. Antes era una petición
-    // por miniatura y con una hora, así que reabrir la ficha volvía a pedirlas todas
-    // —y sin cobertura no se veía ninguna, aunque los bytes estuvieran en el
-    // teléfono, porque sin firma no hay `src` que buscar en el caché—.
+    // One request for all of them, and none at all if they were already signed:
+    // `signPaths` keeps the signatures by path and for a week. It used to be one request
+    // per thumbnail and for one hour, so reopening the record asked for them all again
+    // —and with no coverage none of them showed, even with the bytes on the phone,
+    // because with no signature there is no `src` to look up in the cache—.
     const urls = await signPaths(rows.map((r) => r.thumbnail_path))
     setThumbUrls(
       Object.fromEntries(

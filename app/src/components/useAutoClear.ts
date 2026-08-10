@@ -1,37 +1,36 @@
 import { useEffect } from 'react'
 
 /**
- * Cuánto se queda un aviso que se va solo (RNF-106).
+ * How long a notice that dismisses itself stays on screen (RNF-106).
  *
- * Cuatro segundos. Por debajo de tres no se lee del todo si la vista estaba en otro
- * sitio de la pantalla —y en esta aplicación lo normal es que estuviera en la
- * fotografía—, y por encima de cinco deja de leerse como «acaba de pasar» y se
- * queda tapando la ficha. Es también el suelo que recomiendan los lectores de
- * pantalla para un `role="status"`: menos tiempo y el anuncio se corta a medias.
+ * Four seconds. Below three it is not read in full if the eyes were somewhere else
+ * on the screen —and in this application they are normally on the photograph—, and
+ * above five it stops reading as «this just happened» and sits there covering the
+ * record. It is also the floor screen readers recommend for a `role="status"`: less
+ * time than that and the announcement is cut halfway.
  */
 export const AUTO_CLEAR_MS = 4000
 
 /**
- * Borra `value` solo, unos segundos después de aparecer.
+ * Clears `value` on its own, a few seconds after it appears.
  *
- * **Solo para lo que confirma algo que ya ha pasado**, que es lo que se lee una vez y
- * no hace falta más: «Imagen principal actualizada». Un error NO se pone aquí — pide
- * hacer algo, y un aviso que se va antes de que se decida qué hacer obliga a
- * repetir la acción para volver a leer por qué falló.
+ * **Only for what confirms something that already happened**, which is read once and
+ * never again: «Imagen principal actualizada». An error does NOT go here — it asks for
+ * something to be done, and a notice that vanishes before that decision is made forces
+ * the action to be repeated just to read why it failed.
  *
- * El temporizador se reinicia cuando cambia `value`, así que dos confirmaciones
- * seguidas se leen cuatro segundos cada una en vez de compartir los del primero. Y
- * se cancela al desmontar: un `setState` sobre una pantalla que ya no está es un
- * aviso en la consola y una fuga de memoria por cada vez.
+ * The timer restarts when `value` changes, so two confirmations in a row are each read
+ * for four seconds instead of sharing the first one's. And it is cancelled on unmount: a
+ * `setState` on a screen that is gone is a console warning and one leak per visit.
  */
 export function useAutoClear(value: unknown, clear: () => void, ms = AUTO_CLEAR_MS): void {
   useEffect(() => {
     if (value === null || value === undefined || value === '') return
     const timer = setTimeout(clear, ms)
     return () => clearTimeout(timer)
-    // `clear` fuera de las dependencias a propósito: es una función nueva en cada
-    // render si quien llama la escribe en línea, y con ella dentro el temporizador
-    // se reiniciaría en cada pintado y el aviso no se iría nunca.
+    // `clear` is deliberately out of the dependencies: it is a new function on every
+    // render when the caller writes it inline, and with it in there the timer would
+    // restart on every paint and the notice would never leave.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, ms])
 }

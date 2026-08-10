@@ -11,11 +11,11 @@ import {
 } from './photoOverlay'
 
 /**
- * Los mandos sobre la fotografía (RF-405, RF-901, RNF-106).
+ * The controls over the photograph (RF-405, RF-901, RNF-106).
  *
- * Un icono no lleva palabra al lado, así que su rótulo **es** lo único que dice qué
- * hace. Lo que se fija aquí es que los tres estados de la estrella no se confundan
- * entre sí y que el orden no ofrezca un movimiento imposible.
+ * An icon carries no word beside it, so its label **is** the only thing that says what it
+ * does. What is pinned here is that the star's three states are not confused with one
+ * another, and that the order does not offer an impossible move.
  */
 
 describe('la estrella de la portada', () => {
@@ -36,8 +36,8 @@ describe('la estrella de la portada', () => {
   })
 
   it('principal SIN fijar es un tercer estado, ni apagada ni terminada', () => {
-    // Es la diferencia que importa: sin fijar, subir otra general cambia la
-    // portada sola. Encendida y pulsable a la vez, que es lo que hay.
+    // This is the difference that matters: unpinned, uploading another general changes
+    // the cover on its own. Lit and pressable at the same time, which is what it is.
     const state = mainButtonState(true, false)
     expect(state.filled).toBe(true)
     expect(state.disabled).toBe(false)
@@ -74,7 +74,7 @@ describe('lo que se lee bajo la fotografía', () => {
   })
 
   it('con una sola fotografía no hay orden que contar', () => {
-    // «1 de 1» es ruido, y con una sola tampoco hay portada que elegir.
+    // «1 de 1» is noise, and with a single one there is no cover to choose either.
     expect(photoStatusText({ isMain: true, manuallyChosen: true, position: 1, total: 1 })).toBe(
       'Principal',
     )

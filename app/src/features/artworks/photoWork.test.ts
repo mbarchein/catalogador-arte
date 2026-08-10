@@ -11,13 +11,12 @@ import {
 } from './photoWork'
 
 /**
- * Lo que está pasando con una fotografía, en dos largos (RNF-106).
+ * What is happening to a photograph, at two lengths (RNF-106).
  *
- * El distintivo sobre la imagen es una píldora de una línea, y **lo único que de
- * verdad se mira en ella es el porcentaje**. Con un solo texto para el distintivo
- * y para la línea de debajo, el largo se recortaba por el final —que es donde va
- * el porcentaje— y el distintivo acababa diciendo «Aplicando la corrección y
- * subiendo las c…»: mucho texto y ni un dato.
+ * The badge over the image is a one-line pill, and **the only thing really looked at in it
+ * is the percentage**. With a single text for the badge and for the line below, the long
+ * one was truncated at the end —which is where the percentage goes— and the badge ended up
+ * saying «Aplicando la corrección y subiendo las c…»: plenty of text and not one datum.
  */
 
 const TODOS: PhotoWork[] = [
@@ -30,9 +29,9 @@ const TODOS: PhotoWork[] = [
 
 describe('el texto del distintivo cabe', () => {
   it('ninguno pasa del tope', () => {
-    // El rótulo largo volvió por descuido una vez, y el síntoma —un porcentaje
-    // que no se ve— no se parece en nada a su causa. Por eso hay un tope y no
-    // solo buena intención.
+    // The long label came back by carelessness once, and the symptom —a percentage that
+    // cannot be seen— looks nothing like its cause. Hence a cap and not just good
+    // intentions.
     for (const work of TODOS) {
       expect(work.short.length, work.short).toBeLessThanOrEqual(WORK_SHORT_MAX)
     }
@@ -64,13 +63,12 @@ describe('el texto de la línea de debajo explica', () => {
 })
 
 /**
- * El 100 % no es el final (RNF-106).
+ * 100 % is not the end (RNF-106).
  *
- * El porcentaje cuenta bytes que salen, y salir no es haber llegado: después del
- * último trozo queda el almacén contestando y la ficha anotando. Con una copia de
- * 19 MB eso dura, y lo que se veía era «Subiendo copias 100 %» con el anillo entero
- * y quieto durante un rato largo, que es exactamente el aspecto de una pantalla
- * colgada.
+ * The percentage counts bytes going out, and going out is not having arrived: after the
+ * last chunk the store is still answering and the row still recording. With a 19 MB copy
+ * that lasts, and what was shown was «Subiendo copias 100 %» with the ring whole and still
+ * for a long while, which is exactly what a hung screen looks like.
  */
 describe('el tramo final', () => {
   it('al llegar al 100 % deja de dar número, para que el anillo vuelva a girar', () => {

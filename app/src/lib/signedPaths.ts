@@ -1,72 +1,73 @@
 import { signedUrls } from './images'
 
 /**
- * Las firmas de las rutas de almacenamiento, guardadas y reutilizadas (RF-110, RNF-106).
+ * The signatures of storage paths, kept and reused (RF-110, RNF-106).
  *
- * ── EL PROBLEMA QUE RESUELVE ────────────────────────────────
+ * ── THE PROBLEM IT SOLVES ───────────────────────────────────
  *
- * El *bucket* es privado, así que cada imagen se pinta con una URL firmada. Los bytes
- * ya no viajan dos veces —el *service worker* los guarda por ruta, recortando la firma
- * de la clave (ver `runtimeCaching` en vite.config.ts)—, pero **la firma sí viajaba**:
- * la ficha de fotografías firmaba cada miniatura por separado y con una hora de
- * validez, sin guardarla. Abrir una ficha de cuatro fotos eran cuatro peticiones de
- * firma, más las de las copias del carrusel, cada vez.
+ * The bucket is private, so every image is painted with a signed URL. The bytes no
+ * longer travel twice —the service worker keeps them by path, trimming the signature
+ * out of the key (see `runtimeCaching` in vite.config.ts)— but **the signature did**:
+ * the photographs screen signed every thumbnail separately and for one hour, without
+ * keeping it. Opening a record with four photos was four signing requests, plus the
+ * carousel's derivatives, every time.
  *
- * Y lo que se notaba no era el tráfico, era esto: **sin cobertura, una ficha ya vista
- * no enseñaba sus fotos aunque los bytes estuvieran en el teléfono**, porque sin firma
- * no hay `src` que buscar en el caché. Se quedaba en «Cargando…».
+ * And what was felt was not the traffic, it was this: **with no coverage, a record
+ * already visited showed none of its photographs even though the bytes were on the
+ * phone**, because with no signature there is no `src` to look up in the cache. It sat
+ * on «Cargando…».
  *
- * ── LO QUE HACE ─────────────────────────────────────────────
+ * ── WHAT IT DOES ────────────────────────────────────────────
  *
- * Lo mismo que el listado de obras ya hacía con sus miniaturas, y por eso este módulo
- * existe: para hacerlo una vez. Firma **en lote**, con una validez **larga**, y guarda
- * el resultado; en la visita siguiente no hay ninguna petición.
+ * What the artworks list already did with its thumbnails, which is why this module
+ * exists: to do it once. It signs **in one batch**, with a **long** validity, and keeps
+ * the result; on the next visit there is no request at all.
  *
- * ── LAS TRES DECISIONES QUE IMPORTAN ────────────────────────
+ * ── THE THREE DECISIONS THAT MATTER ─────────────────────────
  *
- * **La clave es la ruta, no el identificador de la imagen.** Reencuadrar una foto
- * conserva su identificador y escribe ficheros nuevos, así que una caché por
- * identificador seguiría enseñando el recorte anterior. La ruta es la identidad del
- * contenido: es lo mismo en lo que se apoya el caché de bytes.
+ * **The key is the path, not the image identifier.** Reframing a photograph keeps its
+ * identifier and writes new files, so a cache keyed by identifier would go on showing
+ * the previous crop. The path is the identity of the content: it is the same thing the
+ * byte cache relies on.
  *
- * **Una firma que sigue valiendo se reutiliza tal cual.** Volver a firmar el mismo
- * fichero produce una URL distinta, y una URL distinta es otra imagen para cualquier
- * caché: se perdería justo lo que se quería ganar. De ahí el margen — una firma que
- * caduca dentro de la propia visita para la que se entregó no vale.
+ * **A signature that still works is reused as it is.** Signing the same file again
+ * produces a different URL, and a different URL is a different image to every cache: it
+ * would lose exactly what it set out to gain. Hence the margin — a signature that
+ * expires inside the very visit it was handed out for is no good.
  *
- * **Está acotado.** Son datos del catálogo en el navegador de un dispositivo que puede
- * ser compartido, y `localStorage` tiene un límite pequeño; así que caduca, se poda al
- * leer y hay un tope de entradas. Y se borra al cerrar sesión, como el espejo del
- * listado y por el mismo motivo.
+ * **It is bounded.** This is catalog data in the browser of a device that may be
+ * shared, and `localStorage` has a small limit; so entries expire, are pruned on read,
+ * and are capped. And it is wiped on sign out, like the list's mirror and for the same
+ * reason.
  */
 
 const KEY = 'catalogador.signed-paths'
 const VERSION = 1
 
-/** Una semana, como las miniaturas del listado. */
+/** One week, like the list's thumbnails. */
 export const SIGNED_TTL_SECONDS = 7 * 24 * 60 * 60
 
 /**
- * Cuánto antes de caducar se vuelve a firmar.
+ * How long before expiry a path is signed again.
  *
- * Seis horas: una firma que expira a media visita deja imágenes roas en pantalla, y
- * quien cataloga puede tener la aplicación abierta toda la mañana.
+ * Six hours: a signature that expires mid-visit leaves broken images on screen, and
+ * whoever is cataloging may have the application open all morning.
  */
 export const SIGN_MARGIN_MS = 6 * 60 * 60 * 1000
 
 /**
- * Tope de rutas guardadas.
+ * Cap on the number of stored paths.
  *
- * Cada entrada es una URL firmada de unos 300 caracteres, así que 600 son del orden de
- * 200 kB de los 5 MB que suele dar `localStorage` — y con eso caben las fotografías de
- * más de cien fichas. Al pasarse se tiran las que caducan antes, que con una validez
- * fija son las más antiguas.
+ * Each entry is a signed URL of some 300 characters, so 600 are of the order of 200 kB
+ * out of the 5 MB `localStorage` usually gives — and that holds the photographs of more
+ * than a hundred records. Over the cap, the ones expiring soonest go, which with a
+ * fixed validity are the oldest.
  */
 export const MAX_SIGNED_PATHS = 600
 
 export interface SignedPath {
   url: string
-  /** Caducidad absoluta, en ms desde la época. */
+  /** Absolute expiry, in ms since the epoch. */
   expiresAt: number
 }
 
@@ -86,8 +87,8 @@ function isSigned(value: unknown): value is SignedPath {
 }
 
 /**
- * Lee lo guardado y tira lo caducado: una URL vencida no sirve para nada, y pintar una
- * imagen roa es peor que pintar el hueco mientras llega la buena.
+ * Reads what is stored and drops what expired: a lapsed URL is of no use, and painting
+ * a broken image is worse than painting the gap while the good one arrives.
  */
 export function readSignedPaths(
   storage: Storage | undefined = getStorage(),
@@ -104,8 +105,8 @@ export function readSignedPaths(
     }
     return out
   } catch {
-    // Cualquier cosa que no se reconozca es «no hay nada»: se vuelve a firmar, que es
-    // lento pero funciona. Una excepción aquí dejaría la ficha sin pintar.
+    // Anything not recognized is «there is nothing»: it signs again, which is slow but
+    // works. An exception here would leave the record unpainted.
     return {}
   }
 }
@@ -117,23 +118,23 @@ export function saveSignedPaths(
   try {
     storage?.setItem(KEY, JSON.stringify({ v: VERSION, paths: map }))
   } catch {
-    // Sin almacenamiento —cuota, navegación privada— todo sigue funcionando: lo único
-    // que se pierde es no tener que volver a firmar.
+    // Without storage —quota, private browsing— everything still works: the only thing
+    // lost is not having to sign again.
   }
 }
 
-/** Borra las firmas guardadas. Al cerrar sesión, como el espejo del listado. */
+/** Wipes the stored signatures. On sign out, like the list's mirror. */
 export function clearSignedPaths(storage: Storage | undefined = getStorage()): void {
   try {
     storage?.removeItem(KEY)
   } catch {
-    /* nada que borrar */
+    /* nothing to clear */
   }
 }
 
 /**
- * De las rutas pedidas, las que hay que firmar: las que no están y las que caducan
- * dentro del margen. Sin repeticiones — la misma ruta pedida dos veces se firma una.
+ * Of the paths asked for, the ones that must be signed: those not stored and those
+ * expiring within the margin. Without repeats — the same path asked twice is signed once.
  */
 export function pathsToSign(
   paths: readonly string[],
@@ -150,11 +151,11 @@ export function pathsToSign(
 }
 
 /**
- * Mete las firmas nuevas, poda las caducadas y respeta el tope.
+ * Adds the new signatures, prunes the expired ones and honors the cap.
  *
- * Al recortar se van las que caducan antes: con una validez fija son las más antiguas,
- * es decir las fichas que se visitaron hace más tiempo. Lo que se acaba de firmar —lo
- * que se está mirando ahora mismo— nunca es lo que se tira.
+ * What is dropped when trimming is what expires soonest: with a fixed validity those are
+ * the oldest, that is, the records visited longest ago. What was just signed —what is on
+ * screen right now— is never what goes.
  */
 export function mergeSigned(
   cached: SignedPathMap,
@@ -175,14 +176,14 @@ export function mergeSigned(
   return Object.fromEntries(entries.slice(0, max))
 }
 
-// ── El acceso, con una sola copia en memoria ─────────────────
+// ── The access, with a single copy in memory ─────────────────
 
 /**
- * Lo guardado, leído una vez por sesión.
+ * What is stored, read once per session.
  *
- * Una sola copia y **mutada en su sitio**, no una por componente: la ficha pide sus
- * miniaturas y el carrusel sus copias casi a la vez, y con una copia cada uno el que
- * guardara segundo borraría las firmas del primero.
+ * One copy, **mutated in place**, not one per component: the record asks for its
+ * thumbnails and the carousel for its derivatives almost at once, and with a copy each
+ * whichever saved second would wipe the first one's signatures.
  */
 let memory: SignedPathMap | null = null
 
@@ -191,17 +192,17 @@ function loaded(now: number): SignedPathMap {
   return memory
 }
 
-/** Olvida lo leído. Para cerrar sesión, y para que los tests no se contagien. */
+/** Forgets what was read. For signing out, and so the tests do not infect each other. */
 export function forgetSignedPaths(): void {
   memory = null
 }
 
 /**
- * Devuelve una URL firmada por cada ruta pedida, firmando solo lo que hace falta.
+ * Returns a signed URL for each path asked for, signing only what is needed.
  *
- * Las rutas que no se puedan firmar salen fuera del resultado en vez de con una URL
- * inservible: quien pinta ya sabe qué hacer con una imagen que no está —enseña el
- * hueco explicado, nunca una imagen roa—.
+ * Paths that cannot be signed are left OUT of the result instead of carrying a useless
+ * URL: whoever paints already knows what to do with an image that is not there — it
+ * shows the explained gap, never a broken image.
  */
 export async function signPaths(
   paths: readonly string[],

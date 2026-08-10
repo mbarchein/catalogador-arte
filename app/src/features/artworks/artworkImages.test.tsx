@@ -4,27 +4,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useArtworkImages } from './artworkImages'
 
 /**
- * Las dos preguntas de una ficha, hechas a la vez (RNF-106).
+ * The two questions of a record, asked at once (RNF-106).
  *
- * Abrir una ficha necesita dos datos independientes: **qué fotografías tiene** y **cuál
- * es la portada**, que sale de la vista `representative_image` y no depende de la otra
- * consulta. Iban en serie, y eso eran dos idas y venidas seguidas: con datos móviles en
- * un almacén, entre medio segundo y tres segundos con el texto de la obra ya puesto
- * —ese sí se pinta al instante desde el espejo del listado— y los huecos de las fotos
- * vacíos.
+ * Opening a record needs two independent data: **which photographs it has** and **which
+ * one is the cover**, which comes from the `representative_image` view and needs nothing
+ * from the other query. They went in series, and that was two round trips back to back: on
+ * mobile data in a storeroom, between half a second and three seconds with the artwork's
+ * text already painted —that one does paint instantly, off the list's mirror— and the
+ * photo gaps empty.
  *
- * Este test existe porque **el paralelismo se pierde en una refactorización sin que se
- * note**: `await` seguido de `await` funciona igual de bien y solo es más lento. Así
- * que lo que se mide es la línea del tiempo: que la segunda consulta EMPIECE antes de
- * que la primera conteste. Es lo único que distingue las dos versiones.
+ * This test exists because **the parallelism is lost in a refactor without anyone
+ * noticing**: `await` followed by `await` works just as well and is only slower. So what
+ * is measured is the timeline: that the second query STARTS before the first one answers.
+ * It is the only thing that tells the two versions apart.
  *
- * En jsdom porque lo que se comprueba es el cableado de un gancho de React, no una
- * decisión: la aritmética no tiene dónde vivir aquí.
+ * In jsdom because what is checked is the wiring of a React hook, not a decision: the
+ * arithmetic has nowhere to live here.
  */
 
-/** Lo que va pasando, en orden, para poder mirar si se solapan. */
+/** What happens, in order, so the overlap can be looked at. */
 const linea: string[] = []
-/** Suelta la respuesta de cada tabla cuando el test lo diga. */
+/** Releases each table's answer when the test says so. */
 const sueltan: Record<string, () => void> = {}
 
 function respuestaDiferida(tabla: string, data: unknown) {
@@ -45,8 +45,8 @@ vi.mock('../../lib/supabase', () => ({
           ? [{ image_id: 'TS-0001_v1', thumbnail_path: 't/1', derivative_path: 'd/1' }]
           : { image_id: 'TS-0001_v1', manually_chosen: false }
       const pendiente = respuestaDiferida(tabla, datos)
-      // El constructor de consultas de PostgREST: todo devuelve el mismo objeto y la
-      // promesa solo se resuelve cuando el test la suelta.
+      // The PostgREST query builder: everything returns the same object and the promise
+      // only resolves when the test releases it.
       const constructor: Record<string, unknown> = {
         then: (...args: unknown[]) =>
           (pendiente.then as (...a: unknown[]) => unknown).apply(pendiente, args),
@@ -84,7 +84,7 @@ describe('las dos consultas de una ficha', () => {
 
   it('la segunda empieza antes de que la primera conteste', async () => {
     const { getByText } = render(<Ficha />)
-    // Con las dos preguntas hechas y ninguna contestada, el solape está probado.
+    // With both questions asked and neither answered, the overlap is proven.
     await waitFor(() => expect(sueltan.representative_image).toBeDefined())
     expect(linea).toEqual(['pregunta images', 'pregunta representative_image'])
 
@@ -94,8 +94,8 @@ describe('las dos consultas de una ficha', () => {
   })
 
   it('y contestar en el orden contrario no descoloca nada', async () => {
-    // La portada puede llegar antes que la lista: la vista es más pequeña. Con dos
-    // «await» en serie ese caso no existía, y ahora sí.
+    // The cover can arrive before the list: the view is smaller. With two `await` in
+    // series that case did not exist, and now it does.
     const { getByText } = render(<Ficha />)
     await waitFor(() => expect(sueltan.representative_image).toBeDefined())
     sueltan.representative_image?.()

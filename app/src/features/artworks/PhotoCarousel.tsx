@@ -61,7 +61,7 @@ export function PhotoCarousel({
       .filter((r): r is ImageRow => r !== undefined && !(r.derivative_path in slideUrls))
     if (wanted.length === 0) return
     let current = true
-    // Las tres de una vez, y de la caché de firmas si ya estaban: ver `signPaths`.
+    // The three at once, and off the signature cache if they were there: see `signPaths`.
     void signPaths(wanted.map((r) => r.derivative_path)).then((urls) => {
       if (!current) return
       setSlideUrls((u) => ({ ...u, ...urls }))

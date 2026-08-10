@@ -1,69 +1,69 @@
 /**
- * Lo que está pasando con una fotografía, dicho en dos largos (RNF-106).
+ * What is happening to a photograph, said at two lengths (RNF-106).
  *
- * El mismo trabajo se cuenta en dos sitios y no cabe lo mismo en los dos:
+ * The same work is told in two places and the same text does not fit both:
  *
- *   · **el distintivo sobre la imagen** es una píldora de una línea sobre la foto,
- *     y lo que de verdad se mira en ella es el porcentaje;
- *   · **la línea de debajo** tiene el ancho de la pantalla y puede explicarse.
+ *   · **the badge over the image** is a one-line pill on top of the photo, and what is
+ *     really looked at in it is the percentage;
+ *   · **the line below** has the width of the screen and can explain itself.
  *
- * Con un solo texto para los dos, el largo se recortaba con puntos suspensivos
- * justo por el final — que es donde iba el porcentaje —, así que el distintivo
- * acababa diciendo «Aplicando la corrección y subiendo las c…» y no contaba nada
- * de lo único que se quería saber. De ahí que cada estado traiga sus dos formas y
- * que el porcentaje se pinte aparte, en un elemento que no se recorta nunca.
+ * With a single text for both, the long one was truncated with an ellipsis right at the
+ * end — which is where the percentage went — so the badge ended up saying «Aplicando la
+ * corrección y subiendo las c…» and told nothing of the one thing worth knowing. Hence
+ * each state carrying both forms, and the percentage painted apart, in an element that
+ * is never truncated.
  */
 
 export interface PhotoWork {
-  /** Para el distintivo sobre la imagen. Corto de verdad: ver `WORK_SHORT_MAX`. */
+  /** For the badge over the image. Genuinely short: see `WORK_SHORT_MAX`. */
   short: string
-  /** Para la línea de debajo, donde hay sitio para decir qué fichero es. */
+  /** For the line below, where there is room to say which file it is. */
   long: string
 }
 
 /**
- * Lo que puede medir el distintivo, en caracteres.
+ * How much the badge can measure, in characters.
  *
- * A 390 px y con el porcentaje al lado caben del orden de veinte; el tope está ahí
- * y hay un test que lo vigila, porque el rótulo largo volvió por descuido una vez
- * y el síntoma —un porcentaje que no se ve— no se parece en nada a su causa.
+ * At 390 px and with the percentage beside it, about twenty fit; the cap is here and a
+ * test watches it, because the long label came back by carelessness once and the symptom
+ * —a percentage that cannot be seen— looks nothing like its cause.
  */
 export const WORK_SHORT_MAX = 20
 
-/** Bajando el original del archivo para poder editarlo. */
+/** Downloading the archive original so it can be edited. */
 export const WORK_DOWNLOADING_MASTER: PhotoWork = {
   short: 'Descargando',
   long: 'Descargando el máster…',
 }
 
-/** Sin máster: se abre la copia de consulta, que ya está en Supabase. */
+/** No master: the consultation copy is opened, which is already in Supabase. */
 export const WORK_OPENING_COPY: PhotoWork = {
   short: 'Abriendo',
   long: 'Abriendo la copia de consulta…',
 }
 
-/** Publicando el recorte: las dos copias pequeñas y la de resolución completa. */
+/** Publishing the crop: the two small copies and the full-resolution one. */
 export const WORK_UPLOADING: PhotoWork = {
   short: 'Subiendo copias',
   long: 'Aplicando la corrección y subiendo las copias…',
 }
 
-/** Anotando una revisión de color que no cambia ningún píxel. */
+/** Recording a colour review that changes no pixel. */
 export const WORK_SAVING_TRACE: PhotoWork = {
   short: 'Guardando',
   long: 'Anotando la revisión del color…',
 }
 
 /**
- * El tramo final, cuando ya no queda nada que contar.
+ * The final stretch, when there is nothing left to count.
  *
- * El porcentaje mide **los bytes que han salido**, y salir no es haber llegado: el
- * navegador canta el 100 % en cuanto suelta el último trozo por el cable, y después
- * queda el almacén guardándolo y contestando, y la ficha anotando dónde ha quedado.
- * Con una copia de 19 MB desde un almacén con mala cobertura ese tramo dura, y lo que
- * se veía era «100 %» con el anillo entero y quieto durante un rato largo —la misma
- * imagen que tiene una pantalla colgada—. Así que al llegar al 100 % se deja de dar
- * el número y el anillo vuelve a girar: se sabe menos, y se dice.
+ * The percentage measures **the bytes that have gone out**, and going out is not having
+ * arrived: the browser calls 100 % as soon as it drops the last chunk down the wire, and
+ * after that the store is still saving it and answering, and the row still recording
+ * where it ended up. With a 19 MB copy from a storeroom with poor coverage that stretch
+ * lasts, and what was shown was «100 %» with the ring whole and still for a long while
+ * —the very picture of a hung screen—. So on reaching 100 % it stops giving the number
+ * and the ring spins again: less is known, and that is said.
  */
 export const WORK_FINISHING: PhotoWork = {
   short: 'Terminando',
@@ -71,10 +71,12 @@ export const WORK_FINISHING: PhotoWork = {
 }
 
 /**
- * Lo que hay que pintar: qué se está haciendo y cuánto va, ya resuelto el final.
+ * What has to be painted: what is being done and how far along, with the ending already
+ * resolved.
  *
- * `percent` es el medido, y sale null cuando no hay que enseñar número —porque no se
- * sabe o porque ya no informa—, que es lo que hace girar el anillo.
+ * `percent` is the measured one, and comes out null when no number should be shown
+ * —because it is unknown or because it no longer informs—, which is what makes the ring
+ * spin.
  */
 export function photoStage(
   work: PhotoWork | null,

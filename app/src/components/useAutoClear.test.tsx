@@ -4,13 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AUTO_CLEAR_MS, useAutoClear } from './useAutoClear'
 
 /**
- * El aviso que se va solo (RNF-106).
+ * The notice that dismisses itself (RNF-106).
  *
- * En jsdom porque lo que hay que comprobar es el cableado del temporizador, y ahí
- * están los tres defectos que tiene este gancho cuando se escribe deprisa: que no
- * se reinicie al cambiar el aviso —y entonces el segundo hereda los segundos que
- * le quedaban al primero—, que se dispare sobre una pantalla desmontada, y que
- * borre un aviso que no existe.
+ * In jsdom because what has to be checked is the wiring of the timer, and that is where
+ * this hook's three defects live when it is written in a hurry: that it does not restart
+ * when the notice changes —and then the second inherits whatever seconds were left of the
+ * first—, that it fires on an unmounted screen, and that it clears a notice that is not
+ * there.
  */
 
 function Auto({ value, clear }: { value: string | null; clear: () => void }) {
@@ -40,8 +40,8 @@ describe('useAutoClear', () => {
   })
 
   it('un aviso nuevo empieza a contar de cero', () => {
-    // Sin esto, dos confirmaciones seguidas comparten los segundos de la primera:
-    // la segunda se leería medio segundo y desaparecería.
+    // Without this, two confirmations in a row share the first one's seconds: the second
+    // would be readable for half a second and then vanish.
     const clear = vi.fn()
     const { rerender } = render(<Auto value="Primero" clear={clear} />)
     vi.advanceTimersByTime(AUTO_CLEAR_MS - 500)
@@ -53,8 +53,8 @@ describe('useAutoClear', () => {
   })
 
   it('al desmontar no queda temporizador vivo', () => {
-    // Un `setState` sobre una pantalla que ya no está es un aviso en la consola y
-    // una fuga por cada vez que se abrió.
+    // A `setState` on a screen that is gone is a console warning and one leak for every
+    // time it was opened.
     const clear = vi.fn()
     const { unmount } = render(<Auto value="Algo" clear={clear} />)
     unmount()
@@ -63,8 +63,8 @@ describe('useAutoClear', () => {
   })
 
   it('cuatro segundos, ni tres ni diez', () => {
-    // Por debajo de tres no se lee si la vista estaba en la fotografía; por encima
-    // de cinco deja de leerse como «acaba de pasar» y tapa la ficha.
+    // Below three it is not read if the eyes were on the photograph; above five it stops
+    // reading as «this just happened» and covers the record.
     expect(AUTO_CLEAR_MS).toBe(4000)
   })
 })

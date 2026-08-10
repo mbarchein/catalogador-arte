@@ -14,21 +14,22 @@ import {
 } from './signedPaths'
 
 /**
- * Las firmas guardadas (RF-110, RNF-106).
+ * The stored signatures (RF-110, RNF-106).
  *
- * El *bucket* es privado, así que cada imagen se pinta con una URL firmada. Los bytes
- * ya no viajaban dos veces —los guarda el *service worker*, por ruta— pero la firma sí:
- * la ficha firmaba cada miniatura por separado y con una hora de validez, sin
- * guardarla. Y lo que se notaba no era el tráfico: **sin cobertura, una ficha ya vista
- * no enseñaba sus fotos**, porque sin firma no hay `src` que buscar en el caché.
+ * The bucket is private, so every image is painted with a signed URL. The bytes no longer
+ * travelled twice —the service worker keeps them, by path— but the signature did: the
+ * record signed every thumbnail separately and for one hour, without keeping it. And what
+ * was felt was not the traffic: **with no coverage, a record already visited showed none
+ * of its photographs**, because with no signature there is no `src` to look up in the
+ * cache.
  *
- * Lo que se fija aquí son las formas de que esto sea PEOR que no tenerlo: volver a
- * firmar lo que ya valía —que produce otra URL, y otra URL es otra imagen para
- * cualquier caché, con lo que se pierde justo lo que se quería ganar—, entregar una
- * firma que caduca a media visita, y crecer sin tope en un `localStorage` de 5 MB.
+ * What is pinned here are the ways this could be WORSE than not having it: signing again
+ * what was still valid —which produces a different URL, and a different URL is a different
+ * image to every cache, losing exactly what it set out to gain—, handing out a signature
+ * that expires mid-visit, and growing without a cap in a 5 MB `localStorage`.
  */
 
-/** Un almacenamiento de mentira, que además puede negarse a escribir. */
+/** A pretend storage that can also refuse to write. */
 function fakeStorage(negarse = false): Storage {
   const data = new Map<string, string>()
   return {
@@ -57,15 +58,15 @@ describe('qué hay que volver a firmar', () => {
   })
 
   it('y NO lo que sigue valiendo, que es de lo que va todo esto', () => {
-    // Volver a firmar produce otra URL, y otra URL es otra imagen para el caché de
-    // bytes: se descargaría de nuevo un fichero que ya está en el teléfono.
+    // Signing again produces a different URL, and a different URL is a different image to
+    // the byte cache: a file already on the phone would be downloaded once more.
     const cached: SignedPathMap = { a: firma(AHORA + SIGNED_TTL_SECONDS * 1000) }
     expect(pathsToSign(['a'], cached, AHORA)).toEqual([])
   })
 
   it('lo que caduca dentro del margen se renueva antes de que estorbe', () => {
-    // Una firma que expira a media visita deja imágenes roas en pantalla, y la
-    // aplicación puede estar abierta toda la mañana.
+    // A signature that expires mid-visit leaves broken images on screen, and the
+    // application can be open all morning.
     const justo = { a: firma(AHORA + SIGN_MARGIN_MS + 1000) }
     const apurado = { a: firma(AHORA + SIGN_MARGIN_MS - 1000) }
     expect(pathsToSign(['a'], justo, AHORA)).toEqual([])
@@ -93,8 +94,8 @@ describe('lo que se guarda', () => {
   })
 
   it('con tope, y lo que se tira es lo que caduca antes', () => {
-    // Con una validez fija, «caduca antes» es «se firmó hace más»: las fichas que se
-    // visitaron hace más tiempo. Lo que se acaba de firmar nunca se tira.
+    // With a fixed validity, «expires soonest» is «signed longest ago»: the records
+    // visited longest ago. What was just signed is never thrown away.
     const cached: SignedPathMap = {}
     for (let i = 0; i < MAX_SIGNED_PATHS + 5; i += 1) {
       cached[`p${i}`] = firma(AHORA + 1000 + i)
@@ -102,8 +103,8 @@ describe('lo que se guarda', () => {
     const merged = mergeSigned(cached, { recien: 'https://x/r' }, AHORA + 999_999, AHORA)
     expect(Object.keys(merged)).toHaveLength(MAX_SIGNED_PATHS)
     expect(merged.recien).toBeDefined()
-    // Sobraban seis —605 guardadas más la nueva, y el tope es 600—, así que se han
-    // ido las seis más antiguas y ninguna más.
+    // Six were over the cap —605 stored plus the new one, and the cap is 600— so the six
+    // oldest are gone and no more than those.
     expect(merged.p0).toBeUndefined()
     expect(merged.p5).toBeUndefined()
     expect(merged.p6).toBeDefined()
@@ -124,13 +125,13 @@ describe('leer y escribir', () => {
   })
 
   it('la basura es «no hay nada», nunca una excepción', () => {
-    // Esto corre al pintar una ficha: una excepción aquí la dejaría sin fotos.
+    // This runs while painting a record: an exception here would leave it with no photos.
     for (const raw of ['', '{', 'null', '[]', '"texto"', '{"v":99,"paths":{}}', '{"v":1}']) {
       const storage = fakeStorage()
       storage.setItem('catalogador.signed-paths', raw)
       expect(readSignedPaths(storage, AHORA)).toEqual({})
     }
-    // Y una entrada con la forma cambiada se descarta sin llevarse las buenas.
+    // And an entry of an unexpected shape is dropped without taking the good ones with it.
     const storage = fakeStorage()
     storage.setItem(
       'catalogador.signed-paths',
@@ -161,7 +162,7 @@ describe('signPaths', () => {
   })
 
   it('firma en UNA petición y devuelve una URL por ruta', async () => {
-    // Una por miniatura eran cuatro peticiones desde un móvil por abrir una ficha.
+    // One per thumbnail was four requests from a phone just to open a record.
     const sign = vi.fn(async (paths: string[]) =>
       Object.fromEntries(paths.map((p) => [p, `https://x/${p}?token=1`])),
     )
@@ -195,7 +196,7 @@ describe('signPaths', () => {
   })
 
   it('una ruta que no se pueda firmar sale fuera, no con una URL inservible', async () => {
-    // Quien pinta enseña el hueco explicado; una imagen roa sería peor.
+    // Whoever paints shows the explained gap; a broken image would be worse.
     const sign = async () => ({ a: 'https://x/a' })
     expect(await signPaths(['a', 'b'], sign, AHORA)).toEqual({ a: 'https://x/a' })
   })
