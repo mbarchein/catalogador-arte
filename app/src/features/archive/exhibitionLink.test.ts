@@ -59,8 +59,8 @@ describe('rankExhibitionLinkOptions, la frontera del selector (RF-609, RF-901)',
   })
 
   it('las ya enlazadas se siguen listando, marcadas', () => {
-    // Esconderlas hace teclear el mismo título una y otra vez preguntándose dónde se ha
-    // metido. Es el criterio opuesto al de la retirada, y a propósito.
+    // Hiding them makes the same title get typed over and over while wondering where it
+    // went. It is the opposite criterion to the retired one, and deliberately so.
     const options = rankExhibitionLinkOptions(catalogo, '', new Set(['zafra']))
     expect(options.map((r) => r.item.id)).toContain('zafra')
     expect(options.find((r) => r.item.id === 'zafra')?.item.alreadyLinked).toBe(true)

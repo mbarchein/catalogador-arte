@@ -37,11 +37,11 @@ export function LinkExhibitionSheet({
   onDone,
 }: {
   exhibitions: readonly ExhibitionRow[]
-  /** Las exposiciones que este documento ya tiene enlazadas, para marcarlas. */
+  /** The exhibitions this document already has linked, so they can be marked. */
   linked: ReadonlySet<string>
   loading: boolean
   loadError: string | null
-  /** Llama a `document_exhibition`. Responde null cuando entró. */
+  /** Calls `document_exhibition`. Answers null when it went through. */
   onLink: (exhibitionId: string, note: string) => Promise<string | null>
   onClose: () => void
   onDone: (notice: string) => Promise<void>
@@ -63,8 +63,8 @@ export function LinkExhibitionSheet({
     const problem = await onLink(exhibitionId, note)
     setBusy(false)
     if (problem !== null) {
-      // La hoja se queda abierta: la frase explica qué ha pasado y con qué se puede
-      // volver a intentar.
+      // The sheet stays open: the sentence explains what happened and with what it can be
+      // tried again.
       setFailure(problem)
       return
     }
@@ -72,8 +72,8 @@ export function LinkExhibitionSheet({
     onClose()
   }
 
-  // La nota del vínculo se escribe antes de elegir la muestra, así que es justo lo que se
-  // perdería al cerrar sin querer. La búsqueda no cuenta.
+  // The link note is typed before choosing the show, so it is exactly what would be lost on
+  // closing by accident. The search does not count.
   const guard = useSheetGuard({ onClose: busy ? () => {} : onClose, dirty: anyWritten(note) })
 
   return (

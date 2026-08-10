@@ -61,13 +61,13 @@ export function DocumentPage() {
   const { id = '' } = useParams()
   const { canEdit } = useAuth()
   const record = useDocumentRecord(id)
-  // El árbol de sitios, para decir dónde está el papel con su rama entera (ADR-006).
+  // The tree of places, to say where the paper is with its whole branch (ADR-006).
   const { tree: placeTree } = usePhysicalPlaces()
   const [linking, setLinking] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   useAutoClear(notice, () => setNotice(null))
-  // El catálogo de exposiciones se pide SOLO con el panel abierto: esta pantalla se abre
-  // muchas veces para leer un documento, y quien solo lee no tiene por qué pagarlo.
+  // The exhibitions catalog is fetched ONLY with the panel open: this screen is opened many
+  // times just to read a document, and whoever only reads should not pay for it.
   const catalogue = useExhibitions(linking)
 
   const artworks = useMemo(() => linkedArtworkViews(record.artworks), [record.artworks])
@@ -78,8 +78,7 @@ export function DocumentPage() {
     return <LoadingNotice>Cargando el documento…</LoadingNotice>
   }
 
-  // Nunca una página en blanco: una dirección que no es ningún documento lo dice y
-  // ofrece la salida.
+  // Never a blank page: an address that is no document says so and offers the way out.
   if (record.document === null) {
     return (
       <Layout title="Documento" back="/archive">
@@ -178,8 +177,8 @@ export function DocumentPage() {
           loading: record.loading,
           error: record.linksError,
           count: exhibitions.length,
-          // La frase del bloque vacío cambia con quien la lee: mandar a enlazar aquí
-          // abajo a quien no tiene el botón sería mandarlo a buscar lo que no está.
+          // The empty block's sentence changes with who reads it: sending someone with no
+          // button to link down here would be sending them to look for what is not there.
           empty: canEdit ? NO_LINKED_EXHIBITIONS_WRITABLE : NO_LINKED_EXHIBITIONS_READONLY,
         })}
       >
@@ -351,7 +350,7 @@ function ExhibitionLinkRow({
   )
 }
 
-/** Una línea de la ficha. Nunca un hueco (RF-304): sin dato, se dice. */
+/** One line of the record. Never a gap (RF-304): with no datum, it is said. */
 /**
  * El aviso de de qué cuelga el documento, con sus referencias pulsables.
  *
@@ -402,7 +401,7 @@ function Badge({ children }: { children: string }) {
   )
 }
 
-/** Uno de los dos bloques de vínculos, con su aviso cuando está vacío. */
+/** One of the two link blocks, with its notice when empty. */
 function LinkedBlock({
   title,
   notice,

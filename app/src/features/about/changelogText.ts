@@ -29,9 +29,9 @@
 /** A piece of a paragraph's text, with its emphasis. */
 export interface Span {
   text: string
-  /** `**así**` en el fichero: el arranque en negrita con el que empieza cada novedad. */
+  /** `**así**` in the file: the bold opening each item starts with. */
   strong?: boolean
-  /** `` `así` ``: un nombre técnico, de los pocos que quedan. */
+  /** `` `así` ``: a technical name, one of the few left. */
   code?: boolean
 }
 
@@ -43,9 +43,9 @@ export type ChangelogBlock =
   | { kind: 'paragraph'; spans: Span[] }
   | { kind: 'list'; items: Span[][] }
 
-/** Una fecha con todo lo que cuelga de ella, que es como se lee y como se pliega. */
+/** A date with everything hanging off it, which is how it is read and how it folds. */
 export interface ChangelogEntry {
-  /** `5 de agosto de 2026`, o `Sin fechar` si el fichero empezara sin encabezado. */
+  /** `5 de agosto de 2026`, or `Sin fechar` if the file began with no heading. */
   date: string
   blocks: ChangelogBlock[]
 }
@@ -69,7 +69,7 @@ export function parseSpans(line: string): Span[] {
     last = at + match[0].length
   }
   if (last < line.length) spans.push({ text: line.slice(last) })
-  // Una línea vacía no da ningún trozo, y quien la pinte no tiene que pensar en eso.
+  // An empty line yields no piece, and whoever paints it does not have to think about that.
   return spans
 }
 
@@ -116,13 +116,13 @@ export function parseChangelog(markdown: string): ChangelogBlock[] {
       blocks.push({ kind: 'section', text: line.slice(4).trim() })
       continue
     }
-    // La regla horizontal que separa entradas en el fichero no se pinta: aquí cada fecha
-    // ya viene en su propia caja plegable. Sin esto se leía un «---» suelto en pantalla.
+    // The horizontal rule that separates entries in the file is not painted: here each date
+    // already comes in its own collapsible box. Without this a stray «---» was read on screen.
     if (/^-{3,}$/.test(line.trim())) {
       flush()
       continue
     }
-    // Una viñeta corta el párrafo que hubiera.
+    // A bullet cuts off whatever paragraph was open.
     if (/^\s*-\s+/.test(line)) {
       flushParagraph()
       items.push(line.replace(/^\s*-\s+/, ''))
@@ -136,7 +136,7 @@ export function parseChangelog(markdown: string): ChangelogBlock[] {
       items[items.length - 1] += ` ${line.trim()}`
       continue
     }
-    // Y una línea normal cierra la lista.
+    // And a normal line closes the list.
     flushList()
     paragraph.push(line.trim())
   }
@@ -165,7 +165,7 @@ export function groupChangelog(blocks: readonly ChangelogBlock[]): ChangelogEntr
     if (entries.length === 0) entries.push({ date: 'Sin fechar', blocks: [] })
     entries[entries.length - 1]!.blocks.push(block)
   }
-  // Una fecha sin nada debajo no se ofrece para desplegar: sería un botón que no abre nada.
+  // A date with nothing under it is not offered to expand: it would be a button that opens nothing.
   return entries.filter((entry) => entry.blocks.length > 0)
 }
 
@@ -182,7 +182,7 @@ export function isHeadline(block: ChangelogBlock): boolean {
   return block.spans.length === 1 && block.spans[0]?.strong === true
 }
 
-/** Lo que se lee mientras llega, y si no llega. */
+/** What is read while it arrives, and if it does not. */
 export const CHANGELOG_LOADING = 'Abriendo el registro de cambios…'
 
 export const CHANGELOG_FAILED =

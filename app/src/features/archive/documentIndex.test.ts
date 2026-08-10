@@ -46,8 +46,8 @@ function doc(over: Partial<DocumentOption> = {}): DocumentOption {
 
 describe('archiveOrderKey, con qué se ordena un documento', () => {
   it('con su signatura, normalizada como la compara el índice único', () => {
-    // Dos signaturas que solo difieren en mayúsculas son la MISMA para la base, así que
-    // también para el orden.
+    // Two references differing only in case are the SAME to the database, so they are for
+    // the ordering too.
     expect(archiveOrderKey(doc({ archive_code: 'AR-ARCH-0001' }))).toBe(
       archiveOrderKey(doc({ archive_code: 'ar-arch-0001' })),
     )
@@ -228,8 +228,8 @@ describe('archiveListNotice, nunca una página en blanco', () => {
   })
 
   it('el archivo vacío dice de dónde salen los documentos', () => {
-    // Y no ofrece un alta que no existe aquí: se sube desde la documentación de una
-    // obra, porque así queda subido y enlazado de una vez.
+    // And it does not offer a creation that does not exist here: it is uploaded from an
+    // artwork's documentation, because that way it lands uploaded and linked in one go.
     const text = archiveListNotice({ ...base, total: 0, shown: 0 })
     expect(text).toContain('Todavía no hay ningún documento')
     expect(text).toContain('desde la documentación de una obra')

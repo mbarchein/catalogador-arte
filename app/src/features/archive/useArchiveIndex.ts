@@ -37,7 +37,7 @@ export interface ArchiveIndexQuery {
   reload: () => Promise<void>
 }
 
-/** Un `ref` que dice si el componente sigue montado. El mismo patrón que el resto. */
+/** A `ref` saying whether the component is still mounted. The same pattern as the rest. */
 function useAlive() {
   const alive = useRef(true)
   useEffect(() => {
@@ -82,8 +82,8 @@ export function useArchiveIndex(enabled = true): ArchiveIndexQuery {
       return
     }
     setError(null)
-    // Sin `order`: el orden del índice es el de la estantería —la signatura normalizada
-    // como la compara el índice único— y se decide en `sortArchiveDocuments`.
+    // No `order`: the index's order is the shelf's —the normalized reference as the unique
+    // index compares it— and is decided in `sortArchiveDocuments`.
     setDocuments((data ?? []) as unknown as DocumentOption[])
   }, [alive, enabled])
 
@@ -95,12 +95,12 @@ export function useArchiveIndex(enabled = true): ArchiveIndexQuery {
 }
 
 export interface DocumentRecordQuery {
-  /** El documento, o null mientras carga y cuando esa dirección no es ninguno. */
+  /** The document, or null while loading and when that address is not one. */
   document: DocumentRow | null
   artworks: LinkedArtworkRow[]
   exhibitions: LinkedExhibitionRow[]
   loading: boolean
-  /** Un fallo al leer el documento. */
+  /** A failure while reading the document. */
   error: string | null
   /** Un fallo al leer lo que cuelga de él: la ficha se lee igual, y el bloque lo dice. */
   linksError: string | null

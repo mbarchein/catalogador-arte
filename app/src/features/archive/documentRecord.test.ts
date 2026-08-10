@@ -74,8 +74,8 @@ describe('linkedArtworkViews, las obras que lo tienen enlazado (RF-516)', () => 
   })
 
   it('los vínculos retirados no salen', () => {
-    // Uno retirado salió de la ficha de su obra (RF-517): contarlo aquí haría que las
-    // dos pantallas dijeran cosas distintas del mismo hecho.
+    // A retired one left its artwork's record (RF-517): counting it here would make the two
+    // screens say different things about the same fact.
     const rows = [linkedArtwork({ id: 'vivo' }), linkedArtwork({ id: 'ido', active: false })]
     expect(linkedArtworkViews(rows).map((v) => v.id)).toEqual(['vivo'])
   })
@@ -103,7 +103,7 @@ describe('linkedArtworkViews, las obras que lo tienen enlazado (RF-516)', () => 
     expect(view?.unavailable).toBe(true)
     expect(view?.linked).toBe(false)
     expect(view?.title).toContain('no se puede leer')
-    // El código sí, que está en la fila puente y es real.
+    // The code does, which is on the bridge row and is real.
     expect(view?.catalogId).toBe('AR-0042')
   })
 })
@@ -188,8 +188,8 @@ describe('documentReachSegments, y además se puede ir (RF-516)', () => {
     segments.filter((s) => s.kind === 'link')
 
   it('nombra la obra en vez de contarla, y lleva a su ficha', () => {
-    // «Enlazado con una obra» obliga a bajar hasta el bloque de abajo para saber
-    // cuál es, y a bajar otra vez para llegar.
+    // «Enlazado con una obra» forces a scroll down to the block below to find out which one
+    // it is, and another scroll to get there.
     const segments = documentReachSegments({ artworks: [obra('RC-0005')], exhibitions: [] })
     expect(plain(segments)).toBe('Enlazado con la obra RC-0005.')
     expect(links(segments)).toEqual([{ kind: 'link', text: 'RC-0005', to: '/artwork/RC-0005' }])
@@ -216,8 +216,8 @@ describe('documentReachSegments, y además se puede ir (RF-516)', () => {
   })
 
   it('lo que no se puede leer desde aquí se nombra, pero SIN enlace', () => {
-    // Un enlace que lleva a una pantalla que dirá que esa ficha no existe es peor
-    // que decirlo aquí: promete algo que no hay al otro lado.
+    // A link leading to a screen that will say that record does not exist is worse than
+    // saying it here: it promises something that is not on the other side.
     const segments = documentReachSegments({ artworks: [obra('RC-0005', false)], exhibitions: [] })
     expect(plain(segments)).toBe('Enlazado con la obra RC-0005.')
     expect(links(segments)).toEqual([])

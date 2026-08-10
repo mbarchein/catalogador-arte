@@ -31,10 +31,10 @@ import { fuzzyRankBy, type RankedItem } from '../../lib/vocabulary'
 import { exhibitionOptionText } from '../documentary/exhibitions/participationEdits'
 import type { ExhibitionRow } from '../documentary/documentaryRows'
 
-/** Una exposición como la ofrece el selector de un documento. */
+/** An exhibition as a document's chooser offers it. */
 export interface ExhibitionLinkOption {
   id: string
-  /** `Muestra de Zafra · 1985 · Casa de Cultura`, lo mismo que ofrece la ficha de obra. */
+  /** `Muestra de Zafra · 1985 · Casa de Cultura`, the same as the artwork record offers. */
   text: string
   /**
    * El título a secas, para nombrar la muestra en el aviso de que el vínculo entró.
@@ -78,16 +78,16 @@ export function rankExhibitionLinkOptions(
   }))
 }
 
-/** Los identificadores de las exposiciones que este documento ya tiene enlazadas. */
+/** The identifiers of the exhibitions this document already has linked. */
 export function linkedExhibitionIds(
   rows: readonly { exhibition_id: string; active: boolean }[],
 ): Set<string> {
-  // Solo los vínculos VIVOS: uno retirado no es un vínculo, y marcarlo como «ya
-  // enlazada» esconderría la única forma de recuperarlo, que es volver a enlazar.
+  // LIVE links only: a retired one is not a link, and marking it as «ya enlazada» would hide
+  // the only way to get it back, which is to link it again.
   return new Set(rows.filter((row) => row.active).map((row) => row.exhibition_id))
 }
 
-/** Lo que dice el selector en vez de una lista vacía, que nunca lo es (RF-304). */
+/** What the chooser says instead of an empty list, which it never is (RF-304). */
 export function noExhibitionOptionsText(total: number, query: string): string {
   if (total === 0) {
     return (
@@ -104,7 +104,7 @@ export function noExhibitionOptionsText(total: number, query: string): string {
   )
 }
 
-/** Lo que se dice cuando el vínculo ha entrado. */
+/** What is said once the link has gone through. */
 export function exhibitionLinkedNotice(exhibitionTitle: string): string {
   const clean = exhibitionTitle.trim()
   return `Documento enlazado con ${clean === '' ? 'la exposición' : `«${clean}»`}.`

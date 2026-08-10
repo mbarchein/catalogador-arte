@@ -38,9 +38,9 @@ export const DOCUMENT_RECORD_COLUMNS =
   'document_type:document_types(id, name, active), ' +
   'archive_series:archive_series(id, parent_id, name, active)'
 
-/** La obra que tiene el documento enlazado: la fila puente más la obra. */
+/** The artwork that has the document linked: the bridge row plus the artwork. */
 export interface LinkedArtworkRow extends ArtworkDocument {
-  /** Nula cuando la obra no se puede leer. La fila se queda y lo dice. */
+  /** Null when the artwork cannot be read. The row stays and says so. */
   artwork: ArtworkRef | null
 }
 
@@ -48,7 +48,7 @@ export const LINKED_ARTWORK_COLUMNS =
   'id, catalog_id, document_id, note, active, ' +
   'artwork:artworks(catalog_id, title, artist, execution_date, active)'
 
-/** Lo mínimo de una exposición para nombrarla en una lista: el título y cuándo fue. */
+/** The least of an exhibition needed to name it in a list: the title and when it was. */
 export interface ExhibitionBrief {
   id: string
   title: string
@@ -59,7 +59,7 @@ export interface ExhibitionBrief {
   active: boolean
 }
 
-/** La exposición que tiene el documento enlazado: la fila puente más la exposición. */
+/** The exhibition that has the document linked: the bridge row plus the exhibition. */
 export interface LinkedExhibitionRow extends ExhibitionDocument {
   exhibition: ExhibitionBrief | null
 }
@@ -73,14 +73,14 @@ function written(text: string | null | undefined): string | null {
   return clean === '' ? null : clean
 }
 
-// ── Las obras que lo tienen enlazado ─────────────────────────
+// ── The artworks that have it linked ─────────────────────────
 
 export interface LinkedArtworkView {
-  /** La fila puente. */
+  /** The bridge row. */
   id: string
   catalogId: string
   title: string
-  /** Lo que este documento dice de ESA obra. */
+  /** What this document says about THAT artwork. */
   note: string | null
   retired: boolean
   unavailable: boolean
@@ -94,8 +94,8 @@ export interface LinkedArtworkView {
  */
 export function linkedArtworkViews(rows: readonly LinkedArtworkRow[]): LinkedArtworkView[] {
   return rows
-    // Solo los vínculos vivos: uno retirado salió de la ficha de su obra (RF-517), así
-    // que contarlo aquí haría que las dos pantallas dijeran cosas distintas.
+    // Live links only: a retired one left its artwork's record (RF-517), so counting it here
+    // would make the two screens say different things.
     .filter((row) => row.active)
     .slice()
     .sort((a, b) => a.catalog_id.localeCompare(b.catalog_id))
@@ -124,15 +124,15 @@ export function linkedArtworkViews(rows: readonly LinkedArtworkRow[]): LinkedArt
     })
 }
 
-// ── Las exposiciones que lo tienen enlazado ──────────────────
+// ── The exhibitions that have it linked ──────────────────────
 
 export interface LinkedExhibitionView {
   id: string
   exhibitionId: string
   title: string
-  /** `12 de marzo – 4 de mayo de 1985`, o «Sin fechar». Nunca un hueco. */
+  /** `12 de marzo – 4 de mayo de 1985`, or «Sin fechar». Never a gap. */
   dates: string
-  /** Lo que este documento dice de ESA muestra, que no es lo que dice de una obra suya. */
+  /** What this document says about THAT show, which is not what it says about one of its artworks. */
   note: string | null
   retired: boolean
   unavailable: boolean
@@ -190,7 +190,7 @@ export function linkedExhibitionViews(
     })
 }
 
-// ── Lo que se lee encima y en lugar de las filas ─────────────
+// ── What is read above and instead of the rows ───────────────
 
 /**
  * De qué está colgando el documento, en una frase y contando las dos mitades.
@@ -215,11 +215,11 @@ export function documentReachSummary(input: {
   return `Enlazado con ${parts.join(' y ')}.`
 }
 
-/** Lo que se lee cuando no cuelga de nada. */
+/** What is read when it hangs off nothing. */
 export const DOCUMENT_UNLINKED_TEXT =
   'No lo tiene enlazado nada: ni una obra ni una exposición. Solo se llega a él desde aquí.'
 
-/** Un trozo del aviso: texto, o una referencia a la ficha de la que cuelga. */
+/** A piece of the notice: text, or a reference to the record it hangs off. */
 export type ReachSegment =
   | { kind: 'text'; text: string }
   | { kind: 'link'; text: string; to: string }
@@ -285,7 +285,7 @@ export function documentReachSegments(input: {
   return segments
 }
 
-/** Lo que va donde irían las filas de un bloque, o null cuando hay filas (RF-304). */
+/** What goes where a block's rows would go, or null when there are rows (RF-304). */
 export function linkedBlockNotice(input: {
   loading: boolean
   error: string | null
@@ -309,6 +309,6 @@ export const NO_LINKED_ARTWORKS =
  * `NO_LINKED_EXHIBITIONS_WRITABLE` y `NO_LINKED_EXHIBITIONS_READONLY`.
  */
 
-/** Lo que se lee cuando la dirección no corresponde a ningún documento. */
+/** What is read when the address matches no document. */
 export const DOCUMENT_MISSING_TEXT =
   'Ese documento no está en el archivo. Búscalo en el listado, por si está retirado.'

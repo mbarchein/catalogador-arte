@@ -40,7 +40,7 @@ import { displayStructuredDate } from '../documentary/documentaryFormat'
  */
 export { DOCUMENT_OPTION_COLUMNS as DOCUMENT_INDEX_COLUMNS }
 
-/** Lo que la búsqueda mira, que es también lo que la fila enseña. */
+/** What the search looks at, which is also what the row shows. */
 export { documentOptionText as archiveSearchText }
 
 /**
@@ -83,22 +83,22 @@ export function sortArchiveDocuments(rows: readonly DocumentOption[]): DocumentO
   })
 }
 
-/** Una fila del índice, lista para pintar. */
+/** One row of the index, ready to paint. */
 export interface ArchiveIndexEntry {
   row: DocumentOption
-  /** La signatura escrita en la carpeta, o null cuando el documento no está archivado. */
+  /** The reference written on the folder, or null when the document is not filed. */
   code: string | null
-  /** El título o descripción corta. Nunca vacío: la base lo exige. */
+  /** The title or short description. Never empty: the database demands it. */
   title: string
-  /** «Carta», «Recorte de prensa»… o «Tipo sin clasificar». Nunca un hueco (RF-304). */
+  /** «Carta», «Recorte de prensa»… or «Tipo sin clasificar». Never a gap (RF-304). */
   kind: string
-  /** La fecha de ADR-004, o «Sin fecha». */
+  /** The date of ADR-004, or «Sin fecha». */
   date: string
-  /** «Digitalizado · 3,2 MB» o «Sin digitalizar». Es la respuesta a si hay que ir al papel. */
+  /** «Digitalizado · 3,2 MB» or «Sin digitalizar». It answers whether the paper is needed. */
   fileText: string
-  /** Sin fichero subido: lo que decide si se puede leer desde aquí o hay que buscar el papel. */
+  /** No file uploaded: what decides whether it can be read from here or the paper must be found. */
   digitized: boolean
-  /** En la papelera. Se pinta apagado — y SE DICE, porque el gris a secas es decoración. */
+  /** In the wastebasket. Painted dimmed — and SAID, because grey on its own is decoration. */
   retired: boolean
   text: string
   indices: number[]
@@ -137,7 +137,7 @@ export function rankArchiveDocuments(
   })
 }
 
-/** Cuántos están en la papelera, para ofrecer el interruptor solo cuando hay algo dentro. */
+/** How many are in the wastebasket, to offer the switch only when there is something inside. */
 export function retiredDocumentCount(rows: readonly DocumentOption[]): number {
   return rows.filter((row) => !row.active).length
 }
@@ -163,7 +163,7 @@ export function archiveCountText(input: {
   return `${head} · ${withoutFile === 1 ? '1 sin digitalizar' : `${withoutFile} sin digitalizar`}`
 }
 
-/** Cuántos de los que se están enseñando no tienen fichero. */
+/** How many of those being shown have no file. */
 export function withoutFileCount(entries: readonly ArchiveIndexEntry[]): number {
   return entries.filter((entry) => !entry.digitized).length
 }
