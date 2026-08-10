@@ -1032,8 +1032,8 @@ begin
     raise exception 'FAIL: la función de trigger del congelado es ejecutable por PUBLIC';
   end if;
 
-  -- `security invoker`, como set_main_image: así sigue pasando por RLS y un
-  -- lector no cambia nada aunque la llame.
+  -- `security invoker`, like set_main_image: this way it still goes through RLS and a
+  -- reader changes nothing even if they call it.
   if (select prosecdef from pg_proc
        where oid = 'public.record_link_check(uuid, public.link_check_status)'::regprocedure) then
     raise exception 'FAIL: record_link_check es SECURITY DEFINER y se saltaría la RLS';
@@ -1042,8 +1042,8 @@ begin
   raise notice 'OK: is_web_url es inmutable, con search_path fijo y no de PUBLIC; la RPC no se salta la RLS (RF-111)';
 end $$;
 
--- La autoría la sella la función COMÚN de RF-804 y no una copia propia. Seis
--- copias de veinte líneas es la divergencia garantizada.
+-- The authorship is stamped by RF-804's COMMON function and not by a copy of its own. Six
+-- copies of twenty lines is guaranteed divergence.
 do $$
 declare v_funcion text;
 begin
@@ -1064,11 +1064,11 @@ begin
   raise notice 'OK: la autoría la sella tg_row_audit, la función común (RF-804)';
 end $$;
 
--- Y `is_web_url` es la misma regla para las dos columnas y para quien la llame
--- directamente: la aplicación la usa para dar el mensaje en español antes de
--- guardar. El espejo en TypeScript vive en el frontend y su lista hostil es
--- ESTA misma; la fuente de verdad es esta función, y la deriva solo puede hacer
--- al cliente más estricto y nunca a la base más permisiva.
+-- And `is_web_url` is the same rule for both columns and for whoever calls it
+-- directly: the application uses it to give the message in Spanish before
+-- saving. The TypeScript mirror lives in the frontend and its hostile list is
+-- THIS same one; the source of truth is this function, and the drift can only make
+-- the client stricter and never the base more permissive.
 do $$
 declare r record;
 begin

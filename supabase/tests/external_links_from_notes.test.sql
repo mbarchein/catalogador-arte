@@ -1,46 +1,46 @@
--- El traslado de las direcciones que vivían dentro de una nota:
--- RF-1401, RF-1402, RF-1405, RF-1407, y RF-801 y RF-802 por lo que NO se movió.
+-- The move of the addresses that lived inside a note:
+-- RF-1401, RF-1402, RF-1405, RF-1407, and RF-801 and RF-802 for what did NOT move.
 --
--- Este fichero es distinto de todos los demás de la carpeta: no crea sus datos
--- para lo esencial, porque lo que verifica es UN ESTADO QUE UNA MIGRACIÓN YA DEJÓ
--- EN LA BASE. Los fixtures que hay al final existen solo para el aserto de
--- idempotencia, que necesita una nota nueva sin tocar el catálogo real.
+-- This file is different from every other in the folder: it does not create its data
+-- for the essential part, because what it verifies is A STATE A MIGRATION ALREADY LEFT
+-- IN THE BASE. The fixtures at the end exist only for the idempotence
+-- assertion, which needs a new note without touching the real catalogue.
 --
--- ── CÓMO ESTÁ ESCRITO PARA QUE VALGA EN LAS DOS BASES ───────
+-- ── HOW IT IS WRITTEN TO HOLD IN BOTH BASES ─────────────────
 --
--- La verificación automática arranca el stack sobre un volumen limpio y corre
--- `make db-test` SIN haber cargado ningún volcado: ahí no existe AR-0001 y no hay
--- ninguna nota. Sobre una copia local del volcado hay dos. Así que todo aserto
--- está escrito como una invariante que se cumple en las dos: los bucles recorren
--- las notas que HAY —cero o dos—, y el recuento admite 0 y 2 y ningún otro, que es
--- literalmente la misma guarda que lleva la migración. Los dos envejecen juntos y
--- no a destiempo: el día que aparezca una tercera nota con una dirección dentro se
--- ponen rojos los dos a la vez.
+-- The automatic verification starts the stack over a clean volume and runs
+-- `make db-test` WITHOUT having loaded any dump: there AR-0001 does not exist and there is
+-- no note. Over a local copy of the dump there are two. So every assertion
+-- is written as an invariant that holds in both: the loops walk
+-- the notes that ARE THERE —zero or two—, and the count admits 0 and 2 and no other, which is
+-- literally the same guard the migration carries. Both age together and
+-- not out of step: the day a third note with an address inside appears they
+-- both go red at once.
 --
--- ── EL RASTRO POR EL QUE SE RECONOCE LO QUE HIZO LA MIGRACIÓN ──
+-- ── THE TRAIL BY WHICH WHAT THE MIGRATION DID IS RECOGNISED ──
 --
--- `created_by is null`. `tg_row_audit` firma con `auth.uid()`, que dentro de una
--- migración no es nadie, así que una fila de enlace sin firma solo puede haberla
--- escrito una migración y una firmada solo puede haberla escrito una persona. De
--- ahí sale todo lo que este fichero puede afirmar sin caducar en cuanto alguien
--- añada su primer enlace a mano: los asertos hablan de LOS ENLACES SIN FIRMA, no
--- de «los enlaces que hay».
+-- `created_by is null`. `tg_row_audit` signs with `auth.uid()`, which inside a
+-- migration is nobody, so an unsigned link row can only have been
+-- written by a migration and a signed one can only have been written by a person. From
+-- there comes everything this file can assert without expiring as soon as somebody
+-- adds their first link by hand: the assertions speak of THE UNSIGNED LINKS, not
+-- of «the links there are».
 --
--- El mismo rastro, al revés, es el que prueba que la migración no tocó ninguna
--- obra: si hubiera escrito sobre `artworks`, `tg_artwork_audit_trail` habría
--- puesto `updated_by` a nulo. Que las dos obras sigan con su `updated_by` firmado
--- es exactamente el aserto de RF-801 y RF-802, y sigue valiendo cuando alguien las
--- edite mañana.
+-- The same trail, in reverse, is what proves the migration touched no
+-- artwork: if it had written over `artworks`, `tg_artwork_audit_trail` would have
+-- set `updated_by` to null. That both artworks still have their `updated_by` signed
+-- is exactly RF-801's and RF-802's assertion, and it still holds when somebody
+-- edits them tomorrow.
 \set ON_ERROR_STOP on
 begin;
 
 
--- ── 1. El mismo recuento que la guarda de la migración ───────
+-- ── 1. The same count as the migration's guard ───────────────
 --
--- Va primero porque mira los datos que hay, antes de que los fixtures del final
--- añadan los suyos. 0 sobre una base recién migrada, 2 sobre el catálogo real.
--- Cualquier otro número es una nota nueva con una dirección dentro que nadie ha
--- trasladado, y ese es el fallo que toda esta entrega existe para terminar.
+-- It goes first because it looks at the data that is there, before the fixtures at the end
+-- add theirs. 0 over a freshly migrated base, 2 over the real catalogue.
+-- Any other number is a new note with an address inside that nobody has
+-- moved, and that is the failure this whole delivery exists to end.
 do $$
 declare v_notas int;
 begin
@@ -62,16 +62,16 @@ begin
 end $$;
 
 
--- ── 2. Ninguna dirección se quedó dentro de la prosa ────────
+-- ── 2. No address stayed inside the prose ───────────────────
 --
--- Por cada nota con una dirección, un enlace anclado a la obra: exactamente uno,
--- activo, de tipo página de museo, con la dirección que la nota lleva dentro y sin
--- firma —lo trasladó la migración, no una persona—.
+-- For every note with an address, one link anchored to the artwork: exactly one,
+-- active, of museum-page type, with the address the note carries inside and with no
+-- signature —the migration moved it, not a person—.
 --
--- La correspondencia se comprueba con `like '%' || e.url || '%'` y no extrayendo la
--- URL de la prosa con una expresión regular, por lo mismo que la migración las
--- escribió literales: un `regexp` se llevaría el punto final de la frase pegado al
--- final de la dirección y este test estaría comprobando otra cosa.
+-- The correspondence is checked with `like '%' || e.url || '%'` and not by extracting the
+-- URL from the prose with a regular expression, for the same reason the migration wrote them
+-- literal: a `regexp` would take the sentence's full stop stuck to the
+-- end of the address and this test would be checking something else.
 do $$
 declare
   v_obra    record;
@@ -113,10 +113,10 @@ begin
         v_obra.catalog_id, v_fila.url;
     end if;
 
-    -- Nace SIN COMPROBAR, que no es «funciona» y no es «roto» (RF-1405). Nadie ha
-    -- abierto esa página, y una migración no está en condiciones de afirmar que
-    -- carga. El trigger de congelado lo garantiza aunque el insert pidiera otra
-    -- cosa, y esto lo mide en la fila real.
+    -- It is born UNCHECKED, which is not «it works» and is not «broken» (RF-1405). Nobody has
+    -- opened that page, and a migration is in no position to state that it
+    -- loads. The freezing trigger guarantees it even if the insert asked for something
+    -- else, and this measures it in the real row.
     if v_fila.check_status is not null
        or v_fila.checked_at is not null
        or v_fila.checked_by is not null then
@@ -125,9 +125,9 @@ begin
         v_obra.catalog_id;
     end if;
 
-    -- Y con un título que se lee, no con la dirección desnuda: cuando el título
-    -- falta la interfaz enseña el dominio, pero aquí sí se sabía qué había al otro
-    -- lado y se escribió (RF-1402).
+    -- And with a title that reads, not with the bare address: when the title
+    -- is missing the interface shows the domain, but here it was known what was on the other
+    -- side and it was written (RF-1402).
     if btrim(coalesce(v_fila.title, '')) = '' then
       raise exception
         'FAIL: el enlace trasladado de % se quedó sin título y aquí sí se sabía (RF-1402)',
@@ -139,27 +139,27 @@ begin
 end $$;
 
 
--- ── 3. El texto de las notas es idéntico al que había ───────
+-- ── 3. The notes' text is identical to what was there ───────
 --
--- La migración no reescribe la prosa de la catalogadora: la frase dice algo que el
--- enlace no dice —que de ahí salieron TODOS los datos catalográficos, no solo la
--- imagen— y corregirla automáticamente no es migrar datos, es corregir a una
--- persona. Se compara contra la cadena literal, byte a byte, y no contra un
--- patrón: un patrón dejaría pasar justamente el recorte que se teme.
+-- The migration does not rewrite the cataloguer's prose: the sentence says something the
+-- link does not say —that ALL the cataloguing data came from there, not only the
+-- image— and correcting it automatically is not migrating data, it is correcting a
+-- person. It is compared against the literal string, byte by byte, and not against a
+-- pattern: a pattern would let through precisely the trim that is feared.
 --
--- Se salta cuando esta base NO tiene el volcado, y el discriminante importa. La
--- primera versión miraba si la nota era nula, y estaba mal por dos motivos:
--- `inventory_process_notes` es `not null default ''`, así que nunca es nula
--- mientras la obra exista, y la obra existe también en una base recién migrada
--- porque la siembra la crea. Resultado: integración continua en rojo comparando la
--- nota de producción contra una cadena vacía.
+-- It is skipped when this base does NOT have the dump, and the discriminant matters. The
+-- first version looked at whether the note was null, and it was wrong for two reasons:
+-- `inventory_process_notes` is `not null default ''`, so it is never null
+-- while the artwork exists, and the artwork exists also in a freshly migrated base
+-- because the seed creates it. Result: continuous integration red comparing
+-- production's note against an empty string.
 --
--- Y el discriminante NO puede ser «la nota está vacía», que es lo primero que uno
--- escribe: vaciar la nota es exactamente el fallo que este bloque vigila, así que
--- saltárselo por eso lo escondería. El discriminante es **el enlace que la
--- migración creó**: si no existe, este catálogo no pasó por el traslado y no hay
--- nada que comparar; si existe y la nota ya no está, el bloque falla, que es lo que
--- se quiere.
+-- And the discriminant CANNOT be «the note is empty», which is the first thing one
+-- writes: emptying the note is exactly the failure this block watches, so
+-- skipping it for that would hide it. The discriminant is **the link the
+-- migration created**: if it does not exist, this catalogue did not go through the move and there is
+-- nothing to compare; if it exists and the note is no longer there, the block fails, which is what
+-- is wanted.
 do $$
 declare v_texto text; v_esperado record; v_trasladada boolean;
 begin
@@ -196,11 +196,11 @@ begin
 end $$;
 
 
--- ── 4. La reproducción dice ahora de dónde salió (RF-1407) ──
+-- ── 4. The reproduction now says where it came from (RF-1407) ──
 --
--- Es la mitad que le faltaba a RF-417: `provenance` podía decir que una fotografía
--- venía de otro catálogo, pero no de cuál. Una procedencia sin origen es media
--- respuesta, y la mitad que falta es la que se necesita para volver a la fuente.
+-- It is the half RF-417 was missing: `provenance` could say that a photograph
+-- came from another catalogue, but not which one. A provenance with no source is half
+-- an answer, and the missing half is the one needed to go back to the source.
 do $$
 declare
   v_obra    record;
@@ -243,9 +243,9 @@ begin
         'FAIL: el enlace de origen de %_v1 nace comprobado (RF-1405)', v_obra.catalog_id;
     end if;
 
-    -- Y la marca: con el origen escrito, decir que no es propia ya no es una
-    -- corazonada. La evidencia está en la nota —«incluida la imagen»— y en el
-    -- enlace que acaba de comprobarse.
+    -- And the mark: with the source written, saying it is not our own is no longer a
+    -- hunch. The evidence is in the note —«incluida la imagen»— and in the
+    -- link that has just been checked.
     select provenance into v_proc
       from public.images where image_id = v_obra.catalog_id || '_v1';
 
@@ -260,22 +260,22 @@ begin
 end $$;
 
 
--- ── 5. Y no marcó de más, que es tan grave como marcar de menos ──
+-- ── 5. And it did not over-mark, which is as serious as under-marking ──
 --
--- Las dos mitades del aserto. La primera —«no de menos»— es el bucle de arriba.
--- Esta es la segunda, y se escribe sobre EL RASTRO DE LA MIGRACIÓN y no sobre un
--- recuento congelado, por un motivo que este repositorio ya aprendió: el aserto
--- «ninguna fila con recorte tiene además procedencia» de `image_perspective` caducó
--- por uso legítimo, y un test que se pone rojo porque la herramienta se ha usado
--- deja de avisar del fallo nuevo. Un «exactamente 42 propias» caducaría igual: el
--- recuento del lote habla de CUATRO reproducciones y RF-1407 espera que la
--- catalogadora identifique las otras dos con la obra delante.
+-- The assertion's two halves. The first —«not under»— is the loop above.
+-- This is the second, and it is written over THE MIGRATION'S TRAIL and not over a
+-- frozen count, for a reason this repository has already learnt: the assertion
+-- «no row with a crop also has provenance» in `image_perspective` expired
+-- through legitimate use, and a test that goes red because the tool has been used
+-- stops warning about the new failure. An «exactly 42 of our own» would expire the same: the
+-- batch's count speaks of FOUR reproductions and RF-1407 expects the
+-- cataloguer to identify the other two with the artwork in front.
 --
--- Lo que sí es invariante: NINGÚN ENLACE SIN FIRMA CUELGA DE DONDE NO SALIÓ. Su
--- dirección tiene que seguir estando dentro de una nota de inventario. Con eso más
--- el `exists` que el `update` de la migración lleva escrito —solo marca la
--- fotografía cuyo enlace de origen aterrizó— queda probado que marcó exactamente
--- tantas como notas y ninguna más, sin congelar ningún número.
+-- What is invariant: NO UNSIGNED LINK HANGS FROM WHERE IT DID NOT COME FROM. Its
+-- address has to still be inside an inventory note. With that plus
+-- the `exists` the migration's `update` carries written —it only marks the
+-- photograph whose source link landed— it is proved that it marked exactly
+-- as many as there are notes and no more, without freezing any number.
 do $$
 declare v_sueltos int; v_de_foto int; v_notas int;
 begin
@@ -296,7 +296,7 @@ begin
       v_sueltos;
   end if;
 
-  -- Y ninguno más colgando de una fotografía: dos notas, dos enlaces de origen.
+  -- And no more hanging from a photograph: two notes, two source links.
   select count(*) into v_de_foto
     from public.external_links
    where image_id is not null and created_by is null;
@@ -311,18 +311,18 @@ begin
 end $$;
 
 
--- ── 6. Ninguna obra ha movido su traza (RF-801, RF-802) ────
+-- ── 6. No artwork has moved its trace (RF-801, RF-802) ─────
 --
--- La migración inserta enlaces y escribe dos columnas de `images`, y afirma en su
--- cabecera que por eso NO necesita desactivar `artwork_audit_trail`. Esto lo
--- comprueba en vez de creerlo, y por el rastro y no por un valor congelado: si
--- hubiera escrito sobre `artworks` —directamente, o de rebote por
--- `recalculate_photographed`—, el trigger habría puesto `updated_by` a nulo,
--- porque dentro de una migración `auth.uid()` no es nadie.
+-- The migration inserts links and writes two columns of `images`, and states in its
+-- heading that this is why it does NOT need to disable `artwork_audit_trail`. This
+-- checks it instead of believing it, and by the trail and not by a frozen value: if
+-- it had written over `artworks` —directly, or by rebound through
+-- `recalculate_photographed`—, the trigger would have set `updated_by` to null,
+-- because inside a migration `auth.uid()` is nobody.
 --
--- Que las dos obras del traslado sigan con su autoría firmada es el aserto, y
--- sobrevive a que alguien las edite mañana: una edición de una persona vuelve a
--- firmarlas.
+-- That the move's two artworks still have their authorship signed is the assertion, and
+-- it survives somebody editing them tomorrow: a person's edit signs them
+-- again.
 do $$
 declare v_obra record; v_n int := 0;
 begin
@@ -338,15 +338,15 @@ begin
         v_obra.catalog_id;
     end if;
 
-    -- Y su indicador de fotografiada no se ha recalculado en falso: sigue cierto,
-    -- que es lo que era, porque tiene fotografías activas.
+    -- And its photographed indicator has not been recalculated falsely: it is still true,
+    -- which is what it was, because it has active photographs.
     if not v_obra.photographed then
       raise exception
         'FAIL: la obra % ha dejado de constar como fotografiada', v_obra.catalog_id;
     end if;
 
-    -- La fecha de la última revisión física no se toca al trasladar una dirección:
-    -- una dirección no se comprueba con la obra delante (RF-802).
+    -- The date of the last physical review is not touched on moving an address:
+    -- an address is not checked with the artwork in front (RF-802).
     if v_obra.basic_updated_at > v_obra.updated_at then
       raise exception
         'FAIL: la obra % tiene la revisión física más reciente que su última actualización (RF-802)',
@@ -360,15 +360,15 @@ begin
 end $$;
 
 
--- ── 7. Idempotencia: el cuerpo del traslado, otra vez ──────
+-- ── 7. Idempotence: the move's body, again ─────────────────
 --
--- Ejecutar esto dos veces no debe duplicar nada, y no debe duplicarlo POR EL
--- `not exists` Y NO POR EL ÍNDICE ÚNICO: un `insert` que choca contra un índice
--- aborta la transacción entera, así que la segunda pasada de una migración
--- reejecutada se llevaría por delante todo lo que viniera detrás. Lo que se afirma
--- es que no inserta ninguna fila y no lanza ninguna excepción.
+-- Running this twice must not duplicate anything, and it must not duplicate it BY THE
+-- `not exists` AND NOT BY THE UNIQUE INDEX: an `insert` that clashes against an index
+-- aborts the whole transaction, so a re-run migration's second pass
+-- would take with it everything that came behind. What is asserted
+-- is that it inserts no row and throws no exception.
 --
--- Son las dos sentencias de la migración, copiadas tal cual.
+-- They are the migration's two statements, copied as is.
 do $$
 declare v_filas int;
 begin
@@ -424,16 +424,16 @@ begin
 end $$;
 
 
--- ── 8. Y la guarda del not exists llega antes que el índice ──
+-- ── 8. And the not exists guard comes before the index ──────
 --
--- El aserto anterior no distingue «no insertó» de «no había nada que insertar», así
--- que aquí se monta el caso a propósito sobre datos de prueba: una obra con una
--- nota que lleva una dirección dentro, el enlace ya trasladado, y la misma
--- sentencia otra vez. Si el `not exists` no estuviera, esto saltaría con violación
--- de unicidad y el bloque siguiente no llegaría a ejecutarse.
+-- The previous assertion does not distinguish «it did not insert» from «there was nothing to insert», so
+-- here the case is set up on purpose over test data: an artwork with a
+-- note carrying an address inside, the link already moved, and the same
+-- statement again. If the `not exists` were not there, this would blow up with a uniqueness
+-- violation and the following block would not get to run.
 --
--- Los identificadores llevan marca de prueba para no chocar con el catálogo real
--- cuando esta batería corre sobre una copia del volcado.
+-- The identifiers carry a test mark so as not to clash with the real catalogue
+-- when this suite runs over a copy of the dump.
 insert into public.artworks (catalog_id, artist, title, attributed_title, inventory_process_notes)
 values ('AR-9800', 'ROTILI', 'Obra con dirección en la nota', 'UNCONFIRMED',
         'Ficha tomada de https://prueba-traslado.example/obra/9800/ el día del volcado.');
@@ -468,11 +468,11 @@ exception
     raise exception 'FAIL: la segunda pasada ha llegado al índice único: sin not exists, una migración reejecutada abortaría entera';
 end $$;
 
--- Y el contrario, que es lo que hace que el aserto de arriba signifique algo: una
--- dirección que NO está en la nota no se traslada, aunque se escriba en la lista.
--- Es la protección contra una nota reescrita entre que la migración se escribió y
--- se aplicó: antes que escribir una dirección que ya no está donde decía estar, no
--- se escribe nada y la guarda del recuento lo denuncia.
+-- And the opposite, which is what makes the assertion above mean something: an
+-- address that is NOT in the note is not moved, even if it is written in the list.
+-- It is the protection against a note rewritten between the migration being written and
+-- being applied: rather than writing an address that is no longer where it said it was, nothing
+-- is written and the count's guard denounces it.
 do $$
 declare v_filas int;
 begin

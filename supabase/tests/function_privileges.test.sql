@@ -1,21 +1,21 @@
--- RF-111: ninguna función del esquema público es ejecutable por quien no debe.
+-- RF-111: no function of the public schema is executable by whoever should not.
 --
--- Son invariantes del proyecto entero, como los de rls_default_deny: no
--- comprueban un caso, comprueban que no hay excepciones. Están escritos para
--- romperse el día que alguien añada una función y se quede con la concesión por
--- omisión de PostgreSQL, que es a PUBLIC.
+-- They are invariants of the whole project, like rls_default_deny's: they do not
+-- check a case, they check that there are no exceptions. They are written to
+-- break the day somebody adds a function and keeps PostgreSQL's default
+-- grant, which is to PUBLIC.
 \set ON_ERROR_STOP on
 begin;
 
--- Fixture: un catalogador. El perfil lo crea el trigger de auth.users.
+-- Fixture: one cataloguer. The profile is created by the auth.users trigger.
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-0000000000f1', 'privilegios@test.local');
 update public.profiles set role = 'CATALOGER'
  where id = '00000000-0000-0000-0000-0000000000f1';
 
--- ── 1. Ninguna función es de PUBLIC ──────────────────────────
--- El grantee 0 de la ACL es PUBLIC. anon y authenticated lo heredan por ser sus
--- miembros, así que revocar de ellos no cierra nada mientras esto exista.
+-- ── 1. No function belongs to PUBLIC ─────────────────────────
+-- The ACL's grantee 0 is PUBLIC. anon and authenticated inherit it by being its
+-- members, so revoking from them closes nothing while this exists.
 do $$
 declare
   v_publicas text[];
@@ -33,9 +33,9 @@ begin
   raise notice 'OK: ninguna función del esquema público es ejecutable por PUBLIC';
 end $$;
 
--- ── 2. Toda función fija su search_path ──────────────────────
--- Una función que resuelve sus nombres contra un search_path que controla quien
--- la invoca es una función de la que no se sabe qué ejecuta.
+-- ── 2. Every function fixes its search_path ──────────────────
+-- A function that resolves its names against a search_path controlled by whoever
+-- invokes it is a function of which it is not known what it executes.
 do $$
 declare
   v_sin_ruta text[];
@@ -55,7 +55,7 @@ begin
   raise notice 'OK: toda función del esquema público fija su search_path';
 end $$;
 
--- ── 3. Un anónimo no puede ejecutar nada que escriba ─────────
+-- ── 3. An anonymous one cannot execute anything that writes ──
 do $$
 begin
   if has_function_privilege('anon', 'public.recalculate_photographed(text)', 'execute') then
@@ -70,7 +70,7 @@ begin
   raise notice 'OK: un anónimo no puede ejecutar ninguna RPC que escriba';
 end $$;
 
--- ── 4. Las funciones de trigger no las ejecuta nadie ─────────
+-- ── 4. The trigger functions are executed by nobody ──────────
 do $$
 declare
   v_concedidas text[];
@@ -90,10 +90,10 @@ begin
   raise notice 'OK: ninguna función de trigger es invocable desde la API';
 end $$;
 
--- ── 5. Y aun así los triggers siguen disparando ──────────────
--- Es la comprobación que justifica el punto 4: PostgreSQL no exige EXECUTE al
--- disparar un trigger, solo al invocar la función. Si esto se rompiera, revocar
--- habría roto la asignación del identificador y la traza de autoría.
+-- ── 5. And even so the triggers still fire ───────────────────
+-- It is the check that justifies point 4: PostgreSQL does not require EXECUTE to
+-- fire a trigger, only to invoke the function. If this broke, revoking
+-- would have broken the identifier's assignment and the authorship trace.
 do $$
 declare
   v_id text;
