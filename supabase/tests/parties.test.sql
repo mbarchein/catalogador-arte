@@ -1,27 +1,27 @@
--- RF-508: personas e instituciones, una sola tabla con clave sustituta.
--- RF-804, RF-801, RF-902: la trazabilidad común y la papelera, selladas por la base.
--- RF-901, RF-111, RF-113: nada se borra, y la tabla nace cerrada.
+-- RF-508: people and institutions, a single table with a surrogate key.
+-- RF-804, RF-801, RF-902: the common traceability and the wastebasket, stamped by the base.
+-- RF-901, RF-111, RF-113: nothing is deleted, and the table is born closed.
 --
--- Lo que se comprueba es lo que el cliente no debe volver a comprobar: que un
--- nombre en blanco o con espacios alrededor no entra, que dos escrituras del
--- mismo museo son la misma ficha, que los dos enumerados no admiten texto libre,
--- que la baja se sella sola y conserva su traza al restaurar, y que la función de
--- trazabilidad genérica no toca ni una columna que no sea suya — que es el riesgo
--- propio de leer la fila como jsonb y devolverla.
+-- What is checked is what the client must not check again: that a
+-- blank name or one with spaces around it does not go in, that two writings of the
+-- same museum are the same record, that the two enums admit no free text,
+-- that the withdrawal stamps itself and keeps its trace on restoring, and that the traceability
+-- function does not touch a single column that is not its own — which is the risk
+-- particular to reading the row as jsonb and returning it.
 \set ON_ERROR_STOP on
 begin;
 
--- Fixtures: un catalogador y un lector. Los perfiles los crea el trigger de
--- auth.users.
+-- Fixtures: one cataloguer and one reader. The profiles are created by the
+-- auth.users trigger.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000c1', 'cat-partes@test.local'),
   ('00000000-0000-0000-0000-0000000000c2', 'lec-partes@test.local');
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000c1';
 update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000c2';
 
--- ── 1. Una ficha mínima entra ────────────────────────────────
--- El nombre y el tipo, y nada más: lo que se sabe la primera vez que aparece un
--- nombre en un catálogo de 1985. Todo lo demás nace vacío y explícito.
+-- ── 1. A minimal record goes in ──────────────────────────────
+-- The name and the type, and nothing else: what is known the first time a
+-- name appears in a 1985 catalogue. Everything else is born empty and explicit.
 do $$
 declare
   v_id uuid;

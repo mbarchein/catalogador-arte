@@ -118,11 +118,11 @@ begin
   end;
 end $$;
 
--- ── 4. El recorte y las esquinas conviven ────────────────────
--- Es lo que permite desplegar en una fase: las filas que ya tienen recorte lo
--- conservan, el frontend viejo sigue leyéndolas, y las columnas nuevas nacen
--- nulas. La precedencia —si hay esquinas, mandan— la aplica el cliente, porque
--- es una decisión de renderizado y no una regla de integridad.
+-- ── 4. The crop and the corners coexist ──────────────────────
+-- It is what allows deploying in one phase: the rows that already have a crop
+-- keep it, the old frontend goes on reading them, and the new columns are born
+-- null. The precedence —if there are corners, they rule— is applied by the client, because
+-- it is a rendering decision and not an integrity rule.
 do $$
 declare v_id text; v_x numeric; v_nw numeric;
 begin
@@ -143,10 +143,10 @@ begin
   raise notice 'OK: el recorte y las esquinas conviven en la misma fila';
 end $$;
 
--- ── 5. La procedencia del encuadre ───────────────────────────
--- Las filas anteriores a la columna se quedan en nulo, que es «no se sabe». Poner
--- 'MANUAL' por omisión sería inventar el dato, y es justo el dato que hizo falta
--- inferir para medir el detector.
+-- ── 5. The framing's provenance ──────────────────────────────
+-- The rows predating the column stay null, which is «not known». Putting
+-- 'MANUAL' by default would be inventing the datum, and it is precisely the datum that had to be
+-- inferred in order to measure the detector.
 do $$
 declare v_id text; v_fuente public.crop_source; v_sin_encuadre int;
 begin
@@ -170,20 +170,20 @@ begin
     raise notice 'OK: la procedencia es un enumerado cerrado';
   end;
 
-  -- Y sobre una base cargada con el volcado: la procedencia no se inventa sola.
+  -- And over a base loaded with the dump: the provenance does not invent itself.
   --
-  -- Esta comprobación se escribió como «ninguna fila con recorte tiene además
-  -- procedencia», y **caducó por uso legítimo**: las once filas que hoy llevan
-  -- procedencia se crearon entre el 27 y el 31 de julio de 2026 usando la
-  -- herramienta, no rellenadas por ninguna migración. Un test que se pone rojo
-  -- porque la función que verifica se ha usado no verifica nada, y dejarlo rojo
-  -- «porque es anterior» hace que la batería deje de avisar del fallo nuevo.
+  -- This check was written as «no row with a crop also has
+  -- provenance», and **it expired through legitimate use**: the eleven rows that today carry
+  -- provenance were created between 27 and 31 July 2026 using the
+  -- tool, not filled in by any migration. A test that goes red
+  -- because the function it verifies has been used verifies nothing, and leaving it red
+  -- «because it is older» makes the suite stop warning about the new failure.
   --
-  -- Lo que sí es una invariante y sí importa: **una procedencia sin encuadre no
-  -- significa nada**. `crop_source` describe de dónde salió el encuadre —dibujado a
-  -- mano, sugerido, o sugerido y ajustado—, así que una fila con procedencia y sin
-  -- recorte ni esquinas es exactamente el dato inventado que aquella redacción
-  -- quería cazar, y esta lo caza sin depender de cuánto se haya usado el editor.
+  -- What is an invariant and does matter: **a provenance with no framing means
+  -- nothing**. `crop_source` describes where the framing came from —drawn by
+  -- hand, suggested, or suggested and adjusted—, so a row with provenance and with no
+  -- crop or corners is exactly the invented datum that wording
+  -- wanted to catch, and this one catches it without depending on how much the editor has been used.
   select count(*) into v_sin_encuadre
     from public.images
    where crop_source is not null

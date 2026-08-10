@@ -45,13 +45,13 @@ end $$;
 
 reset role;
 
--- ── Cualquiera puede ser la principal, en los dos sentidos ───
--- Incidencia real: marcar y desmarcar en una sola sentencia dependía del orden
--- FÍSICO de las filas, porque el índice único parcial se comprueba fila a fila
--- y no al final de la sentencia (solo las restricciones diferibles lo hacen).
--- Elegir una foto guardada antes que la principal de entonces fallaba con
--- «duplicate key». Este bucle recorre todas en ambos sentidos: con el fallo
--- presente, revienta en la primera vuelta.
+-- ── Any one can be the main one, in both directions ──────────
+-- A real incident: marking and unmarking in a single statement depended on the
+-- PHYSICAL order of the rows, because the partial unique index is checked row by row
+-- and not at the end of the statement (only deferrable constraints do that).
+-- Choosing a photo stored before the main one of the time failed with
+-- «duplicate key». This loop walks all of them in both directions: with the failure
+-- present, it blows up on the first pass.
 do $$
 declare v_id text; v_marked integer;
 begin

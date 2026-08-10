@@ -1,30 +1,30 @@
--- RF-213, RF-802, RF-901 (ADR-007): los tipos de obra y las series con clave
--- sustituta.
+-- RF-213, RF-802, RF-901 (ADR-007): artwork types and series with a surrogate
+-- key.
 --
--- Lo que se comprueba es la promesa de la decisión: que renombrar sea una fila
--- que ve el catálogo entero sin tocar ninguna obra, que ahora se pueda retirar lo
--- que antes no tenía forma de retirarse, y que la regla que el nombre sostenía
--- —una serie es del fondo de su artista— siga en pie ahora que la obra apunta por
--- identificador.
+-- What is checked is the decision's promise: that renaming be one row
+-- the whole catalogue sees without touching any artwork, that what previously had no way of being
+-- withdrawn can now be withdrawn, and that the rule the name held up
+-- —a series belongs to its artist's fund— still stands now that the artwork points by
+-- identifier.
 --
--- El fondo (`artist_fund`) no entra: sigue siendo un tipo enumerado hasta la
--- segunda entrega de ADR-007.
+-- The fund (`artist_fund`) is not included: it is still an enum type until
+-- ADR-007's second delivery.
 \set ON_ERROR_STOP on
 begin;
 
--- Fixtures: un catalogador y un lector. Los nombres llevan marca de prueba a
--- propósito, para no chocar con el vocabulario real cuando estos tests corren
--- sobre una copia local del volcado de producción.
+-- Fixtures: one cataloguer and one reader. The names carry a test mark on
+-- purpose, so as not to clash with the real vocabulary when these tests run
+-- over a local copy of the production dump.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'cat-claves@test.local'),
   ('00000000-0000-0000-0000-0000000000d2', 'lec-claves@test.local');
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000d1';
 update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000d2';
 
--- ── 1. El traslado no dejó nada sin emparejar ────────────────
--- Sobre una base recién migrada no dice nada; sobre una cargada con el volcado es
--- donde se ve si el emparejamiento por texto hizo su trabajo. Va primero porque
--- mira los datos que hay, antes de que los fixtures añadan los suyos.
+-- ── 1. The move left nothing unpaired ────────────────────────
+-- Over a freshly migrated base it says nothing; over one loaded with the dump it is
+-- where it can be seen whether the pairing by text did its job. It goes first because
+-- it looks at the data that is there, before the fixtures add theirs.
 do $$
 declare v_sueltas int;
 begin
@@ -39,8 +39,8 @@ begin
   raise notice 'OK: ningún tipo ni serie en texto se quedó sin su fila';
 end $$;
 
--- ── 2. El nombre ya no es la clave ───────────────────────────
--- El aserto que dice que la decisión está aplicada: la clave primaria es `id`.
+-- ── 2. The name is no longer the key ─────────────────────────
+-- The assertion that says the decision is applied: the primary key is `id`.
 do $$
 declare v_tipo text; v_serie text;
 begin
@@ -63,9 +63,9 @@ begin
   raise notice 'OK: las dos tablas tienen clave sustituta';
 end $$;
 
--- ── 3. Y sigue siendo único ──────────────────────────────────
--- Soltar la identidad no es soltar la unicidad: dos tipos con el mismo nombre
--- siguen siendo el mismo tipo.
+-- ── 3. And it is still unique ────────────────────────────────
+-- Letting go of identity is not letting go of uniqueness: two types with the same name
+-- are still the same type.
 do $$
 begin
   insert into public.artwork_types (name) values ('Tipo de prueba ADR-007');
@@ -76,8 +76,8 @@ begin
     raise notice 'OK: dos tipos con el mismo nombre se rechazan';
   end;
 
-  -- En las series la unicidad es por fondo: el mismo nombre en otro fondo es
-  -- otra serie, que es el motivo de que el fondo entrara en la clave vieja.
+  -- In the series uniqueness is by fund: the same name in another fund is
+  -- another series, which is the reason the fund entered the old key.
   insert into public.series (artist, name) values ('ROTILI', 'Serie de prueba ADR-007');
   insert into public.series (artist, name) values ('TEST', 'Serie de prueba ADR-007');
   begin
@@ -88,9 +88,9 @@ begin
   end;
 end $$;
 
--- ── 4. Renombrar es una fila y no toca la obra ───────────────
--- El requisito que ordena toda la decisión. Con el nombre por clave, esto exigía
--- tocar todas las obras que usaran el tipo.
+-- ── 4. Renaming is one row and does not touch the artwork ────
+-- The requirement that orders the whole decision. With the name as the key, this required
+-- touching every artwork that used the type.
 do $$
 declare
   v_tipo uuid;
@@ -101,8 +101,8 @@ declare
 begin
   select id into v_tipo from public.artwork_types where name = 'Tipo de prueba ADR-007';
 
-  -- Sin texto en `artwork_type`: la obra apunta solo por identificador, que es
-  -- como escribirá el frontend nuevo.
+  -- With no text in `artwork_type`: the artwork points only by identifier, which is
+  -- how the new frontend will write.
   insert into public.artworks (artist, title, attributed_title, artwork_type_id)
   values ('ROTILI', 'la del tipo', 'UNCONFIRMED', v_tipo)
   returning catalog_id, updated_at, basic_updated_at
@@ -127,9 +127,9 @@ begin
   raise notice 'OK: renombrar un tipo es un update de una fila y no toca ninguna obra';
 end $$;
 
--- ── 5. Cambiar el tipo de la obra sí mueve la fecha básica ───
--- RF-802: el tipo es un campo de fase 1, se toma con la obra delante. La serie
--- no: se decide leyendo un catálogo.
+-- ── 5. Changing the artwork's type does move the basic date ──
+-- RF-802: the type is a phase-1 field, it is taken with the artwork in front. The series
+-- is not: it is decided by reading a catalogue.
 do $$
 declare
   v_obra text;
@@ -151,7 +151,7 @@ begin
     raise exception 'FAIL: cambiar el tipo no ha movido basic_updated_at';
   end if;
 
-  -- Y la serie no la mueve.
+  -- And the series does not move it.
   update public.artworks set basic_updated_at = '2020-01-01' where catalog_id = v_obra;
   select basic_updated_at into v_antes from public.artworks where catalog_id = v_obra;
 
@@ -166,10 +166,10 @@ begin
   raise notice 'OK: el tipo mueve la fecha básica y la serie no (RF-802)';
 end $$;
 
--- ── 6. La serie sigue siendo la del fondo de la obra ─────────
--- La clave ajena garantiza que la serie existe, no que sea del artista: es la
--- regla que sostenía el trigger del vocabulario y que había que rehacer para el
--- identificador.
+-- ── 6. The series is still the one of the artwork's fund ─────
+-- The foreign key guarantees the series exists, not that it belongs to the artist: it is the
+-- rule the vocabulary's trigger held up and that had to be redone for the
+-- identifier.
 do $$
 declare v_serie_test uuid;
 begin
@@ -177,7 +177,7 @@ begin
    where artist = 'TEST' and name = 'Serie de prueba ADR-007';
 
   begin
-    -- Una obra de Rotili con una serie del fondo de pruebas.
+    -- A Rotili artwork with a series from the test fund.
     insert into public.artworks (artist, title, attributed_title, series_id)
     values ('ROTILI', 'serie de otro fondo', 'UNCONFIRMED', v_serie_test);
     raise exception 'FAIL: una obra ha entrado con una serie de otro fondo';
@@ -185,7 +185,7 @@ begin
     raise notice 'OK: una obra no puede apuntar a una serie de otro fondo';
   end;
 
-  -- Y tampoco moviéndola después.
+  -- And not by moving it afterwards either.
   begin
     update public.artworks set series_id = v_serie_test where title = 'la del tipo';
     raise exception 'FAIL: se ha movido una obra a una serie de otro fondo';
@@ -194,9 +194,9 @@ begin
   end;
 end $$;
 
--- ── 7. Lo que tiene obras dentro no se retira ────────────────
--- La baja lógica es nueva: antes no había forma de retirar un tipo, porque el
--- nombre era la clave.
+-- ── 7. What has artworks inside is not withdrawn ─────────────
+-- The logical deletion is new: before there was no way of withdrawing a type, because the
+-- name was the key.
 do $$
 declare v_tipo uuid; v_serie uuid;
 begin
@@ -217,7 +217,7 @@ begin
   end;
 end $$;
 
--- ── 8. Una obra en la papelera no estorba ────────────────────
+-- ── 8. An artwork in the wastebasket does not get in the way ─
 do $$
 declare v_tipo uuid; v_obra text;
 begin
@@ -236,7 +236,7 @@ begin
   raise notice 'OK: una obra en la papelera no impide retirar su tipo';
 end $$;
 
--- ── 9. La baja la sella la base, y es reversible ─────────────
+-- ── 9. The withdrawal is stamped by the base, and it is reversible ─
 do $$
 declare v_id uuid; v_cuando timestamptz; v_quien uuid;
 begin
@@ -260,7 +260,7 @@ begin
   raise notice 'OK: la baja sella quién y cuándo, y restaurar lo deshace';
 end $$;
 
--- ── 10. Nadie borra de verdad ────────────────────────────────
+-- ── 10. Nobody really deletes ────────────────────────────────
 do $$
 declare t text;
 begin
@@ -276,18 +276,18 @@ begin
   raise notice 'OK: retirar es un update; borrar no está concedido a nadie (RF-901)';
 end $$;
 
--- ── 11. Quién puede renombrar y retirar ──────────────────────
--- El Catalogador, como con los lugares: el estudio está en reordenación y
--- esperar a un administrador para corregir un nombre no es viable.
+-- ── 11. Who can rename and withdraw ─────────────────────────
+-- The Cataloguer, as with the places: the studio is being reorganised and
+-- waiting for an administrator to correct a name is not viable.
 do $$
 declare v_id uuid; v_filas int; v_nombre text;
 begin
   select id into v_id from public.artwork_types where name = 'Otro tipo de prueba ADR-007';
 
-  -- Un UPDATE que no pasa el `using` de la política NO da error: la fila
-  -- simplemente no es visible para él y se actualizan cero. Es distinto del
-  -- INSERT, donde un `with check` que falla sí lanza insufficient_privilege, y
-  -- confundirlos es cómo se escribe un test que aprueba una tabla abierta.
+  -- An UPDATE that does not pass the policy's `using` gives NO error: the row
+  -- simply is not visible to them and zero are updated. It is different from the
+  -- INSERT, where a `with check` that fails does throw insufficient_privilege, and
+  -- confusing them is how a test that passes an open table gets written.
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d2","role":"authenticated"}';
   set local role authenticated;
   update public.artwork_types set name = 'Renombrado por un lector' where id = v_id;
