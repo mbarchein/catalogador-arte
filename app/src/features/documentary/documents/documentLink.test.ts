@@ -16,14 +16,14 @@ import {
 } from './documentLink'
 
 /**
- * Enlazar con una obra un documento que YA está en el archivo (RF-516, RF-517,
+ * Linking to an artwork a document that is ALREADY in the archive (RF-516, RF-517,
  * RF-218, RF-304).
  *
- * Lo que se verifica aquí es la regla que sostiene toda la pantalla: un documento
- * cuelga de varias obras por una tabla puente y el PDF se guarda UNA vez, así que
- * enlazar y subir son dos actos distintos y el buscador tiene que empujar hacia el
- * primero. Un buscador que esconde lo que ya está enlazado es un buscador que invita
- * a subir el mismo escaneo por segunda vez.
+ * What is verified here is the rule that holds up the whole screen: a document
+ * hangs from several artworks through a bridge table and the PDF is stored ONCE, so
+ * linking and uploading are two different acts and the finder has to push towards the
+ * first. A finder that hides what is already linked is a finder that invites
+ * uploading the same scan a second time.
  */
 
 function option(over: Partial<DocumentOption> = {}): DocumentOption {
@@ -60,9 +60,9 @@ function link(over: Partial<DocumentLinkRow> = {}): DocumentLinkRow {
 
 describe('las columnas que pide el buscador', () => {
   /**
-   * Un tipo de TypeScript no existe en tiempo de ejecución: lo que la consulta olvide
-   * llega como `undefined` con el tipo prometiendo un valor, que es el fallo que las
-   * esquinas de una fotografía ya costaron una vez en este proyecto.
+   * A TypeScript type does not exist at run time: whatever the query forgets
+   * arrives as `undefined` with the type promising a value, which is the failure a photograph's
+   * corners already cost once in this project.
    */
   it('la lista de columnas cubre todo lo que `DocumentOption` promete', () => {
     const keys = Object.keys(option()).filter((key) => key !== 'document_type')
@@ -102,9 +102,9 @@ describe('lo que se lee de un documento en el buscador, que es lo que se busca',
   })
 
   /**
-   * Que haya escaneo o no es el dato que decide si basta con enlazar o hay que ir a
-   * buscar el papel, así que va en la fila y no un toque más adentro. No hay columna
-   * «digitalizado»: es la ruta (RF-408).
+   * Whether there is a scan or not is the datum that decides whether linking is enough or whether one has to go
+   * and fetch the paper, so it goes in the row and not one tap further in. There is no
+   * «digitised» column: it is the path (RF-408).
    */
   it('dice si está digitalizado y cuánto pesa', () => {
     expect(documentOptionFileText(option())).toBe('Digitalizado · 3,2 MB')
@@ -122,9 +122,9 @@ describe('a quién se ofrece y a quién no', () => {
   ]
 
   /**
-   * Un documento retirado NO se ofrece: esta es una lista para elegir, y ofrecer algo
-   * que el archivo ha retirado sería devolverlo al uso por la puerta de atrás. Es la
-   * regla contraria a la de la ficha, que sí muestra el nombre de lo retirado.
+   * A withdrawn document is NOT offered: this is a list for choosing, and offering something
+   * the archive has withdrawn would be putting it back into use through the back door. It is the
+   * opposite rule to the record's, which does show the name of what is withdrawn.
    */
   it('los documentos retirados no se ofrecen', () => {
     const choices = rankDocumentOptions(archive, '', new Set())
@@ -132,9 +132,9 @@ describe('a quién se ofrece y a quién no', () => {
   })
 
   /**
-   * **La decisión que evita la duplicación del PDF.** Lo que ya está enlazado se ve,
-   * marcado y no elegible: esconderlo dejaría el buscador con pinta de que el
-   * documento no está en el archivo, y de ahí se sube otra vez.
+   * **The decision that avoids duplicating the PDF.** What is already linked is visible,
+   * marked and not selectable: hiding it would leave the finder looking as if the
+   * document were not in the archive, and from there it gets uploaded again.
    */
   it('lo que ya está enlazado se LISTA, marcado, y no se puede elegir dos veces', () => {
     const choices = rankDocumentOptions(archive, '', new Set(['doc-1']))
@@ -170,9 +170,9 @@ describe('a quién se ofrece y a quién no', () => {
 
 describe('nunca una lista vacía sin explicación (RF-304)', () => {
   /**
-   * Los dos casos son distintos y confundirlos cuesta una tarde: el archivo está
-   * vacío, o tiene documentos y ninguno coincide. Los dos tienen que apuntar al OTRO
-   * botón, o la catalogadora concluye que el buscador está roto.
+   * The two cases are different and confusing them costs an afternoon: the archive is
+   * empty, or it has documents and none matches. Both have to point at the OTHER
+   * button, or the cataloguer concludes that the finder is broken.
    */
   it('el archivo vacío manda a subir, y lo nombra igual que el botón', () => {
     const said = noDocumentOptionsText(0, '')
@@ -211,10 +211,10 @@ describe('lo que viaja a `document_artwork` (RF-516, RF-517)', () => {
   })
 
   /**
-   * Una nota vacía viaja vacía a propósito: la función conserva lo que ya hubiera
-   * cuando lo que llega está en blanco —«lo que no se manda no se borra»— y así
-   * volver a enlazar desde un formulario que abre limpio no puede vaciar la frase
-   * que alguien investigó.
+   * An empty note travels empty on purpose: the function keeps whatever was already there
+   * when what arrives is blank —«what is not sent is not erased»— and this way
+   * linking again from a form that opens clean cannot empty the sentence
+   * somebody researched.
    */
   it('una nota en blanco viaja en blanco, que es «no toques la que hay»', () => {
     expect(documentLinkArgs('AR-0001', 'doc-1', '   ').p_note).toBe('')
@@ -223,9 +223,9 @@ describe('lo que viaja a `document_artwork` (RF-516, RF-517)', () => {
 
 describe('«sin revisar» no es «no», y aquí manda al revés (RF-218)', () => {
   /**
-   * `tg_artwork_document_status_coherent` lo rechaza y lo dice en español —medido
-   * contra la base—, y esa frase se muestra tal cual cuando llega. Pero un control que
-   * va a ser rechazado tiene que decirlo ANTES de pulsarse: ella está de pie.
+   * `tg_artwork_document_status_coherent` rejects it and says so in Spanish —measured
+   * against the base—, and that sentence is shown as is when it arrives. But a control that
+   * is going to be rejected has to say so BEFORE being pressed: she is on her feet.
    */
   it('con la documentación «investigada sin resultado» se avisa antes de tocar', () => {
     const said = linkBlockedReason('NONE_FOUND')
@@ -244,9 +244,9 @@ describe('«sin revisar» no es «no», y aquí manda al revés (RF-218)', () =>
 
 describe('quitar un documento de la ficha dice lo que NO pasa (RF-517, RF-901)', () => {
   /**
-   * Es el aviso entero de esta pieza: el documento se queda en el archivo, con su
-   * fichero, y lo siguen viendo las demás obras. Una catalogadora que crea que va a
-   * destruir un expediente escaneado dejará el vínculo equivocado en el catálogo.
+   * It is this piece's whole warning: the document stays in the archive, with its
+   * file, and the other artworks keep seeing it. A cataloguer who believes she is going to
+   * destroy a scanned file will leave the wrong link in the catalogue.
    */
   it('el documento sigue en el archivo y el fichero no se toca', () => {
     const said = retireLinkConfirmText({ title: 'Carta de la galería', file: { bytes: 3_355_443 } })
@@ -270,9 +270,9 @@ describe('quitar un documento de la ficha dice lo que NO pasa (RF-517, RF-901)',
 
 describe('por qué hay dos botones, dicho una vez', () => {
   /**
-   * Sin esta frase los dos botones parecen el camino largo y el corto de lo mismo, y
-   * se pulsa el de arriba: para la segunda obra de un recorte eso son dos copias del
-   * PDF en el almacén y dos fichas que hay que reconciliar a mano.
+   * Without this sentence the two buttons look like the long way and the short way to the same thing, and
+   * the top one gets pressed: for a clipping's second artwork that means two copies of the
+   * PDF in the store and two records to reconcile by hand.
    */
   it('dice que un documento se guarda una vez y cuelga de varias obras', () => {
     expect(TWO_ACTS_TEXT).toContain('varias obras')

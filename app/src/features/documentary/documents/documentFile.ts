@@ -71,12 +71,12 @@ export interface DocumentFileOffer {
   /** The name the file lands with, chosen here and not by the store. */
   fileName: string
   /**
-   * Cómo se puede ver sin bajárselo, o null cuando la única salida es descargarlo.
+   * How it can be seen without downloading it, or null when the only way out is downloading it.
    *
-   * Lo decide `documentPreview.ts`, que es donde está la frontera de qué pinta un
-   * navegador y qué no. Con esto, descargar deja de ser la acción principal de un JPEG
-   * o de un PDF: sigue estando, porque sacar el fichero del catálogo es un requisito
-   * (RF-411), pero un paso por detrás.
+   * `documentPreview.ts` decides it, which is where the boundary of what a
+   * browser paints and what it does not lives. With this, downloading stops being the primary action of a JPEG
+   * or of a PDF: it is still there, because taking the file out of the catalogue is a requirement
+   * (RF-411), but one step behind.
    */
   preview: DocumentPreviewKind | null
   /** What the view button says, with the weight inside. Null when there is no button. */
@@ -264,16 +264,16 @@ export const DOCUMENT_STEP_TEXT: Record<DocumentDownloadStep, string> = {
 }
 
 /**
- * Firma el fichero del bucket privado, y traduce la negativa (RF-110).
+ * Signs the private bucket's file, and translates the refusal (RF-110).
  *
- * Sacado del cuerpo de `runDocumentDownload` cuando **ver** un documento se convirtió en
- * la segunda cosa que hace falta firmar. Es una sola puerta a propósito: dos caminos que
- * firman lo mismo terminan diciendo dos frases distintas de la misma negativa, y la
- * negativa de un permiso es justo la que no se puede permitir el lujo de ser ambigua.
+ * Taken out of `runDocumentDownload`'s body when **seeing** a document became
+ * the second thing that needed signing. It is a single door on purpose: two paths that
+ * sign the same thing end up saying two different sentences for the same refusal, and a
+ * permission refusal is precisely the one that cannot afford the luxury of being ambiguous.
  *
- * Lanza `DownloadFailure` con la frase ya en español. Que `signedUrl` conteste null sin
- * el mensaje del almacén es una pérdida conocida y aceptada; ver el comentario de
- * `runDocumentDownload`.
+ * It throws `DownloadFailure` with the sentence already in Spanish. That `signedUrl` answers null without
+ * the store's message is a known and accepted loss; see `runDocumentDownload`'s
+ * comment.
  */
 export async function signDocumentFile(
   offer: Pick<DocumentFileOffer, 'path' | 'noun'>,

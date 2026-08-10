@@ -8,14 +8,14 @@ import {
 } from './documentPreview'
 
 /**
- * Ver un documento del archivo sin bajárselo (RF-408, RF-411, RNF-106).
+ * Seeing an archive document without downloading it (RF-408, RF-411, RNF-106).
  *
- * Lo que fija esta batería es **la frontera**, que es donde este botón se rompe: ofrecer
- * «Ver» sobre algo que el navegador no pinta da un hueco negro con el icono de imagen
- * rota, y eso es peor que no ofrecer nada. Los dos casos que parecen imágenes y no lo son
- * a estos efectos —TIFF, que ningún navegador pinta y que es justo el formato de un
- * escaneado de archivo de verdad, y HEIC, que Safari pinta y Chrome no— tienen aquí su
- * test cada uno, porque los dos se colarían solos si la regla fuera «empieza por
+ * What this suite pins down is **the boundary**, which is where this button breaks: offering
+ * «Ver» over something the browser does not paint gives a black gap with the broken-image
+ * icon, and that is worse than offering nothing. The two cases that look like images and are not
+ * for these purposes —TIFF, which no browser paints and which is precisely the format of a real
+ * archive scan, and HEIC, which Safari paints and Chrome does not— each have their
+ * test here, because both would slip through on their own if the rule were «starts with
  * image/».
  */
 

@@ -66,9 +66,9 @@ describe('el nombre con el que el fichero sale de la aplicación (RF-411)', () =
   })
 
   /**
-   * El documento es del archivo, NO de la obra desde la que se descarga: un recorte
-   * que menciona tres obras es una sola fila (RF-516), y bautizarlo con el código de
-   * la ficha que se tuviera abierta daría tres nombres para un mismo fichero.
+   * The document belongs to the archive, NOT to the artwork it is downloaded from: a clipping
+   * mentioning three artworks is a single row (RF-516), and christening it with the code of
+   * whichever record happened to be open would give three names for one and the same file.
    */
   it('no lleva el código de catalogación de la obra, ni aunque esté en la ruta', () => {
     const name = documentFileName(
@@ -172,9 +172,9 @@ describe('lo que la ficha ofrece de un documento (RF-408, RF-411)', () => {
   })
 
   it('la oferta trae también cómo se puede VER, no solo cómo se descarga', () => {
-    // Un PDF se abre aparte y un JPEG se pinta dentro de la aplicación; la frontera
-    // entera está en `documentPreview.test.ts`. Lo que se fija aquí es que la oferta la
-    // lleva, que si no la fila se quedaría con el botón de descargar y nada más.
+    // A PDF opens apart and a JPEG is painted inside the application; the whole
+    // boundary is in `documentPreview.test.ts`. What is pinned down here is that the offer
+    // carries it, since otherwise the row would be left with the download button and nothing else.
     const pdf = documentFileOffer(document())!
     expect(pdf.preview).toBe('newTab')
     expect(pdf.previewLabel).toBe('Abrir el PDF (3,2 MB)')
@@ -256,8 +256,8 @@ describe('el camino de la descarga (RF-411, RF-110)', () => {
   })
 
   /**
-   * `signedUrl` de images.ts contesta null y se traga el mensaje del almacén. Sin
-   * este caso, un permiso denegado dejaría el botón en silencio.
+   * images.ts's `signedUrl` answers null and swallows the store's message. Without
+   * this case, a denied permission would leave the button in silence.
    */
   it('una firma que no llega tampoco deja el botón mudo', async () => {
     const failure = await runDocumentDownload(offer, { sign: async () => null }).catch(
