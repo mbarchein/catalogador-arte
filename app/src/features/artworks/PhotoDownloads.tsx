@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAutoClear } from '../../components/useAutoClear'
 import { DownloadFailure } from '../../lib/download'
 import type { ShotTypeValue } from '../../lib/types'
 import type { EditColumns } from '../../lib/imageEdits'
@@ -53,6 +54,8 @@ export function PhotoDownloads({
   const [busy, setBusy] = useState<{ kind: ArchiveKind; step: ArchiveDownloadStep } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  useAutoClear(notice, () => setNotice(null))
 
   const { offers, notes } = archiveDownloads({ catalogId, row, detail, detailsFailed, ordinal })
 

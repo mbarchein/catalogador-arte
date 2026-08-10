@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAutoClear } from '../../../components/useAutoClear'
 import { DownloadFailure } from '../../../lib/download'
 import {
   DOCUMENT_STEP_TEXT,
@@ -43,6 +44,8 @@ export function DocumentFileActions({
   const [opening, setOpening] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  useAutoClear(notice, () => setNotice(null))
   const [viewing, setViewing] = useState(false)
 
   function clear() {

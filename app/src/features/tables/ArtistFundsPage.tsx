@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Navigate } from 'react-router'
 import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { LoadingNotice, Toggle } from '../../components/ui'
+import { useAutoClear } from '../../components/useAutoClear'
+import { LoadingNotice, Toast, Toggle } from '../../components/ui'
 import { useTableAction } from './MasterTableRow'
 import { useArtistFunds } from './useArtistFunds'
 import {
@@ -40,6 +41,7 @@ export function ArtistFundsPage() {
     useArtistFunds()
   const { busy, failure, failureRef, run } = useTableAction()
   const [notice, setNotice] = useState<string | null>(null)
+  useAutoClear(notice, () => setNotice(null))
 
   if (access === 'loading') return <LoadingNotice />
   if (access === 'denied') return <Navigate to="/" replace />
@@ -52,6 +54,11 @@ export function ArtistFundsPage() {
 
   return (
     <Layout title="Fondos" back="/tables">
+      {/* La confirmación, flotando y unos segundos. Era una tarjeta al principio de
+          la pantalla, y aparecer empujaba la lista hacia abajo justo después de
+          pulsar algo en una de sus filas: lo que se estaba mirando se movía de sitio.
+          El error de abajo no flota ni se va: pide hacer algo. */}
+      {notice && <Toast>{notice}</Toast>}
       <p className="mb-3 text-sm text-stone-600">
         Los conjuntos de obra del catálogo. El nombre se corrige aquí; el prefijo no se toca.
       </p>
@@ -64,11 +71,6 @@ export function ArtistFundsPage() {
       {error && (
         <p role="alert" className="card mb-3 text-sm text-red-700">
           {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="card mb-3 text-sm text-stone-700">
-          {notice}
         </p>
       )}
 

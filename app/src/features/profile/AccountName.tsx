@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAutoClear } from '../../components/useAutoClear'
 import { useAuth } from '../../auth/AuthContext'
 import { supabase } from '../../lib/supabase'
 import {
@@ -30,6 +31,8 @@ export function AccountName() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  useAutoClear(notice, () => setNotice(null))
 
   async function save(value: string) {
     const invalid = validateFullName(value)

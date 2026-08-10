@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAutoClear } from '../../components/useAutoClear'
 import { Link, Navigate, useMatch, useNavigate, useParams } from 'react-router'
 import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
@@ -407,6 +408,8 @@ function CatalogueSection({
   const { canEdit } = useAuth()
   const [open, setOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  useAutoClear(notice, () => setNotice(null))
   // Se pide solo con el panel abierto, y también para LEER el título de la referencia
   // que consta: sin ella no se puede nombrar. Con `catalogue_reference_id` nulo no hace
   // falta pedir nada.

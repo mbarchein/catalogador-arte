@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useAutoClear } from '../../../components/useAutoClear'
 import { Link } from 'react-router'
 import { useAuth } from '../../../auth/AuthContext'
 import { PlusIcon } from '../../../components/ui'
@@ -106,6 +107,8 @@ export function DocumentsSection({
     { kind: 'link' | 'upload' } | { kind: 'edit' | 'scan'; linkId: string } | null
   >(null)
   const [notice, setNotice] = useState<string | null>(null)
+  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  useAutoClear(notice, () => setNotice(null))
   const [actionError, setActionError] = useState<string | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
 

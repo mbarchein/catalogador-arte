@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
+import { useAutoClear } from '../../components/useAutoClear'
 import { NoteRow } from '../documentary/NoteText'
-import { LoadingNotice } from '../../components/ui'
+import { LoadingNotice, Toast } from '../../components/ui'
 import { placePathText } from '../../lib/places'
 import { displayStructuredDate } from '../documentary/documentaryFormat'
 import { DocumentFileActions } from '../documentary/documents/DocumentFileActions'
@@ -64,6 +65,7 @@ export function DocumentPage() {
   const { tree: placeTree } = usePhysicalPlaces()
   const [linking, setLinking] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  useAutoClear(notice, () => setNotice(null))
   // El catálogo de exposiciones se pide SOLO con el panel abierto: esta pantalla se abre
   // muchas veces para leer un documento, y quien solo lee no tiene por qué pagarlo.
   const catalogue = useExhibitions(linking)
@@ -97,6 +99,11 @@ export function DocumentPage() {
 
   return (
     <Layout title={document.title.trim() || 'Documento sin título'} back="/archive">
+      {/* Lo que acaba de pasar, flotando y unos segundos: enlazar o quitar una
+          exposición se hace desde una hoja, así que al cerrarse la vista puede estar
+          en cualquier parte de la pantalla y este aviso vivía al final del bloque. */}
+      {notice !== null && <Toast>{notice}</Toast>}
+
       {record.error && (
         <p role="alert" className="card mb-3 text-sm text-red-700">
           {record.error}
@@ -189,11 +196,6 @@ export function DocumentPage() {
         ))}
       </LinkedBlock>
 
-      {notice !== null && (
-        <p role="status" className="mt-2 card text-sm text-stone-700">
-          {notice}
-        </p>
-      )}
 
       {/* La única escritura de esta pantalla, y solo sobre un documento vivo: enlazar
           uno retirado lo devolvería a circulación por la puerta de atrás, que es lo
