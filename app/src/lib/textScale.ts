@@ -43,7 +43,7 @@ export type TextScale = 'NORMAL' | 'LARGE' | 'LARGER'
 
 export const TEXT_SCALES: readonly TextScale[] = ['NORMAL', 'LARGE', 'LARGER']
 
-/** El porcentaje de cada escalón, que es lo que se dice en pantalla junto al nombre. */
+/** Each step's percentage, which is what is said on screen next to the name. */
 export const TEXT_SCALE_PERCENT: Record<TextScale, number> = {
   NORMAL: 100,
   LARGE: 115,
@@ -99,11 +99,11 @@ export function normalizeTextScale(raw: string | null | undefined): TextScale {
  */
 export function textScaleFontSize(scale: TextScale): string {
   const px = (BASE_FONT_PX * TEXT_SCALE_PERCENT[scale]) / 100
-  // Sin decimales de más: 16, 18.4, 20.8.
+  // No extra decimals: 16, 18.4, 20.8.
   return `${Math.round(px * 100) / 100}px`
 }
 
-/** «Grande · 115 %», para el botón de cada escalón. */
+/** «Grande · 115 %», for each step's button. */
 export function textScaleOptionText(scale: TextScale): string {
   return `${TEXT_SCALE_LABEL[scale]} · ${TEXT_SCALE_PERCENT[scale]}%`
 }
@@ -123,6 +123,6 @@ export function textScaleNotice(scale: TextScale): string | null {
   )
 }
 
-/** La frase de muestra del perfil, para ver el tamaño antes de salir de ahí. */
+/** The profile's sample sentence, to see the size before leaving there. */
 export const TEXT_SCALE_SAMPLE =
   'Paisaje de Zafra · AR-0042 · Estantería 3, carpeta azul'

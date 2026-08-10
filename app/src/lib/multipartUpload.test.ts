@@ -10,8 +10,8 @@ const MB = 1_048_576
 
 describe('cuándo merece la pena partir', () => {
   it('solo si sale más de una parte', () => {
-    // Con una sola parte, partir es un PUT normal con dos viajes de más y una forma de
-    // fallar que el PUT normal no tiene.
+    // With a single part, splitting is a normal PUT with two extra trips and a way of
+    // failing that the normal PUT does not have.
     expect(useMultipart(2 * MB)).toBe(false)
     expect(useMultipart(MULTIPART_MIN_PART_BYTES)).toBe(false)
     expect(useMultipart(MULTIPART_MIN_PART_BYTES + 1)).toBe(true)
@@ -26,8 +26,8 @@ describe('cuándo merece la pena partir', () => {
 
 describe('el reparto en partes', () => {
   it('cubre el fichero entero, exactamente una vez y en orden', () => {
-    // La propiedad de la que depende todo lo demás: si las partes no cubren el fichero,
-    // el almacén junta un objeto más corto que el original y lo da por bueno.
+    // The property everything else depends on: if the parts do not cover the file,
+    // the store assembles an object shorter than the original and takes it as good.
     const size = 19 * MB
     const parts = planParts(size)
     expect(parts[0]?.start).toBe(0)
@@ -45,7 +45,7 @@ describe('el reparto en partes', () => {
     parts.slice(0, -1).forEach((p) => {
       expect(p.end - p.start).toBe(MULTIPART_MIN_PART_BYTES)
     })
-    // 12 MiB − 10 MiB. La última puede ser todo lo pequeña que salga.
+    // 12 MiB − 10 MiB. The last one can be as small as it comes out.
     expect((parts[2]?.end ?? 0) - (parts[2]?.start ?? 0)).toBe(2 * MB)
   })
 

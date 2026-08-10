@@ -85,8 +85,8 @@ describe('rutas que la función de firma acepta (RF-411, RF-420)', () => {
   })
 
   it('los prefijos son los tres fondos y las clases las dos que viven fuera', () => {
-    // Si mañana se añade un fondo hay que añadirlo también aquí, o sus
-    // fotografías no subirán: ya pasó una vez con `TS-`. Este aserto es el aviso.
+    // If a fund is added tomorrow it has to be added here too, or its
+    // photographs will not upload: it happened once already with `TS-`. This assertion is the warning.
     expect([...CATALOG_PREFIXES]).toEqual(['AR', 'RC', 'TS'])
     expect([...SIGNABLE_KINDS]).toEqual(['master', 'corrected'])
   })

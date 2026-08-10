@@ -28,8 +28,8 @@ describe('cuánto del anillo queda por pintar', () => {
   })
 
   it('y un número que no es número deja el anillo vacío, no a medias', () => {
-    // Sin esto, un NaN pinta un arco de longitud indefinida: un progreso
-    // inventado, que es justo lo que no puede haber.
+    // Without this, a NaN paints an arc of undefined length: an invented
+    // progress, which is exactly what there cannot be.
     expect(ringOffset(Number.NaN)).toBeCloseTo(RING_CIRCUMFERENCE)
   })
 })
@@ -40,8 +40,8 @@ describe('lo que se anuncia a quien no lo ve', () => {
   })
 
   it('y sin él, dice al menos que está en marcha', () => {
-    // Un dibujo que solo informa por su forma no informa a nadie con lector de
-    // pantalla, y aquí el dibujo ES el dato.
+    // A drawing that informs only through its shape informs nobody with a screen
+    // reader, and here the drawing IS the datum.
     expect(ringLabel('Subiendo la copia', null)).toBe('Subiendo la copia…')
   })
 })

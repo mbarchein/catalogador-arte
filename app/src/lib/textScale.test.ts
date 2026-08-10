@@ -28,8 +28,8 @@ describe('normalizeTextScale, lo guardado no manda a ciegas', () => {
   })
 
   it('y cualquier otra cosa es «Normal»', () => {
-    // De otra versión, de una extensión del navegador, de un guardado a medias, o de
-    // alguien tecleando en la consola. Ninguna puede dejar la pantalla ilegible.
+    // From another version, from a browser extension, from a half-done save, or from
+    // somebody typing in the console. None of them can leave the screen unreadable.
     const basura = [null, undefined, '', '   ', 'GIGANTE', 'normal', '130', '{}', 'NORMAL '] as const
     for (const raw of basura) {
       expect(normalizeTextScale(raw), String(raw)).toBe('NORMAL')

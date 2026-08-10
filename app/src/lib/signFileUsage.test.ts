@@ -26,8 +26,8 @@ describe('sumar un tramo del listado', () => {
   })
 
   it('un listado vacío es cero y no un fallo', () => {
-    // Un bucket recién creado. Cero es la respuesta correcta, y tratarlo como
-    // error dejaría la pantalla sin cifra el primer día.
+    // A freshly created bucket. Zero is the right answer, and treating it as an
+    // error would leave the screen with no figure on the first day.
     const result = usagePage(page(''))
 
     expect(result.bytes).toBe(0)
@@ -36,8 +36,8 @@ describe('sumar un tramo del listado', () => {
   })
 
   it('cuenta TODAS las versiones, que es por lo que se paga', () => {
-    // El bucket conserva las anteriores a propósito (infra/b2.tf). Contar solo la
-    // vigente diría menos de lo que factura el almacén.
+    // The bucket keeps the previous ones on purpose (infra/b2.tf). Counting only the
+    // current one would say less than the store bills for.
     const result = usagePage(page(version(4_000_000) + version(3_900_000) + version(3_800_000)))
 
     expect(result.bytes).toBe(11_700_000)
@@ -84,8 +84,8 @@ describe('por dónde sigue el listado', () => {
   })
 
   it('truncado pero sin marcador se da por terminado', () => {
-    // Es la defensa contra el bucle infinito: sin marcador, el tramo siguiente
-    // sería el mismo, y el mismo, y el mismo.
+    // It is the defence against the infinite loop: with no marker, the next stretch
+    // would be the same one, and the same, and the same.
     const result = usagePage(page(version(10), '<IsTruncated>true</IsTruncated>'))
 
     expect(result.next).toBeNull()
@@ -94,8 +94,8 @@ describe('por dónde sigue el listado', () => {
 
 describe('el tope de tramos', () => {
   it('está por encima de lo que este catálogo puede tener, y existe', () => {
-    // Mil objetos por tramo. Un bucle que pagina contra un servicio remoto sin
-    // tope es un bucle que un día no termina.
+    // A thousand objects per stretch. A loop paginating against a remote service with no
+    // cap is a loop that one day does not finish.
     expect(MAX_USAGE_PAGES).toBeGreaterThanOrEqual(100)
     expect(Number.isFinite(MAX_USAGE_PAGES)).toBe(true)
   })

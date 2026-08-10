@@ -261,7 +261,7 @@ export const QR_SIDE = 108
 export const QR_CAPTION = 'Abre esta ficha en la aplicación, al día.'
 export const QR_CAPTION_SIZE = 6
 const QR_CAPTION_LEAD = 7.5
-/** El aire entre el código y su pie: el propio código no lleva margen blanco. */
+/** The air between the code and its caption: the code itself carries no white margin. */
 const QR_CAPTION_PAD = 8
 /**
  * Alto de la columna del código: el código, su aire y **una** línea de pie.
@@ -415,8 +415,8 @@ export async function generateRecordPdf(
     page.drawText(line, { x: margin, y, size: 13, font: italic, color: INK })
     y -= 16
   }
-  // The rule closes the band below whichever column reaches further down — y la
-  // columna del código llega ahora hasta su pie, no hasta el código.
+  // The rule closes the band below whichever column reaches further down — and the
+  // code's column now reaches down to its caption, not to the code.
   y = Math.min(y, captionBottom) - 4
   page.drawLine({
     start: { x: margin, y }, end: { x: width - margin, y },

@@ -29,8 +29,8 @@ function readStored(): TextScale {
   try {
     return normalizeTextScale(window.localStorage.getItem(TEXT_SCALE_KEY))
   } catch {
-    // Modo privado de Safari, o almacenamiento bloqueado por política. Se queda en el
-    // tamaño normal, que es lo que el script de arranque habrá hecho también.
+    // Safari's private mode, or storage blocked by policy. It stays at the
+    // normal size, which is what the boot script will have done too.
     return 'NORMAL'
   }
 }
@@ -58,7 +58,7 @@ function emit(): void {
   for (const listener of listeners) listener()
 }
 
-/** Cambia el tamaño: lo guarda, lo aplica y avisa a quien lo esté mirando. */
+/** Changes the size: stores it, applies it and notifies whoever is watching it. */
 export function setTextScale(scale: TextScale): void {
   current = scale
   try {
@@ -81,7 +81,7 @@ function getSnapshot(): TextScale {
   return current
 }
 
-/** El tamaño elegido, reactivo. */
+/** The chosen size, reactive. */
 export function useTextScale(): TextScale {
   return useSyncExternalStore(subscribe, getSnapshot, () => 'NORMAL' as TextScale)
 }

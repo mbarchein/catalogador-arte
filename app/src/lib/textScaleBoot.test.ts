@@ -27,7 +27,7 @@ import {
 
 const HTML = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
 
-/** El bloque `<script>` que aplica la escala, aislado del resto de la página. */
+/** The `<script>` block applying the scale, isolated from the rest of the page. */
 function bootScript(): string {
   const scripts = [...HTML.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1] ?? '')
   const boot = scripts.find((body) => body.includes(TEXT_SCALE_KEY))
@@ -48,8 +48,8 @@ describe('el script de arranque de index.html', () => {
     const script = bootScript()
     for (const scale of TEXT_SCALES) {
       const named = script.includes(`'${scale}'`)
-      // `NORMAL` es el caso por omisión y no hace falta nombrarlo; los demás sí, porque
-      // cada uno tiene su tamaño.
+      // `NORMAL` is the default case and does not need naming; the others do, because
+      // each one has its own size.
       expect(named, scale).toBe(scale !== 'NORMAL')
     }
   })
@@ -57,7 +57,7 @@ describe('el script de arranque de index.html', () => {
   it('y el tamaño de cada uno es el que dice el módulo', () => {
     const script = bootScript()
     for (const scale of TEXT_SCALES) {
-      // Sin la unidad: el script compone `px` aparte.
+      // Without the unit: the script composes `px` separately.
       const px = textScaleFontSize(scale).replace('px', '')
       expect(script, `${scale} → ${px}`).toContain(px)
     }
@@ -75,15 +75,15 @@ describe('el script de arranque de index.html', () => {
   })
 
   it('y va envuelto, porque `localStorage` lanza en el modo privado de Safari', () => {
-    // Una excepción aquí es una excepción antes del primer pintado: la aplicación no
-    // arrancaría. Es el sitio del proyecto donde eso importa más.
+    // An exception here is an exception before the first paint: the application would
+    // not start. It is the place in the project where that matters most.
     const script = bootScript()
     expect(script).toContain('try')
     expect(script).toContain('catch')
   })
 
   it('corre antes de la aplicación, no después', () => {
-    // Si quedara detrás del módulo de arranque perdería su único motivo de existir.
+    // If it ended up behind the boot module it would lose its only reason to exist.
     const boot = HTML.indexOf(TEXT_SCALE_KEY)
     const app = HTML.indexOf('/src/main.tsx')
     expect(boot).toBeGreaterThan(-1)
@@ -123,6 +123,6 @@ describe('ningún tamaño de letra clavado en píxeles', () => {
   })
 })
 
-/** Comprobación de tipos: el mapa de escalones no se queda corto en silencio. */
+/** Type check: the step map does not fall short in silence. */
 const _exhaustive: Record<TextScale, true> = { NORMAL: true, LARGE: true, LARGER: true }
 void _exhaustive

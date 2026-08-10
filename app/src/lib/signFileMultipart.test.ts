@@ -129,8 +129,8 @@ describe('el peso del fichero ya montado', () => {
   })
 
   it('sin cabecera no se da por bueno', () => {
-    // «No lo sé» no puede leerse como «está bien»: es la última comprobación que
-    // separa un máster truncado de uno registrado como guardado.
+    // «I do not know» cannot read as «it is fine»: it is the last check that
+    // separates a truncated master from one recorded as stored.
     expect(sizeMatches(100, null)).toBe(false)
   })
 

@@ -435,7 +435,7 @@ describe('el pie del código y su enlace', () => {
     const { qr } = splitImages(await imagePlacements(bytes))
     const caption = await textPlacement(bytes, QR_CAPTION)
     expect(caption).not.toBeNull()
-    // Por debajo del código, y a menos de un centímetro: es su pie, no otra nota.
+    // Below the code, and less than a centimetre away: it is its caption, not another note.
     expect(caption!.y).toBeLessThan(qr!.y)
     expect(qr!.y - caption!.y).toBeLessThan(20)
   })
@@ -444,7 +444,7 @@ describe('el pie del código y su enlace', () => {
     const { bytes } = await pdfOf(withPhoto)
     const { qr } = splitImages(await imagePlacements(bytes))
     const caption = await textPlacement(bytes, QR_CAPTION)
-    // Empieza dentro de la columna del código, no en el margen izquierdo.
+    // It starts inside the code's column, not at the left margin.
     expect(caption!.x).toBeGreaterThanOrEqual(qr!.x)
     expect(caption!.x).toBeLessThan(qr!.x + QR_SIDE / 2)
   })

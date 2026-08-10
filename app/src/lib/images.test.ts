@@ -832,7 +832,7 @@ describe('uploadShot: la fecha del fichero, el tamaño y la procedencia (RF-416,
     })
     expect(lastRow().provenance).toBe('OTHER_CATALOG')
 
-    // Lo que diga la subida manda sobre lo que quedó guardado en la cola.
+    // What the upload says rules over what was left stored in the queue.
     await uploadShot('AR-0001', shotOf(masterOf(), { provenance: 'OTHER_CATALOG' }), {
       shotType: 'GENERAL',
       isIndex: false,
@@ -865,7 +865,7 @@ describe('uploadShot: la copia corregida a resolución completa (RF-420)', () =>
     })
     expect(lastRow()).toMatchObject(NO_CORRECTED_COPY)
     expect(result.correctedPending).toBeNull()
-    // Nulo y no un duplicado del máster: para eso ya está el máster (RF-411).
+    // Null and not a duplicate of the master: the master is already there for that (RF-411).
     expect(api.puts.filter((p) => p.url.includes('_corrected'))).toHaveLength(0)
   })
 
@@ -874,8 +874,8 @@ describe('uploadShot: la copia corregida a resolución completa (RF-420)', () =>
       shotType: 'GENERAL',
       isIndex: false,
     })
-    // «No hace falta» y «no se ha podido» no pueden ser la misma fila: la segunda
-    // quedaría invisible y nadie volvería a intentarlo.
+    // «Not needed» and «could not be done» cannot be the same row: the second one
+    // would be invisible and nobody would try again.
     expect(lastRow().corrected_pending).toBe(true)
     expect(lastRow().corrected_path).toBeNull()
     expect(lastRow().corrected_bytes).toBeNull()
@@ -895,8 +895,8 @@ describe('uploadShot: la copia corregida a resolución completa (RF-420)', () =>
     expect(row.corrected_pending).toBe(false)
     expect(result.correctedPending).toBeNull()
 
-    // Va a B2 por el camino de firma que ya existe, no a Supabase Storage, y con el
-    // Content-Type que se firmó.
+    // It goes to B2 by the signing path that already exists, not to Supabase Storage, and with the
+    // Content-Type that was signed.
     expect(api.signed).toContainEqual({
       operation: 'upload',
       path: row.corrected_path,
@@ -906,7 +906,7 @@ describe('uploadShot: la copia corregida a resolución completa (RF-420)', () =>
     expect(put?.method).toBe('PUT')
     expect(put?.type).toBe(CORRECTED_CONTENT_TYPE)
     expect(put?.body).toBe(blob)
-    // Y nunca sobre el máster: son dos ficheros distintos y los dos existen.
+    // And never over the master: they are two different files and both exist.
     expect(row.corrected_path).not.toBe(row.master_path)
     expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(1)
   })
@@ -942,8 +942,8 @@ describe('saveCorrectedCopy (RF-420, ADR-010)', () => {
     })
     expect(stuck.columns.corrected_pending).toBe(true)
     expect(stuck.columns.corrected_path).toBeNull()
-    // La razón la sabe quien genera —el techo del lienzo, un máster que no se
-    // descargó— y llega a la pantalla tal cual.
+    // The reason is known by whoever generates —the canvas ceiling, a master that was not
+    // downloaded— and it reaches the screen as is.
     expect(stuck.reason).toBe(razon)
 
     const ready = await saveCorrectedCopy({
@@ -956,8 +956,8 @@ describe('saveCorrectedCopy (RF-420, ADR-010)', () => {
   })
 
   it('no sube un fichero vacío: lo deja pendiente', async () => {
-    // Un fichero de cero bytes es la misma clase de fallo que el lienzo en blanco:
-    // una fila con ruta y tamaño plausibles y una imprenta que no abre nada.
+    // A zero-byte file is the same kind of failure as the blank canvas:
+    // a row with a plausible path and size and a print shop that opens nothing.
     const outcome = await saveCorrectedCopy({
       catalogId: 'AR-0001',
       copy: { status: 'READY', blob: new Blob([]) },
@@ -981,8 +981,8 @@ describe('saveCorrectedCopy (RF-420, ADR-010)', () => {
 
   it('se niega a escribir en la ruta del máster, y en cualquier ruta con forma de máster (§0.1)', async () => {
     const copy = { status: 'READY' as const, blob: new Blob([new Uint8Array(4)]) }
-    // La restricción de la base también lo prohíbe, pero cuando la base dice no, el
-    // fichero ya se ha subido: aquí se para antes de firmar.
+    // The base's constraint also forbids it, but when the base says no, the
+    // file has already been uploaded: here it stops before signing.
     await expect(
       saveCorrectedCopy({
         catalogId: 'AR-0001',
@@ -996,7 +996,7 @@ describe('saveCorrectedCopy (RF-420, ADR-010)', () => {
         catalogId: 'AR-0001',
         copy,
         masterPath: 'AR-0001/AR-0001_abcd1234_master.jpg',
-        // Otra fila, mismo desastre: un máster que no es el de esta imagen.
+        // Another row, same disaster: a master that is not this image's.
         path: 'AR-0002/AR-0002_ffff0000_master.jpeg',
       }),
     ).rejects.toThrow(/máster/)
@@ -1005,8 +1005,8 @@ describe('saveCorrectedCopy (RF-420, ADR-010)', () => {
   })
 
   it('los dos mensajes de pendiente dicen que la corrección no se ha perdido', async () => {
-    // Lo que la catalogadora necesita saber es que su media hora de trabajo está
-    // guardada y que el fichero se puede generar después, no cómo funciona un lienzo.
+    // What the cataloguer needs to know is that her half hour of work is
+    // stored and that the file can be generated later, not how a canvas works.
     for (const message of [CORRECTED_NOT_GENERATED, CORRECTED_NOT_UPLOADED]) {
       expect(message).toContain('pendiente')
       expect(message).toMatch(/corrección está guardada/)
@@ -1038,7 +1038,7 @@ interface Entry {
   long?: number
 }
 
-/** Un directorio colocado en `start` del bloque TIFF, en little endian. */
+/** A directory placed at `start` of the TIFF block, in little endian. */
 function ifdBytes(entries: Entry[], start: number): Uint8Array {
   const table = 2 + entries.length * 12 + 4
   const payloads = entries.map((e) => (e.text === undefined ? null : asciiZ(e.text)))
@@ -1053,8 +1053,8 @@ function ifdBytes(entries: Entry[], start: number): Uint8Array {
     view.setUint16(at + 2, entry.type, true)
     const payload = payloads[i]
     if (payload) {
-      // Una fecha son 20 bytes, así que siempre vive fuera de la entrada y esta
-      // guarda un desplazamiento relativo al inicio del bloque TIFF.
+      // A date is 20 bytes, so it always lives outside the entry and this one
+      // stores an offset relative to the start of the TIFF block.
       view.setUint32(at + 4, payload.length, true)
       view.setUint32(at + 8, start + dataAt, true)
       bytes.set(payload, dataAt)
@@ -1071,18 +1071,18 @@ const TAG_DATE_TIME = 0x0132
 const TAG_EXIF_IFD = 0x8769
 const TAG_DATE_TIME_ORIGINAL = 0x9003
 
-/** Un JPEG con las etiquetas de fecha que se le pidan y nada más. */
+/** A JPEG with whichever date tags are asked for and nothing else. */
 function jpegWithDates(dates: { original?: string; file?: string }): File {
   const ifd0: Entry[] = []
   if (dates.file) ifd0.push({ tag: TAG_DATE_TIME, type: 2, text: dates.file })
   let block0 = ifdBytes(ifd0, 8)
-  // Anotado: `ifdBytes` devuelve un `Uint8Array` sobre cualquier búfer y el inferido
-  // de `new Uint8Array(0)` es más estrecho.
+  // Annotated: `ifdBytes` returns a `Uint8Array` over any buffer and the one inferred
+  // from `new Uint8Array(0)` is narrower.
   let blockExif: Uint8Array = new Uint8Array(0)
   if (dates.original) {
     ifd0.push({ tag: TAG_EXIF_IFD, type: 4, long: 0 })
-    // El valor del puntero depende de lo que mida el IFD0 con el puntero dentro, así
-    // que se mide primero y se rellena después.
+    // The pointer's value depends on how long IFD0 is with the pointer inside, so
+    // it is measured first and filled in afterwards.
     const exifStart = 8 + ifdBytes(ifd0, 8).length
     ifd0[ifd0.length - 1] = { tag: TAG_EXIF_IFD, type: 4, long: exifStart }
     block0 = ifdBytes(ifd0, 8)
@@ -1123,8 +1123,8 @@ describe('readShotDate (RF-416)', () => {
   })
 
   it('cae al respaldo del IFD0 marcándolo como aproximado: las 14 tomas de 2022', async () => {
-    // Sin este respaldo obligatorio no se corrige ninguna de las catorce, que llevan
-    // por fecha la de su subida.
+    // Without this mandatory fallback none of the fourteen gets corrected, since they carry
+    // their upload date as their date.
     const taken = await readShotDate(jpegWithDates({ file: '2022:10:09 17:10:33' }))
     expect(taken?.date).toBe('2022-10-09')
     expect(taken?.exact).toBe(false)
@@ -1162,8 +1162,8 @@ describe('readShotDate (RF-416)', () => {
   })
 
   it('solo lee el prefijo del fichero, no los megabytes de píxeles', async () => {
-    // Lo importante es que no se pida el fichero entero: son 8 MB en el mismo efecto
-    // que crea el object URL, en un teléfono.
+    // What matters is that the whole file is not asked for: it is 8 MB in the same effect
+    // that creates the object URL, on a phone.
     const jpeg = jpegWithDates({ original: '2024:03:14 09:05:01' })
     const padded = new Blob([jpeg, new Uint8Array(300_000)], { type: 'image/jpeg' })
     let asked = 0

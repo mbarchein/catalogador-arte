@@ -341,7 +341,7 @@ describe('rotateCorners (RF-410)', () => {
 })
 
 describe('moveCorner (RF-410)', () => {
-  /** Las esquinas movidas sin comprobar nada, para poder medir lo que se rechaza. */
+  /** The corners moved without checking anything, to be able to measure what gets rejected. */
   const moveCorner2 = (corners: Corners, key: 'nw' | 'ne' | 'se' | 'sw', point: { x: number; y: number }) => ({
     ...corners,
     [key]: point,

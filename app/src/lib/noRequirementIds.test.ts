@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest'
  * interfaz como cualquier otro.
  */
 
-/** `RF-`, `RNF-` y `ADR-` seguidos de un número. */
+/** `RF-`, `RNF-` and `ADR-` followed by a number. */
 const REQUIREMENT_ID = /\b(?:RF|RNF|ADR)-\d+/g
 
 /**
@@ -47,7 +47,7 @@ describe('ningún identificador de requisito en la interfaz', () => {
       if (file.includes('.test.')) continue
       const source = withoutComments(readFileSync(file, 'utf8'))
       for (const match of source.matchAll(REQUIREMENT_ID)) {
-        // Con algo de contexto: sin él, «RF-503» no dice dónde buscarlo.
+        // With some context: without it, «RF-503» does not say where to look for it.
         const at = match.index
         offenders.push(`${file}: …${source.slice(Math.max(0, at - 50), at + 30).trim()}…`)
       }

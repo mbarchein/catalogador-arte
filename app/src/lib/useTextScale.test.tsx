@@ -34,7 +34,7 @@ function Muestra() {
   )
 }
 
-/** El editor de fotografía: mientras vive, la raíz vuelve al tamaño base. */
+/** The photograph editor: while it lives, the root goes back to the base size. */
 function Editor() {
   useBaseTextScaleHere()
   return <p>editor</p>
@@ -56,8 +56,8 @@ afterEach(() => {
 
 describe('useTextScale, el tamaño aplicado a la raíz', () => {
   it('el escalón normal no deja nada puesto en la raíz', async () => {
-    // Fijar 16px clavaría el tamaño contra quien lo haya agrandado desde el sistema, y eso
-    // el navegador ya sabía hacerlo antes de que existiera este ajuste.
+    // Pinning 16px would nail the size against whoever has enlarged it from the system, and that
+    // the browser already knew how to do before this setting existed.
     render(<Muestra />)
     expect(raiz()).toBe('')
     expect(actual()).toBe('NORMAL')
@@ -83,8 +83,8 @@ describe('useTextScale, el tamaño aplicado a la raíz', () => {
   })
 
   it('lo ven a la vez todos los que lo miran, y no solo quien lo tocó', async () => {
-    // El perfil lo cambia y el editor lo suspende: son dos sitios tocando el mismo dato, y
-    // sin almacén compartido el segundo se quedaría con un valor viejo.
+    // The profile changes it and the editor suspends it: they are two places touching the same datum, and
+    // without a shared store the second would be left with an old value.
     const user = userEvent.setup()
     render(
       <>
@@ -111,8 +111,8 @@ describe('useBaseTextScaleHere, la exención del editor de fotografía', () => {
   })
 
   it('y lo RESTITUYE al cerrarlo', async () => {
-    // Lo que se rompería en silencio: agrandar la letra, abrir una fotografía y quedarse con
-    // la interfaz pequeña el resto de la sesión, sin saber por qué.
+    // What would break in silence: enlarging the text, opening a photograph and being left with
+    // the interface small for the rest of the session, without knowing why.
     const user = userEvent.setup()
     render(<Muestra />)
     await user.click(screen.getByRole('button', { name: 'Grande' }))
