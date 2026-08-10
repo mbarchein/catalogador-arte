@@ -1,17 +1,17 @@
 /**
- * Lo que este bloque le pide a la base: los enlaces de la ficha, las fotografías
- * de las que puede colgar uno, y las cinco escrituras.
+ * What this block asks of the base: the record's links, the photographs
+ * one can hang from, and the five writes.
  *
- * Como en el resto de la documentación de la obra, aquí no se decide nada: el
- * orden, los grupos, las frases y la traducción de cada respuesta viven al lado
- * en `externalLinks.ts` y `linkDraft.ts`, que la batería sí puede abrir. Lo que
- * queda aquí es la petición.
+ * As in the rest of the artwork's documentation, nothing is decided here: the
+ * order, the groups, the sentences and the translation of each answer live alongside
+ * in `externalLinks.ts` and `linkDraft.ts`, which the suite can open. What
+ * is left here is the request.
  *
- * Ninguna escritura recarga nada por su cuenta: la sección espera la respuesta y
- * llama a su propio `reload()`. Estas filas **no llegan por Realtime** —su
- * migración decidió no publicarlas, con el argumento de que las añade la misma
- * persona que está mirando la ficha—, así que la única forma de que la lista y el
- * recuento de la cabecera cuadren es que los recargue quien los pintó.
+ * No write reloads anything on its own: the section awaits the answer and
+ * calls its own `reload()`. These rows **do not arrive by Realtime** —their
+ * migration decided not to publish them, on the argument that they are added by the same
+ * person who is looking at the record—, so the only way for the list and the
+ * heading's count to agree is for whoever painted them to reload them.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -28,13 +28,13 @@ import {
 } from './linkDraft'
 
 /**
- * Las columnas del enlace.
+ * The link's columns.
  *
- * `created_at` se pide porque es el orden dentro de un tipo (la tabla no lleva
- * `sort_order` a propósito). `checked_by` se pide y **no se resuelve a un nombre**:
- * el bloque enseña cuándo se comprobó, que es lo que decide si hay que volver a
- * mirar, y quién lo hizo es una consulta más a `profiles` para un dato que ya
- * guarda el historial de cambios.
+ * `created_at` is asked for because it is the order within a type (the table deliberately does not carry
+ * `sort_order`). `checked_by` is asked for and **not resolved to a name**:
+ * the block shows when it was checked, which is what decides whether one has to look
+ * again, and who did it is one more query to `profiles` for a datum the
+ * change history already stores.
  */
 const LINK_COLUMNS =
   'id, artwork_id, image_id, url, title, link_type, note, archive_url, ' +

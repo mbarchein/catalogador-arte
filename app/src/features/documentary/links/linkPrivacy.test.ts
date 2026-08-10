@@ -6,28 +6,28 @@ import * as linkDraft from './linkDraft'
 import * as useExternalLinks from './useExternalLinks'
 
 /**
- * RF-1404: **el catálogo no le cuenta a nadie qué obra se está catalogando.**
+ * RF-1404: **the catalogue does not tell anybody which artwork is being catalogued.**
  *
- * Requisito negativo, y por eso tiene test. Guardar la dirección de la ficha de un
- * museo es guardar texto; pedirle algo a ese sitio es otra cosa completamente
- * distinta, porque la petición sale del navegador de la catalogadora y lleva encima
- * la dirección de la ficha desde la que se pulsó. Un icono del sitio, una
- * previsualización, una miniatura o una comprobación automática de si el enlace
- * sigue vivo le cuentan a un tercero **qué obra se está catalogando y cuándo**, que
- * es justo lo que este requisito prohíbe. Por eso la comprobación de un enlace la
- * sella una persona a mano (RF-1405) y no un robot.
+ * A negative requirement, and that is why it has a test. Storing the address of a
+ * museum's record is storing text; asking that site for something is a completely
+ * different matter, because the request leaves the cataloguer's browser carrying
+ * the address of the record it was pressed from. A site icon, a
+ * preview, a thumbnail or an automatic check of whether the link is
+ * still alive tell a third party **which artwork is being catalogued and when**, which
+ * is precisely what this requirement forbids. That is why a link's check is
+ * stamped by a person by hand (RF-1405) and not by a robot.
  *
- * ── POR QUÉ ESTE TEST LEE EL CÓDIGO FUENTE ──────────────────────
+ * ── WHY THIS TEST READS THE SOURCE CODE ─────────────────────────
  *
- * Porque lo que hay que verificar es una AUSENCIA en todo el módulo, y una ausencia
- * no se puede llamar. Sin entorno de DOM no se puede montar el bloque y contar las
- * peticiones que salen, así que se comprueban las dos cosas que sí se pueden
- * comprobar sin navegador: que ningún nombre exportado hable de esas ideas, y que
- * en el texto de los cinco ficheros de la pieza no aparezca ninguna de las formas
- * de salir a la red.
+ * Because what has to be verified is an ABSENCE across the whole module, and an absence
+ * cannot be called. With no DOM environment the block cannot be mounted and the requests
+ * that leave cannot be counted, so the two things that can be
+ * checked without a browser are checked: that no exported name speaks of those ideas, and that
+ * in the text of the piece's five files none of the ways
+ * of going out to the network appears.
  *
- * Es la clase de línea que se añade dentro de seis meses «porque total es una
- * llamada», y entonces nadie se acuerda de por qué no estaba. Ahora falla el test.
+ * It is the kind of line that gets added in six months' time «because after all it is just one
+ * call», and then nobody remembers why it was not there. Now the test fails.
  */
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
@@ -41,8 +41,8 @@ function featureSources(): { name: string; code: string }[] {
 
 describe('RF-1404: la aplicación no le pide nada al sitio enlazado', () => {
   /**
-   * Los nombres primero, porque un nombre es la huella de una intención: nadie
-   * escribe `linkFavicon` sin ir a buscar un favicon.
+   * The names first, because a name is the footprint of an intention: nobody
+   * writes `linkFavicon` without going to fetch a favicon.
    */
   it('ningún nombre exportado habla de rastreador, icono, previsualización, instantánea ni acortador', () => {
     const forbidden =
@@ -55,14 +55,14 @@ describe('RF-1404: la aplicación no le pide nada al sitio enlazado', () => {
   })
 
   /**
-   * Y las formas de salir a la red, en el texto de la pieza entera. `fetch`, `XHR`,
-   * un `Image` cuyo `src` sea la dirección guardada, un `<img>` o un `<iframe>`
-   * apuntando fuera, y las etiquetas que hacen que el navegador contacte con un
-   * sitio **antes** de que nadie pulse nada.
+   * And the ways of going out to the network, in the whole piece's text. `fetch`, `XHR`,
+   * an `Image` whose `src` is the stored address, an `<img>` or an `<iframe>`
+   * pointing outside, and the tags that make the browser contact a
+   * site **before** anybody presses anything.
    *
-   * `supabase.rpc` y `supabase.from` no están en la lista y no son una excepción a
-   * la regla: van al catálogo, que es de la usuaria, y no al sitio enlazado. La
-   * única llamada de la pieza que sale es `is_web_url`, y es a la base.
+   * `supabase.rpc` and `supabase.from` are not on the list and are not an exception to
+   * the rule: they go to the catalogue, which is the user's, and not to the linked site. The
+   * piece's only call that goes out is `is_web_url`, and it is to the base.
    */
   it('en el código de la pieza no hay ninguna forma de contactar con el sitio', () => {
     const forbidden = [
@@ -85,9 +85,9 @@ describe('RF-1404: la aplicación no le pide nada al sitio enlazado', () => {
   })
 
   /**
-   * La red de seguridad de la comprobación de arriba: si la pieza se parte en más
-   * ficheros y el patrón de nombres deja de cazarlos, este aserto se cae y hay que
-   * volver a mirar. Cinco ficheros hoy, comprobado el 4 de agosto de 2026.
+   * The safety net of the check above: if the piece is split into more
+   * files and the name pattern stops catching them, this assertion falls and one has to
+   * look again. Five files today, checked on 4 August 2026.
    */
   it('la comprobación anterior mira todos los ficheros de la pieza, y se entera si aparecen más', () => {
     const names = featureSources().map((source) => source.name).sort()
@@ -102,10 +102,10 @@ describe('RF-1404: la aplicación no le pide nada al sitio enlazado', () => {
   })
 
   /**
-   * Y lo que la pantalla le PROMETE a la usuaria sobre esto, que es la mitad que se
-   * puede leer: el formulario dice que la aplicación no abre la página ni le pide
-   * nada al sitio. Si algún día se añadiera la llamada, esta frase sería mentira, y
-   * este aserto la ata a la ausencia de arriba.
+   * And what the screen PROMISES the user about this, which is the half that can
+   * be read: the form says that the application does not open the page or ask the
+   * site for anything. If the call were ever added, this sentence would be a lie, and
+   * this assertion ties it to the absence above.
    */
   it('el formulario promete que no se le pide nada al sitio, y la promesa está atada al código', () => {
     const form = readFileSync(`${HERE}LinkForm.tsx`, 'utf8')

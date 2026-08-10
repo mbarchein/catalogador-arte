@@ -207,10 +207,10 @@ export const REFUSAL_GENERAL =
   'La base no acepta esa dirección. Tiene que empezar por http:// o https://, sin espacios.'
 
 /**
- * Los caracteres que no se ven y que dentro del nombre de un sitio son un ataque:
- * el ancho cero y compañía. `is_web_url` los cierra con su lista blanca ASCII —
- * `[[:space:]]` de PostgreSQL NO caza U+200B—, y aquí solo sirven para elegir el
- * mensaje. Escritos por su código, que es la única forma de poder revisarlos.
+ * The characters that are not visible and that inside a site's name are an attack:
+ * zero width and company. `is_web_url` closes them with its ASCII whitelist —
+ * PostgreSQL's `[[:space:]]` does NOT catch U+200B—, and here they only serve to choose the
+ * message. Written by their code, which is the only way of being able to review them.
  */
 const INVISIBLE = /[\u00ad\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/
 
@@ -218,22 +218,22 @@ const INVISIBLE = /[\u00ad\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/
 const CONTROL = /[\u0000-\u001f\u007f]/
 
 /**
- * Por qué la base ha rechazado ESTA dirección, en español.
+ * Why the base has rejected THIS address, in Spanish.
  *
- * ── ESTO NO ES UNA SEGUNDA COPIA DE LA REGLA, Y LA DIFERENCIA
- *    ES DE VERDAD Y NO DE MATIZ ────────────────────────────────
+ * ── THIS IS NOT A SECOND COPY OF THE RULE, AND THE DIFFERENCE
+ *    IS REAL AND NOT A NUANCE ──────────────────────────────────
  *
- * Esta función **solo se llama sobre una dirección que la base YA ha rechazado**
- * —`is_web_url` ha contestado `false`, o el `check` ha contestado `23514`— y lo
- * único que hace es mirar el texto para elegir cuál de varias frases explica
- * mejor el rechazo. No puede aceptar nada: no tiene rama que devuelva «vale».
- * Si ninguna pista encaja, devuelve la frase general, así que una dirección
- * rechazada por un motivo que aquí no se ha previsto se sigue explicando —peor,
- * pero se explica—. Y si un día `is_web_url` se endurece, lo que pasa es que
- * alguna pista se queda genérica: nunca que algo prohibido pase.
+ * This function **is only called over an address the base has ALREADY rejected**
+ * —`is_web_url` has answered `false`, or the `check` has answered `23514`— and the
+ * only thing it does is look at the text to choose which of several sentences explains
+ * the rejection best. It cannot accept anything: it has no branch that returns «fine».
+ * If no hint fits, it returns the general sentence, so an address
+ * rejected for a reason not foreseen here is still explained —worse,
+ * but explained—. And if one day `is_web_url` gets stricter, what happens is that
+ * some hint stays generic: never that something forbidden gets through.
  *
- * Cada pista está medida contra la base local, y las dos que importan son las que
- * un patrón nuevo habría dejado pasar:
+ * Every hint is measured against the local base, and the two that matter are the ones
+ * a new pattern would have let through:
  *
  *   select is_web_url('https://evil.example\.ejemplo.es/')  → false
  *   select is_web_url('https://macvac​.es/')           → false
@@ -260,11 +260,11 @@ export function describeUrlRefusal(url: string): string {
     return 'La dirección tiene que empezar por http:// o https://.'
   }
 
-  // Caracteres invisibles ANTES que «no es ASCII»: un ancho cero no se ve, así
-  // que decir «letras que no son ASCII» mandaría a buscar una eñe que no existe.
-  // Escritos con su código y no con el carácter: un fichero fuente con un ancho
-  // cero dentro de una expresión regular es justo lo que este mensaje denuncia,
-  // algo invisible que nadie puede revisar en una diferencia.
+  // Invisible characters BEFORE «it is not ASCII»: a zero width is not visible, so
+  // saying «letters that are not ASCII» would send people looking for an ñ that does not exist.
+  // Written with their code and not with the character: a source file with a zero
+  // width inside a regular expression is precisely what this message denounces,
+  // something invisible nobody can review in a diff.
   if (INVISIBLE.test(text)) {
     return (
       'La dirección lleva caracteres invisibles y puede llevar a otro sitio. Escríbela a mano.'
@@ -348,8 +348,8 @@ const ATTEMPT: Record<LinkAction, string> = {
 }
 
 /**
- * La forma de una escritura fallida, tal como la entrega supabase-js. Declarada
- * estrecha para poder traducir sin cliente: un `PostgrestError` encaja.
+ * The shape of a failed write, as supabase-js delivers it. Declared
+ * narrow so it can be translated with no client: a `PostgrestError` fits.
  */
 export interface WriteFailure {
   code?: string | null
@@ -359,10 +359,10 @@ export interface WriteFailure {
 }
 
 /**
- * La frase en español de una respuesta de la base.
+ * The Spanish sentence for an answer of the base.
  *
- * Todos los códigos están MEDIDOS contra la base local por HTTP, con la sesión de
- * un catalogador y con la de un lector, y no imaginados:
+ * Every code is MEASURED against the local base over HTTP, with a cataloguer's
+ * session and with a reader's, and not imagined:
  *
  *   {"code":"23514","message":"new row for relation \"external_links\" violates
  *     check constraint \"external_links_url_is_web\""}
@@ -379,17 +379,17 @@ export interface WriteFailure {
  *   {"code":"P0001","message":"No existe el enlace que se intenta comprobar"}
  *   {"code":"22P02","message":"invalid input value for enum link_check_status: …"}
  *
- * Los `P0001` llegan ESCRITOS EN ESPAÑOL por la propia función para la usuaria y
- * se muestran tal cual: reescribirlos aquí sería una segunda redacción de una
- * frase que ya dice la consecuencia.
+ * The `P0001`s arrive WRITTEN IN SPANISH by the function itself for the user and
+ * are shown as is: rewriting them here would be a second wording of a
+ * sentence that already says the consequence.
  */
 export function describeLinkFailure(
   action: LinkAction,
   failure: WriteFailure,
   /**
-   * La dirección que se intentaba guardar, cuando la hay. PostgreSQL **no la
-   * devuelve** en el mensaje del `check`, así que sin ella el rechazo solo se
-   * puede explicar en general; con ella se explica el motivo concreto.
+   * The address that was being stored, when there is one. PostgreSQL **does not
+   * return it** in the `check`'s message, so without it the rejection can only
+   * be explained in general; with it the specific reason is explained.
    */
   url = '',
 ): string {
@@ -446,9 +446,9 @@ export function describeLinkFailure(
     return `${ATTEMPT[action]}: la base no ha entendido uno de los valores enviados. Ha contestado: ${message}`
   }
 
-  // Ningún código no es una regla diciendo que no, es que nadie ha contestado: la
-  // petición no llegó. Decirlo importa porque el cambio NO se guardó, y en un
-  // almacén sin cobertura es el fallo más probable de la pantalla.
+  // No code is not a rule saying no, it is that nobody has answered: the
+  // request never arrived. Saying so matters because the change was NOT stored, and in a
+  // storeroom with no coverage it is the screen's most likely failure.
   if (code === '') {
     return `${ATTEMPT[action]}: no hay conexión con el catálogo. Compruébala y vuelve a intentarlo.`
   }
@@ -457,13 +457,13 @@ export function describeLinkFailure(
 }
 
 /**
- * Una escritura que no ha fallado y tampoco ha tocado ninguna fila.
+ * A write that has not failed and has not touched any row either.
  *
- * No es hipotético y está medido: con la sesión de un Lector, `PATCH
- * external_links?id=eq.…` contesta `200 []` y **no** un error, porque la política
- * de UPDATE simplemente no deja ver la fila que se quería cambiar. Un formulario
- * que trate eso como éxito le dice a la usuaria que ha guardado algo que no se ha
- * guardado, que es la peor de las mentiras posibles en un catálogo.
+ * It is not hypothetical and it is measured: with a Reader's session, `PATCH
+ * external_links?id=eq.…` answers `200 []` and **not** an error, because the UPDATE
+ * policy simply does not let the row that was to be changed be seen. A form
+ * that treats that as success tells the user she has stored something that has not been
+ * stored, which is the worst possible lie in a catalogue.
  */
 export const NOTHING_CHANGED =
   'La base no ha cambiado nada: el enlace sigue igual. Lo normal es que tu sesión no tenga permiso.'
@@ -496,13 +496,13 @@ export const CHECK_OPTIONS: readonly {
 }))
 
 /**
- * Y la cuarta respuesta, que no es una de las tres: devolver el enlace a «sin
+ * And the fourth answer, which is not one of the three: putting the link back to «sin
  * comprobar».
  *
- * Existe porque equivocarse al pulsar es normal y porque «vuelve a estar sin
- * comprobar» es una corrección legítima —la RPC pone las tres columnas a nulo
- * cuando el estado es nulo, y así está en su test—. Sin esto, un toque en «Ya no
- * está» sería irreversible y el catálogo tendría un dato falso para siempre.
+ * It exists because pressing by mistake is normal and because «it is unchecked
+ * again» is a legitimate correction —the RPC sets the three columns to null
+ * when the state is null, and so it is in its test—. Without this, a tap on «Ya no
+ * está» would be irreversible and the catalogue would have a false datum forever.
  */
 export const CHECK_CLEAR_TEXT = 'Volver a «sin comprobar»'
 export const CHECK_CLEAR_HINT = 'Borra el resultado, la fecha y el autor de la comprobación'
