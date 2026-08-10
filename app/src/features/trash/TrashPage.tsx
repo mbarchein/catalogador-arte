@@ -60,8 +60,8 @@ export function TrashPage() {
   const total = useMemo(() => trashTotalText(views), [views])
   const blocked = useMemo(() => blockedCountText(views), [views])
 
-  // La espera importa: el rol llega después de la sesión, así que decidir en el
-  // primer render echaría a quien sí puede. Ver useEditingAccess.
+  // The wait matters: the role arrives after the session, so deciding on the
+  // first render would throw out whoever can. See useEditingAccess.
   if (access === 'loading') return <LoadingNotice />
   if (access === 'denied') return <Navigate to="/" replace />
 
@@ -71,8 +71,8 @@ export function TrashPage() {
     void restore(item).then((message) => {
       setBusy(false)
       setFailure(message)
-      // El aviso se pone donde está el pulgar, no arriba fuera de la vista: en un
-      // móvil, un mensaje en la cabecera de una lista larga no se ve.
+      // The notice goes where the thumb is, not up out of sight: on a
+      // phone, a message in the heading of a long list is not seen.
       if (message !== null) failureRef.current?.scrollIntoView({ block: 'center' })
     })
   }
@@ -177,7 +177,7 @@ function TrashGroupSection({
   )
 }
 
-/** Una clase de cosa con sus líneas. */
+/** A kind of thing with its lines. */
 function TrashKindSection({
   view,
   now,

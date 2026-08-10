@@ -25,7 +25,7 @@ import {
   type TrashRow,
 } from './trashKinds'
 
-/** El perfil de quien retiró algo, con la forma que ya tiene el historial. */
+/** The profile of whoever withdrew something, in the shape the history already has. */
 export type TrashAuthor = NonNullable<ChangeLogRow['author']>
 
 /**
@@ -78,17 +78,17 @@ export function retiredTraceText(item: TrashItem, now: Date): string {
   return `${participle} por ${item.retiredBy} ${retiredWhenText(item.retiredAt, now)}`
 }
 
-/** Una cosa de la papelera, ya lista para pintar. */
+/** A thing in the wastebasket, already ready to paint. */
 export interface TrashItem {
   readonly kind: TrashKindId
-  /** El valor de la clave, para el `update` que la recupera. */
+  /** The key's value, for the `update` that recovers it. */
   readonly key: string
-  /** Qué es. Nunca vacío. */
+  /** What it is. Never empty. */
   readonly label: string
-  /** De qué cuelga o cómo se distingue. Vacío cuando no aporta. */
+  /** What it hangs from or how it is told apart. Empty when it adds nothing. */
   readonly context: string
   readonly retiredAt: string | null
-  /** Ya resuelto a un nombre legible. */
+  /** Already resolved to a readable name. */
   readonly retiredBy: string
   /**
    * Por qué recuperarla todavía no serviría, o `null` si se puede.
@@ -114,7 +114,7 @@ function parentRetired(
 ): boolean | null {
   if (parent.via === 'embed') return embeddedRetired(row, parent.key)
   const id = cell(row, parent.column)
-  // Sin padre no hay padre retirado: una ubicación raíz tiene `parent_id` nulo.
+  // With no parent there is no withdrawn parent: a root location has a null `parent_id`.
   if (id === '') return null
   return retiredKeys.has(id)
 }

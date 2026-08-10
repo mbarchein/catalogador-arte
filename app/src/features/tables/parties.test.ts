@@ -59,7 +59,7 @@ function draft(over: Partial<PartyDraft> = {}): PartyDraft {
   return { ...emptyPartyDraft(), name: 'Galería Rayuela', ...over }
 }
 
-// ── Los dos enumerados, en su orden ──────────────────────────
+// ── The two enums, in their order ─────────────────────────────
 
 describe('los enumerados que ofrece la pantalla (RF-508)', () => {
   it('persona e institución, en el orden del tipo y sin «Sin revisar»', () => {
@@ -85,7 +85,7 @@ describe('los enumerados que ofrece la pantalla (RF-508)', () => {
   })
 })
 
-// ── La identidad: place_key, no normalizeForSearch ───────────
+// ── Identity: place_key, not normalizeForSearch ──────────────
 
 describe('la clave de comparación de un nombre (ADR-007)', () => {
   it('ignora mayúsculas y tildes, que es lo que hace el índice único', () => {
@@ -93,8 +93,8 @@ describe('la clave de comparación de un nombre (ADR-007)', () => {
   })
 
   it('DEJA EN PIE LA Ñ: «Muñiz» y «Muniz» son dos personas distintas', () => {
-    // La trampa de esta tanda de pantallas: normalizeForSearch aplana la ñ y
-    // habría contestado «ya está» a un nombre que la base sí acepta.
+    // The trap of this batch of screens: normalizeForSearch flattens the ñ and
+    // would have answered «it is already there» to a name the base does accept.
     expect(partyKey('Muñiz')).not.toBe(partyKey('Muniz'))
   })
 
@@ -103,7 +103,7 @@ describe('la clave de comparación de un nombre (ADR-007)', () => {
   })
 })
 
-// ── El orden y la línea de debajo ────────────────────────────
+// ── The order and the line underneath ────────────────────────
 
 describe('el orden de la lista', () => {
   it('ordena en es-ES: «Álvarez» va con las a, no detrás de la z', () => {
@@ -146,7 +146,7 @@ describe('la segunda línea de una ficha (RF-304)', () => {
   })
 })
 
-// ── La búsqueda: perdona lo que la identidad no perdona ──────
+// ── The search: it forgives what identity does not ───────────
 
 describe('el filtro de la lista', () => {
   const register = [
@@ -164,8 +164,8 @@ describe('el filtro de la lista', () => {
   })
 
   it('SÍ aplana la ñ al buscar, al contrario que la identidad', () => {
-    // Buscar perdona: en un teclado de móvil «muniz» tiene que encontrar
-    // «Muñiz». Crear no perdona: son dos personas.
+    // Searching forgives: on a phone keyboard «muniz» has to find
+    // «Muñiz». Creating does not forgive: they are two people.
     expect(filterParties(register, 'muniz').map((party) => party.id)).toEqual(['1'])
     expect(partyKey('Muniz')).not.toBe(partyKey('Muñiz'))
   })
@@ -180,7 +180,7 @@ describe('el filtro de la lista', () => {
   })
 })
 
-// ── El borrador, y el contacto que NO se pisa ────────────────
+// ── The draft, and the contact that is NOT trampled ──────────
 
 describe('el borrador de una ficha nueva', () => {
   it('arranca en Persona y con el país puesto', () => {
@@ -228,8 +228,8 @@ describe('lo que viaja a la base', () => {
   })
 
   it('NO manda la columna de contacto cuando el borrador no la cargó', () => {
-    // El fallo que convertiría la protección en destrucción: guardar el nombre
-    // corregido de un museo borraría el teléfono de la persona de la ficha.
+    // The failure that would turn the protection into destruction: saving a museum's
+    // corrected name would erase the phone number of the person on the record.
     const payload = partyPayload(draft({ contact: null }))
     expect('contact' in payload).toBe(false)
   })
@@ -251,7 +251,7 @@ describe('lo que viaja a la base', () => {
   })
 })
 
-// ── Dar de alta ──────────────────────────────────────────────
+// ── Registering one ──────────────────────────────────────────
 
 describe('qué hace «Añadir» (RF-901, ADR-007)', () => {
   const register = [
@@ -312,8 +312,8 @@ describe('qué hace «Guardar» en una ficha (RF-801)', () => {
   })
 
   it('abrir el lápiz y guardar sin tocar nada NO escribe', () => {
-    // Escribiría updated_at y updated_by (sellados por tg_row_audit) y pondría
-    // esta sesión sobre una ficha que nadie tocó.
+    // It would write updated_at and updated_by (stamped by tg_row_audit) and would put
+    // this session on a record nobody touched.
     const opened = partyDraft(register[0] as PartyListRow, '655 000 000')
     expect(planPartyEdit(register, '1', opened, { ...opened })).toEqual({ action: 'unchanged' })
   })
@@ -367,7 +367,7 @@ describe('qué hace «Guardar» en una ficha (RF-801)', () => {
   })
 
   it('cambiar el tipo es una edición normal: una colección familiar se hace fundación', () => {
-    // RF-508: el mismo eslabón de la cadena, no una ficha nueva.
+    // RF-508: the same link of the chain, not a new record.
     const opened = partyDraft(register[0] as PartyListRow, '')
     expect(opened.party_type).toBe('INSTITUTION')
     const plan = planPartyEdit(register, '1', opened, { ...opened, party_type: 'PERSON' })
@@ -376,7 +376,7 @@ describe('qué hace «Guardar» en una ficha (RF-801)', () => {
   })
 })
 
-// ── Lo que contesta la base, medido contra la base ───────────
+// ── What the base answers, measured against the base ─────────
 
 describe('las frases de las negativas de la base (RF-1106)', () => {
   it('23505: el nombre repetido, con qué hacer y sin el nombre del índice', () => {
@@ -427,7 +427,7 @@ describe('las frases de las negativas de la base (RF-1106)', () => {
   })
 
   it('P0001 pasa tal cual, uniendo el mensaje y la pista de la base', () => {
-    // Los tres cuerpos, copiados de la respuesta real de la pasarela REST.
+    // The three bodies, copied from the REST gateway's real answer.
     expect(
       partyFailureText(
         {
@@ -495,7 +495,7 @@ describe('el resultado de una escritura', () => {
   })
 
   it('CERO filas sin error NO es éxito: es lo que contesta la base al Lector', () => {
-    // Medido: un PATCH que las políticas niegan vuelve 200 con [] y sin error.
+    // Measured: a PATCH the policies deny comes back 200 with [] and with no error.
     const text = partyWriteResult('save', { failure: null, rows: 0 })
     expect(text).toContain('No se ha guardado nada')
     expect(text).toContain('Vuelve a entrar')
@@ -512,7 +512,7 @@ describe('el resultado de una escritura', () => {
   })
 })
 
-// ── Dónde se usa una ficha, que es lo que la base no dice ────
+// ── Where a record is used, which is what the base does not say ──
 
 describe('la lista leída en español', () => {
   it('uno solo', () => {
@@ -630,7 +630,7 @@ describe('la respuesta completa a un retiro que la base rechaza', () => {
   })
 })
 
-// ── El contacto en pantalla (RF-105) ────────────────────────
+// ── The contact on screen (RF-105) ──────────────────────────
 
 describe('el aviso del contacto (RF-105)', () => {
   it('dice de quién es el dato y quién más lo ve', () => {
@@ -661,7 +661,7 @@ describe('el aviso del contacto (RF-105)', () => {
   })
 })
 
-// ── Nunca una página en blanco ───────────────────────────────
+// ── Never a blank page ───────────────────────────────────────
 
 describe('lo que dice la lista sin filas (RF-304)', () => {
   it('con filas no dice nada', () => {

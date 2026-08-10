@@ -390,7 +390,7 @@ describe('guardar una sede editada', () => {
   })
 })
 
-// ── Cuando la base dice no ───────────────────────────────────
+// ── When the base says no ────────────────────────────────────
 
 describe('cuando la base dice no', () => {
   /**
@@ -472,7 +472,7 @@ describe('cuando la base dice no', () => {
     expect(text).not.toContain('foreign key')
   })
 
-  /** RF-1106: solo el Catalogador mantiene las maestras. */
+  /** RF-1106: only the Cataloguer maintains the master tables. */
   it('42501: la sesión sin permiso se cuenta como sesión, no como política', () => {
     const text = venueFailureText(
       { code: '42501', message: 'new row violates row-level security policy for table "exhibition_venues"' },
@@ -540,14 +540,14 @@ describe('el resultado de una escritura', () => {
   })
 })
 
-// ── Nunca una página en blanco ───────────────────────────────
+// ── Never a blank page ───────────────────────────────────────
 
 describe('lo que dice la lista cuando no tiene filas', () => {
   it('con filas, no dice nada', () => {
     expect(venueListNotice({ loading: false, error: null, count: 3 })).toBe(null)
   })
 
-  /** Afirmar que no hay sedes mientras la consulta está en el aire es afirmar lo que no se sabe. */
+  /** Stating that there are no venues while the query is in the air is stating what is not known. */
   it('mientras carga, no afirma que no haya sedes', () => {
     expect(venueListNotice({ loading: true, error: null, count: 0 })).toBe('Cargando las sedes…')
   })

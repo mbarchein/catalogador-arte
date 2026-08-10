@@ -74,7 +74,7 @@ export function useArtistFunds() {
     void reload()
   }, [reload])
 
-  /** Manda un solo campo y recarga. Responde null cuando entró. */
+  /** Sends a single field and reloads. Answers null when it went in. */
   const write = useCallback(
     async (id: string, patch: Record<string, unknown>): Promise<string | null> => {
       // `select('id')` por lo que ya aprendieron las otras pantallas de

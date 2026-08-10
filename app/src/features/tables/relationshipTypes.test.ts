@@ -52,8 +52,8 @@ describe('RF-217 · las columnas que se escriben', () => {
   })
 
   it('una relación simétrica se guarda sin lectura inversa aunque el campo tuviera texto', () => {
-    // La restricción `inverse_coherent` lo exige, y el motivo no es contable: dos
-    // etiquetas para un solo hecho dejarían que cada ficha eligiera una.
+    // The `inverse_coherent` constraint requires it, and the reason is not bookkeeping: two
+    // labels for a single fact would let each record pick one.
     expect(relationshipTypeColumns(draft({ symmetric: true, inverseName: 'Obra final de' }))).toEqual(
       { name: 'Estudio previo de', inverse_name: '', is_symmetric: true },
     )
@@ -89,8 +89,8 @@ describe('RF-217 · un tipo con dirección necesita sus dos lecturas', () => {
   })
 
   it('rechaza dos lecturas iguales aunque solo coincidan sin mayúsculas ni tildes', () => {
-    // La base solo prohíbe que sean IDÉNTICAS, así que «Copia de»/«copia de»
-    // pasaría su comprobación y dejaría un tipo simétrico mal declarado.
+    // The base only forbids them being IDENTICAL, so «Copia de»/«copia de»
+    // would pass its check and would leave a symmetric type badly declared.
     const problem = relationshipTypeDraftProblem(
       draft({ name: 'Copia de', inverseName: 'copia dé' }),
     )
@@ -148,7 +148,7 @@ describe('RF-217, RF-901 · añadir un tipo de relación', () => {
   })
 
   it('un nombre que ya está en la lista se cuenta, no se traga en silencio', () => {
-    // Vaciar el formulario sin escribir nada se leería como «añadido».
+    // Emptying the form without writing anything would read as «added».
     const plan = planRelationshipTypeAddition([STUDY], draft())
     expect(plan.action).toBe('problem')
     if (plan.action !== 'problem') throw new Error('se esperaba un problema')
@@ -176,8 +176,8 @@ describe('RF-217, RF-901 · añadir un tipo de relación', () => {
   })
 
   it('la ñ no se aplana, porque el índice único de la tabla tampoco la aplana', () => {
-    // La comparación es `placeKey`, calcada de `public.place_key`: predecir una
-    // colisión que la base no tiene rechazaría un tipo que sí se puede crear.
+    // The comparison is `placeKey`, traced from `public.place_key`: predicting a
+    // collision the base does not have would reject a type that can be created.
     const nino: ArtworkRelationshipType = { ...STUDY, id: 'nino', name: 'Niño de' }
     expect(planRelationshipTypeAddition([nino], draft({ name: 'Nino de' })).action).toBe('insert')
     expect(planRelationshipTypeAddition([nino], draft({ name: 'niño DE' })).action).toBe('problem')
@@ -189,8 +189,8 @@ describe('RF-217, RF-901 · añadir un tipo de relación', () => {
     expect(plan).toEqual({
       action: 'restore',
       entry: retired,
-      // El nombre guardado se conserva: lo que pedía escribiendo un equivalente
-      // era ESA entrada, no cambiarle las mayúsculas.
+      // The stored name is kept: what was being asked for by writing an equivalent
+      // was THAT entry, not changing its capitals.
       columns: { name: 'Estudio previo de', inverse_name: 'Boceto final de', is_symmetric: false },
     })
   })
@@ -219,8 +219,8 @@ describe('RF-217 · renombrar un tipo cambia las dos lecturas a la vez', () => {
   })
 
   it('pasar a simétrico borra la lectura inversa en el mismo update', () => {
-    // Las dos columnas son una sola decisión: viajar en dos peticiones dejaría
-    // un instante con la fila incoherente, que la restricción no permite.
+    // The two columns are a single decision: travelling in two requests would leave
+    // an instant with the row inconsistent, which the constraint does not allow.
     expect(planRelationshipTypeEdit(STUDY, draft({ symmetric: true }))).toEqual({
       action: 'update',
       columns: { name: 'Estudio previo de', inverse_name: '', is_symmetric: true },
@@ -228,8 +228,8 @@ describe('RF-217 · renombrar un tipo cambia las dos lecturas a la vez', () => {
   })
 
   it('guardar sin haber cambiado nada no escribe', () => {
-    // Importa en un tipo YA USADO: la base congela su simetría (RF-217), y un
-    // update que la reenvía igual no dispara nada, pero uno que la mueva sí.
+    // It matters in an ALREADY USED type: the base freezes its symmetry (RF-217), and an
+    // update resending it unchanged fires nothing, but one moving it does.
     expect(planRelationshipTypeEdit(STUDY, relationshipTypeDraft(STUDY))).toEqual({
       action: 'unchanged',
     })
@@ -252,8 +252,8 @@ describe('RF-217 · renombrar un tipo cambia las dos lecturas a la vez', () => {
 
 describe('RF-217, RF-1106 · lo que la base contesta, contado en español', () => {
   it('retirar un tipo en uso: el mensaje del trigger llega con su pista', () => {
-    // Provocado en la base: código P0001, mensaje y HINT separados, y PostgREST
-    // trae los dos. Sin la pista, «no se puede retirar» es un callejón sin salida.
+    // Provoked in the base: code P0001, message and HINT separate, and PostgREST
+    // brings both. Without the hint, «no se puede retirar» is a dead end.
     const message = relationshipTypeFailure(
       {
         code: 'P0001',
@@ -369,14 +369,14 @@ describe('RF-217, RF-1106 · lo que la base contesta, contado en español', () =
   })
 
   it('un update que no toca ninguna fila no se cuenta como éxito', () => {
-    // Comprobado contra la base: con la sesión de una lectora, el PATCH vuelve
-    // 200 con lista vacía y sin error ninguno.
+    // Checked against the base: with a reader's session, the PATCH comes back
+    // 200 with an empty list and no error at all.
     const message = relationshipTypeMissingRow('rename')
     expect(message).toContain('la lista ha cambiado o esta sesión ya no puede editarla')
   })
 
   it('un fallo de red se cuenta en español y dice que no se mandó', () => {
-    // La rama que faltaba: sin código, la frase acababa siendo «No se ha podido
+    // The branch that was missing: with no code, the sentence ended up being «No se ha podido
     // retirar el tipo de relación: TypeError: Failed to fetch».
     const message = relationshipTypeFailure(
       { code: '', message: 'TypeError: Failed to fetch' },
@@ -389,8 +389,8 @@ describe('RF-217, RF-1106 · lo que la base contesta, contado en español', () =
 
 describe('RF-1106 · una carga fallida tampoco habla inglés', () => {
   it('traduce lo que el hook de lectura entrega en crudo', () => {
-    // El hook de lectura vive en la ficha y devuelve `failure.message` tal cual;
-    // esta pantalla lo pegaba detrás de un encabezado en español.
+    // The read hook lives in the record and returns `failure.message` as is;
+    // this screen glued it behind a heading in Spanish.
     const message = relationshipTypeLoadFailure('TypeError: Failed to fetch')
     expect(message).not.toMatch(/fetch/i)
     expect(message).toContain('No se ha podido leer la lista de tipos de relación')
@@ -410,8 +410,8 @@ describe('RF-1106 · una carga fallida tampoco habla inglés', () => {
 
 describe('RF-1106 · el orden de la lista', () => {
   it('alfabético en es-ES, con las tildes en su sitio y sin apartar los retirados', () => {
-    // El orden es el compartido por la sección (`sortByName`), y esta pantalla
-    // depende de él: se fija aquí para que un cambio se note.
+    // The order is the one shared by the section (`sortByName`), and this screen
+    // depends on it: it is pinned here so a change gets noticed.
     const entries: ArtworkRelationshipType[] = [
       { ...PAIR, id: 'v', name: 'Versión de' },
       { ...PAIR, id: 'r', name: 'Ámbito de', active: false },

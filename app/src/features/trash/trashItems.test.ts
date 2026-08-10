@@ -56,8 +56,8 @@ describe('cuándo se retiró, y el caso en que no consta', () => {
   })
 
   it('sin fecha se dice que no consta, en vez de inventar una o dejar el hueco', () => {
-    // Medido: la base sella `deactivated_at` en cada baja, pero una fila trasladada
-    // por una migración no la retiró nadie y llega nula.
+    // Measured: the base stamps `deactivated_at` on every withdrawal, but a row moved
+    // by a migration was withdrawn by nobody and arrives null.
     expect(retiredWhenText(null, now)).toBe('en una fecha que no consta')
     expect(retiredWhenText('   ', now)).toBe('en una fecha que no consta')
   })
@@ -87,8 +87,8 @@ describe('la traza lleva el participio con el género de la cosa', () => {
   })
 
   it('masculino: «Retirado por…»', () => {
-    // El género es un dato de la clase y no una deducción de la terminación: de
-    // deducirlo salen «la fotografía retirado» y «el eslabón retirada».
+    // Gender is a datum of the class and not a deduction from the ending: deducing
+    // it gives «la fotografía retirado» and «el eslabón retirada».
     expect(retiredTraceText(line('provenance_events'), now)).toMatch(/^Retirado por /)
     expect(retiredTraceText(line('external_links'), now)).toMatch(/^Retirado por /)
   })
@@ -122,8 +122,8 @@ describe('recuperar bajo un padre retirado se detiene ANTES de escribir', () => 
   })
 
   it('se nombran TODOS los padres que faltan, no solo el primero', () => {
-    // Recuperar la obra para descubrir después que también falta la referencia es
-    // hacer el mismo viaje dos veces.
+    // Recovering the artwork only to discover afterwards that the reference is missing too is
+    // making the same trip twice.
     const citations = kindSpec('artwork_bibliography')
     const row: TrashRow = {
       id: '1',
@@ -206,8 +206,8 @@ describe('las filas se convierten en líneas con su traza', () => {
   })
 
   it('un autor que ya no está en los perfiles no rompe la línea', () => {
-    // La cuenta pudo borrarse desde el panel. Perder el nombre es aceptable; perder
-    // la línea —y con ella la única forma de recuperar la fila— no lo es.
+    // The account may have been deleted from the panel. Losing the name is acceptable; losing
+    // the line —and with it the only way of recovering the row— is not.
     const items = toTrashItems(
       kindSpec('images'),
       [{ image_id: 'x', deactivated_by: 'fantasma', deactivated_at: null }],
@@ -218,8 +218,8 @@ describe('las filas se convierten en líneas con su traza', () => {
   })
 
   it('el conjunto de retiradas se calcula con las filas de la propia clase', () => {
-    // Dos ubicaciones retiradas, una dentro de la otra: la de dentro no se puede
-    // recuperar sola, y eso se sabe sin ninguna consulta más.
+    // Two withdrawn locations, one inside the other: the inner one cannot be
+    // recovered on its own, and that is known with no further query.
     const items = toTrashItems(
       kindSpec('physical_places'),
       [
@@ -239,7 +239,7 @@ describe('las cuentas se leen como frases y no como ceros', () => {
   it('singular, plural y vacío', () => {
     expect(kindCountText(images, 1)).toBe('1 fotografía')
     expect(kindCountText(images, 3)).toBe('3 fotografías')
-    // «0 fotografías» se lee como una respuesta sobre el catálogo, y no lo es.
+    // «0 fotografías» reads as an answer about the catalogue, and it is not.
     expect(kindCountText(images, 0)).toBe('Nada retirado')
     expect(kindCountText(images, -1)).toBe('Nada retirado')
   })
