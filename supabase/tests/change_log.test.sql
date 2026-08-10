@@ -533,23 +533,23 @@ begin
     raise exception 'FAIL: el Lector debería ver las tres líneas de la obra activa, ve % (RF-105)', v_n;
   end if;
 
-  -- Lo de la obra retirada, nada: ni la línea, ni el hecho de que se retiró.
+  -- The withdrawn artwork's, nothing: neither the line, nor the fact that it was withdrawn.
   select count(*) into v_n from public.change_log
    where change_id::text like 'c1000001-%' and row_key = 'AR-9801';
   if v_n <> 0 then
     raise exception 'FAIL: el Lector ve % línea(s) del historial de una obra retirada (RF-609)', v_n;
   end if;
 
-  -- La fotografía activa, sí.
+  -- The active photograph, yes.
   select count(*) into v_n from public.change_log
    where change_id::text like 'c1000001-%' and row_key = 'AR-9800_v1';
   if v_n <> 1 then
     raise exception 'FAIL: el Lector no ve el historial de una fotografía activa (RF-105)';
   end if;
 
-  -- Y la fotografía RETIRADA de una obra que sí ve: cero. Este es el aserto que
-  -- distingue una política escrita sobre la fila auditada de una escrita sobre
-  -- la obra.
+  -- And the WITHDRAWN photograph of an artwork it does see: zero. This is the assertion that
+  -- distinguishes a policy written over the audited row from one written over
+  -- the artwork.
   select count(*) into v_n from public.change_log
    where change_id::text like 'c1000001-%' and row_key = 'AR-9800_v2';
   if v_n <> 0 then
@@ -562,9 +562,9 @@ end $$;
 
 reset role;
 
--- Una sesión autenticada SIN PERFIL no ve nada. Es el caso de un JWT válido
--- emitido para alguien a quien todavía no se le ha dado papel (RF-104): `can_read()`
--- es falso y la política no llega ni a mirar la entidad.
+-- An authenticated session WITH NO PROFILE sees nothing. It is the case of a valid JWT
+-- issued for somebody who has not been given a role yet (RF-104): `can_read()`
+-- is false and the policy does not even get to look at the entity.
 do $$
 declare v_n integer;
 begin
@@ -581,9 +581,9 @@ end $$;
 
 reset role;
 
--- El valor almacenado se guarda TAL CUAL, y traducirlo es tarea de la interfaz
--- (RF-1502). Se afirma sobre la línea que el Lector sí ve: `'54.00'` y no
--- «54 cm», y el nulo de `old_value` sigue siendo nulo y no la cadena «null».
+-- The stored value is kept AS IS, and translating it is the interface's job
+-- (RF-1502). It is asserted over the line the Reader does see: `'54.00'` and not
+-- «54 cm», and `old_value`'s null is still null and not the string «null».
 do $$
 declare v_old text; v_new text; v_col text;
 begin
@@ -610,11 +610,11 @@ end $$;
 reset role;
 
 
--- ── 9. Las restricciones, cada una por su nombre ─────────────
+-- ── 9. The constraints, each one by its name ─────────────────
 --
--- Lo que PostgreSQL dice al rechazar es el NOMBRE de la restricción, así que se
--- comprueba el nombre y no solo que falle: una fila rechazada por la restricción
--- equivocada es una restricción que no está haciendo lo que se cree.
+-- What PostgreSQL says on rejecting is the constraint's NAME, so
+-- the name is checked and not only that it fails: a row rejected by the wrong
+-- constraint is a constraint that is not doing what it is believed to do.
 
 alter table public.change_log disable trigger change_log_insert_guard;
 
@@ -631,8 +631,8 @@ exception
     raise notice 'OK: para una obra, la fila auditada es la obra (change_log_artwork_key_is_catalog_id)';
 end $$;
 
--- La equivalencia, en los DOS sentidos, porque una restricción escrita con `=`
--- entre dos predicados se puede romper por cualquiera de los dos lados.
+-- The equivalence, in BOTH directions, because a constraint written with `=`
+-- between two predicates can be broken from either side.
 do $$
 begin
   insert into public.change_log (change_id, entity, row_key, catalog_id, operation, column_name)
@@ -685,8 +685,8 @@ exception
     raise notice 'OK: el nombre del campo no puede quedar en blanco (change_log_column_name_not_blank)';
 end $$;
 
--- Nadie elige el número de línea: la identidad es `generated always`, y eso es
--- lo que impide colar una fila «entre» dos verdaderas.
+-- Nobody chooses the line number: the identity is `generated always`, and that is
+-- what prevents slipping a row «between» two true ones.
 do $$
 begin
   insert into public.change_log (id, change_id, entity, row_key, catalog_id, operation)
@@ -697,11 +697,11 @@ exception
     raise notice 'OK: el número de línea lo pone la base y no se puede elegir';
 end $$;
 
--- Y lo que SÍ tiene que entrar: varias filas con el mismo `change_id` y campos
--- distintos son una sola acción del usuario con varios campos cambiados, que es
--- la forma normal de este registro (RF-1502). La invariante de «una fila por
--- campo y operación» la garantiza el recorrido de claves del escritor y se
--- afirma en su propio test, no con un índice único.
+-- And what DOES have to go in: several rows with the same `change_id` and different
+-- fields are a single user action with several fields changed, which is
+-- this log's normal shape (RF-1502). The invariant of «one row per
+-- field and operation» is guaranteed by the writer's key walk and is
+-- asserted in its own test, not with a unique index.
 do $$
 declare v_n integer;
 begin
@@ -724,12 +724,12 @@ end $$;
 alter table public.change_log enable trigger change_log_insert_guard;
 
 
--- ── 10. El requisito negativo (RF-1505) ──────────────────────
+-- ── 10. The negative requirement (RF-1505) ───────────────────
 --
--- El registro NO es reversible. Este bloque es deliberadamente tosco y su valor
--- no es la precisión: es ponerse en rojo el día que alguien escriba el
--- «deshacer», y obligar a que borrar este test aparezca en un diff que alguien
--- lee. Las tres funciones del propio registro van excluidas por nombre.
+-- The log is NOT reversible. This block is deliberately crude and its value
+-- is not precision: it is going red the day somebody writes the
+-- «undo», and forcing the deletion of this test to appear in a diff somebody
+-- reads. The log's own three functions are excluded by name.
 do $$
 declare v_sospechosas text[];
 begin
@@ -751,9 +751,9 @@ begin
   raise notice 'OK: ninguna función devuelve un valor del registro al catálogo (RF-1505)';
 end $$;
 
--- Y ninguna vista sobre el registro. Una vista es propiedad de quien la crea y
--- se salta la RLS salvo que lleve `security_invoker = true`: sería una segunda
--- puerta de lectura, con otras reglas, para ahorrarse un join.
+-- And no view over the log. A view is owned by whoever creates it and
+-- bypasses the RLS unless it carries `security_invoker = true`: it would be a second
+-- read door, with other rules, just to save a join.
 do $$
 declare v_vistas text[];
 begin
@@ -773,9 +773,9 @@ begin
   raise notice 'OK: no hay ninguna vista que abra una segunda puerta al registro';
 end $$;
 
--- El índice, uno y con la forma que sirve al historial de la ficha. Va con test
--- porque la decisión que documenta —tres índices retirados con la cuenta
--- delante— se pierde si alguien los devuelve sin leerla.
+-- The index, one and with the shape that serves the record's history. It comes with a test
+-- because the decision it documents —three indexes retired with the count
+-- in front— gets lost if somebody puts them back without reading it.
 do $$
 declare v_indices text[];
 begin

@@ -1,31 +1,31 @@
--- El escritor del registro de cambios: RF-1502, RF-1503, RF-1505, RF-1509 a
--- RF-1512. Y el perímetro, otra vez y con el escritor ya puesto: RF-1504.
+-- The change log's writer: RF-1502, RF-1503, RF-1505, RF-1509 to
+-- RF-1512. And the perimeter, again and with the writer already in place: RF-1504.
 --
--- ESTE FICHERO ES LA OTRA MITAD DE change_log.test.sql. Aquel defiende que nadie
--- puede escribir en el registro; este defiende que el registro SÍ se escribe
--- cuando alguien cambia algo de verdad. Las dos mitades se necesitan: un registro
--- inviolable y vacío no es más seguro que no tener registro, es la apariencia de
--- tenerlo, y es exactamente el estado en que estuvo la base entre 20260805120000
--- y 20260805140000 —tabla cerrada, cero filas, ninguna función de escritura—.
+-- THIS FILE IS THE OTHER HALF OF change_log.test.sql. That one defends that nobody
+-- can write in the log; this one defends that the log IS written
+-- when somebody really changes something. Both halves are needed: an inviolable
+-- and empty log is no safer than having no log, it is the appearance of
+-- having one, and it is exactly the state the base was in between 20260805120000
+-- and 20260805140000 —closed table, zero rows, no write function—.
 --
--- Y hay una razón para que el candado se vuelva a medir AQUÍ, con el escritor
--- puesto, en vez de dar por bueno lo que ya midió el otro fichero: desde esta
--- migración existe en la base una función `security definer` que SÍ puede
--- insertar en el registro. Eso es superficie nueva, y lo que hay que demostrar es
--- que sigue sin haber forma de llegar a ella (bloque 9).
+-- And there is a reason for the padlock to be measured again HERE, with the writer
+-- in place, instead of taking as good what the other file already measured: since this
+-- migration there exists in the base a `security definer` function that CAN
+-- insert into the log. That is new surface, and what has to be demonstrated is
+-- that there is still no way of reaching it (block 9).
 --
--- Todo lo que se cuenta va acotado a las obras de este fichero (`AR-96%`, `TS-%`
--- creadas aquí) y NO a la tabla entera, porque el registro es de solo añadir y
--- comparte tabla con lo que escriban los demás tests.
+-- Everything counted is bounded to this file's artworks (`AR-96%`, `TS-%`
+-- created here) and NOT to the whole table, because the log is append-only and
+-- shares a table with whatever the other tests write.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
 --
--- Un usuario de cada papel, de verdad: los perfiles los crea el trigger de
--- auth.users. El Superusuario está aquí y no es adorno — `can_edit()` incluye
--- SUPERUSER, así que también es un autor posible del registro y su celda de la
--- matriz no la cubría nadie.
+-- One user of each role, for real: the profiles are created by the
+-- auth.users trigger. The Superuser is here and is not an ornament — `can_edit()` includes
+-- SUPERUSER, so it is also a possible author of the log and its cell in the
+-- matrix was covered by nobody.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b1', 'esc-cat@test.local'),
   ('00000000-0000-0000-0000-0000000000b2', 'esc-lec@test.local'),
@@ -35,16 +35,16 @@ update public.profiles set role = 'READER'    where id = '00000000-0000-0000-000
 update public.profiles set role = 'SUPERUSER' where id = '00000000-0000-0000-0000-0000000000b3';
 
 
--- ── 1. El alta deja una línea, y con el autor correcto ────────
+-- ── 1. The creation leaves one line, and with the right author ─
 --
--- RF-1503. Una sola línea, sin campo: el estado inicial está en la propia ficha y
--- las restricciones del registro no dejarían escribirlo de otra forma.
+-- RF-1503. A single line, with no field: the initial state is in the record itself and
+-- the log's constraints would not let it be written any other way.
 --
--- Se comprueba de paso lo que obliga a que el trigger sea AFTER: `catalog_id` lo
--- asigna `assign_catalog_id` en un BEFORE INSERT, así que un escritor que corriera
--- antes anotaría la clave a nulo o rompería el alta contra el `not null` de
--- `row_key`. Que la línea traiga el identificador de verdad es el aserto que lo
--- verifica.
+-- Incidentally what forces the trigger to be AFTER is checked: `catalog_id` is
+-- assigned by `assign_catalog_id` in a BEFORE INSERT, so a writer running
+-- before would note the key as null or would break the creation against `row_key`'s
+-- `not null`. That the line carries the real identifier is the assertion that
+-- verifies it.
 do $$
 declare v_id text; v_n integer; v_key text; v_cat text; v_col text; v_autor uuid;
 begin
@@ -81,12 +81,12 @@ end $$;
 
 reset role;
 
--- EL ALTA SIN IDENTIFICADOR, que es la normal en la aplicación: el formulario de
--- captura rápida no lo manda, lo asigna `assign_catalog_id` en un BEFORE INSERT
--- (RF-1204). Este es el aserto que de verdad exige que el escritor sea AFTER —
--- el bloque anterior daba el `catalog_id` escrito a mano, así que no distinguía—.
--- Con un escritor BEFORE, aquí `row_key` llegaría nula y el `not null` de la tabla
--- del registro tumbaría el alta de cualquier obra.
+-- THE CREATION WITH NO IDENTIFIER, which is the normal one in the application: the quick-capture
+-- form does not send it, `assign_catalog_id` assigns it in a BEFORE INSERT
+-- (RF-1204). This is the assertion that really requires the writer to be AFTER —
+-- the previous block gave the `catalog_id` written by hand, so it did not distinguish—.
+-- With a BEFORE writer, here `row_key` would arrive null and the log table's
+-- `not null` would knock down the creation of any artwork.
 do $$
 declare v_id text; v_n integer; v_key text;
 begin
@@ -114,9 +114,9 @@ end $$;
 
 reset role;
 
--- Y el mismo alta hecha por el Superusuario, que también puede editar. No se da
--- por hecho que «si funciona para el Catalogador funciona para el otro»: el autor
--- lo pone `auth.uid()` y lo que se comprueba es que sale el de la sesión.
+-- And the same creation done by the Superuser, who can also edit. It is not taken
+-- for granted that «if it works for the Cataloguer it works for the other»: the author
+-- is set by `auth.uid()` and what is checked is that the session's comes out.
 do $$
 declare v_autor uuid;
 begin
@@ -136,9 +136,9 @@ end $$;
 
 reset role;
 
--- El Lector no puede crear, así que no hay línea que escribir. Se comprueba que
--- el intento falla Y que no dejó rastro: un registro que anotara intentos
--- fallidos contaría cambios que no ocurrieron.
+-- The Reader cannot create, so there is no line to write. It is checked that
+-- the attempt fails AND that it left no trace: a log noting failed
+-- attempts would count changes that did not happen.
 do $$
 declare v_n integer;
 begin
@@ -163,11 +163,11 @@ end $$;
 reset role;
 
 
--- ── 2. El cambio: una fila por campo (RF-1502) ───────────────
+-- ── 2. The change: one row per field (RF-1502) ───────────────
 --
--- Dos campos en un solo `update` son DOS líneas con el MISMO `change_id`, que es
--- lo que permite a la interfaz reconstruir la acción del usuario. Y los valores se
--- guardan en su representación almacenada: `'54.00'` y no «54 cm».
+-- Two fields in a single `update` are TWO lines with the SAME `change_id`, which is
+-- what lets the interface reconstruct the user's action. And the values are
+-- stored in their stored representation: `'54.00'` and not «54 cm».
 do $$
 declare
   v_n integer; v_ids integer; v_op text;
@@ -195,9 +195,9 @@ begin
       coalesce(v_old_alto, '(nulo)'), coalesce(v_new_alto, '(nulo)');
   end if;
 
-  -- La técnica venía de la cadena vacía, que es su valor por omisión: se anota la
-  -- cadena vacía y no un nulo, porque son cosas distintas y el registro es el
-  -- único sitio que no puede confundirlas.
+  -- The technique came from the empty string, which is its default value: the
+  -- empty string is noted and not a null, because they are different things and the log is the
+  -- only place that cannot confuse them.
   select old_value, new_value into v_old_tec, v_new_tec
     from public.change_log where row_key = 'AR-9600' and column_name = 'technique';
   if v_old_tec is distinct from '' or v_new_tec is distinct from 'Hierro soldado' then
@@ -216,9 +216,9 @@ end $$;
 
 reset role;
 
--- El paso de nulo a valor y de valor a nulo, que es el cambio más común de este
--- catálogo —«sin revisar» no es «no»— y el que se perdería si la comparación
--- usara `<>` en vez de `is distinct from`. Se ejerce en los DOS sentidos.
+-- The step from null to value and from value to null, which is this catalogue's most common
+-- change —«sin revisar» is not «no»— and the one that would be lost if the comparison
+-- used `<>` instead of `is distinct from`. It is exercised in BOTH directions.
 do $$
 declare v_n integer; v_old text; v_new text;
 begin
@@ -252,14 +252,14 @@ end $$;
 reset role;
 
 
--- ── 3. Un guardado que no cambia nada no escribe nada ────────
+-- ── 3. A save that changes nothing writes nothing ────────────
 --
--- RF-1510, y es el aserto que separa un registro que alguien lee de uno que
--- nadie lee. El caso no es raro: es el formulario que se guarda sin haber tocado
--- nada, y es el `PATCH` de PostgREST que manda el objeto entero. Se mide con
--- recuento ANTES y DESPUÉS, y se comprueba que el `update` afectó de verdad a una
--- fila, para que el bloque no pase por el motivo equivocado —«no escribió nada»
--- porque no actualizó nada—.
+-- RF-1510, and it is the assertion that separates a log somebody reads from one
+-- nobody reads. The case is not rare: it is the form saved without having touched
+-- anything, and it is PostgREST's `PATCH` that sends the whole object. It is measured with
+-- a count BEFORE and AFTER, and it is checked that the `update` really affected one
+-- row, so the block does not pass for the wrong reason —«it wrote nothing»
+-- because it updated nothing—.
 do $$
 declare v_antes integer; v_despues integer; v_filas integer;
 begin
@@ -287,21 +287,21 @@ end $$;
 reset role;
 
 
--- ── 4. Las marcas de traza no se anotan (RF-1509) ────────────
+-- ── 4. The trace marks are not noted (RF-1509) ───────────────
 --
--- Y ESTE BLOQUE TIENE QUE DEMOSTRAR PRIMERO QUE LAS MARCAS CAMBIARON DE VERDAD,
--- porque si no estaría pasando por el motivo equivocado: «no hay línea de
--- updated_by» es trivialmente cierto si updated_by no se movió.
+-- AND THIS BLOCK HAS TO DEMONSTRATE FIRST THAT THE MARKS REALLY CHANGED,
+-- because otherwise it would be passing for the wrong reason: «there is no
+-- updated_by line» is trivially true if updated_by did not move.
 --
--- LAS MARCAS QUE SE EJERCEN SON `updated_by` Y `basic_updated_at`, Y NO
--- `updated_at`, POR UNA RAZÓN QUE CONVIENE DEJAR ESCRITA: el trigger de traza
--- sella con `now()`, que es la hora de la TRANSACCIÓN, así que dentro de un test
--- —una sola transacción— `updated_at` vale lo mismo antes y después y no hay forma
--- de moverlo. Las otras dos sí se mueven de verdad aquí: la obra la crea el
--- Catalogador y la cambia el Superusuario, así que `updated_by` pasa de uno a
--- otro; y `basic_updated_at` nace nula y se sella al tocar `support`, que es campo
--- de fase 1 (RF-802). Se usa una obra NUEVA justamente para que la marca básica
--- esté sin sellar al empezar.
+-- THE MARKS EXERCISED ARE `updated_by` AND `basic_updated_at`, AND NOT
+-- `updated_at`, FOR A REASON WORTH WRITING DOWN: the trace trigger
+-- stamps with `now()`, which is the TRANSACTION's time, so inside a test
+-- —a single transaction— `updated_at` is the same before and after and there is no way
+-- of moving it. The other two do really move here: the artwork is created by the
+-- Cataloguer and changed by the Superuser, so `updated_by` goes from one to
+-- the other; and `basic_updated_at` is born null and is stamped on touching `support`, which is a
+-- phase-1 field (RF-802). A NEW artwork is used precisely so the basic mark
+-- is unstamped at the start.
 do $$
 declare
   v_autor_antes uuid; v_autor_despues uuid;
@@ -329,8 +329,8 @@ begin
     raise exception 'FAIL: updated_by no se ha movido (% -> %), así que este bloque no está midiendo nada (RF-803)',
       coalesce(v_autor_antes::text, '(nulo)'), coalesce(v_autor_despues::text, '(nulo)');
   end if;
-  -- Y se comprueba el valor exacto y no solo que cambió: `updated_by` tiene que
-  -- ser el usuario de la sesión que guardó, que es lo que pide RF-803.
+  -- And the exact value is checked and not only that it changed: `updated_by` has to
+  -- be the user of the session that saved, which is what RF-803 asks for.
   if v_autor_antes   is distinct from '00000000-0000-0000-0000-0000000000b1'::uuid
      or v_autor_despues is distinct from '00000000-0000-0000-0000-0000000000b3'::uuid then
     raise exception 'FAIL: updated_by debería ser el Catalogador y luego el Superusuario, es % y luego % (RF-803)',
@@ -341,8 +341,8 @@ begin
       coalesce(v_basica_antes::text, '(nulo)'), coalesce(v_basica_despues::text, '(nulo)');
   end if;
 
-  -- Y ahora, con las dos marcas movidas de verdad, el registro no debe mencionar
-  -- ninguna de las nueve.
+  -- And now, with both marks really moved, the log must not mention
+  -- any of the nine.
   select coalesce(array_agg(distinct column_name order by column_name), '{}')
     into v_ruido
     from public.change_log
@@ -355,7 +355,7 @@ begin
       array_to_string(v_ruido, ', ');
   end if;
 
-  -- Lo que sí se anota es el campo que cambió, y SOLO ese: una línea, no tres.
+  -- What IS noted is the field that changed, and ONLY that one: one line, not three.
   if not exists (select 1 from public.change_log
                   where row_key = 'AR-9603' and column_name = 'support' and new_value = 'Chapa') then
     raise exception 'FAIL: el campo que sí cambió no se ha anotado';
