@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
 import { draftDirty } from '../../../components/formDirty'
-import { BottomSheet } from '../../../components/ui'
+import { BottomSheet, SheetFooter } from '../../../components/ui'
 import { useFormDraft } from '../../../components/useFormDraft'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import type { PlaceTree } from '../../../lib/places'
@@ -253,19 +253,19 @@ export function UploadDocumentSheet({
         </p>
       )}
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <SheetFooter>
         <button
           type="button"
           disabled={busy || blocked}
           onClick={() => void save()}
-          className="btn-primary min-h-touch disabled:opacity-60"
+          className="btn-primary min-h-touch flex-1 disabled:opacity-60"
         >
           {step === null ? 'Subir y enlazar' : UPLOAD_STEP_TEXT[step]}
         </button>
         <button type="button" disabled={busy} onClick={guard.cancel} className="btn-secondary">
           Cancelar
         </button>
-      </div>
+      </SheetFooter>
     </BottomSheet>
   )
 }

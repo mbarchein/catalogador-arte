@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { anyWritten } from '../../../components/formDirty'
-import { BottomSheet } from '../../../components/ui'
+import { BottomSheet, SheetFooter } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import { displayExhibitionDates } from '../documentaryFormat'
 import type { ExhibitionRow } from '../documentaryRows'
@@ -202,19 +202,19 @@ export function ExhibitionPicker({
               </p>
             )}
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <SheetFooter>
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => void add()}
-                className="btn-primary min-h-touch"
+                className="btn-primary min-h-touch flex-1"
               >
                 {saving ? 'Añadiendo…' : 'Añadir'}
               </button>
               <button type="button" disabled={saving} onClick={close} className="btn-secondary">
                 Cancelar
               </button>
-            </div>
+            </SheetFooter>
           </>
         )}
       </BottomSheet>

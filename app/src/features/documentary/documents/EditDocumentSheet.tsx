@@ -3,7 +3,7 @@ import { draftDirty } from '../../../components/formDirty'
 import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
 import { draftFingerprint } from '../../../components/draftStore'
 import { useFormDraft } from '../../../components/useFormDraft'
-import { BottomSheet } from '../../../components/ui'
+import { BottomSheet, SheetFooter } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import type { PlaceTree } from '../../../lib/places'
 import type { DocumentTypeEntry } from '../../../lib/types'
@@ -242,19 +242,19 @@ export function EditDocumentSheet({
         </p>
       )}
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <SheetFooter>
         <button
           type="button"
           disabled={saving}
           onClick={() => void save()}
-          className="btn-primary min-h-touch disabled:opacity-60"
+          className="btn-primary min-h-touch flex-1 disabled:opacity-60"
         >
           {saving ? 'Guardando…' : 'Guardar la corrección'}
         </button>
         <button type="button" disabled={saving} onClick={guard.cancel} className="btn-secondary">
           Cancelar
         </button>
-      </div>
+      </SheetFooter>
     </BottomSheet>
   )
 }

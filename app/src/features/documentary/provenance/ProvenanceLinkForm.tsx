@@ -3,7 +3,7 @@ import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
 import { draftFingerprint } from '../../../components/draftStore'
 import { draftDirty } from '../../../components/formDirty'
 import { useFormDraft } from '../../../components/useFormDraft'
-import { BottomSheet, Chips, ToggleChip, YearStepper } from '../../../components/ui'
+import { BottomSheet, Chips, SheetFooter, ToggleChip, YearStepper } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import {
   PROVENANCE_ACQUISITION_LABEL,
@@ -297,14 +297,19 @@ export function ProvenanceLinkForm({
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" disabled={saving} onClick={() => void save()} className="btn-primary">
+        <SheetFooter>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void save()}
+            className="btn-primary flex-1"
+          >
             {saving ? 'Guardando…' : initial.id === null ? 'Añadir al final' : 'Guardar'}
           </button>
           <button type="button" disabled={saving} onClick={onCancel} className="btn-secondary">
             Cancelar
           </button>
-        </div>
+        </SheetFooter>
       </div>
     </BottomSheet>
   )

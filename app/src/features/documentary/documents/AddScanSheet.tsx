@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { BottomSheet } from '../../../components/ui'
+import { BottomSheet, SheetFooter } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import { fileSizeText } from '../documentaryFormat'
 import { scanAddedNotice, scanTargetProblem, type EditableDocument } from './documentEdit'
@@ -155,19 +155,19 @@ export function AddScanSheet({
             </p>
           )}
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <SheetFooter>
             <button
               type="button"
               disabled={busy || file === null || fileProblem !== null}
               onClick={() => void add()}
-              className="btn-primary min-h-touch disabled:opacity-60"
+              className="btn-primary min-h-touch flex-1 disabled:opacity-60"
             >
               {step === null ? 'Añadir el escaneo' : SCAN_STEP_TEXT[step]}
             </button>
             <button type="button" disabled={busy} onClick={guard.cancel} className="btn-secondary">
               Cancelar
             </button>
-          </div>
+          </SheetFooter>
         </>
       )}
     </BottomSheet>

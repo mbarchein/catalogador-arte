@@ -3,7 +3,7 @@ import { draftDirty } from '../../../components/formDirty'
 import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
 import { draftFingerprint } from '../../../components/draftStore'
 import { useFormDraft } from '../../../components/useFormDraft'
-import { BottomSheet, Chips, YearStepper } from '../../../components/ui'
+import { BottomSheet, Chips, SheetFooter, YearStepper } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import { maxYear } from '../../../lib/structuredDate'
 import type { MasterRef, ReferenceRow } from '../documentaryRows'
@@ -260,26 +260,27 @@ export function ReferenceSheet({
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
+        {/* Qué se está corrigiendo, en gris y por encima de los botones: el título
+            editable de arriba puede estar a medio escribir, y esto es la referencia
+            tal como está guardada ahora mismo. Iba debajo, y con los botones pegados
+            al borde de la hoja lo de debajo ya no existe. */}
+        <p className="text-xs text-stone-400">
+          Estás corrigiendo «{referenceTitleText(reference)}».
+        </p>
+
+        <SheetFooter>
           <button
             type="button"
             disabled={busy}
             onClick={() => void save()}
-            className="btn min-h-touch bg-stone-900 text-white"
+            className="btn min-h-touch flex-1 bg-stone-900 text-white"
           >
             {busy ? 'Guardando…' : 'Guardar la referencia'}
           </button>
           <button type="button" disabled={busy} onClick={guard.cancel} className="btn-secondary">
             Cancelar
           </button>
-        </div>
-
-        {/* Qué se está corrigiendo, al pie y en gris: el título editable de arriba
-            puede estar a medio escribir, y esto es la referencia tal como está
-            guardada ahora mismo. */}
-        <p className="text-xs text-stone-400">
-          Estás corrigiendo «{referenceTitleText(reference)}».
-        </p>
+        </SheetFooter>
       </div>
     </BottomSheet>
   )

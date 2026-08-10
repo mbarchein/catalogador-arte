@@ -3,7 +3,7 @@ import { DraftOfferBanner } from '../../../components/DraftOfferBanner'
 import { draftFingerprint } from '../../../components/draftStore'
 import { draftDirty } from '../../../components/formDirty'
 import { useFormDraft } from '../../../components/useFormDraft'
-import { BottomSheet, Chips, PlusIcon, YearStepper } from '../../../components/ui'
+import { BottomSheet, Chips, PlusIcon, SheetFooter, YearStepper } from '../../../components/ui'
 import { useSheetGuard } from '../../../components/useSheetGuard'
 import { maxYear } from '../../../lib/structuredDate'
 import type { MasterRef, ReferenceRow } from '../documentaryRows'
@@ -412,19 +412,19 @@ export function CitationSheet({
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
+          <SheetFooter>
             <button
               type="button"
               disabled={busy}
               onClick={() => void confirm()}
-              className="btn min-h-touch bg-stone-900 text-white"
+              className="btn min-h-touch flex-1 bg-stone-900 text-white"
             >
               {busy ? 'Guardando…' : target !== null ? 'Guardar' : 'Añadir la cita'}
             </button>
             <button type="button" disabled={busy} onClick={guard.cancel} className="btn-secondary">
               Cancelar
             </button>
-          </div>
+          </SheetFooter>
         </div>
       )}
 
