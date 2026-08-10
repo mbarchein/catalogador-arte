@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { Layout } from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
@@ -53,6 +53,7 @@ import {
   MoveBeforeIcon,
   ProgressRing,
   StarIcon,
+  Toast,
   TrashIcon,
 } from '../../components/ui'
 import { ringLabel } from '../../lib/progressRing'
@@ -80,6 +81,7 @@ import {
 } from './photoWork'
 import type { UploadProgressEvent } from '../../lib/signedUpload'
 import { moveItem } from '../../lib/reorder'
+import { useAutoClear } from '../../components/useAutoClear'
 import { useUnloadGuard } from '../../components/useUnloadGuard'
 import { rememberBatchColor } from './batch'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
@@ -199,6 +201,12 @@ export function ArtworkPhotosPage() {
   )
   const percent = stage.percent
   const [saving, setSaving] = useState(false)
+  /**
+   * La confirmación de lo último que se hizo, que se va sola.
+   *
+   * El error de al lado NO se va: pide hacer algo, y uno que desaparece antes de que
+   * se decida qué obliga a repetir la acción para volver a leer por qué falló.
+   */
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmRemoval, setConfirmRemoval] = useState<string | null>(null)
@@ -227,16 +235,6 @@ export function ArtworkPhotosPage() {
     note: string | null
   } | null>(null)
 
-  /**
-   * Una recarga sin querer aquí se lleva trabajo de verdad (RNF-106).
-   *
-   * Con una subida en marcha se pierde lo enviado y los segundos de generar la copia a
-   * tamaño completo. Y con fotografías preparadas se pierden LAS FOTOGRAFÍAS: al
-   * contrario que la pantalla de captura, que apunta su cola en el teléfono, aquí están
-   * solo en memoria — se eligieron del carrete o se hicieron con la cámara, se les puso
-   * el tipo de toma y quizá se recortaron, y de eso no queda nada.
-   */
-  useUnloadGuard(uploading !== null || staged.length > 0)
 
   // The selection starts on the main image and follows removals; it never
   // jumps on its own while the cataloger is working.
@@ -293,6 +291,58 @@ export function ArtworkPhotosPage() {
         total: ordered.length,
       })
     : ''
+
+  /**
+   * Los datos de la toma abierta tal como están guardados, y el borrador que se está
+   * escribiendo encima.
+   *
+   * El borrador vive AQUÍ y no dentro del formulario porque «Guardar» y «Deshacer» se
+   * han ido a la barra del pie, que es de la página: el mismo motivo por el que el
+   * formulario de la ficha tampoco se guarda a sí mismo.
+   */
+  const savedData: PhotoDataDraft | null = selected
+    ? photoDataDraft({
+        shot_type: selected.shot_type,
+        provenance: selectedDetail?.provenance ?? 'OWN',
+        photo_credit: selectedDetail?.photo_credit ?? '',
+        provenance_source: selectedDetail?.provenance_source ?? '',
+      })
+    : null
+  // La identidad de lo guardado como texto, para poder comparar por valor: `savedData`
+  // es un objeto nuevo en cada pintado y en las dependencias de un efecto sería un
+  // bucle.
+  const savedKey = savedData === null ? '' : JSON.stringify(savedData)
+  const [dataDraft, setDataDraft] = useState<PhotoDataDraft | null>(savedData)
+  // Lo guardado, alcanzable desde dentro del efecto sin estar en sus dependencias.
+  const savedRef = useRef(savedData)
+  savedRef.current = savedData
+  useEffect(() => {
+    // Se reinicia al pasar a otra toma —el borrador de una no es el de la otra— y
+    // también cuando cambia lo guardado, que son dos momentos: al terminar de
+    // guardar, y cuando el detalle de la fotografía llega de la base unos
+    // milisegundos después de abrir el panel. Sin lo segundo, el borrador se quedaba
+    // con la procedencia por omisión y la pantalla anunciaba cambios sin guardar que
+    // nadie había hecho.
+    setDataDraft(savedRef.current)
+  }, [selectedId, savedKey])
+  const dataDirty =
+    dataDraft !== null && savedData !== null && photoDataDirty(dataDraft, savedData)
+
+  /**
+   * Una recarga sin querer aquí se lleva trabajo de verdad (RNF-106).
+   *
+   * Con una subida en marcha se pierde lo enviado y los segundos de generar la copia a
+   * tamaño completo. Y con fotografías preparadas se pierden LAS FOTOGRAFÍAS: al
+   * contrario que la pantalla de captura, que apunta su cola en el teléfono, aquí están
+   * solo en memoria — se eligieron del carrete o se hicieron con la cámara, se les puso
+   * el tipo de toma y quizá se recortaron, y de eso no queda nada.
+   *
+   * Y desde que los datos de la toma tienen «Guardar» propio, lo escrito y sin
+   * guardar también se pierde: son cuatro campos, pero uno de ellos es de dónde salió
+   * una fotografía ajena, que no se vuelve a averiguar en un minuto.
+   */
+  useUnloadGuard(uploading !== null || staged.length > 0 || dataDirty)
+  useAutoClear(notice, () => setNotice(null))
 
   function discardStaged() {
     staged.forEach((s) => URL.revokeObjectURL(s.prepared.preview))
@@ -945,17 +995,9 @@ export function ArtworkPhotosPage() {
                     Los tres datos que describen la fotografía, juntos y con un solo
                     «Guardar»: son la misma pregunta —qué es esto y de dónde salió— y
                     antes se guardaban de tres formas distintas. Ver photoData.ts. */}
-                <PhotoDataForm
-                  key={selected.image_id}
-                  saved={photoDataDraft({
-                    shot_type: selected.shot_type,
-                    provenance: selectedDetail?.provenance ?? 'OWN',
-                    photo_credit: selectedDetail?.photo_credit ?? '',
-                    provenance_source: selectedDetail?.provenance_source ?? '',
-                  })}
-                  busy={saving}
-                  onSave={(draft) => void savePhotoData(selected.image_id, draft)}
-                />
+                {dataDraft !== null && (
+                  <PhotoDataForm draft={dataDraft} busy={saving} onChange={setDataDraft} />
+                )}
               </div>
             )}
 
@@ -994,17 +1036,18 @@ export function ArtworkPhotosPage() {
           </>
         )}
 
-        {notice && (
-          <p role="status" className="mt-2 rounded-lg bg-green-50 p-2 text-xs text-green-900">
-            {notice}
-          </p>
-        )}
         {error && (
           <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-800">
             {error}
           </p>
         )}
       </section>
+
+      {/* La confirmación de lo que acaba de pasar, flotando arriba y unos segundos:
+          vivía al final de la tarjeta, debajo del panel entero, y con la vista puesta
+          en la fotografía —que es donde están los mandos que la producen— aparecía
+          fuera de la pantalla. El porqué de que se vaya sola, en `useAutoClear`. */}
+      {notice && <Toast>{notice}</Toast>}
 
       {editing && (
         <PhotoEditor
@@ -1033,15 +1076,21 @@ export function ArtworkPhotosPage() {
         />
       )}
 
-      {/* ── Lo que falta por subir, pegado al pie ──
-          Como en el formulario de editar la ficha, y por el mismo motivo. Estos botones
-          vivían dentro de la tarjeta de arriba, así que añadir cuatro fotografías —cada
-          una una miniatura en la tira, cada una con su tipo de toma que elegir— los
-          sacaba de la pantalla. Fotos preparadas y nunca enviadas es el único fallo que
-          esta pantalla produce en silencio, y «no lo he subido» no se distingue de «no lo
-          he hecho». La barra solo existe mientras hay algo pendiente o algo subiendo: sin
-          nada que hacer con ella, no tapa la ficha. */}
-      {(staged.length > 0 || uploading) && (
+      {/* ── LA BARRA DEL PIE, CON LOS DOS PENDIENTES QUE PUEDE HABER ──
+          Esta pantalla puede tener dos cosas a medias a la vez: fotografías
+          preparadas y sin subir, y los datos de la toma abierta escritos y sin
+          guardar. **Son una sola barra y no dos**: dos elementos pegados al mismo
+          borde se pintan uno encima del otro, y el que quedara debajo sería un botón
+          que existe y no se puede pulsar.
+
+          Los dos van al pie por el mismo motivo, que es el que ya sacó de la tarjeta
+          al de subir: con cuatro miniaturas arriba y el panel de datos abajo, el
+          botón que cierra el trabajo se queda fuera de la pantalla, y «no lo he
+          guardado» no se distingue de «no lo he hecho».
+
+          Sin nada pendiente la barra no existe: una barra fija que no hace nada tapa
+          la ficha a cambio de nada. */}
+      {(staged.length > 0 || uploading || dataDirty) && (
         <ActionBar
           notice={
             uploading ? (
@@ -1054,31 +1103,62 @@ export function ArtworkPhotosPage() {
               <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-800">
                 {uploadError}
               </p>
-            ) : (
+            ) : staged.length > 0 ? (
               <p className="text-xs text-stone-600">{pendingUploadNotice(staged.length)}</p>
+            ) : (
+              // Lo pendiente se dice, además de encender el botón: un botón que
+              // cambia de color no se ve cuando lo que se mira es la fotografía.
+              <p className="text-xs text-amber-800">{pendingDataNotice(dataDirty)}</p>
             )
           }
         >
-          <button
-            type="button"
-            disabled={saving || uploading !== null}
-            onClick={() => void uploadStaged()}
-            className="btn min-h-touch flex-1 bg-stone-900 text-white"
-          >
-            {uploading
-              ? 'Subiendo…'
-              : uploadError
-                ? 'Volver a intentarlo'
-                : pendingUploadText(staged.length)}
-          </button>
-          <button
-            type="button"
-            disabled={uploading !== null}
-            onClick={discardStaged}
-            className="btn-secondary"
-          >
-            Descartar
-          </button>
+          <div className="flex flex-1 flex-col gap-2">
+            {(staged.length > 0 || uploading) && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={saving || uploading !== null}
+                  onClick={() => void uploadStaged()}
+                  className="btn min-h-touch flex-1 bg-stone-900 text-white"
+                >
+                  {uploading
+                    ? 'Subiendo…'
+                    : uploadError
+                      ? 'Volver a intentarlo'
+                      : pendingUploadText(staged.length)}
+                </button>
+                <button
+                  type="button"
+                  disabled={uploading !== null}
+                  onClick={discardStaged}
+                  className="btn-secondary"
+                >
+                  Descartar
+                </button>
+              </div>
+            )}
+
+            {dataDirty && selected && savedData !== null && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={saving}
+                  onClick={() => setDataDraft(savedData)}
+                >
+                  Deshacer
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary flex-1"
+                  disabled={saving || dataDraft === null}
+                  onClick={() => dataDraft && void savePhotoData(selected.image_id, dataDraft)}
+                >
+                  {saving ? 'Guardando…' : 'Guardar los datos'}
+                </button>
+              </div>
+            )}
+          </div>
         </ActionBar>
       )}
     </Layout>
@@ -1160,17 +1240,15 @@ function PhotoAction({
  * otra toma trae sus datos y no el borrador a medias de la anterior.
  */
 function PhotoDataForm({
-  saved,
+  draft,
   busy,
-  onSave,
+  onChange,
 }: {
-  saved: PhotoDataDraft
+  draft: PhotoDataDraft
   busy: boolean
-  onSave: (draft: PhotoDataDraft) => void
+  onChange: (draft: PhotoDataDraft) => void
 }) {
-  const [draft, setDraft] = useState(saved)
-  const dirty = photoDataDirty(draft, saved)
-  const pending = pendingDataNotice(dirty)
+  const setDraft = onChange
 
   return (
     <div>
@@ -1221,28 +1299,6 @@ function PhotoDataForm({
         <p className="mt-1 text-xs text-stone-500">{photoSourceHint(draft.provenance)}</p>
       </div>
 
-      {/* Lo pendiente se dice, además de encender el botón: un botón que cambia de
-          color no se ve cuando lo que se mira es la fotografía. */}
-      {pending && <p className="mt-2 text-xs text-amber-800">{pending}</p>}
-
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          className="btn-secondary"
-          disabled={busy || !dirty}
-          onClick={() => setDraft(saved)}
-        >
-          Deshacer
-        </button>
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={busy || !dirty}
-          onClick={() => onSave(draft)}
-        >
-          {busy ? 'Guardando…' : 'Guardar'}
-        </button>
-      </div>
     </div>
   )
 }
