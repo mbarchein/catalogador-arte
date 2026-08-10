@@ -11,11 +11,11 @@ import {
 } from './citationFormat'
 
 /**
- * Lo que se lee de una cita bibliográfica en la ficha (RF-504).
+ * What is read of a bibliographic citation in the record (RF-504).
  *
- * Una referencia se lee de un vistazo o no sirve: autoría, título, dónde salió,
- * cuándo, y la página donde sale ESTA obra. Aquí se verifica la frase, no el
- * componente que la contiene: la batería corre en node y no hay DOM.
+ * A reference is read at a glance or it is of no use: authorship, title, where it appeared,
+ * when, and the page where THIS artwork appears. Here the sentence is verified, not the
+ * component that contains it: the suite runs in node and there is no DOM.
  */
 
 function reference(over: Partial<ReferenceRow> = {}): ReferenceRow {

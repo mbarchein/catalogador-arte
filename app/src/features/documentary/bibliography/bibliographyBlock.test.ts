@@ -9,12 +9,12 @@ import {
 } from './bibliographyBlock'
 
 /**
- * Las dos consultas del bloque de bibliografía y lo que pasa cuando solo llega
- * una (RF-218, RF-304, RF-504).
+ * The bibliography block's two queries and what happens when only
+ * one arrives (RF-218, RF-304, RF-504).
  *
- * El caso que hay que decidir es el incómodo: las citas cargan y el estado de la
- * investigación no. Pintar «Ninguna registrada» ahí sería publicar justo la frase
- * que toda esta parte del catálogo existe para evitar.
+ * The case that has to be decided is the awkward one: the citations load and the research
+ * state does not. Painting «Ninguna registrada» there would be publishing precisely the sentence
+ * this whole part of the catalogue exists to avoid.
  */
 
 const spec = sectionSpec('bibliography')

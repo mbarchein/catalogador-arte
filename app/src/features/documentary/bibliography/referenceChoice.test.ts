@@ -17,12 +17,12 @@ import {
 } from './referenceChoice'
 
 /**
- * Elegir en qué referencia se cita una obra, y escribir la referencia cuando
- * todavía no está en el catálogo (RF-504).
+ * Choosing which reference an artwork is cited in, and writing the reference when
+ * it is not in the catalogue yet (RF-504).
  *
- * Lo que se comprueba aquí es lo que decide algo: qué referencias se ofrecen,
- * cuáles alcanza lo que se teclea, cuándo un borrador es en realidad una
- * referencia que ya existe, y qué falta antes de poder guardarla.
+ * What is checked here is what decides something: which references are offered,
+ * which ones what is typed reaches, when a draft is actually a
+ * reference that already exists, and what is missing before it can be stored.
  */
 
 function reference(over: Partial<ReferenceRow> = {}): ReferenceRow {

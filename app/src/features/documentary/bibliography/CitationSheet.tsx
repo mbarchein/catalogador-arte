@@ -148,9 +148,9 @@ export function CitationSheet({
     [publicationTypes],
   )
 
-  // No perder lo escrito por un roce: la página y la nota de ESTA cita, y los campos de
-  // la referencia nueva cuando se está dando de alta una. La búsqueda no cuenta —teclear
-  // en el buscador no es trabajo que se pierda—, y el fondo no cierra.
+  // Not losing what was written to a brush: THIS citation's page and note, and the fields of
+  // the new reference when one is being created. The search does not count —typing
+  // in the finder is not work that gets lost—, and the backdrop does not close.
   const dirty =
     pages.trim() !== (editing?.pages ?? '').trim() ||
     note.trim() !== (editing?.note ?? '').trim() ||
@@ -206,9 +206,9 @@ export function CitationSheet({
           />
 
           {matches.length === 0 ? (
-            /* Nunca un desplegable vacío sin explicación, y la explicación
-               correcta de las tres posibles (RF-304): se decide en
-               `noReferenceOptionsText`, donde la batería la comprueba. */
+            /* Never an empty dropdown with no explanation, and the correct
+               explanation of the three possible ones (RF-304): it is decided in
+               `noReferenceOptionsText`, where the suite checks it. */
             <p className="px-1 text-sm text-stone-600">
               {noReferenceOptionsText(offered, references.length, query)}
             </p>

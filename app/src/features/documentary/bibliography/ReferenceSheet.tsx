@@ -94,9 +94,9 @@ export function ReferenceSheet({
   // came from: this reference is read by every artwork that cites it.
   const dirty = draftDirty(draft, referenceEdit(reference))
 
-  // Y apuntada, con huella: esta fila la corrigen desde la ficha de la referencia y desde
-  // la bibliografía de cualquier obra que la cite, así que es de las más expuestas a que
-  // otra sesión la haya tocado mientras el borrador esperaba.
+  // And noted down, with a fingerprint: this row is corrected from the reference's record and from
+  // the bibliography of any artwork that cites it, so it is one of the most exposed to
+  // another session having touched it while the draft was waiting.
   const stored = useFormDraft({
     scope: `referencia-editar:${reference.id}`,
     draft,

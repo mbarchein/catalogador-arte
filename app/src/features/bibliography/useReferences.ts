@@ -52,10 +52,10 @@ export interface ReferencesQuery {
 }
 
 /**
- * @param enabled Falso pide NADA. La ficha de una exposición carga la bibliografía entera
- *   solo cuando va a nombrar o a elegir su catálogo (RF-503): esa pantalla se abre muchas
- *   veces para leer una muestra, y quien solo lee no tiene por qué pagar el catálogo de
- *   referencias. Por omisión verdadero, que es lo que necesitan el listado y la ficha.
+ * @param enabled False asks for NOTHING. An exhibition's record loads the whole bibliography
+ *   only when it is going to name or choose its catalogue (RF-503): that screen is opened many
+ *   times to read a show, and whoever only reads has no reason to pay for the reference
+ *   catalogue. True by default, which is what the listing and the record need.
  */
 export function useReferences(enabled = true): ReferencesQuery {
   const [references, setReferences] = useState<ReferenceRow[]>([])
@@ -77,25 +77,25 @@ export function useReferences(enabled = true): ReferencesQuery {
       setLoading(false)
       return
     }
-    // Se vuelve a pedir al pasar de apagado a encendido, y esa espera tiene que verse:
-    // si no, el selector leería «todavía no hay ninguna referencia» mientras la primera
-    // consulta está en el aire. Al listado no le cuesta nada, que solo enseña la espera
-    // cuando no hay ninguna fila pintada.
+    // It is asked for again on going from off to on, and that wait has to be visible:
+    // otherwise, the selector would read «there is no reference yet» while the first
+    // query is in the air. It costs the listing nothing, since it only shows the wait
+    // when there is no row painted.
     setLoading(true)
     const { data, error: failure } = await supabase.from('bibliography').select(REFERENCE_COLUMNS)
     if (!alive.current) return
     setLoading(false)
     if (failure) {
       setError(referenceFailureText(failure))
-      // La lista NO se vacía: las filas ya pintadas mantienen la pantalla legible, y
-      // de una lista vieja no se escribe nada — desde aquí no se escribe nada en
-      // absoluto.
+      // The list is NOT emptied: the rows already painted keep the screen readable, and
+      // nothing is written from an old list — nothing at all is written from
+      // here.
       return
     }
     setError(null)
-    // Sin `order` en la consulta: el orden del índice es por autor con la
-    // colación es-ES, y la de la base ordenaría «Álvarez» después de la z. Se decide
-    // en `sortReferences`, donde es puro y está probado.
+    // No `order` in the query: the index's order is by author with the
+    // es-ES collation, and the base's would order «Álvarez» after the z. It is decided
+    // in `sortReferences`, where it is pure and tested.
     setReferences((data ?? []) as unknown as ReferenceRow[])
   }, [enabled])
 

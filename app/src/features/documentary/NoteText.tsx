@@ -1,11 +1,11 @@
 import { noteSegments } from './noteText'
 
 /**
- * Una nota de texto libre, con sus direcciones acortadas y pulsables.
+ * A free-text note, with its addresses shortened and clickable.
  *
- * Acortadas para que quepan (ver `noteText.ts`) y pulsables porque una dirección
- * recortada que no se pueda abrir no serviría de nada: lo que se enseña es un
- * resumen y el destino entero va en el enlace, así que se sigue llegando.
+ * Shortened so they fit (see `noteText.ts`) and clickable because a shortened
+ * address that cannot be opened would be of no use: what is shown is a
+ * summary and the whole destination goes in the link, so it can still be reached.
  */
 export function NoteText({ text }: { text: string }) {
   return (
@@ -34,12 +34,12 @@ export function NoteText({ text }: { text: string }) {
 }
 
 /**
- * La fila de una nota dentro de una lista de campos.
+ * A note's row inside a list of fields.
  *
- * Va **con los demás campos**, no en un bloque aparte: es un campo más de la
- * ficha. Lo que cambia es que su contenido ocupa el ancho entero en vez de la
- * columna estrecha de la derecha, porque es el único que trae párrafos y
- * direcciones. Se usa dentro de un `<dl>`.
+ * It goes **with the other fields**, not in a block apart: it is one more field of the
+ * record. What changes is that its content takes up the whole width instead of the
+ * narrow column on the right, because it is the only one that carries paragraphs and
+ * addresses. It is used inside a `<dl>`.
  */
 export function NoteRow({ label, value }: { label: string; value: string }) {
   const written = value.trim()

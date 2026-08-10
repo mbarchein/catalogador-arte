@@ -1,8 +1,8 @@
 /**
- * El bloque «Bibliografía» de la ficha de obra (RF-303, RF-504).
+ * The artwork record's «Bibliografía» block (RF-303, RF-504).
  *
- * Se monta con la fila documental de la obra, que la ficha carga UNA vez para
- * los cinco bloques:
+ * It is mounted with the artwork's documentary row, which the record loads ONCE for
+ * the five blocks:
  *
  * ```tsx
  * const documentary = useArtworkDocumentary(artwork.catalog_id)

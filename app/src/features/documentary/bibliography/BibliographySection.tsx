@@ -64,18 +64,18 @@ export function BibliographySection({
    */
   documentary: ArtworkDocumentaryQuery
   /**
-   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
-   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
-   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   * Whether this block can write. False in the record's view and true only
+   * in the editing area. False by default: a new block that forgets to
+   * pass it is born read-only, which is the safe side of forgetting.
    */
   writable?: boolean
 }) {
   const spec = sectionSpec('bibliography')
   const { canEdit } = useAuth()
-  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
-  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
-  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
-  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  // RF-308: **writing lives in the editing area and not in the view.** The record that
+  // is read is read-only, so no control of this block offers to change
+  // a datum unless the page says it is editing. `canWrite` is still
+  // necessary —the permission rules over the mode— but it is no longer sufficient.
   const canWrite = canWriteBlock(writable, canEdit)
   const { rows, loading, error, reload } = useArtworkBibliography(catalogId)
   const edits = useBibliographyEdits(catalogId, canWrite)
@@ -214,15 +214,15 @@ export function BibliographySection({
               </p>
             )}
             {blockedReason !== null ? (
-              /* La base rechazaría la cita (RF-218), así que se dice aquí y no
-                 después de un viaje de ida y vuelta: el botón de debajo cambia el
-                 estado, que es lo que hay que hacer primero. */
+              /* The base would reject the citation (RF-218), so it is said here and not
+                 after a round trip: the button below changes the
+                 state, which is what has to be done first. */
               <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{blockedReason}</p>
             ) : edits.error !== null ? (
-              /* Citar queda desactivado y se dice por qué: sin el catálogo de
-                 referencias no hay manera de saber si la que se va a escribir ya
-                 existe, y dos filas para el mismo libro parten en dos las citas
-                 del catálogo para siempre. */
+              /* Citing is disabled and the reason is said: without the reference
+                 catalogue there is no way of knowing whether the one about to be written already
+                 exists, and two rows for the same book split the catalogue's citations
+                 in two forever. */
               <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
                 No se ha podido cargar el catálogo de referencias, así que no se puede citar. Inténtalo donde haya cobertura. ({edits.error})
               </p>

@@ -9,12 +9,12 @@ import {
 } from './citationGroups'
 
 /**
- * Agrupar la bibliografía por tipo de publicación cuando aporta, y no cuando no
+ * Grouping the bibliography by publication type when it helps, and not when it does not
  * (RF-504, RF-514).
  *
- * Cada rótulo cuesta una línea de una pantalla de móvil, así que tiene que
- * ganársela: tres referencias se leen enteras y catorce no. La regla que lo
- * decide se comprueba aquí y no se lee dentro del JSX.
+ * Each label costs one line of a phone screen, so it has to
+ * earn it: three references are read whole and fourteen are not. The rule that
+ * decides it is checked here and is not read inside the JSX.
  */
 
 const ARTICLE: MasterRef = { id: 'pt-article', name: 'Artículo', active: true }
