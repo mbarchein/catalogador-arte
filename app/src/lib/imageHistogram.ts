@@ -644,13 +644,13 @@ export function clippingNotice(clipping: Clipping | null | undefined): string | 
   const crushed = clipping.lowPercent >= CLIPPING_NOTICE_PERCENT
   const burnt = clipping.highPercent >= CLIPPING_NOTICE_PERCENT
   if (crushed && burnt) {
-    return `Con este ajuste, el ${percentText(clipping.lowPercent)} % de los píxeles se queda en negro puro y el ${percentText(clipping.highPercent)} % en blanco puro: en esas zonas ya no hay detalle. Si importan, conviene bajar los negros y subir los blancos.`
+    return `Con este ajuste, el ${percentText(clipping.lowPercent)}% de los píxeles se queda en negro puro y el ${percentText(clipping.highPercent)}% en blanco puro: en esas zonas ya no hay detalle. Si importan, conviene bajar los negros y subir los blancos.`
   }
   if (crushed) {
-    return `Con este ajuste, el ${percentText(clipping.lowPercent)} % de los píxeles se queda en negro puro y pierde el detalle de las sombras. Si esa zona importa, conviene bajar los negros.`
+    return `Con este ajuste, el ${percentText(clipping.lowPercent)}% de los píxeles se queda en negro puro y pierde el detalle de las sombras. Si esa zona importa, conviene bajar los negros.`
   }
   if (burnt) {
-    return `Con este ajuste, el ${percentText(clipping.highPercent)} % de los píxeles se queda en blanco puro y pierde el detalle de las luces. Si esa zona importa, conviene subir los blancos.`
+    return `Con este ajuste, el ${percentText(clipping.highPercent)}% de los píxeles se queda en blanco puro y pierde el detalle de las luces. Si esa zona importa, conviene subir los blancos.`
   }
   return null
 }

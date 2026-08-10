@@ -142,7 +142,7 @@ function Gauge({
         aria-valuenow={percent}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`${name}: ${percent} % ocupado`}
+        aria-label={`${name}: ${percent}% ocupado`}
         className="mt-1 h-2 w-full overflow-hidden rounded-full bg-stone-200"
       >
         <div className={`h-full ${BAR[level]}`} style={{ width: `${percent}%` }} />

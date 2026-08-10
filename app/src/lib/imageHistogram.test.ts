@@ -310,7 +310,7 @@ describe('píxeles acromáticos creíbles del encuadre (RF-414)', () => {
     expect(measureFrame(solid(4, 4, [100, 92, 92])).achromatic).toBe(0)
   })
 
-  it('por debajo del 0,5 % de grises creíbles el automático no puede opinar (RF-414)', () => {
+  it('por debajo del 0,5% de grises creíbles el automático no puede opinar (RF-414)', () => {
     const withGreys = (greys: number) =>
       measureFrame(
         raster(40, 25, (x, y) => (y * 40 + x < greys ? [128, 128, 128] : [200, 120, 120])),
@@ -434,7 +434,7 @@ describe('recuento de píxeles empastados y quemados (RF-414)', () => {
     expect(clipping.lowPercent).toBe(MIN_CLIPPED_PERCENT)
   })
 
-  it('el 100 % se anota como 99,99, que es lo que la columna puede guardar (RF-414)', () => {
+  it('el 100% se anota como 99,99, que es lo que la columna puede guardar (RF-414)', () => {
     const clipping = clippingOf(solid(2, 2, [10, 10, 10]), buildColorLuts({ blackPoint: 32 }))
     expect(clipping.low).toBe(4)
     expect(clipping.lowPercent).toBe(MAX_CLIPPED_PERCENT)
@@ -470,7 +470,7 @@ describe('aviso de recorte (RF-414)', () => {
         buildColorLuts({ blackPoint: 32 }),
       ),
     )
-    expect(notice).toContain('20,00 %')
+    expect(notice).toContain('20,00%')
     expect(notice).toContain('negro puro')
     expect(notice).toContain('bajar los negros')
   })
@@ -482,7 +482,7 @@ describe('aviso de recorte (RF-414)', () => {
         buildColorLuts({ whitePoint: 192 }),
       ),
     )
-    expect(notice).toContain('10,00 %')
+    expect(notice).toContain('10,00%')
     expect(notice).toContain('blanco puro')
     expect(notice).toContain('subir los blancos')
   })
@@ -496,7 +496,7 @@ describe('aviso de recorte (RF-414)', () => {
     const notice = clippingNotice(
       clippingOf(photo, buildColorLuts({ blackPoint: 32, whitePoint: 192 })),
     )
-    expect(notice).toContain('20,00 %')
+    expect(notice).toContain('20,00%')
     expect(notice).toContain('negro puro')
     expect(notice).toContain('blanco puro')
     expect(notice?.split('Con este ajuste').length).toBe(2)

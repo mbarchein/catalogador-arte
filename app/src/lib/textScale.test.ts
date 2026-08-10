@@ -80,7 +80,7 @@ describe('los escalones, tal como se leen', () => {
       expect(textScaleOptionText(scale)).toContain(TEXT_SCALE_LABEL[scale])
       expect(textScaleOptionText(scale)).toContain(String(TEXT_SCALE_PERCENT[scale]))
     }
-    expect(textScaleOptionText('LARGE')).toBe('Grande · 115 %')
+    expect(textScaleOptionText('LARGE')).toBe('Grande · 115%')
   })
 })
 

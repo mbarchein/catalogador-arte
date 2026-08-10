@@ -121,7 +121,7 @@ export function uploadStatusText(status: UploadStatus): string {
   // that is stuck, which is the question being asked.
   if (percent === null) return `${position(status)}Subiendo ${name}: ${sent(loaded)} enviados${again}`
 
-  return `${position(status)}Subiendo ${name}: ${sent(loaded)} de ${sent(status.total ?? 0)} (${percent} %)${again}`
+  return `${position(status)}Subiendo ${name}: ${sent(loaded)} de ${sent(status.total ?? 0)} (${percent}%)${again}`
 }
 
 /**

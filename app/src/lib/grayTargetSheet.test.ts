@@ -193,7 +193,7 @@ describe('grayTargetSheet: lo que la hoja dice de sí misma (RF-418)', () => {
   // bigger patches, the instruction on the sheet moves with it.
   it('RF-418: la talla mínima que pide sale de MIN_PATCH_SIDE, no de una opinión', () => {
     expect(MIN_FRAME_SHARE).toBeCloseTo(SHEET_PATCH_CODES.length * MIN_PATCH_SIDE, 10)
-    const percent = `${Math.round(MIN_FRAME_SHARE * 100)} %`
+    const percent = `${Math.round(MIN_FRAME_SHARE * 100)}%`
     expect(GRAY_TARGET_SHEET_TEXT.notes.join(' ')).toContain(percent)
   })
 

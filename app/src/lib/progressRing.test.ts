@@ -36,7 +36,7 @@ describe('cuánto del anillo queda por pintar', () => {
 
 describe('lo que se anuncia a quien no lo ve', () => {
   it('con porcentaje, lo dice', () => {
-    expect(ringLabel('Descargando el original', 42)).toBe('Descargando el original: 42 %')
+    expect(ringLabel('Descargando el original', 42)).toBe('Descargando el original: 42%')
   })
 
   it('y sin él, dice al menos que está en marcha', () => {

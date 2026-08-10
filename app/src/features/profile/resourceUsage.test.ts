@@ -68,9 +68,9 @@ describe('el aviso sale cuando queda poco, y no antes', () => {
     expect(usageWarning('Archivo de másters', 1_000_000, MASTERS_LIMIT_BYTES)).toBeNull()
   })
 
-  it('a partir del 80 % avisa y dice el porcentaje', () => {
+  it('a partir del 80% avisa y dice el porcentaje', () => {
     expect(usageLevel(8_000_000_000, MASTERS_LIMIT_BYTES)).toBe('warning')
-    expect(usageWarning('Archivo de másters', 8_000_000_000, MASTERS_LIMIT_BYTES)).toContain('80 %')
+    expect(usageWarning('Archivo de másters', 8_000_000_000, MASTERS_LIMIT_BYTES)).toContain('80%')
   })
 
   it('y lleno dice qué va a pasar y qué se puede hacer', () => {

@@ -105,7 +105,7 @@ export function textScaleFontSize(scale: TextScale): string {
 
 /** «Grande · 115 %», para el botón de cada escalón. */
 export function textScaleOptionText(scale: TextScale): string {
-  return `${TEXT_SCALE_LABEL[scale]} · ${TEXT_SCALE_PERCENT[scale]} %`
+  return `${TEXT_SCALE_LABEL[scale]} · ${TEXT_SCALE_PERCENT[scale]}%`
 }
 
 /**

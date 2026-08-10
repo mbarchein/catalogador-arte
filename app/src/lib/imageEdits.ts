@@ -708,11 +708,11 @@ export function editSummary(edit: PhotoEdit): string | null {
   if (normalized.corners) {
     const box = cornersBoundingBox(normalized.corners)
     const percent = Math.round(box.width * box.height * 100)
-    parts.push(`Perspectiva corregida, al ${percent} % del original`)
+    parts.push(`Perspectiva corregida, al ${percent}% del original`)
   }
   if (normalized.crop) {
     const percent = Math.round(normalized.crop.width * normalized.crop.height * 100)
-    parts.push(`Recortada al ${percent} % del original`)
+    parts.push(`Recortada al ${percent}% del original`)
   }
   const color = colorSummary(normalized.color)
   if (color) {
@@ -927,10 +927,7 @@ export function colorAvailability(
     return {
       available: false,
       reason:
-        'El ajuste de color no se ofrece porque no se ha podido descargar el máster de ' +
-        'archivo: se está trabajando sobre la copia de consulta, que ya lleva el color ' +
-        'aplicado, y volver a ajustarlo corregiría los defectos de la compresión como si ' +
-        'fueran la obra.',
+        'Sin el máster de archivo no se ofrece el ajuste: la copia de consulta ya lo lleva aplicado.',
     }
   }
   return { available: true, reason: null }

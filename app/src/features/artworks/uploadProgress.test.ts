@@ -19,7 +19,7 @@ import {
  */
 
 describe('uploadPercent', () => {
-  it('is floored, so «100 %» never appears with bytes still in flight (RNF-106)', () => {
+  it('is floored, so «100%» never appears with bytes still in flight (RNF-106)', () => {
     // 11 999 999 of 12 000 000 is 99.99…, and rounding it shows a finished upload that
     // then keeps going — the reading that makes the number stop being believed.
     expect(uploadPercent(11_999_999, 12_000_000)).toBe(99)
@@ -69,14 +69,14 @@ describe('uploadStatusText', () => {
   it('says which file, how much of how much, and the percentage', () => {
     expect(
       uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 4_404_019, total: 12_373_197 }),
-    ).toBe('Subiendo el original: 4,2 MB de 11,8 MB (35 %)')
+    ).toBe('Subiendo el original: 4,2 MB de 11,8 MB (35%)')
   })
 
   it('starts at «0 kB» and not at nothing', () => {
     // `formatFileSize` answers null below one byte, and a line reading «de 7,6 MB» with
     // no left-hand side looks broken at exactly the moment the wait begins.
     expect(uploadStatusText({ index: 2, count: 4, step: 'master', loaded: 0, total: 8_000_000 })).toBe(
-      'Foto 2 de 4 · Subiendo el original: 0 kB de 7,6 MB (0 %)',
+      'Foto 2 de 4 · Subiendo el original: 0 kB de 7,6 MB (0%)',
     )
   })
 
@@ -99,10 +99,10 @@ describe('uploadStatusText', () => {
     // como se lee una avería.
     expect(
       uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 0, total: 8_000_000, attempt: 2 }),
-    ).toBe('Subiendo el original: 0 kB de 7,6 MB (0 %) · reintento 1')
+    ).toBe('Subiendo el original: 0 kB de 7,6 MB (0%) · reintento 1')
     expect(
       uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 0, total: 8_000_000, attempt: 3 }),
-    ).toBe('Subiendo el original: 0 kB de 7,6 MB (0 %) · reintento 2')
+    ).toBe('Subiendo el original: 0 kB de 7,6 MB (0%) · reintento 2')
   })
 
   it('no dice nada del primer intento, que no es un reintento', () => {

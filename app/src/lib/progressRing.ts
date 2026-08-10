@@ -36,5 +36,5 @@ export function ringOffset(percent: number, circumference = RING_CIRCUMFERENCE):
  * pantalla, y aquí el dibujo ES el dato.
  */
 export function ringLabel(action: string, percent: number | null): string {
-  return percent === null ? `${action}…` : `${action}: ${percent} %`
+  return percent === null ? `${action}…` : `${action}: ${percent}%`
 }

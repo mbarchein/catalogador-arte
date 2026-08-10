@@ -115,7 +115,7 @@ export function usageWarning(name: string, used: number, limit: number): string 
   if (level === 'full') {
     return `${name} está al límite. Lo siguiente que se guarde puede fallar: hay que subir de plan.`
   }
-  return `${name} va por el ${usedPercent(used, limit)} %. Conviene ir mirando el plan.`
+  return `${name} va por el ${usedPercent(used, limit)}%. Conviene ir mirando el plan.`
 }
 
 /**
