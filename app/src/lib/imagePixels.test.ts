@@ -33,7 +33,7 @@ const flat = (r: number, g: number, b: number): PixelRaster => raster(1, 1, [[r,
 
 describe('analysisRasterSize: el tamaño del ráster de análisis (RF-410, RF-414)', () => {
   it('reduce el lado largo al de análisis conservando la proporción', () => {
-    // Fotografía de móvil típica, horizontal.
+    // Typical phone photograph, landscape.
     expect(analysisRasterSize(4032, 3024, 700)).toEqual({ width: 700, height: 525 })
   })
 
@@ -75,15 +75,15 @@ describe('luminanceOf: la luminancia de un ráster (RF-410, RF-414)', () => {
       [0, 0, 255],
       [0, 0, 0],
     ])
-    // Pesos Rec. 709 sobre los valores sRGB tal cual: 0,2126 · 0,7152 · 0,0722.
+    // Rec. 709 weights over the sRGB values as they are: 0.2126 · 0.7152 · 0.0722.
     expect(Array.from(luminanceOf(pixels))).toEqual([54, 182, 18, 0])
   })
 
   it('un gris neutro vuelve como el mismo código', () => {
     expect(luminanceOf(flat(0, 0, 0))[0]).toBe(0)
     expect(luminanceOf(flat(128, 128, 128))[0]).toBe(128)
-    // El truncado a entero pierde a lo sumo un nivel, y todos los consumidores
-    // leen diferencias entre vecinos, donde un desplazamiento constante se va.
+    // Truncating to an integer loses at most one level, and every consumer
+    // reads differences between neighbours, where a constant shift cancels out.
     expect(luminanceOf(flat(255, 255, 255))[0]).toBe(254)
   })
 
@@ -115,8 +115,8 @@ describe('luminanceOf: la luminancia de un ráster (RF-410, RF-414)', () => {
   })
 
   it('lee width · height píxeles y no lo que quepa en el búfer', () => {
-    // Un ráster de dos píxeles dentro de un búfer de cuatro: lo que manda es el
-    // tamaño declarado.
+    // A two-pixel raster inside a four-pixel buffer: what rules is the
+    // declared size.
     const wide = raster(4, 1, [[255, 255, 255]])
     const declared: PixelRaster = { data: wide.data, width: 2, height: 1 }
     expect(luminanceOf(declared)).toHaveLength(2)

@@ -347,8 +347,8 @@ describe('RF-420: el plan de franjas y el trozo de máster que cada una necesita
   })
 
   it('el presupuesto de una franja está por debajo de lo que un móvil puede sostener', () => {
-    // 4 MB de píxeles son 16 MB de array. Lo que se está evitando son los 256 MB del
-    // máster entero, medidos y documentados en este mismo fichero.
+    // 4 MB of pixels are 16 MB of array. What is being avoided is the whole master's 256 MB,
+    // measured and documented in this same file.
     expect(MAX_BAND_PIXELS).toBeLessThan(64_000_000 / 4)
   })
 })

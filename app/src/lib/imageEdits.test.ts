@@ -960,9 +960,9 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
     expect(turned.color.neutral).not.toBeNull()
     expect(turned.color.neutral!.x).toBeCloseTo(1 - 0.7, 5)
     expect(turned.color.neutral!.y).toBeCloseTo(0.2, 5)
-    // La corrección en sí no gira: una tabla de 256 entradas no tiene orientación.
+    // The correction itself does not rotate: a 256-entry table has no orientation.
     expect(turned.color.temperature).toBe(10)
-    // Y cuatro cuartos de vuelta devuelven el punto a su sitio.
+    // And four quarter turns put the point back where it was.
     let edit: PhotoEdit = { rotation: 0, crop: null, color }
     for (let i = 0; i < 4; i += 1) edit = rotateEdit(edit, 90)
     expect(normalizeColor(edit.color).neutral).toEqual(color.neutral)
@@ -1012,8 +1012,8 @@ describe('el color como dato: las columnas de la fila (RF-414)', () => {
   })
 
   it('y devuelve la misma tabla de 256 entradas, que es lo que ven los píxeles', () => {
-    // La comparación que de verdad importa: el redondeo de `numeric` no puede cambiar
-    // el color con el que sale la derivada.
+    // The comparison that really matters: `numeric`'s rounding cannot change
+    // the colour the derivative comes out with.
     const back = editFromColumns(editToColumns({ rotation: 0, crop: null, color: AJUSTE }))
     const written = buildColorLuts(back.color)
     const original = buildColorLuts(AJUSTE)
@@ -1024,8 +1024,8 @@ describe('el color como dato: las columnas de la fila (RF-414)', () => {
   })
 
   it('una fila anterior a la migración se lee como color neutro (RF-414)', () => {
-    // Las 39 filas activas se quedaron a nulo y nadie las reescribe: el despliegue es de
-    // una sola fase porque nulo aquí significa «este parámetro no hace nada».
+    // The 39 active rows were left null and nobody rewrites them: the deployment is
+    // single-phase because null here means «this parameter does nothing».
     const back = editFromColumns({
       rotation: 90,
       crop_x: 0.1,
@@ -1034,8 +1034,8 @@ describe('el color como dato: las columnas de la fila (RF-414)', () => {
       crop_height: 0.5,
     })
     expect(back.color).toEqual(NO_COLOR)
-    // La excepción es color_source, donde nulo es «nadie ha mirado todavía el color de
-    // esta fotografía» y no «se miró y se dejó igual».
+    // The exception is color_source, where null is «nobody has looked at this photograph's
+    // colour yet» and not «it was looked at and left alone».
     expect(back.color.source).toBeNull()
     expect(editFromColumns({ rotation: 0, color_source: 'REVIEWED_UNCHANGED' }).color.source).toBe(
       'REVIEWED_UNCHANGED',
@@ -1064,21 +1064,21 @@ describe('composeEdits y el color (RF-414, camino degradado)', () => {
   })
 
   it('sobre una imagen que ya lleva el encuadre aplicado se rechaza, y lo dice en español', () => {
-    // La copia de consulta pasó por un WebP con pérdida: ajustar el color ahí corregiría
-    // los defectos de la compresión como si fueran la obra.
+    // The reference copy went through a lossy WebP: adjusting the colour there would correct
+    // the compression's defects as if they were the artwork.
     const horneado: PhotoEdit = { rotation: 0, crop: { x: 0.1, y: 0.1, width: 0.6, height: 0.6 } }
     expect(() => composeEdits(horneado, { rotation: 0, crop: null, color: AJUSTE })).toThrow(
       'No se puede ajustar el color sobre una imagen que ya lleva aplicado un ajuste anterior',
     )
-    // Y sobre una que ya lleva el color cocido, cualquier ajuste nuevo.
+    // And over one that already carries the colour baked in, any new adjustment.
     expect(() =>
       composeEdits({ rotation: 0, crop: null, color: AJUSTE }, { rotation: 0, crop: null, color: { tint: 5 } }),
     ).toThrow(/color/)
   })
 
   it('pero el color ya aplicado viaja intacto cuando solo se recorta', () => {
-    // Recortar más sí se puede desde la copia de consulta, y la fila no puede quedarse
-    // diciendo que no hay color sobre un fichero que lo lleva cocido.
+    // Cropping further can be done from the reference copy, and the row cannot be left
+    // saying there is no colour over a file that carries it baked in.
     const stored: PhotoEdit = {
       rotation: 0,
       crop: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 },
@@ -1130,8 +1130,8 @@ describe('qué parámetros ofrece cada tipo de toma (RF-414, §3.1)', () => {
   const TODOS: readonly ColorParam[] = [...COLOR_PARAM_ORDER]
 
   it('la lista de mandos cubre exactamente la tabla del conjunto cerrado', () => {
-    // Un parámetro añadido a COLOR_RANGES sin colocarlo aquí desaparecería del panel sin
-    // una queja; y uno de más aquí es un mando que la base no sabría guardar.
+    // A parameter added to COLOR_RANGES without being placed here would disappear from the panel without
+    // a complaint; and one too many here is a control the base would not know how to store.
     expect([...TODOS].sort()).toEqual(Object.keys(COLOR_RANGES).sort())
   })
 
@@ -1141,7 +1141,7 @@ describe('qué parámetros ofrece cada tipo de toma (RF-414, §3.1)', () => {
     const general = colorParamsForShotType('GENERAL')
     expect(general.gray.offered).toBe(false)
     expect(general.gray.reason).toMatch(/reverso/)
-    // En un daño o un marco el color ES el dato, así que ahí tiene su propia razón.
+    // In a damage or a frame shot the colour IS the datum, so there it has its own reason.
     expect(colorParamsForShotType('DAMAGE_DETAIL').gray.reason).toMatch(/detalle de daño/)
     expect(colorParamsForShotType('FRAME').gray.offered).toBe(false)
   })
@@ -1156,8 +1156,8 @@ describe('qué parámetros ofrece cada tipo de toma (RF-414, §3.1)', () => {
         'gamma',
         'shoulder',
       ])
-      // Visibles y desactivados, con la razón en la línea de ayuda: un mando que
-      // desaparece no explica nada.
+      // Visible and disabled, with the reason on the help line: a control that
+      // disappears explains nothing.
       for (const entry of params.disabled) expect(entry.reason.length).toBeGreaterThan(20)
     }
     expect(colorParamsForShotType('DAMAGE_DETAIL').disabled[0]!.reason).toMatch(/amarilleo|humedad|óxido/)
@@ -1170,8 +1170,8 @@ describe('qué parámetros ofrece cada tipo de toma (RF-414, §3.1)', () => {
       const all = [...params.offered, ...params.disabled.map((entry) => entry.param)]
       expect([...all].sort()).toEqual([...TODOS].sort())
     }
-    // Un tipo de toma desconocido se trata como la general: ofrece lo que ella y nunca
-    // habilita lo que un detalle prohíbe.
+    // An unknown kind of shot is treated like the general one: it offers what that one does and never
+    // enables what a detail forbids.
     expect(colorParamsForShotType(null).offered).toEqual(TODOS)
     expect(colorParamsForShotType(null).gray.offered).toBe(false)
   })
@@ -1188,7 +1188,7 @@ describe('qué parámetros ofrece cada tipo de toma (RF-414, §3.1)', () => {
     expect(restringido.whitePoint).toBe(255)
     expect(restringido.gamma).toBe(1)
     expect(restringido.shoulder).toBe(0)
-    // La procedencia no se toca: lo que se ha restringido es el aspecto.
+    // The provenance is untouched: what has been restricted is the look.
     expect(restringido.source).toBe(AJUSTE.source)
     expect(restringido.reference).toBe(AJUSTE.reference)
     expect(restringido.light).toBe(AJUSTE.light)
@@ -1198,7 +1198,7 @@ describe('qué parámetros ofrece cada tipo de toma (RF-414, §3.1)', () => {
     expect(restrictColorToShotType({ gray: true }, 'BACK').gray).toBe(true)
     expect(restrictColorToShotType({ gray: true }, 'FRAME').gray).toBe(false)
     expect(restrictColorToShotType({ gray: true }, 'GENERAL').gray).toBe(false)
-    // En una toma general no hay nada que restringir de los siete mandos.
+    // On a general shot there is nothing to restrict of the seven controls.
     expect(restrictColorToShotType(AJUSTE, 'GENERAL')).toEqual(AJUSTE)
   })
 })
@@ -1225,8 +1225,8 @@ describe('el ajuste heredado de la toma general (RF-414, §7)', () => {
     expect(back.color.gamma).toBe(general.gamma)
     expect(back.rotation).toBe(90)
     expectCrop(back.crop, { x: 0.1, y: 0.1, width: 0.7, height: 0.7 })
-    // Y el hecho llega a la fila: es la columna la que lo dice, no una comparación de
-    // números, que diría «heredado» también cuando coinciden por casualidad.
+    // And the fact reaches the row: it is the column that says it, not a comparison of
+    // numbers, which would say «inherited» also when they coincide by chance.
     expect(editToColumns(back).color_inherited).toBe(true)
   })
 
@@ -1234,7 +1234,7 @@ describe('el ajuste heredado de la toma general (RF-414, §7)', () => {
     const back = inheritColor(reverso, general, 'BACK')
     expect(back.color.neutral).toBeNull()
     expect(editToColumns(back).color_neutral_x).toBeNull()
-    // Pero de dónde salieron los números sí se conserva.
+    // But where the numbers came from is kept.
     expect(back.color.source).toBe('NEUTRAL_PICKED')
     expect(back.color.light).toBe('INCANDESCENT')
   })
@@ -1253,7 +1253,7 @@ describe('el ajuste heredado de la toma general (RF-414, §7)', () => {
     const propio = withOwnColor(heredado, heredado.color)
     expect(propio.color.inherited).toBe(false)
     expect(isInheritedColor(propio)).toBe(false)
-    // Los mismos píxeles: lo que ha cambiado es cómo llegó el ajuste, no su aspecto.
+    // The same pixels: what has changed is how the adjustment arrived, not its look.
     expect(sameEdit(heredado, propio)).toBe(true)
     expect(editToColumns(propio).color_inherited).toBe(false)
   })
@@ -1270,8 +1270,8 @@ describe('el ajuste heredado de la toma general (RF-414, §7)', () => {
 
   it('y la pantalla lo dice: el resumen menciona la herencia', () => {
     expect(editSummary(inheritColor(reverso, general, 'BACK'))).toMatch(/heredado de la toma general/)
-    // Sobre un ajuste que no hace nada no se anuncia ninguna herencia: sería anunciar la
-    // herencia de nada.
+    // Over an adjustment that does nothing no inheritance is announced: it would be announcing the
+    // inheritance of nothing.
     expect(editSummary(inheritColor(reverso, NO_COLOR, 'BACK'))).not.toMatch(/heredado/)
   })
 })

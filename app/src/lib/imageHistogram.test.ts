@@ -69,14 +69,14 @@ describe('histograma del encuadre (RF-414)', () => {
     expect(measure.histogram.r[128]).toBe(64)
     expect(measure.histogram.g[128]).toBe(64)
     expect(measure.histogram.b[128]).toBe(64)
-    // Los pesos de Rec. 709 suman 1, así que un gris cae en su propio código.
+    // Rec. 709's weights add up to 1, so a grey falls on its own code.
     expect(measure.histogram.luminance[128]).toBe(64)
     expect(measure.median).toBe(128)
   })
 
   it('mide el encuadre elegido y no la fotografía entera: el gotelé queda fuera (RF-414)', () => {
-    // La mitad izquierda es la obra (oscura) y la derecha la pared (clara). Medido
-    // entero, el percentil alto y la mediana son de la pared.
+    // The left half is the artwork (dark) and the right one the wall (light). Measured
+    // whole, the high percentile and the median are the wall's.
     const photo = halves(8, 4, [20, 20, 20], [240, 240, 240])
     const whole = measureFrame(photo)
     expect(whole.count).toBe(32)
@@ -93,7 +93,7 @@ describe('histograma del encuadre (RF-414)', () => {
 
   it('deshace el giro: el recorte llega en fracciones de la imagen ya girada (RF-414)', () => {
     const photo = halves(8, 4, [20, 20, 20], [240, 240, 240])
-    // Con la foto girada 90° la columna izquierda del máster es la franja de arriba.
+    // With the photo rotated 90° the master's left column is the top strip.
     const top = measureFrame(photo, {
       rotation: 90,
       crop: { x: 0, y: 0, width: 1, height: 0.5 },
@@ -226,8 +226,8 @@ describe('histograma del encuadre (RF-414)', () => {
 
 describe('percentiles y mediana del encuadre (RF-414)', () => {
   it('el percentil 0,1 no lo mueve un puñado de píxeles perdidos (RF-414)', () => {
-    // Nueve píxeles a 5 sobre diez mil: menos de una milésima, que es justo el
-    // motivo de leer el percentil y no el mínimo.
+    // Nine pixels at 5 out of ten thousand: less than a thousandth, which is precisely the
+    // reason for reading the percentile and not the minimum.
     const bins = new Int32Array(256)
     bins[5] = 9
     bins[128] = 9991
@@ -254,8 +254,8 @@ describe('percentiles y mediana del encuadre (RF-414)', () => {
   })
 
   it('los dos percentiles del encuadre son los que lee el automático (RF-414)', () => {
-    // Diez mil píxeles: uno a 0, uno a 255 y el resto a 128. Con el 0,1 % y el
-    // 99,9 % los dos extremos sueltos no cuentan, que es la prudencia del §3.4.
+    // Ten thousand pixels: one at 0, one at 255 and the rest at 128. With 0.1 % and
+    // 99.9 % the two lone extremes do not count, which is §3.4's prudence.
     const photo = raster(100, 100, (x, y) => {
       const index = y * 100 + x
       if (index === 0) return [0, 0, 0]
@@ -304,8 +304,8 @@ describe('píxeles acromáticos creíbles del encuadre (RF-414)', () => {
   })
 
   it('la desviación se mide sobre el máximo del propio píxel, no en códigos (RF-414)', () => {
-    // Ocho códigos de diferencia máx−mín en los dos casos: sobre un gris claro es
-    // un tinte leve (5 %) y sobre uno oscuro es violento (8 %).
+    // Eight codes of max−min difference in both cases: over a light grey it is
+    // a slight tint (5 %) and over a dark one it is violent (8 %).
     expect(measureFrame(solid(4, 4, [160, 152, 152])).achromatic).toBe(16)
     expect(measureFrame(solid(4, 4, [100, 92, 92])).achromatic).toBe(0)
   })
@@ -337,13 +337,13 @@ describe('píxeles acromáticos creíbles del encuadre (RF-414)', () => {
     const measure = measureFrame(photo)
     expect(measure.count).toBe(4)
     expect(measure.achromatic).toBe(3)
-    // La media de 120, 130 y 160 es 136,67; la mediana es 130.
+    // The mean of 120, 130 and 160 is 136.67; the median is 130.
     expect(measure.achromaticMedian).toEqual({ r: 130, g: 130, b: 130 })
   })
 
   it('el gris se busca en el encuadre, no en la pared (RF-414)', () => {
-    // Pared gris neutra a la derecha, obra teñida a la izquierda: encuadrada la
-    // obra, no hay gris que creer y el automático tiene que callar.
+    // Neutral grey wall on the right, tinted artwork on the left: with the
+    // artwork framed, there is no grey to believe and the automatic has to keep quiet.
     const photo = halves(8, 4, [160, 140, 120], [128, 128, 128])
     expect(hasBelievableGray(measureFrame(photo))).toBe(true)
     expect(
@@ -372,7 +372,7 @@ describe('recuento de píxeles empastados y quemados (RF-414)', () => {
     const photo = row([[10, 10, 10], [0, 0, 0], [200, 200, 200], [255, 255, 255]])
     const clipping = clippingOf(photo, buildColorLuts({ blackPoint: 32 }))
     expect(clipping.count).toBe(4)
-    // El píxel a 10 se pierde; el que ya era negro puro no lo pierde este ajuste.
+    // The pixel at 10 is lost; the one that was already pure black is not lost by this adjustment.
     expect(clipping.low).toBe(1)
     expect(clipping.high).toBe(0)
     expect(clipping.lowPercent).toBe(25)
@@ -394,8 +394,8 @@ describe('recuento de píxeles empastados y quemados (RF-414)', () => {
   })
 
   it('un canal a cero no es un píxel perdido; los tres sí (RF-414)', () => {
-    // Balance de blancos fuerte: la ganancia del azul baja y el canal se va a cero
-    // en un píxel oscuro que conserva su dibujo en rojo y en verde.
+    // Strong white balance: blue's gain comes down and the channel goes to zero
+    // in a dark pixel that keeps its detail in red and green.
     const tables = buildColorLuts({ temperature: 60 })
     expect(tables.b[1]).toBe(0)
     expect(tables.r[1]).toBeGreaterThan(0)
@@ -425,8 +425,8 @@ describe('recuento de píxeles empastados y quemados (RF-414)', () => {
   })
 
   it('una pérdida real nunca se anota como 0,00 por redondeo (RF-414)', () => {
-    // Un píxel de treinta mil es el 0,0033 %, que redondeado a dos decimales es
-    // cero: la columna diría «no se perdió nada» junto a un detalle perdido.
+    // One pixel out of thirty thousand is 0.0033 %, which rounded to two decimals is
+    // zero: the column would say «nothing was lost» next to a lost detail.
     const photo = raster(200, 150, (x, y) => (x === 0 && y === 0 ? [10, 10, 10] : [128, 128, 128]))
     const clipping = clippingOf(photo, buildColorLuts({ blackPoint: 32 }))
     expect(clipping.count).toBe(30000)
@@ -530,7 +530,7 @@ describe('ruta SVG del histograma (RF-414)', () => {
   it('la raíz cuadrada deja ver la cola que la escala lineal aplasta (RF-414)', () => {
     const sqrt = histogramPath([100, 1], { width: 2, height: 100 })
     const linear = histogramPath([100, 1], { width: 2, height: 100, scale: 'linear' })
-    // El bin de un solo píxel: 10 unidades de alto con la raíz, 1 con la lineal.
+    // The single-pixel bin: 10 units tall with the square root, 1 with the linear scale.
     expect(sqrt).toContain('90')
     expect(linear).toContain('99')
     expect(sqrt).not.toBe(linear)
@@ -541,7 +541,7 @@ describe('ruta SVG del histograma (RF-414)', () => {
     const blue = [1, 0]
     expect(histogramPeak(red, blue)).toBe(4)
     expect(histogramPeak(null, undefined)).toBe(0)
-    // Sin pico compartido el azul llegaría arriba como si fuese tan alto como el rojo.
+    // Without a shared peak, blue would reach the top as if it were as tall as red.
     expect(histogramPath(blue, { width: 2, height: 100 })).toContain('L 0 0')
     expect(histogramPath(blue, { width: 2, height: 100, peak: histogramPeak(red, blue) })).toContain(
       'L 0 50',
@@ -566,7 +566,7 @@ describe('ruta SVG del histograma (RF-414)', () => {
   it('un bin con más píxeles se dibuja más alto (RF-414)', () => {
     const tops = (bins: number[]) =>
       (histogramPath(bins, { width: 2, height: 100 }).match(/-?\d+(\.\d+)?/g) ?? []).map(Number)
-    // [1, 4]: el segundo bin es el pico y el primero queda a media altura.
+    // [1, 4]: the second bin is the peak and the first is left at half height.
     expect(tops([1, 4])).toContain(50)
     expect(tops([1, 4])).toContain(0)
   })

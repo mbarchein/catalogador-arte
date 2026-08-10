@@ -492,8 +492,8 @@ describe('la ruta de la copia corregida (RF-420)', () => {
     const base = target.master.replace(/_master\..*$/, '')
     expect(target.corrected).toBe(`${base}${CORRECTED_SUFFIX}.${CORRECTED_EXTENSION}`)
     expect(target.corrected).toMatch(/_corrected\.jpg$/)
-    // Los cuatro ficheros de una toma quedan juntos en el almacén y se pueden leer
-    // a mano.
+    // A shot's four files end up together in the store and can be read
+    // by hand.
     expect(target.corrected.startsWith(base)).toBe(true)
   })
 
@@ -509,8 +509,8 @@ describe('la ruta de la copia corregida (RF-420)', () => {
   })
 
   it('reeditar escribe una ruta nueva y no reutiliza la anterior', () => {
-    // El service worker cachea por ruta con CacheFirst: sobrescribir serviría los
-    // bytes viejos desde el teléfono para siempre.
+    // The service worker caches by path with CacheFirst: overwriting would serve the
+    // old bytes from the phone forever.
     const first = correctedPath('AR-0001')
     const second = correctedPath('AR-0001')
     expect(first).not.toBe(second)
@@ -547,8 +547,8 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     expect(puts).toHaveLength(1)
     expect(puts[0]?.body).toBe(master)
     expect(puts[0]?.method).toBe('PUT')
-    // El Content-Type firmado se repite exacto o la firma no valida, y es el del
-    // fichero de la cámara: no el de las derivadas.
+    // The signed Content-Type is repeated exactly or the signature does not validate, and it is the
+    // camera file's: not the derivatives'.
     expect(puts[0]?.type).toBe('image/jpeg')
     expect(api.signed[0]).toMatchObject({ operation: 'upload', contentType: 'image/jpeg' })
   })
@@ -560,8 +560,8 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     // incluidos los doce segundos de generar la copia corregida.
     api.cutsBeforeSuccess = 2
     const master = masterOf()
-    // Reloj falso: entre intentos se espera 2 s y luego 6 s, que es lo correcto en un
-    // almacén con cobertura intermitente y una eternidad en una batería de tests.
+    // Fake clock: between attempts it waits 2 s and then 6 s, which is right in a
+    // storeroom with intermittent coverage and an eternity in a test suite.
     vi.useFakeTimers()
     const upload = uploadShot('AR-0001', shotOf(master), {
       shotType: 'GENERAL',
@@ -574,15 +574,15 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
 
     const masterPuts = api.puts.filter((p) => p.url.includes('_master'))
     expect(masterPuts).toHaveLength(3)
-    // El MISMO objeto en los tres: un reintento no puede recodificar el documento de
-    // archivo por el camino (ADR-002).
+    // The SAME object in all three: a retry cannot re-encode the archive
+    // document on the way (ADR-002).
     expect(masterPuts.every((p) => p.body === master)).toBe(true)
     // Y una firma nueva por intento. La de subida vale diez minutos desde que se emite,
     // y el intento que acaba de fallar ha podido gastarse tres: reutilizar la URL haría
     // que el reintento con más posibilidades de funcionar fuera el más propenso a que se
     // lo rechacen por firma caducada, que se lee como un problema de permisos y no lo es.
     expect(api.signed.filter((s) => s.path.includes('_master'))).toHaveLength(3)
-    // La pantalla se entera de en qué intento va, o el contador baja de 80 % a 0 % solo.
+    // The screen finds out which attempt it is on, or the counter drops from 80 % to 0 % on its own.
     expect(api.progress.filter((p) => p.step === 'master').map((p) => p.attempt)).toEqual([1, 2, 3])
   })
 
@@ -597,14 +597,14 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     await vi.advanceTimersByTimeAsync(30_000)
     await settled
     vi.useRealTimers()
-    // Tres intentos y ni uno más: pasado eso ya no es un tropiezo, es que no hay
-    // cobertura, y una pantalla reintentando diez minutos es peor que una que lo diga.
+    // Three attempts and not one more: beyond that it is no longer a stumble, it is that there is no
+    // coverage, and a screen retrying for ten minutes is worse than one that says so.
     expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(UPLOAD_ATTEMPTS)
   })
 
   it('no reintenta lo que el almacén ha contestado', async () => {
-    // Un 5xx es el almacén diciendo algo. Repetir tres veces una petición rechazada solo
-    // alarga la espera antes del mismo mensaje.
+    // A 5xx is the store saying something. Repeating a rejected request three times only
+    // lengthens the wait before the same message.
     api.putStatus = 503
     await expect(
       uploadShot('AR-0001', shotOf(masterOf()), { shotType: 'GENERAL', isIndex: false }),
@@ -635,15 +635,15 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     const enviado = masterPuts.reduce((n, p) => n + ((p.body as Blob).size ?? 0), 0)
     expect(enviado).toBe(master.size)
 
-    // Y se cierra con las tres marcas, en orden. Sin ellas no hay fichero.
+    // And it closes with the three marks, in order. Without them there is no file.
     const completed = api.multipart[1]?.parts as { partNumber: number; etag: string }[]
     expect(completed.map((p) => p.partNumber)).toEqual([1, 2, 3])
     expect(completed.every((p) => p.etag.length > 0)).toBe(true)
   })
 
   it('cuenta el progreso sobre el fichero entero, no sobre la parte', async () => {
-    // La mitad visible de lo que compra partir: al reintentar una parte el contador
-    // baja esa parte y no vuelve a cero, porque lo anterior ya está al otro lado.
+    // The visible half of what splitting buys: on retrying one part the counter
+    // drops by that part and does not go back to zero, because what came before is already on the other side.
     const master = bigMaster(12 * MiB)
     await uploadShot('AR-0001', shotOf(master), {
       shotType: 'GENERAL',
@@ -652,21 +652,21 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     })
     const delMaster = api.progress.filter((p) => p.step === 'master')
     expect(delMaster.every((p) => p.total === master.size)).toBe(true)
-    // El arnés avisa a mitad de cada parte: 2,5 MiB, 7,5 MiB y 11 MiB del fichero.
+    // The harness reports halfway through each part: 2.5 MiB, 7.5 MiB and 11 MiB of the file.
     expect(delMaster.map((p) => p.loaded)).toEqual([2.5 * MiB, 7.5 * MiB, 11 * MiB])
   })
 
   it('un fichero pequeño sigue yendo de una vez', async () => {
-    // Con una sola parte, partir es un PUT normal con dos viajes de más y una forma de
-    // fallar que el PUT normal no tiene.
+    // With a single part, splitting is a normal PUT with two extra trips and a way of
+    // failing that the normal PUT does not have.
     await uploadShot('AR-0001', shotOf(masterOf()), { shotType: 'GENERAL', isIndex: false })
     expect(api.multipart).toEqual([])
     expect(api.putParts.every((n) => n === undefined)).toBe(true)
   })
 
   it('si una parte no hay manera, se abandona y NO se termina nada a medias', async () => {
-    // Terminar sin una parte guarda un fichero más corto que el original y lo registra
-    // como almacenado. Antes que eso, se tira la subida entera y se avisa.
+    // Finishing without one part stores a file shorter than the original and records it
+    // as stored. Rather than that, the whole upload is thrown away and it is reported.
     api.cutsBeforeSuccess = 99
     vi.useFakeTimers()
     const upload = uploadShot('AR-0001', shotOf(bigMaster(12 * MiB)), {
@@ -679,12 +679,12 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     vi.useRealTimers()
 
     expect(api.multipart.map((m) => m.operation)).toEqual(['multipart-start', 'multipart-abort'])
-    // Y se le dice al almacén cuál abandonar, o los trozos se quedan ocupando sitio.
+    // And the store is told which one to abandon, or the chunks stay taking up room.
     expect(api.multipart[1]?.uploadId).toBe('up-1')
   })
 
   it('reintenta solo la parte caída, no el fichero entero', async () => {
-    // El motivo de todo esto: lo ya aceptado por el almacén se queda aceptado.
+    // The reason for all this: what the store has already accepted stays accepted.
     api.cutsBeforeSuccess = 1
     vi.useFakeTimers()
     const upload = uploadShot('AR-0001', shotOf(bigMaster(12 * MiB)), {
@@ -695,16 +695,16 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
     await upload
     vi.useRealTimers()
 
-    // Cuatro PUT para tres partes: la primera se cayó y se repitió. Un PUT único
-    // habría vuelto a mandar los 12 MB desde el principio.
+    // Four PUTs for three parts: the first one fell and was repeated. A single PUT
+    // would have sent the 12 MB again from the start.
     expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(4)
     expect(api.putParts.filter((n) => n !== undefined)).toEqual([1, 1, 2, 3])
     expect(api.multipart.map((m) => m.operation)).toEqual(['multipart-start', 'multipart-complete'])
   })
 
   it('una parte rechazada también abandona la subida', async () => {
-    // Un 5xx no se reintenta —el almacén ha contestado— pero los trozos ya aceptados
-    // siguen ahí. Sin abandonar, se quedan ocupando sitio sin que nada los referencie.
+    // A 5xx is not retried —the store has answered— but the chunks already accepted
+    // are still there. Without abandoning, they stay taking up room with nothing referencing them.
     api.putStatus = 503
     await expect(
       uploadShot('AR-0001', shotOf(bigMaster(12 * MiB)), { shotType: 'GENERAL', isIndex: false }),
@@ -742,8 +742,8 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
   })
 
   it('sube sin informar de nada cuando nadie pregunta', async () => {
-    // `onProgress` es opcional: el resto de la aplicación sube sin pintar progreso y no
-    // debe romperse por no pasarlo.
+    // `onProgress` is optional: the rest of the application uploads without painting progress and must
+    // not break for not passing it.
     await uploadShot('AR-0001', shotOf(masterOf()), { shotType: 'GENERAL', isIndex: false })
     expect(api.progress).toEqual([])
     expect(api.puts.filter((p) => p.url.includes('_master'))).toHaveLength(1)
@@ -752,7 +752,7 @@ describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
   it('no pasa el máster por Supabase Storage ni le cambia la extensión', async () => {
     const master = masterOf('escaneo.tif')
     await uploadShot('AR-0001', shotOf(master), { shotType: 'GENERAL', isIndex: false })
-    // A Storage van la miniatura y la derivada, y solo ellas.
+    // The thumbnail and the derivative go to Storage, and only they.
     expect(api.uploads).toHaveLength(2)
     expect(api.uploads.every((u) => !u.path.includes('_master'))).toBe(true)
     expect(lastRow().master_path).toMatch(/_master\.tif$/)
@@ -792,8 +792,8 @@ describe('uploadShot: la fecha del fichero, el tamaño y la procedencia (RF-416,
     const row = lastRow()
     expect(row.file_photo_date).toBe('2024-03-14')
     expect(row.file_photo_date_exact).toBe(true)
-    // Las dos columnas, y la de la ficha sigue siendo la de hoy: son dos datos
-    // distintos y pueden discrepar sin que ninguno esté mal.
+    // Both columns, and the record's is still today's: they are two different
+    // data and can disagree without either being wrong.
     expect(row.photo_date).toBe(new Date().toISOString().slice(0, 10))
     expect(row.photo_date).not.toBe(row.file_photo_date)
   })
@@ -804,15 +804,15 @@ describe('uploadShot: la fecha del fichero, el tamaño y la procedencia (RF-416,
       isIndex: false,
     })
     expect(lastRow().file_photo_date).toBe('2022-10-09')
-    // Sin la marca, una fecha aproximada se leería como medida.
+    // Without the mark, an approximate date would read as measured.
     expect(lastRow().file_photo_date_exact).toBe(false)
   })
 
   it('deja las dos columnas a nulo cuando la fotografía no dice cuándo se tomó (RF-416)', async () => {
     await uploadShot('AR-0001', shotOf(masterOf()), { shotType: 'GENERAL', isIndex: false })
     expect(lastRow().file_photo_date).toBeNull()
-    // La restricción de la base pide precisión solo cuando hay fecha; escribir un
-    // «exacta» sin fecha describiría una fecha que no existe.
+    // The base's constraint asks for precision only when there is a date; writing an
+    // «exacta» with no date would describe a date that does not exist.
     expect(lastRow().file_photo_date_exact).toBeNull()
   })
 

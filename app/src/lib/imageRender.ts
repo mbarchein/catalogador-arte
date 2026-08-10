@@ -1124,8 +1124,8 @@ async function uploadCorrectedCopy(
   if (error) throw new Error(`firmando la subida: ${error.message}`)
   const url = (data as { url?: string } | null)?.url
   if (!url) throw new Error('la función de firma no ha devuelto ninguna URL')
-  // `putSignedFile` y no `fetch`: es el mismo PUT firmado, pero por XHR, que es lo
-  // único que sabe decir cuánto lleva subido. Son hasta 19 MB.
+  // `putSignedFile` and not `fetch`: it is the same signed PUT, but over XHR, which is the
+  // only thing that can say how much has been uploaded. They are up to 19 MB.
   const result = await putSignedFile(url, blob, CORRECTED_CONTENT_TYPE, onProgress)
   if (!result.ok) throw new Error(`HTTP ${result.status}`)
 }
