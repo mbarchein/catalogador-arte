@@ -1,53 +1,53 @@
 name: desplegar
 
-# Pipeline de despliegue: verificar → migrar la base → publicar el frontend.
+# Deployment pipeline: verify → migrate the base → publish the frontend.
 #
-# El orden importa y no es negociable: primero las migraciones y después el
-# frontend, porque el frontend nuevo puede depender del esquema nuevo y lo
-# contrario nunca. Consecuencia práctica: durante unos segundos el frontend
-# viejo corre contra el esquema nuevo, así que las migraciones deben ser
-# aditivas — renombrar o borrar una columna en uso exige dos despliegues
-# (primero dejar de usarla, después quitarla).
+# The order matters and is not negotiable: the migrations first and the frontend
+# afterwards, because the new frontend may depend on the new schema and the
+# opposite never. A practical consequence: for a few seconds the old frontend
+# runs against the new schema, so the migrations must be
+# additive — renaming or deleting a column in use requires two deployments
+# (first stop using it, then remove it).
 #
-# Y el orden es una cadena, no una sugerencia: «publicar» exige que «migrar» haya
-# terminado bien, y «migrar» corre en TODOS los despliegues verificados, no solo
-# en los que traen migraciones. Ese «solo los que traen migraciones» fue un fallo
-# real en producción y está contado entero en el comentario del job «migrar».
+# And the order is a chain, not a suggestion: «publicar» requires that «migrar» have
+# finished well, and «migrar» runs on ALL verified deployments, not only
+# on those that bring migrations. That «only those that bring migrations» was a real
+# failure in production and it is told in full in the «migrar» job's comment.
 #
-# Este workflow queda inerte hasta el primer `terraform apply`: los secretos y
-# variables que consume (SUPABASE_*, VERCEL_*) los crea infra/github.tf a
-# partir de los recursos reales, no se copian a mano al panel.
+# This workflow stays inert until the first `terraform apply`: the secrets and
+# variables it consumes (SUPABASE_*, VERCEL_*) are created by infra/github.tf from
+# the real resources, they are not copied by hand into the panel.
 
 on:
   push:
     branches: [main]
-    # Aquí solo va lo que no puede afectar a NADA de lo que este workflow hace:
-    # ni al despliegue ni a la verificación que lo precede. Si un cambio no
-    # dispara el workflow, sus jobs no llegan a evaluar ningún `if`, así que este
-    # filtro es el más ancho de los dos y gana siempre: lo que se ignore aquí no
-    # se verifica ni se despliega, y no hay condición que lo recupere.
+    # Only what cannot affect ANYTHING this workflow does goes here:
+    # neither the deployment nor the verification that precedes it. If a change does not
+    # fire the workflow, its jobs never get to evaluate any `if`, so this
+    # filter is the wider of the two and always wins: what is ignored here is
+    # neither verified nor deployed, and there is no condition that recovers it.
     #
-    # infra/** está aquí porque este workflow no ejecuta Terraform en ningún job:
-    # la plataforma se aplica a mano por política (ver infra/README.md).
+    # infra/** is here because this workflow does not run Terraform in any job:
+    # the platform is applied by hand as a matter of policy (see infra/README.md).
     #
-    # Ojo con lo que YA NO está en esta lista: Makefile, docker/** y
-    # docker-compose.yml. No cambian nada de lo desplegado, pero SÍ son lo que
-    # ejecuta la verificación de más abajo (`make db-test` sobre el stack de
-    # compose). Ignorarlos aquí significaba que un Makefile roto entraba en main
-    # sin que nadie lo ejecutara — y main admite push directo del administrador
-    # (enforce_admins = false) —, con el fallo apareciendo en el siguiente
-    # despliegue de verdad, atribuido al commit equivocado. Ahora disparan la
-    # verificación pero no el despliegue: eso lo decide el `if` de cada job.
+    # Mind what is NO LONGER on this list: Makefile, docker/** and
+    # docker-compose.yml. They change nothing of what is deployed, but they ARE what
+    # runs the verification further below (`make db-test` over the compose
+    # stack). Ignoring them here meant that a broken Makefile got into main
+    # with nobody running it — and main admits a direct push from the administrator
+    # (enforce_admins = false) —, with the failure appearing in the next
+    # real deployment, attributed to the wrong commit. Now they fire the
+    # verification but not the deployment: that is decided by each job's `if`.
     #
-    # Una ruta nueva que nadie añada a esta lista dispara el workflow, que es el
-    # lado seguro del error: cuesta minutos de CI, no se salta comprobaciones.
+    # A new path nobody adds to this list fires the workflow, which is the
+    # safe side of the error: it costs minutes of CI, it does not skip checks.
     #
-    # `*.md` y no `**.md`: en los filtros de GitHub, `*` no cruza la barra, así
-    # que esto ignora los .md de la raíz (README, CHANGELOG, CLAUDE) pero NO los
-    # de app/, que el clasificador cuenta como parte del frontend. Con `**.md` un
-    # push que solo cambiara un Markdown de app/ no llegaba ni a arrancar este
-    # workflow, y el cambio se quedaba sin publicar sin ningún aviso. Los .md de
-    # docs/ e infra/ ya entran por sus carpetas; los de docker/, por su patrón.
+    # `*.md` and not `**.md`: in GitHub's filters, `*` does not cross the slash, so
+    # this ignores the root's .md files (README, CHANGELOG, CLAUDE) but NOT those
+    # of app/, which the classifier counts as part of the frontend. With `**.md` a
+    # push that only changed a Markdown of app/ did not even get to start this
+    # workflow, and the change was left unpublished with no warning at all. The .md files of
+    # docs/ and infra/ already come in through their folders; those of docker/, through their pattern.
     paths-ignore:
       - '*.md'
       - 'docs/**'
@@ -57,52 +57,52 @@ on:
       - 'LICENSE'
       - '.gitignore'
       - '.env.example'
-  # Al disparo manual no se le aplican los filtros de rutas, y la acción que
-  # clasifica los cambios no tiene con qué comparar: despliega todo. Es la
-  # escotilla para forzar un despliegue completo.
+  # Path filters do not apply to a manual trigger, and the action that
+  # classifies the changes has nothing to compare with: it deploys everything. It is the
+  # hatch for forcing a complete deployment.
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# Un solo despliegue a la vez, y sin cancelar el que esté en marcha: matarlo a
-# mitad puede dejar migraciones aplicadas con el frontend viejo publicado.
+# A single deployment at a time, and without cancelling whichever is under way: killing it
+# half way can leave migrations applied with the old frontend published.
 concurrency:
   group: despliegue-produccion
   cancel-in-progress: false
 
-# LA VERSIÓN DE LA CLI DE SUPABASE ESTÁ CLAVADA. Se repite en los dos jobs que
-# la instalan —«migrar» y «secretos»— porque un `env:` de la cabecera exigiría
-# interpolarlo en el `with:` del paso, y esto no se puede probar sin desplegar.
-# Que las dos digan lo mismo lo comprueba `.github/pipeline.test.sh`, así que
-# subirla a medias no llega a main.
+# THE SUPABASE CLI VERSION IS PINNED. It is repeated in the two jobs that
+# install it —«migrar» and «secretos»— because an `env:` in the header would require
+# interpolating it in the step's `with:`, and this cannot be tested without deploying.
+# That both say the same thing is checked by `.github/pipeline.test.sh`, so
+# raising it half way does not reach main.
 #
-# Estaba en `latest`, y eso significa que cada despliegue estrena la versión que
-# se haya publicado desde el anterior. El 7 de agosto de 2026 la 2.112.0 salió a
-# las 10:08 y a las 10:13 el despliegue falló en el primer paso:
+# It was on `latest`, and that means that every deployment premières the version
+# published since the previous one. On 7 August 2026 2.112.0 came out at
+# 10:08 and at 10:13 the deployment failed at the first step:
 #
 #   failed to get api keys: SchemaError(Expected a string matching the RegExp
 #   ^…T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ at [2]["inserted_at"])
 #
-# No era nada de este repositorio. Esa versión añadió una comprobación en tiempo
-# de ejecución sobre las marcas de tiempo que devuelve la API de gestión de
-# Supabase —hasta la 2.111.0 el campo era una cadena sin validar— y la propia API
-# devuelve una que no la cumple. Con `supabase link` fallando, el job «migrar» no
-# arrancaba, y como «publicar» exige un «migrar» en verde, no se desplegaba nada.
+# It was nothing of this repository's. That version added a run-time
+# check over the timestamps Supabase's management API returns
+# —up to 2.111.0 the field was an unvalidated string— and the API itself
+# returns one that does not satisfy it. With `supabase link` failing, the «migrar» job did not
+# start, and as «publicar» requires a green «migrar», nothing was deployed.
 #
-# El coste de `latest` es este: un despliegue que ha pasado toda la verificación
-# se cae por algo que se publicó fuera del repositorio mientras corría. Subirla
-# es un cambio deliberado y revisable, como cualquier otra dependencia.
+# `latest`'s cost is this: a deployment that has passed all the verification
+# falls over because of something published outside the repository while it was running. Raising it
+# is a deliberate and reviewable change, like any other dependency.
 #
-# PARA SUBIRLA: cambiar los DOS `version:` a la vez y comprobar que `supabase
-# link` funciona con la versión nueva. El fallo de arriba se arreglará en la CLI
-# o en la API; mientras no se sepa cuál, la única comprobación es lanzarlo.
+# TO RAISE IT: change BOTH `version:` at once and check that `supabase
+# link` works with the new version. The failure above will be fixed in the CLI
+# or in the API; until it is known which, the only check is to launch it.
 
 jobs:
-  # Qué ha cambiado de verdad en este push. Misma acción compuesta que usa
-  # verificar.yml, a propósito: si la clasificación estuviera copiada en los dos
-  # ficheros, las dos copias se separarían y un workflow acabaría saltándose algo
-  # que el otro comprueba. La lista de rutas y su justificación están allí.
+  # What has really changed in this push. The same composite action verificar.yml
+  # uses, on purpose: if the classification were copied in both
+  # files, the two copies would drift apart and one workflow would end up skipping something
+  # the other checks. The list of paths and its justification are there.
   cambios:
     runs-on: ubuntu-latest
     outputs:
@@ -111,33 +111,33 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # Historia completa: la acción compara contra la punta anterior de la
-          # rama, que con la profundidad 1 por omisión no está en el clon. Si no
-          # la encuentra no adivina: clasifica todo como relevante.
+          # Full history: the action compares against the branch's previous tip,
+          # which with the default depth of 1 is not in the clone. If it does not
+          # find it, it does not guess: it classifies everything as relevant.
           fetch-depth: 0
 
       - id: filtro
         uses: ./.github/actions/clasificar-cambios
 
-  # Se verifica otra vez aunque la protección de rama ya exigiera «verificar» en
-  # la PR: main admite push directo del administrador (enforce_admins = false), y
-  # desplegar sin verificar por esa puerta sería un agujero. Incluye los tests de
-  # RLS contra una base real: son el perímetro de seguridad y por tanto la puerta
-  # del despliegue, no un extra.
+  # It is verified again even though the branch protection already required «verificar» in
+  # the PR: main admits a direct push from the administrator (enforce_admins = false), and
+  # deploying without verifying through that door would be a hole. It includes the RLS
+  # tests against a real base: they are the security perimeter and therefore the deployment's
+  # gate, not an extra.
   verificar:
     needs: cambios
-    # Se verifica siempre que haya cambiado algo verificable, aunque no se vaya a
-    # desplegar nada: es lo que hace que un cambio en el Makefile o en el stack
-    # de compose no entre en main sin ejecutarse. Y este job es la única puerta de
-    # «migrar», que ahora cuelga solo de él: si se salta, no se toca la base.
+    # It is verified whenever something verifiable has changed, even if nothing is going to
+    # be deployed: it is what makes a change to the Makefile or to the compose
+    # stack not get into main without being run. And this job is the only gate of
+    # «migrar», which now hangs from it alone: if it is skipped, the base is not touched.
     if: needs.cambios.outputs.datos == 'true' || needs.cambios.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      # Primero y sin dependencias: los invariantes del propio pipeline, que son
-      # lo que impide publicar un frontend contra un esquema sin migrar. Si esto
-      # falla, nada de lo que viene después importa. Ver .github/pipeline.test.sh.
+      # First and with no dependencies: the pipeline's own invariants, which are
+      # what prevents publishing a frontend against an unmigrated schema. If this
+      # fails, nothing that comes afterwards matters. See .github/pipeline.test.sh.
       - name: Tests del pipeline de despliegue
         run: ./.github/pipeline.test.sh
 
@@ -159,9 +159,9 @@ jobs:
         run: npm test
         working-directory: app
 
-      # La compilación se comprueba ANTES de migrar. Si compilara mal y se
-      # descubriera en «publicar», las migraciones ya estarían aplicadas y el
-      # frontend viejo quedaría corriendo contra el esquema nuevo sin relevo.
+      # The build is checked BEFORE migrating. If it built badly and it were
+      # discovered in «publicar», the migrations would already be applied and the
+      # old frontend would be left running against the new schema with no relief.
       - name: Compilación de producción
         run: npm run build
         working-directory: app
@@ -169,10 +169,10 @@ jobs:
           VITE_SUPABASE_URL: http://localhost:8321
           VITE_SUPABASE_ANON_KEY: clave-de-compilacion-sin-uso
 
-      # El up ya espera a las migraciones: rest depende de migrate con
-      # service_completed_successfully. No añadir `docker compose wait migrate`:
-      # solo sabe esperar a contenedores corriendo, y si migrate ya terminó
-      # falla con «no containers for project» (carrera vista en CI).
+      # The up already waits for the migrations: rest depends on migrate with
+      # service_completed_successfully. Do not add `docker compose wait migrate`:
+      # it only knows how to wait for running containers, and if migrate has already finished it
+      # fails with «no containers for project» (a race seen in CI).
       - name: Levantar el stack local
         run: docker compose up -d db auth migrate rest gateway
 
@@ -188,42 +188,42 @@ jobs:
 
   migrar:
     needs: verificar
-    # Sin status functions a propósito: si `verificar` falla o se salta, este job
-    # se salta también, porque la dirección segura es no desplegar.
+    # With no status functions on purpose: if `verificar` fails or is skipped, this job
+    # is skipped too, because the safe direction is not to deploy.
     #
-    # Y SIN condición sobre `esquema`: este job corre en TODO despliegue
-    # verificado, aunque el push no traiga ni una migración. La razón es un fallo
-    # que ya ocurrió en producción:
+    # And WITH NO condition on `esquema`: this job runs on EVERY verified
+    # deployment, even if the push does not bring a single migration. The reason is a failure
+    # that already occurred in production:
     #
-    #   1. Un push traía trece migraciones nuevas (la procedencia, la
-    #      bibliografía, las exposiciones, el archivo documental...) y su
-    #      `verificar` falló por un test de SQL. `migrar` se saltó, correctamente.
-    #   2. Los pushes siguientes arreglaron el test y siguieron con el frontend,
-    #      pero ya no tocaban supabase/migrations/, así que `esquema` era false y
-    #      `migrar` se saltaba en cada uno — mientras `publicar` sí corría.
-    #   3. Resultado: frontend nuevo en producción contra el esquema viejo. La
-    #      usuaria veía «Could not find the table 'public.provenance_events' in
-    #      the schema cache» en todos los bloques nuevos de la ficha.
+    #   1. A push brought thirteen new migrations (the provenance, the
+    #      bibliography, the exhibitions, the documentary archive...) and its
+    #      `verificar` failed because of a SQL test. `migrar` was skipped, correctly.
+    #   2. The following pushes fixed the test and carried on with the frontend,
+    #      but they no longer touched supabase/migrations/, so `esquema` was false and
+    #      `migrar` was skipped on each one — while `publicar` did run.
+    #   3. Result: a new frontend in production against the old schema. The
+    #      user saw «Could not find the table 'public.provenance_events' in
+    #      the schema cache» in all the record's new blocks.
     #
-    # La asimetría que lo causaba: `publicar` sube el ÁRBOL entero, así que un
-    # push posterior arrastra los cambios de frontend que se quedaron atrás;
-    # `migrar` estaba condicionado al DIFF de un push, así que las migraciones de
-    # un despliegue fallido no volvían a intentarse nunca. Solo salía de ahí un
-    # `workflow_dispatch` a mano, y nadie sabe que hay que lanzarlo hasta que la
-    # usuaria ve el error.
+    # The asymmetry that caused it: `publicar` uploads the whole TREE, so a
+    # later push drags along the frontend changes that were left behind;
+    # `migrar` was conditioned on the DIFF of one push, so the migrations of
+    # a failed deployment were never retried. The only way out of there was a
+    # `workflow_dispatch` by hand, and nobody knows it has to be launched until the
+    # user sees the error.
     #
-    # Correrlo siempre es gratis y correcto: `supabase db push` es idempotente
-    # —lleva su registro en supabase_migrations.schema_migrations y no aplica dos
-    # veces la misma migración—, y sin nada pendiente son segundos. El coste
-    # aceptado es el simétrico: si Supabase no responde, este job falla y
-    # `publicar` no publica, así que un arreglo de solo frontend espera a que la
-    # base esté accesible. Es la dirección segura: la contraria es la de arriba.
+    # Running it always is free and correct: `supabase db push` is idempotent
+    # —it keeps its record in supabase_migrations.schema_migrations and does not apply the
+    # same migration twice—, and with nothing pending it is seconds. The accepted
+    # cost is the symmetric one: if Supabase does not answer, this job fails and
+    # `publicar` does not publish, so a frontend-only fix waits until the
+    # base is reachable. It is the safe direction: the opposite one is the one above.
     if: needs.verificar.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      # Versión clavada, no «latest»: el motivo está en la cabecera del fichero.
+      # A pinned version, not «latest»: the reason is in the file's header.
       - uses: supabase/setup-cli@v3
         with:
           version: 2.111.0
@@ -235,57 +235,57 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
-      # Qué hay aplicado en producción y qué falta, ANTES de tocar nada. No
-      # decide ni condiciona: se imprime para que el registro del despliegue diga
-      # con qué esquema se encontró. Cuando el fallo de arriba volvió a
-      # investigarse, esta lista era justo lo que no había en ningún sitio.
+      # What is applied in production and what is missing, BEFORE touching anything. It
+      # decides nothing and conditions nothing: it is printed so that the deployment's log says
+      # which schema it found. When the failure above was
+      # investigated again, this list was exactly what was nowhere to be found.
       - name: Migraciones pendientes en producción
         run: supabase migration list
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
-      # Aplica supabase/migrations/*.sql en orden, cada una una sola vez: la CLI
-      # lleva su propio registro en supabase_migrations.schema_migrations, igual
-      # que docker/migrate.sh lo lleva en _migraciones para el stack local.
-      # seed.sql NO se ejecuta aquí: es semilla de desarrollo.
+      # It applies supabase/migrations/*.sql in order, each one only once: the CLI
+      # keeps its own record in supabase_migrations.schema_migrations, just
+      # as docker/migrate.sh keeps it in _migraciones for the local stack.
+      # seed.sql is NOT run here: it is a development seed.
       #
-      # Al no estar condicionado a que el push traiga migraciones, esto aplica
-      # TODO lo que le falte a producción, venga del push de ahora o de uno
-      # anterior que no llegó a desplegarse. Es la propiedad que faltaba.
+      # As it is not conditioned on the push bringing migrations, this applies
+      # EVERYTHING production is missing, whether it comes from the current push or from an
+      # earlier one that never got deployed. It is the property that was missing.
       - name: Aplicar migraciones
         run: supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
-      # Tampoco condicionado, y por el mismo motivo: una función Edge cuyo push
-      # se quedó sin desplegar tenía el mismo agujero que las migraciones, y
-      # encima ningún job la comprueba (ver el hueco anotado en la acción que
-      # clasifica los cambios). Redesplegar el mismo código es idempotente.
+      # Also unconditioned, and for the same reason: an Edge function whose push
+      # was left undeployed had the same hole as the migrations, and
+      # on top of that no job checks it (see the gap noted in the action that
+      # classifies the changes). Redeploying the same code is idempotent.
       - name: Desplegar funciones Edge
         run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
 
-  # Los secretos de la función Edge tienen su propio job, y no un paso dentro de
-  # «migrar», porque son la única cosa de este workflow cuyo valor cambia SIN que
-  # cambie ningún fichero del repositorio: los deriva Terraform del bucket real
-  # (infra/github.tf) y se renuevan al rotar la clave de B2. Ese `terraform apply`
-  # se hace a mano y su commit solo toca infra/**, que está en el paths-ignore de
-  # arriba: no dispara nada. Si este paso colgara de un job condicionado al diff
-  # del push, una clave rotada no llegaría a Supabase hasta el siguiente cambio
-  # de esquema, y mientras tanto la función firmaría con la credencial revocada:
-  # subir másters fallaría en producción con todo el CI en verde. Por eso se
-  # reempujan en TODO despliegue verificado: es idempotente y tarda segundos.
-  # («migrar» ahora también corre siempre, por una versión más caro de este mismo
-  # razonamiento, pero sigue teniendo su job aparte: son cosas distintas y un
-  # fallo al empujar secretos no debe impedir aplicar migraciones.)
+  # The Edge function's secrets have their own job, and not a step inside
+  # «migrar», because they are the only thing in this workflow whose value changes WITHOUT
+  # any file of the repository changing: Terraform derives them from the real bucket
+  # (infra/github.tf) and they are renewed on rotating the B2 key. That `terraform apply`
+  # is done by hand and its commit only touches infra/**, which is in the paths-ignore
+  # above: it fires nothing. If this step hung from a job conditioned on the push's
+  # diff, a rotated key would not reach Supabase until the next schema
+  # change, and meanwhile the function would sign with the revoked credential:
+  # uploading masters would fail in production with all the CI green. That is why
+  # they are re-pushed on EVERY verified deployment: it is idempotent and takes seconds.
+  # («migrar» now also runs always, by a more expensive version of this same
+  # reasoning, but it still has its own separate job: they are different things and a
+  # failure in pushing secrets must not prevent applying migrations.)
   #
-  # No va delante de «migrar» ni «migrar» detrás de él a propósito: encadenarlos
-  # haría que un fallo aquí se llevara por delante el despliegue del esquema, sin
-  # ganar nada. Van en paralelo.
+  # It does not go before «migrar» nor «migrar» behind it on purpose: chaining them
+  # would make a failure here take the schema's deployment down with it, without
+  # gaining anything. They go in parallel.
   secretos:
     needs: verificar
     if: needs.verificar.result == 'success'
@@ -293,15 +293,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # La misma versión que «migrar», y por el mismo motivo: los dos jobs hablan
-      # con la misma API de gestión, así que la avería de uno es la del otro.
+      # The same version as «migrar», and for the same reason: both jobs speak
+      # with the same management API, so one's breakdown is the other's.
       - uses: supabase/setup-cli@v3
         with:
           version: 2.111.0
 
-      # Las credenciales de B2 llegan a la función por aquí, desde los secretos
-      # que Terraform derivó del bucket real. Nombres S3_* a propósito: cambiar
-      # de proveedor de almacenamiento es cambiar estos valores, no el código.
+      # The B2 credentials reach the function through here, from the secrets
+      # Terraform derived from the real bucket. S3_* names on purpose: changing
+      # storage provider is changing these values, not the code.
       - name: Configurar secretos de las funciones
         run: |
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
@@ -316,16 +316,16 @@ jobs:
 
   publicar:
     needs: [cambios, verificar, migrar]
-    # Se exige que `migrar` haya terminado en `success`, y ya no se admite que se
-    # haya SALTADO. Antes se admitía porque `migrar` se saltaba en los pushes que
-    # solo tocaban app/, y sin ese `skipped` el frontend no se habría publicado
-    # nunca; ahora `migrar` corre en todo despliegue verificado, así que solo se
-    # salta cuando `verificar` no ha ido bien — caso que la condición de al lado
-    # ya bloquea. Admitirlo aquí sería dejar abierta la única puerta por la que un
-    # frontend nuevo puede salir a producción contra un esquema viejo.
+    # It is required that `migrar` have finished in `success`, and it is no longer admitted that it have been
+    # SKIPPED. It used to be admitted because `migrar` was skipped on the pushes that
+    # only touched app/, and without that `skipped` the frontend would never have been
+    # published; now `migrar` runs on every verified deployment, so it is only
+    # skipped when `verificar` has not gone well — a case the condition alongside
+    # already blocks. Admitting it here would be leaving open the only door through which a
+    # new frontend can go out to production against an old schema.
     #
-    # `!cancelled()` sigue siendo necesario: sin él, cualquier `skipped` en la
-    # cadena de `needs` arrastraría a este job.
+    # `!cancelled()` is still necessary: without it, any `skipped` in the
+    # `needs` chain would drag this job along.
     if: >-
       !cancelled()
       && needs.verificar.result == 'success'
@@ -345,21 +345,21 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
 
-      # Mismo camino que la otra aplicación del equipo, que lleva tiempo en
-      # producción: `vercel build` ejecuta la compilación de Vite (el proyecto
-      # tiene root_directory = app) y las VITE_* se incrustan en ese momento.
-      # Vienen de las variables de Actions, que Terraform deriva de los recursos
-      # reales, así que no pueden quedar desactualizadas: el proyecto de Vercel
-      # no guarda ninguna variable — CI es la única fuente.
+      # The same route as the team's other application, which has been in
+      # production for a while: `vercel build` runs Vite's build (the project
+      # has root_directory = app) and the VITE_* are embedded at that moment.
+      # They come from the Actions variables, which Terraform derives from the real
+      # resources, so they cannot get out of date: the Vercel project
+      # stores no variable — CI is the only source.
       #
-      # Al incrustarse al compilar, el valor que hay publicado es el que había
-      # cuando se compiló. Y este job solo corre cuando cambia app/, así que
-      # cambiar una de esas variables con `terraform apply` (por ejemplo la URL
-      # de la aplicación, que va en el QR de la ficha impresa) NO se recoge en el
-      # siguiente despliegue cualquiera: hay que lanzar este workflow con
-      # `workflow_dispatch`, que al no tener base con la que comparar despliega
-      # todo. Los secretos S3_* no dependen de esto: se reempujan siempre, en el
-      # job `secretos`, precisamente porque nadie se acuerda de estas cosas.
+      # As they are embedded on building, the value that is published is the one that was there
+      # when it was built. And this job only runs when app/ changes, so
+      # changing one of those variables with `terraform apply` (for example the URL
+      # of the application, which goes in the printed record's QR) is NOT picked up in the
+      # next deployment of any kind: this workflow has to be launched with
+      # `workflow_dispatch`, which having no base to compare with deploys
+      # everything. The S3_* secrets do not depend on this: they are re-pushed always, in the
+      # `secretos` job, precisely because nobody remembers these things.
       - name: Publicar en Vercel
         run: |
           npm install --global vercel@latest

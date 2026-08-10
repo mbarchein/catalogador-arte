@@ -3,16 +3,16 @@ description: >-
   Decide qué bloques del pipeline hay que ejecutar según los ficheros que ha
   tocado el evento. Fuente única de esa clasificación para los dos workflows.
 
-# Por qué esto vive en una acción compuesta y no copiado en cada workflow: dos
-# copias de una lista de rutas se separan solas, y separarse significa que un
-# workflow se salta algo que el otro no. Con una sola copia, la lista se cambia
-# en un sitio; y como está bajo .github/, tocarla dispara el pipeline entero
-# (ver el patrón `.github/*` más abajo), así que el cambio se ejercita a sí mismo.
+# Why this lives in a composite action and is not copied into each workflow: two
+# copies of a list of paths drift apart on their own, and drifting apart means that
+# one workflow skips something the other does not. With a single copy, the list is changed
+# in one place; and as it is under .github/, touching it fires the whole pipeline
+# (see the `.github/*` pattern further below), so the change exercises itself.
 #
-# Requiere que el repositorio esté ya descargado con historia suficiente para
-# comparar contra la base del evento: `actions/checkout` con `fetch-depth: 0`.
-# Si la base no está disponible, esta acción NO adivina: clasifica todo como
-# relevante y lo dice en el registro.
+# It requires the repository to be already checked out with enough history to
+# compare against the event's base: `actions/checkout` with `fetch-depth: 0`.
+# If the base is not available, this action does NOT guess: it classifies everything as
+# relevant and says so in the log.
 
 outputs:
   infra:
@@ -25,15 +25,15 @@ outputs:
     description: Hay que verificar (y publicar) el frontend de app/
     value: ${{ steps.filtro.outputs.app }}
 
-# Aquí hubo una salida `esquema` («hay algo que se DESPLIEGA a Supabase») que
-# condicionaba el job «migrar» de desplegar.yml. Se quitó porque clasificar por
-# el diff de UN push es la pregunta equivocada para lo que se despliega a la
-# base: si ese push no llega a desplegarse, sus migraciones no vuelven a
-# intentarse jamás, y los pushes siguientes —que ya no tocan las migraciones—
-# publican frontend nuevo contra el esquema viejo. Pasó, y la usuaria lo vio como
-# «Could not find the table ... in the schema cache». Ahora «migrar» corre
-# siempre y `supabase db push` aplica lo que falte, que es idempotente y no
-# necesita saber qué cambió. La historia larga está en desplegar.yml.
+# There used to be an `esquema` output here («there is something that is DEPLOYED to Supabase») that
+# conditioned desplegar.yml's «migrar» job. It was removed because classifying by
+# the diff of ONE push is the wrong question for what is deployed to the
+# base: if that push never gets deployed, its migrations are never
+# retried, and the following pushes —which no longer touch the migrations—
+# publish a new frontend against the old schema. It happened, and the user saw it as
+# «Could not find the table ... in the schema cache». Now «migrar» runs
+# always and `supabase db push` applies whatever is missing, which is idempotent and does not
+# need to know what changed. The long story is in desplegar.yml.
 
 runs:
   using: composite
@@ -43,9 +43,9 @@ runs:
       shell: bash
       env:
         EVENTO: ${{ github.event_name }}
-        # Punta anterior de la rama en un push. En el primer push de una rama
-        # llega a ceros, y tras un force-push puede apuntar a un commit que ya
-        # no existe: los dos casos caen en la escotilla de «verificar todo».
+        # The branch's previous tip on a push. On a branch's first push it
+        # arrives as zeros, and after a force-push it may point at a commit that no
+        # longer exists: both cases fall into the «verify everything» hatch.
         ANTES: ${{ github.event.before }}
       run: |
         set -euo pipefail
@@ -55,37 +55,37 @@ runs:
 
         case "$EVENTO" in
           pull_request)
-            # En una pull request, HEAD es el commit de fusión que prepara
-            # GitHub y HEAD^1 es la punta de la rama base, así que este diff es
-            # exactamente «lo que la PR cambia respecto a main».
+            # On a pull request, HEAD is the merge commit GitHub prepares
+            # and HEAD^1 is the base branch's tip, so this diff is
+            # exactly «what the PR changes with respect to main».
             base="HEAD^1"; cabeza="HEAD" ;;
           push)
             base="$ANTES"; cabeza="$GITHUB_SHA" ;;
           *)
-            # workflow_dispatch y cualquier otro evento sin base: no hay nada
-            # con lo que comparar. Es además la escotilla para forzar a mano el
-            # pipeline completo.
+            # workflow_dispatch and any other event with no base: there is nothing
+            # to compare with. It is besides the hatch for forcing the complete
+            # pipeline by hand.
             base=""; cabeza="" ;;
         esac
 
-        # La lista de rutas va a un fichero temporal separada por bytes nulos, y
-        # no a una variable separada por saltos de línea, por dos motivos:
+        # The list of paths goes to a temporary file separated by null bytes, and
+        # not to a variable separated by newlines, for two reasons:
         #
-        #  - `git diff --name-only` SIN `-z` entrecomilla y escapa las rutas que
-        #    considera raras. Con `core.quotepath` en su valor por omisión (true,
-        #    y los runners de GitHub no lo cambian) eso incluye TODO carácter no
-        #    ASCII: `docs/ubicación.md` sale como `"docs/ubicaci\303\263n.md"`,
-        #    que no coincide ni con `docs/*` ni con `*.md` y caería en el comodín
-        #    «sin clasificar», disparando el pipeline entero por un fichero de
-        #    documentación. En un repositorio cuya documentación está en español,
-        #    ese es el nombre de fichero más probable. Con `-z`
-        #    git emite la ruta cruda, sin entrecomillar, y de paso deja de ser un
-        #    problema el nombre con espacios, comillas o saltos de línea.
-        #  - A un fichero y no a `$(...)`: la sustitución de órdenes de bash
-        #    DESCARTA los bytes nulos (avisa y sigue), así que
-        #    `ficheros=$(git diff -z ...)` pegaría todas las rutas en una sola
-        #    cadena y cualquier cambio de más de un fichero caería también en el
-        #    comodín.
+        #  - `git diff --name-only` WITHOUT `-z` quotes and escapes the paths it
+        #    considers odd. With `core.quotepath` at its default value (true,
+        #    and GitHub's runners do not change it) that includes EVERY non-ASCII
+        #    character: `docs/ubicación.md` comes out as `"docs/ubicaci\303\263n.md"`,
+        #    which matches neither `docs/*` nor `*.md` and would fall into the
+        #    «unclassified» wildcard, firing the whole pipeline over a documentation
+        #    file. In a repository whose documentation is in Spanish,
+        #    that is the most likely file name. With `-z`
+        #    git emits the raw path, unquoted, and incidentally a name with spaces,
+        #    quotes or newlines stops being a problem.
+        #  - To a file and not to `$(...)`: bash's command substitution
+        #    DISCARDS the null bytes (it warns and carries on), so
+        #    `ficheros=$(git diff -z ...)` would glue all the paths into a single
+        #    string and any change of more than one file would also fall into the
+        #    wildcard.
         lista="$(mktemp)"
 
         motivo=""
@@ -98,10 +98,10 @@ runs:
         fi
 
         if [ -n "$motivo" ]; then
-          # Dirección segura: si no se sabe qué ha cambiado, se verifica todo.
-          # Equivocarse aquí cuesta minutos de CI; equivocarse al revés se salta
-          # los tests de las políticas RLS, que son el único perímetro de
-          # seguridad de este proyecto.
+          # The safe direction: if it is not known what has changed, everything is verified.
+          # Getting it wrong here costs minutes of CI; getting it wrong the other way skips
+          # the RLS policy tests, which are this project's only security
+          # perimeter.
           echo "Sin lista de cambios fiable: $motivo"
           echo "Se verifica TODO."
           todo
@@ -112,72 +112,72 @@ runs:
           while IFS= read -r -d '' f; do
             [ -n "$f" ] || continue
             case "$f" in
-              # Todo app/ y no solo app/src/: package-lock.json es la clave del
-              # caché y la entrada de `npm ci`, y vite.config.ts define además
-              # el entorno de los tests. El Dockerfile y nginx.conf solo los usa
-              # `make preview`, pero disparar de más es el lado bueno del error.
+              # All of app/ and not only app/src/: package-lock.json is the cache's
+              # key and `npm ci`'s input, and vite.config.ts also defines
+              # the tests' environment. The Dockerfile and nginx.conf are used only by
+              # `make preview`, but firing too much is the good side of the error.
               #
-              # Esta rama va ANTES que la de los ficheros irrelevantes, y no es
-              # cosmético: `case` se queda con la PRIMERA coincidencia, así que
-              # con `*.md` delante un `app/public/nota.md` se clasificaría como
-              # irrelevante. Hoy no hay ningún .md bajo app/ y el build no lee
-              # ninguno, pero el día que la aplicación importe un Markdown el
-              # fallo sería silencioso: el cambio no se publicaría y nadie se
-              # enteraría. Con app/ delante, un .md de app/ compila y publica de
-              # más, que es el lado del error que este diseño acepta.
+              # This branch goes BEFORE the one for the irrelevant files, and it is not
+              # cosmetic: `case` keeps the FIRST match, so
+              # with `*.md` in front an `app/public/nota.md` would be classified as
+              # irrelevant. Today there is no .md under app/ and the build reads
+              # none, but the day the application imports a Markdown the
+              # failure would be silent: the change would not be published and nobody would
+              # find out. With app/ in front, an .md from app/ compiles and publishes too
+              # much, which is the side of the error this design accepts.
               app/*) app=true ;;
 
-              # Nada de lo que CI ejecuta lee estos ficheros. Los README de
-              # infra/ y docker/ entran por `*.md` aunque vivan al lado de
-              # código: son documentación. `scripts/generar-iconos.py` genera
-              # PNG que ya están versionados (app/public/icons/), y CI no lo
-              # ejecuta nunca; lo que sí importa es su salida, que cae en app/.
+              # Nothing CI runs reads these files. The READMEs of
+              # infra/ and docker/ come in through `*.md` even though they live next to
+              # code: they are documentation. `scripts/generar-iconos.py` generates
+              # PNGs that are already versioned (app/public/icons/), and CI never
+              # runs it; what does matter is its output, which falls in app/.
               docs/*|*.md|LICENSE|.gitignore|.env.example|scripts/*) ;;
 
-              # Terraform de la plataforma: solo se comprueba formato y validez.
-              # No se aplica desde CI (se aplica a mano, ver infra/README.md).
+              # The platform's Terraform: only format and validity are checked.
+              # It is not applied from CI (it is applied by hand, see infra/README.md).
               infra/*) infra=true ;;
 
-              # Todo lo de supabase/ activa los tests de SQL, y ya no se
-              # distingue lo que se despliega de lo que solo se verifica: lo que
-              # va a Supabase —migraciones y funciones Edge— se despliega en TODO
-              # push verificado, sin preguntar por el diff (ver «migrar» en
-              # desplegar.yml). Los tests de SQL y seed.sql no se despliegan, pero
-              # tampoco hacía falta una salida para eso.
+              # Everything under supabase/ activates the SQL tests, and what is
+              # deployed is no longer distinguished from what is only verified: what
+              # goes to Supabase —migrations and Edge functions— is deployed on EVERY
+              # verified push, without asking about the diff (see «migrar» in
+              # desplegar.yml). The SQL tests and seed.sql are not deployed, but
+              # an output for that was not needed either.
               #
-              # Hueco conocido, anterior a este filtro y sin arreglar aquí:
-              # supabase/functions/ se despliega pero ningún job la comprueba —
-              # no hay `deno check` y el stack de compose no levanta el servicio
-              # `functions`. Cuando lo haya, es un bloque nuevo con su propia
-              # salida, no un remiendo de esta rama.
+              # A known gap, earlier than this filter and not fixed here:
+              # supabase/functions/ is deployed but no job checks it —
+              # there is no `deno check` and the compose stack does not raise the
+              # `functions` service. When there is one, it is a new block with its own
+              # output, not a patch on this branch.
               #
-              # Lo demás que cae aquí y ejecuta o sostiene los tests de SQL: los
-              # propios tests, la semilla, el stack de compose y el Makefile.
-              # El Makefile va aquí porque `make db-test` es LO QUE EJECUTA los
-              # tests de RLS (el bucle, el ON_ERROR_STOP=1 y el `|| exit 1` que
-              # hace que un test rojo tumbe el pipeline): si cambia, hay que
-              # comprobar que siguen ejecutándose, porque un Makefile roto es un
-              # pipeline verde que no prueba nada. Y docker/migrate.sh imprime
-              # el «Migraciones OK» que los dos workflows buscan con grep, así
-              # que tocarlo puede romper CI sin tocar ni una política.
+              # What else falls here and runs or holds up the SQL tests: the
+              # tests themselves, the seed, the compose stack and the Makefile.
+              # The Makefile goes here because `make db-test` is WHAT RUNS the
+              # RLS tests (the loop, the ON_ERROR_STOP=1 and the `|| exit 1` that
+              # makes a red test knock down the pipeline): if it changes, it has to be
+              # checked that they are still being run, because a broken Makefile is a
+              # green pipeline that proves nothing. And docker/migrate.sh prints
+              # the «Migraciones OK» that both workflows look for with grep, so
+              # touching it can break CI without touching a single policy.
               supabase/*|docker/*|docker-compose.yml|Makefile) datos=true ;;
 
-              # Cambiar el pipeline (workflows o esta misma acción) dispara el
-              # pipeline entero, incluido él mismo.
+              # Changing the pipeline (the workflows or this very action) fires the
+              # whole pipeline, itself included.
               .github/*) todo ;;
 
-              # Ruta sin clasificar: se verifica TODO. Esta rama es la red de
-              # seguridad del diseño, no un descuido. Si mañana aparece una
-              # carpeta nueva y nadie la añade a las listas de arriba, NO se
-              # salta la verificación: la dispara entera hasta que alguien
-              # decida a qué bloque pertenece. Añadir aquí una carpeta nueva es
-              # una decisión explícita, olvidarla solo cuesta minutos de CI.
+              # An unclassified path: EVERYTHING is verified. This branch is the design's
+              # safety net, not an oversight. If a new folder appears tomorrow
+              # and nobody adds it to the lists above, the verification is NOT
+              # skipped: it fires whole until somebody
+              # decides which block it belongs to. Adding a new folder here is
+              # an explicit decision, forgetting it only costs minutes of CI.
               *)
                 echo "  → «$f» no está clasificado: se verifica TODO"
                 todo ;;
             esac
-            # Redirección y no tubería: una tubería ejecuta el bucle en un
-            # subshell y las variables volverían a false al terminar.
+            # A redirection and not a pipe: a pipe runs the loop in a
+            # subshell and the variables would go back to false on finishing.
           done <"$lista"
         fi
 

@@ -1,25 +1,25 @@
 name: verificar
 
-# La puerta de las pull requests. El nombre del job de cierre «verificar» es el
-# contexto que exige la protección de la rama main (infra/github.tf): si se
-# renombra, hay que cambiarlo allí. Añadir jobs a este workflow es seguro;
-# renombrar o quitar el job «verificar» rompe la fusión de todas las PR.
+# The pull requests' gate. The name of the closing job «verificar» is the
+# context the main branch's protection requires (infra/github.tf): if it is
+# renamed, it has to be changed there. Adding jobs to this workflow is safe;
+# renaming or removing the «verificar» job breaks the merging of every PR.
 #
-# Ya no se dispara en push a main: ahí corre desplegar.yml, que verifica de
-# nuevo antes de tocar producción. Así cada evento ejecuta un solo pipeline.
+# It no longer fires on a push to main: there desplegar.yml runs, which verifies
+# again before touching production. This way each event runs a single pipeline.
 #
-# Este workflow NO lleva filtro de rutas en `on`, y no es descuido: es una
-# comprobación REQUERIDA por la protección de rama. Un job saltado por un filtro
-# de rutas no reporta estado, así que filtrar aquí dejaría a una PR que solo toca
-# documentación esperando para siempre un check que no va a llegar. Lo que se
-# salta son los BLOQUES de trabajo, con el `if` de cada job a partir de lo que
-# clasifica el job `cambios`; el job de cierre corre y reporta siempre.
+# This workflow carries NO path filter in `on`, and it is not an oversight: it is a
+# check REQUIRED by the branch protection. A job skipped by a path
+# filter reports no status, so filtering here would leave a PR that only touches
+# documentation waiting for ever for a check that is not going to arrive. What is
+# skipped are the BLOCKS of work, with each job's `if` from what the
+# `cambios` job classifies; the closing job runs and reports always.
 #
-# Tampoco vale el truco del workflow espejo con un job del mismo nombre que hace
-# `exit 0` en las rutas inversas: `paths` y `paths-ignore` no son complementarios
-# (una PR que toca documentación Y código coincide con los dos), así que se
-# crearían dos check runs llamados «verificar» y el verde falso podría tapar al
-# rojo de verdad.
+# Nor does the mirror-workflow trick work, with a job of the same name that does
+# `exit 0` on the inverse paths: `paths` and `paths-ignore` are not complementary
+# (a PR that touches documentation AND code matches both), so two check runs
+# called «verificar» would be created and the false green could cover up the
+# real red.
 
 on:
   pull_request:
@@ -29,9 +29,9 @@ permissions:
   contents: read
 
 jobs:
-  # Qué ha cambiado de verdad. La clasificación vive en una acción compuesta y
-  # no aquí para que desplegar.yml use exactamente la misma lista: dos copias se
-  # separan solas, y separarse significa saltarse algo en uno de los dos sitios.
+  # What has really changed. The classification lives in a composite action and
+  # not here so that desplegar.yml uses exactly the same list: two copies drift
+  # apart on their own, and drifting apart means skipping something in one of the two places.
   cambios:
     runs-on: ubuntu-latest
     outputs:
@@ -41,10 +41,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # Historia completa: la acción compara contra la base del evento y con
-          # la profundidad 1 por omisión ese commit no existe en el clon. Sin él
-          # la acción no adivina, clasifica todo como relevante — seguro, pero
-          # entonces el pipeline entero corre en cada PR y filtrar no serviría.
+          # Full history: the action compares against the event's base and with
+          # the default depth of 1 that commit does not exist in the clone. Without it
+          # the action does not guess, it classifies everything as relevant — safe, but
+          # then the whole pipeline runs on every PR and filtering would be of no use.
           fetch-depth: 0
 
       - id: filtro
@@ -67,7 +67,7 @@ jobs:
         run: terraform fmt -check -recursive -diff
         working-directory: infra
 
-      # Sin backend: validar no necesita credenciales ni acceso al estado.
+      # With no backend: validating needs no credentials and no access to the state.
       - name: Validar Terraform
         run: |
           terraform init -backend=false -input=false
@@ -77,10 +77,10 @@ jobs:
           terraform validate
         working-directory: infra
 
-  # Los tests de RLS tienen su propio job y ya no van detrás del frontend: sin
-  # backend, las políticas son el único perímetro de seguridad, y su fallo no
-  # corrompe datos, los expone. Que este bloque corra en paralelo con el
-  # frontend recupera además el tiempo que antes daba el orden secuencial.
+  # The RLS tests have their own job and no longer go behind the frontend: with no
+  # backend, the policies are the only security perimeter, and their failure does not
+  # corrupt data, it exposes it. This block running in parallel with the
+  # frontend also recovers the time the sequential order used to cost.
   datos:
     needs: cambios
     if: needs.cambios.outputs.datos == 'true'
@@ -88,10 +88,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # El up ya espera a las migraciones: rest depende de migrate con
-      # service_completed_successfully. No añadir `docker compose wait migrate`:
-      # solo sabe esperar a contenedores corriendo, y si migrate ya terminó
-      # falla con «no containers for project» (carrera vista en CI).
+      # The up already waits for the migrations: rest depends on migrate with
+      # service_completed_successfully. Do not add `docker compose wait migrate`:
+      # it only knows how to wait for running containers, and if migrate has already finished it
+      # fails with «no containers for project» (a race seen in CI).
       - name: Levantar el stack
         run: docker compose up -d db auth migrate rest gateway
 
@@ -137,11 +137,11 @@ jobs:
           VITE_SUPABASE_URL: http://localhost:8321
           VITE_SUPABASE_ANON_KEY: clave-de-compilacion-sin-uso
 
-  # Los invariantes del pipeline de despliegue, que son código como cualquier
-  # otro y ya rompieron producción una vez (ver .github/pipeline.test.sh). Sin
-  # `if`: corre en toda PR, porque lo que comprueba no depende de qué ficheros
-  # se hayan tocado y cuesta segundos. Solo lee ficheros: ni red, ni Docker, ni
-  # credenciales.
+  # The deployment pipeline's invariants, which are code like any
+  # other and already broke production once (see .github/pipeline.test.sh). With no
+  # `if`: it runs on every PR, because what it checks does not depend on which files
+  # have been touched and it costs seconds. It only reads files: no network, no Docker, no
+  # credentials.
   pipeline:
     runs-on: ubuntu-latest
     steps:
@@ -150,19 +150,19 @@ jobs:
       - name: Tests del pipeline de despliegue
         run: ./.github/pipeline.test.sh
 
-  # El contexto que exige la protección de rama (infra/github.tf). No lleva
-  # filtro de rutas y lleva `always()`: corre y reporta SIEMPRE, también cuando
-  # los tres bloques se saltan. Es lo único que evita que una PR de solo
-  # documentación quede bloqueada esperando un check que no va a llegar.
+  # The context the branch protection requires (infra/github.tf). It carries no
+  # path filter and it carries `always()`: it runs and reports ALWAYS, including when
+  # the three blocks are skipped. It is the only thing that prevents a documentation-only
+  # PR from being blocked waiting for a check that is not going to arrive.
   verificar:
     name: verificar
     needs: [cambios, infra, datos, frontend, pipeline]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      # `always()` sin comprobar los resultados convertiría este job en un sello
-      # verde permanente: con `always()`, un `needs` fallido ya no tumba al job
-      # que depende de él. Por eso se enumeran los resultados uno a uno.
+      # `always()` without checking the results would turn this job into a permanent
+      # green stamp: with `always()`, a failed `needs` no longer knocks down the job
+      # that depends on it. That is why the results are enumerated one by one.
       - name: Resultado de los bloques de verificación
         env:
           RESULTADOS: >-
@@ -172,8 +172,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "Resultados: $RESULTADOS"
-          # «skipped» es un resultado válido: significa que no ha cambiado nada
-          # de lo que ese bloque comprueba. Solo fallan «failure» y «cancelled».
+          # «skipped» is a valid result: it means that nothing of what that block
+          # checks has changed. Only «failure» and «cancelled» fail.
           for r in $RESULTADOS; do
             case "$r" in
               success|skipped) ;;

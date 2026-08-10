@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 #
-# Tests del pipeline de despliegue (RNF-103: el frontend se publica desde
-# integración continua al fusionar en main — y, como dice la cabecera de
-# desplegar.yml, después del esquema y nunca antes).
+# Tests of the deployment pipeline (RNF-103: the frontend is published from
+# continuous integration on merging into main — and, as desplegar.yml's header
+# says, after the schema and never before).
 #
-# Existe por una incidencia real: trece migraciones —la procedencia, la
-# bibliografía, las exposiciones, el archivo documental— llegaron a main en un
-# push cuya verificación falló, así que no se aplicaron. Los pushes siguientes
-# arreglaron el test y siguieron con el frontend, pero como ya no tocaban
-# supabase/migrations/ el job «migrar» se saltaba en cada uno, mientras
-# «publicar» sí corría. Producción acabó con el frontend nuevo contra el esquema
-# viejo, y la usuaria vio en todos los bloques nuevos de la ficha:
+# It exists because of a real incident: thirteen migrations —the provenance, the
+# bibliography, the exhibitions, the documentary archive— reached main in a
+# push whose verification failed, so they were not applied. The following pushes
+# fixed the test and carried on with the frontend, but as they no longer touched
+# supabase/migrations/ the «migrar» job was skipped on each one, while
+# «publicar» did run. Production ended up with the new frontend against the old
+# schema, and the user saw in all the record's new blocks:
 #
 #   Could not find the table 'public.provenance_events' in the schema cache
 #
-# Lo que se comprueba aquí no es que el YAML esté escrito de una forma concreta,
-# sino las dos propiedades cuya ausencia causó eso: que aplicar migraciones NO
-# dependa de qué ficheros trae el push, y que publicar el frontend exija haberlo
-# hecho con éxito. Son afirmaciones sobre el grafo de jobs, no sobre el texto.
+# What is checked here is not that the YAML be written in a particular way,
+# but the two properties whose absence caused that: that applying migrations NOT
+# depend on which files the push brings, and that publishing the frontend require having
+# done it successfully. They are assertions about the job graph, not about the text.
 #
-# No necesita red, ni Docker, ni credenciales: solo lee los ficheros del
-# repositorio. Se ejecuta con `make pipeline-test`.
+# It needs no network, no Docker and no credentials: it only reads the repository's
+# files. It is run with `make pipeline-test`.
 
 set -euo pipefail
 
@@ -37,8 +37,8 @@ ok() {
   echo "  ✓ $1"
 }
 
-# Devuelve la condición `if` de un job de desplegar.yml, con los saltos de línea
-# del bloque plegado ya resueltos por el analizador de YAML.
+# It returns the `if` condition of a desplegar.yml job, with the newlines
+# of the folded block already resolved by the YAML parser.
 condicion_de() {
   python3 - "$1" <<'PY'
 import sys, yaml
@@ -48,7 +48,7 @@ print(' '.join(str(jobs[sys.argv[1]].get('if', '')).split()))
 PY
 }
 
-# Devuelve los `needs` de un job, uno por línea.
+# It returns a job's `needs`, one per line.
 dependencias_de() {
   python3 - "$1" <<'PY'
 import sys, yaml
@@ -63,9 +63,9 @@ echo "→ El esquema se despliega en todo despliegue verificado"
 
 migrar="$(condicion_de migrar)"
 
-# El corazón de la incidencia: si aplicar migraciones depende de la
-# clasificación de los ficheros del push, las migraciones de un push que no
-# llegó a desplegarse no se reintentan nunca.
+# The heart of the incident: if applying migrations depends on the
+# classification of the push's files, the migrations of a push that never
+# got deployed are never retried.
 if [[ "$migrar" == *"cambios.outputs"* ]]; then
   fallo "«migrar» vuelve a depender de qué ficheros trae el push: $migrar"
 else
@@ -78,7 +78,7 @@ else
   ok "«migrar» no necesita la clasificación del push"
 fi
 
-# La otra mitad: no se toca la base si la verificación no ha ido bien.
+# The other half: the base is not touched if the verification has not gone well.
 if [[ "$migrar" == *"needs.verificar.result == 'success'"* ]]; then
   ok "«migrar» exige que la verificación haya ido bien"
 else
@@ -96,18 +96,18 @@ else
   fallo "«publicar» ya no exige un «migrar» en verde: $publicar"
 fi
 
-# Admitir «skipped» era imprescindible cuando «migrar» se saltaba en los pushes
-# de solo frontend, y es exactamente la puerta por la que salió el frontend
-# nuevo contra el esquema viejo. Ahora «migrar» solo se salta si la verificación
-# no ha ido bien, caso que la condición de al lado ya bloquea.
+# Admitting «skipped» was indispensable when «migrar» was skipped on the
+# frontend-only pushes, and it is exactly the door through which the new frontend
+# came out against the old schema. Now «migrar» is only skipped if the verification
+# has not gone well, a case the condition alongside already blocks.
 if [[ "$publicar" == *"migrar.result == 'skipped'"* ]]; then
   fallo "«publicar» vuelve a admitir un «migrar» saltado: $publicar"
 else
   ok "«publicar» no admite un «migrar» saltado"
 fi
 
-# Sin esto, cualquier `skipped` en la cadena de `needs` arrastra al job y el
-# frontend no se publica nunca: el fallo simétrico, silencioso y también visto.
+# Without this, any `skipped` in the `needs` chain drags the job along and the
+# frontend is never published: the symmetric failure, silent and also seen.
 if [[ "$publicar" == *'!cancelled()'* ]]; then
   ok "«publicar» conserva el «!cancelled()» que lo salva de la cadena de saltos"
 else
@@ -117,8 +117,8 @@ fi
 echo
 echo "→ Las migraciones que existen se despliegan de verdad"
 
-# Que el paso exista y no lleve condición propia: un `if` aquí reintroduciría el
-# agujero un nivel más abajo, donde el grafo de jobs ya no lo delata.
+# That the step exist and carry no condition of its own: an `if` here would reintroduce the
+# hole one level further down, where the job graph no longer gives it away.
 python3 - <<'PY' || exit 1
 import sys, yaml
 with open('.github/workflows/desplegar.yml') as f:
@@ -146,23 +146,23 @@ PY
 echo
 echo "→ La CLI de Supabase está clavada en una versión concreta"
 
-# Estaba en `latest`, y el 7 de agosto de 2026 un despliegue verificado se cayó
-# en el primer paso —«failed to get api keys: SchemaError(…inserted_at)»— porque
-# la 2.112.0 se había publicado cinco minutos antes. Nada del repositorio había
-# cambiado. Con `link` roto, «migrar» no arrancaba y «publicar» no publicaba.
+# It was on `latest`, and on 7 August 2026 a verified deployment fell over
+# at the first step —«failed to get api keys: SchemaError(…inserted_at)»— because
+# 2.112.0 had been published five minutes earlier. Nothing in the repository had
+# changed. With `link` broken, «migrar» did not start and «publicar» did not publish.
 #
-# Lo que se comprueba no es qué versión es —esa decisión es del fichero, y su
-# motivo está en la cabecera—, sino que sea UNA y la misma en todos los jobs:
-# `latest` convierte cada despliegue en el estreno de lo que se haya publicado
-# fuera mientras corría, y dos versiones distintas en el mismo despliegue son dos
-# comportamientos distintos contra la misma API.
+# What is checked is not which version it is —that decision belongs to the file, and its
+# reason is in the header—, but that it be ONE and the same in every job:
+# `latest` turns every deployment into the première of whatever has been published
+# outside while it was running, and two different versions in the same deployment are two
+# different behaviours against the same API.
 python3 - <<'PY' || exit 1
 import sys, yaml
 
 with open('.github/workflows/desplegar.yml') as f:
     wf = yaml.safe_load(f)
 
-# `latest`, `beta` o una rama son móviles; lo demás se considera una versión.
+# `latest`, `beta` or a branch are moving; anything else is considered a version.
 MOVILES = {'latest', 'beta', 'canary', 'main', 'master', ''}
 
 usos = []
@@ -183,9 +183,9 @@ for job, version in usos:
     else:
         print(f"  ✓ «{job}» instala la {version}")
 
-# La versión va escrita en cada job, así que subirla es tocar dos sitios. Esto
-# es lo que impide subir uno y dejarse el otro: dos versiones distintas contra la
-# misma API es justo el estado que nadie va a mirar hasta que falle.
+# The version is written in each job, so raising it is touching two places. This
+# is what prevents raising one and leaving the other: two different versions against the
+# same API is exactly the state nobody is going to look at until it fails.
 distintas = {v for _, v in usos}
 if len(distintas) > 1:
     print(f"  ✗ los jobs no coinciden en la versión de la CLI: {sorted(distintas)}", file=sys.stderr)
