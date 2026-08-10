@@ -1,3 +1,4 @@
+import { clearSignedPaths, forgetSignedPaths } from '../../lib/signedPaths'
 import type { Artwork } from '../../lib/types'
 
 /**
@@ -119,6 +120,10 @@ export function clearArtworksCache(storage: Storage | undefined = getStorage()):
   } catch {
     /* nothing to clear */
   }
+  // Las firmas de las fotografías de las fichas, por lo mismo: son rutas del catálogo
+  // y una firma sigue abriendo el fichero hasta que caduca.
+  clearSignedPaths(storage)
+  forgetSignedPaths()
   try {
     void caches?.delete(IMAGE_CACHE)
   } catch {

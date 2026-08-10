@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { signedUrl } from '../../lib/images'
+import { signPaths } from '../../lib/signedPaths'
 import { useLiveChanges } from '../../lib/live'
 import type { ShotTypeValue } from '../../lib/types'
 
@@ -81,10 +81,19 @@ export function useArtworkImages(catalogId: string) {
     setMainId(representative?.image_id ?? null)
     setManuallyChosen(representative?.manually_chosen ?? false)
 
-    const pairs = await Promise.all(
-      rows.map(async (r) => [r.image_id, await signedUrl(r.thumbnail_path)] as const),
+    // Una sola petición para todas, y ninguna si ya estaban firmadas: `signPaths`
+    // guarda las firmas por ruta y con una semana de validez. Antes era una petición
+    // por miniatura y con una hora, así que reabrir la ficha volvía a pedirlas todas
+    // —y sin cobertura no se veía ninguna, aunque los bytes estuvieran en el
+    // teléfono, porque sin firma no hay `src` que buscar en el caché—.
+    const urls = await signPaths(rows.map((r) => r.thumbnail_path))
+    setThumbUrls(
+      Object.fromEntries(
+        rows
+          .map((r) => [r.image_id, urls[r.thumbnail_path]] as const)
+          .filter((p): p is [string, string] => p[1] !== undefined),
+      ),
     )
-    setThumbUrls(Object.fromEntries(pairs.filter((p): p is [string, string] => p[1] !== null)))
     setLoading(false)
     return { rows, main: representative?.image_id ?? null }
   }, [catalogId])

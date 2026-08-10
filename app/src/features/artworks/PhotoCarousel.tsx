@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { signedUrl } from '../../lib/images'
+import { signPaths } from '../../lib/signedPaths'
 import { SHOT_TYPE_LABEL } from '../../lib/types'
 import type { ImageRow } from './artworkImages'
 
@@ -61,14 +61,10 @@ export function PhotoCarousel({
       .filter((r): r is ImageRow => r !== undefined && !(r.derivative_path in slideUrls))
     if (wanted.length === 0) return
     let current = true
-    void Promise.all(
-      wanted.map(async (r) => [r.derivative_path, await signedUrl(r.derivative_path)] as const),
-    ).then((pairs) => {
+    // Las tres de una vez, y de la caché de firmas si ya estaban: ver `signPaths`.
+    void signPaths(wanted.map((r) => r.derivative_path)).then((urls) => {
       if (!current) return
-      setSlideUrls((u) => ({
-        ...u,
-        ...Object.fromEntries(pairs.filter((p): p is [string, string] => p[1] !== null)),
-      }))
+      setSlideUrls((u) => ({ ...u, ...urls }))
     })
     return () => {
       current = false
