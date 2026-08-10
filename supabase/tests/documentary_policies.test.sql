@@ -596,9 +596,9 @@ end $$;
 
 reset role;
 
--- Y edita, y manda a la papelera, que es como se retira algo en este catálogo.
--- Se usa `note` donde existe y `name` en el vocabulario, porque no todas tienen
--- las mismas columnas y escribir en una que no lleva nada no probaría nada.
+-- And they edit, and send to the wastebasket, which is how something is withdrawn in this catalogue.
+-- `note` is used where it exists and `name` in the vocabulary, because not all of them have
+-- the same columns and writing in one that carries neither would prove nothing.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec; v_affected integer; v_column text;
 begin
@@ -632,10 +632,10 @@ end $$;
 
 reset role;
 
--- La baja lógica, que es la única forma de retirar algo (RF-901). Se hace sobre
--- las puentes y los eslabones, que son las que no tienen guardarraíl de
--- desactivación delante: retirar una maestra en uso lo impide un trigger, y eso
--- es otra regla y tiene sus propios tests.
+-- The logical deletion, which is the only way of withdrawing something (RF-901). It is done over
+-- the bridges and the links, which are the ones with no deactivation
+-- guardrail in front: withdrawing a master table row in use is prevented by a trigger, and that
+-- is another rule and has its own tests.
 do $$
 declare v_specs perimeter_spec[]; r perimeter_spec; v_affected integer; v_row record;
 begin
@@ -655,8 +655,8 @@ begin
       raise exception 'FAIL: el catalogador no ha podido dar de baja en public.%', r.table_name;
     end if;
 
-    -- Y la baja deja traza de quién y cuándo, que es lo que la separa de un
-    -- borrado (RF-901, RF-804).
+    -- And the withdrawal leaves a trace of who and when, which is what separates it from a
+    -- delete (RF-901, RF-804).
     execute format(
       'select deactivated_at, deactivated_by from public.%I where id = %L',
       r.table_name, r.id_active) into v_row;
@@ -671,13 +671,13 @@ end $$;
 reset role;
 
 
--- ── 11. El dato de tercero: `parties.contact` (RF-105) ───────
+-- ── 11. The third party's datum: `parties.contact` (RF-105) ──
 --
--- La fila que más importa de toda la matriz, y por eso va aparte del bucle. Es
--- el teléfono o el correo de un coleccionista particular: si una política se
--- escribe mal, lo que se expone no es el catálogo del estudio, es el contacto
--- de otra persona. Que el Lector lo vea es una decisión escrita de RF-105, no
--- un descuido, y por eso se ejerce.
+-- The row that matters most of the whole matrix, and that is why it goes outside the loop. It is
+-- a private collector's phone number or e-mail: if a policy is
+-- written badly, what is exposed is not the studio's catalogue, it is another person's
+-- contact. That the Reader sees it is a written decision of RF-105, not
+-- an oversight, and that is why it is exercised.
 do $$
 declare v_contact text;
 begin
@@ -696,7 +696,7 @@ end $$;
 
 reset role;
 
--- Y no el de una parte retirada, que es papelera como cualquier otra.
+-- And not that of a withdrawn party, which is wastebasket like any other.
 do $$
 declare v_n integer;
 begin
@@ -715,12 +715,12 @@ end $$;
 reset role;
 
 
--- ── 12. Las cinco RPC vuelven a la vida ──────────────────────
+-- ── 12. The five RPCs come back to life ──────────────────────
 --
--- Todas son SECURITY INVOKER a propósito, así que hasta esta migración ninguna
--- escribía nada para un usuario con sesión: la política que les faltaba era
--- justo la que necesitaban. Se ejercitan con el rol puesto, que es como las va
--- a llamar PostgREST.
+-- All of them are SECURITY INVOKER on purpose, so until this migration none
+-- wrote anything for a user with a session: the policy they were missing was
+-- precisely the one they needed. They are exercised with the role set, which is how PostgREST is
+-- going to call them.
 do $$
 declare
   v_cita  public.artwork_bibliography;
@@ -732,8 +732,8 @@ begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated"}';
   set local role authenticated;
 
-  -- Restaurar una cita retirada en vez de chocar contra la unicidad (RF-517):
-  -- la fila de AR-9601 se dejó en la papelera al montar los fixtures.
+  -- Restoring a withdrawn citation instead of clashing against uniqueness (RF-517):
+  -- AR-9601's row was left in the wastebasket when assembling the fixtures.
   v_cita := public.cite_artwork('AR-9601', '9e000004-0000-4000-8000-000000000001');
   if not v_cita.active or v_cita.pages <> 'p. 12' then
     raise exception 'FAIL: cite_artwork no ha restaurado la cita conservando las páginas';
@@ -755,7 +755,7 @@ begin
     raise exception 'FAIL: document_exhibition no ha restaurado el vínculo con la exposición';
   end if;
 
-  -- Y en un tipo simétrico da igual el orden en que se pasen las obras.
+  -- And in a symmetric type the order the artworks are passed in does not matter.
   v_rel := public.relate_artworks('AR-9601', 'AR-9600', '9e00000e-0000-4000-8000-000000000001');
   if not v_rel.active or v_rel.from_catalog_id <> 'AR-9600' then
     raise exception 'FAIL: relate_artworks no ha restaurado la relación canonicalizada';
@@ -766,13 +766,13 @@ end $$;
 
 reset role;
 
--- Reordenar la cadena de procedencia necesitaba la política de SELECT: sin
--- ella la función no encontraba los eslabones y rechazaba cualquier lista.
+-- Reordering the provenance chain needed the SELECT policy: without
+-- it the function did not find the links and rejected any list.
 --
--- Antes hay que sacar de la papelera el eslabón que el bloque 10 retiró, y eso
--- es media prueba de propina: restaurar es un update de `active` en sentido
--- contrario y necesita la misma política. Un perímetro que deje retirar y no
--- deje restaurar convierte la papelera en un borrado con otro nombre.
+-- First the link block 10 withdrew has to be taken out of the wastebasket, and that
+-- is half a proof thrown in: restoring is an update of `active` in the opposite
+-- direction and needs the same policy. A perimeter that lets things be withdrawn and does
+-- not let them be restored turns the wastebasket into a delete under another name.
 do $$
 declare v_first uuid; v_affected integer;
 begin
@@ -802,8 +802,8 @@ end $$;
 
 reset role;
 
--- Y el Lector recibe el mensaje en español de la propia función, que es mejor
--- que el silencio de un update que no afecta a nadie.
+-- And the Reader receives the function's own message in Spanish, which is better
+-- than the silence of an update that affects nobody.
 do $$
 begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}';
@@ -824,12 +824,12 @@ end $$;
 reset role;
 
 
--- ── 13. Y el catálogo entero sigue sin una política de DELETE ─
+-- ── 13. And the whole catalogue still has no DELETE policy ────
 --
--- Lo mismo que afirma `rls_default_deny.test.sql`, repetido aquí a propósito:
--- quince tablas nuevas son quince ocasiones de escribir la política que este
--- proyecto no quiere, y el aviso tiene que llegar del fichero que se está
--- editando y no solo de otro.
+-- The same thing `rls_default_deny.test.sql` asserts, repeated here on purpose:
+-- fifteen new tables are fifteen chances to write the policy this
+-- project does not want, and the warning has to come from the file being
+-- edited and not only from another one.
 do $$
 declare v_with_delete text[];
 begin

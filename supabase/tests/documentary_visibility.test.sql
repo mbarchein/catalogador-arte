@@ -1,49 +1,49 @@
--- La cascada de visibilidad de la baja lógica de una obra.
+-- The visibility cascade of an artwork's logical deletion.
 --
 -- RF-609, RF-905, RF-910, RF-911, RF-912, RF-913, RF-906, RF-105, RF-106,
 -- RF-109, RF-111, RF-511.
 --
--- ESTE FICHERO NACIÓ DE UNA FUGA MEDIDA, no de un repaso del diseño. Con la
--- política anterior a 20260805130000, un Lector autenticado contra una obra dada
--- de baja lógica veía:
+-- THIS FILE WAS BORN OF A MEASURED LEAK, not of a design review. With the
+-- policy before 20260805130000, a Reader authenticated against a logically
+-- deleted artwork saw:
 --
---   la obra ................... 0 filas
---   su eslabón de procedencia . 1 fila
---   su cita ................... 1 fila
---   su participación .......... 1 fila
---   su documento .............. 1 fila
---   su relación ............... 1 fila
+--   the artwork ............... 0 rows
+--   its provenance link ....... 1 row
+--   its citation .............. 1 row
+--   its participation ......... 1 row
+--   its document .............. 1 row
+--   its relationship .......... 1 row
 --
--- y, siguiendo el eslabón hasta `parties`, el nombre y el CONTACTO del
--- coleccionista particular que la tuvo. La ficha estaba escondida y la cadena de
--- propietarios de esa ficha escondida, no: es el único dato del catálogo cuya
--- exposición afecta a personas ajenas al proyecto, y por eso este fichero lo
--- comprueba leyendo el contacto de verdad y no contando filas de una puente.
+-- and, following the link to `parties`, the name and the CONTACT of the
+-- private collector who had it. The record was hidden and the chain of
+-- owners of that hidden record was not: it is the only datum in the catalogue whose
+-- exposure affects people outside the project, and that is why this file
+-- checks it by reading the real contact and not by counting rows of a bridge.
 --
--- Todo se ejerce AUTENTICÁNDOSE como un usuario de cada papel. Comprobar que la
--- política dice `exists` no verifica nada: lo que importa es lo que la base
--- contesta cuando la petición viene de quien viene, que es lo que hará un `curl`
--- con el token de la Lectora — no hay interfaz que se interponga.
+-- Everything is exercised AUTHENTICATING as a user of each role. Checking that the
+-- policy says `exists` verifies nothing: what matters is what the base
+-- answers when the request comes from whom it comes, which is what a `curl`
+-- with the Reader's token will do — there is no interface standing in between.
 --
--- Los cuatro bloques que sostienen el fichero, y por qué ninguno sobra:
+-- The four blocks that hold up the file, and why none is superfluous:
 --
---   1. La fuga: seis recuentos a cero y el contacto ilegible.
---   2. EL CONTROL, con todo activo: los mismos seis recuentos a uno. Sin él, una
---      política que negara siempre pasaría el bloque 1 y el catálogo se quedaría
---      en blanco sin que nada avisara.
---   3. Los DOS EXTREMOS de cada puente, uno por uno. Es lo que distingue
---      «hereda» de «hereda a medias», y es el error que un `exists` de más
---      esconde: con solo el extremo de la obra, los bloques 1 y 2 pasan igual.
---   4. La papelera del Catalogador COMPLETA. Es la que esta migración no puede
---      romper: es su forma de restaurar (RF-906), y un arreglo de visibilidad
---      que la vaciara sería peor que la fuga.
+--   1. The leak: six counts at zero and the contact unreadable.
+--   2. THE CONTROL, with everything active: the same six counts at one. Without it, a
+--      policy that always denied would pass block 1 and the catalogue would be left
+--      blank with nothing warning about it.
+--   3. BOTH ENDS of each bridge, one by one. It is what distinguishes
+--      «inherits» from «half inherits», and it is the mistake an extra `exists`
+--      hides: with only the artwork's end, blocks 1 and 2 pass all the same.
+--   4. The Cataloguer's COMPLETE wastebasket. It is the one this migration cannot
+--      break: it is their way of restoring (RF-906), and a visibility fix
+--      that emptied it would be worse than the leak.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
 --
--- Un Catalogador y un Lector de verdad, con su fila en `profiles` creada por el
--- trigger de `auth.users`.
+-- A real Cataloguer and a real Reader, with their `profiles` row created by the
+-- `auth.users` trigger.
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'cat-cascada@test.local'),
@@ -51,18 +51,18 @@ insert into auth.users (id, email) values
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000a1';
 update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000a2';
 
--- Cuatro obras. Los identificadores están elegidos por su ORDEN, no por gusto:
--- el trigger de canonicalización pone el menor en `from_catalog_id` de una
--- relación simétrica, así que AR-9800 < AR-9805 < AR-9810 es lo que permite
--- dejar la obra retirada una vez en cada extremo.
+-- Four artworks. The identifiers are chosen for their ORDER, not out of taste:
+-- the canonicalisation trigger puts the lesser in `from_catalog_id` of a
+-- symmetric relationship, so AR-9800 < AR-9805 < AR-9810 is what allows
+-- the withdrawn artwork to be left once at each end.
 insert into public.artworks (catalog_id, artist, title, attributed_title) values
   ('AR-9800', 'ROTILI', 'Obra activa anterior', 'UNCONFIRMED'),
   ('AR-9805', 'ROTILI', 'La obra que se da de baja', 'UNCONFIRMED'),
   ('AR-9810', 'ROTILI', 'Obra activa posterior', 'UNCONFIRMED'),
   ('AR-9820', 'ROTILI', 'Obra del control, todo activo', 'UNCONFIRMED');
 
--- El dato personal de tercero. RF-105 decide que el Lector ve `contact` DE LAS
--- PARTES QUE PUEDE VER; lo que había que arreglar es cuáles puede ver.
+-- The third party's personal datum. RF-105 decides that the Reader sees `contact` OF THE
+-- PARTIES THEY CAN SEE; what had to be fixed is which ones they can see.
 insert into public.parties (id, party_type, name, contact) values
   ('9a000001-0000-4000-8000-000000000001', 'PERSON',
    'Coleccionista particular de la cascada', 'telefono-privado@cascada.test');
@@ -82,7 +82,7 @@ insert into public.archive_documents (id, title) values
 insert into public.artwork_relationship_types (id, name, inverse_name, is_symmetric) values
   ('9a00000e-0000-4000-8000-000000000001', 'Cascada simétrica de', '', true);
 
--- ── Las cinco filas documentales de la obra que se retira ────
+-- ── The five documentary rows of the artwork that is withdrawn ─
 
 insert into public.provenance_events (id, catalog_id, party_id, capacity) values
   ('9a000002-0000-4000-8000-000000000001', 'AR-9805',
@@ -100,24 +100,24 @@ insert into public.artwork_documents (id, catalog_id, document_id) values
   ('9a00000c-0000-4000-8000-000000000001', 'AR-9805',
    '9a00000b-0000-4000-8000-000000000001');
 
--- El MISMO documento, colgado además de una exposición que sigue activa: es el
--- caso en el que las dos anclas discrepan, y el criterio escrito en la migración
--- dice qué gana. Se comprueba en el bloque 5.
+-- The SAME document, hanging also from an exhibition that is still active: it is the
+-- case in which the two anchors disagree, and the criterion written in the migration
+-- says which wins. It is checked in block 5.
 insert into public.exhibition_documents (id, exhibition_id, document_id) values
   ('9a00000d-0000-4000-8000-000000000001', '9a000007-0000-4000-8000-000000000001',
    '9a00000b-0000-4000-8000-000000000001');
 
--- La obra retirada en CADA extremo de una relación, que es lo que hace falta
--- para que mirar un solo lado no pase el test.
+-- The artwork withdrawn at EACH end of a relationship, which is what is needed
+-- for looking at only one side not to pass the test.
 insert into public.artwork_relationships (id, from_catalog_id, to_catalog_id, relationship_type_id) values
   ('9a00000f-0000-4000-8000-000000000001', 'AR-9805', 'AR-9810',
    '9a00000e-0000-4000-8000-000000000001'),
   ('9a00000f-0000-4000-8000-000000000002', 'AR-9800', 'AR-9805',
    '9a00000e-0000-4000-8000-000000000001');
 
--- Que la canonicalización haya dejado los extremos donde este fichero cuenta que
--- están. Si un día cambia el criterio, esto lo dice en vez de dejar el test
--- pasando por el motivo equivocado.
+-- That the canonicalisation has left the ends where this file says they
+-- are. If the criterion ever changes, this says so instead of leaving the test
+-- passing for the wrong reason.
 do $$
 begin
   if not exists (select 1 from public.artwork_relationships
@@ -132,9 +132,9 @@ begin
   end if;
 end $$;
 
--- ── Las mismas cinco filas de una obra que NO se retira ──────
+-- ── The same five rows of an artwork that is NOT withdrawn ───
 --
--- El control del bloque 2. Van a las mismas fichas ancla, todas activas.
+-- Block 2's control. They go to the same anchor records, all active.
 
 insert into public.provenance_events (id, catalog_id, party_id, capacity) values
   ('9a000002-0000-4000-8000-000000000009', 'AR-9820',
@@ -152,11 +152,11 @@ insert into public.artwork_relationships (id, from_catalog_id, to_catalog_id, re
   ('9a00000f-0000-4000-8000-000000000009', 'AR-9800', 'AR-9820',
    '9a00000e-0000-4000-8000-000000000001');
 
--- ── Las puentes con el OTRO extremo retirado ─────────────────
+-- ── The bridges with the OTHER end withdrawn ─────────────────
 --
--- Obra ACTIVA en todas: lo único retirado es la ficha del otro lado. Sin estas
--- cinco filas, una política que solo heredara de la obra pasaría el fichero
--- entero.
+-- Artwork ACTIVE in all of them: the only thing withdrawn is the record on the other side. Without these
+-- five rows, a policy that only inherited from the artwork would pass the whole
+-- file.
 
 insert into public.artwork_bibliography (id, catalog_id, bibliography_id, pages) values
   ('9a000005-0000-4000-8000-00000000000b', 'AR-9820',
@@ -175,11 +175,11 @@ insert into public.exhibition_documents (id, exhibition_id, document_id) values
   ('9a00000d-0000-4000-8000-00000000000c', '9a000007-0000-4000-8000-000000000001',
    '9a00000b-0000-4000-8000-000000000002');
 
--- Y AHORA se retiran las fichas ancla: la obra y, por separado, la referencia,
--- la exposición y el documento del otro extremo. Ni una sola fila documental se
--- toca — es exactamente lo que pasa en producción, porque la baja de una obra no
--- lleva cascada de datos y no debe llevarla (RF-905: restaurar devuelve la obra
--- con todo lo suyo dentro y en el estado en que estaba).
+-- And NOW the anchor records are withdrawn: the artwork and, separately, the reference,
+-- the exhibition and the document at the other end. Not a single documentary row is
+-- touched — it is exactly what happens in production, because an artwork's withdrawal does
+-- not carry a data cascade and must not carry one (RF-905: restoring gives the artwork
+-- back with everything of its own inside and in the state it was in).
 update public.artworks set active = false, deactivated_at = now(),
        deactivated_by = '00000000-0000-0000-0000-0000000000a1'
  where catalog_id = 'AR-9805';
@@ -190,9 +190,9 @@ update public.exhibitions set active = false
 update public.archive_documents set active = false
  where id = '9a00000b-0000-4000-8000-000000000002';
 
--- Y que la baja no haya caído en cascada sobre los datos, medido y no supuesto:
--- si algún día se añadiera esa cascada, los bloques de abajo dejarían de
--- verificar la política y pasarían por el motivo equivocado.
+-- And that the withdrawal has not cascaded over the data, measured and not assumed:
+-- if that cascade were ever added, the blocks below would stop
+-- verifying the policy and would pass for the wrong reason.
 do $$
 declare v_n integer;
 begin
@@ -216,10 +216,10 @@ begin
 end $$;
 
 
--- ── 1. La fuga: el Lector no ve nada de la obra retirada ─────
+-- ── 1. The leak: the Reader sees nothing of the withdrawn artwork ─
 --
--- RF-609. Cada recuento es una de las líneas de la medición del 4 de agosto de
--- 2026, y cada uno estaba a 1 antes de 20260805130000.
+-- RF-609. Each count is one of the lines of the measurement of 4 August
+-- 2026, and each one was at 1 before 20260805130000.
 do $$
 declare v_n integer;
 begin
@@ -251,7 +251,7 @@ begin
     raise exception 'FAIL: el lector ve el documento de una obra retirada (% filas)', v_n;
   end if;
 
-  -- Los dos extremos de la relación de una sola vez.
+  -- Both ends of the relationship in one go.
   select count(*) into v_n from public.artwork_relationships
    where from_catalog_id = 'AR-9805' or to_catalog_id = 'AR-9805';
   if v_n <> 0 then
@@ -264,10 +264,10 @@ end $$;
 
 reset role;
 
--- Y LA FUGA EN SUS PROPIOS TÉRMINOS: no un recuento de una puente, sino el dato
--- personal del tercero, leído con la consulta que lo sacaba. RF-511 y la
--- prioridad 1 del plan de pruebas: es el único dato cuya exposición afecta a
--- personas ajenas al catálogo.
+-- And THE LEAK IN ITS OWN TERMS: not a count of a bridge, but the third
+-- party's personal datum, read with the query that pulled it out. RF-511 and the
+-- test plan's priority 1: it is the only datum whose exposure affects
+-- people outside the catalogue.
 do $$
 declare v_contact text;
 begin
