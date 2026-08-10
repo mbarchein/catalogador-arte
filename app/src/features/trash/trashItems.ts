@@ -1,17 +1,17 @@
 /**
- * Lo retirado, convertido en líneas que se leen y se pueden decidir.
+ * What is withdrawn, turned into lines that are read and can be decided upon.
  *
- * Una papelera que solo dice «hay cinco cosas» no sirve para nada: lo que hace
- * decidible si algo se recupera es **qué es, cuándo se retiró y quién lo retiró**.
- * Ese es el trabajo de este módulo, y está separado de la pantalla porque ahí es
- * donde están las decisiones —qué nombre se le pone a un autor que ya no existe,
- * qué se dice de una fecha que no consta— y una pantalla no se puede probar en esta
- * batería.
+ * A wastebasket that only says «there are five things» is of no use: what makes
+ * it decidable whether something is recovered is **what it is, when it was withdrawn and who withdrew it**.
+ * That is this module's job, and it is separate from the screen because that is where
+ * the decisions are —what name is given to an author who no longer exists,
+ * what is said about a date that is not recorded— and a screen cannot be tested in this
+ * suite.
  *
- * **La firma no se redacta aquí por segunda vez.** El historial de cambios ya fijó
- * cómo se nombra a quien hizo algo —nombre, y si no correo, y si no «El sistema»—, y
- * `authorName` se reutiliza en vez de reescribirse: si la papelera y el historial
- * firmaran a la misma persona de dos maneras, una de las dos estaría mal.
+ * **The signature is not worded here a second time.** The change history already settled
+ * how whoever did something is named —name, and failing that e-mail, and failing that «El sistema»—, and
+ * `authorName` is reused instead of rewritten: if the wastebasket and the history
+ * signed the same person in two ways, one of the two would be wrong.
  */
 
 import { authorName, type ChangeLogRow } from '../history/changeEntry'
@@ -29,28 +29,28 @@ import {
 export type TrashAuthor = NonNullable<ChangeLogRow['author']>
 
 /**
- * Quién retiró la cosa, tal como se firma en pantalla.
+ * Who withdrew the thing, as it is signed on screen.
  *
- * Delega en el historial a propósito. `authorName` solo lee `row.author`, así que se
- * le pasa una fila con ese único campo relleno; la conversión es estrecha y está
- * cubierta por un test que recorre los tres escalones del respaldo, que es lo que
- * avisaría si el historial cambiara la escalera por debajo.
+ * It delegates to the history on purpose. `authorName` only reads `row.author`, so it
+ * is passed a row with that single field filled; the conversion is narrow and is
+ * covered by a test that walks the fallback's three rungs, which is what
+ * would warn if the history changed the ladder underneath.
  */
 export function retiredByText(author: TrashAuthor | null): string {
   return authorName({ author } as Pick<ChangeLogRow, 'author'> as ChangeLogRow)
 }
 
 /**
- * Cuándo se retiró, en español y sin la hora cuando no aporta.
+ * When it was withdrawn, in Spanish and without the time when it adds nothing.
  *
- * Misma redacción que el historial de cambios: hoy y ayer se nombran, porque una
- * papelera se abre casi siempre para recuperar algo que se acaba de tirar, y una
- * fecha completa para eso obliga a calcular mentalmente qué día es hoy.
+ * Same wording as the change history: today and yesterday are named, because a
+ * wastebasket is almost always opened to recover something just thrown away, and a
+ * full date for that forces mental arithmetic about what day it is today.
  *
- * **Y la fecha puede no constar.** Medido: `deactivated_at` lo sella la base en
- * cada baja, pero una fila trasladada por una migración no la retiró nadie y llega
- * nula. Decir «en una fecha que no consta» es la verdad; poner la fecha de hoy o
- * dejar el hueco serían las dos formas de mentir.
+ * **And the date may not be recorded.** Measured: `deactivated_at` is stamped by the base on
+ * every withdrawal, but a row moved by a migration was withdrawn by nobody and arrives
+ * null. Saying «en una fecha que no consta» is the truth; putting today's date or
+ * leaving the gap would be the two ways of lying.
  */
 export function retiredWhenText(iso: string | null, now: Date): string {
   if (iso === null || iso.trim() === '') return 'en una fecha que no consta'
@@ -67,10 +67,10 @@ export function retiredWhenText(iso: string | null, now: Date): string {
 }
 
 /**
- * La frase completa de la traza: «Retirada por Victoria hoy a las 10:24».
+ * The trace's complete sentence: «Retirada por Victoria hoy a las 10:24».
  *
- * El participio lo trae la clase con su género, porque el español no lo perdona: de
- * deducirlo del nombre salen «la fotografía retirado» y «el eslabón retirada».
+ * The participle comes from the class with its gender, because Spanish does not forgive it: deducing
+ * it from the name gives «la fotografía retirado» and «el eslabón retirada».
  */
 export function retiredTraceText(item: TrashItem, now: Date): string {
   const spec = kindSpec(item.kind)
@@ -91,21 +91,21 @@ export interface TrashItem {
   /** Already resolved to a readable name. */
   readonly retiredBy: string
   /**
-   * Por qué recuperarla todavía no serviría, o `null` si se puede.
+   * Why recovering it would not work yet, or `null` if it can be done.
    *
-   * Se decide **antes** de escribir, y no es una precaución de más: medido contra la
-   * base, restaurar algo cuyo padre sigue retirado NO falla —la fila vuelve a estar
-   * activa y sigue sin verse—. Ver `restoreBlock`.
+   * It is decided **before** writing, and it is not an excess of caution: measured against the
+   * base, restoring something whose parent is still withdrawn does NOT fail —the row is active
+   * again and still is not visible—. See `restoreBlock`.
    */
   readonly blocked: string | null
 }
 
 /**
- * Si el padre de una fila está retirado, con las dos formas de saberlo.
+ * Whether a row's parent is withdrawn, with the two ways of knowing it.
  *
- * `retiredKeys` es el conjunto de claves retiradas de la MISMA tabla, que la
- * pantalla ya tiene cargado. Es lo que resuelve las dos tablas anidadas sobre sí
- * mismas, que PostgREST no puede incrustar.
+ * `retiredKeys` is the set of withdrawn keys of the SAME table, which the
+ * screen already has loaded. It is what resolves the two tables nested on
+ * themselves, which PostgREST cannot embed.
  */
 function parentRetired(
   parent: TrashParent,
@@ -120,17 +120,17 @@ function parentRetired(
 }
 
 /**
- * La frase que explica por qué recuperar algo todavía no serviría, o `null`.
+ * The sentence explaining why recovering something would not work yet, or `null`.
  *
- * **Este es el motivo por el que la papelera no es un botón mudo.** La base acepta
- * restaurar un eslabón cuya obra sigue retirada: el `update` afecta a una fila,
- * contesta 200 y la usuaria ve «recuperado» mientras en la ficha no aparece nada,
- * porque lo que no se ve es la obra. Comprobado en la base local. Así que el caso se
- * detiene aquí, se dice qué hay que recuperar primero, y no se escribe nada.
+ * **This is the reason the wastebasket is not a mute button.** The base accepts
+ * restoring a link whose artwork is still withdrawn: the `update` affects one row,
+ * answers 200 and the user sees «recovered» while nothing appears in the record,
+ * because what is not visible is the artwork. Checked in the local base. So the case is
+ * stopped here, what has to be recovered first is said, and nothing is written.
  *
- * Se nombran TODOS los padres retirados y no solo el primero: recuperar la obra para
- * descubrir después que también falta la referencia es hacer el mismo viaje dos
- * veces.
+ * ALL the withdrawn parents are named and not only the first: recovering the artwork only to
+ * discover afterwards that the reference is missing too is making the same trip
+ * twice.
  */
 export function restoreBlock(
   spec: TrashKindSpec,
@@ -153,10 +153,10 @@ export function restoreBlock(
 }
 
 /**
- * Convierte las filas de una clase en líneas de la papelera.
+ * Turns a class's rows into wastebasket lines.
  *
- * `authors` viene resuelto de una sola consulta a `profiles` para toda la pantalla,
- * como en el historial: son unas pocas personas y no todo el equipo.
+ * `authors` arrives resolved from a single query to `profiles` for the whole screen,
+ * as in the history: they are a few people and not the whole team.
  */
 export function toTrashItems(
   spec: TrashKindSpec,
@@ -184,9 +184,9 @@ export function toTrashItems(
 /**
  * «3 obras», «1 obra», «Nada retirado».
  *
- * El caso vacío es una frase y no un cero, por lo mismo que en los bloques de la
- * ficha: «0 obras» se lee como una respuesta sobre el catálogo, y aquí la respuesta
- * es que en la papelera no hay nada de esa clase.
+ * The empty case is a sentence and not a zero, for the same reason as in the record's
+ * blocks: «0 obras» reads as an answer about the catalogue, and here the answer
+ * is that there is nothing of that class in the wastebasket.
  */
 export function kindCountText(spec: TrashKindSpec, count: number): string {
   if (count <= 0) return 'Nada retirado'
@@ -204,10 +204,10 @@ export interface TrashKindView {
 }
 
 /**
- * Cuántas cosas hay en la papelera, contando todas las clases.
+ * How many things there are in the wastebasket, counting every class.
  *
- * Es lo primero que se lee al abrir la pantalla, y por eso cuenta cosas y no clases:
- * «5 cosas retiradas» responde la pregunta con la que se entra.
+ * It is the first thing read on opening the screen, and that is why it counts things and not classes:
+ * «5 cosas retiradas» answers the question one comes in with.
  */
 export function trashTotalText(views: readonly TrashKindView[]): string {
   const total = views.reduce((sum, view) => sum + view.items.length, 0)
@@ -219,11 +219,11 @@ export function trashTotalText(views: readonly TrashKindView[]): string {
 }
 
 /**
- * Cuántas de ellas no se pueden recuperar todavía.
+ * How many of them cannot be recovered yet.
  *
- * Se dice arriba y no solo línea por línea: si de treinta cosas veinte están
- * bloqueadas por una obra retirada, lo que hay que hacer es recuperar la obra, y eso
- * no se ve leyendo treinta avisos iguales.
+ * It is said at the top and not only line by line: if of thirty things twenty are
+ * blocked by a withdrawn artwork, what has to be done is recover the artwork, and that
+ * is not visible reading thirty identical warnings.
  */
 export function blockedCountText(views: readonly TrashKindView[]): string | null {
   const blocked = views.reduce(

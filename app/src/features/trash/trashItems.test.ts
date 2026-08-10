@@ -18,10 +18,10 @@ const NOBODY = new Map<string, TrashAuthor>()
 
 describe('quién retiró algo se firma como en el historial (RF-902)', () => {
   /**
-   * La escalera de respaldo la fijó el historial de cambios y esta pantalla la
-   * reutiliza en vez de reescribirla: si la papelera y el historial firmaran a la
-   * misma persona de dos maneras, una de las dos estaría mal. Estos tres casos son lo
-   * que protege esa reutilización: si el historial cambiara la escalera, caerían aquí.
+   * The fallback ladder was set by the change history and this screen
+   * reuses it instead of rewriting it: if the wastebasket and the history signed the
+   * same person in two ways, one of the two would be wrong. These three cases are what
+   * protects that reuse: if the history changed the ladder, they would fall here.
    */
   it('el nombre cuando lo hay', () => {
     expect(retiredByText({ name: 'Victoria Rotili', email: 'v@example.org' })).toBe(
@@ -96,10 +96,10 @@ describe('la traza lleva el participio con el género de la cosa', () => {
 
 describe('recuperar bajo un padre retirado se detiene ANTES de escribir', () => {
   /**
-   * Medido contra la base local: se retira una obra, se restaura un eslabón suyo, y
-   * el `update` afecta a UNA fila y contesta bien. La fila vuelve a estar activa y
-   * sigue sin verse, porque lo que no se ve es la obra. Un botón que «funciona» y no
-   * cambia nada de lo que la usuaria mira es peor que uno que se niega explicando.
+   * Measured against the local base: an artwork is withdrawn, one of its links is restored, and
+   * the `update` affects ONE row and answers fine. The row is active again and
+   * still is not visible, because what is not visible is the artwork. A button that «works» and does
+   * not change anything the user is looking at is worse than one that refuses with an explanation.
    */
   const images = kindSpec('images')
 
@@ -145,11 +145,11 @@ describe('recuperar bajo un padre retirado se detiene ANTES de escribir', () => 
 
 describe('las tablas anidadas sobre sí mismas se resuelven sin incrustado', () => {
   /**
-   * Medido: PostgREST **no** incrusta una tabla en sí misma. Pedir
+   * Measured: PostgREST does **not** embed a table in itself. Asking for
    * `physical_places?select=parent:physical_places!physical_places_parent_id_fkey(...)`
-   * contesta `PGRST200`, «could not find a relationship». Así que el padre se reconoce
-   * con lo único que ya se tiene sin pedir nada: el conjunto de claves retiradas de su
-   * propia tabla.
+   * answers `PGRST200`, «could not find a relationship». So the parent is recognised
+   * with the only thing already at hand without asking for anything: the set of withdrawn keys of its
+   * own table.
    */
   const places = kindSpec('physical_places')
 

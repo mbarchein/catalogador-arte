@@ -244,11 +244,11 @@ function TrashKindSection({
 }
 
 /**
- * Una línea: qué es, de qué cuelga, quién la retiró y cuándo, y el botón.
+ * One line: what it is, what it hangs from, who withdrew it and when, and the button.
  *
- * **El motivo por el que algo no se puede recuperar ocupa el sitio del botón**, no un
- * aviso al lado. Un botón que se puede pulsar y contesta que no se podía es la forma
- * más rápida de enseñar a la usuaria a no leer los avisos.
+ * **The reason why something cannot be recovered takes the button's place**, not a
+ * warning alongside. A button that can be pressed and answers that it could not be is the quickest
+ * way of teaching the user not to read the warnings.
  */
 function TrashLine({
   item,

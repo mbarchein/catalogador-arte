@@ -13,15 +13,15 @@ import {
 } from './trashKinds'
 
 /**
- * Las veintiuna tablas con baja lógica, medidas en la base local:
+ * The twenty-one tables with logical deletion, measured in the local base:
  *
  *   select table_name from information_schema.columns
  *    where table_schema='public'
  *      and column_name in ('active','deactivated_at','deactivated_by')
  *    group by table_name having count(*) = 3;
  *
- * Escritas aquí a mano para que el registro no pueda «cubrirlo todo» por el simple
- * hecho de que nadie lo compare con la base.
+ * Written here by hand so the register cannot «cover everything» by the simple
+ * fact that nobody compares it with the base.
  */
 const TABLES_WITH_TRASH = [
   'archive_documents',
