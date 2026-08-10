@@ -79,8 +79,8 @@ begin
     raise exception 'FAIL: change_log no tiene RLS activado (RF-111)';
   end if;
 
-  -- El rol anónimo, ni un privilegio. Revocar de `anon` no deshace lo que PUBLIC
-  -- concede, así que lo que se mira es el resultado y no la sentencia.
+  -- The anonymous role, not one privilege. Revoking from `anon` does not undo what PUBLIC
+  -- grants, so what is looked at is the result and not the statement.
   select coalesce(array_agg(distinct privilege_type order by privilege_type), '{}')
     into v_privilegios
     from information_schema.table_privileges
@@ -90,11 +90,11 @@ begin
       array_to_string(v_privilegios, ', ');
   end if;
 
-  -- EL ASERTO QUE CAZA EL FALLO MÁS CARO DE ESTA TABLA: `service_role` también
-  -- sin nada. Las ACL por omisión de la plataforma le conceden INSERT, UPDATE,
-  -- DELETE y TRUNCATE sobre toda tabla nueva, y además lleva `bypassrls`: sin el
-  -- `revoke`, cualquiera con la clave de servicio podría insertar filas FALSAS
-  -- en la auditoría, que es peor que no tener auditoría.
+  -- THE ASSERTION THAT CATCHES THIS TABLE'S MOST EXPENSIVE FAILURE: `service_role` also
+  -- with nothing. The platform's default ACLs grant it INSERT, UPDATE,
+  -- DELETE and TRUNCATE over every new table, and besides it carries `bypassrls`: without the
+  -- `revoke`, anybody with the service key could insert FALSE rows
+  -- into the audit, which is worse than having no audit.
   select coalesce(array_agg(distinct privilege_type order by privilege_type), '{}')
     into v_privilegios
     from information_schema.table_privileges
@@ -104,9 +104,9 @@ begin
       array_to_string(v_privilegios, ', ');
   end if;
 
-  -- Y el autenticado, EXACTAMENTE uno. Se compara el conjunto completo y no se
-  -- pregunta «¿no tiene delete?», para que un `grant` futuro de cualquier cosa
-  -- ponga esto en rojo.
+  -- And the authenticated one, EXACTLY one. The complete set is compared and it is not
+  -- asked «does it not have delete?», so that a future `grant` of anything
+  -- turns this red.
   select coalesce(array_agg(distinct privilege_type order by privilege_type), '{}')
     into v_privilegios
     from information_schema.table_privileges
@@ -119,11 +119,11 @@ begin
   raise notice 'OK: solo SELECT y solo para el autenticado; ni el anónimo ni la clave de servicio tienen nada (RF-1504)';
 end $$;
 
--- La secuencia de identidad, por la puerta de atrás. Quien pudiera hacerle
--- `setval` hacia atrás dejaría el catálogo entero sin poder guardar: cada cambio
--- de una obra chocaría contra la clave primaria del registro. La plataforma
--- concede rwU sobre toda secuencia nueva a los tres roles, así que esto no es
--- teórico.
+-- The identity sequence, through the back door. Whoever could `setval` it
+-- backwards would leave the whole catalogue unable to save: every change
+-- to an artwork would clash against the log's primary key. The platform
+-- grants rwU over every new sequence to all three roles, so this is not
+-- theoretical.
 do $$
 declare v_rol text;
 begin
@@ -137,9 +137,9 @@ begin
   raise notice 'OK: la secuencia de identidad del registro no la toca ningún rol de la aplicación';
 end $$;
 
--- Una sola política, y de lectura. LA AUSENCIA DE LAS OTRAS TRES ES LA
--- DENEGACIÓN (RF-111): esto es lo que hay que afirmar, y no que la de SELECT
--- exista.
+-- A single policy, and a read one. THE ABSENCE OF THE OTHER THREE IS THE
+-- DENIAL (RF-111): this is what has to be asserted, and not that the SELECT one
+-- exists.
 do $$
 declare v_politicas text[];
 begin
@@ -162,11 +162,11 @@ begin
   raise notice 'OK: una política y solo de lectura; insert, update y delete se deniegan por ausencia (RF-111, RF-1504)';
 end $$;
 
--- Y NO lleva `force row level security`. Este aserto parece al revés y no lo
--- está: esa línea es justo la que alguien añade en una revisión de seguridad
--- creyendo que endurece. Aquí anularía la exención del propietario, abortaría el
--- insert del trigger escritor y con él EL GUARDADO DEL USUARIO. Rompería el
--- catálogo, no el registro.
+-- And it does NOT carry `force row level security`. This assertion looks backwards and it is
+-- not: that line is precisely the one somebody adds in a security review
+-- believing it hardens things. Here it would void the owner's exemption, would abort the
+-- writer trigger's insert and with it THE USER'S SAVE. It would break the
+-- catalogue, not the log.
 do $$
 begin
   if (select relforcerowsecurity from pg_class where oid = 'public.change_log'::regclass) then
@@ -175,8 +175,8 @@ begin
   raise notice 'OK: change_log no fuerza la RLS sobre su propietario, que es lo que permite que el trigger escriba';
 end $$;
 
--- Los dos enumerados son legibles por la aplicación: sin USAGE, un filtro por
--- operación desde PostgREST fallaría con «permission denied for type».
+-- Both enums are readable by the application: without USAGE, a filter by
+-- operation from PostgREST would fail with «permission denied for type».
 do $$
 begin
   if not has_type_privilege('authenticated', 'public.audited_entity', 'usage')
@@ -187,7 +187,7 @@ begin
 end $$;
 
 
--- ── 2. El anónimo, atacando de verdad (RF-101) ───────────────
+-- ── 2. The anonymous one, really attacking (RF-101) ──────────
 do $$
 begin
   set local role anon;
@@ -203,13 +203,13 @@ end $$;
 reset role;
 
 
--- ── 3. El Catalogador no escribe en su propia auditoría ──────
+-- ── 3. The Cataloguer does not write in their own audit ──────
 --
--- RF-1504. Es el aserto central del fichero: quien cataloga es el auditado, y el
--- auditado no toca el registro. Se afirma el TIPO de error —falta de
--- privilegio— y no solo que falla: un insert bloqueado por privilegio y uno
--- bloqueado por política son fallos distintos, y aquí tiene que ocurrir el de
--- privilegio, que es el que también para a un cliente que se salte la interfaz.
+-- RF-1504. It is the file's central assertion: whoever catalogues is the audited, and the
+-- audited does not touch the log. The TYPE of error is asserted —lack of
+-- privilege— and not only that it fails: an insert blocked by privilege and one
+-- blocked by policy are different failures, and here the privilege one has to happen,
+-- which is the one that also stops a client bypassing the interface.
 
 do $$
 begin
@@ -242,10 +242,10 @@ end $$;
 
 reset role;
 
--- Y el borrado, que es el ataque que de verdad importa: si esto solo afectara a
--- cero filas en vez de fallar, sería el comportamiento de una política ausente
--- sobre un privilegio CONCEDIDO, y el día que alguien escribiera la política se
--- podría borrar la auditoría entera.
+-- And the delete, which is the attack that really matters: if this only affected
+-- zero rows instead of failing, it would be the behaviour of an absent policy
+-- over a GRANTED privilege, and the day somebody wrote the policy the
+-- whole audit could be deleted.
 do $$
 begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated"}';
@@ -262,12 +262,12 @@ end $$;
 reset role;
 
 
--- ── 4. El Lector, los mismos tres intentos ───────────────────
+-- ── 4. The Reader, the same three attempts ───────────────────
 --
--- RF-106, RF-1504. No se da por hecho que «si el Catalogador no puede, el Lector
--- tampoco»: los privilegios son del rol de base de datos y los dos papeles
--- comparten `authenticated`, así que lo que se prueba es el mismo candado desde
--- la otra sesión, que es lo que pide la matriz de roles.
+-- RF-106, RF-1504. It is not taken for granted that «if the Cataloguer cannot, the Reader
+-- cannot either»: the privileges belong to the database role and both roles
+-- share `authenticated`, so what is tested is the same padlock from
+-- the other session, which is what the role matrix asks for.
 do $$
 declare v_sentencias constant text[] := array[
     $q$insert into public.change_log (change_id, entity, row_key, catalog_id, operation)
@@ -295,21 +295,21 @@ end $$;
 reset role;
 
 
--- ── 4 bis. El Superusuario, que es quien más puede ───────────
+-- ── 4 bis. The Superuser, who is the one who can do most ─────
 --
--- RF-109, RF-1504. Añadido al auditar este fichero: faltaba el tercer papel, y
--- era el que peor se podía dar por supuesto. Los otros dos bloques se justifican
--- diciendo que «los privilegios son del rol de base de datos y los dos papeles
--- comparten `authenticated`»; ese mismo argumento vale para el Superusuario, pero
--- es un argumento, y lo que este fichero promete en su cabecera es atacar con la
--- sesión de cada papel.
+-- RF-109, RF-1504. Added on auditing this file: the third role was missing, and
+-- it was the one that could be assumed with least justification. The other two blocks justify themselves
+-- by saying that «the privileges belong to the database role and both roles
+-- share `authenticated`»; that same argument holds for the Superuser, but
+-- it is an argument, and what this file promises in its heading is to attack with
+-- each role's session.
 --
--- Y hay una razón para que sea la celda MÁS importante de las tres: el
--- Superusuario es el papel de RF-1105, el que administra usuarios desde el panel
--- de Supabase. Su sesión de aplicación no debe poder tocar el registro, porque lo
--- que change_log.sql decide es que la frontera esté en «entrar por el panel con
--- una sentencia deliberada» y no en «tener el papel más alto de la aplicación».
--- Si esta celda cayera, esa frontera se movería sin que nadie lo hubiera decidido.
+-- And there is a reason for it to be the MOST important cell of the three: the
+-- Superuser is RF-1105's role, the one that administers users from Supabase's
+-- panel. Their application session must not be able to touch the log, because what
+-- change_log.sql decides is that the boundary be at «coming in through the panel with
+-- a deliberate statement» and not at «having the application's highest role».
+-- If this cell fell, that boundary would move without anybody having decided it.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000e3', 'sup-registro@test.local');
 update public.profiles set role = 'SUPERUSER' where id = '00000000-0000-0000-0000-0000000000e3';
@@ -341,14 +341,14 @@ end $$;
 reset role;
 
 
--- ── 5. El auditado editando su propia auditoría desde dentro ──
+-- ── 5. The audited editing their own audit from inside ───────
 --
--- RF-1504, y hay que escribirlo aunque parezca paranoico, porque es el escenario
--- que la RLS NO cubre: las políticas no se aplican al propietario de la tabla.
--- Aquí la sesión es la administrativa —la misma con la que se aplica una
--- migración o se abre el editor SQL del panel— y lo único que la para son los
--- dos triggers. Se comprueban los cuatro verbos y el MENSAJE, porque el mensaje
--- es lo que va a leer quien se tropiece con esto dentro de dos años.
+-- RF-1504, and it has to be written even though it looks paranoid, because it is the scenario
+-- the RLS does NOT cover: the policies do not apply to the table's owner.
+-- Here the session is the administrative one —the same one a migration is applied with
+-- or the panel's SQL editor is opened with— and the only thing that stops it are the
+-- two triggers. All four verbs and the MESSAGE are checked, because the message
+-- is what whoever stumbles on this in two years' time is going to read.
 
 do $$
 begin
@@ -387,8 +387,8 @@ exception
     raise notice 'OK: ni el propietario borra del registro de cambios (RF-901, RF-1504)';
 end $$;
 
--- El truncate es la vía por la que se pierde una tabla entera de un tirón, y no
--- la cubre ninguna política: la RLS no tiene nada que decir sobre TRUNCATE.
+-- The truncate is the way a whole table is lost in one go, and it is not
+-- covered by any policy: the RLS has nothing to say about TRUNCATE.
 do $$
 begin
   truncate public.change_log;
@@ -402,13 +402,13 @@ exception
 end $$;
 
 
--- ── 6. Y `postgres`, que conserva sus privilegios a propósito ──
+-- ── 6. And `postgres`, which keeps its privileges on purpose ──
 --
--- RF-1504. Es el rol del panel de Supabase y el que repone el volcado, lleva
--- `bypassrls` y NO se le revoca nada: quitárselo rompería la restauración de la
--- base sin cerrar nada, porque se salta la RLS igual. Así que lo que hay que
--- demostrar es que lo detiene el OTRO candado — que es exactamente el argumento
--- de los dos cerrojos en serie, visto desde el rol para el que solo sirve uno.
+-- RF-1504. It is Supabase's panel role and the one that restores the dump, it carries
+-- `bypassrls` and NOTHING is revoked from it: taking it away would break the base's
+-- restoration without closing anything, because it bypasses the RLS anyway. So what has to be
+-- demonstrated is that the OTHER padlock stops it — which is exactly the argument
+-- of the two bolts in series, seen from the role for which only one works.
 do $$
 begin
   set local role postgres;
@@ -445,11 +445,11 @@ end $$;
 reset role;
 
 
--- ── 7. Las filas de prueba, y por qué cuesta ponerlas ────────
+-- ── 7. The test rows, and why they are hard to put in ────────
 --
--- Que haya que desactivar el candado para poder escribir un fixture ES el
--- resultado que se buscaba. Se desactiva, se escriben las cuatro filas, y se
--- vuelve a activar antes de seguir.
+-- That the padlock has to be disabled in order to write a fixture IS the
+-- result that was wanted. It is disabled, the four rows are written, and it is
+-- enabled again before going on.
 
 alter table public.change_log disable trigger change_log_insert_guard;
 
@@ -460,26 +460,26 @@ values
    'CREATE', null, null, null, '00000000-0000-0000-0000-0000000000e1'),
   ('c1000001-0000-4000-8000-000000000002', 'ARTWORK', 'AR-9800', 'AR-9800',
    'UPDATE', 'height_cm', '54.00', '45.00', '00000000-0000-0000-0000-0000000000e1'),
-  -- El historial de una obra que está en la papelera: el Lector no debe
-  -- enterarse ni de que existe (RF-609).
+  -- The history of an artwork that is in the wastebasket: the Reader must not
+  -- even find out that it exists (RF-609).
   ('c1000001-0000-4000-8000-000000000003', 'ARTWORK', 'AR-9801', 'AR-9801',
    'DEACTIVATE', 'active', 'true', 'false', '00000000-0000-0000-0000-0000000000e1'),
-  -- El de una fotografía activa y el de una retirada, las dos de una obra que sí
-  -- se ve: es el hueco que se cerraría solo si la política pregunta por la fila
-  -- auditada y no por la obra.
+  -- That of an active photograph and that of a withdrawn one, both of an artwork that IS
+  -- visible: it is the hole that would close on its own if the policy asked about the
+  -- audited row and not about the artwork.
   ('c1000001-0000-4000-8000-000000000004', 'IMAGE', 'AR-9800_v1', 'AR-9800',
    'CREATE', null, null, null, '00000000-0000-0000-0000-0000000000e1'),
   ('c1000001-0000-4000-8000-000000000005', 'IMAGE', 'AR-9800_v2', 'AR-9800',
    'DEACTIVATE', 'active', 'true', 'false', '00000000-0000-0000-0000-0000000000e1'),
-  -- Sin sesión: `changed_by` nulo es la verdad de una migración, no un hueco.
+  -- With no session: a null `changed_by` is a migration's truth, not a gap.
   ('c1000001-0000-4000-8000-000000000006', 'ARTWORK', 'AR-9800', 'AR-9800',
    'UPDATE', 'technique', null, 'Hierro soldado', null);
 
 alter table public.change_log enable trigger change_log_insert_guard;
 
--- Y devuelto el candado, vuelve a cerrar. Sin este aserto, un fichero de test
--- que se dejara el trigger apagado pasaría igual y dejaría la tabla abierta para
--- el siguiente que mirase.
+-- And with the padlock given back, it closes again. Without this assertion, a test file
+-- that left the trigger off would pass all the same and would leave the table open for
+-- the next one to look.
 do $$
 begin
   insert into public.change_log (change_id, entity, row_key, catalog_id, operation)
@@ -494,13 +494,13 @@ exception
 end $$;
 
 
--- ── 8. Quién ve qué historial (RF-1506, RF-609) ──────────────
+-- ── 8. Who sees which history (RF-1506, RF-609) ──────────────
 --
--- La regla no es una copia de la visibilidad de la ficha: es la visibilidad de
--- la ficha, porque la subconsulta de la política se evalúa BAJO LA POLÍTICA DE
--- SU PROPIA TABLA. Se prueba con las cuatro combinaciones, y la que de verdad
--- importa es la cuarta — la fotografía retirada de una obra ACTIVA, que es donde
--- una política escrita «por obra» habría filtrado.
+-- The rule is not a copy of the record's visibility: it IS the record's
+-- visibility, because the policy's subquery is evaluated UNDER THE POLICY OF
+-- ITS OWN TABLE. It is tested with all four combinations, and the one that really
+-- matters is the fourth — the withdrawn photograph of an ACTIVE artwork, which is where
+-- a policy written «by artwork» would have leaked.
 
 do $$
 declare v_n integer;
@@ -526,7 +526,7 @@ begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}';
   set local role authenticated;
 
-  -- Lo de la obra activa, sí: tres líneas (el alta, el alto y la técnica).
+  -- The active artwork's, yes: three lines (the creation, the height and the technique).
   select count(*) into v_n from public.change_log
    where change_id::text like 'c1000001-%' and entity = 'ARTWORK' and row_key = 'AR-9800';
   if v_n <> 3 then
