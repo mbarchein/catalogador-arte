@@ -233,11 +233,11 @@ export function MoveIcon({ className = 'h-6 w-6' }: { className?: string }) {
 }
 
 /**
- * La estrella de la portada, en sus dos estados.
+ * The cover's star, in its two states.
  *
- * `filled` la rellena, y es lo que distingue «esta es la principal» de «ponla de
- * principal» sin una palabra al lado: el contorno es un botón y el relleno es un
- * estado. Un icono que no cambia al pulsarlo no dice si ha pasado algo.
+ * `filled` fills it in, and it is what distinguishes «this is the main one» from «make it
+ * the main one» with no word alongside: the outline is a button and the fill is a
+ * state. An icon that does not change when pressed does not say whether anything has happened.
  */
 export function StarIcon({
   className = 'h-6 w-6',
@@ -265,12 +265,12 @@ export function TrashIcon({ className = 'h-6 w-6' }: { className?: string }) {
 }
 
 /**
- * Mover una posición, hacia el principio o hacia el final.
+ * Moving one position, towards the start or towards the end.
  *
- * **No es un galón de navegación**, y esa es toda la decisión: sobre una fotografía
- * que se pasa deslizando, un «‹» se lee como «foto anterior». La barra del final es
- * lo que lo convierte en «llévala hacia allí», que es el mismo dibujo que usan las
- * teclas de inicio y fin.
+ * **It is not a navigation chevron**, and that is the whole decision: over a photograph
+ * flicked past by swiping, a «‹» reads as «previous photo». The bar at the end is
+ * what turns it into «take it that way», which is the same drawing the
+ * home and end keys use.
  */
 export function MoveBeforeIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
@@ -311,15 +311,15 @@ export function EllipsisIcon({ className = 'h-6 w-6' }: { className?: string }) 
 }
 
 /**
- * Anillo de progreso, para el control que está trabajando (RNF-106).
+ * Progress ring, for the control that is working (RNF-106).
  *
- * Dos formas y no una: **determinado** cuando se sabe cuánto pesa lo que viaja
- * —el arco avanza y se puede decidir si esperar—, e **indeterminado** cuando no
- * —gira, que solo dice «esto sigue vivo»—. Fingir un porcentaje sin conocer el
- * total sería inventar el único dato que se está mirando.
+ * Two shapes and not one: **determinate** when how much is travelling is known
+ * —the arc advances and it can be decided whether to wait—, and **indeterminate** when it is not
+ * —it spins, which only says «this is still alive»—. Faking a percentage without knowing the
+ * total would be inventing the very datum being looked at.
  *
- * El fondo es el mismo círculo entero en gris tenue, para que el arco se lea como
- * una parte de un todo y no como una raya suelta.
+ * The background is that same whole circle in faint grey, so that the arc reads as
+ * a part of a whole and not as a stray stroke.
  */
 export function ProgressRing({
   percent,
@@ -608,9 +608,9 @@ export function Toggle({
   label: string
   help?: string
   /**
-   * Apagado del todo: ni se pulsa ni aparenta poder pulsarse. Para el control
-   * que la base va a rechazar de todas formas — quien lo mire tiene que ver que
-   * no va a ir ANTES de intentarlo, y el motivo se dice al lado.
+   * Off entirely: neither pressable nor looking pressable. For the control
+   * the base is going to reject anyway — whoever looks at it has to see that
+   * it is not going to work BEFORE trying, and the reason is said alongside.
    */
   disabled?: boolean
 }) {
@@ -654,18 +654,18 @@ export function Toggle({
 // ── Información ampliada ─────────────────────────────────────
 
 /**
- * El porqué largo, detrás de un icono (RNF-106).
+ * The long why, behind an icon (RNF-106).
  *
- * La pantalla dice lo justo —qué hay y qué se puede hacer— y esto guarda lo que
- * de verdad hace falta a veces: por qué una regla es así, qué pasa si se hace de
- * otra forma, el ejemplo que desatasca. **No es un sitio donde volcar lo que
- * sobra**: si el texto de al lado ya basta, este icono no se pone. Lo que
- * justifica añadirlo es que sin esa explicación alguien se equivoca; y como el
- * hueco existe, la frase de fuera puede quedarse corta de verdad.
+ * The screen says just enough —what there is and what can be done— and this keeps what
+ * is really needed sometimes: why a rule is the way it is, what happens if it is done
+ * another way, the example that unblocks. **It is not a place to dump what is
+ * left over**: if the text alongside is already enough, this icon is not put in. What
+ * justifies adding it is that without that explanation somebody gets it wrong; and since the
+ * space exists, the sentence outside can genuinely fall short.
  *
- * Una hoja y no un globo de ayuda: se lee con el pulgar, cabe cualquier largo y
- * el «atrás» del móvil la cierra —lo hace `BottomSheet`— en vez de salir de la
- * pantalla.
+ * A sheet and not a help bubble: it is read with the thumb, any length fits and
+ * the phone's «back» closes it —`BottomSheet` does that— instead of leaving the
+ * screen.
  */
 export function InfoNote({
   title,
@@ -1231,26 +1231,26 @@ export function BottomSheet({
   onClose: () => void
   title: string
   /**
-   * Un control opcional junto al título, a la izquierda del cierre.
+   * An optional control next to the title, to the left of the close.
    *
-   * Existe porque la acción que deshace lo que la hoja acumula —quitar los filtros
-   * puestos— tiene que estar donde se ve sin desplazarse: al pie queda por debajo de
-   * cinco secciones de opciones, y con la hoja a tres cuartos de pantalla eso son
-   * dos gestos para encontrarla. Y arriba puede además decir CUÁNTOS filtros va a
-   * quitar, que es la información que hace falta para decidir si se pulsa.
+   * It exists because the action undoing what the sheet accumulates —removing the filters
+   * set— has to be where it is seen without scrolling: at the foot it ends up below
+   * five sections of options, and with the sheet at three quarters of the screen that is
+   * two gestures to find it. And at the top it can also say HOW MANY filters it is going to
+   * remove, which is the information needed to decide whether to press it.
    */
   headerAction?: ReactNode
   children: ReactNode
   /**
-   * El guardián de lo escrito, para las hojas que son un formulario: `useSheetGuard`.
+   * The guard of what was written, for the sheets that are a form: `useSheetGuard`.
    *
-   * Sin él la hoja se comporta como siempre —las cuatro salidas cierran en el acto—, que
-   * es lo que necesita una hoja de ELEGIR algo: ahí no hay nada que perder y pedir
-   * confirmación sería molestar sin proteger nada.
+   * Without it the sheet behaves as always —the four exits close on the spot—, which
+   * is what a sheet for CHOOSING something needs: there is nothing to lose there and asking for
+   * confirmation would be a nuisance protecting nothing.
    *
-   * Va entero y no como tres props porque el «Cancelar» del pie lo pinta el formulario, en
-   * el mismo componente que pinta la hoja: el estado tiene que vivir arriba para que las
-   * CINCO salidas entren por la misma puerta. Ver `useSheetGuard.ts`.
+   * It goes whole and not as three props because the footer's «Cancelar» is painted by the form, in
+   * the same component that paints the sheet: the state has to live above so that ALL
+   * FIVE exits come in through the same door. See `useSheetGuard.ts`.
    */
   guard?: SheetGuard
 }) {
@@ -1269,10 +1269,10 @@ export function BottomSheet({
   const backdropCloses = guard === undefined ? true : guard.backdropCloses
   const confirming = guard?.confirming ?? false
 
-  // El botón de atrás cierra la hoja en vez de salir de la pantalla: es la salida que el
-  // pulgar alcanza sin apuntar, y en el móvil la hoja es lo que tapa la ficha. Ver
-  // `useCloseOnBack`, que ya sabe volver a empujar su entrada de historia cuando el
-  // cierre se niega — que es exactamente lo que pasa cuando esto pregunta.
+  // The back button closes the sheet instead of leaving the screen: it is the exit the
+  // thumb reaches without aiming, and on a phone the sheet is what covers the record. See
+  // `useCloseOnBack`, which already knows how to push its history entry again when the
+  // close is refused — which is exactly what happens when this asks.
   const onBack = useCallback(() => requestClose('back'), [requestClose])
   useCloseOnBack(onBack, open)
 
@@ -1416,9 +1416,9 @@ export interface CheckOption<T extends string> {
   /** Rendered instead of `text` when present, for the matched-letter emphasis. */
   label?: ReactNode
   /**
-   * Distintivo corto junto al nombre, para lo que hay que saber de esa fila
-   * ANTES de elegirla. Va aquí y no en `hint` porque una condición de la fila se
-   * lee de un vistazo y una explicación se lee leyendo.
+   * Short badge next to the name, for what has to be known about that row
+   * BEFORE choosing it. It goes here and not in `hint` because a condition of the row is
+   * read at a glance and an explanation is read by reading.
    */
   badge?: string
 }
@@ -1579,9 +1579,9 @@ export function SearchableCheckList<T extends string>({
  * happens. The padding-bottom respects the phone's bottom bar.
  */
 /**
- * «Cargando…», centrado. Existe porque estaba copiado en cinco pantallas: es lo que
- * se pinta mientras una vista no puede decidir todavía qué mostrar, y el sitio donde
- * eso se decide es `useEditingAccess`.
+ * «Cargando…», centred. It exists because it was copied into five screens: it is what
+ * is painted while a view cannot decide yet what to show, and the place where
+ * that is decided is `useEditingAccess`.
  */
 export function LoadingNotice({ children = 'Cargando…' }: { children?: ReactNode }) {
   return <div className="p-8 text-center text-sm text-stone-600">{children}</div>
@@ -1591,18 +1591,18 @@ export function ActionBar({ children, notice }: { children: ReactNode; notice?: 
   return (
     <div
       className="sticky z-10 -mx-4 mt-4 border-t border-stone-200 bg-stone-100/95 px-4 pb-3 pt-3 backdrop-blur"
-      // Pegada por encima del menú del pie, no al borde de la ventana.
+      // Stuck above the footer menu, not to the window's edge.
       //
-      // Con `bottom: 0` la barra se quedaba DEBAJO del menú: los dos son
-      // `sticky bottom-0` con el mismo z-index, y el menú va después en el
-      // documento, así que pintaba encima. «Guardar» y «Cancelar» solo aparecían
-      // al llegar al final del formulario con el dedo, que es exactamente lo que
-      // una barra pegada existe para evitar.
+      // With `bottom: 0` the bar ended up BELOW the menu: both are
+      // `sticky bottom-0` with the same z-index, and the menu comes later in the
+      // document, so it painted on top. «Guardar» and «Cancelar» only appeared
+      // on reaching the end of the form with the finger, which is exactly what
+      // a stuck bar exists to avoid.
       //
-      // 3.5rem es la altura del menú (`h-14`), y su franja segura la añade él
-      // mismo, así que aquí se suma pero no se vuelve a rellenar. Al final del
-      // recorrido la posición natural de la barra ya coincide con esta, y no
-      // salta.
+      // 3.5rem is the menu's height (`h-14`), and it adds its own safe strip
+      // itself, so here it is added but not padded again. At the end of the
+      // scroll the bar's natural position already coincides with this one, and it does not
+      // jump.
       style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
     >
       {/* The notice goes here and not at the top of the page: the result of

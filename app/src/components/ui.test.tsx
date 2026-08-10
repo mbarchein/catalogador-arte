@@ -332,8 +332,8 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
 })
 
 /**
- * Una hoja con guardián, como la monta cualquier formulario de la aplicación: el hook lo
- * llama el componente que pinta la hoja, que es donde vive el «Cancelar» del pie.
+ * A sheet with a guard, as any form in the application assembles it: the hook is
+ * called by the component that paints the sheet, which is where the footer's «Cancelar» lives.
  */
 function Guarded({
   onClose,
