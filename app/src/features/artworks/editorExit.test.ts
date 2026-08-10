@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { editorExit } from './editorExit'
 
 /**
- * La escalera de salida del editor de fotografías (RF-1205, RNF-106).
+ * The photograph editor's exit ladder (RF-1205, RNF-106).
  *
- * Reproduce la incidencia que la trajo: con el panel de color abierto, el botón de
- * atrás del móvil salía del editor y se llevaba el encuadre y el color sin
- * aplicar. Escape sí pelaba una capa, porque la escalera estaba escrita dentro de
- * su manejador y el «atrás» tenía la suya. En un teléfono sin barra de navegador
- * el «atrás» es la única salida que hay, así que la que estaba mal era la única.
+ * It reproduces the incident that brought it about: with the colour panel open, the phone's
+ * back button left the editor and took the framing and the colour away
+ * unapplied. Escape did peel one layer, because the ladder was written inside
+ * its handler and «back» had its own. On a phone with no browser bar
+ * «back» is the only exit there is, so the one that was wrong was the only one.
  */
 describe('editorExit, salir del editor pela una capa a la vez (RF-1205)', () => {
   const cerrado = { eyedropper: false, panelOpen: false, leaving: false }

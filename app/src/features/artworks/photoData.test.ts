@@ -10,14 +10,14 @@ import {
 } from './photoData'
 
 /**
- * Los datos de una toma como formulario (RF-417, RF-405).
+ * A shot's data as a form (RF-417, RF-405).
  *
- * Antes cada control guardaba por su cuenta: los chips al tocarlos y el texto al
- * salir del campo. Lo segundo es medio invisible en un móvil —se toca fuera y no
- * se sabe si entró— y convivían dos formas de guardar en el mismo bloque. Lo que
- * se fija aquí es lo que hace que un «Guardar» sirva: que sepa cuándo hay algo
- * pendiente, y que cambiar de procedencia sin guardar no se lleve por delante lo
- * escrito.
+ * Each control used to save on its own: the chips on being touched and the text on
+ * leaving the field. The second is half invisible on a phone —you touch outside and you do not
+ * know whether it went in— and two ways of saving coexisted in the same block. What
+ * is pinned down here is what makes a «Guardar» useful: that it knows when anything is
+ * pending, and that changing provenance without saving does not run over what was
+ * written.
  */
 
 const saved = photoDataDraft({
@@ -51,9 +51,9 @@ describe('qué se está editando', () => {
 
 describe('cambiar de procedencia sin guardar no pierde nada', () => {
   it('el ida y vuelta devuelve la autoría intacta', () => {
-    // Es la razón de que el borrador lleve LOS DOS textos y no solo el que se
-    // enseña: con uno, marcar «tomada de otro catálogo» y arrepentirse borraría
-    // lo escrito sin que nadie lo pidiera.
+    // It is the reason the draft carries BOTH texts and not only the one
+    // shown: with one, marking «tomada de otro catálogo» and changing one's mind would erase
+    // what was written without anybody asking.
     const fuera = withSourceText({ ...saved, provenance: 'THIRD_PARTY' }, 'Web del MACVA')
     const vuelta = { ...fuera, provenance: 'OWN' as const }
 
@@ -104,9 +104,9 @@ describe('lo que se manda a la base', () => {
 
 describe('las secciones del panel', () => {
   it('queda una: lo único que se escribe', () => {
-    // El panel tenía nueve cosas apiladas sin un solo título, luego tres bloques,
-    // y ahora uno. Girar y recortar, la portada, el orden y quitar actúan sobre la
-    // toma que se está mirando, así que son iconos sobre la propia fotografía.
+    // The panel had nine things stacked with not a single title, then three blocks,
+    // and now one. Rotating and cropping, the cover, the order and removing act on the
+    // shot being looked at, so they are icons over the photograph itself.
     expect(Object.values(PHOTO_SECTIONS)).toEqual(['Qué es esta toma'])
   })
 })

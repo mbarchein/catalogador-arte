@@ -9,13 +9,13 @@ import {
 } from './photoSource'
 
 /**
- * De quién es la fotografía y de dónde salió (RF-417).
+ * Whose the photograph is and where it came from (RF-417).
  *
- * Lo que se fija, y es la razón de que este módulo exista, es **el valor
- * dormido**: son dos columnas y la base no impide que las dos tengan texto —una
- * restricción cruzada haría fallar el cambio de procedencia por un dato que no
- * estorba—. Así que quien decide qué se enseña es esto, y equivocarse aquí es
- * atribuir la fotografía de un catálogo ajeno a quien no la hizo.
+ * What is pinned down, and it is the reason this module exists, is **the dormant
+ * value**: they are two columns and the base does not prevent both from having text —a
+ * cross constraint would make the provenance change fail over a datum that is not in the
+ * way—. So the one that decides what is shown is this, and getting it wrong here is
+ * attributing somebody else's catalogue photograph to whoever did not take it.
  */
 
 const row = (over: Partial<{ photo_credit: string; provenance_source: string }> = {}) => ({

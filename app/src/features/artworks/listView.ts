@@ -462,13 +462,13 @@ export function matchesView(
   view: ListView,
   scope: ReadonlySet<string> | null = null,
   /**
-   * Los fondos marcados para apartar sus obras del listado (ADR-007, segunda
-   * entrega).
+   * The funds marked to set their artworks aside from the listing (ADR-007, second
+   * delivery).
    *
-   * **Se apartan por omisión y vuelven al filtrar por ellos**, que es la mitad
-   * que hace que esto no sea un borrado: la obra existe, se abre por su enlace y
-   * se encuentra pidiendo su fondo. Vacío por omisión, así que quien no sepa de
-   * esto ve el catálogo entero.
+   * **They are set aside by default and come back on filtering by them**, which is the half
+   * that makes this not a delete: the artwork exists, it opens through its link and
+   * it is found by asking for its fund. Empty by default, so whoever does not know about
+   * this sees the whole catalogue.
    */
   hiddenFunds: ReadonlySet<ArtistFund> = EMPTY_FUNDS,
 ): boolean {

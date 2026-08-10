@@ -2,28 +2,28 @@ import type { PhotoProvenance, ShotTypeValue } from '../../lib/types'
 import { cleanPhotoSource, photoSourceField } from './photoSource'
 
 /**
- * Los datos de una toma, como un formulario (RF-417, RF-405).
+ * A shot's data, as a form (RF-417, RF-405).
  *
- * ── POR QUÉ ESTO ES UN FORMULARIO Y NO TRES CONTROLES SUELTOS ──
+ * ── WHY THIS IS A FORM AND NOT THREE LOOSE CONTROLS ─────────
  *
- * El panel de una fotografía tenía nueve cosas apiladas en una caja sin un solo
- * título, y cada control guardaba por su cuenta: los chips al tocarlos y el campo
- * de texto al salir de él. Eso último es medio invisible en un móvil —se toca
- * fuera y no se sabe si entró, o se cierra la pantalla y se pierde—, y conviven
- * dos formas de guardar en el mismo bloque, que es lo que hace que no se sepa
- * cuándo hay algo pendiente.
+ * A photograph's panel had nine things stacked in a box with not a single
+ * title, and each control saved on its own: the chips on being touched and the text
+ * field on leaving it. That last one is half invisible on a phone —you touch
+ * outside and you do not know whether it went in, or you close the screen and it is lost—, and
+ * two ways of saving coexist in the same block, which is what makes it impossible to know
+ * when anything is pending.
  *
- * Ahora los tres son un formulario con «Guardar»: **nada se escribe hasta
- * pulsarlo** y la pantalla puede decir si queda algo sin guardar. Es lo mismo que
- * hace el formulario de la ficha, así que las dos pantallas se comportan igual.
+ * Now all three are a form with «Guardar»: **nothing is written until it is
+ * pressed** and the screen can say whether anything is unsaved. It is the same as
+ * the record's form does, so the two screens behave alike.
  *
- * ── LOS DOS TEXTOS VIAJAN JUNTOS ────────────────────────────
+ * ── THE TWO TEXTS TRAVEL TOGETHER ───────────────────────────
  *
- * El borrador guarda **las dos** columnas de texto y no solo la que se está
- * enseñando, porque la procedencia se puede cambiar sin guardar: quien marque
- * «tomada de otro catálogo» tiene que ver el campo del origen vacío y recuperar su
- * autoría intacta si vuelve atrás. Con un solo texto en el borrador, ese viaje de
- * ida y vuelta se llevaría por delante lo que hubiera escrito.
+ * The draft stores **both** text columns and not only the one being
+ * shown, because the provenance can be changed without saving: whoever marks
+ * «tomada de otro catálogo» has to see the source field empty and get their
+ * authorship back intact if they go back. With a single text in the draft, that round
+ * trip would run over whatever had been written.
  */
 
 export interface PhotoDataDraft {
@@ -63,10 +63,10 @@ export function withSourceText(draft: PhotoDataDraft, value: string): PhotoDataD
 }
 
 /**
- * Si hay algo que guardar.
+ * Whether there is anything to save.
  *
- * Los textos se comparan recortados: unos espacios de más no son un cambio, y sin
- * esto abrir el campo y cerrarlo dejaría el botón encendido para siempre.
+ * The texts are compared trimmed: a few extra spaces are not a change, and without
+ * this opening the field and closing it would leave the button lit forever.
  */
 export function photoDataDirty(draft: PhotoDataDraft, saved: PhotoDataDraft): boolean {
   return (
@@ -93,17 +93,17 @@ export function photoDataColumns(draft: PhotoDataDraft): {
 }
 
 /**
- * Los títulos de las secciones del panel, en el orden en que se leen.
+ * The titles of the panel's sections, in the order they are read.
  *
- * Eran cuatro y queda una. Las otras tres se fueron por el mismo camino y por el
- * mismo motivo: girar y recortar, la portada, el orden y quitar **actúan sobre la
- * toma que se está mirando**, así que ahora son iconos sobre la propia fotografía
- * y su estado se lee debajo de ella. Lo que queda aquí es lo único que se
- * escribe, y por eso es lo único que tiene «Guardar».
+ * There were four and one is left. The other three went the same way and for the
+ * same reason: rotating and cropping, the cover, the order and removing **act on the
+ * shot being looked at**, so they are now icons over the photograph itself
+ * and their state is read below it. What is left here is the only thing that is
+ * written, and that is why it is the only thing with a «Guardar».
  *
- * Sigue siendo un objeto con un solo título, y no una constante suelta: la
- * sección puede volver a tener compañía, y el sitio donde se decide cómo se llama
- * un bloque de este panel no debería mudarse por eso.
+ * It is still an object with a single title, and not a loose constant: the
+ * section may have company again, and the place where the name of a block of this panel
+ * is decided should not move house for that.
  */
 export const PHOTO_SECTIONS = {
   data: 'Qué es esta toma',

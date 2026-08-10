@@ -1,30 +1,30 @@
 import type { PhotoProvenance } from '../../lib/types'
 
 /**
- * De quién es la fotografía, y de dónde salió si no es propia (RF-417).
+ * Whose the photograph is, and where it came from if it is not our own (RF-417).
  *
- * La procedencia ya se elegía —propia, tomada de otro catálogo, recibida de un
- * tercero—, pero no había dónde apuntar lo que hace útil esa respuesta, y **no es
- * el mismo dato en los dos lados**:
+ * The provenance was already chosen —our own, taken from another catalogue, received from a
+ * third party—, but there was nowhere to note down what makes that answer useful, and **it is not
+ * the same datum on both sides**:
  *
- *   · en una propia, **quién la hizo**. Es un crédito, y es lo que hay que poder
- *     contestar si alguien pregunta de quién es esa fotografía;
- *   · en una que viene de fuera, **de dónde salió**: el catálogo, la dirección, o
- *     quién la mandó y cuándo. Es la trazabilidad de una imagen que no se puede
- *     volver a hacer.
+ *   · on one of our own, **who took it**. It is a credit, and it is what one has to be able to
+ *     answer if somebody asks whose that photograph is;
+ *   · on one that comes from outside, **where it came from**: the catalogue, the address, or
+ *     who sent it and when. It is the traceability of an image that cannot be
+ *     taken again.
  *
- * Los dos son opcionales. En 35 de las 39 tomas la hizo quien cataloga, y obligar
- * a teclearlo treinta y cinco veces convertiría un crédito en un peaje.
+ * Both are optional. In 35 of the 39 shots it was taken by whoever catalogues, and forcing
+ * them to type it thirty-five times would turn a credit into a toll.
  *
- * ── EL VALOR DORMIDO ────────────────────────────────────────
+ * ── THE DORMANT VALUE ───────────────────────────────────────
  *
- * Son dos columnas, así que una fotografía puede tener las dos escritas: basta con
- * anotar la autoría y después marcarla como tomada de otro catálogo. La base no lo
- * impide a propósito —una restricción cruzada haría fallar el cambio de procedencia
- * por un dato que no estorba—, y por eso **de decidir qué se enseña responde este
- * módulo**: `photoSourceOf` devuelve solo el que corresponde a la procedencia de
- * hoy. Es lo que impide que un crédito viejo se lea junto a una reproducción ajena,
- * que sería atribuir la foto a quien no la hizo.
+ * They are two columns, so a photograph can have both written: it is enough to
+ * note the authorship down and then mark it as taken from another catalogue. The base does not
+ * prevent it on purpose —a cross constraint would make the provenance change fail
+ * over a datum that is not in the way—, and that is why **deciding what is shown is this
+ * module's job**: `photoSourceOf` returns only the one matching today's
+ * provenance. It is what prevents an old credit from being read next to somebody else's reproduction,
+ * which would be attributing the photo to whoever did not take it.
  */
 
 /** Which of the two fields makes sense with this provenance. */
@@ -61,10 +61,10 @@ export function photoSourceColumn(provenance: PhotoProvenance): keyof PhotoSourc
 }
 
 /**
- * Lo que hay escrito para la procedencia de HOY, o null.
+ * What is written for TODAY's provenance, or null.
  *
- * Es lo único que debe leer quien pinte o imprima: el otro valor puede existir y
- * no significa nada mientras la procedencia sea la que es.
+ * It is the only thing whoever paints or prints should read: the other value may exist and
+ * it means nothing while the provenance is what it is.
  */
 export function photoSourceOf(
   row: PhotoSourceColumns,

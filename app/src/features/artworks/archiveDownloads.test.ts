@@ -212,9 +212,9 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
   })
 
   it('el color corregido también cuenta como corrección', () => {
-    // Sin las columnas de color, una fotografía a la que solo se le arregló la
-    // dominante de la bombilla se leería como «sin correcciones», que es la única
-    // lectura claramente falsa.
+    // Without the colour columns, a photograph that only had the bulb's cast
+    // fixed would read as «sin correcciones», which is the one clearly false
+    // reading.
     const { notes } = archiveDownloads({
       catalogId: 'AR-0001',
       row: row(),
@@ -292,9 +292,9 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
   })
 
   it('ninguna condición mira el rol: el Lector descarga las dos (RF-411)', () => {
-    // El caso de uso del Lector ES mandar el fichero a una imprenta o a un comisario.
-    // La autorización real vive en la función de firma, que solo pide sesión válida
-    // para descargar; aquí no puede haber un segundo permiso que la contradiga.
+    // The Reader's use case IS sending the file to a print shop or to a curator.
+    // The real authorisation lives in the signing function, which only asks for a valid session
+    // to download; here there cannot be a second permission contradicting it.
     const { offers } = archiveDownloads({
       catalogId: 'AR-0001',
       row: row({ rotation: 90 }),

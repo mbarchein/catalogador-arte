@@ -157,13 +157,13 @@ describe('la cola de fotos pendientes (RF-410)', () => {
 })
 
 /**
- * La fecha del fichero y la procedencia en la cola (RF-416, RF-417).
+ * The file's date and the provenance in the queue (RF-416, RF-417).
  *
- * La fecha es el campo sin segunda oportunidad de todo el módulo: el original solo
- * está en el navegador durante `prepareShot`, así que si no viaja en la fila de la
- * cola, una pestaña descartada mientras la cámara estaba en primer plano deja la
- * fotografía archivada como si no tuviera fecha, y las 14 tomas de 2022 son
- * precisamente las que dependen de ella.
+ * The date is the whole module's field with no second chance: the original is only
+ * in the browser during `prepareShot`, so if it does not travel in the queue's
+ * row, a tab discarded while the camera was in the foreground leaves the
+ * photograph filed as if it had no date, and the 14 shots from 2022 are
+ * precisely the ones that depend on it.
  */
 describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', () => {
   const EXACT: PhotoTakenDate = {
@@ -197,9 +197,9 @@ describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', ()
   })
 
   it('no toma la fecha de modificación del fichero como fecha de la toma (RF-416)', () => {
-    // `lastModified` es la fecha en que se escribió el fichero, y en una fila
-    // rehidratada es el instante de la propia rehidratación. Que un máster tenga
-    // fecha de fichero reciente no puede convertirse en fecha de toma.
+    // `lastModified` is the date the file was written, and in a rehydrated
+    // row it is the instant of the rehydration itself. A master having a
+    // recent file date cannot turn into a shooting date.
     const row = toStoredShot(shot({ rotation: 0, crop: null }))
     const back = rehydrate(row)
     expect(back.prepared.fileDate).toBeNull()
@@ -207,9 +207,9 @@ describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', ()
   })
 
   it('deriva «exacta» de la etiqueta de origen y no se cree la pareja incoherente (RF-416)', () => {
-    // Es el mismo hecho escrito dos veces. Una fila que dijera DateTimeOriginal con
-    // `exact: false` llegaría a la base como una fecha aproximada que no lo es, y la
-    // columna que distingue el lote de 2022 empezaría a mentir.
+    // It is the same fact written twice. A row saying DateTimeOriginal with
+    // `exact: false` would reach the base as an approximate date that is not one, and the
+    // column that distinguishes the 2022 batch would start lying.
     const row = {
       ...toStoredShot(shot({ rotation: 0, crop: null })),
       fileDate: { ...EXACT, exact: false },
@@ -250,17 +250,17 @@ describe('la fecha del fichero y la procedencia en la cola (RF-416, RF-417)', ()
     const back = rehydrate(
       toStoredShot(shot({ rotation: 0, crop: null }, undefined, { provenance: 'OTHER_CATALOG' })),
     )
-    // Sin esto, una reproducción tomada de otro catálogo que sobreviviera a una
-    // recarga se subiría como propia, y en las propias sí se ofrece el ajuste de
-    // color: la consecuencia no es cosmética.
+    // Without this, a reproduction taken from another catalogue surviving a
+    // reload would be uploaded as our own, and on our own the colour adjustment IS
+    // offered: the consequence is not cosmetic.
     expect(back.prepared.provenance).toBe('OTHER_CATALOG')
   })
 
   it('no inventa una procedencia cuando la fila no la trae (RF-417)', () => {
-    // Ausente es «nadie ha dicho nada», y quien escribe la fila pone OWN, que es la
-    // omisión de la columna. Adivinarla aquí desde las dimensiones —1080×2400 sin
-    // datos de cámara parece una captura de pantalla— sería una inferencia, no una
-    // prueba.
+    // Absent is «nobody has said anything», and whoever writes the row puts OWN, which is the
+    // column's default. Guessing it here from the dimensions —1080×2400 with no
+    // camera data looks like a screenshot— would be an inference, not
+    // proof.
     const back = rehydrate(toStoredShot(shot({ rotation: 0, crop: null })))
     expect(back.prepared.provenance).toBeUndefined()
   })
