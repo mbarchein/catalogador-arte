@@ -1,5 +1,14 @@
 import { inflateSync } from 'node:zlib'
-import { PDFDocument, PDFRawStream } from 'pdf-lib'
+import {
+  PDFArray,
+  PDFDict,
+  PDFDocument,
+  PDFName,
+  PDFNumber,
+  PDFRawStream,
+  PDFString,
+  StandardFonts,
+} from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 import {
   generateRecordPdf,
@@ -7,6 +16,9 @@ import {
   printableText,
   recordLines,
   recordUrl,
+  QR_CAPTION,
+  QR_CAPTION_SIZE,
+  QR_SIDE,
   type RecordPhoto,
 } from './recordPdf'
 import type { Artwork } from './types'
@@ -216,15 +228,61 @@ async function imagePlacements(bytes: Uint8Array) {
     })
 }
 
-/** Side of the QR on the sheet: it never shrinks (RF-1003). */
-const QR_SIDE = 108
-
 const withPhoto = async () => ({ jpeg: SMALL_JPEG, shotType: 'GENERAL' }) as RecordPhoto
 
 /**
  * Which of the two images is which: only the QR is a 108 pt square, and the
  * photograph is scaled to fit its box without ever being deformed.
  */
+/**
+ * Dónde se dibuja un texto, leído del flujo de contenido.
+ *
+ * pdf-lib abre cada texto con `BT`, coloca la matriz —`1 0 0 1 x y Tm`, sin rotación
+ * ni escala— y escribe la cadena en hexadecimal seguida de `Tj`. Se busca el hexadecimal
+ * y se lee hacia atrás la última matriz: es la de esa línea.
+ */
+async function textPlacement(
+  bytes: Uint8Array,
+  text: string,
+): Promise<{ x: number; y: number } | null> {
+  const content = await printedText(bytes)
+  const at = content.indexOf(asHex(printableText(text)).toUpperCase())
+  if (at < 0) return null
+  const before = content.slice(0, at)
+  const matrices = [...before.matchAll(/1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm/g)]
+  const last = matrices[matrices.length - 1]
+  if (!last) return null
+  return { x: Number(last[1]), y: Number(last[2]) }
+}
+
+/**
+ * Los enlaces de la página, leídos de sus anotaciones.
+ *
+ * No pasan por el flujo de contenido —una anotación es un objeto del documento— así que
+ * se leen del diccionario de la página, que es donde un lector de PDF los busca.
+ */
+async function linkAnnotations(bytes: Uint8Array) {
+  const doc = await PDFDocument.load(bytes)
+  const page = doc.getPage(0)
+  const annots = page.node.Annots()
+  const found: { url: string; rect: number[]; border: number[]; strokeWidth: number }[] = []
+  for (let i = 0; i < (annots?.size() ?? 0); i += 1) {
+    const dict = annots!.lookup(i, PDFDict)
+    if (dict.lookup(PDFName.of('Subtype'), PDFName) !== PDFName.of('Link')) continue
+    const action = dict.lookup(PDFName.of('A'), PDFDict)
+    const rect = dict.lookup(PDFName.of('Rect'), PDFArray)
+    const border = dict.lookup(PDFName.of('Border'), PDFArray)
+    const bs = dict.lookup(PDFName.of('BS'), PDFDict)
+    found.push({
+      url: action.lookup(PDFName.of('URI'), PDFString).decodeText(),
+      rect: rect.asArray().map((n) => (n as PDFNumber).asNumber()),
+      border: border.asArray().map((n) => (n as PDFNumber).asNumber()),
+      strokeWidth: bs.lookup(PDFName.of('W'), PDFNumber).asNumber(),
+    })
+  }
+  return found
+}
+
 const splitImages = (images: Awaited<ReturnType<typeof imagePlacements>>) => {
   const qr = images.find((i) => i.width === QR_SIDE && i.height === QR_SIDE)
   return { qr, photo: images.find((i) => i !== qr) }
@@ -359,5 +417,78 @@ describe('the arrangement of the sheet', () => {
     const { qr, photo } = splitImages(images)
     expect(qr!.x + qr!.width).toBeCloseTo(A5_WIDTH - MARGIN, 5)
     expect(photo!.x + photo!.width).toBeCloseTo(A5_WIDTH - MARGIN, 5)
+  })
+})
+
+/**
+ * El pie del código y el enlace que el código es (RF-202, RF-1003).
+ *
+ * La nota que explica el código vivía al pie de la hoja, y por eso empezaba diciendo
+ * dónde estaba el código —«El código QR de la cabecera abre…»—. Puesta debajo del
+ * propio código, esa primera mitad sobra: un pie de foto no dice de qué foto es.
+ *
+ * Y el código es además un enlace: en un ordenador no hay cámara con la que apuntarle.
+ */
+describe('el pie del código y su enlace', () => {
+  it('el pie va debajo del código, con su aire, y no pisa la raya de la cabecera', async () => {
+    const { bytes } = await pdfOf(withPhoto)
+    const { qr } = splitImages(await imagePlacements(bytes))
+    const caption = await textPlacement(bytes, QR_CAPTION)
+    expect(caption).not.toBeNull()
+    // Por debajo del código, y a menos de un centímetro: es su pie, no otra nota.
+    expect(caption!.y).toBeLessThan(qr!.y)
+    expect(qr!.y - caption!.y).toBeLessThan(20)
+  })
+
+  it('y centrado bajo el código, no alineado con el texto de la izquierda', async () => {
+    const { bytes } = await pdfOf(withPhoto)
+    const { qr } = splitImages(await imagePlacements(bytes))
+    const caption = await textPlacement(bytes, QR_CAPTION)
+    // Empieza dentro de la columna del código, no en el margen izquierdo.
+    expect(caption!.x).toBeGreaterThanOrEqual(qr!.x)
+    expect(caption!.x).toBeLessThan(qr!.x + QR_SIDE / 2)
+  })
+
+  /**
+   * Una línea, porque de una línea es el sitio que `photoBoxSide` le reserva. Si
+   * alguien alarga la frase, esto se pone rojo aquí en vez de salir pisando la raya
+   * de la cabecera en una hoja ya impresa.
+   */
+  it('cabe en una línea del ancho del código, medido con la tipografía de verdad', async () => {
+    const doc = await PDFDocument.create()
+    const font = await doc.embedFont(StandardFonts.Helvetica)
+    expect(font.widthOfTextAtSize(printableText(QR_CAPTION), QR_CAPTION_SIZE)).toBeLessThanOrEqual(
+      QR_SIDE,
+    )
+  })
+
+  it('ya no dice dónde está el código, porque está al lado', async () => {
+    const { prints } = await pdfOf(withPhoto)
+    expect(prints(QR_CAPTION)).toBe(true)
+    expect(prints('cabecera')).toBe(false)
+  })
+
+  it('el código es un enlace a la ficha, del tamaño exacto del código', async () => {
+    const { bytes } = await pdfOf(withPhoto)
+    const { qr } = splitImages(await imagePlacements(bytes))
+    const links = await linkAnnotations(bytes)
+    expect(links).toHaveLength(1)
+    expect(links[0]!.url).toBe(recordUrl(ARTWORK.catalog_id, 'https://catalogo.example'))
+    const [x1, y1, x2, y2] = links[0]!.rect
+    expect(x1).toBeCloseTo(qr!.x, 4)
+    expect(y1).toBeCloseTo(qr!.y, 4)
+    expect(x2 - x1).toBeCloseTo(QR_SIDE, 4)
+    expect(y2 - y1).toBeCloseTo(QR_SIDE, 4)
+  })
+
+  /**
+   * Sin recuadro. Un lector que mire el borde que falte pintaría un marco azul
+   * alrededor de un código de barras, y lo impreso no se corrige.
+   */
+  it('el enlace no pinta ningún marco', async () => {
+    const { bytes } = await pdfOf(withPhoto)
+    const links = await linkAnnotations(bytes)
+    expect(links[0]!.border).toEqual([0, 0, 0])
+    expect(links[0]!.strokeWidth).toBe(0)
   })
 })

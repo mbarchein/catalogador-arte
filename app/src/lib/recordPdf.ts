@@ -6,7 +6,17 @@
  * way it also works from the storage room. This module is imported dynamically
  * from the record page so pdf-lib does not bloat the initial bundle.
  */
-import { PDFDocument, PageSizes, StandardFonts, rgb, type PDFFont, type PDFImage } from 'pdf-lib'
+import {
+  PDFDocument,
+  PDFName,
+  PDFString,
+  PageSizes,
+  StandardFonts,
+  rgb,
+  type PDFFont,
+  type PDFImage,
+  type PDFPage,
+} from 'pdf-lib'
 import QRCode from 'qrcode'
 import { displayDate } from './dates'
 import { computeTarget, signedUrl } from './images'
@@ -178,6 +188,41 @@ export async function loadRecordPhoto(catalogId: string): Promise<RecordPhoto | 
   return { jpeg: await toEmbeddableJpeg(await response.blob()), shotType: row.shot_type }
 }
 
+/**
+ * Convierte un rectángulo de la página en un enlace a `url`.
+ *
+ * pdf-lib no tiene API para esto, así que se escribe la anotación a mano: es un
+ * `/Annot` de subtipo `/Link` con una acción `/URI`, que es lo que cualquier lector
+ * entiende desde PDF 1.1. El borde va a cero por las tres vías —`Border`, `BS` y `C`—
+ * porque los lectores no se ponen de acuerdo en cuál miran, y el que mire la que falte
+ * pintaría un recuadro azul en una hoja pensada para pegarse a un cuadro.
+ *
+ * Las anotaciones que la página ya tuviera se conservan: escribir `Annots` de nuevas
+ * borraría un enlace anterior, y esa es la clase de fallo que no se ve hasta que
+ * alguien pulsa lo que ya no lleva a ningún sitio.
+ */
+function linkTo(
+  doc: PDFDocument,
+  page: PDFPage,
+  url: string,
+  box: { x: number; y: number; width: number; height: number },
+): void {
+  const annotation = doc.context.register(
+    doc.context.obj({
+      Type: 'Annot',
+      Subtype: 'Link',
+      Rect: [box.x, box.y, box.x + box.width, box.y + box.height],
+      Border: [0, 0, 0],
+      C: [],
+      BS: { W: 0 },
+      A: { Type: 'Action', S: 'URI', URI: PDFString.of(url) },
+    }),
+  )
+  const existing = page.node.Annots()
+  if (existing) existing.push(annotation)
+  else page.node.set(PDFName.of('Annots'), doc.context.obj([annotation]))
+}
+
 const GRAY = rgb(0.45, 0.42, 0.4)
 const INK = rgb(0.11, 0.1, 0.09)
 const PAPER_GRAY = rgb(0.95, 0.945, 0.94)
@@ -198,7 +243,37 @@ const MIN_PHOTO_BOX = 96
 /** Gap between the right-hand column — QR above, photograph below — and the text. */
 const COLUMN_GAP = 14
 /** Side of the QR in the header: at 108 pt any phone reads it at arm's length. */
-const QR_SIDE = 108
+export const QR_SIDE = 108
+
+/**
+ * El pie del código, debajo del propio código (RF-1003).
+ *
+ * Estaba al pie de la hoja, con el resto de lo que la hoja dice de sí misma, y por eso
+ * empezaba nombrando dónde estaba el código: «El código QR de la cabecera abre…». Un
+ * pie de foto no tiene que decir de qué foto es, así que al ponerlo donde toca la
+ * primera mitad de la frase sobra.
+ *
+ * Más pequeño que el resto de las notas —6 pt frente a 8— porque no es una nota de la
+ * ficha: es la etiqueta de un elemento, y compite con el código, que es lo único de
+ * esta hoja que no puede ceder sitio. Con su aire por encima, para que no parezca
+ * parte del dibujo del código y no le coma el margen blanco que el lector necesita.
+ */
+export const QR_CAPTION = 'Abre esta ficha en la aplicación, al día.'
+export const QR_CAPTION_SIZE = 6
+const QR_CAPTION_LEAD = 7.5
+/** El aire entre el código y su pie: el propio código no lleva margen blanco. */
+const QR_CAPTION_PAD = 8
+/**
+ * Alto de la columna del código: el código, su aire y **una** línea de pie.
+ *
+ * Una y no «las que salgan»: de esta altura sale el sitio que le queda a la
+ * fotografía, y eso lo calcula `photoBoxSide`, que es una función pura y no tiene las
+ * medidas de la tipografía a mano. Así que el pie cabe en una línea y hay un test que
+ * lo mide con la tipografía de verdad — si alguien lo alarga, se pone rojo ahí en vez
+ * de salir pisando la raya de la cabecera en una hoja impresa.
+ */
+const QR_CAPTION_LINES = 1
+const QR_BLOCK = QR_SIDE + QR_CAPTION_PAD + QR_CAPTION_LINES * QR_CAPTION_LEAD
 /** Height of a printed data line, and the air between two rows. */
 const LINE = 13
 const ROW_GAP = 4
@@ -217,7 +292,7 @@ const footerTopAt = (margin: number, photoSide: number) =>
  */
 export function photoBoxSide(dataHeight: number, pageHeight: number, margin: number): number {
   const room =
-    pageHeight - margin - 12 - QR_SIDE - 20 - dataHeight - (margin + 12 + COLUMN_GAP)
+    pageHeight - margin - 12 - QR_BLOCK - 20 - dataHeight - (margin + 12 + COLUMN_GAP)
   return Math.max(MIN_PHOTO_BOX, Math.min(PHOTO_BOX, room))
 }
 
@@ -292,6 +367,31 @@ export async function generateRecordPdf(
   const qrX = width - margin - QR_SIDE
   const qrBottom = y - QR_SIDE
   page.drawImage(qrImage, { x: qrX, y: qrBottom, width: QR_SIDE, height: QR_SIDE })
+  // Y el código es además un enlace: en la pantalla de un ordenador no hay cámara con
+  // la que apuntarle, y el mismo cuadrado que en el almacén se escanea con el móvil
+  // aquí se pulsa. Sin marco: un recuadro azul alrededor de un código de barras es
+  // ruido impreso, y lo que se imprime se imprime para siempre.
+  linkTo(doc, page, url, { x: qrX, y: qrBottom, width: QR_SIDE, height: QR_SIDE })
+
+  // El pie, debajo del código y centrado bajo él. Recortado a dos líneas porque de
+  // dos líneas es la altura que `photoBoxSide` ha reservado: una tercera se metería
+  // en la banda de los datos.
+  let captionY = qrBottom - QR_CAPTION_PAD - QR_CAPTION_SIZE
+  const captionBottom = qrBottom - QR_CAPTION_PAD - QR_CAPTION_LINES * QR_CAPTION_LEAD
+  for (const line of wrapLines(QR_CAPTION, normal, QR_CAPTION_SIZE, QR_SIDE).slice(
+    0,
+    QR_CAPTION_LINES,
+  )) {
+    const lineWidth = normal.widthOfTextAtSize(line, QR_CAPTION_SIZE)
+    page.drawText(line, {
+      x: qrX + (QR_SIDE - lineWidth) / 2,
+      y: captionY,
+      size: QR_CAPTION_SIZE,
+      font: normal,
+      color: GRAY,
+    })
+    captionY -= QR_CAPTION_LEAD
+  }
 
   // Header text keeps clear of the QR column, whose width is always the same.
   const headerWidth = qrX - COLUMN_GAP - margin
@@ -315,8 +415,9 @@ export async function generateRecordPdf(
     page.drawText(line, { x: margin, y, size: 13, font: italic, color: INK })
     y -= 16
   }
-  // The rule closes the band below whichever column reaches further down.
-  y = Math.min(y, qrBottom) - 4
+  // The rule closes the band below whichever column reaches further down — y la
+  // columna del código llega ahora hasta su pie, no hasta el código.
+  y = Math.min(y, captionBottom) - 4
   page.drawLine({
     start: { x: margin, y }, end: { x: width - margin, y },
     thickness: 0.8, color: GRAY,
@@ -379,19 +480,12 @@ export async function generateRecordPdf(
     x: margin, y: margin, size: 6.5, font: normal, color: GRAY,
   })
 
-  // The note names where the code is, because it does not sit beside it: the
-  // note belongs to the foot, with the rest of what the sheet says about itself.
-  const qrNote = 'El código QR de la cabecera abre esta misma ficha en la aplicación, al día.'
-  // Anchored to the top of the reserved box, not to the image: a landscape
-  // photograph is shorter than the box and the note would drift down with it.
-  let noteY = margin + 12 + photoBox - 8
-  for (const line of wrapLines(qrNote, normal, 8, photoX - margin - COLUMN_GAP)) {
-    page.drawText(line, { x: margin, y: noteY, size: 8, font: normal, color: GRAY })
-    noteY -= 10.5
-  }
+  // La fecha de generación, anclada al alto de la caja reservada y no a la imagen:
+  // una fotografía horizontal es más baja que su caja y el texto se iría con ella.
+  // Lo que el código hace lo dice su propio pie, arriba, junto al código.
   page.drawText(
     `Ficha generada el ${new Date().toLocaleDateString('es-ES')}`,
-    { x: margin, y: noteY - 6, size: 8, font: normal, color: GRAY },
+    { x: margin, y: margin + 12 + photoBox - 8, size: 8, font: normal, color: GRAY },
   )
 
   const bytes = await doc.save()
