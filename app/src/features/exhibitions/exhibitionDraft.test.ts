@@ -14,16 +14,16 @@ import {
 } from './exhibitionDraft'
 
 /**
- * Dar de alta y corregir una exposición (RF-501, RF-502, RF-503, RF-512).
+ * Creating and correcting an exhibition (RF-501, RF-502, RF-503, RF-512).
  *
- * Lo que se verifica aquí es la REGLA y la frase, no el componente: la batería
- * corre en node y no puede abrir un JSX, así que todo lo que decide —qué impide
- * guardar, qué viaja a la base, qué significa «no ha cambiado nada»— está en
- * funciones puras y se comprueba palabra por palabra.
+ * What is verified here is the RULE and the sentence, not the component: the suite
+ * runs in node and cannot open a JSX, so everything that decides —what prevents
+ * saving, what travels to the base, what «nothing has changed» means— is in
+ * pure functions and is checked word by word.
  *
- * Cada regla de aquí tiene su gemela en el esquema, y los mensajes de la base se
- * midieron contra ella (ver `exhibitionMessages.ts`). Lo que estas pruebas fijan es
- * que la catalogadora se entera ANTES de pulsar.
+ * Every rule here has its twin in the schema, and the base's messages were
+ * measured against it (see `exhibitionMessages.ts`). What these tests pin down is
+ * that the cataloguer finds out BEFORE pressing.
  */
 
 function draft(over: Partial<ExhibitionDraft> = {}): ExhibitionDraft {

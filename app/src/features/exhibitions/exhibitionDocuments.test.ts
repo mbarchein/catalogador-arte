@@ -12,12 +12,12 @@ import {
 } from './exhibitionDocuments'
 
 /**
- * RF-516, RF-517: los documentos del archivo que hablan de una exposición.
+ * RF-516, RF-517: the archive documents that speak of an exhibition.
  *
- * El vínculo estaba en el esquema y se creaba desde la ficha del documento; lo que faltaba
- * era que la exposición lo enseñara. Aquí se fija lo que se lee, que es donde este bloque
- * puede equivocarse sin que se note: un vacío contado como error, un «quitar» que parece
- * llevarse el documento, o una frase que nombra «esta obra» en la ficha de una muestra.
+ * The link was in the schema and was created from the document's record; what was missing
+ * was for the exhibition to show it. Here what is read is pinned down, which is where this block
+ * can go wrong unnoticed: an emptiness counted as an error, a «quitar» that seems to
+ * take the document away, or a sentence naming «esta obra» in a show's record.
  */
 
 const link = (over: Partial<ExhibitionDocumentLinkRow> = {}): ExhibitionDocumentLinkRow =>
@@ -38,9 +38,9 @@ describe('el recuento y el vacío', () => {
   })
 
   it('un bloque vacío NO es un error, y dice dónde se suben', () => {
-    // Una exposición sin documentos de archivo es lo normal, así que no puede leerse como
-    // una avería; y el hueco tiene que decir qué hacer, porque el botón de subir no está
-    // en esta pantalla a propósito.
+    // An exhibition with no archive documents is the norm, so it cannot read as
+    // a breakdown; and the gap has to say what to do, because the upload button is not
+    // on this screen on purpose.
     const said = exhibitionDocumentsNotice({ loading: false, error: null, count: 0 })
     expect(said).toContain('No hay ningún documento enlazado')
     expect(said).toContain('documentación de una obra')
@@ -78,9 +78,9 @@ describe('lo que ya está enlazado', () => {
   })
 
   it('un vínculo retirado NO cuenta como enlazado', () => {
-    // Está en la papelera, así que volver a enlazarlo es legítimo: la función del esquema
-    // lo restaura en vez de chocar contra la unicidad (RF-517). Contarlo aquí dejaría el
-    // documento fuera del selector para siempre.
+    // It is in the wastebasket, so linking it again is legitimate: the schema's function
+    // restores it instead of clashing against uniqueness (RF-517). Counting it here would leave the
+    // document out of the selector forever.
     expect(linkedDocumentIds([link({ active: false })])).toEqual(new Set())
   })
 })

@@ -1,35 +1,35 @@
 /**
- * El catálogo de una exposición, que es una referencia de la bibliografía y no una
- * tabla propia (RF-503, RF-506).
+ * An exhibition's catalogue, which is a bibliography reference and not a table
+ * of its own (RF-503, RF-506).
  *
- * Puro y sin React, como el resto de las decisiones de esta carpeta.
+ * Pure and without React, like the rest of this folder's decisions.
  *
- * ── LO QUE FALTABA, Y NO ERA LA MITAD QUE PARECÍA ───────────
+ * ── WHAT WAS MISSING, AND IT WAS NOT THE HALF IT LOOKED LIKE ─
  *
- * `exhibitions.catalogue_reference_id` existe desde la primera migración de
- * exposiciones y **ninguna pantalla podía fijarlo**: el borrador de la ficha lo dejaba
- * fuera a propósito —«elegirlo necesita el selector de la bibliografía, que es otra
- * pantalla»— así que la columna estaba siempre a nulo. El plan de pruebas lo tenía
- * anotado como «la ficha de exposición dice si hubo catálogo pero no nombra la
- * referencia que lo es ni enlaza con ella, y no hay ficha de referencia adonde ir».
- * Ahora hay ficha de referencia, y esto es la otra mitad: poder decir cuál es.
+ * `exhibitions.catalogue_reference_id` has existed since the first exhibitions
+ * migration and **no screen could set it**: the record's draft deliberately left it
+ * out —«choosing it needs the bibliography's selector, which is another
+ * screen»— so the column was always null. The test plan had it
+ * noted as «the exhibition record says whether there was a catalogue but does not name the
+ * reference that is it nor link to it, and there is no reference record to go to».
+ * Now there is a reference record, and this is the other half: being able to say which it is.
  *
- * ── POR QUÉ ES UNA OPERACIÓN APARTE Y NO UN CAMPO MÁS ───────
+ * ── WHY IT IS A SEPARATE OPERATION AND NOT ONE MORE FIELD ────
  *
- * Porque no se comporta como los ocho campos del formulario:
+ * Because it does not behave like the form's eight fields:
  *
- *   · **La base la ata a otro campo.** `exhibitions_catalogue_reference_needs_catalogue`
- *     rechaza el vínculo mientras `catalogue_published` no sea «Sí», así que elegir una
- *     referencia depende de una respuesta que se da en otro sitio de la misma pantalla.
- *     Se dice ANTES, no después de un viaje de ida y vuelta.
- *   · **Se elige, no se escribe.** Necesita el catálogo entero de referencias cargado y
- *     un buscador, que es medio panel; los ocho campos son texto y desplegables.
- *   · **Y su ausencia tiene que poder decirse.** Quitar el vínculo es una operación con
- *     sentido propio —«esto no era su catálogo»— y no un campo que se deja vacío.
+ *   · **The base ties it to another field.** `exhibitions_catalogue_reference_needs_catalogue`
+ *     rejects the link while `catalogue_published` is not «Sí», so choosing a
+ *     reference depends on an answer given somewhere else on the same screen.
+ *     It is said BEFORE, not after a round trip.
+ *   · **It is chosen, not written.** It needs the whole reference catalogue loaded and
+ *     a finder, which is half a panel; the eight fields are text and dropdowns.
+ *   · **And its absence has to be sayable.** Removing the link is an operation with
+ *     a meaning of its own —«this was not its catalogue»— and not a field left empty.
  *
- * El guardado del formulario sigue sin mandar esta columna, que es lo que garantiza que
- * corregir el título de una muestra no le borre su catálogo (está escrito en
- * `useExhibition`). Esta operación manda esta columna y ninguna otra.
+ * The form's save still does not send this column, which is what guarantees that
+ * correcting a show's title does not erase its catalogue (it is written in
+ * `useExhibition`). This operation sends this column and no other.
  */
 
 import type { TriState } from '../../lib/types'
@@ -38,16 +38,16 @@ import { referenceTitleText } from '../documentary/bibliography/referenceEdit'
 import type { ReferenceRow } from '../documentary/documentaryRows'
 
 /**
- * Por qué no se puede elegir el catálogo todavía, o null cuando sí.
+ * Why the catalogue cannot be chosen yet, or null when it can.
  *
- * Es el espejo de `exhibitions_catalogue_reference_needs_catalogue`, medido: la base
- * rechaza el vínculo si `catalogue_published` no es «Sí». Y las dos negativas son
- * distintas, que es lo que hace que la frase sirva de algo:
+ * It is the mirror of `exhibitions_catalogue_reference_needs_catalogue`, measured: the base
+ * rejects the link if `catalogue_published` is not «Sí». And the two refusals are
+ * different, which is what makes the sentence of any use:
  *
- *   · «Sin revisar» es que **nadie ha mirado** si hubo catálogo. Lo que hay que hacer
- *     es investigarlo, y la respuesta puede ser que sí.
- *   · «No» es que se investigó y **no hubo catálogo**. Enlazar uno entonces no es
- *     completar la ficha: es contradecirla, y lo que hay que corregir es el «No».
+ *   · «Sin revisar» is that **nobody has looked** at whether there was a catalogue. What has to be done
+ *     is to research it, and the answer may be yes.
+ *   · «No» is that it was researched and **there was no catalogue**. Linking one then is not
+ *     completing the record: it is contradicting it, and what has to be corrected is the «No».
  */
 export function catalogueChoiceBlockedReason(cataloguePublished: TriState): string | null {
   if (cataloguePublished === 'YES') return null
@@ -62,29 +62,29 @@ export function catalogueChoiceBlockedReason(cataloguePublished: TriState): stri
 }
 
 /**
- * ¿Se ofrece siquiera elegir catálogo?
+ * Is choosing a catalogue even offered?
  *
- * Con «No publicó catálogo» en pantalla, un enlace que dice «Decir cuál es su catálogo»
- * se contradice con la línea que tiene encima: ofrece hacer algo que la base va a
- * rechazar y que, si se aceptara, dejaría la ficha diciendo dos cosas opuestas. Se
- * quita — la forma de arreglarlo, si hubo catálogo, es corregir «¿Se publicó catálogo?»
- * en los datos de la exposición, que es donde se corrige cualquier otro dato suyo.
+ * With «No publicó catálogo» on screen, a link saying «Decir cuál es su catálogo»
+ * contradicts the line above it: it offers to do something the base is going to
+ * reject and that, if accepted, would leave the record saying two opposite things. It is
+ * removed — the way to fix it, if there was a catalogue, is to correct «¿Se publicó catálogo?»
+ * in the exhibition's data, which is where any other datum of its is corrected.
  *
- * **Con «sin revisar» sí se ofrece**, y la diferencia no es un descuido: ahí nadie ha
- * mirado todavía y la respuesta puede acabar siendo que sí, así que el panel explica qué
- * hay que responder antes. `catalogueChoiceBlockedReason` dice esas dos negativas por
- * separado por el mismo motivo.
+ * **With «sin revisar» it IS offered**, and the difference is not an oversight: there nobody has
+ * looked yet and the answer may end up being yes, so the panel explains what
+ * has to be answered first. `catalogueChoiceBlockedReason` says those two refusals
+ * separately for the same reason.
  */
 export function offersCatalogueChoice(cataloguePublished: TriState): boolean {
   return cataloguePublished !== 'NO'
 }
 
 /**
- * Lo que la ficha lee sobre su catálogo, en una línea, y **nunca un hueco** (RF-304).
+ * What the record reads about its catalogue, in one line, and **never a gap** (RF-304).
  *
- * Las cuatro respuestas son distintas y confundirlas cuesta una mañana de biblioteca:
- * que no consta, que no hubo, que hubo y sabemos cuál es, y que hubo y no está
- * enlazado — que es lo que hay que hacer y no un error.
+ * The four answers are different and confusing them costs a morning in the library:
+ * that it is not recorded, that there was none, that there was one and we know which it is, and that there was one and it is not
+ * linked — which is what has to be done and not an error.
  */
 export function catalogueReferenceLine(input: {
   cataloguePublished: TriState
@@ -119,11 +119,11 @@ export type CatalogueReferencePlan =
   | { action: 'clear' }
 
 /**
- * Qué hacer con la elección.
+ * What to do with the choice.
  *
- * `unchanged` importa por lo mismo que en el resto del proyecto: escribir la fila mueve
- * `updated_at` y deja una línea del historial de un cambio que nadie ha hecho
- * (RF-1501). Y quitar el vínculo de una exposición que no lo tenía es también nada.
+ * `unchanged` matters for the same reason as in the rest of the project: writing the row moves
+ * `updated_at` and leaves a history line for a change nobody has made
+ * (RF-1501). And removing the link of an exhibition that did not have one is also nothing.
  */
 export function planCatalogueReference(input: {
   cataloguePublished: TriState
@@ -134,9 +134,9 @@ export function planCatalogueReference(input: {
   const { cataloguePublished, current, chosen } = input
   if (chosen === current) return { action: 'unchanged' }
   if (chosen === null) return { action: 'clear' }
-  // Quitar el vínculo se admite SIEMPRE, también con la ficha en «No» o «sin revisar»:
-  // es la única salida de una fila incoherente que hubiera llegado por SQL, y negarla
-  // dejaría a la pantalla sin forma de arreglarla.
+  // Removing the link is ALWAYS allowed, also with the record on «No» or «sin revisar»:
+  // it is the only way out of an inconsistent row that had arrived through SQL, and refusing it
+  // would leave the screen with no way of fixing it.
   const blocked = catalogueChoiceBlockedReason(cataloguePublished)
   if (blocked !== null) return { action: 'blocked', message: blocked }
   return { action: 'set', referenceId: chosen }
@@ -152,12 +152,12 @@ export function catalogueReferenceNotice(plan: CatalogueReferencePlan, title: st
 }
 
 /**
- * Lo que dice el selector en vez de una lista vacía, que nunca lo es (RF-304).
+ * What the selector says instead of an empty list, which it never is (RF-304).
  *
- * Los dos casos son distintos: la bibliografía está vacía, o tiene referencias y ninguna
- * coincide. El segundo tiene que decir **de dónde sale una referencia nueva**, porque si
- * no, se teclea el título del catálogo que se tiene en la mano, no aparece nada y se
- * concluye que el buscador está roto.
+ * The two cases are different: the bibliography is empty, or it has references and none
+ * matches. The second has to say **where a new reference comes from**, because otherwise
+ * the title of the catalogue held in hand gets typed, nothing turns up and the conclusion
+ * is that the finder is broken.
  */
 export function noCatalogueOptionsText(total: number, query: string): string {
   if (total === 0) {

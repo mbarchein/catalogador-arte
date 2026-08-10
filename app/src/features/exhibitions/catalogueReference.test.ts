@@ -83,9 +83,9 @@ describe('offersCatalogueChoice', () => {
   })
 
   it('se ofrece exactamente cuando la elección no está bloqueada por contradicción', () => {
-    // El par que hay que mantener a la vez: lo que se ofrece y lo que el panel deja
-    // hacer. Ofrecer algo bloqueado es lo que se acaba de quitar; bloquear algo que se
-    // ofrece sin decir por qué sería el error simétrico.
+    // The pair that has to be kept together: what is offered and what the panel lets
+    // one do. Offering something blocked is what has just been removed; blocking something that is
+    // offered without saying why would be the symmetric error.
     expect(offersCatalogueChoice('NO')).toBe(false)
     expect(catalogueChoiceBlockedReason('NO')).not.toBeNull()
   })

@@ -1,23 +1,23 @@
 /**
- * «Otros documentos relacionados» en la ficha de una exposición (RF-516, RF-517).
+ * «Otros documentos relacionados» in an exhibition's record (RF-516, RF-517).
  *
- * ── QUÉ FALTABA ─────────────────────────────────────────────
+ * ── WHAT WAS MISSING ────────────────────────────────────────
  *
- * Un documento del archivo —una nota de prensa, un cartel, un díptico, una carta de la
- * galería— habla a la vez de una obra y de la muestra donde estuvo, y el esquema lo tiene
- * previsto desde el principio: dos tablas puente sobre un mismo documento, que es
- * precisamente lo que evita guardar el mismo escaneo dos veces. El vínculo con una
- * exposición ya se podía crear, pero solo desde la ficha del documento; **la exposición
- * no lo mostraba**, así que una nota de prensa enlazada con una muestra no aparecía en
- * ninguna parte de esa muestra.
+ * An archive document —a press release, a poster, a leaflet, a letter from the
+ * gallery— speaks at the same time of an artwork and of the show it was in, and the schema has it
+ * provided for from the start: two bridge tables over one and the same document, which is
+ * precisely what avoids storing the same scan twice. The link with an
+ * exhibition could already be created, but only from the document's record; **the exhibition
+ * did not show it**, so a press release linked to a show did not appear
+ * anywhere in that show.
  *
- * ── POR QUÉ AQUÍ SE ENLAZA Y NO SE SUBE ─────────────────────
+ * ── WHY LINKING HAPPENS HERE AND UPLOADING DOES NOT ─────────
  *
- * Subir un fichero, corregir los datos de un documento y añadirle un escaneo siguen
- * viviendo en la documentación de una obra, donde está la obra que el documento describe.
- * Aquí se enlaza uno que YA está en el archivo, y se retira el vínculo. Repartir la
- * misma escritura por dos pantallas con dos juegos de controles es cómo una de las dos
- * acaba dejando pasar algo — es el mismo reparto que ya hace la ficha del archivo.
+ * Uploading a file, correcting a document's data and adding a scan to it still
+ * live in an artwork's documentation, where the artwork the document describes is.
+ * Here one that is ALREADY in the archive is linked, and the link is withdrawn. Spreading
+ * the same write over two screens with two sets of controls is how one of the two
+ * ends up letting something through — it is the same split the archive's record already makes.
  */
 
 import type { ExhibitionDocumentLinkRow } from '../documentary/documentaryRows'
@@ -28,11 +28,11 @@ export function exhibitionDocumentCountText(count: number): string {
 }
 
 /**
- * La línea que se lee cuando la lista no se puede recorrer, y **nunca un hueco** (RF-304).
+ * The line read when the list cannot be walked through, and **never a gap** (RF-304).
  *
- * Las tres son distintas y confundirlas cuesta una tarde: que todavía se está pidiendo,
- * que no se pudo pedir, y que no hay ninguno — que no es un error y no se presenta como
- * uno, porque una exposición sin documentos de archivo es lo normal.
+ * The three are different and confusing them costs an afternoon: that it is still being asked for,
+ * that it could not be asked for, and that there is none — which is not an error and is not presented as
+ * one, because an exhibition with no archive documents is the norm.
  */
 export function exhibitionDocumentsNotice(input: {
   loading: boolean
@@ -62,11 +62,11 @@ export function linkedDocumentIds(rows: readonly ExhibitionDocumentLinkRow[]): S
 }
 
 /**
- * Lo que se lee al pedir que se quite un vínculo, antes de confirmarlo.
+ * What is read when asking for a link to be removed, before confirming it.
  *
- * Nombra el documento y dice qué NO se lleva: el documento sigue en el archivo y sus
- * otros vínculos siguen vivos. Sin decirlo, «quitar» sobre un documento que también
- * cuelga de tres obras parece que las va a tocar (RF-901).
+ * It names the document and says what is NOT taken away: the document stays in the archive and its
+ * other links stay alive. Without saying so, «quitar» on a document that also
+ * hangs from three artworks looks like it is going to touch them (RF-901).
  */
 export function retireDocumentLinkText(title: string): string {
   return (
@@ -87,10 +87,10 @@ export function documentUnlinkedNotice(title: string): string {
 }
 
 /**
- * El título con el que se nombra un documento en estas frases.
+ * The title a document is named by in these sentences.
  *
- * Sin él, un documento sin título produciría «¿Quitar «» de esta exposición?». Es la
- * misma regla que en el resto: antes un marcador que un hueco.
+ * Without it, a document with no title would produce «¿Quitar «» de esta exposición?». It is the
+ * same rule as in the rest: a placeholder rather than a gap.
  */
 export function documentTitleText(title: string | null | undefined): string {
   const clean = (title ?? '').trim()
