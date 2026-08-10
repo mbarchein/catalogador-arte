@@ -252,8 +252,8 @@ begin
     raise notice 'OK: el catálogo publicado es un tri-estado cerrado';
   end;
 
-  -- Y los tres valores del tri-estado entran, incluido el que da nombre a la
-  -- regla: «Sin revisar» no es «No».
+  -- And the three values of the tri-state go in, including the one that gives the
+  -- rule its name: «Sin revisar» is not «No».
   insert into public.exhibitions (title, year, exhibition_type, catalogue_published)
   values ('Colectiva con catálogo', 1988, 'COLLECTIVE', 'YES');
   insert into public.exhibitions (title, year, exhibition_type, catalogue_published)
@@ -261,10 +261,10 @@ begin
   raise notice 'OK: individual, colectiva y los tres estados del catálogo entran';
 end $$;
 
--- ── 8. La sede, y lo que sostiene ────────────────────────────
--- La clave ajena garantiza que la sede existe; el trigger de baja garantiza que
--- no se retira una que todavía acoge exposiciones activas. Sin él, retirarla no
--- la retira: deja el historial apuntando a algo que la interfaz ya no ofrece.
+-- ── 8. The venue, and what it holds up ───────────────────────
+-- The foreign key guarantees the venue exists; the withdrawal trigger guarantees
+-- that one still hosting active exhibitions is not withdrawn. Without it, withdrawing it does not
+-- withdraw it: it leaves the history pointing at something the interface no longer offers.
 do $$
 declare v_sede uuid;
 begin
@@ -287,14 +287,14 @@ begin
     raise notice 'OK: una sede en uso no se retira: %', sqlerrm;
   end;
 
-  -- Una exposición en la papelera no cuenta, como en las demás maestras: exigir
-  -- vaciar la papelera antes de retirar una sede sería hacer que la papelera
-  -- estorbe.
+  -- An exhibition in the wastebasket does not count, as in the other master tables: requiring
+  -- the wastebasket to be emptied before withdrawing a venue would make the wastebasket
+  -- get in the way.
   update public.exhibitions set active = false where title = 'Colectiva con catálogo';
   update public.exhibition_venues set active = false where id = v_sede;
   raise notice 'OK: una exposición retirada no impide retirar su sede (RF-905)';
 
-  -- Y se deja todo como estaba para lo que viene después.
+  -- And everything is left as it was for what comes afterwards.
   update public.exhibition_venues set active = true where id = v_sede;
   update public.exhibitions set active = true where title = 'Colectiva con catálogo';
 
@@ -306,11 +306,11 @@ begin
   end;
 end $$;
 
--- ── 9. La sede NO es el árbol de lugares ─────────────────────
--- Decidido de forma explícita, y por eso se comprueba: son dos tablas. El árbol
--- contesta «dónde está la obra hoy» y sus nodos contienen otros nodos; la sede
--- contesta «dónde ocurrió una muestra en 1985», es histórica y no contiene
--- nada. Fundirlas metería «Balda 2» en el selector de sedes.
+-- ── 9. The venue is NOT the place tree ───────────────────────
+-- Decided explicitly, and that is why it is checked: they are two tables. The tree
+-- answers «where is the artwork today» and its nodes contain other nodes; the venue
+-- answers «where did a show happen in 1985», it is historical and contains
+-- nothing. Merging them would put «Balda 2» in the venue selector.
 do $$
 begin
   if exists (select 1 from information_schema.columns
@@ -331,11 +331,11 @@ begin
   raise notice 'OK: la sede y el árbol de lugares siguen siendo dos cosas (RF-512)';
 end $$;
 
--- ── 10. La institución detrás de la sede ─────────────────────
--- Para no duplicar el contacto del museo. Y una parte que está detrás de una
--- sede activa no se retira, con la misma regla que sostiene la procedencia: la
--- sede se quedaría con el contacto colgando de una ficha que la interfaz ya no
--- ofrece.
+-- ── 10. The institution behind the venue ─────────────────────
+-- So as not to duplicate the museum's contact. And a party that is behind an
+-- active venue is not withdrawn, with the same rule that holds up the provenance: the
+-- venue would be left with the contact hanging from a record the interface no longer
+-- offers.
 do $$
 declare v_parte uuid; v_sede uuid;
 begin
@@ -355,24 +355,24 @@ begin
     raise notice 'OK: la institución de una sede activa no se retira: %', sqlerrm;
   end;
 
-  -- Retirada la sede, la institución se puede retirar.
+  -- With the venue withdrawn, the institution can be withdrawn.
   update public.exhibitions set venue_id = null where venue_id = v_sede;
   update public.exhibition_venues set active = false where id = v_sede;
   update public.parties set active = false where id = v_parte;
   raise notice 'OK: retirada la sede, su institución se puede retirar';
 
-  -- Y se deja todo como estaba.
+  -- And everything is left as it was.
   update public.parties set active = true where id = v_parte;
   update public.exhibition_venues set active = true where id = v_sede;
 end $$;
 
--- ── 11. Y las dos puertas anteriores de esa misma función ────
+-- ── 11. And that same function's two previous doors ──────────
 --
--- `tg_party_deactivation` la escribió la migración de la procedencia y este
--- grupo la REEMPLAZA con `create or replace` para añadirle la sede. Un reemplazo
--- puede comerse un bloque anterior sin que nada avise: el test de la procedencia
--- pasa igual, porque comprueba la función que hay y no la que había. Esta es la
--- regresión que hay que cazar aquí.
+-- `tg_party_deactivation` was written by the provenance's migration and this
+-- group REPLACES it with `create or replace` to add the venue to it. A replacement
+-- can swallow a previous block with nothing warning: the provenance's test
+-- passes all the same, because it checks the function that is there and not the one that was. This is the
+-- regression to be caught here.
 do $$
 declare v_parte uuid;
 begin
@@ -408,10 +408,10 @@ begin
   raise notice 'OK: sin nada que sostener, la parte se retira';
 end $$;
 
--- ── 12. El catálogo de la muestra vive en la bibliografía ────
--- RF-503: no tiene tabla propia. Y la ficha no puede colgar de una muestra que
--- consta sin catálogo — al revés sí: un catálogo puede constar publicado y no
--- estar todavía dado de alta, que es el estado normal mientras se investiga.
+-- ── 12. The show's catalogue lives in the bibliography ───────
+-- RF-503: it has no table of its own. And the record cannot hang from a show that
+-- is recorded as having no catalogue — the other way round it can: a catalogue may be recorded as published and not
+-- yet be registered, which is the normal state while research goes on.
 do $$
 declare v_ref uuid; v_expo uuid; v_n int;
 begin
@@ -435,8 +435,8 @@ begin
      set catalogue_reference_id = v_ref, catalogue_published = 'YES'
    where id = v_expo;
 
-  -- Navegable en los dos sentidos, que es lo que pide el plan de pruebas: de la
-  -- muestra a su catálogo y del catálogo a la muestra que lo generó.
+  -- Navigable in both directions, which is what the test plan asks for: from the
+  -- show to its catalogue and from the catalogue to the show that generated it.
   select count(*) into v_n
     from public.exhibitions e
     join public.bibliography b on b.id = e.catalogue_reference_id
@@ -463,9 +463,9 @@ begin
   end;
 end $$;
 
--- ── 13. Dos exposiciones se pueden llamar igual (RF-909) ─────
--- Una itinerante en Badajoz y en Cáceres son dos muestras y se titulan igual. La
--- unicidad del título habría convertido un dato real en un error.
+-- ── 13. Two exhibitions can be called the same (RF-909) ──────
+-- A touring show in Badajoz and in Cáceres are two shows and are titled the same. Uniqueness
+-- of the title would have turned a real datum into an error.
 do $$
 begin
   insert into public.exhibitions (title, year) values ('Alberto Rotili. Antológica', 1995);
@@ -473,9 +473,9 @@ begin
   raise notice 'OK: dos exposiciones distintas pueden llamarse igual (RF-909)';
 end $$;
 
--- ── 14. El historial expositivo se ordena ascendente ─────────
--- RF-502. Lo que se comprueba es que el orden funciona SIN depender de que la
--- fecha exacta se conozca: cuando no hay fecha, ordena el año.
+-- ── 14. The exhibition history is ordered ascending ──────────
+-- RF-502. What is checked is that the order works WITHOUT depending on the exact
+-- date being known: when there is no date, the year orders.
 do $$
 declare v_orden text[];
 begin
@@ -497,10 +497,10 @@ begin
   raise notice 'OK: el historial se ordena ascendente con o sin fecha exacta (RF-502)';
 end $$;
 
--- ── 15. La participación: número y nota, dos columnas ────────
--- RF-513. Deshace la fusión de v11 v7 con el criterio que el propio v11 escribió
--- en v9: «cat. 12 bis» es un dato citable de forma exacta y se busca. Lo que
--- este test demuestra es que se consulta SIN analizar texto libre.
+-- ── 15. The participation: number and note, two columns ──────
+-- RF-513. It undoes v11 v7's merge with the criterion v11 itself wrote
+-- in v9: «cat. 12 bis» is a datum citable exactly and it gets searched for. What
+-- this test demonstrates is that it is queried WITHOUT parsing free text.
 do $$
 declare
   v_expo uuid;
@@ -525,21 +525,21 @@ begin
     raise exception 'FAIL: una participación nueva no nace activa';
   end if;
 
-  -- Y se filtra por él sin buscar dentro de una nota, que es lo que v7 dejó
-  -- escrito que se perdía al fundirlos.
+  -- And it is filtered by without searching inside a note, which is what v7 left
+  -- written as being lost on merging them.
   if not exists (select 1 from public.artwork_exhibitions
                   where catalogue_number = '12 bis' and active) then
     raise exception 'FAIL: no se puede filtrar por número de catálogo de exposición (RF-513)';
   end if;
 
-  -- «s/n» y «II.4» son números de catálogo reales: por eso la columna es texto.
+  -- «s/n» and «II.4» are real catalogue numbers: that is why the column is text.
   insert into public.artwork_exhibitions (catalog_id, exhibition_id, catalogue_number)
   values ('AR-9801', v_expo, 's/n');
 
   raise notice 'OK: el número de catálogo se guarda y se filtra como dato aislado (RF-513)';
 end $$;
 
--- ── 16. Una obra participa una vez en cada muestra ───────────
+-- ── 16. An artwork participates once in each show ────────────
 do $$
 declare v_expo uuid;
 begin
@@ -569,20 +569,20 @@ begin
     raise notice 'OK: la clave ajena rechaza una exposición inexistente';
   end;
 
-  -- Y la misma obra en dos muestras distintas es lo normal (RF-501).
+  -- And the same artwork in two different shows is the norm (RF-501).
   insert into public.artwork_exhibitions (catalog_id, exhibition_id)
   values ('AR-9800', (select id from public.exhibitions
                        where title = 'Alberto Rotili. Antológica' and year = 1995));
   raise notice 'OK: la misma obra participa en varias exposiciones (RF-501)';
 end $$;
 
--- ── 17. Volver a añadir una participación la RESTAURA ────────
+-- ── 17. Adding a participation again RESTORES it ─────────────
 --
--- RF-517. Con la unicidad cubriendo también las participaciones retiradas, un
--- `insert` crudo choca contra el índice y la interfaz convertiría un «Añadir» en
--- una violación de unicidad incomprensible. Se comprueban las dos mitades: que
--- el `insert` crudo efectivamente choca —que es por lo que la función existe— y
--- que la función restaura sin borrar lo investigado.
+-- RF-517. With uniqueness also covering the withdrawn participations, a
+-- raw `insert` clashes against the index and the interface would turn an «Añadir» into
+-- an incomprehensible uniqueness violation. Both halves are checked: that
+-- the raw `insert` does clash —which is why the function exists— and
+-- that the function restores without erasing what was researched.
 do $$
 declare
   v_expo uuid; v_id uuid;
@@ -604,8 +604,8 @@ begin
     raise notice 'OK: el insert crudo choca — que es por lo que existe exhibit_artwork';
   end;
 
-  -- Y la función la recupera. Sin número: el formulario de «Añadir» viene en
-  -- blanco, y lo que no se manda no puede borrar lo que alguien investigó.
+  -- And the function recovers it. With no number: the «Añadir» form comes in
+  -- blank, and what is not sent cannot erase what somebody researched.
   v_fila := public.exhibit_artwork('AR-9800', v_expo);
 
   if not v_fila.active then
@@ -621,14 +621,14 @@ begin
     raise exception 'FAIL: la participación restaurada conserva la traza de una baja que ya no existe';
   end if;
 
-  -- Y con número nuevo, manda lo que se manda.
+  -- And with a new number, what is sent rules.
   v_fila := public.exhibit_artwork('AR-9800', v_expo, '12 bis (bis)');
   if v_fila.catalogue_number <> '12 bis (bis)' then
     raise exception 'FAIL: la función no ha actualizado el número (%)', v_fila.catalogue_number;
   end if;
 
-  -- Una pareja que no existía se crea, que es el otro camino de la misma
-  -- función.
+  -- A pair that did not exist is created, which is the same function's other
+  -- path.
   v_fila := public.exhibit_artwork(
     'AR-9801',
     (select id from public.exhibitions where title = 'Alberto Rotili. Antológica' and year = 1996),
@@ -655,11 +655,11 @@ exception when others then
   raise notice 'OK: el lector no expone: %', sqlerrm;
 end $$;
 
--- ── 19. «Sin revisar» no es «no», por las dos puertas ────────
+-- ── 19. «Sin revisar» is not «no», through both doors ────────
 --
--- RF-218, y este es el caso que da nombre a la regla: una obra sin
--- participaciones registradas no es una obra que no se expuso. La columna solo
--- vale si no puede mentir, y para eso hacen falta las dos puertas.
+-- RF-218, and this is the case that gives the rule its name: an artwork with no
+-- registered participations is not an artwork that was not exhibited. The column is only
+-- worth something if it cannot lie, and for that both doors are needed.
 do $$
 declare v_expo uuid;
 begin
@@ -670,8 +670,8 @@ begin
     raise exception 'FAIL: el historial expositivo no nace «Sin revisar» (RF-205)';
   end if;
 
-  -- Lo que SÍ se permite, y es intencionado: participaciones con el estado en
-  -- «Sin revisar». Tener un dato no es haber hecho la investigación.
+  -- What IS allowed, and it is intentional: participations with the state on
+  -- «Sin revisar». Having a datum is not having done the research.
   if not exists (select 1 from public.artwork_exhibitions
                   where catalog_id = 'AR-9800' and active) then
     raise exception 'FAIL: el fixture de este bloque no tiene la participación que necesita';
@@ -685,11 +685,11 @@ begin
     raise notice 'OK: primera puerta — la columna no puede contradecir a las participaciones: %', sqlerrm;
   end;
 
-  -- Retiradas las participaciones, sí se puede declarar.
+  -- With the participations withdrawn, it can be declared.
   update public.artwork_exhibitions set active = false where catalog_id = 'AR-9800';
   update public.artworks set exhibition_history_status = 'NONE_FOUND' where catalog_id = 'AR-9800';
 
-  -- Y entonces la segunda puerta cierra por el otro lado.
+  -- And then the second door closes from the other side.
   select id into v_expo from public.exhibitions where title = 'Muestra de un día';
   begin
     insert into public.artwork_exhibitions (catalog_id, exhibition_id)
