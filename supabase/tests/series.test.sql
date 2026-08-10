@@ -30,10 +30,10 @@ exception
     raise notice 'OK: una serie fuera del catálogo se rechaza: %', sqlerrm;
 end $$;
 
--- ── Cada fondo tiene SUS series ──────────────────────────────
--- Una serie que existe, pero en otro fondo, es tan inválida como una que no
--- existe: es lo que impide arrastrar una serie de Rotili a una obra de Ruiz
--- Campins.
+-- ── Each fund has ITS series ─────────────────────────────────
+-- A series that exists, but in another fund, is as invalid as one that does not
+-- exist: it is what prevents dragging a Rotili series onto a Ruiz
+-- Campins artwork.
 do $$
 begin
   insert into public.artworks (catalog_id, artist, title, attributed_title, series)
@@ -45,9 +45,9 @@ exception
     raise notice 'OK: una serie de otro fondo se rechaza: %', sqlerrm;
 end $$;
 
--- El mismo nombre en dos fondos: dos entradas distintas, y cada obra apunta a
--- la de su fondo. Dos artistas pueden titular igual una serie y siguen siendo
--- dos series diferentes.
+-- The same name in two funds: two different entries, and each artwork points to
+-- the one of its fund. Two artists can title a series the same and they are still
+-- two different series.
 do $$
 declare v_count integer;
 begin
@@ -63,10 +63,10 @@ begin
   raise notice 'OK: el mismo nombre de serie convive en dos fondos';
 end $$;
 
--- ── El fondo forma parte de la comprobación ─────────────────
--- El fondo es inmutable (RF-204), pero la regla de integridad no debe
--- depender de que otra regla siga en su sitio: el trigger vigila también la
--- columna del fondo, así que un cambio de fondo se volvería a comprobar.
+-- ── The fund is part of the check ───────────────────────────
+-- The fund is immutable (RF-204), but the integrity rule must not
+-- depend on another rule staying in place: the trigger also watches
+-- the fund's column, so a fund change would be checked again.
 do $$
 declare v_cols text;
 begin
@@ -82,10 +82,10 @@ begin
   raise notice 'OK: el trigger de integridad vigila serie y fondo';
 end $$;
 
--- ── El relleno de la migración dejó la base coherente ────────
--- Invariante sobre TODO el catálogo: cada obra con serie tiene su entrada de
--- vocabulario en su propio fondo. Es lo que verifica que la migración derivó
--- el fondo de las obras en uso en vez de dejar entradas huérfanas.
+-- ── The migration's fill left the base coherent ─────────────
+-- An invariant over the WHOLE catalogue: every artwork with a series has its vocabulary
+-- entry in its own fund. It is what verifies that the migration derived
+-- the fund from the artworks in use instead of leaving orphan entries.
 do $$
 declare v_bad text;
 begin
@@ -102,7 +102,7 @@ begin
   raise notice 'OK: toda obra con serie la tiene en el catálogo de su fondo';
 end $$;
 
--- Y una entrada nueva se crea con su fondo, no sin él.
+-- And a new entry is created with its fund, not without it.
 do $$
 declare v_artist public.artist_fund;
 begin
@@ -121,7 +121,7 @@ begin
   raise notice 'OK: la entrada del vocabulario lleva el fondo de la obra';
 end $$;
 
--- ── La serie puede ir vacía: no toda obra pertenece a una ────
+-- ── The series can go empty: not every artwork belongs to one ─
 do $$
 declare v text;
 begin
@@ -134,7 +134,7 @@ begin
   raise notice 'OK: la obra nace sin serie y es válido';
 end $$;
 
--- ── El nombre se guarda normalizado ──────────────────────────
+-- ── The name is stored normalised ────────────────────────────
 do $$
 begin
   insert into public.series (artist, name) values ('ROTILI', '  Con espacios  ');
@@ -153,7 +153,7 @@ exception
     raise notice 'OK: el catálogo no admite el nombre en blanco';
 end $$;
 
--- ── Cambiar la serie de una obra también se comprueba ────────
+-- ── Changing an artwork's series is also checked ─────────────
 do $$
 begin
   update public.artworks set series = 'Otra inventada' where catalog_id = 'AR-9750';
@@ -164,7 +164,7 @@ exception
     raise notice 'OK: el cambio a una serie inexistente se rechaza';
 end $$;
 
--- ── RLS: el lector lee el catálogo, el catalogador lo amplía ─
+-- ── RLS: the reader reads the catalogue, the cataloguer extends it ─
 do $$
 declare v_count integer;
 begin
@@ -202,7 +202,7 @@ end $$;
 
 reset role;
 
--- ── La autoría la pone la base, no el cliente ───────────────
+-- ── The authorship is set by the base, not the client ───────
 do $$
 declare v uuid;
 begin
@@ -214,7 +214,7 @@ begin
   raise notice 'OK: la autoría de la serie la sella la base';
 end $$;
 
--- ── Cierre por omisión para el rol anónimo ───────────────────
+-- ── Closed by default for the anonymous role ─────────────────
 do $$
 begin
   set local role anon;

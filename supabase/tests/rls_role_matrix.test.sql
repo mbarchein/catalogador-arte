@@ -238,19 +238,19 @@ end $$;
 
 reset role;
 
--- ── El catálogo razonado documental: quince tablas más ────────
+-- ── The documentary catalogue raisonné: fifteen more tables ───
 --
--- RF-109. Hasta aquí esta matriz cubría dos tablas, `artworks` e `images`. Los
--- seis grupos de 20260804 añadieron quince —personas e instituciones, la cadena
--- de procedencia, bibliografía, exposiciones, archivo y las relaciones entre
--- obras— y sus políticas están en 20260804150000. Una matriz de roles que se
--- quede en dos tablas deja de ser una matriz.
+-- RF-109. Until here this matrix covered two tables, `artworks` and `images`. The
+-- six groups of 20260804 added fifteen —people and institutions, the provenance
+-- chain, bibliography, exhibitions, archive and the relationships between
+-- artworks— and their policies are in 20260804150000. A role matrix that
+-- stops at two tables stops being a matrix.
 --
--- Se recorren las quince y no una muestra, porque el fallo que hay que cazar es
--- exactamente el de la tabla que se quedó fuera. El perímetro tabla a tabla
--- —privilegios medidos, altas, bajas, funciones de vínculo— está en
--- `documentary_policies.test.sql`; aquí van las tres celdas de la matriz: qué
--- lee cada papel, qué escribe y qué ve de la papelera.
+-- All fifteen are walked and not a sample, because the failure to be caught is
+-- exactly that of the table that was left out. The table-by-table perimeter
+-- —privileges measured, creations, withdrawals, link functions— is in
+-- `documentary_policies.test.sql`; here go the matrix's three cells: what
+-- each role reads, what it writes and what it sees of the wastebasket.
 
 insert into public.parties (id, party_type, name, contact) values
   ('ac000001-0000-4000-8000-000000000001', 'INSTITUTION',
@@ -322,8 +322,8 @@ insert into public.artwork_relationships (id, from_catalog_id, to_catalog_id, re
   ('ac00000f-0000-4000-8000-000000000002', 'AR-9001', 'AR-9003',
    'ac00000e-0000-4000-8000-000000000002');
 
--- La segunda fila de cada tabla se manda a la papelera, que es la única forma
--- de retirar algo en este catálogo (RF-901).
+-- Each table's second row is sent to the wastebasket, which is the only way
+-- of withdrawing something in this catalogue (RF-901).
 update public.parties                    set active = false where id = 'ac000001-0000-4000-8000-000000000002';
 update public.provenance_events          set active = false where id = 'ac000002-0000-4000-8000-000000000002';
 update public.publication_types          set active = false where id = 'ac000003-0000-4000-8000-000000000002';
@@ -337,8 +337,8 @@ update public.archive_series             set active = false where id = 'ac00000a
 update public.archive_documents          set active = false where id = 'ac00000b-0000-4000-8000-000000000002';
 update public.artwork_documents          set active = false where id = 'ac00000c-0000-4000-8000-000000000002';
 update public.exhibition_documents       set active = false where id = 'ac00000d-0000-4000-8000-000000000002';
--- El orden importa: un tipo de relación en uso no se retira mientras la
--- relación siga activa, y ese guardarraíl es de la migración del grupo 6.
+-- The order matters: a relationship type in use is not withdrawn while the
+-- relationship is still active, and that guardrail belongs to group 6's migration.
 update public.artwork_relationships      set active = false where id = 'ac00000f-0000-4000-8000-000000000002';
 update public.artwork_relationship_types set active = false where id = 'ac00000e-0000-4000-8000-000000000002';
 
@@ -703,22 +703,22 @@ end $$;
 reset role;
 
 
--- ── Los enlaces externos: la misma matriz, con una vuelta más ──
+-- ── The external links: the same matrix, with one more turn ───
 --
--- RF-105, RF-106, RF-109, RF-609, RF-1401. `external_links` no es una de las
--- quince y no cabe en los bucles de arriba: sus filas no se identifican solas,
--- cuelgan de una ficha, y de ahí sale la celda que esta tabla añade a la matriz
--- y que ninguna otra tiene — QUÉ VE CADA PAPEL DEPENDE DE LO QUE VEA DE LA FICHA
--- ANCLA. El perímetro completo está en `external_links.test.sql`; aquí van las
--- tres celdas de siempre más esa cuarta.
+-- RF-105, RF-106, RF-109, RF-609, RF-1401. `external_links` is not one of the
+-- fifteen and does not fit in the loops above: its rows do not identify themselves,
+-- they hang from a record, and from there comes the cell this table adds to the matrix
+-- and that no other has — WHAT EACH ROLE SEES DEPENDS ON WHAT IT SEES OF THE ANCHOR
+-- RECORD. The complete perimeter is in `external_links.test.sql`; here go the
+-- usual three cells plus that fourth.
 
 insert into public.external_links (id, artwork_id, url, title) values
   ('ac000010-0000-4000-8000-000000000001', 'AR-9001',
    'https://www.macvac.es/obra/matriz-activa/', 'Enlace activo de la matriz'),
   ('ac000010-0000-4000-8000-000000000002', 'AR-9001',
    'https://www.macvac.es/obra/matriz-retirada/', 'Enlace retirado de la matriz'),
-  -- El de una obra que está en la papelera: el lector no debe enterarse ni de
-  -- que existe (RF-609).
+  -- That of an artwork that is in the wastebasket: the reader must not even find out
+  -- that it exists (RF-609).
   ('ac000010-0000-4000-8000-000000000003', 'AR-9002',
    'https://www.macvac.es/obra/matriz-de-obra-retirada/', 'Enlace de una obra retirada');
 
@@ -881,32 +881,32 @@ end $$;
 reset role;
 
 
--- ── El enlace que no creó nadie, y la reproducción ajena ──────
+-- ── The link nobody created, and somebody else's reproduction ──
 --
--- RF-105, RF-106, RF-417, RF-1401, RF-1407. La celda que añade el traslado de
--- 20260805110000 no es un permiso nuevo: es UNA FORMA DE FILA QUE ANTES NO
--- EXISTÍA. Los cuatro enlaces que la migración sacó de dentro de dos notas de
--- inventario tienen `created_by` a NULO, porque `tg_row_audit` firma con
--- `auth.uid()` y dentro de una migración `auth.uid()` no es nadie. Nulo es la
--- verdad: esa fila no la creó ninguna persona.
+-- RF-105, RF-106, RF-417, RF-1401, RF-1407. The cell 20260805110000's move
+-- adds is not a new permission: it is A SHAPE OF ROW THAT DID NOT EXIST
+-- BEFORE. The four links the migration pulled out of two inventory
+-- notes have `created_by` NULL, because `tg_row_audit` signs with
+-- `auth.uid()` and inside a migration `auth.uid()` is nobody. Null is the
+-- truth: that row was created by no person.
 --
--- Y esa forma de fila es exactamente la que rompería una política escrita con la
--- tentación de siempre —«ves lo que tú creaste»—: en producción hay cuatro filas
--- que nadie creó, así que una política así las escondería para todo el mundo y el
--- traslado habría sacado las direcciones de la nota para meterlas en un cajón
--- cerrado. Se comprueba autenticándose de verdad, no leyendo la política.
+-- And that shape of row is exactly the one that would break a policy written with the
+-- usual temptation —«you see what you created»—: in production there are four rows
+-- nobody created, so such a policy would hide them from everybody and the
+-- move would have taken the addresses out of the note to put them in a closed
+-- drawer. It is checked by authenticating for real, not by reading the policy.
 --
--- La segunda mitad es el par de RF-1407: una fotografía dicha ajena MÁS su enlace
--- de origen. Las dos mitades las escribió la misma migración y las dos las tiene
--- que poder leer el Lector, porque la pantalla de la fotografía las muestra
--- juntas; y ninguna de las dos la puede tocar.
+-- The second half is RF-1407's pair: a photograph said to be somebody else's PLUS its source
+-- link. Both halves were written by the same migration and the Reader has to be able
+-- to read both, because the photograph's screen shows them
+-- together; and neither of the two can be touched.
 
--- Sin sesión, como la migración, y hay que pedirlo EXPLÍCITAMENTE: `reset role`
--- devuelve el rol pero no borra el `request.jwt.claims` que dejó puesto el último
--- `set local`, así que a estas alturas del fichero `auth.uid()` todavía devuelve
--- al lector. Vaciar la reclamación es lo que reproduce de verdad la situación de
--- una migración —nadie ha iniciado sesión— y sin esta línea la fila nacería
--- firmada y este bloque no estaría probando nada.
+-- With no session, like the migration, and it has to be asked for EXPLICITLY: `reset role`
+-- gives back the role but does not clear the `request.jwt.claims` the last
+-- `set local` left in place, so by this point in the file `auth.uid()` still returns
+-- the reader. Emptying the claim is what really reproduces a
+-- migration's situation —nobody has logged in— and without this line the row would be born
+-- signed and this block would be testing nothing.
 set local request.jwt.claims = '';
 
 insert into public.external_links (id, image_id, url, title, link_type, note) values
@@ -1019,17 +1019,17 @@ end $$;
 reset role;
 
 
--- ── El registro de cambios: la fila de la matriz que es casi toda ceros ──
+-- ── The change log: the matrix row that is almost all zeros ──
 --
--- RF-105, RF-106, RF-109, RF-609, RF-1504, RF-1506. `change_log` no cabe en los
--- bucles de arriba y no por su forma, sino porque su fila de esta matriz dice lo
--- contrario que la de todas las demás: el Catalogador TAMPOCO escribe. En el
--- resto del esquema la matriz es «el que edita, edita»; aquí el que edita es el
--- AUDITADO, y un registro que el auditado puede tocar no es un registro.
+-- RF-105, RF-106, RF-109, RF-609, RF-1504, RF-1506. `change_log` does not fit in the
+-- loops above and not because of its shape, but because its row of this matrix says the
+-- opposite of every other one's: the Cataloguer does NOT write either. In the
+-- rest of the schema the matrix is «whoever edits, edits»; here whoever edits is the
+-- AUDITED, and a log the audited can touch is not a log.
 --
--- El perímetro completo —los dos candados, los cuatro verbos, el rol del panel—
--- está en `change_log.test.sql`. Aquí van las celdas de la matriz: qué lee cada
--- papel y qué escribe, que en esta tabla es nada.
+-- The complete perimeter —the two padlocks, the four verbs, the panel's role—
+-- is in `change_log.test.sql`. Here go the matrix's cells: what each
+-- role reads and what it writes, which in this table is nothing.
 
 insert into public.images (catalog_id, thumbnail_path, derivative_path, master_path, shot_type)
 values ('AR-9001', 'm/min-hist.webp', 'm/der-hist.webp', 'm/master-hist.jpg', 'BACK');
@@ -1171,28 +1171,28 @@ end $$;
 reset role;
 
 
--- ── El Superusuario: la celda que no cubría nadie ─────────────
+-- ── The Superuser: the cell nobody covered ───────────────────
 --
--- RF-109, RF-1504. Añadida al auditar el registro de cambios, y el hueco era de
--- este fichero entero y no solo del registro: la matriz de roles NO TENÍA UN
--- USUARIO SUPERUSER. Se daba por hecho que su fila es la del Catalogador porque
--- `can_edit()` devuelve verdadero para los dos, y eso es cierto para la LECTURA y
--- la ESCRITURA del catálogo — pero en el registro de cambios la conclusión que se
--- estaba dando por hecha es la contraria a la que hay que demostrar: que quien más
--- privilegio tiene en la aplicación TAMPOCO escribe en la auditoría.
+-- RF-109, RF-1504. Added on auditing the change log, and the gap belonged to
+-- this whole file and not only to the log: the role matrix HAD NO
+-- SUPERUSER USER. It was taken for granted that their row is the Cataloguer's because
+-- `can_edit()` returns true for both, and that is true for READING and
+-- WRITING the catalogue — but in the change log the conclusion being
+-- taken for granted is the opposite of the one that has to be demonstrated: that whoever has the most
+-- privilege in the application does NOT write in the audit either.
 --
--- El Superusuario es además el papel de RF-1105, el del panel de Supabase. Que su
--- sesión de aplicación no pueda tocar el registro es justamente lo que hace que la
--- diferencia entre «entrar por la aplicación» y «entrar por el panel» sea la
--- decisión deliberada que describe change_log.sql, y no un descuido.
--- La reclamación del JWT se vacía A MANO antes de tocar el perfil, y no es
--- ceremonia: `reset role` devuelve el rol de base de datos pero NO borra
--- `request.jwt.claims`, así que a esta altura del fichero la sesión todavía lleva
--- el `sub` del último bloque. Con un usuario dentro, `tg_role_superuser_only()`
--- rechaza el cambio de papel —«Solo el superusuario puede cambiar el rol»
--- (RF-108)—, que es exactamente lo que debe hacer. La promoción del primer
--- superusuario ocurre por necesidad fuera de la aplicación, y este `set_config`
--- es la forma de decir «esto es acceso administrativo» en un test.
+-- The Superuser is besides RF-1105's role, that of Supabase's panel. That their
+-- application session cannot touch the log is precisely what makes the
+-- difference between «coming in through the application» and «coming in through the panel» the
+-- deliberate decision change_log.sql describes, and not an oversight.
+-- The JWT claim is emptied BY HAND before touching the profile, and it is not
+-- ceremony: `reset role` gives back the database role but does NOT clear
+-- `request.jwt.claims`, so by this point in the file the session still carries
+-- the last block's `sub`. With a user inside, `tg_role_superuser_only()`
+-- rejects the role change —«Solo el superusuario puede cambiar el rol»
+-- (RF-108)—, which is exactly what it must do. The promotion of the first
+-- superuser happens by necessity outside the application, and this `set_config`
+-- is the way of saying «this is administrative access» in a test.
 select set_config('request.jwt.claims', '', true);
 
 insert into auth.users (id, email)
@@ -1206,8 +1206,8 @@ begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e9","role":"authenticated"}';
   set local role authenticated;
 
-  -- Lee como el Catalogador, papelera incluida: `can_edit()` lo incluye, así que
-  -- la visibilidad heredada del ancla se la enseña toda.
+  -- They read like the Cataloguer, wastebasket included: `can_edit()` includes them, so
+  -- the anchor's inherited visibility shows them all of it.
   select count(*) into v_n from public.change_log
    where change_id::text like 'ac000030-%';
   reset role;
@@ -1220,9 +1220,9 @@ end $$;
 
 reset role;
 
--- Y no escribe: los tres verbos, y fallando por PRIVILEGIO igual que los demás.
--- El papel más alto de la aplicación es, en esta tabla, exactamente igual de
--- impotente que el Lector.
+-- And they do not write: the three verbs, and failing by PRIVILEGE just like the others.
+-- The application's highest role is, in this table, exactly as
+-- powerless as the Reader.
 do $$
 declare
   v_sentencias constant text[] := array[
@@ -1250,11 +1250,11 @@ end $$;
 
 reset role;
 
--- Y el Superusuario sí escribe en el CATÁLOGO, que es lo que cierra la celda: si
--- no, «no puede tocar el registro» podría estar diciendo simplemente que su sesión
--- no funciona. Su cambio deja además su propia línea en el registro, escrita por
--- el trigger y con él como autor — la otra mitad de la pareja, comprobada desde la
--- matriz.
+-- And the Superuser does write in the CATALOGUE, which is what closes the cell: otherwise,
+-- «they cannot touch the log» could simply be saying that their session
+-- does not work. Their change also leaves its own line in the log, written by
+-- the trigger and with them as author — the pair's other half, checked from the
+-- matrix.
 do $$
 declare v_autor uuid; v_n integer;
 begin

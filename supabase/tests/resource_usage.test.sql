@@ -14,7 +14,7 @@ insert into auth.users (id, email) values
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000e1';
 update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000e2';
 
--- ── El Catalogador obtiene tres cifras utilizables ───────────
+-- ── The Cataloguer gets three usable figures ─────────────────
 
 do $$
 declare v_row record;
@@ -28,17 +28,17 @@ begin
     raise exception 'FAIL: resource_usage no ha devuelto ninguna fila';
   end if;
 
-  -- Una base con el esquema entero aplicado no puede ocupar cero. El aserto
-  -- distingue «ha medido» de «ha contestado un cero por no poder mirar», que es
-  -- exactamente lo que devolvería esta función sin `security definer`.
+  -- A base with the whole schema applied cannot take up zero. The assertion
+  -- distinguishes «it has measured» from «it has answered a zero for not being able to look», which is
+  -- exactly what this function would return without `security definer`.
   if coalesce(v_row.database_bytes, 0) <= 0 then
     raise exception 'FAIL: el tamaño de la base sale %, que no es una medida',
       coalesce(v_row.database_bytes, -1);
   end if;
 
-  -- El almacén puede estar vacío en un stack recién levantado, y eso es un cero
-  -- legítimo. Lo que no puede es ser nulo ni negativo: la aplicación divide por
-  -- el límite para pintar la barra.
+  -- The store may be empty in a freshly raised stack, and that is a legitimate
+  -- zero. What it cannot be is null or negative: the application divides by
+  -- the limit to paint the bar.
   if v_row.storage_bytes is null or v_row.storage_bytes < 0 then
     raise exception 'FAIL: el almacén ocupa %', coalesce(v_row.storage_bytes::text, '(nulo)');
   end if;
@@ -64,9 +64,9 @@ begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}';
   set local role authenticated;
 
-  -- El resultado se guarda en variables y se juzga FUERA del bloque. Juzgarlo
-  -- dentro sería atrapar con el mismo `when` el propio FAIL de este test, y un
-  -- aserto que se traga su propio fallo no es un aserto.
+  -- The result is stored in variables and judged OUTSIDE the block. Judging it
+  -- inside would be catching this test's own FAIL with the same `when`, and an
+  -- assertion that swallows its own failure is not an assertion.
   begin
     select * into v_row from public.resource_usage();
     v_leyo := true;
@@ -80,7 +80,7 @@ begin
   if v_leyo then
     raise exception 'FAIL: un Lector ha podido consultar el espacio ocupado';
   end if;
-  -- El mensaje lo lee la usuaria tal cual: tiene que decir de qué habla.
+  -- The message is read by the user as is: it has to say what it is talking about.
   if v_dijo not like '%espacio ocupado%' then
     raise exception 'FAIL: el rechazo al Lector no explica qué se le negó: %', v_dijo;
   end if;
@@ -90,7 +90,7 @@ end $$;
 
 reset role;
 
--- ── Nadie más tiene la llave ─────────────────────────────────
+-- ── Nobody else has the key ──────────────────────────────────
 
 do $$
 begin
@@ -103,14 +103,14 @@ begin
   raise notice 'OK: solo la sesión ejecuta resource_usage, y el anónimo no';
 end $$;
 
--- ── Y es de las que se comprueban por dentro ─────────────────
+-- ── And it is one of those checked from inside ────────────────
 --
--- `function_privileges.test.sql` ya barre el esquema entero exigiendo
--- `search_path` fijado y ninguna función ejecutable por PUBLIC. Aquí se afirma lo
--- que solo importa en esta: que es `security definer` de verdad. Si alguien la
--- pasara a `security invoker` para «simplificar», los dos bloques de arriba
--- seguirían en verde —el Lector seguiría rechazado— y la pantalla del Catalogador
--- se quedaría en ceros sin que nada se pusiera rojo.
+-- `function_privileges.test.sql` already sweeps the whole schema requiring
+-- a fixed `search_path` and no function executable by PUBLIC. Here what is asserted is what
+-- only matters in this one: that it is really `security definer`. If somebody
+-- changed it to `security invoker` to «simplify», the two blocks above
+-- would stay green —the Reader would still be rejected— and the Cataloguer's screen
+-- would be left at zeros with nothing going red.
 
 do $$
 declare v_definer boolean;
