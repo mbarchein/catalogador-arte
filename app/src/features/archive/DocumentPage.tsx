@@ -33,29 +33,29 @@ import { LinkExhibitionSheet } from './LinkExhibitionSheet'
 import { useDocumentRecord } from './useArchiveIndex'
 
 /**
- * La ficha de un documento del archivo (RF-309, RF-515, RF-516, RF-609).
+ * The record of an archive document (RF-309, RF-515, RF-516, RF-609).
  *
- * Lo que añade y no se podía leer en ningún sitio: **de qué está colgando el documento**.
- * Desde la ficha de una obra solo se ve que cuelga de ELLA, así que un recorte que habla
- * de tres piezas se leía tres veces sin saberlo nunca, y un documento que no cuelga de
- * nada no se leía.
+ * What it adds and could not be read anywhere: **what the document is hanging from**.
+ * From an artwork's record only its hanging from THAT ONE is visible, so a clipping that speaks
+ * of three pieces was read three times without ever knowing it, and a document hanging from
+ * nothing was not read at all.
  *
- * **Dos bloques y no uno**, que es la diferencia con la ficha de una referencia: la
- * relación es de muchos a muchos con las obras y con las exposiciones (RF-516), y
- * fundirlos mezclaría códigos de catalogación con títulos de muestra en la misma
- * columna. Cada bloque dice lo suyo cuando está vacío, y no dicen lo mismo: enlazar con
- * una obra se hace desde la ficha de la obra, y enlazar con una exposición se hace
- * **aquí**.
+ * **Two blocks and not one**, which is the difference from a reference's record: the
+ * relationship is many-to-many with the artworks and with the exhibitions (RF-516), and
+ * merging them would mix cataloguing codes with show titles in the same
+ * column. Each block says its own thing when it is empty, and they do not say the same: linking to
+ * an artwork is done from the artwork's record, and linking to an exhibition is done
+ * **here**.
  *
- * **La única escritura que esta ficha posee es el vínculo con una exposición**
- * (RF-516, RF-517), y es la excepción razonada a que el archivo sea de solo lectura: una
- * exposición no tiene bloque de documentos, así que esta pantalla es el único sitio donde
- * el documento y la muestra están a la vez. Corregir los datos y añadir el escaneo se
- * hacen desde la documentación de una obra enlazada, donde ya están y donde el aviso de
- * alcance cuenta a cuántas fichas afecta; retirar el documento entero y recuperarlo son de
- * la papelera. Traer esos botones aquí sería una segunda forma de hacer lo mismo, y para
- * un documento suelto —el caso que justifica la pantalla— no hay ficha de obra desde la
- * que corregirlo: eso se dice al pie, en vez de dejarlo descubrir.
+ * **The only write this record owns is the link with an exhibition**
+ * (RF-516, RF-517), and it is the reasoned exception to the archive being read-only: an
+ * exhibition has no document block, so this screen is the only place where
+ * the document and the show are together at once. Correcting the data and adding the scan are
+ * done from the documentation of a linked artwork, where they already are and where the scope
+ * warning says how many records it affects; withdrawing the whole document and recovering it belong to
+ * the wastebasket. Bringing those buttons here would be a second way of doing the same, and for
+ * a standalone document —the case that justifies the screen— there is no artwork record to
+ * correct it from: that is said at the foot, instead of leaving it to be discovered.
  */
 export function DocumentPage() {
   const { id = '' } = useParams()
@@ -246,12 +246,12 @@ export function DocumentPage() {
 }
 
 /**
- * Una exposición enlazada, con la salida del vínculo.
+ * A linked exhibition, with the link's way out.
  *
- * Dos toques para quitarlo, como en el resto del proyecto: en una pantalla táctil, uno
- * solo y desaparece lo que alguien investigó. Y lo que se avisa es **lo que NO pasa** —el
- * documento se queda en el archivo con su fichero—, que es la mitad que hace que se pueda
- * decidir; lo redacta `retireExhibitionLinkText`, que es puro y está probado.
+ * Two taps to remove it, as in the rest of the project: on a touch screen, one
+ * alone and what somebody researched disappears. And what is warned about is **what does NOT happen** —the
+ * document stays in the archive with its file—, which is the half that makes it possible to
+ * decide; `retireExhibitionLinkText` words it, which is pure and tested.
  */
 function ExhibitionLinkRow({
   view,

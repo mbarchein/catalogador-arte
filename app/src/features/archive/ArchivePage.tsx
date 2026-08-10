@@ -13,27 +13,27 @@ import {
 import { useArchiveIndex } from './useArchiveIndex'
 
 /**
- * El listado del archivo, con su búsqueda dedicada (RF-515, RF-606, RF-609).
+ * The archive's listing, with its dedicated search (RF-515, RF-606, RF-609).
  *
- * **Cierra el último hueco de este tipo.** Un documento del archivo se subía, se
- * enlazaba, se descargaba, se corregía y se digitalizaba, todo desde la ficha de una obra
- * que lo tuviera enlazado; a uno que ninguna obra tuviera enlazado no se llegaba desde
- * ningún sitio — el cartel de una muestra que no habla de una pieza concreta, o el
- * documento cuyo vínculo se retiró —. Es el mismo hueco que tenía la bibliografía.
+ * **It closes the last gap of this kind.** An archive document could be uploaded,
+ * linked, downloaded, corrected and digitised, all from the record of an artwork
+ * that had it linked; one that no artwork had linked was not reachable from
+ * anywhere — the poster of a show that does not speak of a particular piece, or the
+ * document whose link was withdrawn —. It is the same gap the bibliography had.
  *
- * **Lo lee cualquiera que pueda leer**, como la bibliografía y las exposiciones: un
- * documento es contenido del catálogo y no una lista de mantenimiento, y la RLS ya
- * entrega a un Lector solo los vivos.
+ * **It is read by anybody who can read**, like the bibliography and the exhibitions: a
+ * document is catalogue content and not a maintenance list, and the RLS already
+ * hands a Reader only the live ones.
  *
- * **No hay alta aquí, y su ausencia es la decisión.** Subir un documento se hace desde la
- * documentación de una obra, con «Subir un documento del archivo», porque así queda
- * subido y enlazado de una vez — y ese es el caso normal, la carta que habla de la obra
- * que se tiene delante. Un alta suelta desde aquí produciría documentos sin enlazar, que
- * es justo lo que esta pantalla existe para poder encontrar.
+ * **There is no creation here, and its absence is the decision.** Uploading a document is done from an
+ * artwork's documentation, with «Subir un documento del archivo», because that way it ends up
+ * uploaded and linked in one go — and that is the normal case, the letter that speaks of the artwork
+ * in front of you. A standalone creation from here would produce unlinked documents, which
+ * is exactly what this screen exists to be able to find.
  *
- * El recuento dice **cuántos están sin digitalizar**, que es la cifra que solo tiene
- * sentido en esta pantalla: aquí es una lista de trabajo del escaneo, mientras que en el
- * bloque de una obra la pregunta es «¿puedo leer este papel?».
+ * The count says **how many are not digitised**, which is the figure that only makes
+ * sense on this screen: here it is a work list for scanning, whereas in an
+ * artwork's block the question is «can I read this paper?».
  */
 export function ArchivePage() {
   const { canEdit } = useAuth()

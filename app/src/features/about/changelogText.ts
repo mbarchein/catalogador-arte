@@ -1,29 +1,29 @@
 /**
- * El registro de cambios, leído dentro de la aplicación y sin conexión (RF-1202).
+ * The change log, read inside the application and offline (RF-1202).
  *
- * ── QUÉ ES ESTO Y QUÉ NO ────────────────────────────────────
+ * ── WHAT THIS IS AND WHAT IT IS NOT ─────────────────────────
  *
- * `CHANGELOG.md` se escribe para la catalogadora —así está decidido: la consecuencia
- * práctica y nada de nombres de tabla— y hasta ahora solo se leía en el repositorio, que
- * es justo donde ella no entra. Esto lo trae a la pantalla.
+ * `CHANGELOG.md` is written for the cataloguer —that is settled: the practical
+ * consequence and no table names— and until now it could only be read in the repository, which
+ * is precisely where she does not go. This brings it to the screen.
  *
- * Va **incrustado en la compilación** y no pedido a la red: se lee en un almacén sin
- * cobertura, y un «Novedades» que a veces no carga no se vuelve a abrir. Eso además lo
- * hace exacto — lo que se lee es lo que traía la versión que está corriendo, y no lo que
- * haya en la rama principal ahora mismo.
+ * It goes **embedded in the build** and is not asked of the network: it is read in a storeroom with no
+ * coverage, and a «Novedades» that sometimes does not load is never opened again. That also
+ * makes it exact — what is read is what the running version brought, and not what
+ * happens to be on the main branch right now.
  *
- * ── UN LECTOR DE MARKDOWN MÍNIMO, Y POR QUÉ NO UNA BIBLIOTECA ──
+ * ── A MINIMAL MARKDOWN READER, AND WHY NOT A LIBRARY ────────
  *
- * El fichero usa cuatro cosas: encabezados de fecha, encabezados de sección, párrafos y
- * cinco viñetas; más `**negrita**` y algún `código`. No hay tablas, ni citas, ni bloques
- * de código, ni enlaces. Traer un intérprete de Markdown entero —con su saneador, porque
- * pintar HTML sin sanear es abrir un agujero— para eso engorda lo que se descarga en un
- * almacén con mala cobertura, que es el mismo criterio por el que los iconos son SVG a
- * mano y no una biblioteca.
+ * The file uses four things: date headings, section headings, paragraphs and
+ * five bullets; plus `**bold**` and the odd bit of `code`. There are no tables, no quotations, no code
+ * blocks, no links. Bringing in a whole Markdown interpreter —with its sanitiser, because
+ * painting unsanitised HTML is opening a hole— for that fattens what is downloaded in a
+ * storeroom with poor coverage, which is the same criterion by which the icons are hand-written
+ * SVG and not a library.
  *
- * Y lo importante: esto **no produce HTML**, produce datos. La pantalla los pinta con
- * elementos de React, así que no hay `dangerouslySetInnerHTML` en ninguna parte y un
- * asterisco de más en el fichero no puede convertirse en marcado.
+ * And the important part: this **does not produce HTML**, it produces data. The screen paints them with
+ * React elements, so there is no `dangerouslySetInnerHTML` anywhere and an
+ * extra asterisk in the file cannot turn into markup.
  */
 
 /** A piece of a paragraph's text, with its emphasis. */
@@ -51,11 +51,11 @@ export interface ChangelogEntry {
 }
 
 /**
- * Parte una línea en trozos con y sin énfasis.
+ * Splits a line into pieces with and without emphasis.
  *
- * Una sola pasada con una expresión que alterna las dos marcas, y sin anidarlas: en el
- * fichero no hay negrita dentro de código ni al revés, y soportarlo sería inventar un
- * caso que no existe para poder equivocarse en él.
+ * A single pass with an expression alternating the two marks, and without nesting them: in the
+ * file there is no bold inside code or the other way round, and supporting it would be inventing a
+ * case that does not exist in order to get it wrong.
  */
 export function parseSpans(line: string): Span[] {
   const spans: Span[] = []
@@ -74,11 +74,11 @@ export function parseSpans(line: string): Span[] {
 }
 
 /**
- * Lee el fichero entero.
+ * Reads the whole file.
  *
- * Las líneas seguidas de un párrafo se unen con un espacio: el fichero está ajustado a
- * cien columnas para leerlo en un editor, y respetar esos cortes en una pantalla de móvil
- * daría un texto roto en escalera.
+ * Consecutive lines of a paragraph are joined with a space: the file is wrapped to
+ * a hundred columns to be read in an editor, and respecting those breaks on a phone screen
+ * would give a text broken into a staircase.
  */
 export function parseChangelog(markdown: string): ChangelogBlock[] {
   const blocks: ChangelogBlock[] = []
@@ -128,10 +128,10 @@ export function parseChangelog(markdown: string): ChangelogBlock[] {
       items.push(line.replace(/^\s*-\s+/, ''))
       continue
     }
-    // Una línea SANGRADA con una lista abierta continúa la viñeta anterior. El fichero
-    // está ajustado a cien columnas, así que casi toda viñeta ocupa dos o tres líneas;
-    // sin esto, la primera línea era la viñeta y el resto salía como un párrafo suelto
-    // detrás de la lista — el texto no se perdía, pero se leía descolgado.
+    // An INDENTED line with an open list continues the previous bullet. The file
+    // is wrapped to a hundred columns, so almost every bullet takes two or three lines;
+    // without this, the first line was the bullet and the rest came out as a stray paragraph
+    // after the list — the text was not lost, but it read detached.
     if (items.length > 0 && /^\s+\S/.test(raw)) {
       items[items.length - 1] += ` ${line.trim()}`
       continue
@@ -145,15 +145,15 @@ export function parseChangelog(markdown: string): ChangelogBlock[] {
 }
 
 /**
- * Agrupa por fecha, que es como se lee: **la última abierta y las demás plegadas**.
+ * Groups by date, which is how it is read: **the last one open and the rest folded**.
  *
- * Son mil cuatrocientas líneas y quince meses de trabajo. Volcarlas de una vez en una
- * pantalla de móvil es un muro que no se lee, y lo que se viene a mirar casi siempre es
- * qué ha cambiado en la versión que se acaba de instalar — que es la primera.
+ * It is one thousand four hundred lines and fifteen months of work. Dumping them all at once on a
+ * phone screen is a wall nobody reads, and what people come to look at almost always is
+ * what has changed in the version just installed — which is the first one.
  *
- * Lo que aparezca antes del primer encabezado de fecha no se tira: se agrupa bajo «Sin
- * fechar». Hoy no hay nada ahí, y perder texto en silencio porque el fichero no empiece
- * como se esperaba es peor que enseñarlo con una etiqueta rara.
+ * Whatever appears before the first date heading is not thrown away: it is grouped under «Sin
+ * fechar». There is nothing there today, and losing text in silence because the file does not start
+ * as expected is worse than showing it with an odd label.
  */
 export function groupChangelog(blocks: readonly ChangelogBlock[]): ChangelogEntry[] {
   const entries: ChangelogEntry[] = []
@@ -170,12 +170,12 @@ export function groupChangelog(blocks: readonly ChangelogBlock[]): ChangelogEntr
 }
 
 /**
- * ¿Es este párrafo el titular de una novedad?
+ * Is this paragraph a new feature's headline?
  *
- * En el fichero, cada novedad empieza con una línea que es solo `**su título**` y sigue con sus
- * viñetas. Al leerlo sale un párrafo con un único trozo en negrita, y pintarlo como un párrafo
- * corriente lo deja al mismo peso que el texto que encabeza. Se detecta aquí, y no en la pantalla,
- * para poder comprobarlo sin navegador.
+ * In the file, each new feature starts with a line that is only `**its title**` and continues with its
+ * bullets. On reading it a paragraph comes out with a single bold piece, and painting it as an ordinary
+ * paragraph leaves it at the same weight as the text it heads. It is detected here, and not in the screen,
+ * so it can be checked without a browser.
  */
 export function isHeadline(block: ChangelogBlock): boolean {
   if (block.kind !== 'paragraph') return false

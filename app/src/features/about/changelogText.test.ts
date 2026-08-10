@@ -175,9 +175,9 @@ describe('groupChangelog, una entrada por fecha', () => {
 
 describe('isHeadline, el titular de cada novedad', () => {
   it('un párrafo que es solo negrita es un titular', () => {
-    // En el fichero cada novedad empieza con una línea que es solo `**su título**` y sigue
-    // con sus viñetas. Pintarlo como párrafo corriente lo dejaría al mismo peso que el
-    // texto que encabeza.
+    // In the file each new feature starts with a line that is only `**its title**` and continues
+    // with its bullets. Painting it as an ordinary paragraph would leave it at the same weight as the
+    // text it heads.
     const [block] = parseChangelog('**El archivo tiene ficha propia**')
     expect(isHeadline(block!)).toBe(true)
   })
@@ -200,12 +200,12 @@ describe('el CHANGELOG.md de verdad', () => {
   const entries = groupChangelog(blocks)
 
   it('se lee entero: ni una palabra del fichero se queda fuera', () => {
-    // La avería que este test existe para atrapar: un lector mínimo no falla, se COME
-    // cosas —una sección que desaparece, un párrafo que se traga la viñeta siguiente— y
-    // lo que queda se sigue leyendo bien, así que no se nota mirando la pantalla.
+    // The breakdown this test exists to catch: a minimal reader does not fail, it EATS
+    // things —a section that disappears, a paragraph that swallows the next bullet— and
+    // what is left still reads fine, so it is not noticed looking at the screen.
     //
-    // Palabra por palabra y en orden, que es la única comprobación que no se puede
-    // aprobar por casualidad: contar bloques dejaría pasar un párrafo entero perdido.
+    // Word by word and in order, which is the only check that cannot be
+    // passed by chance: counting blocks would let a whole lost paragraph through.
     const delFichero = MARKDOWN.split('\n')
       // Horizontal rules are not painted, so they are not counted either.
       .filter((line) => !/^-{3,}$/.test(line.trim()))
@@ -248,9 +248,9 @@ describe('el CHANGELOG.md de verdad', () => {
   })
 
   it('cada novedad es un titular seguido de viñetas, sin párrafos sueltos', () => {
-    // La forma que se le ha dado al fichero: título en negrita y debajo una lista. Un
-    // párrafo suelto entre medias rompería esa lectura, y es el descuido más fácil al
-    // escribir una entrada nueva.
+    // The shape the file has been given: a bold title and a list below it. A
+    // stray paragraph in between would break that reading, and it is the easiest slip when
+    // writing a new entry.
     const sueltos = blocks.filter(
       (block) => block.kind === 'paragraph' && !isHeadline(block),
     )
