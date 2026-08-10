@@ -174,9 +174,9 @@ export function ArtworkPage() {
       const target = event.target as HTMLElement | null
       // Not while typing, and not inside a control that uses the arrows itself.
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
-      // Con la galería a pantalla completa, las flechas son suyas: ahí mueven
-      // entre las fotografías de esta obra. Pasar de ficha por debajo dejaría al
-      // visor enseñando las fotos de otra pieza.
+      // With the gallery full screen, the arrows belong to it: there they move
+      // among this artwork's photographs. Moving between records underneath would leave the
+      // viewer showing another piece's photos.
       if (document.querySelector('[data-photo-viewer]')) return
       if (event.key === 'ArrowLeft') goTo(sequence.previous, 'previous')
       if (event.key === 'ArrowRight') goTo(sequence.next, 'next')
@@ -253,13 +253,13 @@ export function ArtworkPage() {
   // Reaching /edit by URL without permission falls back to the view: the
   // Reader must never see an editable form, even a doomed one (RF-109).
   //
-  // Y hay TRES respuestas, no dos. El rol llega después de la sesión, así que
-  // preguntar por `canEdit` en el primer render contestaba «no» a la catalogadora a
-  // la que la zona de edición pertenece: recargar /artwork/:id/edit —o abrir esa
-  // dirección en frío— devolvía a la vista, y con ella se perdían los seis bloques
-  // documentales, que solo se escriben ahí. Es el fallo que `useEditingAccess`
-  // documenta y que aquí seguía sin corregir. Solo espera la zona de edición: la
-  // ficha que se lee no depende del rol y no debe retrasarse por él.
+  // And there are THREE answers, not two. The role arrives after the session, so
+  // asking for `canEdit` on the first render answered «no» to the cataloguer the
+  // editing area belongs to: reloading /artwork/:id/edit —or opening that
+  // address cold— returned to the view, and with it the six documentary
+  // blocks were lost, which are only written there. It is the failure `useEditingAccess`
+  // documents and which here was still uncorrected. It only waits for the editing area: the
+  // record that is read does not depend on the role and must not be delayed by it.
   if (editing && editAccess === 'loading') {
     return (
       <Layout title={`Editando ${artwork.catalog_id}`} back={`/artwork/${id}`}>
@@ -580,9 +580,9 @@ function DocumentaryBlocks({
   /** The list's view as it travels in the URL, so a related artwork keeps the queue (RF-311). */
   search: string
   /**
-   * Si los bloques pueden escribir. Verdadero solo en la zona de edición
-   * (RF-308): la ficha que se lee no ofrece cambiar ningún dato. Por omisión falso,
-   * que es el lado seguro del olvido.
+   * Whether the blocks can write. True only in the editing area
+   * (RF-308): the record that is read does not offer to change any datum. False by default,
+   * which is the safe side of forgetting.
    */
   writable?: boolean
 }) {
@@ -1021,12 +1021,12 @@ function EditForm({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   /**
-   * Una recarga con el formulario tocado se lleva las correcciones (RNF-106).
+   * A reload with the form touched takes the corrections away (RNF-106).
    *
-   * `draftDirty` y no `data !== artwork`: el estado se reemplaza en cada tecla, así que
-   * comparar por identidad preguntaría también después de escribir y borrar una letra —
-   * y un aviso que sale sobre un formulario intacto es el que se despacha sin leer.
-   * Mientras guarda también, que ahí la recarga corta la escritura a medias.
+   * `draftDirty` and not `data !== artwork`: the state is replaced on every keystroke, so
+   * comparing by identity would ask also after writing and deleting one letter —
+   * and a warning that comes up over an untouched form is the one dismissed unread.
+   * While it saves too, since there a reload cuts the write half-done.
    */
   useUnloadGuard(saving || draftDirty(data, artwork))
   // Controlled vocabulary for "Tipo de obra" (RF-213). Only editors reach

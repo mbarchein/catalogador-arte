@@ -125,11 +125,11 @@ export function retireExhibitionLinkText(exhibitionTitle: string): string {
 }
 
 /**
- * La frase que sustituye a la del bloque vacío una vez que enlazar SÍ se puede.
+ * The sentence replacing the empty block's once linking IS possible.
  *
- * La anterior decía que no se hacía desde ninguna pantalla, y era verdad. Dejarla ahí
- * después de construir el botón es exactamente la deriva que la tarjeta de la ficha de
- * obra ha pagado seis veces.
+ * The previous one said it was not done from any screen, and it was true. Leaving it there
+ * after building the button is exactly the drift the artwork record's
+ * card has paid for six times.
  */
 export const NO_LINKED_EXHIBITIONS_WRITABLE =
   'Ninguna exposición lo tiene enlazado. Si es de una muestra, enlázalo con ella aquí abajo.'

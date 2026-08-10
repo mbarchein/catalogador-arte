@@ -1,19 +1,19 @@
 /**
- * El archivo entero, y una ficha suya con lo que cuelga de ella (RF-515, RF-516).
+ * The whole archive, and one record of it with what hangs from it (RF-515, RF-516).
  *
- * **Cargado entero y buscado en el cliente**, por lo mismo que la bibliografía y las
- * exposiciones: son decenas o cientos de documentos, no cientos de miles, y una consulta
- * pequeña contesta a cada pulsación sin viaje de ida y vuelta — que es lo que hace la
- * búsqueda usable con mala cobertura. El día que la tabla crezca, la búsqueda se va al
- * servidor y el ranking puro se queda donde está.
+ * **Loaded whole and searched in the client**, for the same reason as the bibliography and the
+ * exhibitions: they are tens or hundreds of documents, not hundreds of thousands, and a small
+ * query answers every keystroke with no round trip — which is what makes the
+ * search usable with poor coverage. The day the table grows, the search goes to the
+ * server and the pure ranking stays where it is.
  *
- * **Los retirados se cargan y los esconde la pantalla**: la RLS decide qué llega, así
- * que para un Catalogador la lista trae la papelera, que es el único sitio desde el que
- * un documento retirado puede volver. El filtro es decisión del índice, donde es puro.
+ * **The withdrawn ones are loaded and the screen hides them**: the RLS decides what arrives, so
+ * for a Cataloguer the list brings the wastebasket, which is the only place from which
+ * a withdrawn document can come back. The filter is the index's decision, where it is pure.
  *
- * Ninguna escritura: subir un documento y enlazarlo es de la ficha de una obra —así
- * queda subido y enlazado de una vez—, y corregirlo también. Estas pantallas son para
- * encontrarlo y leerlo, que era lo que no se podía hacer.
+ * No writes: uploading a document and linking it belongs to an artwork's record —that way it
+ * ends up uploaded and linked in one go—, and correcting it too. These screens are for
+ * finding it and reading it, which was what could not be done.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -50,12 +50,12 @@ function useAlive() {
 }
 
 /**
- * @param enabled Falso no pide NADA. La ficha de una exposición carga el catálogo entero
- *   del archivo solo cuando va a ofrecerlo para enlazar (RF-516): esa pantalla se abre
- *   muchas veces solo para leer la muestra, y quien únicamente lee no tiene por qué pagar
- *   la lista de documentos. Verdadero por omisión, que es lo que necesitan el índice del
- *   archivo y la documentación de una obra. Mismo parámetro y mismo motivo que en
- *   `useExhibitions` y `useReferences`.
+ * @param enabled False asks for NOTHING. An exhibition's record loads the archive's whole
+ *   catalogue only when it is going to offer it for linking (RF-516): that screen is opened
+ *   many times just to read the show, and whoever only reads has no reason to pay
+ *   for the document list. True by default, which is what the archive's index
+ *   and an artwork's documentation need. Same parameter and same reason as in
+ *   `useExhibitions` and `useReferences`.
  */
 export function useArchiveIndex(enabled = true): ArchiveIndexQuery {
   const [documents, setDocuments] = useState<DocumentOption[]>([])
@@ -68,9 +68,9 @@ export function useArchiveIndex(enabled = true): ArchiveIndexQuery {
       setLoading(false)
       return
     }
-    // Se vuelve a pedir al pasar de apagado a encendido, y la espera tiene que verse: sin
-    // esto el selector leería «todavía no hay ningún documento» mientras la primera
-    // consulta está en el aire.
+    // It is asked for again on going from off to on, and the wait has to be visible: without
+    // this the selector would read «there is no document yet» while the first
+    // query is in the air.
     setLoading(true)
     const { data, error: failure } = await supabase
       .from('archive_documents')
@@ -108,11 +108,11 @@ export interface DocumentRecordQuery {
 }
 
 /**
- * Una ficha del archivo con sus dos listas de vínculos.
+ * An archive record with its two lists of links.
  *
- * Tres consultas en paralelo y no una con dos incrustaciones: PostgREST las traería en
- * un solo viaje, pero un fallo en cualquiera de las dos puentes dejaría sin ficha. Así
- * el documento se lee aunque un bloque no cargue, y el bloque dice lo que le pasa.
+ * Three queries in parallel and not one with two embeddings: PostgREST would bring them in
+ * a single trip, but a failure in either of the two bridges would leave you with no record. This way
+ * the document is read even if a block does not load, and the block says what is wrong with it.
  */
 export function useDocumentRecord(id: string): DocumentRecordQuery {
   const [document, setDocument] = useState<DocumentRow | null>(null)

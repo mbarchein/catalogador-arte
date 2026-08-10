@@ -40,10 +40,10 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
   )
   const viewing = images[viewIndex]
 
-  // «f» abre la galería a pantalla completa. Vive aquí y no en la página porque
-  // el visor es de la galería: subir el estado solo para atajar una tecla sería
-  // repartir en dos sitios algo que solo uno usa. Con el visor abierto no hace
-  // nada: cerrarlo es Escape o el botón de atrás, como siempre.
+  // «f» opens the gallery full screen. It lives here and not in the page because
+  // the viewer belongs to the gallery: lifting the state just to shortcut a key would be
+  // splitting across two places something only one uses. With the viewer open it does
+  // nothing: closing it is Escape or the back button, as always.
   const hayImagenes = images.length > 0
   useEffect(() => {
     if (!hayImagenes) return
@@ -145,9 +145,9 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
         <button
           type="button"
           aria-label="Ver a pantalla completa (tecla F)"
-          // `title` para la pista al pasar el ratón: el atajo no se descubre
-          // solo, y en escritorio el icono es donde se va a buscar. En el móvil
-          // no estorba, porque allí no hay hover ni teclado.
+          // `title` for the hover hint: the shortcut is not discovered
+          // on its own, and on the desktop the icon is where it is going to be looked for. On the phone
+          // it does not get in the way, because there is no hover or keyboard there.
           title="Ver a pantalla completa · tecla F"
           onClick={() => setViewerOpen(true)}
           className="absolute bottom-2 right-2 rounded-full bg-stone-900/70 p-2.5 text-white"

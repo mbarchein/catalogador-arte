@@ -202,10 +202,10 @@ export function ArtworkPhotosPage() {
   const percent = stage.percent
   const [saving, setSaving] = useState(false)
   /**
-   * La confirmación de lo último que se hizo, que se va sola.
+   * The confirmation of the last thing done, which leaves on its own.
    *
-   * El error de al lado NO se va: pide hacer algo, y uno que desaparece antes de que
-   * se decida qué obliga a repetir la acción para volver a leer por qué falló.
+   * The error alongside does NOT leave: it asks for something to be done, and one that disappears before
+   * it is decided what forces the action to be repeated to read again why it failed.
    */
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -293,12 +293,12 @@ export function ArtworkPhotosPage() {
     : ''
 
   /**
-   * Los datos de la toma abierta tal como están guardados, y el borrador que se está
-   * escribiendo encima.
+   * The open shot's data as it is stored, and the draft being
+   * written over it.
    *
-   * El borrador vive AQUÍ y no dentro del formulario porque «Guardar» y «Deshacer» se
-   * han ido a la barra del pie, que es de la página: el mismo motivo por el que el
-   * formulario de la ficha tampoco se guarda a sí mismo.
+   * The draft lives HERE and not inside the form because «Guardar» and «Deshacer» have
+   * gone to the footer bar, which belongs to the page: the same reason why the record's
+   * form does not save itself either.
    */
   const savedData: PhotoDataDraft | null = selected
     ? photoDataDraft({
@@ -308,9 +308,9 @@ export function ArtworkPhotosPage() {
         provenance_source: selectedDetail?.provenance_source ?? '',
       })
     : null
-  // La identidad de lo guardado como texto, para poder comparar por valor: `savedData`
-  // es un objeto nuevo en cada pintado y en las dependencias de un efecto sería un
-  // bucle.
+  // The identity of what is stored as text, to be able to compare by value: `savedData`
+  // is a new object on every paint and in an effect's dependencies it would be a
+  // loop.
   const savedKey = savedData === null ? '' : JSON.stringify(savedData)
   const [dataDraft, setDataDraft] = useState<PhotoDataDraft | null>(savedData)
   // What is stored, reachable from inside the effect without being in its dependencies.

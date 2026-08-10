@@ -1,15 +1,15 @@
 /**
- * El archivo: su listado con búsqueda y la ficha de un documento
+ * The archive: its listing with search and an document's record
  * (RF-309, RF-515, RF-516, RF-606, RF-609).
  *
- * El hueco que cierra, y es el último de esta clase: un documento del archivo se subía,
- * se enlazaba, se descargaba, se corregía y se digitalizaba, **todo desde la ficha de una
- * obra que lo tuviera enlazado**. A uno que ninguna obra tuviera enlazado no se llegaba
- * desde ningún sitio — el cartel de una muestra que no habla de una pieza concreta, o el
- * documento cuyo vínculo se retiró después—. Es el mismo hueco que tenía la bibliografía
- * y se cierra igual.
+ * The gap it closes, and it is the last of this kind: an archive document could be uploaded,
+ * linked, downloaded, corrected and digitised, **all from the record of an
+ * artwork that had it linked**. One that no artwork had linked was not reachable
+ * from anywhere — the poster of a show that does not speak of a particular piece, or the
+ * document whose link was withdrawn afterwards—. It is the same gap the bibliography had
+ * and it is closed the same way.
  *
- * Dos rutas. Se montan en `App.tsx`:
+ * Two routes. They are mounted in `App.tsx`:
  *
  * ```tsx
  * import { ArchivePage, DocumentPage } from './features/archive'
@@ -18,24 +18,24 @@
  * <Route path="/archive/:id" element={<DocumentPage />} />
  * ```
  *
- * `archive` en la ruta y no `documents`, por lo mismo que el bucket se llama `obras`: lo
- * que se nombra es el fondo documental entero y no una tabla, y el prefijo del almacén
- * ya se llama `archivo`. La pantalla se titula «Archivo».
+ * `archive` in the route and not `documents`, for the same reason the bucket is called `obras`: what
+ * is being named is the whole documentary holding and not a table, and the store's prefix
+ * is already called `archivo`. The screen is titled «Archivo».
  *
- * Las lee cualquiera que pueda leer, como la bibliografía y las exposiciones: un
- * documento es contenido del catálogo y no una lista de mantenimiento.
+ * They are read by anybody who can read, like the bibliography and the exhibitions: a
+ * document is catalogue content and not a maintenance list.
  *
- * **Una sola escritura, y las ausencias son decisiones.** Subir un documento y enlazarlo
- * se hace desde la documentación de una obra, porque así queda subido y enlazado de una
- * vez; corregirlo y digitalizarlo, desde ahí también, donde el aviso cuenta a cuántas
- * fichas afecta el cambio; retirarlo y recuperarlo, desde la papelera. Las tres cosas las
- * dice la ficha en vez de dejar buscar el botón.
+ * **A single write, and the absences are decisions.** Uploading a document and linking it
+ * is done from an artwork's documentation, because that way it ends up uploaded and linked in one
+ * go; correcting it and digitising it, from there too, where the warning says how many
+ * records the change affects; withdrawing it and recovering it, from the wastebasket. The record says all three
+ * things instead of letting the button be hunted for.
  *
- * La excepción razonada es **enlazarlo con una exposición**, y lo es porque no se puede
- * hacer en ningún otro sitio: una exposición no tiene bloque de documentos, así que la
- * ficha del documento es el único sitio donde el papel y la muestra están a la vez
- * (RF-516, RF-517). Lleva su retirada, que un vínculo que se crea y no se quita es una
- * trampa.
+ * The reasoned exception is **linking it to an exhibition**, and it is so because it cannot be
+ * done anywhere else: an exhibition has no document block, so the
+ * document's record is the only place where the paper and the show are together at once
+ * (RF-516, RF-517). It carries its withdrawal, since a link that is created and not removed is a
+ * trap.
  */
 
 export { ArchivePage } from './ArchivePage'

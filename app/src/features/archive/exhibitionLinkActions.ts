@@ -1,31 +1,31 @@
 /**
- * Las dos escrituras que la ficha del archivo sí posee (RF-516, RF-517).
+ * The two writes the archive's record does own (RF-516, RF-517).
  *
- * La ficha del archivo se declaró de solo lectura, y estas son la excepción razonada:
- * son las únicas que no se pueden hacer en ningún otro sitio. Subir, corregir y
- * digitalizar viven en la documentación de una obra porque allí está la obra que el
- * documento describe; una exposición no tiene bloque de documentos, así que el único
- * sitio donde el documento y la muestra están a la vez es esta ficha.
+ * The archive's record was declared read-only, and these are the reasoned exception:
+ * they are the only ones that cannot be done anywhere else. Uploading, correcting and
+ * digitising live in an artwork's documentation because that is where the artwork the
+ * document describes is; an exhibition has no document block, so the only
+ * place where the document and the show are together at once is this record.
  *
- * Lo que se dice cuando la base se niega lo traduce `describeDocumentRefusal`, que ya
- * mide y traduce los códigos de este bloque; aquí solo se le añaden los dos verbos.
+ * What is said when the base refuses is translated by `describeDocumentRefusal`, which already
+ * measures and translates this block's codes; here only the two verbs are added to it.
  */
 
 import { supabase } from '../../lib/supabase'
 import { describeDocumentRefusal } from '../documentary/documents/documentDraft'
 
 /**
- * Enlaza un documento con una exposición **a través de `document_exhibition`**, y no con
- * un insert en la tabla puente.
+ * Links a document to an exhibition **through `document_exhibition`**, and not with
+ * an insert into the bridge table.
  *
- * Es el mismo motivo que en el vínculo con una obra: `exhibition_documents_unique` cubre
- * los vínculos retirados, así que un insert de un par que está en la papelera choca
- * contra el índice y convierte un «Enlazar» en una violación de unicidad
- * incomprensible. La función lo restaura en su lugar (RF-517), que es lo que volver a
- * enlazarlo significa.
+ * It is the same reason as with the link to an artwork: `exhibition_documents_unique` covers
+ * the withdrawn links, so an insert of a pair that is in the wastebasket clashes
+ * against the index and turns an «Enlazar» into an incomprehensible uniqueness
+ * violation. The function restores it instead (RF-517), which is what linking it
+ * again means.
  *
- * La función está en el esquema desde la migración del archivo, con su `grant execute` al
- * rol autenticado y su propio test. Lo que faltaba era esta llamada.
+ * The function has been in the schema since the archive's migration, with its `grant execute` to the
+ * authenticated role and its own test. What was missing was this call.
  */
 export async function linkDocumentToExhibition(args: {
   p_exhibition_id: string
@@ -37,13 +37,13 @@ export async function linkDocumentToExhibition(args: {
 }
 
 /**
- * Quita el documento de una exposición, o lo devuelve (RF-517, RF-901): nada se borra
- * tampoco aquí. No hay privilegio de `delete` sobre la tabla puente ni política para
- * uno, así que esta es la única salida.
+ * Removes the document from an exhibition, or gives it back (RF-517, RF-901): nothing is deleted
+ * here either. There is no `delete` privilege over the bridge table nor a policy for
+ * one, so this is the only way out.
  *
- * `select('id')` por lo que ya aprendieron las pantallas de mantenimiento: una
- * actualización que las políticas deniegan vuelve 204 sin error, y cero filas afectadas
- * significa que no se escribió, sea por lo que sea.
+ * `select('id')` for what the maintenance screens already learnt: an
+ * update the policies deny comes back 204 with no error, and zero rows affected
+ * means it was not written, whatever the reason.
  */
 export async function setExhibitionLinkActive(
   id: string,
