@@ -1,37 +1,37 @@
--- RF-217: la relación entre dos obras lleva su tipo, y el tipo es vocabulario
---         propio con clave sustituta: nombre directo, nombre inverso y bandera
---         de simetría. Una simétrica se guarda una sola vez, canonicalizada; una
---         asimétrica no admite su contraria.
--- RF-212: `obras_relacionadas` es una relación múltiple autorreferencial y no un
---         campo de texto. RF-217 la extiende.
--- RF-216: la clave de una tabla maestra no es su nombre: renombrar un tipo es un
---         update de una fila y lo ve el catálogo entero (ADR-007).
--- RF-517, RF-903: una relación se retira, no se borra, y volver a añadirla la
---         restaura en vez de chocar contra la unicidad.
--- RF-901, RF-902: nada se borra, y la baja deja traza de quién y cuándo.
--- RF-801, RF-803, RF-804: la autoría y la fecha las sella la base.
--- RF-111, RF-113: las dos tablas nacen cerradas y nadie tiene DELETE.
+-- RF-217: the relationship between two artworks carries its type, and the type is a
+--         vocabulary of its own with a surrogate key: direct name, inverse name and a symmetry
+--         flag. A symmetric one is stored once, canonicalised; an
+--         asymmetric one does not admit its opposite.
+-- RF-212: `obras_relacionadas` is a multiple self-referential relationship and not a
+--         text field. RF-217 extends it.
+-- RF-216: a master table's key is not its name: renaming a type is an
+--         update of one row and the whole catalogue sees it (ADR-007).
+-- RF-517, RF-903: a relationship is withdrawn, not deleted, and adding it again
+--         restores it instead of clashing against uniqueness.
+-- RF-901, RF-902: nothing is deleted, and the withdrawal leaves a trace of who and when.
+-- RF-801, RF-803, RF-804: the authorship and the date are stamped by the base.
+-- RF-111, RF-113: both tables are born closed and nobody has DELETE.
 --
--- Lo que se comprueba es lo que el cliente no debe volver a comprobar. Tres
--- cosas de esta lista son las que justifican el grupo entero, y las tres son
--- fallos que no se ven al escribirlos:
+-- What is checked is what the client must not check again. Three
+-- things on this list are what justify the whole group, and all three are
+-- failures that are not visible while writing them:
 --
---   • Que la misma pareja simétrica no entra dos veces según el orden en que se
---     escriba, porque cada una se da de alta desde la ficha de su obra y nadie
---     va a recordar cómo la escribió la otra vez.
---   • Que la contraria de una asimétrica se rechaza, también al RESTAURAR una
---     relación que estaba en la papelera, que es el camino por el que la
---     contradicción entra de verdad.
---   • Que la simetría de un tipo ya usado no se puede cambiar, porque mezclar
---     las dos convenciones de guardado deja pasar la misma pareja dos veces y
---     después ya no hay forma de saber cuál sobra.
+--   • That the same symmetric pair does not go in twice depending on the order it is
+--     written in, because each one is created from its own artwork's record and nobody
+--     is going to remember how the other one wrote it.
+--   • That the opposite of an asymmetric one is rejected, also on RESTORING a
+--     relationship that was in the wastebasket, which is the path the
+--     contradiction really comes in by.
+--   • That the symmetry of an already used type cannot be changed, because mixing
+--     the two storage conventions lets the same pair through twice and
+--     afterwards there is no way of knowing which one is superfluous.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
--- Un catalogador, un lector y cuatro obras. Los perfiles los crea el trigger de
--- auth.users. Los identificadores se eligen a mano y en orden para poder
--- razonar sobre cuál es el menor, que es de lo que va la canonicalización.
+-- One cataloguer, one reader and four artworks. The profiles are created by the
+-- auth.users trigger. The identifiers are chosen by hand and in order to be able to
+-- reason about which is the lesser, which is what the canonicalisation is about.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000c1', 'cat-relaciones@test.local'),
   ('00000000-0000-0000-0000-0000000000c2', 'lec-relaciones@test.local');
@@ -44,10 +44,10 @@ insert into public.artworks (catalog_id, artist, title, attributed_title) values
   ('AR-9702', 'ROTILI', 'Estudio para el díptico',  'UNCONFIRMED'),
   ('AR-9703', 'ROTILI', 'Reverso catalogado aparte','UNCONFIRMED');
 
--- ── 1. El vocabulario nace sembrado (RF-217) ─────────────────
--- Una maestra vacía deja el selector en blanco y obliga a inventar el
--- vocabulario mientras se cataloga. Son los seis casos que el catálogo ya tiene
--- delante: tres simétricos y tres con su inversa.
+-- ── 1. The vocabulary is born seeded (RF-217) ────────────────
+-- An empty master table leaves the selector blank and forces one to invent the
+-- vocabulary while cataloguing. They are the six cases the catalogue already has
+-- in front of it: three symmetric and three with their inverse.
 do $$
 declare
   v_n int;
@@ -67,8 +67,8 @@ begin
     raise exception 'FAIL: no hay exactamente tres tipos simétricos sembrados (%)', v_simetricos;
   end if;
 
-  -- La inversa de la asimétrica es el dato entero de esta maestra: sin ella, la
-  -- ficha de la otra obra no tendría nada que escribir.
+  -- The asymmetric one's inverse is this master table's whole point: without it, the
+  -- other artwork's record would have nothing to write.
   if (select inverse_name from public.artwork_relationship_types
        where name = 'Estudio previo de') <> 'Obra final de' then
     raise exception 'FAIL: «Estudio previo de» no trae su etiqueta inversa';
@@ -81,10 +81,10 @@ begin
   raise notice 'OK: los seis tipos de relación están sembrados, con su inversa y su simetría (RF-217)';
 end $$;
 
--- ── 2. Un tipo, una fila, y coherente ────────────────────────
--- La etiqueta de la dirección contraria tiene que existir SIEMPRE en un tipo
--- asimétrico: es lo que la base garantiza para que la interfaz pueda leer las
--- dos direcciones sin comprobar nada.
+-- ── 2. One type, one row, and coherent ───────────────────────
+-- The opposite direction's label has to exist ALWAYS in an
+-- asymmetric type: it is what the base guarantees so the interface can read the
+-- two directions without checking anything.
 do $$
 begin
   begin
@@ -134,7 +134,7 @@ begin
     raise notice 'OK: una inversa con espacios alrededor se rechaza';
   end;
 
-  -- Unicidad por clave de comparación y no por el nombre literal.
+  -- Uniqueness by comparison key and not by the literal name.
   begin
     insert into public.artwork_relationship_types (name, is_symmetric)
     values ('PAREJA DE', true);
@@ -143,16 +143,16 @@ begin
     raise notice 'OK: dos escrituras del mismo tipo son la misma fila';
   end;
 
-  -- Y ampliar la lista es una fila, que es el motivo entero de que esto sea una
-  -- maestra y no un enumerado.
+  -- And extending the list is one row, which is the whole reason this is a
+  -- master table and not an enum.
   insert into public.artwork_relationship_types (name, inverse_name, is_symmetric)
   values ('Fragmento de', 'Obra de la que procede el fragmento', false);
   raise notice 'OK: la usuaria amplía el vocabulario sin migración (RF-217)';
 end $$;
 
--- ── 3. Una relación mínima entra ─────────────────────────────
--- Dos obras y un tipo: lo que se sabe al descubrir que las dos tablas son un
--- díptico. La nota nace vacía y la relación nace activa.
+-- ── 3. A minimal relationship goes in ────────────────────────
+-- Two artworks and a type: what is known on discovering that the two panels are a
+-- diptych. The note is born empty and the relationship is born active.
 do $$
 declare
   v_tipo uuid;
@@ -174,9 +174,9 @@ begin
   raise notice 'OK: una relación mínima entra (RF-212, RF-217)';
 end $$;
 
--- ── 4. Una obra no se relaciona consigo misma ────────────────
--- Es la fila que produce un selector con la obra actual dentro, y que después
--- pinta en la ficha un enlace a la propia ficha.
+-- ── 4. An artwork does not relate to itself ──────────────────
+-- It is the row that a selector with the current artwork inside produces, and that
+-- afterwards paints in the record a link to the record itself.
 do $$
 declare v_tipo uuid;
 begin
@@ -190,7 +190,7 @@ begin
   end;
 end $$;
 
--- ── 5. Los tres extremos existen de verdad ───────────────────
+-- ── 5. The three ends really exist ───────────────────────────
 do $$
 declare v_tipo uuid;
 begin
@@ -212,9 +212,9 @@ begin
     raise notice 'OK: la clave ajena rechaza una obra inexistente a la llegada';
   end;
 
-  -- El tipo inexistente pasa por los dos triggers que leen la maestra ANTES de
-  -- que la clave ajena hable: los dos tienen que callarse y dejarla hablar, o el
-  -- error que ve la usuaria sería otro.
+  -- The non-existent type goes through the two triggers that read the master table BEFORE
+  -- the foreign key speaks: both have to keep quiet and let it speak, or the
+  -- error the user sees would be a different one.
   begin
     insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id)
     values ('AR-9700', 'AR-9702', '00000000-0000-0000-0000-00000000dead');
@@ -224,9 +224,9 @@ begin
   end;
 end $$;
 
--- ── 6. La misma relación es un hecho, no dos ─────────────────
--- Y dos tipos distintos entre las mismas dos obras sí conviven: el anverso y el
--- reverso de una tabla pueden ser además parte del mismo políptico.
+-- ── 6. The same relationship is one fact, not two ────────────
+-- And two different types between the same two artworks do coexist: the front and the
+-- back of a panel can also be part of the same polyptych.
 do $$
 declare v_politico uuid; v_reverso uuid;
 begin
@@ -247,12 +247,12 @@ begin
   raise notice 'OK: dos tipos distintos entre las mismas dos obras conviven';
 end $$;
 
--- ── 7. Una relación simétrica se guarda UNA vez ──────────────
+-- ── 7. A symmetric relationship is stored ONCE ───────────────
 --
--- El fallo que este bloque persigue: cada relación se da de alta desde la ficha
--- de su obra, así que la misma pareja se escribe una vez en cada sentido sin que
--- nadie lo note, y sin canonicalizar entrarían dos filas con dos notas que
--- pueden decir cosas distintas.
+-- The failure this block pursues: each relationship is created from its own artwork's
+-- record, so the same pair is written once in each direction without
+-- anybody noticing, and without canonicalising two rows would go in with two notes that
+-- may say different things.
 do $$
 declare
   v_tipo uuid;
@@ -261,7 +261,7 @@ declare
 begin
   select id into v_tipo from public.artwork_relationship_types where name = 'Pareja de';
 
-  -- Escrita al revés: el mayor primero. La base la da la vuelta.
+  -- Written backwards: the greater first. The base turns it round.
   insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id, note)
   values ('AR-9703', 'AR-9702', v_tipo, 'Colgaban juntas en el estudio')
   returning * into v_fila;
@@ -271,8 +271,8 @@ begin
       v_fila.from_catalog_id, v_fila.to_catalog_id;
   end if;
 
-  -- Y la misma pareja escrita en el otro sentido es la MISMA fila, así que
-  -- choca. Es lo que después convierte `relate_artworks` en una restauración.
+  -- And the same pair written the other way round is the SAME row, so it
+  -- clashes. It is what afterwards turns `relate_artworks` into a restoration.
   begin
     insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id)
     values ('AR-9702', 'AR-9703', v_tipo);
@@ -287,7 +287,7 @@ begin
     raise exception 'FAIL: la pareja simétrica ha dejado % filas', v_n;
   end if;
 
-  -- Una relación ASIMÉTRICA no se canonicaliza: su sentido es el dato.
+  -- An ASYMMETRIC relationship is not canonicalised: its direction is the datum.
   select id into v_tipo from public.artwork_relationship_types where name = 'Estudio previo de';
   insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id)
   values ('AR-9702', 'AR-9700', v_tipo)
@@ -298,11 +298,11 @@ begin
   raise notice 'OK: la asimétrica conserva su dirección, que es su dato';
 end $$;
 
--- ── 8. Y una asimétrica no admite su contraria ───────────────
+-- ── 8. And an asymmetric one does not admit its opposite ─────
 --
--- «A es estudio previo de B» y «B es estudio previo de A» no pueden ser ciertas
--- a la vez. La ficha de B ya dice «obra final de A» sin que nadie escriba nada:
--- para eso existe la etiqueta inversa.
+-- «A es estudio previo de B» and «B es estudio previo de A» cannot both be true
+-- at once. B's record already says «obra final de A» without anybody writing anything:
+-- that is what the inverse label exists for.
 do $$
 declare v_estudio uuid; v_copia uuid;
 begin
@@ -318,19 +318,19 @@ begin
     raise notice 'OK: la contraria de una asimétrica se rechaza: %', sqlerrm;
   end;
 
-  -- Lo que SÍ se permite: la pareja contraria con OTRO tipo. Que AR-9700 sea
-  -- copia de AR-9702 no contradice que AR-9702 sea su estudio previo — son dos
-  -- hechos distintos, y decidir si tienen sentido juntos es trabajo de la
-  -- catalogadora y no de una restricción.
+  -- What IS allowed: the opposite pair with ANOTHER type. That AR-9700 is
+  -- a copy of AR-9702 does not contradict AR-9702 being its preparatory study — they are two
+  -- different facts, and deciding whether they make sense together is the cataloguer's
+  -- work and not a constraint's.
   insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id)
   values ('AR-9700', 'AR-9702', v_copia);
   raise notice 'OK: la comprobación mira SU tipo y no cierra el paso a otro distinto';
 end $$;
 
--- ── 9. La papelera de una relación (RF-517, revisa RF-903) ───
--- La fila lleva trabajo de investigación y quién la retiró es traza que
--- interesa, así que se retira y no se borra. Sin `restored_at`: se restaura
--- desde la ficha de la que cuelga y vuelve limpia, como las demás puentes.
+-- ── 9. A relationship's wastebasket (RF-517, revises RF-903) ─
+-- The row carries research work and who withdrew it is a trace of
+-- interest, so it is withdrawn and not deleted. With no `restored_at`: it is restored
+-- from the record it hangs from and comes back clean, like the other bridges.
 do $$
 declare
   v_tipo uuid; v_id uuid;

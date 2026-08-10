@@ -8,11 +8,11 @@
 \set ON_ERROR_STOP on
 begin;
 
--- ── 1. El traslado no dejó la auditoría apagada ──────────────
--- La migración de datos desactiva el trigger de auditoría para no firmar las
--- obras con un `auth.uid()` nulo. Si alguna vez se olvidara de volver a
--- activarlo, el catálogo perdería la traza sin que nada fallara: eso es lo que
--- comprueba este aserto, y es la clase de fallo que solo se ve buscándolo.
+-- ── 1. The move did not leave the auditing off ───────────────
+-- The data migration disables the audit trigger so as not to sign the
+-- artworks with a null `auth.uid()`. If it were ever forgotten to turn it back
+-- on, the catalogue would lose the trace with nothing failing: that is what
+-- this assertion checks, and it is the kind of failure that is only seen by looking for it.
 do $$
 declare v_estado "char";
 begin
@@ -29,12 +29,12 @@ begin
   raise notice 'OK: la auditoría de obras quedó activada tras el traslado';
 end $$;
 
--- ── 2. El traslado no dejó ubicaciones huérfanas ─────────────
--- Sobre una base recién migrada este aserto no dice nada, y es correcto que no lo
--- diga: sobre una base cargada con el volcado de producción es el único sitio
--- donde se ve si el reparto por comas hizo su trabajo. Va antes de los fixtures
--- porque los fixtures vacían el árbol. `zzzz` era un valor de prueba y se
--- descartó a propósito (ADR-006).
+-- ── 2. The move did not leave orphan locations ───────────────
+-- Over a freshly migrated base this assertion says nothing, and it is right that it does not
+-- say anything: over a base loaded with the production dump it is the only place
+-- where it can be seen whether the comma split did its job. It goes before the fixtures
+-- because the fixtures empty the tree. `zzzz` was a test value and was
+-- discarded on purpose (ADR-006).
 do $$
 declare v_huerfanas int;
 begin
@@ -51,16 +51,16 @@ begin
 end $$;
 
 -- ── Fixtures ─────────────────────────────────────────────────
--- Un catalogador, y el árbol vacío haya lo que haya en la base. Lo segundo hace
--- falta porque estos tests corren tanto sobre una base recién migrada como sobre
--- una copia local del volcado de producción, donde el traslado ya creó lugares
--- con estos mismos nombres: sin esto el test fallaría por el índice de raíces
--- homónimas y no por lo que pretende comprobar. Todo vive dentro de la
--- transacción que se deshace al final.
+-- One cataloguer, and the tree emptied whatever there is in the base. The second is
+-- needed because these tests run both over a freshly migrated base and over
+-- a local copy of the production dump, where the move already created places
+-- with these same names: without this the test would fail over the homonymous-roots
+-- index and not over what it means to check. Everything lives inside the
+-- transaction that is rolled back at the end.
 --
--- Se vacía por hojas y en bucle porque `parent_id` es `on delete restrict`: un
--- solo `delete` que se llevara padre e hijo a la vez lo rechazaría la propia
--- restricción.
+-- It is emptied leaf by leaf and in a loop because `parent_id` is `on delete restrict`: a
+-- single `delete` taking parent and child at once would be rejected by the
+-- constraint itself.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'cat-obra-lugar@test.local');
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000f1';
@@ -75,9 +75,9 @@ begin
   end loop;
 end $$;
 
--- ── 3. Una obra puede no tener ubicación ─────────────────────
--- RF-215. Es la contrapartida de la cadena vacía de antes: catalogar con la
--- pieza delante no puede exigir decidir dónde está.
+-- ── 3. An artwork may have no location ──────────────────────
+-- RF-215. It is the counterpart of the empty string from before: cataloguing with the
+-- piece in front cannot require deciding where it is.
 do $$
 declare v_lugar uuid;
 begin
@@ -91,10 +91,10 @@ begin
   raise notice 'OK: una obra sin ubicación es legítima';
 end $$;
 
--- ── 4. Renombrar el lugar no toca la obra ────────────────────
--- El motivo del ADR: el nombre nuevo lo ve todo el catálogo, la obra no se ha
--- tocado, y por tanto ni `updated_at` ni `basic_updated_at` se mueven (RF-802:
--- renombrar una balda no es haber tenido la pieza delante).
+-- ── 4. Renaming the place does not touch the artwork ─────────
+-- The ADR's reason: the new name is seen by the whole catalogue, the artwork has not been
+-- touched, and therefore neither `updated_at` nor `basic_updated_at` moves (RF-802:
+-- renaming a shelf is not having had the piece in front).
 do $$
 declare
   v_lugar uuid;
@@ -129,9 +129,9 @@ begin
   raise notice 'OK: renombrar es un update de una fila y el catálogo entero lo ve';
 end $$;
 
--- ── 5. Mover la obra de sitio sí mueve la fecha básica ───────
--- RF-802: la ubicación es un campo de fase 1. Cambiarla es haber estado delante
--- de la obra, y esa fecha es el dato que dice cuándo se examinó por última vez.
+-- ── 5. Moving the artwork does move the basic date ───────────
+-- RF-802: the location is a phase-1 field. Changing it is having been in front
+-- of the artwork, and that date is the datum that says when it was last examined.
 do $$
 declare
   v_origen uuid;
@@ -148,8 +148,8 @@ begin
   values ('ROTILI', 'la que se mueve', 'UNCONFIRMED', v_origen)
   returning catalog_id into v_obra;
 
-  -- Una fecha básica anterior y reconocible, para que el aserto no dependa de la
-  -- resolución del reloj dentro de una misma transacción.
+  -- An earlier and recognisable basic date, so the assertion does not depend on the
+  -- clock's resolution within a single transaction.
   update public.artworks set basic_updated_at = '2020-01-01' where catalog_id = v_obra;
   select basic_updated_at into v_antes from public.artworks where catalog_id = v_obra;
 
@@ -162,10 +162,10 @@ begin
   raise notice 'OK: cambiar una obra de sitio mueve la fecha básica (RF-802)';
 end $$;
 
--- ── 6. Un campo de fase 2 sigue sin moverla ──────────────────
--- El aserto que protege el cambio de tupla del trigger: al meter
--- `physical_place_id` no se ha colado nada más ni se ha perdido la distinción
--- entre las dos fases.
+-- ── 6. A phase-2 field still does not move it ────────────────
+-- The assertion that protects the trigger's tuple change: on adding
+-- `physical_place_id` nothing else has slipped in and the distinction between the two
+-- phases has not been lost.
 do $$
 declare
   v_obra text;
@@ -187,7 +187,7 @@ begin
   raise notice 'OK: un campo de fase 2 no mueve la fecha básica';
 end $$;
 
--- ── 7. Un lugar con obras dentro no se retira ────────────────
+-- ── 7. A place with artworks inside is not withdrawn ─────────
 do $$
 declare v_lugar uuid;
 begin
@@ -200,9 +200,9 @@ begin
   end;
 end $$;
 
--- ── 8. Una obra en la papelera no estorba ────────────────────
--- La baja lógica no puede convertirse en un candado: una obra retirada no impide
--- retirar la balda donde estaba.
+-- ── 8. An artwork in the wastebasket does not get in the way ─
+-- The logical deletion cannot turn into a padlock: a withdrawn artwork does not prevent
+-- the shelf it was on from being withdrawn.
 do $$
 declare v_lugar uuid; v_obra text;
 begin
@@ -221,7 +221,7 @@ begin
   raise notice 'OK: una obra en la papelera no impide retirar su lugar';
 end $$;
 
--- ── 9. No se puede apuntar a un lugar que no existe ──────────
+-- ── 9. It cannot point at a place that does not exist ────────
 do $$
 begin
   begin
