@@ -7,25 +7,25 @@ import { signDocumentFile, type DocumentFileOffer } from './documentFile'
 import { PREVIEW_IMAGE_FAILED_TEXT } from './documentPreview'
 
 /**
- * Un documento escaneado, mirado sin bajárselo (RF-408, RF-411).
+ * A scanned document, looked at without downloading it (RF-408, RF-411).
  *
- * Es el mismo patrón que el visor de fotografías y con las mismas razones: la aplicación
- * se tapa a sí misma con la imagen —no una página, ni la API de pantalla completa del
- * navegador, que iOS no soporta para elementos— y se sale con el botón de atrás del
- * móvil, con Escape y con la ✕. En la PWA instalada, sin barra de navegador, esa salida
- * es la diferencia entre un visor y una trampa. Vive en `useCloseOnBack`, que es la única
- * salida de todos los modales de la aplicación.
+ * It is the same pattern as the photograph viewer and for the same reasons: the application
+ * covers itself with the image —not a page, nor the browser's full-screen
+ * API, which iOS does not support for elements— and it is left with the phone's back
+ * button, with Escape and with the ✕. In the installed PWA, with no browser bar, that exit
+ * is the difference between a viewer and a trap. It lives in `useCloseOnBack`, which is the single
+ * exit of every modal in the application.
  *
- * **Y lleva zoom, que aquí no es un adorno.** Lo que se está mirando es una carta
- * mecanografiada o un recorte de periódico: ajustado a una pantalla de 390 puntos el
- * cuerpo del texto queda por debajo de lo legible, así que un visor sin ampliar sirve
- * para saber qué documento es y no para leerlo. Dos estados y no un gesto continuo: en un
- * móvil, ampliar con dos dedos dentro de un elemento con desplazamiento pelea con el
- * desplazamiento de la página, y este visor tiene que funcionar con una mano.
+ * **And it carries zoom, which here is not an ornament.** What is being looked at is a typewritten
+ * letter or a newspaper clipping: fitted to a 390-point screen the
+ * body text falls below legibility, so a viewer with no magnification serves
+ * to know which document it is and not to read it. Two states and not a continuous gesture: on a
+ * phone, pinch-zooming inside a scrolling element fights with the
+ * page's scroll, and this viewer has to work with one hand.
  *
- * Lo que **no** hace es sustituir a la descarga. Sacar el fichero del catálogo es un
- * requisito por sí mismo (RF-411) y su botón sigue en la fila, debajo: esto le quita el
- * sitio de acción principal, no la existencia.
+ * What it does **not** do is replace the download. Taking the file out of the catalogue is a
+ * requirement in itself (RF-411) and its button is still in the row, below: this takes away its
+ * place as the primary action, not its existence.
  */
 export function DocumentImageViewer({
   offer,

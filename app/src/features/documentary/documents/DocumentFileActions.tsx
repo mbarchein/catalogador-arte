@@ -12,23 +12,23 @@ import { PREVIEW_BLOCKED_TEXT } from './documentPreview'
 import { DocumentImageViewer } from './DocumentImageViewer'
 
 /**
- * Las salidas del fichero de un documento: verlo y bajárselo (RF-408, RF-411, RNF-106).
+ * An document's file's ways out: seeing it and downloading it (RF-408, RF-411, RNF-106).
  *
- * **Una sola copia de esto, y antes había dos.** La documentación de una obra y la ficha
- * del archivo tenían cada una su botón de descargar, iguales y por separado, y al añadir
- * el visor habría hecho falta añadirlo dos veces — que es exactamente la deriva por la
- * que una pantalla acaba enseñando algo que la otra ya no enseña. Lo que la fila decide
- * sigue siendo suyo; lo que el fichero hace es de aquí.
+ * **A single copy of this, and there used to be two.** An artwork's documentation and the archive's
+ * record each had their own download button, alike and separate, and on adding
+ * the viewer it would have had to be added twice — which is exactly the drift by
+ * which one screen ends up showing something the other no longer shows. What the row decides
+ * is still its own; what the file does belongs here.
  *
- * **Ver pasa delante de descargar cuando el formato lo permite**, y descargar se queda
- * como enlace debajo. Con la obra delante y en un almacén, leer un recorte no debería
- * costar tres pasos —tocar, esperar, buscar el fichero en las descargas del teléfono— y
- * dejar un fichero suelto en el móvil que nadie va a borrar. Pero descargar no
- * desaparece: sacar el documento del catálogo es un requisito por sí mismo (RF-411), y lo
- * que pierde es el sitio de acción principal, no la existencia.
+ * **Viewing goes ahead of downloading when the format allows it**, and downloading stays
+ * as a link below. With the artwork in front and in a storeroom, reading a clipping should not
+ * cost three steps —tap, wait, hunt for the file in the phone's downloads— and
+ * leave a stray file on the phone nobody is going to delete. But downloading does not
+ * disappear: taking the document out of the catalogue is a requirement in itself (RF-411), and what
+ * it loses is the place of the primary action, not its existence.
  *
- * Qué formato lo permite lo decide `documentPreview.ts`, que es puro y tiene tests. Aquí
- * solo quedan los dos bordes que necesitan un navegador: abrir una ventana y firmar.
+ * Which format allows it is decided by `documentPreview.ts`, which is pure and has tests. Here
+ * only the two edges that need a browser are left: opening a window and signing.
  */
 export function DocumentFileActions({
   offer,
@@ -72,17 +72,17 @@ export function DocumentFileActions({
   }
 
   /**
-   * Abre el PDF en el visor del navegador.
+   * Opens the PDF in the browser's viewer.
    *
-   * **La ventana se abre ANTES de firmar, y en vacío.** Es la única forma que funciona:
-   * un `window.open` después de un `await` llega fuera del gesto del dedo y los
-   * navegadores lo bloquean como si fuera una ventana emergente de publicidad. Así que
-   * primero se abre —dentro del toque, que es cuando está permitido— y luego se le manda
-   * la dirección firmada.
+   * **The window is opened BEFORE signing, and empty.** It is the only way that works:
+   * a `window.open` after an `await` arrives outside the finger's gesture and
+   * browsers block it as if it were an advertising pop-up. So
+   * it is opened first —inside the tap, which is when it is allowed— and then the
+   * signed address is sent to it.
    *
-   * Sin `noopener` en las opciones a propósito: con él, `window.open` devuelve null y no
-   * habría a quién mandar la dirección. La misma protección se consigue borrándole el
-   * `opener`, que es lo que hace la línea de abajo.
+   * With no `noopener` in the options on purpose: with it, `window.open` returns null and there
+   * would be nobody to send the address to. The same protection is achieved by clearing its
+   * `opener`, which is what the line below does.
    */
   async function openApart() {
     clear()

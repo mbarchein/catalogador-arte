@@ -82,26 +82,26 @@ export function DocumentsSection({
    */
   placeText?: (placeId: string) => string | null | undefined
   /**
-   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
-   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
-   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   * Whether this block can write. False in the record's view and true only
+   * in the editing area. False by default: a new block that forgets to
+   * pass it is born read-only, which is the safe side of forgetting.
    */
   writable?: boolean
 }) {
   const spec = sectionSpec('documents')
   const { canEdit } = useAuth()
-  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
-  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
-  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
-  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  // RF-308: **writing lives in the editing area and not in the view.** The record that
+  // is read is read-only, so no control of this block offers to change
+  // a datum unless the page says it is editing. `canWrite` is still
+  // necessary —the permission rules over the mode— but it is no longer sufficient.
   const canWrite = canWriteBlock(writable, canEdit)
   const { rows, loading, error, reload } = useArtworkDocuments(catalogId)
 
   /**
-   * Qué hoja está abierta. Las dos primeras son del bloque; las dos últimas son de UNA
-   * fila, así que llevan el identificador del vínculo que las abrió: el documento que
-   * se corrige se saca de las filas ya cargadas y no de una consulta nueva, porque
-   * `DOCUMENT_LINK_COLUMNS` ya trae las doce columnas que el formulario escribe.
+   * Which sheet is open. The first two belong to the block; the last two belong to ONE
+   * row, so they carry the identifier of the link that opened them: the document being
+   * corrected is taken from the rows already loaded and not from a new query, because
+   * `DOCUMENT_LINK_COLUMNS` already brings the twelve columns the form writes.
    */
   const [panel, setPanel] = useState<
     { kind: 'link' | 'upload' } | { kind: 'edit' | 'scan'; linkId: string } | null
@@ -112,10 +112,10 @@ export function DocumentsSection({
   const [actionError, setActionError] = useState<string | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
 
-  // El archivo y sus maestras se piden solo cuando se abre un panel: este bloque
-  // está montado en TODA ficha del catálogo, y cuatro consultas por obra —para un
-  // buscador que se abre con un toque y solo en la zona de edición— serían cuatro
-  // peticiones por cada obra que se pasa con el pulgar.
+  // The archive and its master tables are asked for only when a panel is opened: this block
+  // is mounted in EVERY record of the catalogue, and four queries per artwork —for a
+  // finder opened with one tap and only in the editing area— would be four
+  // requests for every artwork flicked past with the thumb.
   const archive = useArchiveCatalog(canWrite && panel !== null)
 
   /** The row that opened a document sheet, if it is still there. */
@@ -185,10 +185,10 @@ export function DocumentsSection({
           seriesTree={archive.seriesTree}
           placeTree={archive.placeTree}
           mastersError={archive.mastersError}
-          // Los tres bordes impuros se pasan desde aquí y no se importan dentro del
-          // formulario: así el panel no sabe nada de la red y el flujo entero —el
-          // orden de los tres pasos y lo que se dice cuando falla el de en medio— se
-          // verifica en `documentUpload.test.ts`, sin navegador.
+          // The three impure edges are passed from here and not imported inside the
+          // form: this way the panel knows nothing about the network and the whole flow —the
+          // order of the three steps and what is said when the middle one fails— is
+          // verified in `documentUpload.test.ts`, with no browser.
           deps={{
             upload: (path, file) => uploadDocumentFile(path, file as Blob & PickedFile),
             insert: createArchiveDocument,
@@ -258,11 +258,11 @@ export function DocumentsSection({
             )}
 
             {blockedReason !== null ? (
-              /* La base rechazaría el vínculo (RF-218), así que se dice aquí y no
-                 después de un viaje de ida y vuelta: el selector de debajo cambia el
-                 estado, que es lo que hay que hacer primero. Los dos botones se
-                 explican, no se esconden: un botón que falta se lee como un permiso
-                 que falta, y esto no es ni una cosa ni la otra. */
+              /* The base would reject the link (RF-218), so it is said here and not
+                 after a round trip: the selector below changes the
+                 state, which is what has to be done first. Both buttons are
+                 explained, not hidden: a missing button reads as a missing
+                 permission, and this is neither one thing nor the other. */
               <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{blockedReason}</p>
             ) : (
               <>
@@ -425,9 +425,9 @@ function DocumentRow({
 
       {canWrite &&
         (confirming ? (
-          /* Dos toques para quitarlo, como en las demás fichas: en una pantalla
-             táctil, un toque y el vínculo que alguien investigó desaparece. Y lo que
-             se avisa es lo que NO pasa: el documento se queda en el archivo. */
+          /* Two taps to remove it, as in the other records: on a touch
+             screen, one tap and the link somebody researched disappears. And what
+             is warned about is what does NOT happen: the document stays in the archive. */
           <div className="mt-2 rounded-lg bg-stone-100 p-2">
             <p className="text-xs text-stone-700">{retireLinkConfirmText(view)}</p>
             <div className="mt-2 grid grid-cols-2 gap-2">
@@ -444,17 +444,17 @@ function DocumentRow({
             </div>
           </div>
         ) : (
-          /* Tres salidas de la fila y en este orden, que es el de lo que se hace más
-             veces: corregir lo que está mal escrito, darle el escaneo que le falta, y
-             solo al final quitarlo de la ficha, que es lo que no se quiere pulsar sin
-             querer. «Añadir el escaneo» solo aparece cuando de verdad falta: un botón
-             que se pinta siempre y a veces contesta que no se puede es un botón que se
-             deja de leer.
+          /* Three ways out of the row and in this order, which is that of what is done most
+             often: correcting what is badly written, giving it the scan it is missing, and
+             only at the end removing it from the record, which is what one does not want to press
+             by accident. «Añadir el escaneo» only appears when it is really missing: a button
+             that is always painted and sometimes answers that it cannot be done is a button that
+             stops being read.
 
-             Sobre un documento que esta sesión no puede leer no se ofrece ninguna de
-             las dos primeras: el formulario enseñaría campos vacíos como si fueran los
-             suyos, y guardarlos borraría lo que hay detrás. Quitarlo de la ficha sí,
-             porque eso es del vínculo y el vínculo se ve. */
+             Over a document this session cannot read, neither of the
+             first two is offered: the form would show empty fields as if they were
+             its own, and storing them would erase what lies behind. Removing it from the record yes,
+             because that belongs to the link and the link is visible. */
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
             {!view.unavailable && (
               <button

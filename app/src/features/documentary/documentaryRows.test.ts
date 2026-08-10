@@ -304,9 +304,9 @@ describe('las columnas que pide cada bloque', () => {
 
 describe('el orden de la procedencia (RF-509)', () => {
   /**
-   * El orden es `position`, MANUAL, y no las fechas: la mitad de los eslabones de
-   * un catálogo razonado no tienen año conocido, y un orden derivado de nulos no
-   * es un orden.
+   * The order is `position`, MANUAL, and not the dates: half the links of
+   * a catalogue raisonné have no known year, and an order derived from nulls is
+   * not an order.
    */
   it('sigue la posición que ha puesto la catalogadora, no los años', () => {
     const rows = [
@@ -412,9 +412,9 @@ describe('las obras relacionadas leídas desde un extremo (RF-217)', () => {
   })
 
   /**
-   * La misma fila leída desde la otra obra dice lo contrario, y eso es lo que hace
-   * que exista `inverse_name`: equivocar el sentido publicaría el estudio como la
-   * obra final.
+   * The same row read from the other artwork says the opposite, and that is what makes
+   * `inverse_name` exist: getting the direction wrong would publish the study as the
+   * final work.
    */
   it('desde el extremo lejano se lee el nombre inverso, y la otra obra es la primera', () => {
     const view = relationshipView(relationship(), 'AR-0007')

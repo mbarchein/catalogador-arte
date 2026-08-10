@@ -14,23 +14,23 @@ import {
 } from './documentDraft'
 
 /**
- * Los campos de un documento del archivo, los mismos para registrarlo y para
- * corregirlo (RF-515).
+ * The fields of an archive document, the same ones for registering it and for
+ * correcting it (RF-515).
  *
- * Existe porque hay DOS formularios sobre las mismas doce columnas, y la segunda copia
- * de doscientas líneas de JSX es cómo el panel de alta acaba ofreciendo un campo que
- * el de corrección no tiene —o peor, cómo la ayuda de la signatura sigue diciendo en
- * uno lo que ya no es verdad en el otro—. Lo que cambia entre los dos no son los
- * campos: es qué se hace al guardar.
+ * It exists because there are TWO forms over the same twelve columns, and the second copy
+ * of two hundred lines of JSX is how the creation panel ends up offering a field
+ * the correction one does not have —or worse, how the shelfmark's help goes on saying in
+ * one what is no longer true in the other—. What changes between the two are not the
+ * fields: it is what is done on saving.
  *
- * El orden es el que el papel da: qué es, cuándo, cómo se clasifica, dónde está. El
- * fichero no está aquí a propósito — al registrar se elige antes que nada, porque es
- * lo único que hay que decidir mientras el teléfono lo tiene en la mano, y al corregir
- * no se toca —.
+ * The order is the one the paper gives: what it is, when, how it is classified, where it is. The
+ * file is not here on purpose — on registering it is chosen before anything else, because it is
+ * the only thing to be decided while the phone has it in hand, and on correcting
+ * it is not touched —.
  *
- * Nada de aquí decide nada: lo que falta, lo que la base rechazará y cómo se va a
- * guardar la fecha lo contestan `documentDraft.ts` y `documentEdit.ts`, que la batería
- * alcanza porque corre en node y no puede abrir un formulario.
+ * Nothing here decides anything: what is missing, what the base will reject and how the date is
+ * going to be stored are answered by `documentDraft.ts` and `documentEdit.ts`, which the suite
+ * reaches because it runs in node and cannot open a form.
  */
 export function DocumentFieldsForm({
   idPrefix,

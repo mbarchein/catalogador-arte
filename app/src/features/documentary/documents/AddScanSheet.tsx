@@ -13,24 +13,24 @@ import {
 } from './documentUpload'
 
 /**
- * Darle su escaneo a un documento que se registró sin él (RF-408, RF-515).
+ * Giving its scan to a document that was registered without one (RF-408, RF-515).
  *
- * Es la mitad que le faltaba al alta. Un documento sin digitalizar es un estado
- * legítimo del archivo —el original está en papel y a veces se anota de una
- * fotocopia—, pero hasta hoy era un estado del que no se salía: el panel de subida lo
- * advertía antes de guardar precisamente porque no había ninguna pantalla que arreglara
- * el «luego lo subo». Ya la hay, y por eso ese aviso ya no dice eso.
+ * It is the half the creation was missing. An undigitised document is a legitimate
+ * state of the archive —the original is on paper and sometimes it is noted down from a
+ * photocopy—, but until today it was a state with no way out: the upload panel
+ * warned about it before saving precisely because there was no screen that fixed
+ * the «I'll upload it later». Now there is, and that is why that warning no longer says that.
  *
- * **Una hoja aparte y no un campo más del panel de corrección**, por lo mismo que
- * subir y enlazar son dos botones distintos en este bloque: son dos actos con dos
- * riesgos distintos. Corregir la signatura escribe una columna; esto sube decenas de
- * megas por una línea de móvil y luego escribe cuatro. Un solo «Guardar» para las dos
- * cosas es un botón que a veces tarda un cuarto de hora y a veces no, y que cuando
- * falla no dice cuál de las dos mitades se ha quedado a medias.
+ * **A separate sheet and not one more field of the correction panel**, for the same reason
+ * uploading and linking are two different buttons in this block: they are two acts with two
+ * different risks. Correcting the shelfmark writes one column; this uploads tens of
+ * megabytes over a phone line and then writes four. A single «Guardar» for both
+ * things is a button that sometimes takes a quarter of an hour and sometimes does not, and that when
+ * it fails does not say which of the two halves has been left half-done.
  *
- * Lo que decide qué se puede hacer está en `documentEdit.ts` y `documentUpload.ts`: por
- * qué un documento que ya tiene fichero no lo cambia aquí, qué peso acepta el almacén y
- * qué se dice cuando alguien se ha adelantado.
+ * What decides what can be done is in `documentEdit.ts` and `documentUpload.ts`: why
+ * a document that already has a file does not change it here, what weight the store accepts and
+ * what is said when somebody has got there first.
  */
 export function AddScanSheet({
   document,
@@ -47,14 +47,14 @@ export function AddScanSheet({
   const [file, setFile] = useState<File | null>(null)
   const [step, setStep] = useState<ScanStep | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
-  // Se limpia por el DOM al quitar el fichero: un `input type="file"` guarda su propio
-  // valor, y sin esto quitar un escaneo de 40 MB y volver a elegir el mismo no
-  // dispararía ningún evento.
+  // It is cleared through the DOM on removing the file: an `input type="file"` keeps its own
+  // value, and without this removing a 40 MB scan and choosing the same one again would
+  // fire no event.
   const input = useRef<HTMLInputElement>(null)
 
-  // La única negativa que puede traer el documento: que ya tenga fichero. Se comprueba
-  // aquí y no solo al pintar el botón, porque entre abrir la ficha y abrir esta hoja
-  // alguien puede haberlo subido desde otra.
+  // The only refusal the document can bring: that it already has a file. It is checked
+  // here and not only when painting the button, because between opening the record and opening this sheet
+  // somebody may have uploaded it from another.
   const blocked = scanTargetProblem(document)
   const fileProblem = documentFileProblem(file)
   const busy = step !== null
@@ -66,9 +66,9 @@ export function AddScanSheet({
     const outcome = await runAddScan(document, file, { ...onAdd, onStep: setStep })
     setStep(null)
     if (!outcome.ok) {
-      // La hoja se queda ABIERTA: cuando el fallo es el que importa —el fichero subió
-      // y la anotación no— la frase que explica que no hay que repetirlo no puede
-      // desaparecer con el panel.
+      // The sheet stays OPEN: when the failure is the one that matters —the file uploaded
+      // and the note did not— the sentence explaining that it must not be repeated cannot
+      // disappear with the panel.
       setFailure(outcome.problem)
       return
     }
