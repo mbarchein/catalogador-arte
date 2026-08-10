@@ -4,11 +4,11 @@ import { changeDetail, changeSentence, groupChanges } from './changeEntry'
 import { useChangeLog } from './useChangeLog'
 
 /**
- * Cuándo pasó, en español y sin la hora cuando no hace falta.
+ * When it happened, in Spanish and without the time when it is not needed.
  *
- * Se descompone la fecha a mano en la zona del navegador. Hoy y ayer se nombran
- * porque es lo que se está mirando el 90 % de las veces —«qué he tocado esta
- * mañana»— y una fecha completa para eso obliga a calcular mentalmente.
+ * The date is decomposed by hand in the browser's zone. Today and yesterday are named
+ * because it is what is being looked at 90 % of the time —«what have I touched this
+ * morning»— and a full date for that forces mental arithmetic.
  */
 function whenText(iso: string, now: Date): string {
   const at = new Date(iso)
@@ -24,26 +24,26 @@ function whenText(iso: string, now: Date): string {
 }
 
 /**
- * El historial de cambios de una obra y de sus fotografías (RF-1502, RF-1503).
+ * The change history of an artwork and of its photographs (RF-1502, RF-1503).
  *
- * **Va en la ficha que se lee y no en la de editar**, y eso no contradice la regla
- * de que escribir vive en la zona de edición: aquí no se escribe nada. El historial
- * es un dato de la obra como sus medidas, y además es donde se consulta —se abre
- * para responder «quién cambió esto», que es una pregunta que se hace mirando la
- * ficha, no editándola. No es reversible por decisión del propietario: se lee, y
- * no hay ningún botón que devuelva un valor anterior.
+ * **It goes in the record that is read and not in the editing one**, and that does not contradict the rule
+ * that writing lives in the editing area: nothing is written here. The history
+ * is a datum of the artwork like its measurements, and besides it is where it is consulted —it is opened
+ * to answer «who changed this», which is a question asked while looking at the
+ * record, not editing it. It is not reversible by the owner's decision: it is read, and
+ * there is no button that gives back a previous value.
  *
- * Llega **plegado y sin pedir nada**. Es la parte más pesada de la página —una
- * consulta que crece con la vida de la obra— y la ficha es la pantalla que más se
- * abre de toda la aplicación, muchas veces con datos del móvil.
+ * It arrives **folded and asking for nothing**. It is the heaviest part of the page —a
+ * query that grows with the artwork's life— and the record is the most opened screen
+ * in the whole application, many times on mobile data.
  */
 export function ChangeHistorySection({ catalogId }: { catalogId: string }) {
   const [open, setOpen] = useState(false)
   const { rows, loading, error, hasMore, loadMore } = useChangeLog(catalogId, open)
   const entries = useMemo(() => groupChanges(rows), [rows])
-  // Una sola lectura del reloj para toda la lista: si cada línea leyera la hora por
-  // su cuenta, una que se pintara al cruzar la medianoche diría «ayer» al lado de
-  // otra que dice «hoy» sobre el mismo momento.
+  // A single reading of the clock for the whole list: if each line read the time on
+  // its own, one painted on crossing midnight would say «ayer» next to
+  // another saying «hoy» about the same moment.
   const now = useMemo(() => new Date(), [entries])
 
   return (

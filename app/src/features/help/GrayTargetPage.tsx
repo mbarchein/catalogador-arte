@@ -3,33 +3,33 @@ import { Layout } from '../../components/Layout'
 import { NoIcon, UnreviewedIcon, YesIcon } from '../../components/ui'
 
 /**
- * Cómo se usa un testigo de gris, para quien fotografía y no programa (RF-418, §4).
+ * How a grey target is used, for whoever photographs and does not program (RF-418, §4).
  *
- * Existe porque la detección no puede explicarse a sí misma: el editor puede decir «no
- * se ha encontrado un testigo» y hasta por qué, pero no puede enseñar en una línea de
- * ayuda dónde se pone la carta ni por qué en sombra no sirve. Y porque la propia
- * aplicación genera la hoja imprimible, así que el sitio donde se descarga es el mismo
- * donde se cuenta para qué es.
+ * It exists because the detection cannot explain itself: the editor can say «no
+ * target has been found» and even why, but it cannot show in one line of
+ * help where the chart is placed or why in shade it is of no use. And because the application
+ * itself generates the printable sheet, so the place where it is downloaded is the same
+ * where what it is for is told.
  *
- * **Ilustraciones dibujadas en SVG y no fotografías** (decisión del propietario). Un
- * dibujo enseña la geometría —la carta al lado de la obra, en el mismo plano, en la
- * misma luz— sin arrastrar el peso de cuatro fotografías a un almacén con mala
- * cobertura, sin quedarse obsoleto cuando cambie la carta y sin que nadie confunda el
- * ejemplo con una obra del catálogo. Van en línea, con `currentColor` donde puede, como
- * los iconos de `ui.tsx`.
+ * **Illustrations drawn in SVG and not photographs** (the owner's decision). A
+ * drawing shows the geometry —the chart next to the artwork, in the same plane, in the
+ * same light— without dragging the weight of four photographs to a storeroom with poor
+ * coverage, without becoming obsolete when the chart changes and without anybody confusing the
+ * example with an artwork of the catalogue. They go inline, with `currentColor` where it can, like
+ * `ui.tsx`'s icons.
  *
- * La hoja se genera con `grayTargetSheet.ts`, importado **dinámicamente**: arrastra
- * pdf-lib, y pdf-lib no debe pesar en el arranque de la aplicación. Es el mismo camino
- * que la ficha impresa de la obra.
+ * The sheet is generated with `grayTargetSheet.ts`, imported **dynamically**: it drags in
+ * pdf-lib, and pdf-lib must not weigh on the application's start-up. It is the same path
+ * as the artwork's printed record.
  */
 
 /**
- * Los grises de la tira dibujada.
+ * The greys of the drawn strip.
  *
- * Son los cinco códigos que imprime la hoja (225, 180, 135, 90 y 45) en hexadecimal, y
- * están escritos aquí a mano a propósito: importarlos de `grayTargetSheet.ts` metería
- * pdf-lib en el paquete inicial por una ilustración. Si la hoja cambia sus tonos, este
- * dibujo se queda parecido pero no idéntico, y para un dibujo eso da igual.
+ * They are the five codes the sheet prints (225, 180, 135, 90 and 45) in hexadecimal, and
+ * they are written here by hand on purpose: importing them from `grayTargetSheet.ts` would put
+ * pdf-lib in the initial bundle for one illustration. If the sheet changes its tones, this
+ * drawing stays similar but not identical, and for a drawing that does not matter.
  */
 const PATCHES = ['#e1e1e1', '#b4b4b4', '#878787', '#5a5a5a', '#2d2d2d'] as const
 

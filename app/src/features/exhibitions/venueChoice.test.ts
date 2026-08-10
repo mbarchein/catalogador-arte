@@ -166,8 +166,8 @@ describe('RF-304: el selector nunca se queda en blanco', () => {
 
 describe('RF-304: el selector cerrado tampoco', () => {
   /**
-   * «Sin identificar» y no un botón vacío: un control que no dice nada parece roto, y
-   * aquí el valor vacío es una elección legítima y frecuente, no una pendiente.
+   * «Sin identificar» and not an empty button: a control that says nothing looks broken, and
+   * here the empty value is a legitimate and frequent choice, not a pending one.
    */
   it('sin sede elegida dice «Sin identificar» y no deja el botón mudo', () => {
     expect(chosenVenueText(null)).toBe('Sin identificar')

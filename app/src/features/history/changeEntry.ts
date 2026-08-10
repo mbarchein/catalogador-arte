@@ -1,20 +1,20 @@
 /**
- * El historial de cambios de una ficha, convertido en frases que se leen.
+ * A record's change history, turned into sentences that are read.
  *
- * La tabla guarda **una fila por campo cambiado** (RF-1502), que es lo que hace
- * respondible la pregunta de auditoría real —«quién tocó las medidas de esta
- * obra»— y lo que hace ilegible el historial si se pinta tal cual: guardar una
- * ficha tocando cuatro campos produce cuatro filas con la misma hora y el mismo
- * autor, y en pantalla parecen cuatro acciones distintas.
+ * The table stores **one row per changed field** (RF-1502), which is what makes
+ * the real audit question answerable —«who touched this artwork's
+ * measurements»— and what makes the history illegible if it is painted as is: saving
+ * a record touching four fields produces four rows with the same time and the same
+ * author, and on screen they look like four different actions.
  *
- * Por eso existe `change_id`: es el mismo para todas las filas de un guardado.
- * Aquí se agrupa por él, así que un guardado es **una línea** que nombra los
- * campos que cambió. Sin ese agrupado, un día de trabajo son doscientas líneas
- * y nadie las lee, que es la forma más fácil de tener un registro de auditoría
- * inútil sin que nada falle.
+ * That is why `change_id` exists: it is the same for every row of a save.
+ * Here it is grouped by it, so a save is **one line** naming the
+ * fields it changed. Without that grouping, a day's work is two hundred lines
+ * and nobody reads them, which is the easiest way of having a useless audit
+ * log without anything failing.
  *
- * Nada de este módulo toca la red ni el DOM: es la parte que decide qué se lee,
- * y por eso está separada de la pantalla y probada.
+ * Nothing in this module touches the network or the DOM: it is the part that decides what is read,
+ * and that is why it is separate from the screen and tested.
  */
 
 /** The two things that are audited. */
@@ -40,17 +40,17 @@ export interface ChangeLogRow {
 }
 
 /**
- * El nombre de cada campo en español, tal como lo llama quien cataloga.
+ * Each field's name in Spanish, as whoever catalogues calls it.
  *
- * **Esta tabla es la mitad del valor del historial.** «cambió `height_cm`» no lo
- * lee nadie; «cambió el alto» sí. Y no puede salir de una transformación del
- * nombre de la columna —quitar guiones bajos y capitalizar— porque la mitad de
- * los nombres no coinciden con lo que la usuaria llama a la cosa:
- * `attributed_title` es «si el título es del artista», y `basic_updated_at` no se
- * anota nunca.
+ * **This table is half the history's value.** «cambió `height_cm`» is read by
+ * nobody; «cambió el alto» is. And it cannot come from a transformation of the
+ * column's name —removing underscores and capitalising— because half
+ * the names do not match what the user calls the thing:
+ * `attributed_title` is «si el título es del artista», and `basic_updated_at` is
+ * never noted.
  *
- * Solo están las columnas que el trigger registra: descarta las marcas de traza
- * —quién y cuándo, que ya son el propio historial— y las columnas derivadas.
+ * Only the columns the trigger records are here: it discards the trace marks
+ * —who and when, which are the history itself— and the derived columns.
  */
 const FIELD_LABEL: Readonly<Record<string, string>> = {
   // ── The artwork: identification ──────────────────────────
@@ -150,13 +150,13 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
 }
 
 /**
- * El nombre de un campo, y **nunca vacío**.
+ * A field's name, and **never empty**.
  *
- * Un campo que la tabla no conoce se nombra con su nombre técnico entre
- * paréntesis en vez de callarse. Es jerga, y es deliberado: el proyecto prohíbe
- * dejar un hueco, y aquí el hueco sería peor que la jerga —un cambio que no se
- * lista es un cambio que el historial niega—. Que salga un nombre técnico en
- * pantalla es además la señal visible de que esta tabla se ha quedado atrás.
+ * A field the table does not know is named with its technical name in
+ * brackets instead of kept quiet. It is jargon, and it is deliberate: the project forbids
+ * leaving a gap, and here the gap would be worse than the jargon —a change that is not
+ * listed is a change the history denies—. A technical name appearing on
+ * screen is besides the visible sign that this table has fallen behind.
  */
 export function fieldLabel(column: string | null | undefined): string {
   if (!column || column.trim() === '') return 'un dato'
@@ -189,12 +189,12 @@ export interface ChangeEntry {
 }
 
 /**
- * Agrupa las filas del registro en guardados.
+ * Groups the log's rows into saves.
  *
- * Se conserva el orden de llegada de la consulta (más reciente primero) y, dentro
- * de un guardado, el orden en que se anotaron los campos. Los repetidos se
- * quitan: cambiar `start_year` y `end_year` es **una** cosa —la fecha de
- * ejecución— y decirlo dos veces en la misma línea es ruido.
+ * The query's arrival order is kept (most recent first) and, within
+ * a save, the order in which the fields were noted. Repeats are
+ * removed: changing `start_year` and `end_year` is **one** thing —the date of
+ * execution— and saying it twice in the same line is noise.
  */
 export function groupChanges(rows: readonly ChangeLogRow[]): readonly ChangeEntry[] {
   const byChange = new Map<string, { entry: ChangeEntry; fields: string[] }>()
@@ -242,12 +242,12 @@ export function joinFields(fields: readonly string[]): string {
 }
 
 /**
- * La frase de un guardado, sin la fecha: la pone la pantalla, que sabe si está
- * mostrando el día entero o solo la hora.
+ * A save's sentence, without the date: the screen puts that, which knows whether it is
+ * showing the whole day or only the time.
  *
- * Se nombra la entidad solo cuando hace falta distinguirla. El historial de una
- * ficha mezcla la obra y sus fotografías, y «cambió el giro» sin decir de qué
- * fotografía no sirve de nada.
+ * The entity is named only when it needs distinguishing. A record's history
+ * mixes the artwork and its photographs, and «cambió el giro» without saying of which
+ * photograph is of no use.
  */
 export function changeSentence(entry: ChangeEntry): string {
   const quien = entry.author
@@ -271,12 +271,12 @@ export function changeSentence(entry: ChangeEntry): string {
 }
 
 /**
- * El valor antes y después, para el detalle de una línea con un solo campo.
+ * The value before and after, for the detail of a line with a single field.
  *
- * Devuelve null cuando enseñarlo no aporta: en un alta no hay antes, y con varios
- * campos a la vez la comparación sería una tabla y no una frase. Los valores
- * largos se recortan, porque una nota de proceso de mil caracteres convierte el
- * historial en el texto de la nota.
+ * It returns null when showing it adds nothing: in a creation there is no before, and with several
+ * fields at once the comparison would be a table and not a sentence. Long
+ * values are trimmed, because a thousand-character process note turns the
+ * history into the note's text.
  */
 export function changeDetail(
   rows: readonly ChangeLogRow[],

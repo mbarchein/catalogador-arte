@@ -10,11 +10,11 @@ import {
 } from './changeEntry'
 
 /**
- * RF-1502, RF-1503: el historial de una ficha se lee.
+ * RF-1502, RF-1503: a record's history is read.
  *
- * El registro guarda una fila por campo cambiado, que es lo que hace respondible
- * «quién tocó las medidas» y lo que hace ilegible el historial si se pinta tal
- * cual. Lo que se prueba aquí es el paso de filas técnicas a frases.
+ * The log stores one row per changed field, which is what makes
+ * «who touched the measurements» answerable and what makes the history illegible if it is painted as
+ * is. What is tested here is the step from technical rows to sentences.
  */
 
 let siguiente = 1

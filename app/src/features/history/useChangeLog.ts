@@ -3,30 +3,30 @@ import { supabase } from '../../lib/supabase'
 import type { ChangeLogRow } from './changeEntry'
 
 /**
- * Cuántas filas se piden de una vez.
+ * How many rows are asked for at a time.
  *
- * Son FILAS y no guardados, y la diferencia importa: un guardado que tocó ocho
- * campos son ocho filas y una sola línea en pantalla. Doscientas filas dan del
- * orden de treinta o cuarenta líneas, que es más de lo que nadie lee de un tirón
- * y suficiente para que «ver más» casi nunca haga falta.
+ * They are ROWS and not saves, and the difference matters: a save that touched eight
+ * fields is eight rows and a single line on screen. Two hundred rows give of the
+ * order of thirty or forty lines, which is more than anybody reads in one go
+ * and enough for «ver más» hardly ever to be needed.
  *
- * El índice `change_log_by_artwork_idx` es exactamente `(catalog_id, changed_at
- * desc, id desc)`, así que esta consulta lo recorre sin ordenar nada en memoria.
+ * The `change_log_by_artwork_idx` index is exactly `(catalog_id, changed_at
+ * desc, id desc)`, so this query walks it without sorting anything in memory.
  */
 export const CHANGE_PAGE = 200
 
 /**
- * El registro **no tiene clave ajena a `profiles`**, y no es un olvido: está
- * argumentado en su migración. `profiles.id` cae en cascada desde `auth.users`, y
- * borrar una cuenta desde el panel es un clic; con clave ajena ese clic o falla
- * —y el registro tiene secuestrada a una persona que se fue— o alguien lo resuelve
- * borrando filas de auditoría, que es justo lo que ese diseño existe para impedir.
+ * The log **has no foreign key to `profiles`**, and it is not an oversight: it is
+ * argued in its migration. `profiles.id` cascades from `auth.users`, and
+ * deleting an account from the panel is one click; with a foreign key that click either fails
+ * —and the log holds hostage a person who left— or somebody resolves it
+ * by deleting audit rows, which is precisely what that design exists to prevent.
  *
- * La consecuencia aquí es concreta: **PostgREST no puede incrustar el perfil**, no
- * hay relación que seguir. Así que los nombres se resuelven en una segunda consulta
- * acotada a los autores que de verdad aparecen en las filas leídas, que son unos
- * pocos y no todo el equipo. Y un autor cuya cuenta ya no existe no rompe nada: se
- * queda sin nombre y la línea sigue contando qué pasó, que es lo que se quería.
+ * The consequence here is concrete: **PostgREST cannot embed the profile**, there
+ * is no relationship to follow. So the names are resolved in a second query
+ * narrowed to the authors who really appear in the rows read, which are a
+ * few and not the whole team. And an author whose account no longer exists breaks nothing: it is
+ * left with no name and the line still tells what happened, which is what was wanted.
  */
 const COLUMNS =
   'id, change_id, entity, row_key, operation, column_name, old_value, new_value, ' +
@@ -43,19 +43,19 @@ export interface ChangeLogState {
 }
 
 /**
- * El historial de una obra: sus cambios y los de sus fotografías, en una consulta.
+ * An artwork's history: its changes and those of its photographs, in one query.
  *
- * La columna `catalog_id` del registro está en las dos clases de fila —también en
- * las de una fotografía— precisamente para que el historial de una ficha sea una
- * consulta y no dos con una unión después.
+ * The log's `catalog_id` column is in both kinds of row —also in
+ * a photograph's— precisely so that a record's history is one
+ * query and not two with a union afterwards.
  *
- * **No se pide nada hasta que `enabled` es verdadero.** El bloque de la ficha
- * llega plegado y el historial es la parte más pesada de la página: cargarlo al
- * abrir la ficha sería pagar una consulta que nadie ha pedido, con datos del
- * móvil, en la pantalla que más se abre de toda la aplicación.
+ * **Nothing is asked for until `enabled` is true.** The record's block
+ * arrives folded and the history is the heaviest part of the page: loading it on
+ * opening the record would be paying for a query nobody asked for, on mobile
+ * data, in the most opened screen of the whole application.
  *
- * Quién puede leerlo lo decide la política de la tabla, no este código: se lee con
- * la sesión de quien mira, y una obra que no se ve no muestra su historial.
+ * Who can read it is decided by the table's policy, not by this code: it is read with
+ * the session of whoever looks, and an artwork that is not seen does not show its history.
  */
 export function useChangeLog(catalogId: string | undefined, enabled: boolean): ChangeLogState {
   const [rows, setRows] = useState<readonly ChangeLogRow[]>([])
