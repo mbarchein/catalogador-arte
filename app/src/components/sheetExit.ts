@@ -63,12 +63,12 @@ export function sheetExitAction(input: {
 }
 
 /**
- * Qué hacer con un intento de salir **mientras la confirmación está en pantalla**.
+ * What to do with an attempt to leave **while the confirmation is on screen**.
  *
- * Nunca se sale: el atrás y Escape retiran la pregunta y devuelven a la hoja, con lo
- * escrito intacto. Es lo contrario de lo cómodo y lo único defendible — un atrás de más,
- * con una pregunta delante que dice que se van a perder los datos, no puede ser justo la
- * pulsación que los pierde. Para salir hay que decirlo con el botón que lo dice.
+ * It never leaves: back and Escape withdraw the question and return to the sheet, with what was
+ * written intact. It is the opposite of convenient and the only defensible thing — one back too
+ * many, with a question in front saying the data is going to be lost, cannot be exactly the
+ * press that loses it. To leave, one has to say so with the button that says so.
  */
 export function confirmingExitAction(exit: SheetExit): 'dismiss' | 'ignore' {
   // The backdrop does not withdraw the question: covering it with a brush would leave the
@@ -81,20 +81,20 @@ export function confirmingExitAction(exit: SheetExit): 'dismiss' | 'ignore' {
 export const DISCARD_TITLE = 'Tienes datos a medio meter'
 
 /**
- * Lo que se lee debajo del título, con **lo que NO pasa** delante.
+ * What is read below the title, with **what does NOT happen** first.
  *
- * Es el criterio de todo el proyecto para una pregunta destructiva: lo que hace falta
- * para decidir no es qué se va a borrar, es qué se queda. Aquí lo que se queda es el
- * catálogo entero — nada de lo que hay dentro se ha guardado todavía, así que salir no
- * cambia ninguna ficha.
+ * It is the whole project's criterion for a destructive question: what is needed
+ * to decide is not what is going to be erased, it is what stays. Here what stays is the
+ * whole catalogue — nothing inside has been stored yet, so leaving does not
+ * change any record.
  *
- * @param extra Lo que esta hoja en concreto quiera añadir, ya en español. Sirve para el
- *   dato que la frase general no puede saber: que habría que volver a elegir el fichero,
- *   por ejemplo, que es lo más caro de repetir de todo el formulario.
- * @param kept La hoja apunta el borrador y lo ofrece a la vuelta (ver `useFormDraft`).
- *   Entonces salir **no pierde el tecleo**, y decir que sí sería asustar con algo que no
- *   pasa — que es la forma de que la pregunta deje de creerse. Con esto la frase promete
- *   lo que la hoja de verdad hace.
+ * @param extra What this particular sheet wants to add, already in Spanish. It serves for the
+ *   datum the general sentence cannot know: that the file would have to be chosen again,
+ *   for instance, which is the most expensive thing in the whole form to repeat.
+ * @param kept The sheet notes the draft down and offers it on returning (see `useFormDraft`).
+ *   Then leaving **does not lose the typing**, and saying it does would be frightening people with something that does not
+ *   happen — which is the way for the question to stop being believed. With this the sentence promises
+ *   what the sheet really does.
  */
 export function discardText(extra?: string | null, kept = false): string {
   const base = kept
@@ -110,11 +110,11 @@ export function discardText(extra?: string | null, kept = false): string {
 export const DISCARD_KEEP_LABEL = 'Seguir rellenando'
 
 /**
- * «Salir sin guardar» y no «Salir y perderlo».
+ * «Salir sin guardar» and not «Salir y perderlo».
  *
- * Cambió al apuntarse los borradores: con el borrador guardado, salir ya no pierde el
- * tecleo, y un botón que dice «perderlo» sobre algo que no se pierde es un botón que
- * enseña a no creerse los avisos. Lo que sí es verdad de las dos formas es que no se
- * guarda en el catálogo, que es lo que el botón dice ahora.
+ * It changed when drafts started being noted down: with the draft stored, leaving no longer loses the
+ * typing, and a button saying «perderlo» about something that is not lost is a button that
+ * teaches people not to believe the warnings. What is true either way is that it is not
+ * stored in the catalogue, which is what the button says now.
  */
 export const DISCARD_LEAVE_LABEL = 'Salir sin guardar'

@@ -7,23 +7,23 @@ import { BottomSheet } from './ui'
 import { useSheetGuard } from './useSheetGuard'
 
 /**
- * El primer test de pantalla del proyecto, y está aquí a propósito.
+ * The project's first screen test, and it is here on purpose.
  *
- * Hasta hoy había sesenta y seis ficheros `.tsx` y ningún test de ninguno: de cada
- * pantalla respondían el compilador y las funciones puras que hubiera detrás, y
- * nada más. Todo lo que era gesto, foco o «se ve o no se ve» quedaba fuera.
+ * Until today there were sixty-six `.tsx` files and no test of any of them: for each
+ * screen the compiler and whatever pure functions lay behind answered, and
+ * nothing else. Everything that was gesture, focus or «visible or not» stayed out.
  *
- * Se empieza por `BottomSheet` porque es el componente compartido por más
- * pantallas —los filtros de la lista, los paneles de la ficha— y porque lo que
- * hace es exactamente lo que un test de lógica pura no puede alcanzar: que Escape
- * cierre, que tocar fuera cierre, que el «atrás» del móvil cierre la hoja y no la
- * pantalla, y que lo que se le cuelga de la cabecera se pinte donde se espera. Si
- * esto se rompe, se rompe en varias pantallas a la vez.
+ * It starts with `BottomSheet` because it is the component shared by the most
+ * screens —the list's filters, the record's panels— and because what it
+ * does is exactly what a pure-logic test cannot reach: that Escape
+ * closes, that touching outside closes, that the phone's «back» closes the sheet and not the
+ * screen, and that whatever is hung from its heading is painted where expected. If
+ * this breaks, it breaks in several screens at once.
  *
- * Nota de método para quien añada más: **la marca `@vitest-environment jsdom` de la
- * primera línea es obligatoria**. Sin ella el fichero corre en node y falla con
- * «document is not defined», que no dice lo que pasa. Los tests de lógica pura no
- * la llevan y siguen en node, que es lo que mantiene rápida la batería.
+ * A note on method for whoever adds more: **the first line's `@vitest-environment jsdom` mark
+ * is compulsory**. Without it the file runs in node and fails with
+ * «document is not defined», which does not say what is happening. The pure-logic tests do not
+ * carry it and stay in node, which is what keeps the suite fast.
  */
 describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
   it('no pinta nada cuando está cerrada', () => {
@@ -61,9 +61,9 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
   })
 
   it('Escape no hace nada cuando está cerrada', async () => {
-    // El listener se registra solo mientras está abierta. Si quedara puesto, Escape
-    // cerraría una hoja que no está abierta y, peor, se llevaría el Escape de quien
-    // sí lo esperaba: el editor de fotografías depende de esa tecla.
+    // The listener is registered only while it is open. If it were left in place, Escape
+    // would close a sheet that is not open and, worse, it would take away the Escape of whoever
+    // was expecting it: the photograph editor depends on that key.
     const onClose = vi.fn()
     render(
       <BottomSheet open={false} onClose={onClose} title="Filtros">
@@ -75,10 +75,10 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
   })
 
   it('el «atrás» del móvil la cierra, y no sale de la pantalla', async () => {
-    // La salida que el pulgar encuentra sin apuntar, y la única que hay en la
-    // aplicación instalada, donde no queda barra del navegador. Lo que hace que
-    // funcione está en `useCloseOnBack` y tiene sus propios tests; aquí se
-    // comprueba que la hoja —el modal que comparten catorce pantallas— lo usa.
+    // The exit the thumb finds without aiming, and the only one there is in the
+    // installed application, where there is no browser bar left. What makes it
+    // work is in `useCloseOnBack` and has its own tests; here it is
+    // checked that the sheet —the modal fourteen screens share— uses it.
     window.history.pushState({ screen: 'ficha' }, '')
     const onClose = vi.fn()
     // With its state, the way any screen uses it: closing the sheet is stopping passing
@@ -109,9 +109,9 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
   })
 
   it('cerrada por otro camino no deja la hoja fuera del historial', async () => {
-    // Escape, la ✕ y tocar fuera pasan por `onClose`, y quien lo recibe cierra la
-    // hoja: la entrada que se empujó al abrir tiene que consumirse ahí, o el
-    // «atrás» siguiente no haría nada y parecería averiado.
+    // Escape, the ✕ and touching outside go through `onClose`, and whoever receives it closes the
+    // sheet: the entry pushed on opening has to be consumed there, or the
+    // next «back» would do nothing and would look broken.
     window.history.pushState({ screen: 'listado' }, '')
     window.history.pushState({ screen: 'ficha' }, '')
     const { unmount } = render(
@@ -141,10 +141,10 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
   })
 
   it('la acción de la cabecera se pinta, y el cierre sigue siendo el último', () => {
-    // La posición importa y está razonada en el componente: el cierre se queda
-    // pegado al borde para que el pulgar aprenda dónde está la salida, y lo que se
-    // añada va a su izquierda. Un test que solo comprobara «se pinta» dejaría pasar
-    // el cambio que mueve la salida.
+    // The position matters and is reasoned in the component: the close stays
+    // stuck to the edge so the thumb learns where the exit is, and whatever is
+    // added goes to its left. A test only checking «it is painted» would let through
+    // the change that moves the exit.
     render(
       <BottomSheet
         open
@@ -178,17 +178,17 @@ describe('BottomSheet, la hoja que comparten los paneles (RNF-106)', () => {
 })
 
 /**
- * El guardián de la hoja: no perder lo escrito por un roce (RNF-106).
+ * The sheet's guard: not losing what was written to a brush (RNF-106).
  *
- * Esta batería existe por una incidencia contada dos veces: un toque involuntario en el
- * fondo oscuro —que con la hoja a tres cuartos de pantalla cae justo donde se apoya el
- * pulgar al desplazarse por un formulario largo— cerraba el panel y se perdían diez
- * minutos de tecleo, sin preguntar.
+ * This suite exists because of an incident reported twice: an involuntary tap on the
+ * dark backdrop —which with the sheet at three quarters of the screen falls exactly where the
+ * thumb rests when scrolling through a long form— closed the panel and ten
+ * minutes of typing were lost, with no question asked.
  *
- * Lo que decide qué hacer con cada salida es puro y está en `sheetExit.test.ts`. Aquí se
- * comprueba lo que ningún test de lógica alcanza: que las CUATRO salidas de la hoja pasan
- * de verdad por ese guardián, incluido el botón de atrás del móvil, que es el que lleva
- * historia detrás y el que ya se ha roto dos veces en este proyecto.
+ * What decides what to do with each exit is pure and lives in `sheetExit.test.ts`. Here it is
+ * checked what no logic test reaches: that ALL FOUR exits of the sheet really go
+ * through that guard, including the phone's back button, which is the one that carries
+ * history behind it and the one that has already broken twice in this project.
  */
 describe('BottomSheet, no perder lo escrito por un roce', () => {
   it('en un formulario, el fondo deja de ser un botón: ni cierra ni se anuncia', () => {
@@ -246,9 +246,9 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
   })
 
   it('el botón de atrás pregunta, y su entrada de historia se vuelve a empujar', async () => {
-    // El caso que de verdad importa en un móvil, y el que tiene historia detrás: si la
-    // entrada no se repusiera, el siguiente atrás se saldría de la ficha con los datos
-    // dentro. `useCloseOnBack` sabe volver a empujarla cuando el cierre se niega.
+    // The case that really matters on a phone, and the one with history behind it: if the
+    // entry were not put back, the next back would leave the record with the data
+    // inside. `useCloseOnBack` knows how to push it again when the close is refused.
     const onClose = vi.fn()
     window.history.pushState({ screen: 'ficha' }, '')
     render(<Guarded onClose={onClose} />)
@@ -267,9 +267,9 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
   })
 
   it('el «Cancelar» del pie es la quinta salida, y también pregunta', async () => {
-    // Es la que no controla `BottomSheet`: la pinta el formulario, en el mismo componente
-    // que pinta la hoja. Dejarla fuera del guardián sería dejar un camino que pierde los
-    // datos, y encima el más fácil de pulsar — está pegado a «Guardar».
+    // It is the one `BottomSheet` does not control: the form paints it, in the same component
+    // that paints the sheet. Leaving it outside the guard would be leaving a path that loses the
+    // data, and the easiest one to press at that — it is right next to «Guardar».
     const onClose = vi.fn()
     render(<Guarded onClose={onClose} />)
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
