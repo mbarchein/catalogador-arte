@@ -1,21 +1,21 @@
 /**
- * Con qué más está enlazado un documento del archivo (RF-516).
+ * What else an archive document is linked to (RF-516).
  *
- * Dos números, pedidos por un motivo: el panel que corrige un documento tiene que
- * decir a qué está a punto de afectar ANTES de guardar, y «lo verán las demás fichas»
- * es un aviso distinto de «lo verán las otras tres obras y una exposición». La
- * decisión la toma `documentReachNotice`, que es pura y tiene tests; aquí está el
- * cable.
+ * Two numbers, asked for for one reason: the panel that corrects a document has to
+ * say what it is about to affect BEFORE saving, and «the other records will see it»
+ * is a different warning from «the other three artworks and one exhibition will see it». The
+ * decision is taken by `documentReachNotice`, which is pure and has tests; here is the
+ * wiring.
  *
- * **Son dos peticiones HEAD con `count=exact`, no dos listas.** El panel necesita el
- * tamaño y nunca las filas, y las filas serían los títulos de otras obras dentro de
- * una hoja que habla de esta. Se piden solo con el panel abierto —`enabled`—, porque
- * esto es por documento y por apertura, sobre datos móviles, y no lo necesita nada
- * más de la ficha.
+ * **They are two HEAD requests with `count=exact`, not two lists.** The panel needs the
+ * size and never the rows, and the rows would be the titles of other artworks inside
+ * a sheet that speaks of this one. They are asked for only with the panel open —`enabled`—, because
+ * this is per document and per opening, over mobile data, and nothing else
+ * in the record needs it.
  *
- * Las dos mitades se cuentan aparte porque son dos tablas puente y una exposición no
- * es una obra: contarlas juntas daría un número que no se puede escribir en ninguna
- * frase honrada.
+ * The two halves are counted separately because they are two bridge tables and an exhibition is
+ * not an artwork: counting them together would give a number that cannot be written in any
+ * honest sentence.
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -44,9 +44,9 @@ export function useDocumentUsage(
       setReach({ otherArtworks: null, exhibitions: null })
       return
     }
-    // Vuelta a «no se sabe» mientras viaja el recuento nuevo: dejar en pantalla el
-    // número del documento anterior sería un aviso medido sobre el documento
-    // equivocado, que es peor que no tener número.
+    // Back to «not known» while the new count travels: leaving the previous
+    // document's number on screen would be a measured warning about the wrong
+    // document, which is worse than having no number.
     setReach({ otherArtworks: null, exhibitions: null })
     void (async () => {
       const [artworks, exhibitions] = await Promise.all([
@@ -54,8 +54,8 @@ export function useDocumentUsage(
           .from('artwork_documents')
           .select('id', { count: 'exact', head: true })
           .eq('document_id', documentId)
-          // Los vínculos retirados NO se cuentan: la ficha de esa obra ya no muestra
-          // este documento, así que corregirlo no cambia nada de lo que ahí se lee
+          // Withdrawn links are NOT counted: that artwork's record no longer shows
+          // this document, so correcting it changes nothing of what is read there
           // (RF-901).
           .eq('active', true)
           .neq('catalog_id', catalogId),
@@ -66,10 +66,10 @@ export function useDocumentUsage(
           .eq('active', true),
       ])
       if (!alive.current) return
-      // Un fallo deja el número en «no se sabe» y no pinta ningún error propio: el
-      // panel sigue funcionando, y el aviso de encima de los campos dice que no se
-      // ha podido contar. Un párrafo rojo sobre una advertencia se leería como un
-      // motivo para no guardar.
+      // A failure leaves the number at «not known» and paints no error of its own: the
+      // panel keeps working, and the warning above the fields says that it could not
+      // be counted. A red paragraph over a warning would read as a
+      // reason not to save.
       setReach({
         otherArtworks: artworks.error ? null : (artworks.count ?? null),
         exhibitions: exhibitions.error ? null : (exhibitions.count ?? null),

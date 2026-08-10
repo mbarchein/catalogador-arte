@@ -83,9 +83,9 @@ describe('cuando no se ha podido leer el estado (RF-304)', () => {
   })
 
   /**
-   * Las filas pueden cargar y la fila de la obra no. Sin este aviso, un bloque vacío
-   * se leería como «no hay nada» cuando lo que pasa es que nadie sabe si alguien ha
-   * buscado, que es la confusión que toda esta carpeta existe para evitar.
+   * The rows may load and the artwork's row may not. Without this warning, an empty block
+   * would read as «there is nothing» when what is happening is that nobody knows whether anybody has
+   * looked, which is the confusion this whole folder exists to avoid.
    */
   it('sin estado y sin estar cargando, se dice que no se sabe si alguien ha buscado', () => {
     const notice = statusUnknownNotice(documents, {
@@ -111,10 +111,10 @@ describe('dónde acaba el aviso, que es lo que decide si se lee', () => {
   const notice = statusUnknownNotice(documents, { status: null, loading: false })!
 
   /**
-   * El caso peligroso y el más difícil de colocar: el bloque pinta el texto de
-   * vacío EN LUGAR del cuerpo, así que un aviso puesto entre las filas sería
-   * invisible justo cuando hace falta. Sin esto, un bloque vacío se leería como
-   * «no hay documentación» sin decir que nadie sabe si alguien ha buscado.
+   * The dangerous case and the hardest one to place: the block paints the empty
+   * text INSTEAD OF the body, so a warning placed among the rows would be
+   * invisible precisely when it is needed. Without this, an empty block would read as
+   * «there is no documentation» without saying that nobody knows whether anybody has looked.
    */
   it('con el bloque vacío, el aviso va pegado al texto de vacío', () => {
     const state = withStatusUnknown(blockState(documents, null, 0), notice)

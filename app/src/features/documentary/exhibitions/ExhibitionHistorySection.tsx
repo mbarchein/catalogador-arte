@@ -58,19 +58,19 @@ export function ExhibitionHistorySection({
   /** From `useArtworkDocumentary`: answers null when it worked, the database's message when not. */
   setResearchStatus: (field: ResearchStatusField, value: ResearchStatus) => Promise<string | null>
   /**
-   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
-   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
-   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   * Whether this block can write. False in the record's view and true only
+   * in the editing area. False by default: a new block that forgets to
+   * pass it is born read-only, which is the safe side of forgetting.
    */
   writable?: boolean
 }) {
   const spec = sectionSpec('exhibitions')
   const { rows, loading, error, reload } = useArtworkExhibitions(catalogId)
   const { canEdit } = useAuth()
-  // RF-308: **escribir vive en la zona de edición y no en la vista.** La ficha que
-  // se lee es de solo lectura, así que ningún control de este bloque ofrece cambiar
-  // un dato salvo que la página diga que está editando. `canWrite` sigue siendo
-  // necesario —el permiso manda sobre el modo— pero ya no es suficiente.
+  // RF-308: **writing lives in the editing area and not in the view.** The record that
+  // is read is read-only, so no control of this block offers to change
+  // a datum unless the page says it is editing. `canWrite` is still
+  // necessary —the permission rules over the mode— but it is no longer sufficient.
   const canWrite = canWriteBlock(writable, canEdit)
   const actions = useParticipationActions(catalogId)
 

@@ -20,15 +20,15 @@ import {
 } from './exhibitionHistory'
 
 /**
- * Cómo se lee el historial expositivo de una obra (RF-501, RF-502).
+ * How an artwork's exhibition history reads (RF-501, RF-502).
  *
- * Lo que se verifica aquí es la frase, no el componente: la batería corre en
- * node y no puede abrir un JSX, así que todo lo que DECIDE algo —qué dice una
- * sede sin identificar, si una muestra fue individual, qué significa un bloque
- * vacío— está en funciones puras y se comprueba palabra por palabra.
+ * What is verified here is the sentence, not the component: the suite runs in
+ * node and cannot open a JSX, so everything that DECIDES something —what an
+ * unidentified venue says, whether a show was a solo one, what an empty block
+ * means— is in pure functions and is checked word by word.
  *
- * El caso que da nombre a la regla del proyecto es de este bloque: una obra sin
- * exposiciones registradas no es una obra que no se haya expuesto (RF-218).
+ * The case that gives the project's rule its name belongs to this block: an artwork with no
+ * registered exhibitions is not an artwork that has not been exhibited (RF-218).
  */
 
 const spec = sectionSpec('exhibitions')
@@ -99,10 +99,10 @@ describe('individual o colectiva (RF-501)', () => {
   })
 
   /**
-   * «Sin revisar» a secas, colgando del título de una muestra, se lee como si la
-   * EXPOSICIÓN estuviera sin revisar. Lo que está sin revisar es su carácter, y
-   * un recorte de prensa da el título mucho antes de decir si el artista expuso
-   * solo.
+   * A bare «Sin revisar», hanging from a show's title, reads as if the
+   * EXHIBITION were unreviewed. What is unreviewed is its character, and
+   * a press clipping gives the title long before saying whether the artist exhibited
+   * alone.
    */
   it('RF-218: sin revisar no es «ni individual ni colectiva», y lo dice entero', () => {
     const text = exhibitionKindText('UNREVIEWED')
@@ -147,9 +147,9 @@ describe('la sede de la muestra (RF-502, RF-512)', () => {
   })
 
   /**
-   * «Una galería de Madrid» es un dato legítimo y no una ficha que falta: es lo
-   * que decía la fuente, e inventar una sede para poder guardarlo es como un
-   * catálogo acaba con dos Casas de Cultura.
+   * «Una galería de Madrid» is a legitimate datum and not a missing record: it is what
+   * the source said, and inventing a venue in order to be able to store it is how a
+   * catalogue ends up with two Casas de Cultura.
    */
   it('la sede que consta sin identificar se imprime tal cual', () => {
     const row = exhibition({ venue: null, venue_id: null, venue_note: 'una galería de Madrid' })
@@ -182,8 +182,8 @@ describe('la línea del historial (RF-502)', () => {
   })
 
   /**
-   * La fila se pinta con estas tres piezas y la línea las une: sujetas juntas,
-   * lo que se lee en pantalla y lo que se cita no pueden separarse.
+   * The row is painted with these three pieces and the line joins them: pinned together,
+   * what is read on screen and what is cited cannot come apart.
    */
   it('la línea es exactamente la unión de las tres piezas', () => {
     const row = participation()
@@ -199,9 +199,9 @@ describe('la línea del historial (RF-502)', () => {
   })
 
   /**
-   * Le pasa a un Lector cuando la muestra está retirada: la fila puente sigue
-   * viva y la política de la exposición no se la entrega. La participación es
-   * real, y decirlo es lo único honesto (RF-304).
+   * It happens to a Reader when the show is withdrawn: the bridge row is still
+   * alive and the exhibition's policy does not hand it over. The participation is
+   * real, and saying so is the only honest thing (RF-304).
    */
   it('RF-304: una exposición que el lector no puede ver no deja la fila descabezada', () => {
     const row = participation({ exhibition: null })
@@ -247,9 +247,9 @@ describe('el número en el catálogo de la muestra (RF-513)', () => {
   })
 
   /**
-   * «Sin número registrado» solo significa algo donde hay un catálogo en el que
-   * tenerlo: bajo una muestra que consta sin catálogo inventaría una carencia, y
-   * bajo una sin revisar respondería a una pregunta que nadie ha hecho.
+   * «Sin número registrado» only means something where there is a catalogue in which
+   * to have one: under a show recorded as having no catalogue it would invent a shortcoming, and
+   * under an unreviewed one it would answer a question nobody has asked.
    */
   it('calla cuando no consta catálogo, y calla cuando nadie lo ha mirado', () => {
     const noCatalogue = exhibition({ catalogue_published: 'NO', catalogue_reference_id: null })
@@ -345,10 +345,10 @@ describe('lo que el bloque puede decir mientras carga (RF-218, RF-304)', () => {
   })
 
   /**
-   * El caso incómodo: las filas ya están y el estado de la investigación no. Sin
-   * el estado, el bloque no puede distinguir «nadie ha mirado» de «se ha buscado
-   * y no hay», así que pintar «Ninguna registrada» sería publicar justo la frase
-   * que este bloque existe para no decir.
+   * The awkward case: the rows are already there and the research state is not. Without
+   * the state, the block cannot tell «nobody has looked» from «it has been looked for
+   * and there is none», so painting «Ninguna registrada» would be publishing precisely the sentence
+   * this block exists not to say.
    */
   it('con el estado de la investigación en vuelo, el rótulo no afirma que no haya ninguna', () => {
     const state = historyLoadState({
@@ -393,9 +393,9 @@ describe('el aviso de estado ilegible va donde se lee (RF-304)', () => {
   })
 
   /**
-   * `DocumentarySection` pinta las filas solo cuando las hay, así que en un
-   * bloque vacío —justo el caso donde la distinción decide cómo se lee el
-   * vacío— un aviso puesto entre las filas no aparecería nunca.
+   * `DocumentarySection` paints the rows only when there are any, so in an
+   * empty block —precisely the case where the distinction decides how the
+   * emptiness reads— a warning placed among the rows would never appear.
    */
   it('en un bloque vacío el aviso ocupa el sitio del texto de vacío', () => {
     const state = historyBlockState(blockState(spec, null, 0), 'No se ha podido leer el estado.')
