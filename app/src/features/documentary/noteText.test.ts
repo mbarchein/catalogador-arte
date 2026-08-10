@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { noteSegments, shortLinkText, NOTE_LINK_MAX } from './noteText'
 
 /**
- * Las direcciones dentro de una nota (RF-1408).
+ * The addresses inside a note (RF-1408).
  *
- * Una dirección no tiene espacios: es una sola palabra de ochenta caracteres, y
- * en la columna de una lista de campos el navegador la saca fuera de la pantalla
- * en vez de partirla. Aquí se fija el acortado, y sobre todo **lo que no se
- * acorta**: el dominio entero. Enseñar un trozo que se lea como otro sitio del
- * que de verdad es sería suplantación, la misma que la lista blanca de la base
- * existe para cerrar.
+ * An address has no spaces: it is a single word of eighty characters, and
+ * in the column of a field list the browser pushes it off the screen
+ * instead of breaking it. Here the shortening is pinned down, and above all **what is not
+ * shortened**: the whole domain. Showing a piece that reads as a different site from the
+ * one it really is would be impersonation, the same one the base's whitelist
+ * exists to close.
  */
 
 const REAL =

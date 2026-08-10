@@ -93,10 +93,10 @@ export function PartyPicker({
     close()
   }
 
-  // Esta hoja tiene dos modos y el cambio se ve entero —la lista desaparece y sale un
-  // formulario—, así que el fondo cierra mientras se elige y deja de cerrar mientras se da
-  // de alta una ficha nueva. Es la excepción a «una superficie no puede cerrar unas veces
-  // y otras no»: aquí no es la misma pantalla.
+  // This sheet has two modes and the change is visible in full —the list disappears and a
+  // form comes out—, so the backdrop closes while choosing and stops closing while a new
+  // record is being created. It is the exception to «a surface cannot close sometimes
+  // and not others»: here it is not the same screen.
   const guard = useSheetGuard({
     onClose: close,
     backdropCloses: !creating,

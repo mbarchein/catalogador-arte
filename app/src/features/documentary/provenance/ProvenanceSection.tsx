@@ -93,9 +93,9 @@ export function ProvenanceSection({
    */
   originYear?: number | null
   /**
-   * Si este bloque puede escribir. Falso en la vista de la ficha y verdadero solo
-   * en la zona de edición. Por omisión falso: un bloque nuevo que se olvide de
-   * pasarlo nace de solo lectura, que es el lado seguro del olvido.
+   * Whether this block can write. False in the record's view and true only
+   * in the editing area. False by default: a new block that forgets to
+   * pass it is born read-only, which is the safe side of forgetting.
    */
   writable?: boolean
 }) {

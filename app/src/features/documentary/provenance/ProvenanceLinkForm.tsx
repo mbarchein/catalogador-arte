@@ -56,11 +56,11 @@ export function ProvenanceLinkForm({
   /** Answers null when it worked, and the database's own message when it did not. */
   onSave: (draft: ProvenanceDraft) => Promise<string | null>
   /**
-   * De qué obra es esta cadena, para la clave del borrador apuntado.
+   * Which artwork this chain belongs to, for the noted draft's key.
    *
-   * Lo pasa la sección porque este formulario no sabe de qué obra es —recibe el eslabón y
-   * nada más— y la clave tiene que distinguirlas: si no, un eslabón a medio escribir en
-   * una obra se ofrecería al añadir uno en otra.
+   * The section passes it because this form does not know which artwork it belongs to —it receives the link and
+   * nothing else— and the key has to distinguish them: otherwise, a half-written link in
+   * one artwork would be offered when adding one in another.
    */
   catalogId: string
   onCancel: () => void
@@ -102,9 +102,9 @@ export function ProvenanceLinkForm({
   // empty— and the one being corrected.
   const dirty = draftDirty(draft, initial)
 
-  // Y apuntado. El ámbito distingue el eslabón nuevo del que se corrige: `nuevo` es uno
-  // por obra, que es lo correcto —solo se añade uno a la vez— y así el borrador de un alta
-  // no se ofrece al abrir la corrección de otro eslabón.
+  // And noted down. The scope distinguishes the new link from the one being corrected: `nuevo` is one
+  // per artwork, which is right —only one is added at a time— and this way a creation's draft
+  // is not offered when opening the correction of another link.
   const stored = useFormDraft({
     scope: `procedencia:${catalogId}:${initial.id ?? 'nuevo'}`,
     draft,

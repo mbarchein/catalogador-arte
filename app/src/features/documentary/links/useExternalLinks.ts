@@ -54,25 +54,25 @@ export interface ExternalLinksState {
 }
 
 /**
- * Los enlaces de una ficha: los que cuelgan de la obra y los que cuelgan de
- * cualquiera de sus fotografías.
+ * A record's links: the ones hanging from the artwork and the ones hanging from
+ * any of its photographs.
  *
- * **Son tres consultas y no una, y el motivo es el arco exclusivo.**
- * `external_links` no tiene columna `catalog_id` —cada fila cuelga de una cosa por
- * clave ajena declarada—, así que los de las fotografías se piden por la relación:
- * `images!inner(catalog_id)` con filtro sobre la tabla incrustada, que es un
- * `join` interno y devuelve solo los enlaces cuya toma es de esta obra.
- * Comprobado por HTTP contra la base local antes de escribirlo, no supuesto.
+ * **They are three queries and not one, and the reason is the exclusive arc.**
+ * `external_links` has no `catalog_id` column —each row hangs from one thing by a
+ * declared foreign key—, so the photographs' ones are asked for through the relationship:
+ * `images!inner(catalog_id)` with a filter over the embedded table, which is an
+ * inner `join` and returns only the links whose shot belongs to this artwork.
+ * Checked over HTTP against the local base before writing it, not assumed.
  *
- * Las tres van EN PARALELO: son tres viajes independientes y encadenarlos
- * triplicaría la espera en el sitio donde esto se usa, que es un almacén con mala
- * cobertura.
+ * The three go IN PARALLEL: they are three independent trips and chaining them
+ * would triple the wait in the place where this is used, which is a storeroom with poor
+ * coverage.
  *
- * **Quién ve qué lo decide la política de la tabla y no este código.** La de
- * `external_links` esconde al Lector lo retirado y, además, hereda la visibilidad
- * de la ficha de la que cuelga el enlace: una obra que no se puede ver no enseña
- * sus enlaces. Por eso no se filtra por `active` aquí — quien puede editar tiene
- * que ver lo retirado para poder recuperarlo (RF-1406).
+ * **Who sees what is decided by the table's policy and not by this code.**
+ * `external_links`' hides what is withdrawn from the Reader and, besides, inherits the visibility
+ * of the record the link hangs from: an artwork that cannot be seen does not show
+ * its links. That is why there is no filter by `active` here — whoever can edit has
+ * to see what is withdrawn in order to be able to recover it (RF-1406).
  */
 export function useExternalLinks(catalogId: string, enabled = true): ExternalLinksState {
   const [rows, setRows] = useState<readonly ExternalLinkRow[]>([])
@@ -80,9 +80,9 @@ export function useExternalLinks(catalogId: string, enabled = true): ExternalLin
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // La ficha se pasa con un gesto (RF-311): una respuesta que llega después de
-  // que el bloque se haya desmontado no debe pintar los enlaces de la obra
-  // anterior sobre la siguiente.
+  // The record is flicked past with a gesture (RF-311): an answer arriving after
+  // the block has been unmounted must not paint the previous artwork's links
+  // over the next one.
   const alive = useRef(true)
   useEffect(() => {
     alive.current = true
@@ -107,9 +107,9 @@ export function useExternalLinks(catalogId: string, enabled = true): ExternalLin
 
     const failure = own.error ?? ofPhotos.error ?? gallery.error
     if (failure) {
-      // Un bloque que no ha podido leerse NO se pinta vacío: «sin enlaces» y «no
-      // se ha podido preguntar» son dos cosas distintas, y confundirlas manda a
-      // buscar un dato que está perfectamente bien.
+      // A block that could not be read is NOT painted empty: «no links» and «it could
+      // not be asked» are two different things, and confusing them sends people
+      // looking for a datum that is perfectly fine.
       setError(describeLinkFailure('load', failure))
       setRows([])
       setPhotos([])
@@ -134,19 +134,19 @@ export interface LinkActions {
   /** A write is in flight. The controls go dark with it. */
   readonly saving: boolean
   /**
-   * Pregunta a la base si acepta esta dirección (RF-1403).
+   * Asks the base whether it accepts this address (RF-1403).
    *
-   * Llama a `is_web_url`, que es la MISMA función que aplica el `check` de la
-   * tabla: no hay una segunda copia de la regla en el cliente y por lo tanto no
-   * hay una copia que se quede atrás. Existe solo para poder explicar el rechazo
-   * en español antes de guardar.
+   * It calls `is_web_url`, which is the SAME function the table's `check` applies:
+   * there is no second copy of the rule in the client and therefore there is
+   * no copy that falls behind. It exists only to be able to explain the rejection
+   * in Spanish before saving.
    *
-   * Contesta `UNKNOWN` cuando no ha contestado nadie —sin cobertura—, y en ese
-   * caso quien llama **sigue adelante e intenta guardar**: la validación de
-   * verdad es el `check` de la tabla, que no se puede saltar, así que lo único que
-   * se pierde sin red es la calidad del mensaje. Bloquear el guardado por no haber
-   * podido preguntar convertiría un problema de cobertura en un enlace que no se
-   * puede añadir.
+   * It answers `UNKNOWN` when nobody has answered —no coverage—, and in that
+   * case the caller **carries on and tries to store**: the real
+   * validation is the table's `check`, which cannot be skipped, so all that
+   * is lost with no network is the quality of the message. Blocking the save for not having
+   * been able to ask would turn a coverage problem into a link that cannot
+   * be added.
    */
   readonly verifyUrl: (url: string) => Promise<UrlVerdict>
   /** Adds the link (RF-1401). Null if it went well; the sentence in Spanish if not. */
@@ -156,21 +156,21 @@ export interface LinkActions {
   /** Withdraws or recovers (RF-1406). Never a `delete`: there is no privilege and there is not going to be. */
   readonly setActive: (linkId: string, active: boolean) => Promise<string | null>
   /**
-   * Sella la comprobación a mano (RF-1405) por la RPC `record_link_check`, que es
-   * el único camino: las tres columnas están congeladas por un trigger, así que un
-   * `update` normal las dejaría exactamente como estaban y en silencio.
+   * Stamps the check done by hand (RF-1405) through the `record_link_check` RPC, which is
+   * the only path: the three columns are frozen by a trigger, so a
+   * normal `update` would leave them exactly as they were and in silence.
    */
   readonly check: (linkId: string, status: LinkCheckStatus | null) => Promise<string | null>
 }
 
 /**
- * Las cinco escrituras del bloque.
+ * The block's five writes.
  *
- * Las dos que pasan por `update` piden la fila de vuelta (`select()`) y
- * comprueban que ha vuelto alguna. No es celo: medido contra la base local, un
- * `PATCH` con la sesión de un Lector contesta `200 []` y **no** un error, porque
- * la política de UPDATE no le deja ver la fila. Tratar eso como éxito le diría a
- * la usuaria que ha guardado algo que no se ha guardado.
+ * The two that go through `update` ask for the row back (`select()`) and
+ * check that some row came back. It is not zeal: measured against the local base, a
+ * `PATCH` with a Reader's session answers `200 []` and **not** an error, because
+ * the UPDATE policy does not let them see the row. Treating that as success would tell
+ * the user she has stored something that has not been stored.
  */
 export function useLinkActions(): LinkActions {
   const [saving, setSaving] = useState(false)
@@ -220,9 +220,9 @@ export function useLinkActions(): LinkActions {
       p_status: status,
     })
     setSaving(false)
-    // La RPC sí levanta excepción cuando el enlace no existe o cuando quien llama
-    // no puede editar, y las dos frases llegan ya escritas en español para la
-    // usuaria: se muestran tal cual.
+    // The RPC does raise an exception when the link does not exist or when the caller
+    // cannot edit, and both sentences arrive already written in Spanish for the
+    // user: they are shown as is.
     return error ? describeLinkFailure('check', error) : null
   }, [])
 

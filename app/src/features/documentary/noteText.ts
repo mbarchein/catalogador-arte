@@ -1,23 +1,23 @@
 /**
- * Las notas de texto libre, con las direcciones que traen dentro (RF-1408).
+ * Free-text notes, with the addresses they carry inside (RF-1408).
  *
- * ── EL PROBLEMA QUE RESUELVE ────────────────────────────────
+ * ── THE PROBLEM IT SOLVES ───────────────────────────────────
  *
- * En una nota se pegan direcciones web, y una dirección no tiene espacios: es
- * una sola palabra de ochenta caracteres. En la columna estrecha de una lista de
- * campos no cabe, y el navegador la saca fuera de la pantalla en vez de partirla.
- * Se arregla por los dos lados: **el contenido de la nota va a ancho completo**
- * —eso lo hace el componente— y **la dirección se enseña acortada**, que es lo de
- * aquí.
+ * Web addresses get pasted into a note, and an address has no spaces: it is
+ * a single word of eighty characters. In the narrow column of a field
+ * list it does not fit, and the browser pushes it off the screen instead of breaking it.
+ * It is fixed from both sides: **the note's content goes at full width**
+ * —the component does that— and **the address is shown shortened**, which is what belongs
+ * here.
  *
- * ── QUÉ SE ACORTA Y QUÉ NO ──────────────────────────────────
+ * ── WHAT IS SHORTENED AND WHAT IS NOT ───────────────────────
  *
- * El dominio **entero, siempre**, y se recorta por el final. El motivo no es de
- * estilo: enseñar un trozo de dirección que se lea como otro sitio del que de
- * verdad es sería suplantación, que es lo mismo que `linkDomain` existe para
- * evitar en el bloque de enlaces —`https://macvac.es@evil.example/` se lee como
- * del MACVA y va a otra parte—. Por eso se usa esa misma función, y por eso una
- * dirección que no reconozca **se enseña entera**: larga y fea, pero verdadera.
+ * The domain **whole, always**, and it is trimmed at the end. The reason is not one of
+ * style: showing a piece of an address that reads as a different site from the one it
+ * really is would be impersonation, which is the same thing `linkDomain` exists to
+ * avoid in the links block —`https://macvac.es@evil.example/` reads as
+ * MACVA's and goes elsewhere—. That is why that same function is used, and why an
+ * address it does not recognise **is shown whole**: long and ugly, but true.
  */
 
 import { linkDomain } from './links/externalLinks'
@@ -33,21 +33,21 @@ export interface NoteSegment {
 }
 
 /**
- * Signos que suelen cerrar una frase y no formar parte de la dirección.
+ * Marks that usually close a sentence and are not part of the address.
  *
- * «Véase https://ejemplo.es/obra.» acaba en punto, y el punto es de la frase. Se
- * quitan del final, uno a uno, para que el enlace vaya a donde se escribió.
+ * «Véase https://ejemplo.es/obra.» ends in a full stop, and the stop belongs to the sentence. They
+ * are removed from the end, one by one, so the link goes where it was written.
  */
 const TRAILING = /[.,;:!?)\]}»"']+$/
 
 const URL_IN_TEXT = /https?:\/\/[^\s<>"']+/gi
 
 /**
- * Cómo se lee una dirección dentro de una nota.
+ * How an address reads inside a note.
  *
- * Sin `https://` ni `www.`, que no dicen nada y ocupan; el dominio entero y
- * después tanto camino como quepa. Una dirección cuyo dominio no se reconoce
- * vuelve tal cual: cortarla podría enseñar como destino algo que no lo es.
+ * Without `https://` or `www.`, which say nothing and take up room; the whole domain and
+ * then as much path as fits. An address whose domain is not recognised
+ * comes back as is: cutting it could show as the destination something that is not.
  */
 export function shortLinkText(url: string, max: number = NOTE_LINK_MAX): string {
   const domain = linkDomain(url)
@@ -64,10 +64,10 @@ export function shortLinkText(url: string, max: number = NOTE_LINK_MAX): string 
 }
 
 /**
- * La nota partida en texto y direcciones, en orden y sin perder nada.
+ * The note split into text and addresses, in order and without losing anything.
  *
- * Lo que se devuelve, concatenando los `text`, **no** es la nota original: las
- * direcciones salen acortadas, que es el objetivo. La original viaja en `href`.
+ * What is returned, concatenating the `text`s, is **not** the original note: the
+ * addresses come out shortened, which is the point. The original travels in `href`.
  */
 export function noteSegments(note: string): NoteSegment[] {
   const segments: NoteSegment[] = []
