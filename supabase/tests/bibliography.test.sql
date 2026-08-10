@@ -1,29 +1,29 @@
--- RF-514: los tipos de publicación son vocabulario abierto con clave sustituta,
---         y la clave BibTeX pasa a columna única, opcional y editable (DP-03).
--- RF-504: `pages` se conserva como dato aislado, separado de la nota.
--- RF-506: la cita se lee también desde la referencia («Obras citadas»).
--- RF-517, RF-903: una cita se retira, no se borra, y volver a añadirla la
---         restaura en vez de chocar contra la unicidad.
--- RF-218: «Sin revisar» no es «no», llevado del campo al bloque documental.
--- RF-901, RF-902: nada se borra, y la baja deja traza.
--- RF-909: los duplicados se resuelven por revisión, no por unicidad del título.
--- RF-111, RF-113: las tres tablas nacen cerradas y nadie tiene DELETE.
+-- RF-514: publication types are an open vocabulary with a surrogate key,
+--         and the BibTeX key becomes a unique, optional and editable column (DP-03).
+-- RF-504: `pages` is kept as an isolated datum, separate from the note.
+-- RF-506: the citation is also read from the reference («Obras citadas»).
+-- RF-517, RF-903: a citation is withdrawn, not deleted, and adding it again
+--         restores it instead of clashing against uniqueness.
+-- RF-218: «Sin revisar» is not «no», carried from the field to the documentary block.
+-- RF-901, RF-902: nothing is deleted, and the withdrawal leaves a trace.
+-- RF-909: duplicates are resolved by review, not by uniqueness of the title.
+-- RF-111, RF-113: the three tables are born closed and nobody has DELETE.
 --
--- Lo que se comprueba es lo que el cliente no debe volver a comprobar: que una
--- referencia sin título no entra, que una clave BibTeX con un espacio dentro no
--- es una clave, que dos escrituras de la misma clave son la misma referencia y
--- que muchas referencias sin clave conviven, que un año imposible no entra, que
--- la misma obra no se cita dos veces en la misma referencia y que volver a
--- añadir una cita retirada la recupera con sus páginas, y que la columna de
--- estado de investigación no puede mentir por ninguna de sus dos puertas — ni
--- la de bibliografía, ni la de procedencia, que este grupo REEMPLAZA y podría
--- haberse comido sin que nada avisara.
+-- What is checked is what the client must not check again: that a
+-- reference with no title does not go in, that a BibTeX key with a space inside is not
+-- a key, that two writings of the same key are the same reference and
+-- that many references with no key coexist, that an impossible year does not go in, that
+-- the same artwork is not cited twice in the same reference and that adding
+-- a withdrawn citation again recovers it with its pages, and that the research-state
+-- column cannot lie through either of its two doors — neither
+-- the bibliography one, nor the provenance one, which this group REPLACES and could
+-- have swallowed with nothing warning about it.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
--- Un catalogador, un lector y dos obras. Los perfiles los crea el trigger de
--- auth.users.
+-- One cataloguer, one reader and two artworks. The profiles are created by the
+-- auth.users trigger.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b1', 'cat-biblio@test.local'),
   ('00000000-0000-0000-0000-0000000000b2', 'lec-biblio@test.local');
@@ -34,10 +34,10 @@ insert into public.artworks (catalog_id, artist, title, attributed_title) values
   ('AR-9600', 'ROTILI', 'La muy citada', 'UNCONFIRMED'),
   ('AR-9601', 'ROTILI', 'La que no cita nadie', 'UNCONFIRMED');
 
--- ── 1. El vocabulario nace sembrado ──────────────────────────
--- Una maestra vacía deja el selector en blanco y obliga a inventar el
--- vocabulario mientras se cataloga. Los cuatro valores de v11 más los dos que
--- faltan el primer día de archivo.
+-- ── 1. The vocabulary is born seeded ─────────────────────────
+-- An empty master table leaves the selector blank and forces one to invent the
+-- vocabulary while cataloguing. v11's four values plus the two that
+-- are missing on the first day in the archive.
 do $$
 declare v_n int;
 begin
@@ -51,10 +51,10 @@ begin
   raise notice 'OK: los seis tipos de publicación están sembrados y activos (RF-514)';
 end $$;
 
--- ── 2. Un tipo, una fila ─────────────────────────────────────
--- Unicidad por clave de comparación y no por el nombre literal: «Catálogo de
--- exposición» y «catalogo de exposicion» son el mismo tipo, y descubrirlo
--- cuando ya hay dos filas cuesta repasar todas las referencias.
+-- ── 2. One type, one row ─────────────────────────────────────
+-- Uniqueness by comparison key and not by the literal name: «Catálogo de
+-- exposición» and «catalogo de exposicion» are the same type, and discovering it
+-- when there are already two rows costs going through every reference again.
 do $$
 begin
   begin
@@ -78,16 +78,16 @@ begin
     raise notice 'OK: un tipo con espacios alrededor se rechaza';
   end;
 
-  -- Y ampliar la lista es una fila, que es el motivo entero de que sea una
-  -- maestra y no una selección cerrada de cuatro valores.
+  -- And extending the list is one row, which is the whole reason it is a
+  -- master table and not a closed choice of four values.
   insert into public.publication_types (name) values ('Programa de radio');
   raise notice 'OK: la usuaria amplía el vocabulario sin migración (RF-514)';
 end $$;
 
--- ── 3. Una referencia mínima entra ───────────────────────────
--- El título y nada más: lo que se sabe al anotar una fotocopia sin portada.
--- Todo lo demás nace vacío y explícito, y sin clasificar es una respuesta
--- legítima.
+-- ── 3. A minimal reference goes in ───────────────────────────
+-- The title and nothing else: what is known on noting down a photocopy with no cover.
+-- Everything else is born empty and explicit, and unclassified is a legitimate
+-- answer.
 do $$
 declare
   v_id uuid;
@@ -113,7 +113,7 @@ begin
   raise notice 'OK: una referencia mínima entra y lo pendiente queda pendiente';
 end $$;
 
--- ── 4. Una referencia sin título no se puede citar ───────────
+-- ── 4. A reference with no title cannot be cited ─────────────
 do $$
 begin
   begin
@@ -124,11 +124,11 @@ begin
   end;
 end $$;
 
--- ── 5. Dos referencias se pueden llamar igual (RF-909) ───────
--- Un catálogo de 1985 y una monografía de 2003 se titulan los dos «Alberto
--- Rotili», y son dos entradas legítimas. La unicidad del título habría
--- convertido un dato real en un error, y los duplicados de verdad se resuelven
--- por revisión del equipo.
+-- ── 5. Two references can be called the same (RF-909) ────────
+-- A 1985 catalogue and a 2003 monograph are both titled «Alberto
+-- Rotili», and they are two legitimate entries. Uniqueness of the title would have
+-- turned a real datum into an error, and the real duplicates are resolved
+-- by the team's review.
 do $$
 begin
   insert into public.bibliography (title, year) values ('Alberto Rotili', 1985);
@@ -136,14 +136,14 @@ begin
   raise notice 'OK: dos referencias distintas pueden llamarse igual (RF-909)';
 end $$;
 
--- ── 6. La clave BibTeX, resuelta DP-03 ───────────────────────
--- Deja de ser clave primaria y pasa a columna única, OPCIONAL y EDITABLE. Las
--- tres cosas se comprueban, porque las tres son el cambio.
+-- ── 6. The BibTeX key, DP-03 resolved ───────────────────────
+-- It stops being a primary key and becomes a unique, OPTIONAL and EDITABLE column. All
+-- three are checked, because all three are the change.
 do $$
 declare v_id uuid;
 begin
-  -- Opcional, y muchas a la vez: `place_key` es estricta, así que el índice
-  -- ignora las referencias sin clave. Sin eso, la segunda sin clave chocaría.
+  -- Optional, and many at once: `place_key` is strict, so the index
+  -- ignores the references with no key. Without that, the second one with no key would clash.
   insert into public.bibliography (title) values ('Sin clave todavía, la primera');
   insert into public.bibliography (title) values ('Sin clave todavía, la segunda');
 
@@ -151,8 +151,8 @@ begin
   values ('rotili1985muba', 'Catálogo MUBA 1985', 1985)
   returning id into v_id;
 
-  -- Única, comparada como el resto de nombres del esquema: dos claves que solo
-  -- difieren en mayúsculas no las distinguiría ningún `.bib`.
+  -- Unique, compared like the rest of the schema's names: two keys differing only
+  -- in capitals would not be told apart by any `.bib`.
   begin
     insert into public.bibliography (bibtex_key, title)
     values ('Rotili1985MUBA', 'El mismo catálogo escrito de otra manera');

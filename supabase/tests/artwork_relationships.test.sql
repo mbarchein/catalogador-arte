@@ -359,14 +359,14 @@ begin
   raise notice 'OK: una relación se retira, deja traza y vuelve limpia (RF-902, RF-517)';
 end $$;
 
--- ── 10. Volver a relacionar RESTAURA, en cualquier orden ─────
+-- ── 10. Relating again RESTORES, in any order ────────────────
 --
--- RF-517. Con la unicidad cubriendo también las relaciones retiradas, un
--- `insert` crudo choca contra el índice y la interfaz convertiría un «Añadir» en
--- una violación de unicidad incomprensible. Se comprueban las dos mitades: que
--- el `insert` crudo efectivamente choca —que es por lo que la función existe— y
--- que la función restaura, incluso con las dos obras pasadas al revés, que es lo
--- propio de esta puente y de ninguna de las otras tres.
+-- RF-517. With uniqueness also covering the withdrawn relationships, a
+-- raw `insert` clashes against the index and the interface would turn an «Añadir» into
+-- an incomprehensible uniqueness violation. Both halves are checked: that
+-- the raw `insert` does clash —which is why the function exists— and
+-- that the function restores, even with the two artworks passed the other way round, which is
+-- particular to this bridge and to none of the other three.
 do $$
 declare
   v_tipo uuid; v_id uuid;
@@ -387,10 +387,10 @@ begin
     raise notice 'OK: el insert crudo choca — que es por lo que existe relate_artworks';
   end;
 
-  -- Y la función la recupera, pasando las obras EN EL OTRO ORDEN: la usuaria la
-  -- está añadiendo desde la ficha de la otra obra y no tiene por qué recordar
-  -- cómo se escribió la primera vez. Sin nota: el formulario de «Añadir» viene
-  -- en blanco y lo que no se manda no puede borrar lo que alguien investigó.
+  -- And the function recovers it, passing the artworks IN THE OTHER ORDER: the user is
+  -- adding it from the other artwork's record and has no reason to remember
+  -- how it was written the first time. With no note: the «Añadir» form comes
+  -- in blank and what is not sent cannot erase what somebody researched.
   v_fila := public.relate_artworks('AR-9703', 'AR-9702', v_tipo);
 
   if not v_fila.active then
@@ -406,13 +406,13 @@ begin
     raise exception 'FAIL: la relación restaurada conserva la traza de una baja que ya no existe';
   end if;
 
-  -- Y con nota nueva, manda lo que se manda.
+  -- And with a new note, what is sent rules.
   v_fila := public.relate_artworks('AR-9702', 'AR-9703', v_tipo, 'Se subastaron por separado en 1994');
   if v_fila.note <> 'Se subastaron por separado en 1994' then
     raise exception 'FAIL: la función no ha actualizado la nota (%)', v_fila.note;
   end if;
 
-  -- Una terna que no existía se crea, que es el otro camino de la misma función.
+  -- A triple that did not exist is created, which is the same function's other path.
   select id into v_tipo from public.artwork_relationship_types where name = 'Versión de';
   v_fila := public.relate_artworks('AR-9703', 'AR-9701', v_tipo, 'Misma composición, otro soporte');
   if not v_fila.active or v_fila.from_catalog_id <> 'AR-9701' then
@@ -421,11 +421,11 @@ begin
   raise notice 'OK: volver a relacionar restaura, en cualquier orden y con su nota (RF-517)';
 end $$;
 
--- ── 11. Restaurar pasa por la misma puerta ───────────────────
+-- ── 11. Restoring goes through the same door ─────────────────
 --
--- Es el camino por el que la contradicción entra de verdad: la relación
--- contraria se escribió mientras esta estaba en la papelera, y restaurarla
--- dejaría las dos direcciones activas a la vez sin que nadie insertara nada.
+-- It is the path the contradiction really comes in by: the opposite
+-- relationship was written while this one was in the wastebasket, and restoring it
+-- would leave both directions active at once without anybody inserting anything.
 do $$
 declare v_tipo uuid; v_id uuid;
 begin
@@ -437,8 +437,8 @@ begin
 
   update public.artwork_relationships set active = false where id = v_id;
 
-  -- Con la primera retirada, la contraria ya se puede registrar: retirar una
-  -- relación es decir que no consta, y entonces no hay contradicción.
+  -- With the first one withdrawn, the opposite can now be registered: withdrawing a
+  -- relationship is saying it is not recorded, and then there is no contradiction.
   insert into public.artwork_relationships (from_catalog_id, to_catalog_id, relationship_type_id)
   values ('AR-9700', 'AR-9702', v_tipo);
 
@@ -450,19 +450,19 @@ begin
     raise notice 'OK: restaurar pasa por la misma puerta que insertar (RF-217)';
   end;
 
-  -- Y con la contraria retirada, la restauración vuelve a ser posible.
+  -- And with the opposite withdrawn, the restoration is possible again.
   update public.artwork_relationships set active = false
    where relationship_type_id = v_tipo and from_catalog_id = 'AR-9700';
   update public.artwork_relationships set active = true where id = v_id;
   raise notice 'OK: retirada la contraria, la relación se restaura';
 end $$;
 
--- ── 12. La simetría de un tipo usado no se cambia ────────────
+-- ── 12. The symmetry of a used type is not changed ───────────
 --
--- No es purismo: las filas de un tipo simétrico están canonicalizadas y las de
--- uno asimétrico no. Cambiar la bandera dejaría filas guardadas con una
--- convención y filas nuevas con otra, y la misma pareja entraría dos veces sin
--- que la unicidad lo notase. Después ya no hay forma de saber cuál sobra.
+-- It is not purism: the rows of a symmetric type are canonicalised and those of
+-- an asymmetric one are not. Changing the flag would leave stored rows with one
+-- convention and new rows with another, and the same pair would go in twice without
+-- uniqueness noticing. Afterwards there is no way of knowing which one is superfluous.
 do $$
 declare v_tipo uuid; v_libre uuid;
 begin
@@ -478,17 +478,17 @@ begin
     raise notice 'OK: la simetría de un tipo usado está cerrada: %', sqlerrm;
   end;
 
-  -- Un tipo que todavía no ha relacionado nada sí se corrige: la regla protege
-  -- las filas guardadas, no el vocabulario.
+  -- A type that has not related anything yet is corrected: the rule protects
+  -- the stored rows, not the vocabulary.
   select id into v_libre from public.artwork_relationship_types where name = 'Fragmento de';
   update public.artwork_relationship_types
      set is_symmetric = true, inverse_name = ''
    where id = v_libre;
   raise notice 'OK: un tipo sin usar se corrige entero';
 
-  -- Y las relaciones RETIRADAS también cuentan, al contrario que en la regla de
-  -- la baja: una relación en la papelera se puede restaurar, y volvería escrita
-  -- con la convención antigua.
+  -- And the WITHDRAWN relationships count too, unlike in the withdrawal
+  -- rule: a relationship in the wastebasket can be restored, and it would come back written
+  -- with the old convention.
   update public.artwork_relationships set active = false where relationship_type_id = v_tipo;
   begin
     update public.artwork_relationship_types
@@ -502,12 +502,12 @@ begin
   update public.artwork_relationships set active = true where relationship_type_id = v_tipo;
 end $$;
 
--- ── 13. El tipo en uso no se retira ──────────────────────────
--- Misma regla que en las demás maestras: retirarlo no lo retira, deja el
--- catálogo apuntando a algo que la interfaz ya no ofrece. Una relación en la
--- papelera no cuenta, que es la diferencia con el bloque anterior y es
--- deliberada: exigir vaciar la papelera para retirar un tipo sería hacer que la
--- papelera estorbe.
+-- ── 13. A type in use is not withdrawn ──────────────────────
+-- The same rule as in the other master tables: withdrawing it does not withdraw it, it leaves the
+-- catalogue pointing at something the interface no longer offers. A relationship in the
+-- wastebasket does not count, which is the difference from the previous block and is
+-- deliberate: requiring the wastebasket to be emptied to withdraw a type would make the
+-- wastebasket get in the way.
 do $$
 declare v_tipo uuid;
 begin
@@ -525,8 +525,8 @@ begin
   update public.artwork_relationship_types set active = false where id = v_tipo;
   raise notice 'OK: una relación retirada no impide retirar su tipo (RF-905)';
 
-  -- Y la baja del vocabulario se sella y se deshace, como en las demás maestras:
-  -- sin `restored_at`, restaurar deja la fila como si nunca se hubiera retirado.
+  -- And the vocabulary's withdrawal is stamped and undone, as in the other master tables:
+  -- with no `restored_at`, restoring leaves the row as if it had never been withdrawn.
   if (select deactivated_at from public.artwork_relationship_types where id = v_tipo) is null then
     raise exception 'FAIL: la baja del tipo no ha quedado sellada';
   end if;
@@ -545,10 +545,10 @@ begin
   update public.artwork_relationships set active = true where relationship_type_id = v_tipo;
 end $$;
 
--- ── 14. Renombrar el tipo es un update de una fila ───────────
--- RF-216 y ADR-007: la clave de una maestra no es su nombre. Las relaciones ya
--- guardadas ven el nombre nuevo sin que nadie las toque, que es lo que un
--- enumerado no puede hacer y la razón de que esto sea una tabla.
+-- ── 14. Renaming the type is an update of one row ───────────
+-- RF-216 and ADR-007: a master table's key is not its name. The relationships already
+-- stored see the new name without anybody touching them, which is what an
+-- enum cannot do and the reason this is a table.
 do $$
 declare v_tipo uuid; v_etiqueta text; v_inversa text;
 begin
@@ -574,10 +574,10 @@ begin
    where id = v_tipo;
 end $$;
 
--- ── 15. Las dos direcciones se leen desde cada extremo ───────
--- Lo que la base garantiza es que la etiqueta de la dirección contraria existe
--- SIEMPRE: componer la línea de la ficha es interfaz, pero sin esta garantía la
--- interfaz tendría que inventarse un texto cuando falta.
+-- ── 15. Both directions are read from each end ──────────────
+-- What the base guarantees is that the opposite direction's label exists
+-- ALWAYS: composing the record's line is interface work, but without this guarantee the
+-- interface would have to invent a text when it is missing.
 do $$
 declare v_linea text;
 begin
@@ -611,11 +611,11 @@ exception when others then
   raise notice 'OK: el lector no relaciona: %', sqlerrm;
 end $$;
 
--- ── 17. La autoría la sella la base ──────────────────────────
--- RF-803 y RF-804 con la función genérica: quién y cuándo salen de la sesión, no
--- de lo que mande el cliente. Se comprueba mandando una fecha falsa y viendo que
--- el trigger la pisa; comparar dos instantes no valdría, porque dentro de una
--- transacción `now()` no avanza.
+-- ── 17. The authorship is stamped by the base ────────────────
+-- RF-803 and RF-804 with the generic function: who and when come from the session, not
+-- from what the client sends. It is checked by sending a false date and seeing that
+-- the trigger overrides it; comparing two instants would not do, because inside a
+-- transaction `now()` does not advance.
 do $$
 declare
   v_tipo uuid; v_id uuid; v_creado uuid; v_actualizado uuid; v_cuando timestamptz;
@@ -651,15 +651,15 @@ begin
   raise notice 'OK: la autoría y la fecha las sella la base (RF-801, RF-803, RF-804)';
 end $$;
 
--- ── 18. La cascada del identificador, por los DOS extremos ───
+-- ── 18. The identifier's cascade, through BOTH ends ──────────
 --
--- `on update cascade` en las dos columnas, como en `images`, `provenance_events`
--- y las tres puentes anteriores. No se puede ejercitar cambiando un
--- `catalog_id`: RF-204 lo declara inmutable y `tg_catalog_id_immutable` rechaza
--- el update antes de que la cascada llegue a existir. Lo que se comprueba
--- entonces es la declaración, y es lo único comprobable — pero comprobar solo
--- una de las dos columnas sería no comprobar nada, porque olvidarlo en la
--- segunda es exactamente el error que se comete al copiar la primera.
+-- `on update cascade` on both columns, as in `images`, `provenance_events`
+-- and the three previous bridges. It cannot be exercised by changing a
+-- `catalog_id`: RF-204 declares it immutable and `tg_catalog_id_immutable` rejects
+-- the update before the cascade ever comes into existence. What is checked
+-- then is the declaration, and it is the only checkable thing — but checking only
+-- one of the two columns would be checking nothing, because forgetting it on the
+-- second is exactly the mistake made when copying the first.
 do $$
 declare v_sin_cascada text[];
 begin
@@ -683,11 +683,11 @@ begin
   raise notice 'OK: los dos extremos siguen al identificador de su obra si algún día cambia';
 end $$;
 
--- ── 19. Nadie borra de verdad, y las dos nacen cerradas ──────
--- RF-901, RF-111, RF-113. Las políticas las escribe la migración siguiente; con
--- RLS activado y sin política, la tabla está cerrada, que es el estado seguro
--- para esperar. Lo que no puede pasar nunca es lo contrario: privilegios
--- concedidos sin RLS.
+-- ── 19. Nobody really deletes, and both are born closed ─────
+-- RF-901, RF-111, RF-113. The policies are written by the next migration; with
+-- RLS enabled and no policy, the table is closed, which is the safe state
+-- to wait in. What can never happen is the opposite: privileges
+-- granted with no RLS.
 do $$
 declare v_tabla text;
 begin
