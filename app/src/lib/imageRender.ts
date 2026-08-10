@@ -1131,28 +1131,28 @@ async function uploadCorrectedCopy(
 }
 
 /**
- * Quien escucha cuánto lleva viajado un fichero, subiendo o bajando.
+ * Whoever listens to how much of a file has travelled, going up or coming down.
  *
- * `total` nulo es «no se sabe cuánto pesa», y es un estado legítimo: una respuesta
- * comprimida no trae `content-length`. Quien pinte decide entonces girar en vez de
- * inventarse un porcentaje.
+ * A null `total` is «how much it weighs is not known», and it is a legitimate state: a
+ * compressed response carries no `content-length`. Whoever paints then decides to spin instead of
+ * inventing a percentage.
  */
 export type TransferListener = (event: UploadProgressEvent) => void
 
 /* --------------------------------------------------------------- the two paths */
 
 /**
- * La descarga, contada mientras llega.
+ * The download, counted as it arrives.
  *
- * Se lee el cuerpo a trozos en vez de pedir `.blob()` de una vez, y por un motivo
- * concreto: el máster son de 2 a 8 MB desde un almacén con mala cobertura, y quien
- * pulsa el icono se queda mirando la fotografía sin saber si pasa algo. Con el
- * total del `content-length` el anillo avanza; sin él —una respuesta comprimida o
- * troceada no lo trae— se cuenta lo que lleva y el total va nulo, que es lo que
- * hace que el anillo gire en vez de fingir un porcentaje.
+ * The body is read in chunks instead of asking for `.blob()` all at once, and for a
+ * concrete reason: the master is 2 to 8 MB from a store with poor coverage, and whoever
+ * presses the icon is left looking at the photograph without knowing whether anything is happening. With the
+ * `content-length` total the ring advances; without it —a compressed or
+ * chunked response does not carry it— what has arrived is counted and the total goes null, which is what
+ * makes the ring spin instead of faking a percentage.
  *
- * Si el cuerpo no se puede leer a trozos, se cae a `.blob()` de siempre: quedarse
- * sin fotografía por no poder dibujar una barra sería el peor intercambio posible.
+ * If the body cannot be read in chunks, it falls back to the usual `.blob()`: being left
+ * with no photograph for not being able to draw a bar would be the worst possible trade.
  */
 async function fetchBlob(url: string, onProgress?: TransferListener): Promise<Blob> {
   const response = await fetch(url)
@@ -1266,10 +1266,10 @@ export async function savePhotoEdit(params: {
    */
   masterPath?: string | null
   /**
-   * Cuánto lleva subido de la copia a resolución completa, que es el fichero
-   * grande de este camino: hasta 19 MB. Las dos copias pequeñas van por el
-   * almacenamiento de Supabase, que no sabe contar, así que de esas no hay
-   * progreso y el anillo gira mientras duran.
+   * How much of the full-resolution copy has been uploaded, which is this path's
+   * big file: up to 19 MB. The two small copies go through Supabase's
+   * storage, which cannot count, so for those there is no
+   * progress and the ring spins while they last.
    */
   onProgress?: TransferListener
 }): Promise<{

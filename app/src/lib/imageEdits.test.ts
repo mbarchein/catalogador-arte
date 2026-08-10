@@ -830,8 +830,8 @@ describe('el original siempre se puede recuperar', () => {
 /* ================================================================= colour */
 
 /**
- * Un ajuste real de los que salen de un almacén con bombilla: dominante cálida
- * corregida con el cuentagotas, medio paso de exposición y el rango tonal recogido.
+ * A real adjustment of the kind that comes out of a storeroom with a bulb: a warm cast
+ * corrected with the eyedropper, half a stop of exposure and the tonal range brought in.
  */
 const AJUSTE: ColorEdit = normalizeColor({
   temperature: -34,
@@ -869,9 +869,9 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
     const normalized = normalizeEdit({ rotation: 0, crop: null, color: { temperature: 12 } })
     expect(normalized.color.temperature).toBe(12)
     expect(normalized.color.gamma).toBe(1)
-    // Un color neutro NO es la ausencia de color: puede estar diciendo «se miró con la
-    // obra delante y se dejó como estaba», que es trabajo hecho. «Sin revisar» no es
-    // «no», y anularlo aquí borraría justo eso.
+    // A neutral colour is NOT the absence of colour: it may be saying «it was looked at with the
+    // artwork in front and left as it was», which is work done. «Sin revisar» is not
+    // «no», and voiding it here would erase precisely that.
     const reviewed = normalizeEdit({ rotation: 0, crop: null, color: { source: 'REVIEWED_UNCHANGED' } })
     expect(reviewed.color.source).toBe('REVIEWED_UNCHANGED')
     // And, for the pixels, it is still not a change: no file gets regenerated.
@@ -879,9 +879,9 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
   })
 
   it('un valor de color imposible se lee como identidad, no como el tope', () => {
-    // La regla es de imageColor.ts y aquí solo se comprueba que se delega en ella: un
-    // número que la base no podría haber aceptado enseña la fotografía como es, en vez
-    // de alterarla a lo bestia por un dato que nadie escribió.
+    // The rule belongs to imageColor.ts and here it is only checked that it is delegated to: a
+    // number the base could not have accepted shows the photograph as it is, instead
+    // of altering it wildly over a datum nobody wrote.
     expect(normalizeEdit({ rotation: 0, crop: null, color: { gamma: 9 } }).color.gamma).toBe(1)
     expect(
       normalizeEdit({ rotation: 0, crop: null, color: { temperature: Number.NaN } }).color.temperature,
@@ -895,10 +895,10 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
   })
 
   /**
-   * El caso que sostiene toda la fase: si `sameEdit` no mirara el color, «Aplicar»
-   * decidiría que no hay nada que regenerar, los ficheros se quedarían como estaban y
-   * la corrección que la usuaria acaba de hacer se perdería **en silencio**, con la
-   * fila diciendo que está aplicada.
+   * The case that holds up the whole phase: if `sameEdit` did not look at the colour, «Aplicar»
+   * would decide there is nothing to regenerate, the files would stay as they were and
+   * the correction the user has just made would be lost **in silence**, with the
+   * row saying it is applied.
    */
   it('sameEdit distingue dos ediciones que solo difieren en el color (RF-414)', () => {
     const encuadre: PhotoEdit = { rotation: 90, crop: { x: 0.1, y: 0.1, width: 0.6, height: 0.6 } }
@@ -952,9 +952,9 @@ describe('el color entra en el modelo de edición (RF-414)', () => {
   })
 
   it('el punto donde se tomó el gris gira con la fotografía (RF-418)', () => {
-    // Es el cuarto hermano de la lista de rotateEdit: no cambia ningún píxel, y por eso
-    // es fácil olvidarlo. Lo que se rompe es lo único para lo que existe el campo —
-    // saber en un año que el gris se tomó del cartón y no del cuadro.
+    // It is the fourth sibling of rotateEdit's list: it changes no pixel, and that is why
+    // it is easy to forget. What breaks is the only thing the field exists for —
+    // knowing in a year's time that the grey was taken from the card and not from the painting.
     const color = normalizeColor({ temperature: 10, neutral: { x: 0.2, y: 0.7 } })
     const turned = rotateEdit({ rotation: 0, crop: null, color }, 90)
     expect(turned.color.neutral).not.toBeNull()
@@ -983,10 +983,10 @@ describe('el color como dato: las columnas de la fila (RF-414)', () => {
   it('los nombres son los de la migración, y las dos del empastado no se escriben aquí', () => {
     const columns = editToColumns({ rotation: 0, crop: null, color: AJUSTE })
     for (const name of Object.keys(SIN_COLOR)) expect(columns).toHaveProperty(name)
-    // `color_clipped_low` y `color_clipped_high` no son el ajuste: son la medición de lo
-    // que aplicarlo le hizo a los píxeles, «se anota al aplicar». Aquí no hay píxeles, y
-    // rellenarlas desde este módulo sería una cuenta que nadie ha hecho (las escribe
-    // clippingToColumns, en imageHistogram.ts).
+    // `color_clipped_low` and `color_clipped_high` are not the adjustment: they are the measurement of what
+    // applying it did to the pixels, «noted down on applying». Here there are no pixels, and
+    // filling them from this module would be a sum nobody has done (clippingToColumns
+    // writes them, in imageHistogram.ts).
     expect(columns).not.toHaveProperty('color_clipped_low')
     expect(columns).not.toHaveProperty('color_clipped_high')
   })
@@ -1109,9 +1109,9 @@ describe('cuándo se ofrece el ajuste de color (RF-414, RF-417)', () => {
   })
 
   it('cuando fallan las dos cosas manda la que no se puede arreglar', () => {
-    // Una reproducción ajena no será ajustable nunca; un máster que no se ha descargado
-    // puede descargarse al siguiente intento. Decir lo segundo mandaría a la usuaria a
-    // arreglar lo que no es.
+    // Somebody else's reproduction will never be adjustable; a master that has not been downloaded
+    // can be downloaded on the next attempt. Saying the second would send the user to
+    // fix what is not the problem.
     expect(colorAvailability(false, 'OTHER_CATALOG').reason).toMatch(/otro catálogo/)
   })
 
@@ -1177,9 +1177,9 @@ describe('qué parámetros ofrece cada tipo de toma (RF-414, §3.1)', () => {
   })
 
   it('lo que un tipo de toma no ofrece vuelve a su identidad', () => {
-    // Para lo que escribe varios mandos de golpe y no sabe dónde aterriza: el
-    // automático, un preset de luz y un ajuste heredado. Sin esto, el automático sobre
-    // un detalle de daño movería el punto negro por un mando que ahí está desactivado.
+    // For whatever writes several controls at once and does not know where it lands: the
+    // automatic, a light preset and an inherited adjustment. Without this, the automatic over
+    // a damage detail would move the black point through a control that is disabled there.
     const restringido = restrictColorToShotType(AJUSTE, 'DAMAGE_DETAIL')
     expect(restringido.temperature).toBe(AJUSTE.temperature)
     expect(restringido.tint).toBe(AJUSTE.tint)

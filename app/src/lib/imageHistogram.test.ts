@@ -128,9 +128,9 @@ describe('histograma del encuadre (RF-414)', () => {
   })
 
   it('un cuadrilátero ladeado excluye las esquinas del fotograma (RF-414)', () => {
-    // Pared blanca en las cuatro esquinas del fotograma y obra en el rombo central:
-    // la caja envolvente del rombo es todo el fotograma, así que si se midiera la
-    // caja la pared entraría.
+    // A white wall in the frame's four corners and the artwork in the central rhombus:
+    // the rhombus's bounding box is the whole frame, so if the box were measured
+    // the wall would come in.
     const photo = raster(8, 8, (x, y) => {
       const corner = (x < 2 || x >= 6) && (y < 2 || y >= 6)
       return corner ? [255, 255, 255] : [100, 100, 100]

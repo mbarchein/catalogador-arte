@@ -102,9 +102,9 @@ describe('luminanceOf: la luminancia de un ráster (RF-410, RF-414)', () => {
   })
 
   it('no toca el ráster: el color sobrevive para el histograma y el balance de blancos', () => {
-    // Es la razón de existir del módulo: el mismo ráster decodificado una vez
-    // sirve al detector de bordes, que solo quiere luminancia, y al ajuste de
-    // color, que necesita los tres canales.
+    // It is the module's reason to exist: the same raster decoded once
+    // serves the edge detector, which only wants luminance, and the colour
+    // adjustment, which needs all three channels.
     const pixels = raster(2, 1, [
       [220, 200, 150],
       [40, 60, 90],

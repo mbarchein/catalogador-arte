@@ -498,9 +498,9 @@ describe('la ruta de la copia corregida (RF-420)', () => {
   })
 
   it('nunca coincide con la ruta del máster, ni cuando el máster es un .jpg (ADR-002, §0.1)', () => {
-    // La forma realista de reescribir un máster no es un update malicioso: es derivar
-    // esta ruta de la del máster hasta que un día coincidan. Con el sufijo propio la
-    // colisión es aritméticamente imposible.
+    // The realistic way of rewriting a master is not a malicious update: it is deriving
+    // this path from the master's until one day they coincide. With its own suffix the
+    // collision is arithmetically impossible.
     for (const name of ['IMG_1234.jpg', 'obra.JPG', 'escaneo.tif', 'sinextension']) {
       const target = paths('AR-0001', masterFile(name))
       expect(target.corrected).not.toBe(target.master)
@@ -518,9 +518,9 @@ describe('la ruta de la copia corregida (RF-420)', () => {
   })
 
   it('la codificación es un conjunto emparejado, y es la misma que la de la herramienta por lotes (RF-421)', () => {
-    // Dos productores del mismo fichero: el navegador y `scripts/copias-corregidas`.
-    // Un sufijo distinto en cada lado da dos familias de rutas; un formato distinto,
-    // dos copias de imprenta que pesan y se ven distinto según quién las hizo.
+    // Two producers of the same file: the browser and `scripts/copias-corregidas`.
+    // A different suffix on each side gives two families of paths; a different format,
+    // two print copies that weigh and look different depending on who made them.
     expect(CORRECTED_SUFFIX).toBe('_corrected')
     expect(CORRECTED_EXTENSION).toBe('jpg')
     expect(CORRECTED_CONTENT_TYPE).toBe('image/jpeg')
@@ -529,7 +529,7 @@ describe('la ruta de la copia corregida (RF-420)', () => {
 })
 
 // ---------------------------------------------------------------------------
-// La subida de una toma nueva
+// Uploading a new shot
 // ---------------------------------------------------------------------------
 
 describe('uploadShot: el máster se sube tal cual (§0.1, ADR-002)', () => {
