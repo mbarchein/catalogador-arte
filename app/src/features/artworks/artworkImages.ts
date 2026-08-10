@@ -54,30 +54,47 @@ export function useArtworkImages(catalogId: string) {
   const [loading, setLoading] = useState(true)
 
   const reload = useCallback(async () => {
-    const { data } = await supabase
-      .from('images')
-      .select(
-        'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, ' +
-          'photo_date, sort_order, rotation, crop_x, crop_y, crop_width, crop_height, ' +
-          'corner_nw_x, corner_nw_y, corner_ne_x, corner_ne_y, ' +
-          'corner_se_x, corner_se_y, corner_sw_x, corner_sw_y',
-      )
-      .eq('catalog_id', catalogId)
-      .eq('active', true)
-      // RF-401: the order the cataloger arranged; the identifier only breaks
-      // ties, so two photos never swap places on their own between loads.
-      .order('sort_order', { ascending: true })
-      .order('image_id', { ascending: true })
+    // ── LAS DOS A LA VEZ, NO UNA DETRÁS DE OTRA ─────────────────
+    //
+    // Qué fotografías hay y cuál es la portada son dos preguntas independientes:
+    // la vista `representative_image` no necesita nada de la primera consulta. En
+    // serie eran dos idas y venidas seguidas, y con datos móviles en un almacén
+    // eso son entre medio segundo y tres segundos de ficha con el texto puesto y
+    // los huecos de las fotos vacíos — que es lo que se veía, porque los datos de
+    // la obra sí se pintan al instante desde el espejo del listado.
+    //
+    // Las firmas ya no cuestan red (ver `signPaths`), así que esta espera era
+    // **toda** la espera. Lo único que no arregla es la primera visita a una
+    // ficha: ahí sigue haciendo falta preguntar, pero una vez y no dos.
+    const [imagesAnswer, repAnswer] = await Promise.all([
+      supabase
+        .from('images')
+        .select(
+          'image_id, thumbnail_path, derivative_path, master_path, shot_type, index_image, ' +
+            'photo_date, sort_order, rotation, crop_x, crop_y, crop_width, crop_height, ' +
+            'corner_nw_x, corner_nw_y, corner_ne_x, corner_ne_y, ' +
+            'corner_se_x, corner_se_y, corner_sw_x, corner_sw_y',
+        )
+        .eq('catalog_id', catalogId)
+        .eq('active', true)
+        // RF-401: the order the cataloger arranged; the identifier only breaks
+        // ties, so two photos never swap places on their own between loads.
+        .order('sort_order', { ascending: true })
+        .order('image_id', { ascending: true }),
+      supabase
+        .from('representative_image')
+        .select('image_id, manually_chosen')
+        .eq('catalog_id', catalogId)
+        .maybeSingle(),
+    ])
 
-    const rows = (data ?? []) as unknown as ImageRow[]
+    const rows = (imagesAnswer.data ?? []) as unknown as ImageRow[]
     setImages(rows)
 
-    const { data: rep } = await supabase
-      .from('representative_image')
-      .select('image_id, manually_chosen')
-      .eq('catalog_id', catalogId)
-      .maybeSingle()
-    const representative = rep as { image_id: string; manually_chosen: boolean } | null
+    const representative = repAnswer.data as {
+      image_id: string
+      manually_chosen: boolean
+    } | null
     setMainId(representative?.image_id ?? null)
     setManuallyChosen(representative?.manually_chosen ?? false)
 
