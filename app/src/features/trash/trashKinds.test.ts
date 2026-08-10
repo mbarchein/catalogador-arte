@@ -127,9 +127,9 @@ describe('cada clase se sabe nombrar en español', () => {
 
 describe('ninguna línea de la papelera puede quedarse muda', () => {
   /**
-   * Una fila con TODO vacío es lo peor que le puede llegar a una etiqueta, y llega:
-   * medido en la base local, `artworks.title` de RC-0001 es la cadena vacía y sale en
-   * el incrustado de sus fotografías retiradas.
+   * A row with EVERYTHING empty is the worst thing that can reach a label, and it does reach it:
+   * measured in the local base, RC-0001's `artworks.title` is the empty string and it comes out in
+   * the embedded row of its withdrawn photographs.
    */
   it('la etiqueta dice algo aunque la fila venga vacía', () => {
     for (const kind of TRASH_KINDS) {
@@ -248,11 +248,11 @@ describe('las nueve maestras enlazan a su propia pantalla, y las demás no', () 
   })
 
   it('lo que solo se recupera aquí NO finge tener otra puerta', () => {
-    // Las clases cuyo único camino de vuelta sigue siendo la papelera: una obra, una
-    // fotografía, una referencia o un documento retirados no tienen ninguna otra
-    // pantalla que los muestre. Las exposiciones SALIERON de esta lista el 5 de
-    // agosto de 2026, cuando se construyó su ficha: dejar el aserto habría fijado
-    // como verdad que no la tienen.
+    // The classes whose only way back is still the wastebasket: a withdrawn artwork, a
+    // photograph, a reference or a document have no other
+    // screen that shows them. The exhibitions LEFT this list on 5
+    // August 2026, when their record was built: leaving the assertion would have pinned down
+    // as truth that they do not have one.
     for (const id of ['artworks', 'images', 'bibliography', 'archive_documents'] as const) {
       expect(kindSpec(id).ownScreen).toBeUndefined()
     }
@@ -263,9 +263,9 @@ describe('las nueve maestras enlazan a su propia pantalla, y las demás no', () 
   })
 
   it('solo los enlaces externos explican el choque de duplicado a su manera', () => {
-    // Medido: los índices únicos de las maestras no son parciales sobre `active`, así
-    // que el nombre de algo retirado sigue reservado y recuperarlo no puede chocar.
-    // Donde el hueco sí se libera es en `external_links`, cuyos índices son
+    // Measured: the master tables' unique indexes are not partial on `active`, so
+    // the name of something withdrawn stays reserved and recovering it cannot clash.
+    // Where the slot IS freed is in `external_links`, whose indexes are
     // `where ... and active`.
     const withOwnText = TRASH_KINDS.filter((kind) => kind.duplicateText !== undefined)
     expect(withOwnText.map((kind) => kind.id)).toEqual(['external_links'])

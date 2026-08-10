@@ -1,41 +1,41 @@
 /**
- * La papelera: qué clases de cosa hay dentro, y de qué depende cada una para volver.
+ * The wastebasket: what classes of thing are inside, and what each one depends on to come back.
  *
- * La baja lógica está en el esquema desde el principio —**nunca un borrado real**,
- * RF-901— y por eso hay veintiuna tablas con `active`, `deactivated_at` y
- * `deactivated_by`. Veintiuna pantallas serían veintiuna redacciones distintas de
- * la misma frase, así que aquí se describe cada clase UNA vez —cómo se llama, con
- * qué género, qué columnas hacen legible su línea y de qué cuelga— y la pantalla
- * lee esta tabla en vez de escribir su propio caso.
+ * The logical deletion has been in the schema from the start —**never a real delete**,
+ * RF-901— and that is why there are twenty-one tables with `active`, `deactivated_at` and
+ * `deactivated_by`. Twenty-one screens would be twenty-one different wordings of
+ * the same sentence, so here each class is described ONCE —what it is called, with
+ * what gender, which columns make its line legible and what it hangs from— and the screen
+ * reads this table instead of writing its own case.
  *
- * Es el mismo reparto que `DOCUMENTARY_SECTIONS` hace con los cinco bloques de la
- * ficha, y por el mismo motivo: el género del participio («retirada» / «retirado»)
- * y el nombre de la cosa son datos, no ramas de código, y así se prueban.
+ * It is the same split `DOCUMENTARY_SECTIONS` makes with the record's five
+ * blocks, and for the same reason: the participle's gender («retirada» / «retirado»)
+ * and the thing's name are data, not code branches, and this way they are tested.
  *
- * ── LO QUE SE MIDIÓ CONTRA LA BASE, Y NO SE SUPUSO ───────────────
+ * ── WHAT WAS MEASURED AGAINST THE BASE, AND NOT ASSUMED ──────────
  *
- * 1. **Quién ve la papelera.** Dieciocho de las veintiuna tablas tienen la política
- *    `(active and can_read()) or can_edit()`: quien solo consulta no ve ni una fila
- *    retirada. Comprobado con el token del lector: `images?active=eq.false`
- *    devuelve `[]`. Tres tablas se salen de ese patrón y su `select` es `can_read()`
- *    a secas —`artwork_types`, `series` y `physical_places`—, así que un lector SÍ
- *    ve sus filas retiradas. No se arregla desde aquí (el esquema no se toca), pero
- *    la pantalla entera está cerrada a quien no cataloga, que es lo que sí puede
- *    hacer este lado.
+ * 1. **Who sees the wastebasket.** Eighteen of the twenty-one tables have the policy
+ *    `(active and can_read()) or can_edit()`: whoever only consults does not see a single
+ *    withdrawn row. Checked with the reader's token: `images?active=eq.false`
+ *    returns `[]`. Three tables fall outside that pattern and their `select` is a bare
+ *    `can_read()` —`artwork_types`, `series` and `physical_places`—, so a reader DOES
+ *    see their withdrawn rows. It is not fixed from here (the schema is not touched), but
+ *    the whole screen is closed to whoever does not catalogue, which is what this
+ *    side can do.
  *
- * 2. **Recuperar bajo un padre retirado NO falla.** Medido: se retira una obra, se
- *    restaura un eslabón suyo, y la base lo acepta —`update` afecta a 1 fila—. La
- *    fila vuelve a estar activa y sigue sin verse, porque lo que no se ve es su
- *    obra. Un botón que «funciona» y no cambia nada de lo que la usuaria mira es
- *    peor que uno que se niega explicando, así que ese caso se detiene ANTES de
- *    escribir. Ver `restoreBlock`.
+ * 2. **Recovering under a withdrawn parent does NOT fail.** Measured: an artwork is withdrawn, one
+ *    of its links is restored, and the base accepts it —the `update` affects 1 row—. The
+ *    row is active again and still is not visible, because what is not visible is its
+ *    artwork. A button that «works» and does not change anything the user is looking at is
+ *    worse than one that refuses with an explanation, so that case is stopped BEFORE
+ *    writing. See `restoreBlock`.
  *
- * 3. **El nombre de una fila retirada no se libera.** Los índices únicos de las
- *    maestras —`parties_name_unique`, `document_types_name_unique`…— NO son
- *    parciales sobre `active`, así que mientras algo está en la papelera su nombre
- *    sigue reservado y nadie puede volver a usarlo. Consecuencia: recuperar una
- *    maestra no puede chocar por el nombre. La única tabla donde el hueco SÍ se
- *    libera es `external_links`, cuyos índices son `where ... and active`.
+ * 3. **A withdrawn row's name is not freed.** The master tables' unique
+ *    indexes —`parties_name_unique`, `document_types_name_unique`…— are NOT
+ *    partial on `active`, so while something is in the wastebasket its name
+ *    stays reserved and nobody can use it again. Consequence: recovering a
+ *    master table row cannot clash over the name. The only table where the slot IS
+ *    freed is `external_links`, whose indexes are `where ... and active`.
  */
 
 import { displayTitle } from '../../lib/title'
@@ -60,12 +60,12 @@ export function cell(row: TrashRow, key: string): string {
 }
 
 /**
- * Un incrustado de PostgREST.
+ * A PostgREST embedded row.
  *
- * Se acepta que llegue como objeto o como lista de uno. Todos los de esta pantalla
- * son «uno a uno» —la clave ajena está en la propia fila— y llegan como objeto;
- * aceptar la lista es barato y evita que un cambio de forma del cliente deje las
- * líneas sin contexto en silencio.
+ * It is accepted arriving as an object or as a list of one. Every one on this screen
+ * is «one to one» —the foreign key is in the row itself— and they arrive as objects;
+ * accepting the list is cheap and prevents a change in the client's shape from leaving the
+ * lines without context in silence.
  */
 export function embedded(row: TrashRow, key: string): TrashRow | null {
   const value = row[key]
@@ -75,12 +75,12 @@ export function embedded(row: TrashRow, key: string): TrashRow | null {
 }
 
 /**
- * Si la cosa incrustada está retirada, o `null` cuando no se sabe.
+ * Whether the embedded thing is withdrawn, or `null` when it is not known.
  *
- * `null` y `false` no son lo mismo y la diferencia decide si se bloquea: un padre
- * opcional que la fila no tiene —un documento sin serie de archivo— llega como
- * incrustado nulo, y eso NO es un padre retirado. Devolver `false` ahí sería
- * correcto por casualidad; devolver `null` dice la verdad, que es que no hay padre.
+ * `null` and `false` are not the same and the difference decides whether it is blocked: an optional
+ * parent the row does not have —a document with no archive series— arrives as a
+ * null embedded row, and that is NOT a withdrawn parent. Returning `false` there would be
+ * right by chance; returning `null` tells the truth, which is that there is no parent.
  */
 export function embeddedRetired(row: TrashRow, key: string): boolean | null {
   const parent = embedded(row, key)
@@ -95,14 +95,14 @@ export function joinParts(parts: readonly string[]): string {
 }
 
 /**
- * De qué depende una cosa para que recuperarla sirva de algo.
+ * What a thing depends on for recovering it to be of any use.
  *
- * Dos formas de saberlo, y las dos son necesarias porque **PostgREST no incrusta
- * una tabla en sí misma**: medido, `physical_places?select=parent:physical_places!
- * physical_places_parent_id_fkey(...)` contesta `PGRST200`, «could not find a
- * relationship». Las dos tablas anidadas sobre sí mismas —ubicaciones y
- * clasificación del archivo— se resuelven con la única cosa que ya se tiene sin
- * pedir nada: el conjunto de claves retiradas de su propia tabla.
+ * Two ways of knowing it, and both are necessary because **PostgREST does not embed
+ * a table in itself**: measured, `physical_places?select=parent:physical_places!
+ * physical_places_parent_id_fkey(...)` answers `PGRST200`, «could not find a
+ * relationship». The two tables nested on themselves —locations and
+ * archive classification— are resolved with the only thing already at hand without
+ * asking for anything: the set of withdrawn keys of their own table.
  */
 export type TrashParent =
   /** The parent travels embedded in the row, with its `active`. */
@@ -161,11 +161,11 @@ export interface TrashKindSpec {
   /** «tres obras». */
   readonly many: string
   /**
-   * El participio con el género de la cosa.
+   * The participle with the thing's gender.
    *
-   * Es un dato y no una regla de código porque el español no perdona: «la
-   * fotografía retirado» y «el eslabón retirada» son las dos frases que salen de
-   * intentar deducirlo de la terminación del nombre.
+   * It is a datum and not a code rule because Spanish does not forgive: «la
+   * fotografía retirado» and «el eslabón retirada» are the two sentences that come out of
+   * trying to deduce it from the name's ending.
    */
   readonly retired: 'retirada' | 'retirado'
   /** PostgREST's `select`, with the embedded rows that make the line readable. */
@@ -177,22 +177,22 @@ export interface TrashKindSpec {
   /** What it depends on for recovering it to be visible. */
   readonly parents: readonly TrashParent[]
   /**
-   * La pantalla propia desde la que esta clase TAMBIÉN se recupera, si existe.
+   * The screen of its own from which this class is ALSO recovered, if there is one.
    *
-   * Las nueve maestras ya tienen la suya, y ahí es donde se ve la lista entera con
-   * sus reglas de nombre. Se enlaza en vez de callarlo: la papelera es un sitio
-   * desde el que mirarlo todo junto, no la única puerta.
+   * The nine master tables already have theirs, and that is where the whole list is seen with
+   * its name rules. It is linked instead of kept quiet: the wastebasket is a place
+   * from which to look at everything together, not the only door.
    *
-   * Sin pantalla propia están las obras, las fotografías, las referencias, las
-   * exposiciones y los documentos del archivo: **para esas, esta es la única
-   * salida**, que es exactamente el pendiente que la papelera cierra.
+   * Without a screen of their own are the artworks, the photographs, the references, the
+   * exhibitions and the archive documents: **for those, this is the only
+   * way out**, which is exactly the pending item the wastebasket closes.
    */
   readonly ownScreen?: string
   /**
-   * Lo que se cuenta si la base contesta `23505` al recuperar.
+   * What is told if the base answers `23505` on recovering.
    *
-   * Solo `external_links` lo necesita de verdad —ver la nota 3 de la cabecera—, y
-   * por eso es opcional en vez de una frase genérica repetida veintiuna veces.
+   * Only `external_links` really needs it —see note 3 in the heading—, and
+   * that is why it is optional instead of a generic sentence repeated twenty-one times.
    */
   readonly duplicateText?: string
 }
@@ -205,12 +205,12 @@ export interface TrashGroupSpec {
 }
 
 /**
- * Los cuatro grupos, en el orden en que se busca dentro de una papelera.
+ * The four groups, in the order one searches within a wastebasket.
  *
- * Primero lo que se retira por error y se echa en falta el mismo día —una obra, una
- * fotografía—, y al final las listas, que se retiran a propósito y casi nunca se
- * quieren de vuelta. No es alfabético: alfabético pone «Las listas del catálogo»
- * antes que las obras, que es lo que menos se busca delante de lo que más.
+ * First what gets withdrawn by mistake and is missed the same day —an artwork, a
+ * photograph—, and last the lists, which are withdrawn on purpose and are hardly ever
+ * wanted back. It is not alphabetical: alphabetical puts «Las listas del catálogo»
+ * before the artworks, which is putting what is looked for least in front of what is looked for most.
  */
 export const TRASH_GROUPS: readonly TrashGroupSpec[] = [
   {
@@ -265,10 +265,10 @@ function shotLabel(row: TrashRow): string {
 }
 
 /**
- * Las veintiuna clases de cosa que la papelera puede contener.
+ * The twenty-one classes of thing the wastebasket can contain.
  *
- * El orden dentro de cada grupo es el de importancia para quien busca, no el
- * alfabético ni el de las migraciones.
+ * The order within each group is that of importance for whoever searches, not the
+ * alphabetical one or the migrations'.
  */
 export const TRASH_KINDS: readonly TrashKindSpec[] = [
   // ── Obras y fotografías ──────────────────────────────────────
@@ -286,9 +286,9 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     // real painting: it is what is in hand when looking for a missing artwork.
     label: (row) => joinParts([cell(row, 'catalog_id'), displayTitle(cell(row, 'title'))]),
     context: (row) => joinParts([cell(row, 'artwork_type'), cell(row, 'execution_date')]),
-    // Una obra no cuelga de nada: es la raíz. Su tipo, su serie y su ubicación
-    // pueden estar retirados, pero eso no la hace invisible —y el esquema deja
-    // recuperarla igual—, así que no se bloquea por ellos.
+    // An artwork hangs from nothing: it is the root. Its type, its series and its location
+    // may be withdrawn, but that does not make it invisible —and the schema lets it
+    // be recovered all the same—, so it is not blocked by them.
     parents: [],
   },
   {
@@ -334,9 +334,9 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     context: (row) => joinParts([`Procedencia de ${artworkName(row)}`, cell(row, 'date_text')]),
     parents: [
       { via: 'embed', what: 'la obra', key: 'artworks', name: (row) => artworkName(row) },
-      // La parte puede estar retirada con este eslabón dentro: el disparador
-      // `tg_party_deactivation` solo mira los eslabones ACTIVOS, así que retirar la
-      // parte fue legal mientras el eslabón estaba aquí.
+      // The party may be withdrawn with this link inside: the `tg_party_deactivation`
+      // trigger only looks at the ACTIVE links, so withdrawing the
+      // party was legal while the link was here.
       {
         via: 'embed',
         what: 'la persona o institución',
@@ -487,9 +487,9 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     columns:
       'id, artwork_id, image_id, url, title, deactivated_at, deactivated_by, ' +
       'artworks(active), images(active)',
-    // Un enlace sin título se nombra por su dirección, y sin ninguna de las dos —que
-    // el `check` de la base no permite, pero que no cuesta nada sostener— se dice qué
-    // le falta en vez de dejar la línea muda y sin botón que la recupere.
+    // A link with no title is named by its address, and with neither of the two —which
+    // the base's `check` does not allow, but which costs nothing to support— what
+    // it is missing is said instead of leaving the line mute and with no button to recover it.
     label: (row) => {
       const title = cell(row, 'title')
       if (title !== '') return title
@@ -501,9 +501,9 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
       const owner = image !== '' ? `la fotografía ${image}` : artworkName(row, 'artwork_id')
       return joinParts([`De ${owner}`, cell(row, 'url')])
     },
-    // Exactamente uno de los dos dueños está puesto —lo obliga
-    // `external_links_exactly_one_owner`— y el incrustado del otro llega nulo, que
-    // `embeddedRetired` traduce a «no hay padre» y no a «padre retirado».
+    // Exactly one of the two owners is set —`external_links_exactly_one_owner`
+    // forces it— and the other's embedded row arrives null, which
+    // `embeddedRetired` translates to «there is no parent» and not to «withdrawn parent».
     parents: [
       {
         via: 'embed',
