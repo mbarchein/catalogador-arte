@@ -2,6 +2,16 @@
 
 ### Interfaz
 
+**Abrir una ficha pregunta una vez, no dos**
+
+- Al abrir una ficha se necesitan dos datos que no dependen uno del otro: **qué fotografías tiene** y
+  **cuál es la portada**. Se pedían en fila, uno después del otro, así que la espera era la suma de
+  los dos: con datos móviles, entre medio segundo y tres segundos con el texto de la obra ya puesto
+  —ese sale al instante— y los huecos de las fotos vacíos. Ahora se piden **a la vez**, y la espera
+  es la del más lento.
+- No arregla la primera visita a una ficha nunca abierta: ahí sigue habiendo que preguntar. Lo que
+  cambia es que se pregunta una vez y no dos.
+
 **Las fotografías de una ficha ya vista no se vuelven a pedir**
 
 - Los ficheros de imagen ya se guardaban en el teléfono. Lo que seguía viajando era **el permiso
