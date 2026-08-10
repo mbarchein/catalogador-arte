@@ -474,7 +474,9 @@ describe('el pie del código y su enlace', () => {
     const links = await linkAnnotations(bytes)
     expect(links).toHaveLength(1)
     expect(links[0]!.url).toBe(recordUrl(ARTWORK.catalog_id, 'https://catalogo.example'))
-    const [x1, y1, x2, y2] = links[0]!.rect
+    const rect = links[0]!.rect
+    expect(rect).toHaveLength(4)
+    const [x1, y1, x2, y2] = rect as [number, number, number, number]
     expect(x1).toBeCloseTo(qr!.x, 4)
     expect(y1).toBeCloseTo(qr!.y, 4)
     expect(x2 - x1).toBeCloseTo(QR_SIDE, 4)
