@@ -2,6 +2,24 @@
 
 ### Interfaz
 
+**El porcentaje, pegado al número**
+
+- «115 %» pasa a **«115%»**, sin espacio, en todas partes: el tamaño de letra, el progreso de una
+  subida, el espacio ocupado, el parecido de un testigo de gris y la hoja imprimible.
+
+**Tercera pasada de recorte: los párrafos**
+
+- Las dos primeras midieron frases; esta mide **párrafos**, que es donde se había escondido lo que
+  quedaba: cuatro frases cortas seguidas pasan cualquier medida de frase y siguen siendo un ladrillo.
+  **Ya no hay ningún texto de más de 170 caracteres**, y los de más de 130 han bajado de 98 a 72.
+- Fuera, sobre todo, las explicaciones del mecanismo. Un ejemplo de los treinta y dos: la clasificación
+  del archivo vacía dedicaba 379 caracteres a contar qué es un fondo y qué una subserie; ahora dice
+  «Todavía no hay ninguna serie: fondos, series y subseries, unos dentro de otros. El primero se crea
+  aquí arriba».
+- Lo que **no** se ha ido: lo que hay que hacer. Ocho recortes se rehicieron porque se habían llevado
+  por delante un «vuelve a entrar», un «cámbiala por una barra normal» o el aviso de que la tinta de
+  una impresora no es neutra.
+
 **«Guardar» siempre a mano, y los avisos que se van solos**
 
 - Los botones de guardar y cancelar que estaban **al final de un formulario largo** se quedaban
