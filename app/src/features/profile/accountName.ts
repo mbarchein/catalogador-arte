@@ -1,24 +1,24 @@
 /**
- * El nombre con el que aparece cada quien en el catálogo (RF-109, RF-804).
+ * The name everybody appears under in the catalogue (RF-109, RF-804).
  *
- * No es un dato del perfil y ya está: es lo que se lee en «actualizado por» de
- * cada obra y en la traza de quién retiró qué. Por eso se corrige desde el perfil
- * —a nadie se le ocurre buscar su propio nombre en otra parte— y por eso no se
- * admite en blanco: un nombre vacío convierte toda esa traza en «Sin indicar»,
- * que es exactamente lo contrario de lo que la traza está para decir.
+ * It is not just a datum of the profile: it is what is read in every artwork's «actualizado por»
+ * and in the trace of who withdrew what. That is why it is corrected from the profile
+ * —it would occur to nobody to look for their own name elsewhere— and that is why it is not
+ * allowed blank: an empty name turns all that trace into «Sin indicar»,
+ * which is exactly the opposite of what the trace is there to say.
  *
- * El esquema lo deja en blanco a propósito (`name text not null default ''`),
- * porque una cuenta recién creada todavía no ha dicho cómo se llama. Una cosa es
- * no haberlo dicho aún y otra borrarlo: lo primero es un estado legítimo y lo
- * segundo, un descuido con consecuencias en fichas que ya están escritas.
+ * The schema leaves it blank on purpose (`name text not null default ''`),
+ * because a freshly created account has not said what it is called yet. Not having said it yet
+ * is one thing and erasing it another: the first is a legitimate state and the
+ * second an oversight with consequences in records that are already written.
  */
 
 /**
- * Hasta dónde llega un nombre.
+ * How far a name goes.
  *
- * La columna es `text` y no lo limita, así que esto no repite una regla de la
- * base: la pone la interfaz, y el motivo es la propia ficha, donde «actualizado
- * por» va en una línea con la fecha al lado.
+ * The column is `text` and does not limit it, so this does not repeat a rule of the
+ * base: the interface sets it, and the reason is the record itself, where «actualizado
+ * por» goes on one line with the date alongside.
  */
 export const NAME_MAX_LENGTH = 120
 
@@ -40,10 +40,10 @@ export function validateFullName(name: string): string | null {
 }
 
 /**
- * Lo que se guarda de verdad.
+ * What actually gets stored.
  *
- * Recortado, como en el resto del catálogo: un espacio de más al principio ordena
- * distinto en cualquier lista y no se ve al mirarlo.
+ * Trimmed, as in the rest of the catalogue: one extra space at the start sorts
+ * differently in any list and is not visible on looking at it.
  */
 export function cleanFullName(name: string): string {
   return name.trim()

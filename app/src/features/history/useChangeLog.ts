@@ -94,9 +94,9 @@ export function useChangeLog(catalogId: string | undefined, enabled: boolean): C
           .from('profiles')
           .select('id, name, email')
           .in('id', ids)
-        // Si esta consulta falla, el historial se muestra igual sin nombres: perder
-        // los nombres es peor que perder el historial, pero mucho menos malo que no
-        // mostrar nada. No se convierte en un error de la pantalla.
+        // If this query fails, the history is shown all the same without names: losing
+        // the names is worse than losing the history, but far less bad than not
+        // showing anything. It does not turn into an error of the screen.
         authors = new Map(
           ((people ?? []) as { id: string; name: string | null; email: string | null }[]).map(
             (p) => [p.id, { name: p.name, email: p.email }],

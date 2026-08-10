@@ -16,15 +16,15 @@ import {
 } from './resourceUsage'
 
 /**
- * El espacio que queda, en el perfil y bajo «Sobre la aplicación» (RF-1202).
+ * The space left, in the profile and under «Sobre la aplicación» (RF-1202).
  *
- * Tres barras y no una: ver `resourceUsage.ts` para por qué no se suman. Cada una
- * dice lo que se preguntó —cuánto queda— y debajo, en pequeño, de qué es esa
- * cifra: la ficha, la fotografía de trabajo o el máster de archivo. Sin eso, tres
- * barras seguidas son tres números que no se sabe qué hacer con ellos.
+ * Three bars and not one: see `resourceUsage.ts` for why they are not added up. Each one
+ * says what was asked —how much is left— and below, in small print, what that
+ * figure is of: the record, the working photograph or the archive master. Without that, three
+ * bars in a row are three numbers one does not know what to do with.
  *
- * Se mide al abrir la pantalla y con «Actualizar», que es lo que se pidió. Contar
- * el archivo recorre el listado del bucket, así que no se repite sola.
+ * It is measured on opening the screen and with «Actualizar», which is what was asked for. Counting
+ * the archive walks the bucket's listing, so it does not repeat itself.
  */
 export function ResourceUsage() {
   const { usage, masters, usageError, mastersError, loading, measuredAt, refresh } =

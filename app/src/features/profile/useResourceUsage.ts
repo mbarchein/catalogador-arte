@@ -2,20 +2,20 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
 /**
- * Lo que ocupa el catálogo, preguntado a los dos sitios que lo saben (RF-1202).
+ * What the catalogue takes up, asked of the two places that know (RF-1202).
  *
- * ── DOS FUENTES, Y FALLAN POR SEPARADO ──────────────────────
+ * ── TWO SOURCES, AND THEY FAIL SEPARATELY ───────────────────
  *
- * La base y el almacén de fotografías los cuenta una función SQL; el archivo de
- * másters, la función Edge, que es donde viven las credenciales de Backblaze. Son
- * dos peticiones a dos servicios distintos y **una puede ir bien y la otra no**:
- * el fallo se guarda por separado y lo que sí llegó se enseña igual. Perder la
- * cifra de la base porque Backblaze no contesta sería tirar un dato bueno.
+ * The base and the photograph store are counted by an SQL function; the master
+ * archive, by the Edge function, which is where Backblaze's credentials live. They are
+ * two requests to two different services and **one can go well and the other not**:
+ * the failure is stored separately and whatever did arrive is shown all the same. Losing the
+ * base's figure because Backblaze does not answer would be throwing away a good datum.
  *
- * No se pide sola al abrir el perfil por capricho de tenerlo fresco: contar el
- * archivo obliga a recorrer el listado entero del bucket, y eso no puede pasar
- * cada vez que alguien entra a mirarse el nombre. Se pide al desplegar la sección
- * y luego solo cuando se pulsa «Actualizar».
+ * It is not asked for by itself on opening the profile out of a whim to have it fresh: counting
+ * the archive forces one to walk the bucket's whole listing, and that cannot happen
+ * every time somebody comes in to look at their name. It is asked for on unfolding the section
+ * and then only when «Actualizar» is pressed.
  */
 
 export interface ResourceUsage {

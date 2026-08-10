@@ -120,10 +120,10 @@ export function PlacesPage() {
         {rows.map(({ place, depth }) => (
           <li
             key={place.id}
-            // El nombre se lleva su línea y las acciones van debajo, alineadas a la
-            // derecha: con tres botones al lado, un nombre como «coleccion
-            // particular familia hormeño (propiedad de…)» se partía en cinco
-            // líneas de dos palabras. El móvil es el dispositivo principal.
+            // The name takes its own line and the actions go below, aligned to the
+            // right: with three buttons alongside, a name like «coleccion
+            // particular familia hormeño (propiedad de…)» broke into five
+            // lines of two words. The phone is the primary device.
             className={`card flex flex-wrap items-center gap-2 ${
               place.active ? '' : 'opacity-60'
             }`}

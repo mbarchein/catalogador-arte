@@ -9,12 +9,12 @@ import {
 } from './accountName'
 
 /**
- * El propio nombre, corregido desde el perfil (RF-109, RF-804).
+ * One's own name, corrected from the profile (RF-109, RF-804).
  *
- * Lo que se fija es que **no se pueda dejar en blanco**, que es lo único que este
- * campo puede romper y no se nota al hacerlo: el nombre es lo que se lee en
- * «actualizado por» de cada obra y en la traza de lo retirado, así que vaciarlo
- * convierte esa traza en «Sin indicar» en fichas que ya están escritas.
+ * What is pinned down is that **it cannot be left blank**, which is the only thing this
+ * field can break and it is not noticed while doing it: the name is what is read in
+ * every artwork's «actualizado por» and in the trace of what was withdrawn, so emptying it
+ * turns that trace into «Sin indicar» in records that are already written.
  */
 
 describe('un nombre que se pueda guardar', () => {

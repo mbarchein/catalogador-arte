@@ -1,29 +1,29 @@
 /**
- * Cuánto espacio queda, en los tres sitios donde vive el catálogo (RF-1202).
+ * How much space is left, in the three places where the catalogue lives (RF-1202).
  *
- * ── POR QUÉ SON TRES Y NO UNO ───────────────────────────────
+ * ── WHY THERE ARE THREE AND NOT ONE ─────────────────────────
  *
- * El catálogo está repartido, y cada trozo tiene su propio límite y se llena a su
- * propio ritmo:
+ * The catalogue is spread out, and each piece has its own limit and fills at its
+ * own rate:
  *
- *   · **la base de datos** guarda las fichas y crece despacio, con el texto;
- *   · **el almacén de Supabase** guarda las fotografías de trabajo —miniaturas,
- *     copias corregidas— y crece con cada obra fotografiada;
- *   · **el archivo de Backblaze** guarda los másters, que son de 2 a 8 MB cada
- *     toma y es lo que se llena de verdad.
+ *   · **the database** stores the records and grows slowly, with the text;
+ *   · **Supabase's store** keeps the working photographs —thumbnails,
+ *     corrected copies— and grows with every artwork photographed;
+ *   · **Backblaze's archive** keeps the masters, which are 2 to 8 MB per
+ *     shot and is what really fills up.
  *
- * Sumarlos en una sola cifra escondería justo lo que hay que ver: quedarse sin
- * base con el archivo al 10 % y quedarse sin archivo con la base vacía son dos
- * problemas distintos y se arreglan de forma distinta.
+ * Adding them into a single figure would hide precisely what has to be seen: running out of
+ * base with the archive at 10 % and running out of archive with the base empty are two
+ * different problems and are fixed in different ways.
  *
- * ── LOS LÍMITES ─────────────────────────────────────────────
+ * ── THE LIMITS ──────────────────────────────────────────────
  *
- * Son los del tramo gratuito de cada servicio, que es en el que está el proyecto
- * (`infra/variables.tf` lo dice al hablar del plan Pro de Supabase). Están aquí
- * como constantes y no vienen del servidor porque ningún servicio los publica en
- * una API: se leen en su página de precios. Si algún día se sube de plan, esto es
- * lo que hay que cambiar, y la pantalla dice de qué plan habla para que se note
- * que la cifra tiene un supuesto detrás.
+ * They are each service's free tier's, which is the one the project is on
+ * (`infra/variables.tf` says so when talking about Supabase's Pro plan). They are here
+ * as constants and do not come from the server because no service publishes them in
+ * an API: they are read on their pricing page. If a plan is ever upgraded, this is
+ * what has to be changed, and the screen says which plan it is talking about so it shows
+ * that the figure has an assumption behind it.
  */
 
 /** Database of Supabase's free tier. */
@@ -42,11 +42,11 @@ export const PLAN_NOTICE =
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const
 
 /**
- * Un tamaño como lo escribe la usuaria, en español.
+ * A size as the user writes it, in Spanish.
  *
- * Múltiplos de 1000 y no de 1024 a propósito: es lo que hace que esta cifra se
- * pueda comparar con la que enseña el panel de Supabase o el de Backblaze. Un
- * número que discrepa del panel oficial no se cree, y con razón.
+ * Multiples of 1000 and not 1024 on purpose: it is what makes this figure
+ * comparable with the one Supabase's or Backblaze's panel shows. A
+ * number that disagrees with the official panel is not believed, and rightly so.
  */
 export function bytesText(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
@@ -78,11 +78,11 @@ export function freeBytes(used: number, limit: number): number {
 }
 
 /**
- * Lo que se lee bajo cada barra.
+ * What is read under each bar.
  *
- * Es lo que se preguntó —cuánto queda—, así que va primero y en sus propias
- * palabras. Lo ocupado y el total van detrás, que es el contexto que hace
- * entender la cifra sin ser lo que se buscaba.
+ * It is what was asked —how much is left—, so it goes first and in its own
+ * words. What is used and the total go afterwards, which is the context that makes
+ * the figure understandable without being what was being looked for.
  */
 export function freeText(used: number, limit: number): string {
   const free = freeBytes(used, limit)
@@ -103,11 +103,11 @@ export function usageLevel(used: number, limit: number): UsageLevel {
 }
 
 /**
- * El aviso de un recurso que se está llenando, o null cuando va holgado.
+ * The warning about a resource that is filling up, or null when there is plenty of room.
  *
- * Un aviso permanente se deja de leer, así que solo sale cuando queda poco — y
- * entonces dice qué hacer, porque «lleno» sin salida es una mala noticia y nada
- * más. Lo que se puede hacer no es borrar (RF-901): es subir de plan.
+ * A permanent warning stops being read, so it only comes up when little is left — and
+ * then it says what to do, because «full» with no way out is bad news and nothing
+ * else. What can be done is not deleting (RF-901): it is upgrading the plan.
  */
 export function usageWarning(name: string, used: number, limit: number): string | null {
   const level = usageLevel(used, limit)
@@ -119,11 +119,11 @@ export function usageWarning(name: string, used: number, limit: number): string 
 }
 
 /**
- * Lo que se dice cuando el recuento del archivo se ha quedado a medias.
+ * What is said when the archive's count has been left half-done.
  *
- * La función Edge pagina el listado y tiene un tope. Si lo alcanza, lo que trae
- * es un mínimo: se dice así en vez de presentarlo como el total, que es la clase
- * de cifra que tranquiliza justo el día que no debería.
+ * The Edge function paginates the listing and has a cap. If it reaches it, what it brings
+ * is a minimum: it is said that way instead of presented as the total, which is the kind
+ * of figure that reassures precisely on the day it should not.
  */
 export function truncatedNotice(truncated: boolean): string | null {
   return truncated

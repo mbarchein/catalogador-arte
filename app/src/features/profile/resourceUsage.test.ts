@@ -15,13 +15,13 @@ import {
 } from './resourceUsage'
 
 /**
- * El espacio que queda (RF-1202).
+ * The space left (RF-1202).
  *
- * Lo que se fija es lo que hace inútil a una pantalla como esta si se hace a
- * medias: que la cifra se pueda comparar con la del panel del servicio, que
- * pasarse del límite no se lea como espacio de sobra, y que el aviso salga solo
- * cuando queda poco. Un aviso permanente se deja de leer y entonces no sirve el
- * día que importa.
+ * What is pinned down is what makes a screen like this useless if it is done
+ * halfway: that the figure can be compared with the service panel's, that
+ * going over the limit does not read as spare room, and that the warning only comes up
+ * when little is left. A permanent warning stops being read and then it is of no use on the
+ * day it matters.
  */
 
 describe('los tamaños se escriben como se leen', () => {

@@ -12,17 +12,17 @@ import {
 } from './accountName'
 
 /**
- * Corregir el propio nombre, desde el perfil (RF-109).
+ * Correcting one's own name, from the profile (RF-109).
  *
- * Se edita en el sitio y no en otra pantalla: es un campo, y mandar a alguien a
- * una pantalla aparte para escribir su nombre es un viaje por un dato. La
- * contraseña sí tiene la suya, y con razón — pide la nueva dos veces y la escribe
- * el servicio de identidad, no esta tabla.
+ * It is edited in place and not on another screen: it is one field, and sending somebody to
+ * a separate screen to write their name is a trip for one datum. The
+ * password does have its own, and rightly so — it asks for the new one twice and it is written
+ * by the identity service, not by this table.
  *
- * Al guardar se vuelve a leer el perfil de la sesión: el nombre viaja a «Cuenta»,
- * al pie de esta misma pantalla y a lo que se escriba a partir de ahora en las
- * fichas, así que dejarlo desactualizado hasta la siguiente recarga haría dudar
- * de si el cambio entró.
+ * On saving, the session's profile is read again: the name travels to «Cuenta»,
+ * to the foot of this same screen and to whatever gets written from now on in the
+ * records, so leaving it out of date until the next reload would make one doubt
+ * whether the change went in.
  */
 export function AccountName() {
   const { profile, refreshProfile } = useAuth()

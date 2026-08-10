@@ -72,17 +72,17 @@ function Installation() {
 }
 
 /**
- * El tamaño de letra de toda la aplicación (RNF-106).
+ * The text size of the whole application (RNF-106).
  *
- * Está aquí y no en un ajuste del navegador porque **en la PWA instalada no hay barra de
- * navegador**, y el móvil instalado es el dispositivo principal de este proyecto: el zoom
- * del sistema, que funcionaría —todo está dimensionado en `rem`—, ahí no se puede tocar.
+ * It is here and not in a browser setting because **in the installed PWA there is no browser
+ * bar**, and the installed phone is this project's primary device: the system's
+ * zoom, which would work —everything is dimensioned in `rem`—, cannot be touched there.
  *
- * Tres botones en una fila y no un desplegable: son tres opciones, y elegir entre tres
- * cosas visibles es un gesto en vez de tres. Y **el cambio se aplica al tocar, no al
- * guardar**: lo que se está eligiendo es cómo se ve esta misma pantalla, así que la frase
- * de muestra y los propios botones ya salen al tamaño elegido. Un ajuste de tamaño con un
- * botón «Guardar» obliga a salir para ver si acertaste.
+ * Three buttons in a row and not a dropdown: they are three options, and choosing between three
+ * visible things is one gesture instead of three. And **the change is applied on touching, not on
+ * saving**: what is being chosen is how this very screen looks, so the sample
+ * sentence and the buttons themselves already come out at the chosen size. A size setting with a
+ * «Guardar» button forces one to leave to see whether one got it right.
  */
 function TextSize() {
   const scale = useTextScale()
