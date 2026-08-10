@@ -42,7 +42,7 @@ describe('el recuento y el vacío', () => {
     // una avería; y el hueco tiene que decir qué hacer, porque el botón de subir no está
     // en esta pantalla a propósito.
     const said = exhibitionDocumentsNotice({ loading: false, error: null, count: 0 })
-    expect(said).toContain('No hay ningún documento del archivo enlazado con esta exposición')
+    expect(said).toContain('No hay ningún documento enlazado')
     expect(said).toContain('documentación de una obra')
     expect(said).not.toMatch(/error|fallo/i)
   })

@@ -205,8 +205,8 @@ describe('cuando la base dice no, medido contra la base local', () => {
       message:
         'duplicate key value violates unique constraint "archive_documents_code_unique"',
     })
-    expect(said).toContain('Las mayúsculas y las tildes no cuentan')
-    expect(said).toContain('enlázalo con esta obra en vez de subirlo otra vez')
+    expect(said).toContain('sin contar mayúsculas ni tildes')
+    expect(said).toContain('enlaza el que ya está')
     expect(said).not.toMatch(/duplicate|constraint|archive_documents/)
   })
 
@@ -287,7 +287,7 @@ describe('cuando la base dice no, medido contra la base local', () => {
   it('cero filas afectadas y ningún error no es un éxito', () => {
     const said = describeDocumentRefusal('retire', null)
     expect(said).toContain('No se ha guardado nada')
-    expect(said).toContain('vuelve a entrar')
+    expect(said).toContain('Vuelve a entrar')
   })
 
   it('cada acción se nombra por su verbo cuando la base dice algo que no se mapea', () => {

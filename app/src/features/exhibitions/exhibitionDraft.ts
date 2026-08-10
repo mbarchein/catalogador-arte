@@ -200,9 +200,7 @@ export function exhibitionDraftProblem(draft: ExhibitionDraft): string | null {
   // published and not yet be a bibliographic record.
   if (draft.hasCatalogueRecord && draft.cataloguePublished !== 'YES') {
     return (
-      'El catálogo de esta exposición ya está dado de alta en la bibliografía, así que no puede ' +
-      'constar que no lo hubo. Deja «Sí», o quita antes esa ficha del catálogo desde la ' +
-      'bibliografía.'
+      'Su catálogo ya está dado de alta en la bibliografía, así que no puede constar que no lo hubo. Deja «Sí».'
     )
   }
 

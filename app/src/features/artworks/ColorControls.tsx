@@ -420,17 +420,17 @@ export function grayTargetOffer(candidate: GrayTargetCandidate): {
   movesWhiteBalance: boolean
 } {
   const percent = Math.round(candidate.confidence * 100)
-  const found = `Se ha reconocido una escalera de ${candidate.patches.length} parches (parecido ${percent} %).`
+  const found = `Escalera reconocida: ${candidate.patches.length} parches, parecido ${percent}%.`
   if (candidate.neutral) {
     return {
       label: 'Tomar el gris del testigo',
-      detail: `${found} Al tomarla se fija el balance de blancos con su gris y queda anotado que la referencia fue una carta de grises. Nada se aplica hasta que lo pidas.`,
+      detail: `${found} Al tomarla se fija el balance de blancos con su gris. Nada se aplica hasta que lo pidas.`,
       movesWhiteBalance: true,
     }
   }
   return {
     label: 'Anotar el testigo impreso',
-    detail: `${found} De una hoja impresa en casa se anota que estaba en la toma, pero su gris no se usa como referencia de dominante: la tinta doméstica no es neutra y tomaría el color de la tinta por el de la luz de la sala.`,
+    detail: `${found} Se anota que estaba, pero su gris no vale de referencia: la tinta doméstica no es neutra.`,
     movesWhiteBalance: false,
   }
 }
@@ -1045,7 +1045,7 @@ export function ColorControls({
       return 'Arrastra el dedo hasta un gris de la foto y levántalo ahí. Con dos dedos mueves y acercas.'
     const provenance = colorProvenanceText(color)
     if (provenance) return provenance
-    return `${selectedRange.label}: arrastra, usa las flechas para una muesca, Inicio y Fin para los topes, y toca dos veces para volver al valor de origen.`
+    return `${selectedRange.label}: arrastra o usa las flechas; Inicio y Fin, a los topes; dos toques, al origen.`
   }
 
   return (

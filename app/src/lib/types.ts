@@ -779,8 +779,7 @@ export const COLOR_REFERENCE_LABEL: Record<ColorReference, string> = {
 export const COLOR_REFERENCE_DESCRIPTION: Record<ColorReference, string> = {
   TARGET_CARD: 'Testigo de gris detectado, declarado como carta comprada: su gris es fiable',
   TARGET_PRINT:
-    'Testigo de gris detectado, declarado como hoja impresa en casa: la tinta doméstica no es ' +
-    'neutra, así que sirve para los puntos negro y blanco, pero no como referencia de dominante',
+    'Testigo declarado como hoja impresa en casa: su gris no vale de referencia, la tinta no es neutra',
   SCENE: 'Gris tomado de la escena —una pared, un cartón, un paño—: referencia razonable',
   NONE: 'Corregido a ojo, sin ninguna referencia neutra',
 }

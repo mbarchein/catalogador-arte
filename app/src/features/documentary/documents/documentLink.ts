@@ -159,8 +159,7 @@ export function rankDocumentOptions(
 export function noDocumentOptionsText(total: number, query: string): string {
   if (total === 0) {
     return (
-      'El archivo todavía no tiene ningún documento. Si tienes el papel o su escaneo delante, ' +
-      'súbelo con «Subir un documento del archivo»: queda en el archivo y enlazado con esta obra.'
+      'El archivo todavía no tiene ningún documento. Súbelo con «Subir un documento del archivo».'
     )
   }
   const typed = query.trim()

@@ -77,7 +77,7 @@ describe('la negativa silenciosa, que es la peligrosa', () => {
     // la obra ha vuelto.
     const text = describeRestoreRefusal('images', null)
     expect(text).toContain('No se ha recuperado nada')
-    expect(text).toContain('vuelve a entrar')
+    expect(text).toContain('Vuelve a entrar')
     expect(text.toLowerCase()).not.toContain('recuperada correctamente')
   })
 })

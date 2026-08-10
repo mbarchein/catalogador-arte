@@ -370,7 +370,7 @@ describe('probeDerivativeFormat (RF-409, RF-410)', () => {
     // The cataloger does not choose the encoding, so naming it would only turn a
     // manageable situation into an incomprehensible one.
     expect(HEAVY_DERIVATIVES_WARNING).not.toMatch(/webp|png|jpe?g|codec|códec/i)
-    expect(HEAVY_DERIVATIVES_WARNING).toContain('pesarán bastante más')
+    expect(HEAVY_DERIVATIVES_WARNING).toContain('pesarán más')
     expect(HEAVY_DERIVATIVES_WARNING).toContain('original se guarda')
   })
 })

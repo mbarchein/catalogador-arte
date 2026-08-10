@@ -580,9 +580,7 @@ export function ArtworkPhotosPage() {
       const detail = await fetchPhotoDetail(row.image_id)
       if (!detail) {
         setError(
-          'No se han podido leer el color y la procedencia de esta fotografía, así que no se abre ' +
-            'el editor: guardar sin ese dato borraría el ajuste que ya tenga. Vuelve a intentarlo ' +
-            'con mejor cobertura. El máster de archivo está intacto.',
+          'No se han podido leer el color ni la procedencia, así que no se abre el editor: guardar sin ese dato borraría el ajuste. Inténtalo con mejor cobertura.',
         )
         return
       }
@@ -596,9 +594,7 @@ export function ArtworkPhotosPage() {
       // error it would produce two taps later.
       if (!source.fromMaster && stored.corners) {
         setError(
-          'Esta fotografía tiene la perspectiva corregida y no se ha podido descargar el máster. ' +
-            'Reencuadrarla desde la copia de consulta deformaría la imagen otra vez, así que hay que ' +
-            'esperar a tener mejor cobertura. El máster de archivo está intacto.',
+          'Tiene la perspectiva corregida y no se ha podido descargar el máster: reencuadrarla ahora la deformaría. Inténtalo con mejor cobertura.',
         )
         return
       }
@@ -834,7 +830,7 @@ export function ArtworkPhotosPage() {
                       texto, el recorte se comía justo el número, que es lo único que
                       se mira aquí. */}
                   <span className="min-w-0 truncate">{stage.work.short}</span>
-                  {percent !== null && <span className="shrink-0 tabular-nums">{percent} %</span>}
+                  {percent !== null && <span className="shrink-0 tabular-nums">{percent}%</span>}
                 </p>
               )}
 

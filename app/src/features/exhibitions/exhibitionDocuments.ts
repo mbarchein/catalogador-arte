@@ -45,8 +45,7 @@ export function exhibitionDocumentsNotice(input: {
   }
   if (input.count === 0) {
     return (
-      'No hay ningún documento del archivo enlazado con esta exposición. Una nota de prensa, un ' +
-      'cartel o un díptico se suben desde la documentación de una obra y se enlazan aquí.'
+      'No hay ningún documento enlazado. Un cartel se sube desde la documentación de una obra y se enlaza aquí.'
     )
   }
   return null

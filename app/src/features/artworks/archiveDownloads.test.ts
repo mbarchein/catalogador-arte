@@ -208,7 +208,7 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
       detail: detail(),
     })
     expect(offers.map((o) => o.kind)).toEqual(['master'])
-    expect(notes[0]).toContain('antes de que se guardaran copias')
+    expect(notes[0]).toContain('anterior a las copias')
   })
 
   it('el color corregido también cuenta como corrección', () => {
@@ -220,7 +220,7 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
       row: row(),
       detail: detail({ color_temperature: 18, color_source: 'MANUAL' }),
     })
-    expect(notes[0]).toContain('antes de que se guardaran copias')
+    expect(notes[0]).toContain('anterior a las copias')
   })
 
   it('sin correcciones no falta nada, y se dice con naturalidad', () => {

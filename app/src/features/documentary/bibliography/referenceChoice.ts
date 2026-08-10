@@ -307,8 +307,7 @@ export function noReferenceOptionsText(offered: number, total: number, query: st
   }
   if (offered === 0) {
     return (
-      'Todas las referencias del catálogo están retiradas, así que no hay ninguna que ofrecer ' +
-      'para citar. Escribe la que necesites, o recupera la retirada desde su propia ficha.'
+      'Todas las referencias están retiradas. Escribe la que necesites, o recupérala desde su ficha.'
     )
   }
   const typed = query.trim()

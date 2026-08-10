@@ -138,9 +138,7 @@ export function documentDraftProblems(draft: DocumentFields): DocumentDraftProbl
     problems.push({
       field: 'title',
       text:
-        'Ponle un título o una descripción corta: es lo único imprescindible, porque un documento ' +
-        'sin nada que lo nombre no se vuelve a encontrar («Carta de la galería sobre la muestra ' +
-        'de 1985»).',
+        'Ponle un título o una descripción corta: sin nada que lo nombre no se vuelve a encontrar.',
     })
   }
 
@@ -349,15 +347,11 @@ export function describeDocumentRefusal(
     // uno, y lo que consigue son dos ficheros de los que solo uno consta.
     if (action === 'addFile') {
       return (
-        'No se ha añadido el escaneo. Lo más probable es que el documento ya tenga uno, subido ' +
-        'desde otra ficha o desde otro teléfono: vuelve a cargar la ficha y míralo antes de ' +
-        'repetirlo. Y si sigue sin fichero, puede que tu sesión ya no tenga permiso para escribir. ' +
-        'El fichero que acabas de subir se queda suelto en el almacén, que no estorba a nadie.'
+        'No se ha añadido el escaneo: lo más probable es que el documento ya tenga uno. Vuelve a cargar la ficha y míralo antes de repetirlo.'
       )
     }
     return (
-      'No se ha guardado nada. Puede que tu sesión ya no tenga permiso para escribir en el ' +
-      'catálogo, o que el documento ya no esté: vuelve a entrar y comprueba si el cambio está.'
+      'No se ha guardado nada: o tu sesión no puede escribir, o el documento ya no está. Vuelve a entrar.'
     )
   }
 
@@ -365,9 +359,7 @@ export function describeDocumentRefusal(
 
   if (refusal.code === '23505') {
     return (
-      'Ya hay otro documento en el archivo con esa signatura. Las mayúsculas y las tildes no ' +
-      'cuentan para distinguirlas. Cambia la signatura, o mira si el documento que ya está es el ' +
-      'que ibas a subir: si lo es, enlázalo con esta obra en vez de subirlo otra vez.'
+      'Ya hay otro documento con esa signatura, sin contar mayúsculas ni tildes. Cámbiala, o enlaza el que ya está.'
     )
   }
 
@@ -380,8 +372,7 @@ export function describeDocumentRefusal(
     }
     if (message.includes('archive_documents_file_all_or_nothing')) {
       return (
-        'El fichero se ha registrado a medias, así que la base lo ha rechazado entero y no se ha ' +
-        'guardado nada. Vuelve a intentarlo; si vuelve a pasar, registra el documento sin fichero.'
+        'El fichero se ha registrado a medias y no se ha guardado nada. Si vuelve a pasar, regístralo sin fichero.'
       )
     }
     if (message.includes('archive_documents_coherent_range')) {

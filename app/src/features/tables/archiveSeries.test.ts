@@ -394,7 +394,7 @@ describe('lo que contesta la base, traducido (RF-1106)', () => {
   it('cero filas tocadas y sin error no es un éxito', () => {
     const text = describeArchiveSeriesFailure('rename', null)
     expect(text).toContain('No se ha guardado nada')
-    expect(text).toContain('vuelve a entrar')
+    expect(text).toContain('Vuelve a entrar')
   })
 
   it('un fondo repetido se distingue por el nombre del índice de las raíces', () => {
@@ -729,8 +729,7 @@ describe('lo que dice una lista sin filas (RF-515)', () => {
   it('vacía de verdad, explica qué es la clasificación y cómo se empieza', () => {
     const text = seriesListNotice({ loading: false, error: null, count: 0 })
     expect(text).toContain('fondos, series y subseries')
-    expect(text).toContain('El primer fondo se crea aquí arriba')
-    expect(text).toContain('sin clasificar')
+    expect(text).toContain('El primero se crea aquí arriba')
   })
 
   it('con filas, la lista habla por sí sola', () => {

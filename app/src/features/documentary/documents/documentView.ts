@@ -32,13 +32,9 @@ export type DocumentOwner = 'artwork' | 'exhibition'
 
 const UNAVAILABLE_NOTE: Record<DocumentOwner, string> = {
   artwork:
-    'Hay un documento de archivo enlazado con esta obra, pero no se puede leer: puede estar ' +
-    'retirado o fuera de lo que tu permiso alcanza. No se muestra nada suyo para no inventar ' +
-    'lo que dice.',
+    'Hay un documento enlazado con esta obra que no se puede leer: puede estar retirado.',
   exhibition:
-    'Hay un documento de archivo enlazado con esta exposición, pero no se puede leer: puede ' +
-    'estar retirado o fuera de lo que tu permiso alcanza. No se muestra nada suyo para no ' +
-    'inventar lo que dice.',
+    'Hay un documento enlazado con esta exposición que no se puede leer: puede estar retirado.',
 }
 
 /**

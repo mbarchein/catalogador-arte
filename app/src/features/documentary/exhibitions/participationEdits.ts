@@ -136,9 +136,7 @@ export function noOptionsText(total: number, query: string): string {
 export function addBlockedReason(status: ResearchStatus | null): string | null {
   if (status !== 'NONE_FOUND') return null
   return (
-    'Este historial consta «Investigado, sin resultados», así que la base rechaza cualquier ' +
-    'participación que lo contradiga. Cambia antes el estado a «Investigación en curso» o ' +
-    '«Investigación completa».'
+    'El historial consta «Investigado, sin resultados»: ponlo en «Investigación en curso» o «Investigación completa».'
   )
 }
 

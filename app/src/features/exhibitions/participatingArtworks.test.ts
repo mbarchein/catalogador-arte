@@ -236,8 +236,11 @@ describe('RF-304: nunca un hueco donde iban las obras', () => {
    */
   it('sin ninguna obra explica que falta enlazarlas, y no afirma que no hubiera', () => {
     const text = participantsNotice(settled) ?? ''
-    expect(text).toContain('No quiere decir que no se expusiera ninguna')
-    expect(text).toContain('Historial expositivo')
+    // «Todavía» es lo que separa el dato pendiente del dato investigado, y ya lo
+    // dice: la frase que lo argumentaba —«no quiere decir que no se expusiera
+    // ninguna»— sonaba a que la pantalla se defiende de una acusación.
+    expect(text).toContain('todavía')
+    expect(text).toContain('historial expositivo')
   })
 
   it('con obras no dice nada donde van las obras', () => {

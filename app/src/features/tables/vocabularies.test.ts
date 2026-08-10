@@ -143,7 +143,7 @@ describe('planVocabularyRename (RF-1106: qué significa guardar el lápiz)', () 
 describe('VOCABULARY_MISSING_ROW (RF-1106: cero filas y ningún error no es «guardado»)', () => {
   it('says nothing was saved and what to do, without naming a policy', () => {
     expect(VOCABULARY_MISSING_ROW).toContain('No se ha guardado nada')
-    expect(VOCABULARY_MISSING_ROW).toContain('vuelve a entrar')
+    expect(VOCABULARY_MISSING_ROW).toContain('Vuelve a entrar')
     expect(VOCABULARY_MISSING_ROW).not.toMatch(/row-level|policy|RLS/i)
   })
 })

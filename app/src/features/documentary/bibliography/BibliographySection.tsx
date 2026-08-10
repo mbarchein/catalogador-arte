@@ -224,9 +224,7 @@ export function BibliographySection({
                  existe, y dos filas para el mismo libro parten en dos las citas
                  del catálogo para siempre. */
               <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-                No se ha podido cargar el catálogo de referencias, así que no se puede citar desde
-                aquí: sin la lista no hay forma de comprobar si la referencia ya está. Vuelve a
-                intentarlo donde haya cobertura. ({edits.error})
+                No se ha podido cargar el catálogo de referencias, así que no se puede citar. Inténtalo donde haya cobertura. ({edits.error})
               </p>
             ) : (
               <button

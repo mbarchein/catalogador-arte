@@ -332,9 +332,7 @@ export function seriesMoveProblem(plan: SeriesMovePlan): string | null {
   if (plan.action === 'itself') return 'Una serie no puede estar dentro de sí misma.'
   if (plan.action === 'descendant') {
     return (
-      'Ese destino está dentro de la serie que estás moviendo, así que la clasificación se ' +
-      'cerraría sobre sí misma y la rama dejaría de verse. Saca primero fuera la parte que ' +
-      'quieras conservar.'
+      'Ese destino está dentro de la serie que estás moviendo, y la rama dejaría de verse. Saca antes lo que quieras conservar.'
     )
   }
   if (plan.action === 'taken') return takenText(plan.series, 'move')
@@ -437,9 +435,7 @@ export function describeArchiveSeriesFailure(
 ): string {
   if (refusal === null) {
     return (
-      'No se ha guardado nada. Puede que tu sesión ya no tenga permiso para mantener las ' +
-      'tablas del catálogo, o que la serie ya no esté: vuelve a entrar y comprueba si el ' +
-      'cambio está.'
+      'No se ha guardado nada: o tu sesión no puede mantener las tablas, o la serie ya no está. Vuelve a entrar.'
     )
   }
 
@@ -651,10 +647,6 @@ export function seriesListNotice(state: {
   if (state.error !== null) return null
   if (state.count > 0) return null
   return (
-    'Todavía no hay ninguna serie. La clasificación archivística ordena los papeles del ' +
-    'archivo en fondos, series y subseries: el fondo es lo de arriba —la correspondencia, los ' +
-    'catálogos, la prensa—, y dentro van las series y las subseries que hagan falta. El primer ' +
-    'fondo se crea aquí arriba, y un documento puede quedarse sin clasificar mientras se ' +
-    'decide: «sin revisar» no es «no».'
+    'Todavía no hay ninguna serie: fondos, series y subseries, unos dentro de otros. El primero se crea aquí arriba.'
   )
 }

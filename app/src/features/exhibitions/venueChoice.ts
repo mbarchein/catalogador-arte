@@ -112,9 +112,7 @@ export function keptVenue(
 export function noVenuesText(total: number, query: string): string {
   if (total === 0) {
     return (
-      'Todavía no hay ninguna sede registrada. Se dan de alta en «Tablas → Sedes de exposición». ' +
-      'Y no hace falta ninguna para guardar esta exposición: si la fuente solo dice «una galería ' +
-      'de Madrid», escríbelo tal cual más abajo.'
+      'Todavía no hay ninguna sede registrada. Se dan de alta en «Tablas → Sedes de exposición», y no hace falta ninguna para guardar.'
     )
   }
   const typed = query.trim()

@@ -79,9 +79,7 @@ export interface DerivativeFormat {
  * incomprehensible one.
  */
 export const HEAVY_DERIVATIVES_WARNING =
-  'Este navegador no puede comprimir las copias que se ven en la ficha: se guardarán sin ' +
-  'comprimir, pesarán bastante más y la subida tardará más. La fotografía original se guarda ' +
-  'intacta, y las copias se pueden volver a generar más adelante desde un ordenador.'
+  'Este navegador no puede comprimir las copias: pesarán más y la subida tardará más. El original se guarda intacto.'
 
 export const WEBP_DERIVATIVE: DerivativeFormat = {
   type: 'image/webp',

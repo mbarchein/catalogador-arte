@@ -739,8 +739,6 @@ export function provenanceNarrative(
     text: composeProvenanceLine(rows),
     source: 'composed',
     caveat:
-      'Redactado automáticamente con los eslabones de arriba, para copiar y corregir: no lo ha ' +
-      'escrito nadie. Omite lo que está sin revisar, así que no distingue un propietario de un ' +
-      'eslabón cuya calidad de tenencia nadie ha mirado.',
+      'Redactado con los eslabones de arriba, para copiar y corregir: no lo ha escrito nadie. Omite lo que está sin revisar.',
   }
 }

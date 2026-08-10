@@ -116,8 +116,7 @@ export function planVocabularyRename<E extends MasterEntry>(
  * is fixed.
  */
 export const VOCABULARY_MISSING_ROW =
-  'No se ha guardado nada. Puede que tu sesión ya no tenga permiso para mantener las tablas ' +
-  'del catálogo, o que la entrada ya no esté: vuelve a entrar y comprueba si el cambio está.'
+  'No se ha guardado nada: o tu sesión no puede mantener las tablas, o la entrada ya no está. Vuelve a entrar.'
 
 /**
  * Whether an answer is «nothing answered» rather than «a rule said no».

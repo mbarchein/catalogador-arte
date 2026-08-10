@@ -94,10 +94,7 @@ const VERB: Record<DocumentTypeAction, string> = {
  * not after.
  */
 export const RETIRE_CONSEQUENCE =
-  'Retirar un tipo no cambia los documentos que ya lo tienen: solo deja de ofrecerse para ' +
-  'los nuevos. Si algún documento activo lo usa, el catálogo no deja retirarlo hasta que se ' +
-  'les cambie el tipo. Y si el único que lo usaba está en la papelera, al recuperarlo habrá ' +
-  'que recuperar también el tipo.'
+  'Retirar un tipo no cambia los documentos que ya lo tienen. Y si el único que lo usaba está en la papelera, habrá que recuperar el tipo con él.'
 
 /**
  * The sentence the screen shows when the database says no.

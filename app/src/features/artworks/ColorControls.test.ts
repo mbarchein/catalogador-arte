@@ -457,7 +457,7 @@ describe('RF-418 · el testigo se ofrece, nunca se aplica solo', () => {
     const offer = grayTargetOffer(candidate({}))
     expect(offer.movesWhiteBalance).toBe(true)
     expect(offer.detail).toContain('5 parches')
-    expect(offer.detail).toContain('82 %')
+    expect(offer.detail).toContain('82%')
   })
 
   it('una hoja impresa se anota y NO mueve el balance de blancos', () => {

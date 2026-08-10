@@ -306,9 +306,7 @@ export function reorderHint(count: number): string | null {
 export function addBlockedReason(status: ResearchStatus | null): string | null {
   if (status !== 'NONE_FOUND') return null
   return (
-    'La procedencia de esta obra consta «Investigado, sin resultados», así que la base rechaza ' +
-    'cualquier eslabón que lo contradiga. Cambia antes el estado a «Investigación en curso» o ' +
-    '«Investigación completa».'
+    'La procedencia consta «Investigado, sin resultados»: ponla en «Investigación en curso» o «Investigación completa».'
   )
 }
 

@@ -241,7 +241,7 @@ describe('añadir un eslabón donde la base no lo va a aceptar (RF-218)', () => 
   it('con la procedencia investigada sin resultados, dice qué cambiar antes', () => {
     const reason = addBlockedReason('NONE_FOUND')
     expect(reason).toContain('Investigado, sin resultados')
-    expect(reason).toContain('Cambia antes el estado')
+    expect(reason).toContain('ponla en «Investigación en curso»')
   })
 
   it('en cualquier otro estado no hay nada que impedir', () => {

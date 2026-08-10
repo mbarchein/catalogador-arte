@@ -226,12 +226,8 @@ export function ExhibitionForm({
         />
         <p className="text-xs text-stone-500">
           {draft.hasCatalogueRecord
-            ? 'El catálogo de esta muestra ya está dado de alta en la bibliografía, así que aquí ' +
-              'tiene que constar que sí lo hubo. Ese enlace se quita desde la bibliografía, no ' +
-              'desde aquí.'
-            : 'El catálogo de una exposición no tiene ficha propia: es una publicación y se da de ' +
-              'alta en la bibliografía. Enlazarlo con esta muestra es otra pantalla; marcar aquí ' +
-              'que lo hubo no se pierde mientras tanto.'}
+            ? 'Su catálogo está en la bibliografía, así que aquí tiene que constar que sí lo hubo.'
+            : 'Marcar que lo hubo no da de alta su ficha: eso se hace citándolo desde una obra.'}
         </p>
       </FieldGroup>
     </div>

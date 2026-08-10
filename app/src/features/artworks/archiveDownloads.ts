@@ -281,16 +281,11 @@ export function archiveDownloads(input: {
     )
   } else if (detail.corrected_pending) {
     notes.push(
-      'La copia con las correcciones aplicadas está pendiente: el dispositivo que hizo la ' +
-        'corrección no pudo generarla o no pudo subirla. La corrección está guardada y la copia ' +
-        'se hace después desde un ordenador. Mientras tanto se puede descargar el original, sin ' +
-        'corregir.',
+      'La copia corregida está pendiente: se hace después desde un ordenador. Mientras tanto se puede descargar el original, sin corregir.',
     )
   } else if (!isNoEdit(photoEdit(row, detail))) {
     notes.push(
-      'Esta fotografía se corrigió antes de que se guardaran copias a resolución completa, así ' +
-        'que todavía no hay ninguna. Se hará la próxima vez que se corrija. Mientras tanto se ' +
-        'puede descargar el original, sin corregir.',
+      'Esta corrección es anterior a las copias a resolución completa: se hará en la próxima. Mientras tanto se puede descargar el original.',
     )
   } else {
     notes.push(
@@ -316,9 +311,7 @@ export function archiveDownloads(input: {
     // alternative is a footer with a counter and nothing to its right, which is the
     // gap the rule is about.
     notes.push(
-      'De esta fotografía no consta el original de archivo, así que no se puede descargar. Lo ' +
-        'que se ve en pantalla es una copia de consulta, más pequeña de lo que necesita una ' +
-        'imprenta.',
+      'De esta fotografía no consta el original de archivo, así que no se puede descargar.',
     )
   }
 

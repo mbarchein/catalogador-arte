@@ -229,9 +229,7 @@ export function participantsNotice(state: {
   if (state.loading) return 'Cargando las obras de esta exposición…'
   if (state.count > 0) return null
   return (
-    'Ninguna obra del catálogo consta todavía en esta exposición. No quiere decir que no se ' +
-    'expusiera ninguna: la participación se registra desde la ficha de cada obra, en su bloque ' +
-    '«Historial expositivo», y aquí solo se lee.'
+    'Ninguna obra consta todavía en esta exposición. La participación se registra desde el historial expositivo de cada obra.'
   )
 }
 

@@ -76,9 +76,7 @@ export function describeRestoreRefusal(
     // mientras la pantalla estaba abierta, o la fila ya no está donde estaba. Las
     // dos acaban en «vuelve a entrar y mira», y ninguna es «recuperado».
     return (
-      'No se ha recuperado nada. Puede que tu sesión ya no tenga permiso para recuperar lo ' +
-      'retirado, o que esta fila ya haya vuelto desde otro sitio: vuelve a entrar y comprueba si ' +
-      'está.'
+      'No se ha recuperado nada: o tu sesión no puede, o ya había vuelto. Vuelve a entrar y compruébalo.'
     )
   }
 

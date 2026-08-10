@@ -315,7 +315,7 @@ export function GrayTargetPage() {
           </p>
         )}
         <p className="mt-2 text-xs text-stone-500">
-          Imprímela sin corrección de color ni ahorro de tinta. Si la obra es grande, al 141 %.
+          Imprímela sin corrección de color ni ahorro de tinta. Si la obra es grande, al 141%.
         </p>
       </section>
 

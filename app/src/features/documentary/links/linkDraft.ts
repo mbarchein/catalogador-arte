@@ -288,9 +288,7 @@ export function describeUrlRefusal(url: string): string {
   }
   if (authority.includes('\\')) {
     return (
-      'La dirección lleva una barra invertida en el nombre del sitio. El navegador la trata como ' +
-      'una barra normal, así que el sitio real es lo que hay antes de ella y no lo que parece el ' +
-      'dominio. Cámbiala por una barra normal si es parte de la ruta.'
+      'La dirección lleva una barra invertida en el nombre del sitio, así que el sitio real es lo que hay antes de ella. Cámbiala por una normal.'
     )
   }
   if (/[^\x20-\x7e]/.test(authority)) {
