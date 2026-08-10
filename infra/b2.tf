@@ -1,12 +1,12 @@
-# ── Backblaze B2: másters de archivo (ADR-002, actualización 27/07) ─────────
+# ── Backblaze B2: archive masters (ADR-002, update 27/07) ──────────────────
 #
-# Los másters (2-8 MB mínimo por toma) no caben en el gratuito de Supabase, y
-# Cloudflare quedó descartado para tráfico de usuarios (ADR-005). El navegador
-# sube y descarga con URL firmadas que emite la función Edge `sign-file`:
-# las credenciales solo viven allí y aquí, nunca en el cliente.
+# The masters (2-8 MB minimum per shot) do not fit in Supabase's free tier, and
+# Cloudflare was ruled out for user traffic (ADR-005). The browser
+# uploads and downloads with signed URLs issued by the `sign-file` Edge function:
+# the credentials live only there and here, never in the client.
 
 resource "random_id" "sufijo_b2" {
-  # Los nombres de bucket de B2 son globales, como en S3.
+  # B2 bucket names are global, as in S3.
   byte_length = 3
 }
 
@@ -14,17 +14,17 @@ resource "b2_bucket" "masters" {
   bucket_name = "${var.proyecto}-masters-${random_id.sufijo_b2.hex}"
   bucket_type = "allPrivate"
 
-  # B2 conserva TODAS las versiones por defecto, y eso es lo que se quiere: los
-  # másters son el documento (ADR-002) y una sobrescritura o un borrado
-  # accidental deben ser recuperables. No puede dejarse como regla explícita
-  # porque la API rechaza una regla «conservar todo» (prefijo vacío y días a
-  # cero): conservar todo es, precisamente, la ausencia de reglas.
+  # B2 keeps ALL the versions by default, and that is what is wanted: the
+  # masters are the document (ADR-002) and an accidental overwrite or deletion
+  # must be recoverable. It cannot be left as an explicit rule
+  # because the API rejects a «keep everything» rule (an empty prefix and days at
+  # zero): keeping everything is, precisely, the absence of rules.
 
-  # El navegador hace PUT directo con la URL firmada: sin CORS, la subida desde
-  # la aplicación fallaría en el preflight. El comodín es deliberado — la
-  # autorización real es la firma de la URL, que caduca y la emite la función
-  # tras comprobar el rol; restringir el origen aquí solo rompería el uso desde
-  # la red local sin añadir seguridad.
+  # The browser does a direct PUT with the signed URL: with no CORS, the upload from
+  # the application would fail at the preflight. The wildcard is deliberate — the
+  # real authorisation is the URL's signature, which expires and is issued by the function
+  # after checking the role; restricting the origin here would only break use from
+  # the local network without adding any security.
   cors_rules {
     cors_rule_name  = "aplicacion"
     allowed_origins = ["*"]
@@ -39,9 +39,9 @@ resource "b2_bucket" "masters" {
   }
 }
 
-# Clave acotada al bucket y SIN capacidad de borrado: aunque la función Edge se
-# comprometiera por completo, con estas credenciales no se puede destruir un
-# máster. Es la versión en credenciales del «nada se borra de verdad» (RF-901).
+# A key scoped to the bucket and WITH NO delete capability: even if the Edge function were
+# completely compromised, with these credentials a master cannot be destroyed.
+# It is the credentials version of «nothing is really deleted» (RF-901).
 resource "b2_application_key" "masters" {
   key_name   = "${var.proyecto}-funcion-firmas"
   bucket_ids = [b2_bucket.masters.bucket_id]
@@ -52,11 +52,11 @@ resource "b2_application_key" "masters" {
   ]
 }
 
-# Clave de SOLO LECTURA para traerse los másters a un portátil (FOTOS=todo en
-# `make db-clone`). Es una segunda clave y no la de la función Edge a propósito:
-# aquella puede escribir porque tiene que subir másters, y una copia local no
-# tiene ninguna razón para poder tocar el archivo. Separarlas también permite
-# revocar esta sin dejar la aplicación sin firmar.
+# A READ-ONLY key for fetching the masters to a laptop (FOTOS=todo in
+# `make db-clone`). It is a second key and not the Edge function's on purpose:
+# that one can write because it has to upload masters, and a local copy has
+# no reason at all to be able to touch the archive. Separating them also allows
+# revoking this one without leaving the application unable to sign.
 resource "b2_application_key" "masters_lectura" {
   key_name   = "${var.proyecto}-lectura-local"
   bucket_ids = [b2_bucket.masters.bucket_id]
@@ -76,8 +76,8 @@ output "b2_bucket_masters" {
   value       = b2_bucket.masters.bucket_name
 }
 
-# Las dos mitades de la clave de lectura, para .env. Como la contraseña de la
-# base: sensibles, se leen con `terraform output -raw` (o `make -C infra b2-keys`).
+# The two halves of the read key, for .env. Like the base's password:
+# sensitive, they are read with `terraform output -raw` (or `make -C infra b2-keys`).
 output "b2_lectura_key_id" {
   description = "Identificador de la clave de solo lectura de B2 (B2_KEY_ID)"
   value       = b2_application_key.masters_lectura.application_key_id

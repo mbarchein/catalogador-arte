@@ -57,9 +57,9 @@ variable "supabase_db_password" {
 }
 
 # --- Vercel --------------------------------------------------------------
-# El frontend se aloja en Vercel (ADR-005): los bloqueos de LaLiga a IPs de
-# Cloudflare hacían inviable Pages desde España, y Vercel está probado desde
-# aquí con la otra aplicación del equipo.
+# The frontend is hosted on Vercel (ADR-005): LaLiga's blocks on Cloudflare
+# IPs made Pages unviable from Spain, and Vercel is proven from
+# here with the team's other application.
 
 variable "vercel_token" {
   description = "Token de API de Vercel (https://vercel.com/account/tokens)"
@@ -98,7 +98,7 @@ variable "vercel_cname_target" {
   default     = "cname.vercel-dns.com"
 }
 
-# --- Backblaze B2 (masters de archivo, ADR-002 actualizado) -----------------
+# --- Backblaze B2 (archive masters, ADR-002 updated) ------------------------
 
 variable "b2_application_key_id" {
   description = "Clave maestra de B2 (solo para que Terraform cree el bucket y su clave acotada)"
@@ -147,10 +147,10 @@ variable "gestionar_repositorio" {
   default     = true
 }
 
-# ── Resend: correo transaccional de producción ───────────────
-# La clave se crea a mano en el panel de Resend. Vacía, el proyecto se queda
-# con el SMTP integrado de Supabase, que solo entrega a los miembros del
-# proyecto y con cuentagotas: suficiente para arrancar, no para el equipo.
+# ── Resend: production transactional email ──────────────────
+# The key is created by hand in Resend's panel. Empty, the project is left
+# with Supabase's built-in SMTP, which delivers only to the project's
+# members and in dribbles: enough to start with, not for the team.
 variable "resend_api_key" {
   description = "Clave de API de Resend. Vacía = SMTP integrado de Supabase"
   type        = string

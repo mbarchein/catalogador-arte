@@ -16,8 +16,8 @@ provider "b2" {
   application_key    = var.b2_application_key
 }
 
-# Solo para la zona DNS del dominio (dominio.tf). El tráfico de la aplicación NO
-# pasa por Cloudflare: el registro es solo-DNS, ver la nota en dominio.tf.
+# Only for the domain's DNS zone (dominio.tf). The application's traffic does NOT
+# go through Cloudflare: the record is DNS-only, see the note in dominio.tf.
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }

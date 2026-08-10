@@ -1,34 +1,34 @@
-# Repositorio, protección de ramas y credenciales del flujo de integración.
+# Repository, branch protection and credentials of the integration flow.
 #
-# Las credenciales que necesita CI se derivan de los recursos creados más arriba,
-# de modo que no hay que copiarlas a mano al panel de GitHub: el identificador
-# del proyecto de Supabase o el nombre de un bucket llegan solos a las variables
-# de Actions. Eso es la mitad del valor de tener esto en Terraform.
+# The credentials CI needs are derived from the resources created above,
+# so that they do not have to be copied by hand into GitHub's panel: the identifier
+# of the Supabase project or a bucket's name reach the Actions variables
+# on their own. That is half the value of having this in Terraform.
 
 resource "github_repository" "app" {
   count = var.gestionar_repositorio ? 1 : 0
 
   name        = var.github_repository
   description = "Inventario y catálogo razonado — Alberto Rotili / María Ruiz Campins"
-  # Público por decisión del equipo (ADR-005). Nada del repositorio es secreto:
-  # la clave anónima lo es por diseño, las claves JWT del stack local son las de
-  # demostración bien conocidas de Supabase, y el perímetro real son las
-  # políticas RLS. Los secretos de verdad viven en Actions y en el estado de
-  # Terraform, nunca en el árbol.
+  # Public by the team's decision (ADR-005). Nothing in the repository is secret:
+  # the anonymous key is so by design, the local stack's JWT keys are Supabase's
+  # well-known demonstration ones, and the real perimeter is the
+  # RLS policies. The real secrets live in Actions and in Terraform's
+  # state, never in the tree.
   visibility = "public"
 
   has_issues   = true
   has_projects = false
   has_wiki     = false
 
-  # El historial del catálogo importa: cada commit documenta una decisión.
+  # The catalogue's history matters: every commit documents a decision.
   allow_merge_commit     = false
   allow_squash_merge     = true
   allow_rebase_merge     = true
   delete_branch_on_merge = true
 
   lifecycle {
-    # No destruir un repositorio con historial por un cambio de configuración.
+    # Do not destroy a repository with history over a configuration change.
     prevent_destroy = true
   }
 }
@@ -53,15 +53,15 @@ resource "github_branch_protection" "main" {
     ]
   }
 
-  # Un solo operador: exigir revisión de otra persona bloquearía el trabajo.
-  # Lo que sí se exige es que la verificación automática pase antes de fusionar.
+  # A single operator: requiring another person's review would block the work.
+  # What IS required is that the automatic verification pass before merging.
   enforce_admins      = false
   allows_deletions    = false
   allows_force_pushes = false
 }
 
-# --- Secretos ---------------------------------------------------------------
-# Valores que no deben aparecer nunca en un registro de ejecución.
+# --- Secrets ----------------------------------------------------------------
+# Values that must never appear in an execution log.
 
 resource "github_actions_secret" "supabase_access_token" {
   repository  = local.repo
@@ -93,9 +93,9 @@ resource "github_actions_secret" "vercel_project_id" {
   value       = vercel_project.app.id
 }
 
-# Credenciales de B2 para la función Edge. Nombres S3_* a propósito: la función
-# firma S3 genérico, y cambiar de proveedor de almacenamiento debe ser cambiar
-# estos valores, no el código (la promesa de ADR-002).
+# B2 credentials for the Edge function. S3_* names on purpose: the function
+# signs generic S3, and changing storage provider must be changing
+# these values, not the code (ADR-002's promise).
 resource "github_actions_secret" "s3_key_id" {
   repository  = local.repo
   secret_name = "S3_KEY_ID"
@@ -109,8 +109,8 @@ resource "github_actions_secret" "s3_key_secret" {
 }
 
 # --- Variables --------------------------------------------------------------
-# Valores no sensibles que el flujo necesita conocer. Se derivan de los recursos
-# reales, así que no pueden quedar desactualizados respecto a la infraestructura.
+# Non-sensitive values the flow needs to know. They are derived from the real
+# resources, so they cannot get out of date with respect to the infrastructure.
 
 resource "github_actions_variable" "supabase_project_ref" {
   repository    = local.repo
@@ -124,9 +124,9 @@ resource "github_actions_variable" "supabase_url" {
   value         = "https://${supabase_project.principal.id}.supabase.co"
 }
 
-# La clave anónima es una variable y no un secreto a propósito: es pública por
-# diseño y viaja en el JavaScript compilado. Tratarla como secreto solo haría
-# ilegibles los registros de CI sin proteger nada.
+# The anonymous key is a variable and not a secret on purpose: it is public by
+# design and it travels in the compiled JavaScript. Treating it as a secret would only make
+# the CI logs illegible without protecting anything.
 resource "github_actions_variable" "supabase_anon_key" {
   repository    = local.repo
   variable_name = "SUPABASE_ANON_KEY"

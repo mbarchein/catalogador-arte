@@ -1,20 +1,20 @@
-# ── Vercel: alojamiento del frontend (ADR-005) ──────────────
-# La compilación llega desde CI (`vercel build` + `vercel deploy --prebuilt`,
-# ver .github/workflows/desplegar.yml): el proyecto de Vercel no guarda ninguna
-# variable de entorno — CI es la única fuente de las VITE_*.
+# ── Vercel: frontend hosting (ADR-005) ─────────────────────
+# The build arrives from CI (`vercel build` + `vercel deploy --prebuilt`,
+# see .github/workflows/desplegar.yml): the Vercel project stores no
+# environment variable — CI is the only source of the VITE_*.
 #
-# Sin buckets de ficheros aquí: las imágenes viven en Supabase Storage (la
-# enmienda de ADR-002 en ADR-005), y el estado de Terraform sigue en R2 vía
-# bootstrap/ porque es tráfico de operador, no de usuarios.
+# With no file buckets here: the images live in Supabase Storage (ADR-002's
+# amendment in ADR-005), and Terraform's state stays in R2 via
+# bootstrap/ because it is operator traffic, not user traffic.
 
 resource "vercel_project" "app" {
   name           = var.proyecto
   framework      = "vite"
   root_directory = "app" # la aplicación Vite vive en app/, no en la raíz
 
-  # Sin muro de acceso en ningún despliegue. Producción ya es pública con la
-  # protección estándar, pero se fija explícitamente: un interstitial delante
-  # de la PWA rompería el service worker y la carga del manifiesto.
+  # No access wall in any deployment. Production is already public with the
+  # standard protection, but it is set explicitly: an interstitial in front
+  # of the PWA would break the service worker and the manifest's loading.
   vercel_authentication = {
     deployment_type = "none"
   }

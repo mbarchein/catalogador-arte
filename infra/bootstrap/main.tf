@@ -1,9 +1,9 @@
-# Arranque: crea el bucket donde vivirá el estado de Terraform.
+# Bootstrap: it creates the bucket where Terraform's state will live.
 #
-# Existe por un problema de huevo y gallina: la configuración principal guarda su
-# estado en un bucket de R2, y ese bucket no puede crearlo la misma configuración
-# que lo necesita para arrancar. Este módulo se ejecuta una sola vez, con estado
-# local, y después no se vuelve a tocar.
+# It exists because of a chicken-and-egg problem: the main configuration stores its
+# state in an R2 bucket, and that bucket cannot be created by the same configuration
+# that needs it in order to start. This module is run once, with local
+# state, and afterwards it is not touched again.
 
 terraform {
   required_version = "~> 1.15"

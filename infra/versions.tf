@@ -28,9 +28,9 @@ terraform {
     }
   }
 
-  # Estado remoto en Cloudflare R2, compatible con el backend s3.
-  # La configuración no admite variables, así que se pasa aparte:
+  # Remote state in Cloudflare R2, compatible with the s3 backend.
+  # The configuration does not admit variables, so it is passed separately:
   #   terraform init -backend-config=backend.hcl
-  # Ver backend.hcl.example y el apartado «Arranque» del README.
+  # See backend.hcl.example and the README's «Arranque» section.
   backend "s3" {}
 }

@@ -1,5 +1,5 @@
-# Flujos de la infraestructura. El detalle de cada paso —qué credencial hace
-# falta y de dónde sale— está en README.md; esto son los atajos.
+# Infrastructure flows. The detail of each step —which credential is
+# needed and where it comes from— is in README.md; these are the shortcuts.
 .DEFAULT_GOAL := help
 .PHONY: help check fmt init plan apply output password b2-keys bootstrap
 

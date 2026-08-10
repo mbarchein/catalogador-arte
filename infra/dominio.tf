@@ -1,18 +1,18 @@
-# ── Dominio: catalogo.ruizcampins.com ───────────────────────
-# La zona vive en Cloudflare; el alojamiento, en Vercel (ADR-005). El registro
-# es un CNAME **solo-DNS (nube gris)** hacia el edge de Vercel, y ese detalle no
-# es opcional por tres motivos:
+# ── Domain: catalogo.ruizcampins.com ────────────────────────
+# The zone lives in Cloudflare; the hosting, in Vercel (ADR-005). The record
+# is a **DNS-only (grey cloud)** CNAME towards Vercel's edge, and that detail is
+# not optional for three reasons:
 #
-#  1. Los bloqueos de LaLiga golpean las IPs del *proxy* de Cloudflare, no su
-#     DNS. Solo-DNS = el tráfico va directo a Vercel y no toca la red bloqueada.
-#     Proxiado, volveríamos exactamente al problema del que salimos.
-#  2. Proxiar apilaría dos CDN (Cloudflare delante de Vercel), que es latencia y
-#     dos sitios donde depurar caché.
-#  3. Con proxy, Vercel no puede emitir ni renovar el certificado TLS del
-#     dominio: la validación no le llega.
+#  1. LaLiga's blocks hit the IPs of Cloudflare's *proxy*, not its
+#     DNS. DNS-only = the traffic goes straight to Vercel and does not touch the blocked network.
+#     Proxied, we would go right back to the problem we came out of.
+#  2. Proxying would stack two CDNs (Cloudflare in front of Vercel), which is latency and
+#     two places to debug caching in.
+#  3. With a proxy, Vercel cannot issue or renew the domain's TLS
+#     certificate: the validation does not reach it.
 #
-# Patrón copiado de la otra aplicación del equipo, donde lleva tiempo en
-# producción.
+# The pattern is copied from the team's other application, where it has been in
+# production for a while.
 
 data "cloudflare_zone" "principal" {
   filter = {
@@ -25,9 +25,9 @@ locals {
   url_app  = "https://${var.subdominio_app}.${var.dominio_zona}"
 }
 
-# Vercel verifica la propiedad y emite el certificado a través del CNAME de
-# abajo. El proyecto responde también en su URL *.vercel.app, que queda como
-# respaldo si el dominio tuviera problemas.
+# Vercel verifies the ownership and issues the certificate through the CNAME
+# below. The project also answers on its *.vercel.app URL, which is left as a
+# fallback if the domain had problems.
 resource "vercel_project_domain" "app" {
   project_id = vercel_project.app.id
   domain     = local.app_fqdn
@@ -49,18 +49,18 @@ output "url_aplicacion" {
   value       = local.url_app
 }
 
-# ── DNS de verificación de Resend (SPF/DKIM/MX) ──────────────
-# Los pide el panel de Resend al añadir el dominio; sin ellos, el correo
-# transaccional no sale o sale marcado como sospechoso. La lista llega por
-# variable porque los valores los genera Resend para cada cuenta.
+# ── Resend verification DNS (SPF/DKIM/MX) ───────────────────
+# Resend's panel asks for them on adding the domain; without them, the
+# transactional email does not go out or goes out marked as suspicious. The list arrives by
+# variable because Resend generates the values for each account.
 resource "cloudflare_dns_record" "resend" {
   for_each = { for r in var.resend_dkim_records : "${r.type}-${r.name}" => r }
 
   zone_id = data.cloudflare_zone.principal.zone_id
   name    = each.value.name
   type    = each.value.type
-  # El proveedor v5 de Cloudflare exige el contenido TXT entrecomillado
-  # (si no, avisa y lo entrecomilla él); MX y CNAME van sin comillas.
+  # Cloudflare's v5 provider requires the TXT content in quotes
+  # (otherwise it warns and quotes it itself); MX and CNAME go without quotes.
   content  = each.value.type == "TXT" ? "\"${each.value.content}\"" : each.value.content
   priority = try(each.value.priority, null)
   proxied  = false
