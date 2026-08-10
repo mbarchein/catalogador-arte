@@ -2,16 +2,16 @@ import { DRAFT_DISCARD_LABEL, DRAFT_RESTORE_LABEL } from './draftStore'
 import type { DraftOffer } from './useFormDraft'
 
 /**
- * La oferta de recuperar lo que se dejó a medias, arriba de la hoja.
+ * The offer to recover what was left half-done, at the top of the sheet.
  *
- * Un componente y no tres líneas copiadas en cada formulario: son seis hojas y la que se
- * quedara con una redacción vieja sería la que confunde. Y va **arriba**, no al pie: la
- * decisión es qué hacer con el formulario, así que se toma antes de mirarlo — al pie
- * aparecería después de haber empezado a teclear encima.
+ * A component and not three lines copied into every form: there are six sheets and the one
+ * left with an old wording would be the one that confuses. And it goes **at the top**, not at the
+ * foot: the decision is what to do with the form, so it is taken before looking at it — at the foot
+ * it would appear after having started to type over it.
  *
- * El caso desfasado se pinta distinto **y a propósito en ámbar y no en rojo**: no es un
- * error, es un aviso de que hay que mirar antes de guardar. Rojo diría «algo va mal» sobre
- * algo que está bien y que además hay que leer con calma.
+ * The stale case is painted differently **and deliberately in amber and not in red**: it is not an
+ * error, it is a warning that one has to look before saving. Red would say «something is wrong» about
+ * something that is fine and that also has to be read calmly.
  */
 export function DraftOfferBanner<T>({
   offer,

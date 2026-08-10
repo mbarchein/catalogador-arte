@@ -38,9 +38,9 @@ export function App() {
     return <LoginPage />
   }
 
-  // RF-112: la sesión que abre el enlace de recuperación no llega a ninguna otra
-  // parte hasta que se elige la contraseña. Sin esto el enlace del correo es un
-  // acceso al catálogo, y uno que vive para siempre en una bandeja de entrada.
+  // RF-112: the session opened by the recovery link does not reach any other
+  // part until a password is chosen. Without this the e-mail's link is an
+  // access to the catalogue, and one that lives forever in an inbox.
   if (passwordRecovery) {
     return (
       <Routes>

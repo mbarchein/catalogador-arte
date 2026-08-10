@@ -11,12 +11,12 @@ import {
 } from './passwordRecovery'
 
 /**
- * Recuperar la contraseña olvidada (RF-112, RF-101).
+ * Recovering the forgotten password (RF-112, RF-101).
  *
- * **La primera prioridad de este fichero es que no se pueda enumerar.** Esta
- * pantalla la usa cualquiera sin haber entrado, y el equipo son tres personas con
- * correos adivinables: saber cuál de ellos tiene cuenta convierte «probar
- * contraseñas contra varias direcciones» en «probar contra la buena».
+ * **This file's first priority is that enumeration be impossible.** This
+ * screen is used by anybody without having logged in, and the team is three people with
+ * guessable addresses: knowing which of them has an account turns «trying
+ * passwords against several addresses» into «trying against the right one».
  */
 
 describe('nada distingue una cuenta que existe de una que no', () => {

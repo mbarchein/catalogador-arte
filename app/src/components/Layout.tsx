@@ -55,11 +55,11 @@ export function Layout({
    */
   headerContent?: ReactNode
   /**
-   * Si se pinta el menú de abajo. Falso en las pantallas de las que **no se puede
-   * salir todavía**: la de elegir contraseña nueva llega desde el enlace del
-   * correo, y hasta que se elige una, la aplicación no deja ir a ninguna otra
-   * parte. Cinco pestañas que rebotan aquí mismo no son navegación, son cinco
-   * botones averiados.
+   * Whether the bottom menu is painted. False on the screens that **cannot be
+   * left yet**: the one for choosing a new password arrives from the e-mail's
+   * link, and until one is chosen, the application does not let anyone go anywhere
+   * else. Five tabs bouncing right back here are not navigation, they are five
+   * broken buttons.
    */
   tabs?: boolean
 }) {

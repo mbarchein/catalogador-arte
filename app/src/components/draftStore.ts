@@ -1,35 +1,35 @@
 /**
- * Que un formulario a medio rellenar sobreviva a cerrarse (RNF-106, RF-304).
+ * Making a half-filled form survive being closed (RNF-106, RF-304).
  *
- * ── QUÉ CUBRE ESTO QUE NO CUBRE LA PREGUNTA ─────────────────
+ * ── WHAT THIS COVERS THAT THE QUESTION DOES NOT ─────────────
  *
- * El guardián de `sheetExit.ts` tapa las cinco salidas de la hoja, así que ya no se pierde
- * nada por un roce. Pero quedan las salidas que no son salidas de la hoja y que no se
- * pueden preguntar: **recargar la página, que el teléfono mate la pestaña con la
- * aplicación de fondo, o quedarse sin batería** — y en un almacén, con la obra delante y
- * el móvil abierto media hora, las tres pasan. Contra eso una confirmación no puede hacer
- * nada, y esto sí: lo escrito se apunta, y al volver a abrir la hoja se ofrece.
+ * `sheetExit.ts`'s guard covers the sheet's five exits, so nothing is lost
+ * to a brush any more. But the exits that are not the sheet's exits remain, and they cannot
+ * be asked about: **reloading the page, the phone killing the tab with the
+ * application in the background, or the battery running out** — and in a storeroom, with the artwork in front and
+ * the phone open for half an hour, all three happen. Against that a confirmation can do
+ * nothing, and this can: what was written is noted down, and on reopening the sheet it is offered.
  *
- * Y cambia lo que significa la propia pregunta. Con esto puesto, «salir sin guardar» deja
- * de ser destructivo: no se guarda en el catálogo, pero lo escrito se queda apuntado y se
- * ofrece a la vuelta. Es la diferencia entre un cartel que da miedo y uno que informa.
+ * And it changes what the question itself means. With this in place, «salir sin guardar» stops
+ * being destructive: it is not stored in the catalogue, but what was written stays noted down and is
+ * offered on returning. It is the difference between a sign that frightens and one that informs.
  *
- * ── LAS TRES DECISIONES QUE NO SON OBVIAS ───────────────────
+ * ── THE THREE DECISIONS THAT ARE NOT OBVIOUS ────────────────
  *
- * **Caduca.** Un borrador de hace tres semanas ofrecido sobre una ficha que se ha tocado
- * cinco veces desde entonces no es ayuda, es una trampa: se acepta sin mirar y se
- * sobreescriben cinco correcciones con lo que alguien dejó a medias. Siete días.
+ * **It expires.** A three-week-old draft offered over a record that has been touched
+ * five times since is not help, it is a trap: it is accepted without looking and
+ * five corrections get overwritten with what somebody left half-done. Seven days.
  *
- * **Se compara con la fila.** Si lo guardado ha cambiado desde que se apuntó el borrador,
- * aceptarlo revertiría en silencio la corrección de otra sesión — que es justo la clase de
- * pérdida silenciosa que este proyecto no se permite. No se esconde el borrador, que sería
- * perder trabajo por segunda vez: se ofrece **diciéndolo**, y la catalogadora decide.
+ * **It is compared with the row.** If what is stored has changed since the draft was noted,
+ * accepting it would silently revert another session's correction — which is exactly the kind of
+ * silent loss this project does not allow itself. The draft is not hidden, which would be
+ * losing work a second time: it is offered **saying so**, and the cataloguer decides.
  *
- * **No guarda ficheros.** Un `File` no cabe en `localStorage` y no se va a inventar un
- * hueco para él: el fichero escaneado hay que volver a elegirlo, y eso se dice donde se
- * ofrece el borrador en vez de dejarlo descubrir con el formulario ya relleno.
+ * **It does not store files.** A `File` does not fit in `localStorage` and no hole is going to be
+ * invented for it: the scanned file has to be chosen again, and that is said where the
+ * draft is offered instead of leaving it to be discovered with the form already filled in.
  *
- * Todo aquí es puro, `now` incluido: la batería corre en node.
+ * Everything here is pure, `now` included: the suite runs in node.
  */
 
 /** The envelope that gets stored. With a version, which is what allows changing it safely. */
@@ -38,20 +38,20 @@ interface StoredDraft {
   /** When it was noted down, in ISO. */
   at: string
   /**
-   * Cómo estaba lo guardado cuando se apuntó, o null en un formulario de alta —donde no
-   * hay fila con la que chocar—.
+   * How what was stored looked when it was noted down, or null in a creation form —where there is no
+   * row to clash with—.
    */
   fp: string | null
   draft: unknown
 }
 
 /**
- * La clave de `localStorage`.
+ * The `localStorage` key.
  *
- * Con prefijo del proyecto y versión del formato: la clave de la selección por lotes ya
- * enseñó lo que cuesta renombrar una que está puesta en los navegadores de alguien
- * (`batch.ts` lleva su migración *one-shot*). Con esto, cambiar el formato es cambiar el
- * número: las claves viejas dejan de leerse y se limpian solas al caducar.
+ * With the project's prefix and the format's version: the batch-selection key already
+ * taught what it costs to rename one that is set in somebody's browser
+ * (`batch.ts` carries its *one-shot* migration). With this, changing the format is changing the
+ * number: the old keys stop being read and clean themselves up on expiry.
  */
 export function draftStorageKey(scope: string): string {
   return `catalogador:borrador:v1:${scope}`
@@ -94,11 +94,11 @@ export interface DraftRead<T> {
 }
 
 /**
- * Lee lo guardado y dice si se puede ofrecer.
+ * Reads what is stored and says whether it can be offered.
  *
- * Cualquier cosa que no se entienda es `none` y no una excepción: esto corre al abrir una
- * hoja, y un `localStorage` con basura dentro —de una versión anterior, de una extensión
- * del navegador, de un guardado a medias— no puede impedir abrir el formulario.
+ * Anything not understood is `none` and not an exception: this runs on opening a
+ * sheet, and a `localStorage` with rubbish inside —from an earlier version, from a browser
+ * extension, from a half-done save— cannot prevent the form from opening.
  */
 export function readDraft<T>(
   raw: string | null,

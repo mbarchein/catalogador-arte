@@ -34,9 +34,9 @@ function AddIcon() {
   )
 }
 
-// Dos cuadros colgados sobre la línea de una sala: una exposición es obra puesta
-// en una pared, y el icono tenía que separarse de la cuadrícula de obras (que es
-// el almacén entero) y de las estanterías de las tablas.
+// Two paintings hung over the line of a room: an exhibition is work put
+// on a wall, and the icon had to be separated from the grid of artworks (which is
+// the whole storeroom) and from the shelves of the tables.
 function ExhibitionsIcon() {
   return (
     <svg {...svg}>
@@ -74,32 +74,32 @@ function ProfileIcon() {
  * marked with the top bar besides the color, which with gloves or in full sun
  * is not enough.
  *
- * ── POR QUÉ «EXPOSICIONES» ES UNA PESTAÑA Y NO UNA FILA DE «TABLAS» ──
+ * ── WHY «EXPOSICIONES» IS A TAB AND NOT A ROW OF «TABLAS» ───
  *
- * Aquí solo entra lo que el catálogo CONTIENE o lo que se hace con él, y una
- * exposición es contenido: se lee como se lee una obra, tiene su ficha, y quien
- * solo consulta la ve igual. Al listado de obras se llega por una pestaña de este
- * menú, y ese es el criterio que decide: al de exposiciones también. Meterla en
- * «Tablas» —el índice de las listas de las que eligen las fichas, y solo del
- * Catalogador— habría mentido sobre lo que es y se la habría escondido al lector.
+ * Only what the catalogue CONTAINS or what is done with it goes here, and an
+ * exhibition is content: it reads the way an artwork reads, it has its record, and whoever
+ * only consults sees it just the same. The artwork listing is reached through a tab of this
+ * menu, and that is the criterion that decides: so is the exhibition one. Putting it in
+ * «Tablas» —the index of the lists the records choose from, and the Cataloguer's
+ * only— would have lied about what it is and would have hidden it from the reader.
  *
- * Las dos de contenido van juntas y delante, y las tres que actúan detrás, así que
- * quien solo consulta lee «Obras · Exposiciones · Mi perfil»: el catálogo entero y
- * nada más. La quinta pestaña costó un punto de tamaño en las etiquetas, y está
- * medido y explicado abajo, en la clase de cada una.
+ * The two content ones go together and first, and the three that act behind, so that
+ * whoever only consults reads «Obras · Exposiciones · Mi perfil»: the whole catalogue and
+ * nothing else. The fifth tab cost a point of size in the labels, and it is
+ * measured and explained below, in each one's class.
  *
- * La papelera NO está aquí, y no por olvido: se abre unas pocas veces al año, así
- * que una sexta pestaña estrecharía las cinco de todos los días para nada. Su
- * puerta está en «Tablas», que es donde ya se viene a hacer mantenimiento.
+ * The wastebasket is NOT here, and not out of forgetfulness: it is opened a few times a year, so
+ * a sixth tab would narrow the five everyday ones for nothing. Its
+ * door is in «Tablas», which is where maintenance is already done.
  */
 export function FooterMenu() {
   const { canEdit } = useAuth()
 
   const tabs = [
     { to: '/', end: true, text: 'Obras', Icon: ArtworksIcon },
-    // RF-309, RF-501: el listado de exposiciones lo lee cualquiera que pueda leer,
-    // igual que el de obras. Crear y corregir son del Catalogador y se comprueban
-    // dentro de esas pantallas.
+    // RF-309, RF-501: the exhibition listing is read by anybody who can read,
+    // just like the artwork one. Creating and correcting belong to the Cataloguer and are checked
+    // inside those screens.
     { to: '/exhibitions', end: false, text: 'Exposiciones', Icon: ExhibitionsIcon },
     // RF-1104: capture only exists for whoever can edit.
     ...(canEdit ? [{ to: '/capture', end: false, text: 'Añadir', Icon: AddIcon }] : []),
@@ -121,16 +121,16 @@ export function FooterMenu() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              // 11 px y no 12, y en las CINCO y no solo en la larga: medido en el
-              // navegador a 360 px de ancho —la pantalla de referencia—, cada
-              // pestaña dispone de 72 px y «Exposiciones» pedía 73 a 12 px, así que
-              // salía con puntos suspensivos en la navegación principal. A 11 px
-              // pide 67 y entra con holgura. Bajar solo esa habría dejado una
-              // etiqueta de otro tamaño que las demás.
+              // 11 px and not 12, and in ALL FIVE and not just the long one: measured in the
+              // browser at 360 px wide —the reference screen—, each
+              // tab has 72 px available and «Exposiciones» asked for 73 at 12 px, so
+              // it came out ellipsised in the primary navigation. At 11 px it
+              // asks for 67 and fits with room to spare. Lowering only that one would have left a
+              // label of a different size from the rest.
               //
-              // `min-w-0` y el `truncate` de la etiqueta son la red por debajo de
-              // 340 px: ahí la más larga se recorta en vez de ensanchar su pestaña
-              // y empujar a las vecinas.
+              // `min-w-0` and the label's `truncate` are the net below
+              // 340 px: there the longest one is clipped instead of widening its tab
+              // and pushing its neighbours.
               `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-2xs ${
                 isActive ? 'font-semibold text-stone-900' : 'text-stone-500'
               }`

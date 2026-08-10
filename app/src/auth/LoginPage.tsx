@@ -68,10 +68,10 @@ export function LoginPage() {
     })
     setSending(false)
 
-    // El resultado es el mismo pase lo que pase salvo que el servidor no
-    // conteste. Ver `passwordRecovery.ts`: un mensaje distinto para una
-    // dirección sin cuenta, o para un rechazo por ritmo, sería decir quién
-    // tiene acceso al catálogo.
+    // The result is the same whatever happens unless the server does not
+    // answer. See `passwordRecovery.ts`: a different message for an
+    // address with no account, or for a rate refusal, would be saying who
+    // has access to the catalogue.
     const outcome = recoveryOutcome(error)
     if (outcome === 'unreachable') {
       // In red, because it is a problem and has to be tried again. It leaks nothing: a

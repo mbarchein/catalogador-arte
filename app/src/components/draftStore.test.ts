@@ -10,15 +10,15 @@ import {
 } from './draftStore'
 
 /**
- * El borrador que sobrevive a cerrar la hoja.
+ * The draft that survives closing the sheet.
  *
- * Lo que fija esta batería son las tres formas de que esto sea PEOR que no tenerlo:
+ * What this suite pins down are the three ways for this to be WORSE than not having it:
  *
- *   · ofrecer un borrador viejísimo, que se acepta sin mirar y sobreescribe todo lo que
- *     se haya corregido desde entonces;
- *   · ofrecerlo callándose que la fila ha cambiado, que revierte en silencio la
- *     corrección de otra sesión — la clase de pérdida que no deja rastro;
- *   · reventar al abrir la hoja porque en `localStorage` hay basura.
+ *   · offering an ancient draft, which is accepted without looking and overwrites everything
+ *     that has been corrected since;
+ *   · offering it while keeping quiet that the row has changed, which silently reverts another
+ *     session's correction — the kind of loss that leaves no trace;
+ *   · blowing up on opening the sheet because there is rubbish in `localStorage`.
  */
 
 const AHORA = new Date('2026-08-05T12:00:00Z')
@@ -33,9 +33,9 @@ const BORRADOR: Campos = { title: 'Carta de la galería', year: 1985 }
 
 describe('draftStorageKey, la clave', () => {
   it('lleva prefijo del proyecto y versión del formato', () => {
-    // La clave de la selección por lotes ya enseñó lo que cuesta renombrar una que está
-    // puesta en los navegadores de alguien: con la versión dentro, cambiar el formato es
-    // cambiar el número.
+    // The batch-selection key already taught what it costs to rename one that is
+    // set in somebody's browser: with the version inside, changing the format is
+    // changing the number.
     expect(draftStorageKey('documento-editar:abc')).toBe(
       'catalogador:borrador:v1:documento-editar:abc',
     )
@@ -139,9 +139,9 @@ describe('draftFingerprint, ¿ha cambiado la fila?', () => {
   })
 
   it('los ausentes no se confunden con la cadena vacía… ni al revés', () => {
-    // `null` y `''` son el mismo «sin dato» para el formulario, así que también aquí: si
-    // no, un campo que la base devuelve null y el formulario deja en blanco daría «ha
-    // cambiado» en cada apertura.
+    // `null` and `''` are the same «no datum» for the form, so here too: otherwise,
+    // a field the base returns as null and the form leaves blank would give «it has
+    // changed» on every opening.
     expect(draftFingerprint([null, 'x'])).toBe(draftFingerprint(['', 'x']))
     expect(draftFingerprint([undefined, 'x'])).toBe(draftFingerprint(['  ', 'x']))
   })

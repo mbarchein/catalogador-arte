@@ -36,10 +36,10 @@ export function ResetPasswordPage() {
       return
     }
 
-    // Quien cambia la contraseña por miedo a que alguien la sepa tiene que echar
-    // a ese alguien, no solo dejarlo con la contraseña vieja: las demás sesiones
-    // se cierran. Si esto fallara, la contraseña YA está cambiada y decirlo aquí
-    // convertiría un éxito en un mensaje de error, así que se deja pasar.
+    // Whoever changes their password for fear that somebody knows it has to throw
+    // that somebody out, not just leave them with the old password: the other sessions
+    // are closed. If this failed, the password is ALREADY changed and saying so here
+    // would turn a success into an error message, so it is let through.
     await supabase.auth.signOut({ scope: 'others' }).catch(() => undefined)
 
     // And with the password chosen, the recovery is no longer half done: the application
@@ -52,13 +52,13 @@ export function ResetPasswordPage() {
   }
 
   return (
-    // Sin menú de abajo, se llegue por donde se llegue: elegir contraseña es una
-    // tarea, no una sección del catálogo. Llegando desde el correo las pestañas
-    // además rebotarían a esta misma pantalla —la aplicación no deja salir hasta
-    // elegir una—, que es un menú de cinco botones averiados; y llegando desde el
-    // perfil invitan a irse a media tarea, con el «volver» ya al lado.
+    // With no bottom menu, however it is reached: choosing a password is a
+    // task, not a section of the catalogue. Arriving from the e-mail the tabs
+    // would also bounce back to this same screen —the application does not let anyone leave until
+    // one is chosen—, which is a menu of five broken buttons; and arriving from the
+    // profile they invite leaving mid-task, with «volver» already alongside.
     //
-    // El «volver» solo cuando hay a dónde: desde el correo no lo hay.
+    // The «volver» only when there is somewhere to go: from the e-mail there is not.
     <Layout
       title="Nueva contraseña"
       back={passwordRecovery ? undefined : '/profile'}

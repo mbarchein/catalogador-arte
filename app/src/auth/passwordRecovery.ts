@@ -1,39 +1,39 @@
 /**
- * Recuperar la contraseña olvidada (RF-112).
+ * Recovering the forgotten password (RF-112).
  *
- * ── LA REGLA QUE MANDA SOBRE TODAS: NO SE ENUMERA ───────────
+ * ── THE RULE THAT RULES OVER ALL: NO ENUMERATION ────────────
  *
- * Esta pantalla la puede usar cualquiera sin haber entrado, así que **nada de lo
- * que conteste puede decir si una cuenta existe**. Ni el texto, ni la ausencia de
- * texto, ni un error distinto, ni un botón que se comporta diferente. El equipo
- * son tres personas y sus correos son adivinables, y saber cuál de ellos tiene
- * acceso al catálogo es media intrusión: convierte «probar contraseñas contra
- * varias direcciones» en «probar contraseñas contra la buena».
+ * This screen can be used by anybody without having logged in, so **nothing it
+ * answers can say whether an account exists**. Not the text, not the absence of
+ * text, not a different error, not a button that behaves differently. The team is
+ * three people and their addresses are guessable, and knowing which of them has
+ * access to the catalogue is half an intrusion: it turns «trying passwords against
+ * several addresses» into «trying passwords against the right one».
  *
- * De ahí que el resultado sea **el mismo en todos los casos menos uno**: si el
- * servidor no contesta. Esa excepción no filtra nada —que la red esté caída no
- * dice nada de ninguna cuenta— y sin ella el fallo más común de todos, estar sin
- * cobertura en un almacén, se leería como «el correo ya está enviado» y se
- * esperaría un mensaje que no va a llegar nunca.
+ * Hence the result being **the same in every case but one**: if the
+ * server does not answer. That exception leaks nothing —the network being down says
+ * nothing about any account— and without it the commonest failure of all, being out of
+ * coverage in a storeroom, would read as «the e-mail has been sent» and
+ * a message that is never going to arrive would be waited for.
  *
- * ── LA ESPERA ENTRE ENVÍOS ──────────────────────────────────
+ * ── THE WAIT BETWEEN SENDS ──────────────────────────────────
  *
- * El servicio de identidad ya limita el ritmo por su cuenta. La espera de aquí es
- * otra cosa: hace que **el ritmo lo marque esta pantalla y no el servidor**, para
- * que un rechazo por exceso de peticiones no llegue a producirse y no haya
- * diferencia observable entre pedirlo para una dirección que existe y para una
- * que no.
+ * The identity service already limits the rate on its own. The wait here is
+ * something else: it makes **the rate be set by this screen and not by the server**, so
+ * that a refusal for too many requests never comes about and there is no
+ * observable difference between asking for it for an address that exists and one
+ * that does not.
  */
 
 /** Seconds the screen makes you wait between two sends. */
 export const RESEND_COOLDOWN_SECONDS = 60
 
 /**
- * Lo que se contesta siempre.
+ * What is always answered.
  *
- * En condicional —«si la cuenta existe»— y no en afirmativo: afirmar que se ha
- * enviado sería mentir la mitad de las veces, y quien lo lea tras teclear mal su
- * propia dirección se quedaría esperando un correo que nadie mandó.
+ * In the conditional —«si la cuenta existe»— and not the affirmative: stating that it has
+ * been sent would be lying half the time, and whoever reads it after mistyping their
+ * own address would be left waiting for an e-mail nobody sent.
  */
 export const RECOVERY_NOTICE =
   'Si esa dirección tiene cuenta, llegará un correo con el enlace. Mira también el spam.'
@@ -43,10 +43,10 @@ export const UNREACHABLE_NOTICE =
   'No se ha podido contactar con el servidor. Comprueba la conexión y vuelve a intentarlo.'
 
 /**
- * La dirección tal como se manda.
+ * The address as it is sent.
  *
- * Recortada y en minúsculas: el correo no distingue mayúsculas y un espacio
- * pegado al pegar desde otra aplicación es la causa más tonta de «no me llega».
+ * Trimmed and in lower case: e-mail does not distinguish capitals and a space
+ * stuck on when pasting from another application is the silliest cause of «it does not reach me».
  */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
@@ -56,16 +56,16 @@ export function normalizeEmail(email: string): string {
 export type RecoveryOutcome = 'requested' | 'unreachable'
 
 /**
- * Cómo se clasifica lo que conteste el servicio de identidad.
+ * How whatever the identity service answers is classified.
  *
- * **Todo lo que no sea un fallo de red cuenta como pedido.** Un rechazo por
- * ritmo, una dirección sin cuenta, una plantilla de correo mal configurada: la
- * usuaria lee lo mismo en los tres casos. Es deliberado y es el punto entero de
- * este módulo — un mensaje distinto para alguno de ellos sería la pista que aquí
- * no puede darse.
+ * **Everything that is not a network failure counts as asked for.** A refusal by
+ * rate, an address with no account, a badly configured e-mail template: the
+ * user reads the same in all three cases. It is deliberate and it is the whole point of
+ * this module — a different message for any of them would be the clue that cannot
+ * be given here.
  *
- * `status` viene del error del cliente: ausente o cero es que la petición no
- * llegó a salir.
+ * `status` comes from the client's error: absent or zero means the request never
+ * went out.
  */
 export function recoveryOutcome(failure: { status?: number } | null): RecoveryOutcome {
   if (failure === null) return 'requested'
@@ -78,10 +78,10 @@ export function recoveryText(outcome: RecoveryOutcome): string {
 }
 
 /**
- * Cuántos segundos faltan para poder volver a pedirlo.
+ * How many seconds until it can be asked for again.
  *
- * Cero cuando ya se puede. Las dos marcas de tiempo llegan como argumento en vez
- * de leerse aquí para que esto se pueda probar sin reloj.
+ * Zero when it already can. Both timestamps arrive as arguments instead
+ * of being read here so this can be tested without a clock.
  */
 export function secondsLeft(sentAt: number | null, now: number): number {
   if (sentAt === null) return 0

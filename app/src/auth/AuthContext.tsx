@@ -30,22 +30,22 @@ interface AuthContextValue {
   /** RF-103: only Cataloger and Superuser write. */
   canEdit: boolean
   /**
-   * Vuelve a leer el perfil de la sesión actual.
+   * Reads the current session's profile again.
    *
-   * Lo usa quien acaba de corregir su propio nombre: sin esto la pantalla seguiría
-   * enseñando el viejo hasta la siguiente recarga, y el nombre no es un dato del
-   * perfil y ya está — es lo que se lee en «actualizado por» de cada obra.
+   * Used by whoever has just corrected their own name: without this the screen would keep
+   * showing the old one until the next reload, and the name is not just a datum of the
+   * profile — it is what is read in every artwork's «actualizado por».
    */
   refreshProfile: () => Promise<void>
   /**
-   * La sesión abierta viene del enlace de recuperación y todavía no ha elegido
-   * contraseña (RF-112).
+   * The open session comes from the recovery link and has not yet chosen a
+   * password (RF-112).
    *
-   * Mientras esto sea cierto, la aplicación no deja salir de «Nueva contraseña».
-   * Sin ello el enlace del correo **es un acceso**: abre una sesión normal, y
-   * quien lo pulse y se arrepienta se queda dentro del catálogo sin haber sabido
-   * nunca la contraseña. Que es justo lo que un enlace de recuperación no puede
-   * ser, porque vive para siempre en una bandeja de entrada.
+   * While this is true, the application does not let anyone leave «Nueva contraseña».
+   * Without it the e-mail's link **is an access**: it opens a normal session, and
+   * whoever taps it and changes their mind stays inside the catalogue without ever
+   * having known the password. Which is exactly what a recovery link cannot
+   * be, because it lives forever in an inbox.
    */
   passwordRecovery: boolean
   /** Called once the new password has been chosen. */
@@ -54,13 +54,13 @@ interface AuthContextValue {
 }
 
 /**
- * Dónde se apunta que hay una recuperación a medias.
+ * Where a half-done recovery is noted.
  *
- * En `sessionStorage` y no en memoria porque el aviso llega una sola vez, al
- * abrir el enlace: una recarga de la página no lo vuelve a disparar, y sin dejar
- * rastro la sesión se leería como una entrada normal — que es exactamente el
- * agujero que esto cierra. Y en `sessionStorage` y no en `localStorage` porque
- * muere con la pestaña, como debe morir una recuperación abandonada.
+ * In `sessionStorage` and not in memory because the notice arrives only once, on
+ * opening the link: a page reload does not fire it again, and with no trace
+ * left the session would read as a normal login — which is exactly the
+ * hole this closes. And in `sessionStorage` and not `localStorage` because it
+ * dies with the tab, as an abandoned recovery should die.
  */
 const RECOVERY_KEY = 'password-recovery'
 
