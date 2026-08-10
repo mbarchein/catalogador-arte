@@ -1,147 +1,147 @@
 -- ============================================================
--- El escritor del registro de cambios (RF-1502, RF-1503, RF-1509 a RF-1512).
+-- The change log's writer (RF-1502, RF-1503, RF-1509 to RF-1512).
 --
--- 20260805120000 creó la tabla del registro y sus tres candados, y dijo en su
--- primera línea que «el trigger que la rellena llega en la migración siguiente».
--- LA MIGRACIÓN SIGUIENTE NO LO TRAÍA: 20260805130000 es la visibilidad
--- documental, y entre una y otra el escritor se quedó sin escribir. Medido antes
--- de tocar nada: `change_log` tiene 0 filas, en `public` existen las dos
--- funciones de candado y NINGUNA función de escritura, y ni `artworks` (8
--- triggers) ni `images` (5 triggers) tienen un trigger que apunte al registro.
+-- 20260805120000 created the log's table and its three padlocks, and said in its
+-- first line that «the trigger that fills it arrives in the next migration».
+-- THE NEXT MIGRATION DID NOT BRING IT: 20260805130000 is the documentary
+-- visibility, and between one and the other the writer was left unwritten. Measured before
+-- touching anything: `change_log` has 0 rows, in `public` the two
+-- padlock functions exist and NO write function, and neither `artworks` (8
+-- triggers) nor `images` (5 triggers) have a trigger pointing at the log.
 --
--- Así que hoy el registro es inviolable y está vacío, que es la mitad inútil de
--- la pareja: los 24 intentos de escritura ilegítima fallan —los 12 de los cuatro
--- papeles con `permission denied` y los 12 del propietario y de `postgres` con
--- los candados— y las 22 obras y 39 fotografías de la base no han dejado una sola
--- línea de historia. Un registro de auditoría que no registra nada no es más
--- seguro que no tener registro: es la apariencia de tenerlo.
+-- So today the log is inviolable and empty, which is the useless half of
+-- the pair: the 24 illegitimate write attempts fail —the 12 of the four
+-- roles with `permission denied` and the 12 of the owner and of `postgres` with
+-- the padlocks— and the base's 22 artworks and 39 photographs have not left a single
+-- line of history. An audit log that logs nothing is no more
+-- secure than having no log: it is the appearance of having one.
 --
--- Esta migración trae el escritor. NO reescribe 20260805120000, que está
--- aplicada: la tabla, sus privilegios y sus candados no se tocan ni una línea, y
--- eso es exactamente lo que aquella migración compró al partirse en dos.
+-- This migration brings the writer. It does NOT rewrite 20260805120000, which is
+-- applied: the table, its privileges and its padlocks are not touched by a single line, and
+-- that is exactly what that migration bought by splitting in two.
 --
--- ── POR QUÉ UN TRIGGER Y NO LA APLICACIÓN ───────────────────
+-- ── WHY A TRIGGER AND NOT THE APPLICATION ───────────────────
 --
--- Porque el registro tiene que capturar TODOS los caminos de escritura, y la
--- aplicación es solo uno de ellos. Un trigger sobre la tabla se dispara venga el
--- cambio de donde venga: de la PWA, de un `curl` con la clave anónima, del editor
--- SQL del panel, de una función `security definer` que se salta la RLS, o de OTRO
--- TRIGGER. Este último caso no es hipotético y va con test: `sync_photographed`
--- llama a `recalculate_photographed()`, que actualiza `artworks.photographed`
--- cuando se sube o se retira una fotografía. Ese cambio en la obra no lo escribe
--- nadie desde el formulario y tiene que quedar registrado igual, porque para
--- quien lea la historia dentro de cinco años es un cambio de la ficha.
+-- Because the log has to capture ALL the write paths, and the
+-- application is only one of them. A trigger over the table fires wherever the
+-- change comes from: from the PWA, from a `curl` with the anonymous key, from the panel's
+-- SQL editor, from a `security definer` function that bypasses the RLS, or from ANOTHER
+-- TRIGGER. This last case is not hypothetical and it goes with a test: `sync_photographed`
+-- calls `recalculate_photographed()`, which updates `artworks.photographed`
+-- when a photograph is uploaded or withdrawn. That change to the artwork is written by
+-- nobody from the form and it has to be logged all the same, because for
+-- whoever reads the history five years from now it is a change to the record.
 --
--- Si el registro lo escribiera el cliente, la primera columna del historial sería
--- «lo que el cliente quiso contar», y no existiría ninguna forma de distinguirla
--- de la verdad. Con el trigger, quien quiera falsear el registro tiene que
--- falsear el dato: es el mismo argumento por el que RF-708 exigía imponer el
--- bloqueo en la base y no en el navegador.
+-- If the log were written by the client, the history's first column would be
+-- «what the client wanted to tell», and there would be no way of distinguishing it
+-- from the truth. With the trigger, whoever wants to falsify the log has to
+-- falsify the datum: it is the same argument by which RF-708 required imposing the
+-- lock in the base and not in the browser.
 --
--- ── AFTER Y NO BEFORE, Y ES OBLIGATORIO ─────────────────────
+-- ── AFTER AND NOT BEFORE, AND IT IS COMPULSORY ──────────────
 --
--- El trigger es AFTER INSERT OR UPDATE. No es una preferencia de estilo: en un
--- BEFORE INSERT el registro no tendría qué anotar. `assign_catalog_id` asigna
--- `catalog_id` en un BEFORE INSERT y `assign_image_id` hace lo mismo con
--- `image_id`, así que un escritor que corriera antes vería la clave a nulo y
--- escribiría una línea de auditoría sin decir de qué ficha habla —o chocaría
--- contra el `not null` de `row_key` y rompería el alta de cualquier obra.
+-- The trigger is AFTER INSERT OR UPDATE. It is not a style preference: in a
+-- BEFORE INSERT the log would have nothing to note. `assign_catalog_id` assigns
+-- `catalog_id` in a BEFORE INSERT and `assign_image_id` does the same with
+-- `image_id`, so a writer that ran before would see the key at null and
+-- would write an audit line without saying which record it speaks of —or it would clash
+-- against `row_key`'s `not null` and would break the creation of any artwork.
 --
--- Y en el UPDATE, AFTER es lo que garantiza que se anota el valor que QUEDÓ
--- guardado y no el que llegó: `artwork_audit_trail` sella `basic_updated_at`,
--- `tg_artwork_research_status_coherent` puede corregir un estado de
--- investigación, y `tg_image_deactivation` toca la baja. Un registro que anotara
--- lo que el cliente mandó en vez de lo que la base aceptó mentiría justamente en
--- los casos en que la base corrige al cliente, que son los que interesa auditar.
+-- And in the UPDATE, AFTER is what guarantees that what is noted is the value that WAS
+-- stored and not the one that arrived: `artwork_audit_trail` stamps `basic_updated_at`,
+-- `tg_artwork_research_status_coherent` can correct a research
+-- state, and `tg_image_deactivation` touches the withdrawal. A log that noted
+-- what the client sent instead of what the base accepted would lie in precisely
+-- the cases in which the base corrects the client, which are the ones worth auditing.
 --
--- ── LO QUE NO SE ANOTA, Y POR QUÉ NO ES UNA OMISIÓN ─────────
+-- ── WHAT IS NOT NOTED, AND WHY IT IS NOT AN OMISSION ────────
 --
--- 1. LAS MARCAS DE TRAZA. `updated_at` y `updated_by` cambian en CADA guardado,
---    por definición (RF-801, RF-803): anotarlas convertiría cada corrección de
---    una errata en tres líneas, dos de ellas sin información —«la fecha de
---    actualización pasó de las 12:04 a las 12:05»—, y el historial de una ficha
---    con doscientos cambios tendría cuatrocientas líneas de ruido delante de las
---    doscientas que alguien quiere leer. Lo mismo `created_at`, `created_by`,
---    `basic_updated_at` (RF-802) y las cuatro de la papelera —`deactivated_at`,
---    `deactivated_by`, `restored_at`, `restored_by`—, que las sella el trigger de
---    traza a partir del cambio de `active` y no las decide ninguna persona.
+-- 1. THE TRACE STAMPS. `updated_at` and `updated_by` change on EVERY save,
+--    by definition (RF-801, RF-803): noting them would turn every correction of
+--    a typo into three lines, two of them with no information —«the update
+--    date went from 12:04 to 12:05»—, and the history of a record
+--    with two hundred changes would have four hundred lines of noise in front of the
+--    two hundred somebody wants to read. Likewise `created_at`, `created_by`,
+--    `basic_updated_at` (RF-802) and the four of the wastebasket —`deactivated_at`,
+--    `deactivated_by`, `restored_at`, `restored_by`—, which the trace trigger stamps
+--    from the change to `active` and which no person decides.
 --
---    OJO A LO QUE SÍ SE ANOTA: `active` NO está en esa lista. Retirar y restaurar
---    son los cambios más consecuentes de una ficha y son los que dan nombre a dos
---    de los cuatro verbos del enumerado. Lo que se descarta es el sello
---    redundante que acompaña al cambio, no el cambio.
+--    MIND WHAT IS NOTED: `active` is NOT on that list. Withdrawing and restoring
+--    are a record's most consequential changes and are the ones that give their names to two
+--    of the enumerated type's four verbs. What is discarded is the redundant
+--    stamp that accompanies the change, not the change.
 --
--- 2. LAS COLUMNAS DERIVADAS. `artworks.execution_date` es
---    `generated always as ... stored`: es una función de `date_note`,
---    `start_year`, `end_year`, `approximate_date` y `unconfirmed_date`, que sí se
---    anotan. Anotarla además sería contar el mismo cambio dos veces y, peor,
---    contar como cambio del usuario algo que el usuario no puede escribir.
---    20260805120000 ya lo había decidido al escribir que el registro «por diseño
---    no guarda las columnas derivadas».
+-- 2. THE DERIVED COLUMNS. `artworks.execution_date` is
+--    `generated always as ... stored`: it is a function of `date_note`,
+--    `start_year`, `end_year`, `approximate_date` and `unconfirmed_date`, which are
+--    noted. Noting it as well would be telling the same change twice and, worse,
+--    counting as a user's change something the user cannot write.
+--    20260805120000 had already decided it when it wrote that the log «by design
+--    does not store the derived columns».
 --
--- La lista de descartes va como constante en la función y no como consulta al
--- catálogo por fila, porque se paga en cada guardado. El precio de esa decisión
--- es que una errata en un nombre no fallaría: descartaría de menos y el registro
--- se llenaría de ruido en silencio, que es el peor modo de fallo posible aquí.
--- Por eso la migración se mide a sí misma más abajo contra `pg_attribute`, en los
--- dos sentidos: que todo nombre de la lista existe de verdad en una de las dos
--- tablas auditadas, y que toda columna generada de las dos está en la lista.
+-- The list of discards goes as a constant in the function and not as a query to the
+-- catalogue per row, because it is paid for on every save. The price of that decision
+-- is that a typo in a name would not fail: it would discard too few and the log
+-- would fill with noise in silence, which is the worst possible failure mode here.
+-- That is why the migration measures itself further below against `pg_attribute`, in both
+-- directions: that every name on the list really exists in one of the two
+-- audited tables, and that every generated column of the two is on the list.
 --
--- ── UN UPDATE QUE NO CAMBIA NADA NO ESCRIBE NADA ────────────
+-- ── AN UPDATE THAT CHANGES NOTHING WRITES NOTHING ───────────
 --
--- RF-1510. Un `update` que manda los mismos valores —el caso normal de un
--- formulario que se guarda sin haber tocado nada, y de un `PATCH` de PostgREST
--- con el objeto entero— cambia `updated_at` y `updated_by` y ninguna otra
--- columna. Como las dos están descartadas, no queda ni un campo que anotar y el
--- `insert` escribe CERO filas. No hace falta un `if`: sale de la propia forma de
--- la consulta, que es mejor que una condición que alguien puede quitar.
+-- RF-1510. An `update` that sends the same values —the normal case of a
+-- form saved without anything having been touched, and of a PostgREST `PATCH`
+-- with the whole object— changes `updated_at` and `updated_by` and no other
+-- column. As both are discarded, not one field is left to note and the
+-- `insert` writes ZERO rows. No `if` is needed: it comes out of the query's own
+-- shape, which is better than a condition somebody can remove.
 --
--- Y no se escribe tampoco una línea «vacía» de operación sin campos: no podría,
--- porque la restricción `change_log_create_has_no_column` de 20260805120000 exige
--- que la única fila sin columna sea la del alta. El diseño de la tabla ya impedía
--- el registro lleno de cambios vacíos; esto es lo que hace que el escritor no
--- tenga que intentarlo.
+-- And no «empty» operation line with no fields is written either: it could not be,
+-- because 20260805120000's `change_log_create_has_no_column` constraint requires
+-- that the only row with no column be the creation's. The table's design already prevented
+-- the log filling with empty changes; this is what makes the writer not
+-- have to try.
 --
--- ── NADA DE RELLENAR EL PASADO ──────────────────────────────
+-- ── NO FILLING IN THE PAST ──────────────────────────────────
 --
--- RF-1511. No hay backfill. Las 22 obras y las 39 fotografías que ya existen no
--- reciben una línea de alta retroactiva, y no por pereza: la única cosa que se
--- podría escribir con verdad es `changed_by` nulo y `changed_at` de hoy, o sea
--- una línea que afirma que alguien creó la ficha AR-0001 el 4 de agosto de 2026,
--- que es falso. Inventar líneas de auditoría para que el historial no empiece
--- vacío es exactamente la clase de falsificación que esta tabla existe para
--- impedir, y da igual que la escriba una migración de buena fe. El historial de
--- una ficha anterior a hoy empieza donde empieza el registro; `created_at` y
--- `created_by` de la propia fila siguen contando lo poco que se sabe de antes.
+-- RF-1511. There is no backfill. The 22 artworks and the 39 photographs that already exist do not
+-- receive a retroactive creation line, and not out of laziness: the only thing that
+-- could be written with truth is `changed_by` null and `changed_at` of today, that is,
+-- a line asserting that somebody created the record AR-0001 on 4 August 2026,
+-- which is false. Inventing audit lines so that the history does not start
+-- empty is exactly the class of falsification this table exists to
+-- prevent, and it makes no difference that a migration writes it in good faith. The history of
+-- a record earlier than today starts where the log starts; the row's own `created_at` and
+-- `created_by` go on telling the little that is known from before.
 --
--- ── LO QUE SIGUE SIN SER REVERSIBLE ─────────────────────────
+-- ── WHAT GOES ON NOT BEING REVERSIBLE ───────────────────────
 --
--- RF-1505, y aquí es donde había que tener cuidado, porque un escritor que sabe
--- reconstruir los valores anteriores es el 90 % de un «deshacer». No se construye
--- la otra mitad: ninguna función lee `change_log`, ninguna vista lo proyecta,
--- ninguna RPC acepta un `change_id`, y el escritor no devuelve nada ni guarda
--- identificador de transacción. Comprobado sobre la base: 0 funciones en `public`
--- que nombren `change_log` y escriban en `artworks` o en `images`, y 0 vistas
--- sobre la tabla. El test lo vuelve a comprobar y se pondrá rojo el día que
--- aparezca el atajo.
+-- RF-1505, and this is where care had to be taken, because a writer that knows how to
+-- reconstruct the previous values is 90 % of an «undo». The other half is not built:
+-- no function reads `change_log`, no view projects it,
+-- no RPC accepts a `change_id`, and the writer returns nothing and stores no
+-- transaction identifier. Checked against the base: 0 functions in `public`
+-- naming `change_log` and writing in `artworks` or in `images`, and 0 views
+-- over the table. The test checks it again and will go red the day
+-- the shortcut appears.
 -- ============================================================
 
 
--- ── El escritor ─────────────────────────────────────────────
+-- ── The writer ──────────────────────────────────────────────
 --
--- `security definer` Y NO PUEDE NO SERLO: el rol `authenticated` no tiene
--- `insert` sobre `change_log` —de eso va la migración anterior— así que un
--- escritor que corriera con los privilegios de quien guarda fallaría con
--- «permission denied for table change_log» y, al estar dentro del trigger,
--- tumbaría el guardado de la obra. Corriendo como su propietario, que es el de
--- `change_log`, entra por la exención del propietario a la RLS: ahí es donde
--- aterriza el aviso de 20260805120000 sobre `force row level security`, que
--- anularía esa exención y rompería el catálogo entero.
+-- `security definer` AND IT CANNOT NOT BE: the `authenticated` role does not have
+-- `insert` over `change_log` —that is what the previous migration is about— so a
+-- writer running with the privileges of whoever saves would fail with
+-- «permission denied for table change_log» and, being inside the trigger,
+-- would knock down the artwork's save. Running as its owner, which is `change_log`'s,
+-- it comes in through the owner's exemption from RLS: that is where
+-- 20260805120000's warning about `force row level security` lands, which
+-- would annul that exemption and break the whole catalogue.
 --
--- Una sola función para las dos tablas, resuelta por `tg_table_name` y por
--- `to_jsonb`, y no una por tabla. Con dos copias, el día que se añada una columna
--- a `images` habría que acordarse de la otra; y la comparación campo a campo es
--- idéntica en las dos, porque no mira ningún nombre de columna del catálogo.
+-- A single function for both tables, resolved by `tg_table_name` and by
+-- `to_jsonb`, and not one per table. With two copies, the day a column is added
+-- to `images` one would have to remember the other; and the field-by-field comparison is
+-- identical in both, because it looks at no catalogue column name.
 create function public.tg_change_log()
 returns trigger
 language plpgsql
@@ -149,9 +149,9 @@ security definer
 set search_path = public
 as $$
 declare
-  -- Los descartes. Van ordenados como se explica arriba: primero las marcas de
-  -- traza (RF-801 a RF-804), después las cuatro de la papelera (RF-902), y al
-  -- final las derivadas. `active` NO está aquí, a propósito.
+  -- The discards. They go ordered as explained above: first the trace
+  -- stamps (RF-801 to RF-804), then the four of the wastebasket (RF-902), and at
+  -- the end the derived ones. `active` is NOT here, on purpose.
   c_ignored constant text[] := array[
     'created_at', 'created_by', 'updated_at', 'updated_by', 'basic_updated_at',
     'deactivated_at', 'deactivated_by', 'restored_at', 'restored_by',
@@ -167,10 +167,10 @@ declare
   v_new        jsonb := to_jsonb(new);
   v_old        jsonb;
 begin
-  -- Qué clase de ficha, GUARDADO y no deducido del formato de la clave, que es lo
-  -- que pedía el comentario del enumerado. La clave de la fila se saca de la
-  -- representación jsonb y no de `new.image_id`, para que la función no nombre una
-  -- columna que en la otra tabla no existe.
+  -- What class of record, STORED and not deduced from the key's format, which is what
+  -- the enumerated type's comment asked for. The row's key is taken from the
+  -- jsonb representation and not from `new.image_id`, so that the function does not name a
+  -- column that does not exist in the other table.
   if tg_table_name = 'artworks' then
     v_entity  := 'ARTWORK';
     v_row_key := v_new->>'catalog_id';
@@ -181,11 +181,11 @@ begin
 
   v_catalog_id := v_new->>'catalog_id';
 
-  -- El alta: UNA línea y sin campo. No se enumeran los valores iniciales de la
-  -- ficha, y las dos restricciones `change_log_create_has_no_column` y
-  -- `change_log_create_has_no_values` no dejarían hacerlo de otra forma. Es
-  -- coherente con el resto: el historial cuenta los cambios, y el estado inicial
-  -- está en la propia ficha.
+  -- The creation: ONE line and with no field. The record's initial values are not
+  -- enumerated, and the two constraints `change_log_create_has_no_column` and
+  -- `change_log_create_has_no_values` would not allow doing it any other way. It is
+  -- coherent with the rest: the history tells the changes, and the initial state
+  -- is in the record itself.
   if tg_op = 'INSERT' then
     insert into public.change_log
       (change_id, entity, row_key, catalog_id, operation, changed_by)
@@ -195,10 +195,10 @@ begin
 
   v_old := to_jsonb(old);
 
-  -- El verbo. Retirar y restaurar SON cambios del campo `active` y se anotan
-  -- también como tales —la fila de campo se escribe igual, más abajo—; esto es
-  -- solo el verbo con el que la interfaz lee la línea, que es lo que dice el
-  -- comentario del enumerado en 20260805120000.
+  -- The verb. Withdrawing and restoring ARE changes to the `active` field and are noted
+  -- as such too —the field row is written just the same, further below—; this is
+  -- only the verb with which the interface reads the line, which is what
+  -- the enumerated type's comment in 20260805120000 says.
   if (v_old->>'active')::boolean and not (v_new->>'active')::boolean then
     v_operation := 'DEACTIVATE';
   elsif not (v_old->>'active')::boolean and (v_new->>'active')::boolean then
@@ -207,22 +207,22 @@ begin
     v_operation := 'UPDATE';
   end if;
 
-  -- Una fila por campo cambiado (RF-1502), en un solo `insert`.
+  -- One row per changed field (RF-1502), in a single `insert`.
   --
-  -- LA COMPARACIÓN SE HACE SOBRE EL TEXTO QUE SE VA A GUARDAR, con `->>` y no
-  -- con `->`. Es deliberado y es lo correcto para esta tabla: lo que el registro
-  -- almacena son dos textos, así que lo que decide si hubo cambio es si esos dos
-  -- textos difieren. Comparando el jsonb se podría escribir una línea cuyo valor
-  -- anterior y valor nuevo fueran la misma cadena, que es un cambio vacío con
-  -- otro disfraz.
+  -- THE COMPARISON IS MADE OVER THE TEXT THAT IS GOING TO BE STORED, with `->>` and not
+  -- with `->`. It is deliberate and it is the correct thing for this table: what the log
+  -- stores is two texts, so what decides whether there was a change is whether those two
+  -- texts differ. By comparing the jsonb one could write a line whose previous
+  -- value and new value were the same string, which is an empty change with
+  -- another disguise.
   --
-  -- `is distinct from` y no `<>`: un campo que pasa de nulo a un valor, o al
-  -- revés, es el cambio más común de este catálogo —«sin revisar» no es «no»— y
-  -- con `<>` no se anotaría ninguno de los dos.
+  -- `is distinct from` and not `<>`: a field that goes from null to a value, or the
+  -- other way round, is this catalogue's most common change —«sin revisar» is not «no»— and
+  -- with `<>` neither of the two would be noted.
   --
-  -- El recorrido no repite ninguna clave, y de ahí sale sin índice único la
-  -- invariante de «una fila por campo y operación» que 20260805120000 dijo que se
-  -- afirmaría con un test en vez de con ~24 MB de índice.
+  -- The walk repeats no key, and out of that comes without a unique index the
+  -- invariant of «one row per field and operation» that 20260805120000 said would be
+  -- asserted with a test instead of with ~24 MB of index.
   insert into public.change_log
     (change_id, entity, row_key, catalog_id, operation, column_name,
      old_value, new_value, changed_by)
@@ -232,8 +232,8 @@ begin
     join jsonb_each_text(v_old) o on o.key = n.key
    where n.key <> all (c_ignored)
      and n.value is distinct from o.value
-   -- Orden estable, para que dos guardados iguales dejen la misma secuencia de
-   -- líneas y una diferencia en un volcado sea una diferencia de verdad.
+   -- A stable order, so that two identical saves leave the same sequence of
+   -- lines and a difference in a dump is a real difference.
    order by n.key;
 
   return null;
@@ -242,24 +242,24 @@ end $$;
 comment on function public.tg_change_log is
   'Escribe el registro de cambios de una obra o una fotografía: una fila por campo cambiado (RF-1502). AFTER, porque antes del INSERT la clave de la ficha todavía no está asignada y porque el valor que se anota es el que quedó guardado. Descarta las marcas de traza y las columnas derivadas, así que un guardado que no cambia nada no escribe ninguna línea. Es security definer porque ningún rol de la aplicación tiene insert sobre el registro.';
 
--- Ni el anónimo ni el autenticado la invocan: un trigger dispara sin que nadie
--- tenga EXECUTE sobre su función, y así lo comprueba function_privileges.
+-- Neither the anonymous nor the authenticated role invokes it: a trigger fires without anybody
+-- having EXECUTE over its function, and that is how function_privileges checks it.
 revoke all on function public.tg_change_log() from public;
 
 
--- ── Los dos triggers ────────────────────────────────────────
+-- ── The two triggers ────────────────────────────────────────
 --
--- Sin `update of <columnas>`: la lista habría que mantenerla al añadir una
--- columna, y olvidarla dejaría un campo sin auditar en silencio. Sin `when`, por
--- lo mismo — el filtro de «no ha cambiado nada» está dentro y ahí se puede
--- explicar.
+-- With no `update of <columns>`: the list would have to be maintained on adding a
+-- column, and forgetting it would leave a field unaudited in silence. With no `when`, for
+-- the same reason — the «nothing has changed» filter is inside and there it can be
+-- explained.
 --
--- No hay trigger de DELETE, y no es un olvido: no existe el borrado real
--- (RF-901), ni `artworks` ni `images` tienen política de `delete` —medido: solo
--- insert, select y update en las dos— y el enumerado `change_operation` no tiene
--- un valor que anotarlo. Un `delete` solo lo puede hacer quien se salta la RLS,
--- y para ese caso la respuesta honrada es que no debe ocurrir, no una línea de
--- registro que lo normalice.
+-- There is no DELETE trigger, and it is not an oversight: real deletion does not exist
+-- (RF-901), neither `artworks` nor `images` have a `delete` policy —measured: only
+-- insert, select and update in both— and the `change_operation` enumerated type has no
+-- value to note it with. A `delete` can only be done by whoever bypasses the RLS,
+-- and for that case the honest answer is that it must not happen, not a log
+-- line that normalises it.
 create trigger artwork_change_log
   after insert or update on public.artworks
   for each row execute function public.tg_change_log();
@@ -269,14 +269,14 @@ create trigger image_change_log
   for each row execute function public.tg_change_log();
 
 
--- ── La migración se mide a sí misma ─────────────────────────
+-- ── The migration measures itself ───────────────────────────
 --
--- Se comprueba lo que un `create` correcto no garantiza y lo que un fallo
--- silencioso rompería sin avisar. NO se hace una prueba funcional aquí, y merece
--- decirse por qué: la única forma de comprobar que el escritor escribe es
--- cambiar una ficha, y eso dejaría en el registro una línea de una obra de
--- prueba que después NO SE PUEDE BORRAR, porque de eso va la tabla. La prueba
--- funcional va en el test, dentro de una transacción que se deshace.
+-- What a correct `create` does not guarantee and what a silent failure
+-- would break with no warning is checked. NO functional test is done here, and it deserves
+-- saying why: the only way of checking that the writer writes is to
+-- change a record, and that would leave in the log a line of a test
+-- artwork that afterwards CANNOT BE DELETED, because that is what the table is about. The functional
+-- test goes in the test, inside a transaction that is rolled back.
 do $$
 declare
   c_ignored constant text[] := array[
@@ -288,15 +288,15 @@ declare
   v_sobran  text[];
   v_n       integer;
 begin
-  -- 1. La función es `security definer`. Sin esto no escribe una sola línea y,
-  --    peor, tumba el guardado de cualquier obra con «permission denied».
+  -- 1. The function is `security definer`. Without this it does not write a single line and,
+  --    worse, it knocks down the save of any artwork with «permission denied».
   if not (select prosecdef from pg_proc where oid = 'public.tg_change_log()'::regprocedure) then
     raise exception 'FALLO: tg_change_log no es security definer; no podrá insertar en el registro y romperá el guardado';
   end if;
 
-  -- 2. Los dos triggers, y AFTER. `tgtype` bit 1 (valor 2) es BEFORE: si
-  --    estuviera puesto, el alta de una obra escribiría una línea con la clave a
-  --    nulo. Bit 0 (valor 1) es FOR EACH ROW, y sin él no habría `new`.
+  -- 2. The two triggers, and AFTER. `tgtype` bit 1 (value 2) is BEFORE: if
+  --    it were set, the creation of an artwork would write a line with the key at
+  --    null. Bit 0 (value 1) is FOR EACH ROW, and without it there would be no `new`.
   select count(*) into v_n
     from pg_trigger
    where tgrelid in ('public.artworks'::regclass, 'public.images'::regclass)
@@ -310,12 +310,12 @@ begin
     raise exception 'FALLO: deberían existir dos triggers AFTER INSERT OR UPDATE FOR EACH ROW del escritor, hay %', v_n;
   end if;
 
-  -- 3. LOS DESCARTES, CONTRA EL CATÁLOGO Y EN LOS DOS SENTIDOS. Este es el
-  --    bloque que caza el error real de esta entrega, porque una errata en un
-  --    nombre no falla: descarta de menos y llena el registro de ruido sin que
-  --    nadie se entere.
+  -- 3. THE DISCARDS, AGAINST THE CATALOGUE AND IN BOTH DIRECTIONS. This is the
+  --    block that catches this delivery's real mistake, because a typo in a
+  --    name does not fail: it discards too few and fills the log with noise without
+  --    anybody finding out.
   --
-  --    Sentido 1: todo nombre de la lista existe en `artworks` o en `images`.
+  --    Direction 1: every name on the list exists in `artworks` or in `images`.
   select coalesce(array_agg(i order by i), '{}') into v_faltan
     from unnest(c_ignored) i
    where not exists (
@@ -328,9 +328,9 @@ begin
       array_to_string(v_faltan, ', ');
   end if;
 
-  --    Sentido 2: toda columna GENERADA de las dos tablas está en la lista. Sin
-  --    esto, añadir mañana una columna derivada la anotaría como si la hubiera
-  --    escrito una persona, y contaría dos veces el cambio del que se deriva.
+  --    Direction 2: every GENERATED column of the two tables is on the list. Without
+  --    this, adding a derived column tomorrow would note it as if a person had
+  --    written it, and would count twice the change it derives from.
   select coalesce(array_agg(attrelid::regclass || '.' || attname order by attname), '{}')
     into v_sobran
     from pg_attribute
@@ -342,16 +342,16 @@ begin
       array_to_string(v_sobran, ', ');
   end if;
 
-  -- 4. `active` NO está descartada. Es el aserto al revés del bloque anterior:
-  --    con `active` en la lista, retirar una obra no dejaría rastro y dos de los
-  --    cuatro verbos del enumerado no llegarían a escribirse nunca.
+  -- 4. `active` is NOT discarded. It is the previous block's assertion the other way round:
+  --    with `active` on the list, withdrawing an artwork would leave no trail and two of the
+  --    enumerated type's four verbs would never get written.
   if 'active' = any (c_ignored) then
     raise exception 'FALLO: el escritor descarta `active`; retirar o restaurar una ficha no dejaría rastro';
   end if;
 
-  -- 5. El registro no se audita a sí mismo. Un trigger sobre `change_log` que
-  --    escribiera en `change_log` sería una recursión que se come el disco al
-  --    primer guardado.
+  -- 5. The log does not audit itself. A trigger over `change_log` that
+  --    wrote in `change_log` would be a recursion that eats the disk on the
+  --    first save.
   if exists (
     select 1 from pg_trigger t
      where t.tgrelid = 'public.change_log'::regclass
@@ -361,9 +361,9 @@ begin
     raise exception 'FALLO: el escritor del registro está enganchado al propio registro: se auditaría a sí mismo en cascada';
   end if;
 
-  -- 6. Y los candados de 20260805120000 siguen en pie y activos. Esta migración
-  --    no los toca, pero es la que estrena la primera escritura legítima: si
-  --    alguien hubiera dejado uno desactivado, este es el momento de saberlo.
+  -- 6. And 20260805120000's padlocks are still standing and active. This migration
+  --    does not touch them, but it is the one that opens the first legitimate write: if
+  --    somebody had left one disabled, this is the moment to know it.
   select count(*) into v_n
     from pg_trigger
    where tgrelid = 'public.change_log'::regclass

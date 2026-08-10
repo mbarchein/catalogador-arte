@@ -174,12 +174,12 @@ create policy provenance_events_select on public.provenance_events
   );
 
 
--- ── 2. La cita bibliográfica (RF-504, RF-506, RF-514) ───────
+-- ── 2. The bibliographic citation (RF-504, RF-506, RF-514) ──
 --
--- Los dos extremos. `cite_artwork` hace `insert … on conflict do update …
--- returning` y necesita el select para devolver la fila: la llama un
--- Catalogador, para quien las dos subconsultas son verdaderas, así que sigue
--- devolviendo lo mismo que antes.
+-- Both ends. `cite_artwork` does `insert … on conflict do update …
+-- returning` and it needs the select in order to return the row: a
+-- Cataloguer calls it, for whom both subqueries are true, so it goes on
+-- returning the same as before.
 
 drop policy artwork_bibliography_select on public.artwork_bibliography;
 
@@ -197,7 +197,7 @@ create policy artwork_bibliography_select on public.artwork_bibliography
   );
 
 
--- ── 3. La participación en una exposición (RF-501, RF-502) ──
+-- ── 3. The participation in an exhibition (RF-501, RF-502) ──
 
 drop policy artwork_exhibitions_select on public.artwork_exhibitions;
 
@@ -215,12 +215,12 @@ create policy artwork_exhibitions_select on public.artwork_exhibitions
   );
 
 
--- ── 4. El documento de una obra (RF-310, RF-515, RF-516) ────
+-- ── 4. An artwork's document (RF-310, RF-515, RF-516) ───────
 --
--- Aquí se ejerce la decisión escrita arriba: desaparece el PUENTE, no la ficha
--- del documento. Y no hace falta política nueva de almacenamiento: la ruta del
--- fichero está en `archive_documents`, que sigue visible por su propio `active`,
--- y lo que la Lectora deja de saber es de qué obra era.
+-- Here the decision written above is exercised: the BRIDGE disappears, not the document's
+-- record. And no new storage policy is needed: the file's path
+-- is in `archive_documents`, which stays visible by its own `active`,
+-- and what the Reader stops knowing is which artwork it was of.
 
 drop policy artwork_documents_select on public.artwork_documents;
 
@@ -238,11 +238,11 @@ create policy artwork_documents_select on public.artwork_documents
   );
 
 
--- ── 5. El documento de una exposición (RF-515) ──────────────
+-- ── 5. An exhibition's document (RF-515) ────────────────────
 --
--- La puente que no toca ninguna obra, y la que más fácil se olvida justo por
--- eso. Hereda de sus dos extremos igual que las demás: una exposición retirada
--- es papelera, y su expediente documental con ella.
+-- The bridge that touches no artwork, and the one most easily forgotten precisely for
+-- that reason. It inherits from both its ends just like the others: a withdrawn exhibition
+-- is the wastebasket, and its documentary file with it.
 
 drop policy exhibition_documents_select on public.exhibition_documents;
 
@@ -260,14 +260,14 @@ create policy exhibition_documents_select on public.exhibition_documents
   );
 
 
--- ── 6. La relación entre dos obras (RF-212, RF-217) ─────────
+-- ── 6. The relationship between two artworks (RF-212, RF-217) ──
 --
--- Las DOS obras, con `and`. El trigger de canonicalización ordena el par, así
--- que la obra retirada puede haber quedado en cualquiera de las dos columnas:
--- mirar solo una escondería la mitad de las relaciones y filtraría la otra
--- mitad. Y una relación es simétrica en su lectura aunque el tipo no lo sea —la
--- ficha de la obra activa la muestra igual—, así que no basta con que se vea el
--- extremo desde el que se consulta.
+-- BOTH artworks, with `and`. The canonicalisation trigger orders the pair, so
+-- the withdrawn artwork may have ended up in either of the two columns:
+-- looking at only one would hide half the relationships and leak the other
+-- half. And a relationship is symmetric in its reading even if the type is not —the
+-- active artwork's record shows it just the same—, so it is not enough for the
+-- end being queried from to be visible.
 
 drop policy artwork_relationships_select on public.artwork_relationships;
 
@@ -285,27 +285,27 @@ create policy artwork_relationships_select on public.artwork_relationships
   );
 
 
--- ── 7. La migración se mide a sí misma ──────────────────────
+-- ── 7. The migration measures itself ────────────────────────
 --
--- Corre DENTRO de la transacción que aplica la migración, así que si algo no
--- cuadra la migración no se aplica a medias — y media cascada de visibilidad es
--- peor que ninguna, porque parece hecha.
+-- It runs INSIDE the transaction that applies the migration, so if something does not
+-- add up the migration is not applied half way — and half a visibility cascade is
+-- worse than none, because it looks done.
 --
--- No se mide con `like` sobre el texto de la política: se mide con las
--- DEPENDENCIAS que PostgreSQL registra de cada política, tanto a las tablas que
--- su expresión nombra como a las COLUMNAS. Una comparación de cadenas pasa con
--- un `exists` que apunte a la tabla correcta por la columna equivocada; y la
--- dependencia de columna es la que caza el error de esta migración: que
--- `artwork_relationships` mire un solo extremo. Con la tabla bastaría un
--- `exists` sobre `artworks` para dar la lista por buena, y las relaciones de la
--- obra retirada se seguirían filtrando por el otro lado.
--- Lo funcional —que el Lector cuente cero y el Catalogador uno— es del test de
--- al lado, que es el único que puede autenticarse.
+-- It is not measured with a `like` over the policy's text: it is measured with the
+-- DEPENDENCIES PostgreSQL records for each policy, both to the tables
+-- its expression names and to the COLUMNS. A string comparison passes with
+-- an `exists` pointing at the correct table by the wrong column; and the
+-- column dependency is the one that catches this migration's mistake: that
+-- `artwork_relationships` look at a single end. With the table, an
+-- `exists` over `artworks` would be enough to pass the list as good, and the withdrawn
+-- artwork's relationships would go on leaking through the other side.
+-- The functional part —the Reader counting zero and the Cataloguer one— belongs to the test
+-- alongside, which is the only one that can authenticate.
 
 do $$
 declare
   v_expected constant text[][] := array[
-    -- tabla                  anclas                          columnas propias del select
+    -- table                  anchors                         the select's own columns
     ['provenance_events',     'artworks',                      'catalog_id'],
     ['artwork_bibliography',  'artworks,bibliography',         'catalog_id,bibliography_id'],
     ['artwork_exhibitions',   'artworks,exhibitions',          'catalog_id,exhibition_id'],
@@ -333,7 +333,7 @@ begin
     v_anchors := string_to_array(v_expected[v_i][2], ',');
     v_columns := string_to_array(v_expected[v_i][3], ',');
 
-    -- Las tablas que la política de SELECT nombra, según pg_depend.
+    -- The tables the SELECT policy names, according to pg_depend.
     select coalesce(array_agg(distinct anchor.relname order by anchor.relname), '{}')
       into v_found
       from pg_policy pol
@@ -355,8 +355,8 @@ begin
       end if;
     end loop;
 
-    -- Y las columnas PROPIAS por las que la política se ata a sus anclas: es lo
-    -- que distingue «hereda de los dos extremos» de «hereda de uno».
+    -- And the OWN columns by which the policy ties itself to its anchors: it is what
+    -- distinguishes «it inherits from both ends» from «it inherits from one».
     select coalesce(array_agg(distinct att.attname order by att.attname), '{}')
       into v_used
       from pg_policy pol
@@ -378,8 +378,8 @@ begin
       end if;
     end loop;
 
-    -- Y siguen siendo exactamente tres políticas: reescribir el select no ha
-    -- añadido una cuarta ni se ha dejado una por el camino (RF-111, RF-901).
+    -- And there are still exactly three policies: rewriting the select has not
+    -- added a fourth nor lost one along the way (RF-111, RF-901).
     select coalesce(array_agg(cmd::text order by cmd::text), '{}')
       into v_cmds
       from pg_policies

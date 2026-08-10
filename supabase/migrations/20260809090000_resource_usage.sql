@@ -1,26 +1,26 @@
--- Cuánto ocupa el catálogo, para poder verlo desde la aplicación (RF-1202).
+-- How much the catalogue takes up, so that it can be seen from the application (RF-1202).
 --
--- El catálogo vive repartido en tres sitios con tres límites distintos: la base
--- de datos y el almacén de fotografías de Supabase, y el bucket de másters de
--- Backblaze. Los dos primeros se miden aquí; el tercero lo mide la función Edge,
--- que es donde están sus credenciales.
+-- The catalogue lives split across three places with three different limits: Supabase's
+-- database and photograph store, and Backblaze's master
+-- bucket. The first two are measured here; the third is measured by the Edge function,
+-- which is where its credentials are.
 --
--- ── POR QUÉ ESTO ES UNA FUNCIÓN Y NO UNA VISTA ──────────────
+-- ── WHY THIS IS A FUNCTION AND NOT A VIEW ───────────────────
 --
--- `pg_database_size` y `storage.objects` no son legibles para el rol de la
--- aplicación: el tamaño de la base es del catálogo del servidor, y las filas del
--- almacén están tras las políticas de `storage`. Una vista `security invoker`
--- devolvería cero o un error. Con `security definer` la lectura la hace el
--- propietario y el permiso se comprueba aquí dentro, que es lo mismo que ya hacen
--- `set_main_image` y las demás.
+-- `pg_database_size` and `storage.objects` are not readable for the application's
+-- role: the base's size belongs to the server's catalogue, and the store's
+-- rows are behind `storage`'s policies. A `security invoker` view
+-- would return zero or an error. With `security definer` the read is done by the
+-- owner and the permission is checked in here, which is the same thing
+-- `set_main_image` and the others already do.
 --
--- ── QUIÉN PUEDE PREGUNTARLO ─────────────────────────────────
+-- ── WHO CAN ASK FOR IT ──────────────────────────────────────
 --
--- El Catalogador y el Superusuario. Un Lector no administra la capacidad de nada
--- y el dato no le sirve: es una cuenta de solo consulta, y el tamaño del disco no
--- es parte del catálogo que consulta. `security definer` obliga a comprobarlo
--- dentro —el privilegio de ejecución no distingue roles—, y por eso la primera
--- línea del cuerpo es la comprobación.
+-- The Cataloguer and the Superuser. A Reader administers nobody's capacity
+-- and the datum is of no use to them: it is a consultation-only account, and the disk's size is
+-- not part of the catalogue they consult. `security definer` forces checking it
+-- inside —the execution privilege does not distinguish roles—, and that is why the first
+-- line of the body is the check.
 
 create function public.resource_usage()
 returns table (
@@ -43,13 +43,13 @@ begin
   return query
   select
     pg_database_size(current_database())::bigint,
-    -- `metadata->>'size'` es lo que el servicio de almacenamiento apunta al
-    -- subir. Un objeto sin metadatos cuenta como cero y no rompe la suma: es
-    -- preferible quedarse corto en un fichero a no poder dar ninguna cifra.
+    -- `metadata->>'size'` is what the storage service notes down on
+    -- uploading. An object with no metadata counts as zero and does not break the sum: it is
+    -- preferable to fall short on one file than not to be able to give any figure.
     coalesce(sum((o.metadata->>'size')::bigint), 0)::bigint,
     count(o.*)::bigint
-  -- `obras` es el identificador de legado del bucket (fila de `storage.buckets`
-  -- con objetos dentro). No se renombra: ver CLAUDE.md.
+  -- `obras` is the bucket's legacy identifier (a row of `storage.buckets`
+  -- with objects inside). It is not renamed: see CLAUDE.md.
   from storage.objects o
   where o.bucket_id = 'obras';
 end $$;
@@ -57,8 +57,8 @@ end $$;
 comment on function public.resource_usage is
   'Espacio ocupado en la base y en el almacén de fotografías. Solo Catalogador y Superusuario.';
 
--- El privilegio de ejecución se concede a la sesión, no a cualquiera: una función
--- `security definer` ejecutable por PUBLIC es una puerta abierta con la llave del
--- propietario puesta.
+-- The execution privilege is granted to the session, not to anybody: a
+-- `security definer` function executable by PUBLIC is an open door with the owner's
+-- key left in it.
 revoke all on function public.resource_usage() from public;
 grant execute on function public.resource_usage() to authenticated;

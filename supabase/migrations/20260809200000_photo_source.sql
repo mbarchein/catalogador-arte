@@ -1,32 +1,32 @@
--- De quién es la fotografía, y de dónde salió si no es propia (RF-417).
+-- Whose the photograph is, and where it came from if it is not our own (RF-417).
 --
--- `images.provenance` ya dice si la toma es propia, tomada de otro catálogo o
--- recibida de un tercero. Lo que faltaba es lo que hay que apuntar en cada caso,
--- y **no es el mismo dato**:
+-- `images.provenance` already says whether the shot is our own, taken from another catalogue or
+-- received from a third party. What was missing is what has to be noted down in each case,
+-- and **it is not the same datum**:
 --
---   · en una fotografía **propia**, quién la hizo. Es un crédito, y va con la
---     fotografía cuando la ficha se imprime o se cede;
---   · en una **tomada de otro catálogo o recibida de un tercero**, de dónde salió:
---     el catálogo, la dirección de la página, quién la mandó y cuándo. Es la
---     trazabilidad de una imagen que no se puede volver a hacer, y es lo que hay
---     que enseñar el día que alguien pregunte de dónde ha salido.
+--   · on an **own** photograph, who took it. It is a credit, and it goes with the
+--     photograph when the record is printed or handed over;
+--   · on one **taken from another catalogue or received from a third party**, where it came from:
+--     the catalogue, the page's address, who sent it and when. It is the
+--     traceability of an image that cannot be made again, and it is what has
+--     to be shown the day somebody asks where it came from.
 --
--- Por eso son dos columnas y no una con la etiqueta cambiando: el mismo texto
--- guardado no puede significar «Juan Pérez lo fotografió» un día y «sacado de la
--- web del MACVA» al siguiente solo porque se haya tocado la procedencia.
+-- That is why they are two columns and not one with the label changing: the same stored
+-- text cannot mean «Juan Pérez lo fotografió» one day and «sacado de la
+-- web del MACVA» the next just because the provenance has been touched.
 --
--- ── LO QUE NO SE HACE, Y POR QUÉ ────────────────────────────
+-- ── WHAT IS NOT DONE, AND WHY ───────────────────────────────
 --
--- **No hay restricción cruzada** que exija la columna vacía cuando la procedencia
--- es la otra. La tentación es evidente y el precio no: cambiar la procedencia de
--- una fotografía que ya tiene crédito fallaría con un error del esquema en mitad
--- de una pantalla de captura, por un dato que no estorba. Lo que se guarda se
--- guarda; **lo que se enseña lo decide la procedencia**, y de eso responde
--- `photoSource.ts` con sus tests, para que un valor dormido no pueda colarse en
--- una ficha impresa.
+-- **There is no cross constraint** requiring the column to be empty when the provenance
+-- is the other one. The temptation is obvious and the price is not: changing the provenance of
+-- a photograph that already has a credit would fail with a schema error in the middle
+-- of a capture screen, over a datum that is not in the way. What is stored is
+-- stored; **what is shown is decided by the provenance**, and `photoSource.ts` answers for that
+-- with its tests, so that a dormant value cannot slip into
+-- a printed record.
 --
--- Los dos nacen vacíos, que es lo que son las 39 filas de hoy: nadie ha apuntado
--- todavía ni un crédito ni una procedencia detallada.
+-- Both are born empty, which is what today's 39 rows are: nobody has noted down
+-- either a credit or a detailed provenance yet.
 
 alter table public.images
   add column photo_credit      text not null default '',
@@ -38,6 +38,6 @@ comment on column public.images.photo_credit is
 comment on column public.images.provenance_source is
   'De dónde salió una fotografía que no es propia: el catálogo, la dirección de la página, quién la envió. Solo se ofrece cuando provenance no es OWN. Es texto libre y no una dirección validada a propósito — «me la pasó la familia en 2019» es una procedencia legítima y no cabe en una URL.';
 
--- Sin políticas nuevas: son dos columnas de `images`, que ya tiene RLS y cuyas
--- políticas son de tabla, no de columna. Quien puede corregir una fotografía
--- puede corregir esto, y quien no, no.
+-- With no new policies: they are two columns of `images`, which already has RLS and whose
+-- policies are per table, not per column. Whoever can correct a photograph
+-- can correct this, and whoever cannot, cannot.

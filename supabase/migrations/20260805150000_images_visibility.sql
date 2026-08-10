@@ -1,75 +1,75 @@
 -- ============================================================
--- La fotografía de una obra retirada no se ve (RF-609, RF-905, RF-906, RF-105,
+-- The photograph of a withdrawn artwork is not visible (RF-609, RF-905, RF-906, RF-105,
 -- RF-106, RF-110, RF-111).
 --
--- ── EL ÚLTIMO HUECO DE LA CASCADA, MEDIDO ───────────────────
+-- ── THE CASCADE'S LAST HOLE, MEASURED ───────────────────────
 --
--- 20260805130000 cerró la cascada de visibilidad de las seis tablas documentales
--- y dejó escrito, en voz alta, el que faltaba: con una obra dada de baja lógica,
--- un Lector autenticado veía
+-- 20260805130000 closed the visibility cascade of the six documentary tables
+-- and left the one that was missing written down, out loud: with a logically withdrawn artwork,
+-- an authenticated Reader saw
 --
---   artworks (la obra de baja) ....... 0 filas   ← correcto
---   images (su fotografía) ........... 1 fila    ← FUGA
+--   artworks (the withdrawn artwork) .. 0 rows   ← correct
+--   images (its photograph) ........... 1 row    ← LEAK
 --
--- y con la fila, sus tres rutas del almacén privado: `thumbnail_path`,
--- `derivative_path` y `master_path`. La ficha estaba escondida y la fotografía
--- de esa ficha escondida no.
+-- and with the row, its three private-store paths: `thumbnail_path`,
+-- `derivative_path` and `master_path`. The record was hidden and the photograph
+-- of that hidden record was not.
 --
--- Que la ruta no sea por sí sola una descarga —hace falta una URL firmada
--- (RF-110, RNF-111)— es lo que hizo que esto no fuera la urgencia que sí era el
--- contacto del coleccionista, y es también lo que no lo convierte en aceptable:
--- la ruta lleva el `catalog_id` en el nombre, así que enumerar `images` le dice a
--- quien pregunte QUÉ obras hay en la papelera y cuántas tomas tiene cada una.
--- Eso es exactamente lo que RF-609 no quiere que se pueda saber.
+-- That the path is not by itself a download —a signed URL is needed
+-- (RF-110, RNF-111)— is what made this not the urgency the collector's
+-- contact was, and it is also what does not make it acceptable:
+-- the path carries the `catalog_id` in its name, so enumerating `images` tells
+-- whoever asks WHICH artworks are in the wastebasket and how many shots each one has.
+-- That is exactly what RF-609 does not want to be knowable.
 --
--- ── POR QUÉ AHORA ───────────────────────────────────────────
+-- ── WHY NOW ─────────────────────────────────────────────────
 --
--- Porque el hueco estaba fijado con un aserto AL REVÉS en
--- `documentary_visibility.test.sql` §8: un bloque que afirmaba que la fuga
--- seguía ahí y que se pondría rojo el día que se cerrara. Un rojo tiene que
--- significar siempre «algo se ha roto»; si puede significar «alguien ha arreglado
--- algo», el color deja de informar. Así que el aserto se da la vuelta y para eso
--- hay que cerrar el hueco, que además es la forma de cerrarlo que el propio
--- comentario pedía.
+-- Because the hole was pinned down with an INVERTED assertion in
+-- `documentary_visibility.test.sql` §8: a block asserting that the leak
+-- was still there and that would go red the day it was closed. A red has to
+-- always mean «something has broken»; if it can mean «somebody has fixed
+-- something», the colour stops informing. So the assertion is turned round and for that
+-- the hole has to be closed, which is besides the way of closing it that the
+-- comment itself asked for.
 --
--- ── CÓMO ────────────────────────────────────────────────────
+-- ── HOW ─────────────────────────────────────────────────────
 --
--- Igual que las seis de 20260805130000, y a propósito: un solo criterio escrito
--- de una sola manera. La visibilidad se hereda del ancla con un `exists` sobre
--- `artworks`, que pasa por la política de `artworks` —`(active and can_read()) or
--- can_edit()`— y por tanto
+-- Just like the six of 20260805130000, and on purpose: a single criterion written
+-- in a single way. The visibility is inherited from the anchor with an `exists` over
+-- `artworks`, which goes through `artworks`' policy —`(active and can_read()) or
+-- can_edit()`— and therefore
 --
---   * al Lector le esconde la fila cuando la obra está en la papelera, y
---   * al Catalogador se la devuelve siempre, porque `can_edit()` es verdadero:
---     restaurar una obra tiene que devolverla con sus fotografías dentro
---     (RF-905), y la papelera tiene que poder enseñar lo retirado (RF-906).
+--   * it hides the row from the Reader when the artwork is in the wastebasket, and
+--   * it always returns it to the Cataloguer, because `can_edit()` is true:
+--     restoring an artwork has to give it back with its photographs inside
+--     (RF-905), and the wastebasket has to be able to show what is withdrawn (RF-906).
 --
--- No hace falta clave ajena nueva ni índice nuevo: `images.catalog_id` ya
--- referencia `artworks` y ya está indexada.
+-- No new foreign key and no new index are needed: `images.catalog_id` already
+-- references `artworks` and is already indexed.
 --
--- SOLO SE TOCA EL SELECT. `insert` y `update` siguen siendo `can_edit()` a
--- secas: quien escribe ve todas las obras, así que heredar allí no cambiaría una
--- sola decisión y dejaría el mismo criterio en tres sitios.
+-- ONLY THE SELECT IS TOUCHED. `insert` and `update` go on being `can_edit()` on
+-- its own: whoever writes sees all the artworks, so inheriting there would not change a
+-- single decision and would leave the same criterion in three places.
 --
--- ── LO QUE ARRASTRA, Y ES LO QUE SE QUIERE ──────────────────
+-- ── WHAT IT DRAGS ALONG, AND IT IS WHAT IS WANTED ───────────
 --
--- Dos políticas ya escritas consultan `images` por su propia política, así que
--- heredan este cierre sin tocarlas:
+-- Two already written policies query `images` by its own policy, so they
+-- inherit this closure without being touched:
 --
---   * `external_links` (20260805100000) para los enlaces que cuelgan de una
---     FOTOGRAFÍA — «de dónde salió esta reproducción»—, y
---   * `change_log` (20260805120000) para las líneas de historia cuya fila es una
---     fotografía.
+--   * `external_links` (20260805100000) for the links that hang from a
+--     PHOTOGRAPH — «where this reproduction came from»—, and
+--   * `change_log` (20260805120000) for the history lines whose row is a
+--     photograph.
 --
--- Las dos dejan de enseñarle al Lector lo que cuelga de la fotografía de una obra
--- retirada, que es la misma regla de RF-609 llegando hasta el final de la cadena.
--- Y la vista `representative_image` lleva `security_invoker = true`, así que
--- también hereda: era el otro camino por el que se llegaba a la misma fila.
+-- Both stop showing the Reader what hangs from the photograph of a withdrawn
+-- artwork, which is RF-609's same rule reaching the end of the chain.
+-- And the `representative_image` view carries `security_invoker = true`, so it
+-- inherits too: it was the other path by which the same row was reached.
 --
--- CONTRA QUÉ SE COMPRUEBA. `documentary_visibility.test.sql` §8, ya del derecho:
--- el Lector no ve la fila, el Catalogador sí, y lo que cuelga de ella tampoco se
--- ve. Autenticándose de verdad como cada papel, que es lo único que verifica una
--- política.
+-- WHAT IT IS CHECKED AGAINST. `documentary_visibility.test.sql` §8, now the right way round:
+-- the Reader does not see the row, the Cataloguer does, and what hangs from it is not
+-- visible either. Authenticating for real as each role, which is the only thing that verifies a
+-- policy.
 -- ============================================================
 
 drop policy images_select on public.images;
@@ -84,8 +84,8 @@ create policy images_select on public.images
   );
 
 
--- Y que la tabla siga con exactamente sus tres políticas: reescribir el select no
--- ha añadido una cuarta ni se ha dejado una por el camino (RF-111, RF-901).
+-- And that the table still have exactly its three policies: rewriting the select has
+-- not added a fourth nor lost one along the way (RF-111, RF-901).
 do $$
 declare v_cmds text[];
 begin
@@ -100,8 +100,8 @@ begin
       array_to_string(v_cmds, ', ');
   end if;
 
-  -- Y que el select mire de verdad su columna de anclaje: sin `catalog_id` en la
-  -- expresión no hereda nada, y el bloque de arriba pasaría igual.
+  -- And that the select really look at its anchoring column: with no `catalog_id` in the
+  -- expression it inherits nothing, and the block above would pass just the same.
   if not exists (
     select 1 from pg_policies
      where schemaname = 'public' and tablename = 'images' and cmd = 'SELECT'
