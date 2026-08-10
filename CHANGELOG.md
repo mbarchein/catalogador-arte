@@ -2,6 +2,22 @@
 
 ### Interfaz
 
+**«Guardar» siempre a mano, y los avisos que se van solos**
+
+- Los botones de guardar y cancelar que estaban **al final de un formulario largo** se quedaban
+  fuera de la pantalla: se rellenaba todo, se buscaba el botón y no estaba. Ahora van **pegados al
+  borde de abajo**, como ya hacían la ficha de una obra y la de una exposición. Cambia en los datos
+  de una fotografía y en siete hojas: un eslabón de procedencia, una cita, una referencia, corregir
+  un documento, subirlo, añadirle el escaneo y dar de alta una exposición desde una obra.
+- La franja llega **hasta el borde de la hoja**. Antes de eso quedaba un dedo de hueco por el que se
+  veía asomar el campo siguiente, que hace pensar que el formulario continúa por debajo del botón.
+- **Las confirmaciones flotan arriba y se van solas a los cuatro segundos**: «Imagen principal
+  actualizada», «Fotografía retirada»… Estaban al final de la tarjeta, y con la vista puesta en la
+  fotografía —que es donde están los mandos que las producen— aparecían fuera de la pantalla, así
+  que la confirmación no confirmaba nada. Y ya no empujan la ficha al aparecer.
+- **Los errores no se van solos** y siguen donde estaban: piden hacer algo, y uno que desaparece
+  antes de decidir qué obliga a repetir la acción para volver a leer por qué falló.
+
 **Los mandos de una fotografía, sobre la propia fotografía**
 
 - Poner la portada, cambiar el orden y quitar una toma estaban en el panel de abajo, con botones que
