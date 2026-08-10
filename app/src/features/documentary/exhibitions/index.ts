@@ -1,8 +1,8 @@
 /**
- * El bloque «Historial expositivo» de la ficha de obra (RF-303, RF-501, RF-502).
+ * The artwork record's «Historial expositivo» block (RF-303, RF-501, RF-502).
  *
- * Se monta con la fila documental de la obra, que la ficha carga UNA vez para los
- * cinco bloques:
+ * It is mounted with the artwork's documentary row, which the record loads ONCE for the
+ * five blocks:
  *
  * ```tsx
  * const documentary = useArtworkDocumentary(artwork.catalog_id)
@@ -15,9 +15,9 @@
  * />
  * ```
  *
- * Una sola exportación, como en las otras cuatro áreas: el resto de la carpeta
- * —el orden, las frases, el selector de exposiciones— sigue alcanzable por su ruta
- * para quien tenga un motivo, los tests lo tienen, sin que parezca contrato.
+ * A single export, as in the other four areas: the rest of the folder
+ * —the order, the sentences, the exhibition selector— is still reachable by its path
+ * for whoever has a reason, the tests do, without looking like a contract.
  */
 
 export { ExhibitionHistorySection } from './ExhibitionHistorySection'

@@ -17,34 +17,34 @@ import {
 } from './linkDraft'
 
 /**
- * Pegar un enlace, o corregir uno que ya está (RF-1401 a RF-1403, RF-1406).
+ * Pasting a link, or correcting one that is already there (RF-1401 to RF-1403, RF-1406).
  *
- * **El campo obligatorio es uno: la dirección.** Exigir un título al pegar rompe
- * la captura de una mano, y sin título la ficha muestra el dominio, así que no hay
- * hueco (RNF-106, RF-1408).
+ * **There is one compulsory field: the address.** Requiring a title on pasting breaks
+ * one-handed capture, and with no title the record shows the domain, so there is no
+ * gap (RNF-106, RF-1408).
  *
- * ── EL ORDEN DE LOS RECHAZOS, QUE NO ES CASUAL ──────────────
+ * ── THE ORDER OF THE REFUSALS, WHICH IS NOT ACCIDENTAL ──────
  *
- * Antes de guardar se hacen tres preguntas, y las dos primeras no gastan red:
+ * Before saving, three questions are asked, and the first two spend no network:
  *
- *  1. ¿Hay dirección? Lo decide `missingUrl`, que es lo único que este lado sabe
- *     de una URL.
- *  2. ¿Ya está en esta ficha? Se predice con lo que el bloque tiene cargado, para
- *     contarlo en el acto y con lo que hay que hacer. Si la repetida está
- *     RETIRADA, no se dice que no: se ofrece recuperarla, que es lo que RF-1406
- *     llama volver a añadirla.
- *  3. ¿La acepta la base? Se le pregunta a `is_web_url` **a ella**, que es la
- *     única que tiene la regla. Aquí no hay ni un patrón de URL propio.
+ *  1. Is there an address? `missingUrl` decides it, which is the only thing this side knows
+ *     about a URL.
+ *  2. Is it already in this record? It is predicted with what the block has loaded, so as
+ *     to say it on the spot and with what has to be done. If the repeated one is
+ *     WITHDRAWN, it is not refused: recovering it is offered, which is what RF-1406
+ *     calls adding it again.
+ *  3. Does the base accept it? `is_web_url` is asked **itself**, which is the
+ *     only one that has the rule. Here there is not one URL pattern of our own.
  *
- * Y si la tercera no contesta —sin cobertura— **se guarda igual**: la validación
- * de verdad es el `check` de la tabla y no se puede saltar, así que lo único que
- * se pierde sin red es la calidad del mensaje. Bloquear por no haber podido
- * preguntar convertiría un problema de cobertura en un enlace que no se puede
- * añadir.
+ * And if the third does not answer —no coverage— **it is stored anyway**: the real
+ * validation is the table's `check` and it cannot be skipped, so all that
+ * is lost with no network is the quality of the message. Blocking for not having been able
+ * to ask would turn a coverage problem into a link that cannot be
+ * added.
  *
- * Nada de este fichero decide nada: cada frase, cada predicción y cada carga sale
- * de `linkDraft.ts`, que la batería sí puede abrir. Lo que queda aquí es el
- * formulario.
+ * Nothing in this file decides anything: every sentence, every prediction and every load comes
+ * from `linkDraft.ts`, which the suite can open. What is left here is the
+ * form.
  */
 export function LinkForm({
   anchor,

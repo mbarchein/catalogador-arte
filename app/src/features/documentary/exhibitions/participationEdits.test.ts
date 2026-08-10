@@ -12,17 +12,17 @@ import {
 } from './participationEdits'
 
 /**
- * Añadir y retirar la participación de una obra en una exposición (RF-501,
+ * Adding and withdrawing an artwork's participation in an exhibition (RF-501,
  * RF-517).
  *
- * Lo que se comprueba es lo que la catalogadora VE cuando la respuesta es que
- * no: una lista vacía que no explica nada y un botón que no hace nada son el
- * mismo fallo, y en este bloque hay tres maneras de llegar ahí — el catálogo sin
- * exposiciones, la búsqueda sin coincidencias y el estado «Investigado, sin
- * resultados» que la base va a rechazar.
+ * What is checked is what the cataloguer SEES when the answer is
+ * no: an empty list explaining nothing and a button that does nothing are the
+ * same failure, and in this block there are three ways of getting there — the catalogue with no
+ * exhibitions, the search with no matches and the «Investigado, sin
+ * resultados» state the base is going to reject.
  *
- * Y la lista de columnas: un campo que la consulta olvida llega como `undefined`
- * con el tipo prometiendo un valor.
+ * And the column list: a field the query forgets arrives as `undefined`
+ * with the type promising a value.
  */
 
 function party(over: Partial<PartyRef> = {}): PartyRef {
@@ -116,9 +116,9 @@ describe('las columnas de las exposiciones que se pueden elegir', () => {
 
 describe('lo que se lee de cada exposición en el selector', () => {
   /**
-   * Una sola cadena para leer y para buscar: una lista cuyas filas casan con un
-   * texto que no enseñan parece arbitraria, que es la regla que ya escribió
-   * `SearchableCheckList`.
+   * A single string for reading and for searching: a list whose rows match a
+   * text they do not show looks arbitrary, which is the rule
+   * `SearchableCheckList` already wrote.
    */
   it('lleva título, año y sede, porque dos itinerancias comparten título', () => {
     expect(exhibitionOptionText(exhibition())).toBe(
@@ -156,9 +156,9 @@ describe('las exposiciones que se ofrecen (RF-501)', () => {
   })
 
   /**
-   * Se listan y se marcan, no se esconden: una exposición que desaparece del
-   * selector se lee como que no está registrada, y así es como se acaba dando de
-   * alta la misma muestra dos veces.
+   * They are listed and marked, not hidden: an exhibition that disappears from the
+   * selector reads as not being registered, and that is how the same show ends up being
+   * created twice.
    */
   it('la que ya está en el historial se ofrece marcada, no desaparece', () => {
     const choices = rankExhibitionOptions([exhibition(), other], '', new Set(['ex-1']))
@@ -166,8 +166,8 @@ describe('las exposiciones que se ofrecen (RF-501)', () => {
   })
 
   /**
-   * Al revés que en la ficha: aquí se elige, y ofrecer algo que el catálogo ha
-   * retirado sería devolverlo al uso por la puerta de atrás (RF-901).
+   * The other way round from the record: here one chooses, and offering something the catalogue has
+   * withdrawn would be putting it back into use through the back door (RF-901).
    */
   it('una exposición retirada no se ofrece', () => {
     const choices = rankExhibitionOptions(
@@ -191,9 +191,9 @@ describe('RF-304: el selector nunca se queda en blanco', () => {
   it('sin ninguna exposición en el catálogo, dice que no hay y dónde se dan de alta', () => {
     const text = noOptionsText(0, 'rotili')
     expect(text).toContain('Todavía no hay ninguna exposición registrada')
-    // Y desde que la pantalla existe y está montada, se la nombra en vez de
-    // llamarla «pendiente en esta entrega»: un aviso que manda a ningún sitio es
-    // peor que no darlo.
+    // And since the screen exists and is mounted, it is named instead of
+    // calling it «pending in this delivery»: a warning that sends people nowhere is
+    // worse than not giving one.
     expect(text).toContain('en la pantalla Exposiciones')
     expect(text).not.toContain('pendiente')
   })
@@ -213,10 +213,10 @@ describe('RF-304: el selector nunca se queda en blanco', () => {
 
 describe('cuando la base va a decir que no (RF-218)', () => {
   /**
-   * `tg_artwork_exhibition_status_coherent` rechaza la participación y lo explica
-   * en español. Que lo diga la base cuando pase está bien; que el botón lo diga
-   * antes de pulsarlo es lo que evita el viaje de ida y vuelta de pie en un
-   * almacén.
+   * `tg_artwork_exhibition_status_coherent` rejects the participation and explains it
+   * in Spanish. That the base says so when it happens is fine; that the button says it
+   * before being pressed is what avoids the round trip standing up in a
+   * storeroom.
    */
   it('un historial investigado sin resultados no admite participaciones, y se dice antes', () => {
     const reason = addBlockedReason('NONE_FOUND')

@@ -8,14 +8,14 @@ import {
 } from './researchStatusChoice'
 
 /**
- * Declarar hasta dónde ha llegado la investigación de un bloque (RF-218).
+ * Declaring how far a block's research has got (RF-218).
  *
- * Sin este control, todos los bloques de todas las obras se quedan en el estado
- * en que nacieron y la distinción que paga el esquema entero no se usa jamás. Lo
- * que se verifica aquí es que la única combinación imposible se ofrezca
- * explicada en vez de esconderse, que es la diferencia entre una catalogadora
- * que sabe que el catálogo distingue y una que escribe «no se ha expuesto» en un
- * campo de notas donde nada podrá consultarlo.
+ * Without this control, every block of every artwork stays in the state
+ * it was born in and the distinction the whole schema pays for is never used. What
+ * is verified here is that the one impossible combination is offered
+ * explained instead of being hidden, which is the difference between a cataloguer
+ * who knows the catalogue distinguishes and one who writes «no se ha expuesto» in a
+ * notes field where nothing will be able to query it.
  */
 
 const exhibitions = sectionSpec('exhibitions')
@@ -40,8 +40,8 @@ describe('los cuatro estados que se ofrecen (RF-218)', () => {
   })
 
   /**
-   * Esconderlo sería peor y es el atajo tentador: quien no ve «Investigado, sin
-   * resultados» concluye que el catálogo no sabe decirlo.
+   * Hiding it would be worse and it is the tempting shortcut: whoever does not see «Investigado, sin
+   * resultados» concludes that the catalogue cannot say it.
    */
   it('con filas debajo, el estado imposible se ofrece y lleva su negativa como explicación', () => {
     const options = researchStatusOptions(exhibitions, 3)

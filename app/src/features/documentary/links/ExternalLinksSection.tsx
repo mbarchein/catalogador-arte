@@ -23,31 +23,31 @@ import { LinkForm } from './LinkForm'
 import { useExternalLinks, useLinkActions } from './useExternalLinks'
 
 /**
- * «Enlaces a sitios externos», el bloque de la ficha que dice dónde más está
- * documentada esta obra (RF-1401 a RF-1408).
+ * «Enlaces a sitios externos», the record's block that says where else this artwork
+ * is documented (RF-1401 to RF-1408).
  *
- * Cuelga de la ficha junto a los cinco bloques documentales pero **no es uno de
- * ellos**: no tiene columna de estado de investigación en `artworks` ni la va a
- * tener, así que no usa `DocumentarySection` —cuyo contrato es precisamente esa
- * columna— y trae su propio plegado con la misma forma. El bloque del historial de
- * cambios hizo lo mismo y por el mismo motivo.
+ * It hangs from the record alongside the five documentary blocks but **it is not one of
+ * them**: it has no research-state column in `artworks` and it is not going to
+ * have one, so it does not use `DocumentarySection` —whose contract is precisely that
+ * column— and brings its own folding with the same shape. The change-history
+ * block did the same and for the same reason.
  *
- * ── LA REGLA QUE ORDENA ESTA PANTALLA ───────────────────────
+ * ── THE RULE THAT ORDERS THIS SCREEN ────────────────────────
  *
- * **La ficha que se lee es de solo lectura; escribir vive en la zona de edición**
- * (RF-308). Aquí eso se aplica con un matiz que hay que dejar escrito porque es la
- * frontera del asunto:
+ * **The record that is read is read-only; writing lives in the editing area**
+ * (RF-308). Here that applies with a nuance that has to be written down because it is the
+ * boundary of the matter:
  *
- *  · ABRIR un enlace es leer, y se queda en la ficha. Es la única cosa que se
- *    hace con un enlace el 95 % de las veces.
- *  · ANOTAR LA COMPROBACIÓN escribe en la base —fecha y autor sellados por la
- *    RPC—, así que **no está en la vista** aunque el gesto natural sea pulsar el
- *    enlace, mirar y contestar. Está en la zona de edición, y la vista dice dónde
- *    para que no sea un callejón sin salida. Que una escritura sea cómoda no la
- *    convierte en lectura.
+ *  · OPENING a link is reading, and it stays in the record. It is the only thing
+ *    done with a link 95 % of the time.
+ *  · NOTING THE CHECK writes to the base —date and author stamped by the
+ *    RPC—, so **it is not in the view** even though the natural gesture is to press the
+ *    link, look and answer. It is in the editing area, and the view says where
+ *    so it is not a dead end. That a write is convenient does not
+ *    turn it into a read.
  *
- * `canWriteBlock(writable, canEdit)` decide, y hacen falta las dos: el modo y el
- * permiso. Por omisión `writable` es falso, que es el lado seguro del olvido.
+ * `canWriteBlock(writable, canEdit)` decides, and both are needed: the mode and the
+ * permission. By default `writable` is false, which is the safe side of forgetting.
  */
 export function ExternalLinksSection({
   catalogId,
@@ -55,8 +55,8 @@ export function ExternalLinksSection({
 }: {
   catalogId: string
   /**
-   * Si el bloque puede escribir. Verdadero solo en la zona de edición (RF-308).
-   * Por omisión falso: un bloque que se olvide de pasarlo nace de solo lectura.
+   * Whether the block can write. True only in the editing area (RF-308).
+   * False by default: a block that forgets to pass it is born read-only.
    */
   writable?: boolean
 }) {
@@ -71,9 +71,9 @@ export function ExternalLinksSection({
 
   const groups = useMemo(() => groupLinks(rows, photos), [rows, photos])
   const pending = useMemo(() => reproductionsWithoutSource(photos, rows), [photos, rows])
-  // Una sola lectura del reloj para todo el bloque: si cada línea leyera la hora
-  // por su cuenta, dos comprobaciones del mismo momento podrían decir «ayer» y
-  // «hoy» al cruzar la medianoche mientras se pinta.
+  // A single reading of the clock for the whole block: if each line read the time
+  // on its own, two checks from the same moment could say «ayer» and
+  // «hoy» on crossing midnight while it is being painted.
   const now = useMemo(() => new Date(), [rows])
 
   const bodyId = `external-links-${catalogId}`
@@ -126,9 +126,9 @@ export function ExternalLinksSection({
 
       <div id={bodyId} hidden={!open} className="mt-2">
         {error !== null ? (
-          /* Dos cosas distintas, y confundirlas manda a buscar un dato que está
-             perfectamente bien: el catálogo ha contestado que no hay nada, o el
-             catálogo no ha contestado. */
+          /* Two different things, and confusing them sends people looking for a datum that is
+             perfectly fine: the catalogue has answered that there is nothing, or the
+             catalogue has not answered. */
           <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
             {error} Mientras no se pueda leer, este bloque no muestra nada: lo que haya registrado
             puede ser cualquier cosa.
@@ -327,14 +327,14 @@ const CHECK_TONE_CLASS: Record<CheckTone, string> = {
 }
 
 /**
- * Un enlace: qué es, a dónde va, de qué clase es y cuándo se comprobó.
+ * A link: what it is, where it goes, what kind it is and when it was checked.
  *
- * **La etiqueta y el destino se ven antes de tocar** (RF-1408), y el destino es el
- * dominio y nunca la dirección entera. Se abre en una pestaña nueva con
- * `rel="noopener noreferrer"`: sin `noopener` la página abierta puede manipular la
- * que la abrió a través de `window.opener`, y sin `noreferrer` el sitio del museo
- * recibe la dirección exacta de la ficha desde la que se pulsó — que es contarle a
- * un tercero qué obra se está catalogando (RF-1404).
+ * **The label and the destination are visible before touching** (RF-1408), and the destination is the
+ * domain and never the whole address. It opens in a new tab with
+ * `rel="noopener noreferrer"`: without `noopener` the opened page can manipulate the
+ * one that opened it through `window.opener`, and without `noreferrer` the museum's site
+ * receives the exact address of the record it was pressed from — which is telling
+ * a third party which artwork is being catalogued (RF-1404).
  */
 function LinkItem({
   row,
@@ -486,9 +486,9 @@ function LinkItem({
               </div>
             </div>
           ) : confirming ? (
-            /* Dos toques para retirar, como al quitar una fotografía de la galería:
-               en una pantalla táctil un solo toque es un accidente esperando pasar,
-               y la frase dice qué desaparece y qué no. */
+            /* Two taps to withdraw, as when removing a photograph from the gallery:
+               on a touch screen a single tap is an accident waiting to happen,
+               and the sentence says what disappears and what does not. */
             <div>
               <p className="text-xs text-stone-700">{retireConfirmText(row)}</p>
               <div className="mt-1 grid grid-cols-2 gap-2">
