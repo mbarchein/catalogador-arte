@@ -49,8 +49,8 @@ function draft(over: Partial<ReferenceDraft> = {}): ReferenceDraft {
 }
 
 /**
- * Cada campo de la fila tiene que estar en la lista de columnas: un campo que la
- * consulta olvida llega como `undefined` con el tipo prometiendo un valor.
+ * Every field of the row has to be in the column list: a field the
+ * query forgets arrives as `undefined` with the type promising a value.
  */
 function selectsEveryField(columns: string, row: object, embeds: Record<string, string> = {}) {
   for (const field of Object.keys(row)) {
@@ -149,9 +149,9 @@ describe('RF-504 · buscar entre las referencias', () => {
   })
 
   it('también el lugar, la autoría y la clave BibTeX, que es como se la nombra', () => {
-    // La coincidencia es por subsecuencia, como en el resto de la aplicación:
-    // las letras cuentan aunque estén separadas, así que lo que se comprueba es
-    // que la referencia buscada encabece el resultado y no que sea la única.
+    // The match is by subsequence, as in the rest of the application:
+    // the letters count even when separated, so what is checked is
+    // that the reference sought heads the result and not that it is the only one.
     expect(searchReferenceOptions(catalog, new Set(), 'zafra')[0]?.item.id).toBe('1')
     expect(searchReferenceOptions(catalog, new Set(), 'lopez')[0]?.item.id).toBe('2')
     expect(searchReferenceOptions(catalog, new Set(), 'rotili85')[0]?.item.id).toBe('3')
@@ -170,9 +170,9 @@ describe('RF-504 · buscar entre las referencias', () => {
   })
 
   it('las letras resaltadas nunca se salen del título', () => {
-    // El ranking corre sobre todo el texto buscable y el resaltado se pinta
-    // sobre el título: una coincidencia en el lugar no puede marcar letras
-    // arbitrarias del título.
+    // The ranking runs over all the searchable text and the highlight is painted
+    // over the title: a match in the place cannot mark arbitrary letters
+    // of the title.
     const [match] = searchReferenceOptions(catalog, new Set(), 'zafra')
     for (const index of match?.indices ?? []) {
       expect(index).toBeLessThan((match?.item.text ?? '').length)

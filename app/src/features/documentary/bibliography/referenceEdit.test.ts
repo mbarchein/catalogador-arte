@@ -15,20 +15,20 @@ import {
 } from './referenceEdit'
 
 /**
- * Corregir una referencia bibliográfica desde la ficha de una obra que la cita
- * (RF-504, RF-1106, ADR-007), mientras la ficha propia de la referencia (RF-309)
- * no existe.
+ * Correcting a bibliographic reference from the record of an artwork that cites it
+ * (RF-504, RF-1106, ADR-007), while the reference's own record (RF-309)
+ * does not exist.
  *
- * Lo que se comprueba es lo que decide algo: qué se manda a la base, qué se
- * rechaza antes de mandarlo, cuándo no hay nada que escribir, y —lo que hace
- * distinta a esta pieza de cualquier otra corrección de la ficha— qué se dice en
- * pantalla ANTES de guardar, porque la fila es del catálogo y la leen todas las
- * obras que la citan.
+ * What is checked is what decides something: what is sent to the base, what is
+ * rejected before sending it, when there is nothing to write, and —what makes
+ * this piece different from any other correction in the record— what is said on
+ * screen BEFORE saving, because the row belongs to the catalogue and it is read by every
+ * artwork that cites it.
  *
- * Los mensajes de la base están medidos contra el stack local por la misma
- * pasarela REST que usa la aplicación, con dos referencias creadas para eso y
- * borradas después. Los códigos y los nombres de las restricciones que aparecen
- * aquí son los que contestó.
+ * The base's messages are measured against the local stack through the same
+ * REST gateway the application uses, with two references created for that and
+ * deleted afterwards. The codes and the constraint names that appear
+ * here are the ones it answered.
  */
 
 function reference(over: Partial<ReferenceRow> = {}): ReferenceRow {
@@ -93,9 +93,9 @@ describe('RF-504 · el borrador se abre con la referencia tal como está guardad
 
 describe('lo que viaja a la base', () => {
   it('todo recortado, incluido el título que la base no exige recortado', () => {
-    // La base solo rechaza el título en blanco (`bibliography_title_not_blank`),
-    // no el que lleva espacios alrededor: medido, un título con espacios se
-    // guarda tal cual. Y un espacio final es invisible en pantalla.
+    // The base only rejects the blank title (`bibliography_title_not_blank`),
+    // not the one with spaces around it: measured, a title with spaces is
+    // stored as is. And a trailing space is invisible on screen.
     const payload = referencePayload(
       draft({ title: '  Zafra 1985 ', authors: ' VV. AA. ', place: ' Badajoz ' }),
     )
@@ -105,9 +105,9 @@ describe('lo que viaja a la base', () => {
   })
 
   it('la clave vacía viaja como null y nunca como cadena vacía', () => {
-    // Medido: un `patch` con `bibtex_key: ""` contesta 23514 sobre
-    // `bibliography_bibtex_key_shape`. Y el índice único ignora los nulos, que es
-    // lo que permite muchas referencias sin clave.
+    // Measured: a `patch` with `bibtex_key: ""` answers 23514 on
+    // `bibliography_bibtex_key_shape`. And the unique index ignores nulls, which is
+    // what allows many references with no key.
     expect(referencePayload(draft({ bibtexKey: '   ' })).bibtex_key).toBeNull()
     expect(referencePayload(draft({ bibtexKey: ' zafra1985 ' })).bibtex_key).toBe('zafra1985')
   })
@@ -173,9 +173,9 @@ describe('ADR-007 · guardar la corrección de una fila que comparte el catálog
   })
 
   it('abrir el panel y cerrarlo sin tocar nada NO escribe', () => {
-    // La tabla lleva auditoría (`tg_row_audit` sella `updated_at` y
-    // `updated_by`): un guardado en falso deja constancia de que alguien corrigió
-    // una referencia que nadie corrigió, en una fila que lee todo el catálogo.
+    // The table carries auditing (`tg_row_audit` stamps `updated_at` and
+    // `updated_by`): a false save leaves a record that somebody corrected
+    // a reference nobody corrected, in a row the whole catalogue reads.
     expect(planReferenceEdit(catalog, 'bib-1', open()).action).toBe('unchanged')
   })
 
@@ -234,9 +234,9 @@ describe('ADR-007 · guardar la corrección de una fila que comparte el catálog
   })
 
   it('con el catálogo sin cargar se escribe igual, y la base tiene la última palabra', () => {
-    // El panel se abre con la referencia incrustada en la cita, así que corregir
-    // funciona aunque el catálogo completo no haya llegado. Lo que se pierde es
-    // la predicción del duplicado, que la base repite.
+    // The panel opens with the reference embedded in the citation, so correcting
+    // works even if the complete catalogue has not arrived. What is lost is
+    // the duplicate prediction, which the base repeats.
     expect(planReferenceEdit([], 'bib-1', open({ title: 'Otro título' })).action).toBe('update')
   })
 })
@@ -258,18 +258,18 @@ describe('RF-514 · el tipo de publicación que se ofrece, y el que no se puede 
   })
 
   it('pero el que la referencia YA tiene se queda, marcado como retirado', () => {
-    // Es el agujero que perdería un dato sin decir nada: sin su chip, el selector
-    // no muestra nada elegido en una referencia que sí está clasificada, y el
-    // siguiente gesto natural es «Sin clasificar».
+    // It is the hole that would lose a datum without saying anything: without its chip, the selector
+    // shows nothing chosen on a reference that IS classified, and the
+    // next natural gesture is «Sin clasificar».
     const options = referenceTypeOptions(types, 'tipo-3', null)
     expect(options.map((option) => option.value)).toContain('tipo-3')
     expect(options.find((option) => option.value === 'tipo-3')?.text).toBe('Folleto (retirado)')
   })
 
   it('si el vocabulario no ha llegado, el tipo se muestra desde la fila de la cita', () => {
-    // El panel se abre con la referencia incrustada en la cita, que trae su tipo:
-    // con una barra de cobertura y el vocabulario sin cargar, la clasificación se
-    // sigue viendo en vez de aparecer como «sin clasificar».
+    // The panel opens with the reference embedded in the citation, which brings its type:
+    // with one bar of coverage and the vocabulary not loaded, the classification is
+    // still visible instead of appearing as «sin clasificar».
     const options = referenceTypeOptions([], 'tipo-9', {
       id: 'tipo-9',
       name: 'Tesis doctoral',
@@ -462,9 +462,9 @@ describe('un guardado que no ha tocado nada no se cuenta como guardado', () => {
   })
 
   it('cero filas es la sesión de un Lector o una referencia que ya no está', () => {
-    // Medido: un Lector que hace `patch` sobre una referencia recibe 204 y cero
-    // filas, NO un 42501. Creerse el «sin error» cerraría el panel diciendo que
-    // el catálogo se corrigió cuando no se corrigió.
+    // Measured: a Reader who does a `patch` on a reference receives 204 and zero
+    // rows, NOT a 42501. Believing the «no error» would close the panel saying that
+    // the catalogue was corrected when it was not.
     const text = referenceWriteResult({ failure: null, rows: 0 })
     expect(text).not.toBeNull()
     expect(text).toContain('no se ha tocado')

@@ -61,11 +61,11 @@ describe('la fecha estructurada de ADR-004', () => {
   })
 
   /**
-   * La divergencia con `composeDate` de structuredDate.ts, que es deliberada:
-   * `artworks` exige `end_year > start_year` y allí «1978-1978» no puede existir,
-   * pero `provenance_events` y `archive_documents` admiten `end_year >=
-   * start_year` y la base guarda exactamente eso. Una vista previa que no
-   * coincide con lo que se va a guardar es peor que no tener vista previa.
+   * The divergence from structuredDate.ts's `composeDate`, which is deliberate:
+   * `artworks` requires `end_year > start_year` and there «1978-1978» cannot exist,
+   * but `provenance_events` and `archive_documents` admit `end_year >=
+   * start_year` and the base stores exactly that. A preview that does not
+   * match what is going to be stored is worse than having no preview.
    */
   it('ADR-004: un rango de un solo año se compone como lo hace la base, sin recortarlo', () => {
     expect(structuredDateText(dated({ start_year: 1978, end_year: 1978 }))).toBe('1978-1978')
@@ -169,9 +169,9 @@ describe('el nombre de una persona o una institución (RF-508)', () => {
   })
 
   /**
-   * RF-509: «Colección privada, España» es un eslabón real sin ficha detrás, no
-   * un fallo de carga. La base exige `party_id` o `party_note`, nunca ninguno de
-   * los dos.
+   * RF-509: «Colección privada, España» is a real link with no record behind it, not
+   * a loading failure. The base requires `party_id` or `party_note`, never neither of
+   * the two.
    */
   it('RF-509: sin ficha, el eslabón se lee por su nota', () => {
     expect(partyName(null, 'Colección privada, España')).toBe('Colección privada, España')
@@ -224,10 +224,10 @@ describe('el tamaño de un fichero subido', () => {
   })
 
   /**
-   * La copia deliberada de `sizeText` (ver el comentario en documentaryFormat.ts)
-   * queda sujeta aquí: si alguien cambia una de las dos, este test lo dice antes
-   * de que la ficha y las descargas de fotografía empiecen a contar los megas de
-   * dos maneras distintas.
+   * The deliberate copy of `sizeText` (see the comment in documentaryFormat.ts)
+   * is pinned down here: if somebody changes one of the two, this test says so before
+   * the record and the photograph downloads start counting the megabytes in
+   * two different ways.
    */
   it('dice exactamente lo mismo que `sizeText`, que es de dónde está copiado', () => {
     for (const bytes of [0, 1, 512, 1024, 40_960, 1_048_575, 1_048_576, 3_355_443, 19_922_944]) {

@@ -23,23 +23,23 @@ import {
 } from './documentaryRows'
 
 /**
- * Lo que cada bloque documental le pide a la base y lo que hace con la respuesta.
+ * What each documentary block asks of the base and what it does with the answer.
  *
- * Dos cosas se verifican aquí, y las dos han costado un fallo antes en este
- * proyecto:
+ * Two things are verified here, and both have cost a failure before in this
+ * project:
  *
- *  1. que la lista de columnas seleccione TODO lo que su interfaz declara. Un
- *     campo que la consulta olvida llega como `undefined` con el tipo prometiendo
- *     un valor, que es exactamente lo que pasó con las esquinas de una
- *     fotografía: se guardaba el enderezado y no volvía nunca.
- *  2. el ORDEN, que no está en la consulta porque PostgREST no puede ordenar una
- *     fila padre por una columna incrustada, y que por tanto solo lo comprueba
- *     esta batería.
+ *  1. that the column list selects EVERYTHING its interface declares. A
+ *     field the query forgets arrives as `undefined` with the type promising
+ *     a value, which is exactly what happened with a photograph's
+ *     corners: the straightening was stored and never came back.
+ *  2. the ORDER, which is not in the query because PostgREST cannot order a
+ *     parent row by an embedded column, and which therefore only this
+ *     suite checks.
  */
 
 // ── Fixtures ─────────────────────────────────────────────────
-// Completas a propósito: el tipo obliga a nombrar todos los campos, y de ahí sale
-// la comprobación de que la consulta los pide.
+// Complete on purpose: the type forces every field to be named, and from that comes
+// the check that the query asks for them.
 
 function party(over: Partial<PartyRef> = {}): PartyRef {
   return {
@@ -222,9 +222,9 @@ function documentary(over: Partial<ArtworkDocumentaryRow> = {}): ArtworkDocument
 }
 
 /**
- * Cada campo de la fila tiene que estar en la lista de columnas. Los campos que
- * son filas incrustadas se comprueban por su cabecera (`party:parties(`), que es
- * lo que le dice a PostgREST que la traiga.
+ * Every field of the row has to be in the column list. The fields that
+ * are embedded rows are checked by their header (`party:parties(`), which is
+ * what tells PostgREST to bring it.
  */
 function selectsEveryField(columns: string, row: object, embeds: Record<string, string> = {}) {
   for (const field of Object.keys(row)) {

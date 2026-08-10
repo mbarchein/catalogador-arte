@@ -3,12 +3,12 @@ import { RESEARCH_STATUS_LABEL } from '../../../lib/types'
 import { RESEARCH_STATUSES, researchStatusOptions } from './researchStatusOptions'
 
 /**
- * El selector del estado de la investigación de un bloque (RF-218).
+ * The selector of a block's research state (RF-218).
  *
- * Lo único que depende del bloque que se tenga delante es si «Investigado, sin
- * resultados» se puede declarar: la base lo prohíbe sobre un bloque con filas, y
- * ofrecer una opción que va a fallar seguro es un viaje de ida y vuelta perdido
- * en un almacén con una raya de cobertura.
+ * The only thing that depends on the block in front of you is whether «Investigado, sin
+ * resultados» can be declared: the base forbids it over a block with rows, and
+ * offering an option that is bound to fail is a round trip wasted
+ * in a storeroom with one bar of coverage.
  */
 
 describe('RF-218 · los cuatro estados, siempre los cuatro', () => {
