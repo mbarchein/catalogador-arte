@@ -450,9 +450,9 @@ export const SCAN_STEP_TEXT: Record<ScanStep, string> = {
 export interface AddScanDeps {
   upload: (path: string, file: PickedFile) => Promise<StorageRefusal | null>
   /**
-   * Escribe las cuatro columnas del fichero **solo si el documento sigue sin
-   * ninguno**, y responde null cuando escribió. Cero filas afectadas no es un error
-   * de la base: es que alguien se adelantó, y el que llama lo cuenta como tal.
+   * Writes the file's four columns **only if the document is still without
+   * one**, and answers null when it wrote. Zero rows affected is not an error
+   * of the base: it is that somebody got there first, and the caller counts it as such.
    */
   attach: (
     columns: { file_path: string; file_size_bytes: number; mime_type: string; uploaded_at: string },
@@ -465,19 +465,19 @@ export interface AddScanDeps {
 export type AddScanOutcome = { ok: true; path: string } | { ok: false; problem: string }
 
 /**
- * Sube el escaneo y lo anota en un documento que ya está en el archivo.
+ * Uploads the scan and notes it down on a document that is already in the archive.
  *
- * **Los bytes van primero, por el mismo motivo que en el alta:** un fichero en el
- * almacén al que no apunta ninguna fila no estorba a nadie y se limpia otro día,
- * mientras que una fila que promete un fichero que no llegó es un botón de descarga
- * roto para siempre y la ficha no tiene forma de saberlo.
+ * **The bytes go first, for the same reason as in the creation:** a file in the
+ * store no row points at gets in nobody's way and is cleaned up another day,
+ * whereas a row promising a file that never arrived is a download button
+ * broken forever and the record has no way of knowing it.
  *
- * Y hay un fallo que solo existe aquí y que el alta no puede tener: **el documento
- * puede haber recibido su escaneo entre que este panel se abrió y el «Añadir»**,
- * desde otra ficha enlazada o desde otro teléfono. Sobrescribir la ruta dejaría el
- * primer fichero suelto y sin nadie que lo nombre, así que la escritura solo entra
- * si el documento sigue sin fichero y el resto se cuenta como lo que es: no una
- * negativa de la base, sino que ya está hecho.
+ * And there is a failure that only exists here and that the creation cannot have: **the document
+ * may have received its scan between this panel opening and the «Añadir»**,
+ * from another linked record or from another phone. Overwriting the path would leave the
+ * first file loose and with nobody naming it, so the write only goes in
+ * if the document is still without a file and the rest is counted as what it is: not a
+ * refusal of the base, but that it is already done.
  */
 export async function runAddScan(
   document: { id: string; archive_code?: string | null; title: string },

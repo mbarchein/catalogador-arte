@@ -9,11 +9,11 @@ import {
 } from './documentView'
 
 /**
- * «Documentación relacionada» línea a línea (RF-515, RF-516, RF-304).
+ * «Documentación relacionada» line by line (RF-515, RF-516, RF-304).
  *
- * Lo que se comprueba aquí es la lectura: que ningún dato ausente deje un hueco,
- * que las dos notas —la del enlace y la del documento— no se confundan en una, y
- * que la diferencia entre «no está digitalizado» y «no se puede leer» se diga.
+ * What is checked here is the reading: that no absent datum leaves a gap,
+ * that the two notes —the link's and the document's— are not confused into one, and
+ * that the difference between «it is not digitised» and «it cannot be read» is said.
  */
 
 function link(over: Partial<DocumentLinkRow> = {}): DocumentLinkRow {
@@ -97,9 +97,9 @@ describe('los datos de un documento en la ficha', () => {
   })
 
   /**
-   * El fondo nulo NO es «sin revisar»: `artist_fund` se hizo opcional a propósito,
-   * porque un recorte sobre una colectiva de los dos artistas —o un documento de
-   * contexto que no es de ninguno— no puede elegir.
+   * The null fund is NOT «sin revisar»: `artist_fund` was made optional on purpose,
+   * because a clipping about a group show of the two artists —or a context
+   * document belonging to neither— cannot choose.
    */
   it('un documento que no es de un solo fondo lo dice, y no parece un dato sin rellenar', () => {
     expect(fundText(null)).toBe('No es de un solo fondo')
@@ -140,8 +140,8 @@ describe('los datos de un documento en la ficha', () => {
 
 describe('el documento que no se puede leer (RF-304)', () => {
   /**
-   * La fila NO se descarta: el enlace existe, y quitarlo de la pantalla acortaría en
-   * silencio la documentación de la obra. Se dice lo que pasa y no se inventa nada.
+   * The row is NOT discarded: the link exists, and removing it from the screen would silently
+   * shorten the artwork's documentation. What happens is said and nothing is invented.
    */
   it('se queda en la lista, diciendo que no se puede leer', () => {
     const view = documentView(link({ note: 'Sale en la página 3', document: null }))
@@ -155,9 +155,9 @@ describe('el documento que no se puede leer (RF-304)', () => {
   })
 
   it('nombra a quien lo tiene enlazado, y por omisión es la obra', () => {
-    // La misma fila se lee desde una obra y desde una exposición (RF-516), y esta frase
-    // es lo ÚNICO que cambia entre los dos lados del puente. Decir «esta obra» en la
-    // ficha de una exposición no es un detalle de estilo: cuenta mal dónde está el hueco.
+    // The same row is read from an artwork and from an exhibition (RF-516), and this sentence
+    // is the ONLY thing that changes between the two sides of the bridge. Saying «esta obra» in
+    // an exhibition's record is not a matter of style: it says the wrong thing about where the gap is.
     expect(documentView(link({ document: null })).fileNote).toContain('con esta obra')
     expect(
       documentView(link({ document: null }), { owner: 'exhibition' }).fileNote,

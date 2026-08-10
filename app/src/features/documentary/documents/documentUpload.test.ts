@@ -356,9 +356,9 @@ describe('subir, registrar y enlazar, en ese orden (RF-408, RF-516)', () => {
   })
 
   /**
-   * El caso que decide si el catálogo acaba con dos copias del mismo PDF: el
-   * documento YA está en el archivo y solo falta el puente. Volver a subirlo
-   * duplicaría el fichero y la ficha, así que lo que se dice es «enlázalo».
+   * The case that decides whether the catalogue ends up with two copies of the same PDF: the
+   * document is ALREADY in the archive and only the bridge is missing. Uploading it again
+   * would duplicate the file and the record, so what is said is «enlázalo».
    */
   it('si solo falla el vínculo, el documento está en el archivo y NO se vuelve a subir', async () => {
     const { base } = deps({
@@ -378,8 +378,8 @@ describe('subir, registrar y enlazar, en ese orden (RF-408, RF-516)', () => {
 
 describe('lo que se dice cuando ha funcionado', () => {
   /**
-   * Callar en el éxito es un fallo de verdad en el móvil: la hoja se cierra, la
-   * página no se mueve y el toque parece no haber hecho nada.
+   * Keeping quiet on success is a real failure on a phone: the sheet closes, the
+   * page does not move and the tap looks like it did nothing.
    */
   it('nombra las dos cosas que se han hecho, porque son dos', () => {
     const said = uploadedNotice({ document: DOCUMENT, file: picked() })
@@ -403,13 +403,13 @@ describe('lo que se dice cuando ha funcionado', () => {
 // ── The scan an already registered document was missing ───────
 
 /**
- * `runAddScan` es la mitad que le faltaba al alta: un documento registrado «sin
- * digitalizar» era un estado del que no se salía, y el panel de subida lo advertía
- * antes de guardar precisamente porque no había ninguna pantalla que lo arreglara.
+ * `runAddScan` is the half the creation was missing: a document registered «sin
+ * digitalizar» was a state with no way out, and the upload panel warned about it
+ * before saving precisely because there was no screen that fixed it.
  *
- * Lo que estos tests fijan es el ORDEN —los bytes antes de la fila, por el mismo
- * motivo que en el alta— y el fallo que solo existe aquí: que alguien se haya
- * adelantado entre que el panel se abrió y el «Añadir».
+ * What these tests pin down is the ORDER —the bytes before the row, for the same
+ * reason as in the creation— and the failure that only exists here: that somebody has got
+ * there first between the panel opening and the «Añadir».
  */
 function scanDeps(over: Partial<AddScanDeps> = {}) {
   const calls: string[] = []
@@ -494,9 +494,9 @@ describe('añadir el escaneo a un documento que ya está en el archivo (RF-408)'
   })
 
   it('si la anotación no entra, se dice lo que dijo la base y el fichero queda suelto', async () => {
-    // Es el fallo inofensivo: un fichero en el almacén al que no apunta ninguna fila no
-    // rompe nada. Lo contrario —una fila prometiendo un fichero que no llegó— es un
-    // botón de descarga roto para siempre.
+    // It is the harmless failure: a file in the store no row points at does not
+    // break anything. The opposite —a row promising a file that never arrived— is a
+    // download button broken forever.
     const { base } = scanDeps({
       attach: async () => 'No se ha añadido el escaneo. Lo más probable es que ya tenga uno.',
     })

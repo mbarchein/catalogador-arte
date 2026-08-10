@@ -10,11 +10,11 @@ import {
 } from './researchStatusChoice'
 
 /**
- * Declarar hasta dónde ha llegado la investigación de un bloque (RF-218).
+ * Declaring how far a block's research has got (RF-218).
  *
- * El valor solo significa algo si se puede cambiar desde la ficha: un estado que
- * nadie puede tocar se queda en «Sin revisar» para siempre y enseña al ojo a
- * ignorarlo, que es justo lo contrario de lo que la columna existe para conseguir.
+ * The value only means something if it can be changed from the record: a state
+ * nobody can touch stays at «Sin revisar» forever and teaches the eye to
+ * ignore it, which is precisely the opposite of what the column exists to achieve.
  */
 
 const documents = sectionSpec('documents')
@@ -39,9 +39,9 @@ describe('las cuatro opciones que se ofrecen (RF-218)', () => {
   })
 
   /**
-   * La base se niega a declarar «Investigado, sin resultados» sobre un bloque con
-   * filas. Lo que se hace aquí es no ofrecer lo que va a ser rechazado y decir por
-   * qué en el mismo sitio: ofrecerlo sería un botón que existe para contestar que no.
+   * The base refuses to declare «Investigado, sin resultados» over a block with
+   * rows. What is done here is not offering what is going to be rejected and saying
+   * why in the same place: offering it would be a button that exists to answer no.
    */
   it('con documentos dentro, «Investigado, sin resultados» se apaga y explica por qué', () => {
     const options = researchStatusOptions(documents, 3)
@@ -58,9 +58,9 @@ describe('las cuatro opciones que se ofrecen (RF-218)', () => {
   })
 
   /**
-   * Apagada y NO escondida: un menú al que le falta una opción parece una aplicación
-   * que no la tiene, y «Investigado, sin resultados» es justo el valor que se busca
-   * después de una tarde de archivo.
+   * Off and NOT hidden: a menu missing an option looks like an application
+   * that does not have it, and «Investigado, sin resultados» is precisely the value looked for
+   * after an afternoon in the archive.
    */
   it('la opción imposible se sigue viendo, que es como se sabe que existe', () => {
     expect(researchStatusOptions(documents, 3).map((option) => option.value)).toEqual([

@@ -21,12 +21,12 @@ import type { DocumentRow } from '../documentaryRows'
 import { documentFileOffer, type DocumentFileOffer } from './documentFile'
 
 /**
- * Quién enlaza el documento: una obra o una exposición.
+ * Who links the document: an artwork or an exhibition.
  *
- * Lo único que cambia entre los dos lados de la tabla puente es UNA frase, la del
- * documento que no se puede leer, y ahí la frase tiene que nombrar bien a quién le falta
- * — decir «esta obra» en la ficha de una exposición no es un detalle de estilo, es contar
- * mal dónde está el hueco.
+ * The only thing that changes between the two sides of the bridge table is ONE sentence, that of the
+ * document that cannot be read, and there the sentence has to name properly who is missing it
+ * — saying «esta obra» in an exhibition's record is not a matter of style, it says the wrong
+ * thing about where the gap is.
  */
 export type DocumentOwner = 'artwork' | 'exhibition'
 
@@ -38,11 +38,11 @@ const UNAVAILABLE_NOTE: Record<DocumentOwner, string> = {
 }
 
 /**
- * Lo mínimo que una fila puente tiene que traer para pintarse.
+ * The minimum a bridge row has to bring to be painted.
  *
- * Ni `catalog_id` ni `exhibition_id`: esta función nunca los ha mirado, y acotarla a la
- * fila de una obra era lo único que impedía que la ficha de una exposición reutilizara el
- * bloque entero en vez de copiarlo.
+ * Neither `catalog_id` nor `exhibition_id`: this function has never looked at them, and narrowing it to
+ * an artwork's row was the only thing preventing an exhibition's record from reusing the
+ * whole block instead of copying it.
  */
 export interface DocumentLinkLike {
   id: string

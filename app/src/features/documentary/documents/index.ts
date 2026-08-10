@@ -1,9 +1,9 @@
 /**
- * El bloque «Documentación relacionada» de la ficha de obra (RF-515, RF-516).
+ * The artwork record's «Documentación relacionada» block (RF-515, RF-516).
  *
- * Se monta con la fila documental de la obra, que la ficha carga UNA vez para los
- * cinco bloques, y —si la ficha ya tiene el árbol de lugares cargado, que lo
- * tiene— con la función que resuelve dónde está el papel:
+ * It is mounted with the artwork's documentary row, which the record loads ONCE for the
+ * five blocks, and —if the record already has the place tree loaded, which it
+ * does— with the function that resolves where the paper is:
  *
  * ```tsx
  * const documentary = useArtworkDocumentary(artwork.catalog_id)
@@ -15,16 +15,16 @@
  * />
  * ```
  *
- * `placeText` es opcional: sin él las filas no dicen nada de dónde está el
- * original en papel, que es preferible a adivinarlo o a pagar una consulta más.
+ * `placeText` is optional: without it the rows say nothing about where the
+ * paper original is, which is preferable to guessing it or to paying for one more query.
  *
- * `writable` es el modo de RF-308 y por omisión es falso: el bloque se lee en la
- * ficha y solo se escribe en la zona de edición. Con él en verdadero —y con
- * permiso— el bloque ofrece las DOS acciones que el archivo tiene, que son dos y
- * no una: subir un documento nuevo, y enlazar con esta obra uno que ya está en el
- * archivo. Lo demás que necesita para eso —el archivo, los tipos de documento, las
- * series y los lugares— lo pide él solo, y solo cuando se abre uno de los dos
- * paneles: no hay ninguna prop nueva que cablear.
+ * `writable` is RF-308's mode and by default it is false: the block is read in the
+ * record and only written in the editing area. With it true —and with
+ * permission— the block offers the TWO actions the archive has, which are two and
+ * not one: uploading a new document, and linking to this artwork one that is already in the
+ * archive. Everything else it needs for that —the archive, the document types, the
+ * series and the places— it asks for itself, and only when one of the two
+ * panels is opened: there is no new prop to wire.
  */
 
 export { DocumentsSection } from './DocumentsSection'
