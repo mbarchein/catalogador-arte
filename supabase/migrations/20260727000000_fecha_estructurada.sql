@@ -1,22 +1,22 @@
 -- ============================================================
--- Fecha de ejecución estructurada (ADR-004, revisa RF-207).
+-- Structured execution date (ADR-004, revises RF-207).
 --
--- `fecha_ejecucion` era texto libre y por tanto inservible para buscar: «obra
--- de los setenta» no se puede preguntar contra "c. 1975-1978". Se sustituye por
--- cuatro columnas estructuradas más una nota, y el texto publicable pasa a ser
--- una COLUMNA GENERADA: se compone solo, no puede desincoronizarse de los datos
--- y sigue siendo lo que leen la ficha, el listado y el futuro catálogo impreso.
+-- `fecha_ejecucion` was free text and therefore useless for searching: «artwork
+-- from the seventies» cannot be asked against "c. 1975-1978". It is replaced by
+-- four structured columns plus a note, and the publishable text becomes
+-- a GENERATED COLUMN: it composes itself, it cannot get out of step with the data
+-- and it goes on being what the record, the listing and the future printed catalogue read.
 --
---   anio_inicio / anio_fin      el año, o el rango si anio_fin no es nulo
---   fecha_aproximada            «c.» — la obra es de alrededor de ese año
---   fecha_sin_confirmar         «[?]» — se desconoce; el año es una estimación
---   fecha_nota                  texto libre para lo que la estructura no dice
---                               («finales de los setenta»); si existe, es lo
---                               que se publica, y los años siguen sirviendo
---                               para buscar
+--   anio_inicio / anio_fin      the year, or the range if anio_fin is not null
+--   fecha_aproximada            «c.» — the artwork is from around that year
+--   fecha_sin_confirmar         «[?]» — it is unknown; the year is an estimate
+--   fecha_nota                  free text for what the structure does not say
+--                               («finales de los setenta»); if it exists, it is what
+--                               is published, and the years go on serving
+--                               for searching
 --
--- `fecha_orden` desaparece: era el apaño para ordenar texto libre, y
--- anio_inicio hace su trabajo siendo además un dato de verdad.
+-- `fecha_orden` disappears: it was the workaround for sorting free text, and
+-- anio_inicio does its job while also being a real datum.
 -- ============================================================
 
 alter table public.obras
@@ -29,10 +29,10 @@ alter table public.obras
 comment on column public.obras.fecha_nota is
   'Redacción libre de la fecha cuando la estructura no alcanza («finales de los setenta»). Si no está vacía, es lo que se publica; los años estructurados siguen alimentando la búsqueda.';
 
--- ── Relleno desde el texto existente ────────────────────────
--- Los cuatro formatos del esquema (y el sufijo [?]) se analizan; cualquier otro
--- texto se conserva ÍNTEGRO en fecha_nota. No se pierde ni se reinterpreta
--- nada: un matiz escrito a mano vale más que una estructura adivinada.
+-- ── Fill from the existing text ─────────────────────────────
+-- The schema's four formats (and the [?] suffix) are parsed; any other
+-- text is kept WHOLE in fecha_nota. Nothing is lost and nothing is
+-- reinterpreted: a nuance written by hand is worth more than a guessed structure.
 with analizada as (
   select
     id_catalogacion,
@@ -45,9 +45,9 @@ with analizada as (
 ),
 valorada as (
   select *,
-    -- Un rango invertido o degenerado («1978-1975») no es un formato distinto:
-    -- es un error de captura, y va a la nota para que alguien lo arregle viendo
-    -- el original.
+    -- An inverted or degenerate range («1978-1975») is not a different format:
+    -- it is a capture error, and it goes to the note so that somebody fixes it seeing
+    -- the original.
     (m is not null and (m[3] is null or m[3]::int > m[2]::int)) as valida
   from analizada
 )
@@ -61,7 +61,7 @@ set
 from valorada v
 where v.id_catalogacion = o.id_catalogacion;
 
--- ── El texto pasa a ser columna generada ────────────────────
+-- ── The text becomes a generated column ─────────────────────
 alter table public.obras drop column fecha_ejecucion;
 
 alter table public.obras add column fecha_ejecucion text
@@ -79,19 +79,19 @@ alter table public.obras add column fecha_ejecucion text
 comment on column public.obras.fecha_ejecucion is
   'Generada: se compone de los campos estructurados (o de fecha_nota si existe). No se escribe nunca directamente.';
 
--- ── Reglas que la interfaz no puede garantizar ──────────────
+-- ── Rules the interface cannot guarantee ────────────────────
 alter table public.obras
-  -- Un año fuera de rango plausible es una errata, no una fecha.
+  -- A year outside a plausible range is a typo, not a date.
   add constraint obras_anios_plausibles check (
     (anio_inicio is null or anio_inicio between 1000 and 2100)
     and (anio_fin is null or anio_fin between 1000 and 2100)
   ),
-  -- Un rango necesita inicio, y acaba después de empezar.
+  -- A range needs a start, and it ends after it begins.
   add constraint obras_rango_coherente check (
     anio_fin is null or (anio_inicio is not null and anio_fin > anio_inicio)
   ),
-  -- Las banderas hablan de un año: sin año no hay nada que aproximar ni que
-  -- poner en duda («[?]» a secas no dice nada).
+  -- The flags speak about a year: with no year there is nothing to approximate nor to
+  -- cast doubt on («[?]» on its own says nothing).
   add constraint obras_banderas_requieren_anio check (
     anio_inicio is not null or (not fecha_aproximada and not fecha_sin_confirmar)
   );
@@ -102,5 +102,5 @@ drop index if exists public.obras_activas_idx;
 alter table public.obras drop column fecha_orden;
 
 create index obras_activas_idx on public.obras (activo, artista, anio_inicio);
--- La consulta de época («obra de los setenta») es el motivo de todo esto.
+-- The period query («obra de los setenta») is the reason for all this.
 create index obras_anio_idx on public.obras (anio_inicio) where activo;

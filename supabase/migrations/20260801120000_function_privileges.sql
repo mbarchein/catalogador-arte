@@ -1,29 +1,29 @@
--- Privilegios y search_path de las funciones: lo que el linter de Supabase
--- señala, y que es la misma clase de fallo que este esquema ya conocía en las
--- tablas — con un matiz que lo hizo pasar desapercibido.
+-- The functions' privileges and search_path: what Supabase's linter
+-- points out, and which is the same class of failure this schema already knew in the
+-- tables — with a nuance that made it go unnoticed.
 --
--- La migración inicial cerró las tablas con:
+-- The initial migration closed the tables with:
 --
 --   revoke all on all functions in schema public from anon, authenticated;
 --   alter default privileges in schema public revoke all on functions from anon, authenticated;
 --
--- y esas dos líneas NO cierran nada, porque quien tiene el privilegio no es
--- `anon` ni `authenticated`: es **PUBLIC**. PostgreSQL concede EXECUTE a PUBLIC
--- en cada función que se crea, y anon y authenticated lo heredan por ser
--- miembros de PUBLIC. Revocar de un rol no quita lo que PUBLIC concede. En las
--- tablas la misma frase sí bastaba, porque ahí no hay concesión por omisión: de
--- ahí que el error sobreviviera a una revisión que estaba mirando.
+-- and those two lines close NOTHING, because whoever has the privilege is not
+-- `anon` nor `authenticated`: it is **PUBLIC**. PostgreSQL grants EXECUTE to PUBLIC
+-- on every function that gets created, and anon and authenticated inherit it for being
+-- members of PUBLIC. Revoking from a role does not take away what PUBLIC grants. In the
+-- tables the same sentence was enough, because there there is no grant by default: hence
+-- the mistake surviving a review that was looking.
 --
--- Nada de esto exponía datos: las funciones de trigger devuelven `trigger` y no
--- se pueden invocar de forma útil por la API, y can_read/can_edit/my_role
--- contestan sobre quien llama. La excepción, y el motivo de que esto no espere,
--- es `recalculate_photographed(text)`: una escritura invocable sin sesión.
+-- None of this exposed data: the trigger functions return `trigger` and
+-- cannot be usefully invoked through the API, and can_read/can_edit/my_role
+-- answer about the caller. The exception, and the reason this does not wait,
+-- is `recalculate_photographed(text)`: a write invocable with no session.
 
--- ── 1. search_path fijo en las siete que faltaban ────────────
--- Todas las SECURITY DEFINER ya lo llevaban; estas son de trigger y `invoker`,
--- así que el riesgo es menor, pero una función que resuelve sus nombres contra
--- un search_path que controla quien la invoca es una función que no sabes qué
--- ejecuta.
+-- ── 1. Fixed search_path in the seven that were missing it ───
+-- All the SECURITY DEFINER ones already carried it; these are trigger ones and `invoker`,
+-- so the risk is smaller, but a function that resolves its names against
+-- a search_path controlled by whoever invokes it is a function you do not know what
+-- it runs.
 
 alter function public.tg_artwork_authorship() set search_path = public;
 alter function public.tg_artwork_audit_trail() set search_path = public;
@@ -33,35 +33,35 @@ alter function public.tg_image_authorship() set search_path = public;
 alter function public.tg_image_deactivation() set search_path = public;
 alter function public.tg_series_authorship() set search_path = public;
 
--- ── 2. Ninguna función es de PUBLIC ──────────────────────────
+-- ── 2. No function belongs to PUBLIC ─────────────────────────
 
 revoke all on all functions in schema public from public;
 
--- Y las que se creen a partir de ahora tampoco. Es la línea que faltaba en la
--- migración inicial, y la que evita que esto se repita con la próxima función.
+-- And nor do those created from now on. It is the line that was missing in the
+-- initial migration, and the one that prevents this from repeating with the next function.
 alter default privileges in schema public revoke all on functions from public;
 
--- ── 3. Devolver el EXECUTE, una a una ────────────────────────
+-- ── 3. Giving the EXECUTE back, one by one ───────────────────
 
--- Las tres que evalúan las POLÍTICAS. Van con el privilegio de quien consulta y
--- no con el de quien las escribió, así que sin EXECUTE las consultas de un
--- usuario legítimo fallarían con «permission denied» en vez de aplicar la
--- política.
+-- The three that evaluate the POLICIES. They go with the privilege of whoever queries and
+-- not with that of whoever wrote them, so without EXECUTE a legitimate user's
+-- queries would fail with «permission denied» instead of applying the
+-- policy.
 --
--- A `anon` no se le conceden, y no hace falta: no tiene privilegio sobre
--- ninguna tabla, así que ninguna política suya llega a evaluarse.
+-- They are not granted to `anon`, and it is not needed: it has no privilege over
+-- any table, so none of its policies ever gets evaluated.
 grant execute on function public.can_read() to authenticated;
 grant execute on function public.can_edit() to authenticated;
 grant execute on function public.my_role() to authenticated;
 
--- Las que la aplicación llama por RPC, solo con sesión.
+-- Those the application calls by RPC, only with a session.
 grant execute on function public.next_catalog_id(public.artist_fund) to authenticated;
 grant execute on function public.platform_info() to authenticated;
 grant execute on function public.recalculate_photographed(text) to authenticated;
 grant execute on function public.reorder_images(text, text[]) to authenticated;
 grant execute on function public.set_main_image(text) to authenticated;
 
--- Las de trigger no se conceden a nadie: PostgreSQL no comprueba EXECUTE al
--- dispararlas, solo al invocarlas. Lo verifica function_privileges.test.sql,
--- que inserta una obra y comprueba que el identificador y la traza se han
--- asignado igual.
+-- The trigger ones are not granted to anybody: PostgreSQL does not check EXECUTE on
+-- firing them, only on invoking them. function_privileges.test.sql verifies it,
+-- inserting an artwork and checking that the identifier and the trace have been
+-- assigned just the same.

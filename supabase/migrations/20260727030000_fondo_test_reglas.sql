@@ -1,12 +1,12 @@
--- Reglas del fondo TEST. Continuación de la migración anterior: el valor del
--- enum ya está confirmado y aquí se le enseña al resto del esquema.
+-- Rules of the TEST fund. Continuation of the previous migration: the enum's value
+-- is already committed and here it is taught to the rest of the schema.
 
--- RF-202: el formato admite el prefijo del fondo de pruebas.
+-- RF-202: the format admits the test fund's prefix.
 alter table public.obras drop constraint obras_id_formato;
 alter table public.obras add constraint obras_id_formato
   check (id_catalogacion ~ '^(AR|RC|TS)-[0-9]{4}$');
 
--- El prefijo y el fondo siguen sin poder contradecirse.
+-- The prefix and the fund still cannot contradict each other.
 alter table public.obras drop constraint obras_prefijo_coincide_con_artista;
 alter table public.obras add constraint obras_prefijo_coincide_con_artista check (
   (artista = 'ROTILI' and id_catalogacion like 'AR-%')
@@ -14,10 +14,10 @@ alter table public.obras add constraint obras_prefijo_coincide_con_artista check
   or (artista = 'TEST' and id_catalogacion like 'TS-%')
 );
 
--- Las mismas funciones de DP-01, con el caso nuevo. El case pierde la rama por
--- defecto adrede: un fondo futuro sin prefijo declarado producirá un
--- identificador nulo y el insert fallará a la vista, en vez de colarse en la
--- serie RC- como hasta ahora.
+-- The same DP-01 functions, with the new case. The case loses its default
+-- branch on purpose: a future fund with no declared prefix will produce a
+-- null identifier and the insert will fail in plain sight, instead of slipping into the
+-- RC- series as it did until now.
 create or replace function public.siguiente_id_catalogacion(p_artista fondo_artista)
 returns text language sql stable security definer set search_path = public as $$
   select
@@ -48,21 +48,21 @@ declare
     when 'TEST' then 'TS'
   end;
 begin
-  -- Respeta un identificador indicado explícitamente: permite recuperar la
-  -- numeración de un inventario anterior o corregir una carga.
+  -- It respects an explicitly given identifier: it allows recovering the
+  -- numbering of an earlier inventory or correcting a load.
   if new.id_catalogacion is not null and new.id_catalogacion <> '' then
     return new;
   end if;
 
-  -- Serializa la asignación por fondo. Sin este cerrojo, dos catalogadores
-  -- dando de alta a la vez obtendrían el mismo número: exactamente el
-  -- duplicado que el esquema anticipa como previsible. El cerrojo se libera al
-  -- cerrar la transacción, que es la misma que ejecuta el insert.
+  -- It serialises the assignment per fund. Without this lock, two cataloguers
+  -- creating records at once would get the same number: exactly the
+  -- duplicate the schema anticipates as foreseeable. The lock is released on
+  -- closing the transaction, which is the same one that runs the insert.
   perform pg_advisory_xact_lock(hashtext('id_catalogacion:' || v_prefijo));
 
-  -- Cuenta también las fichas dadas de baja: un identificador retirado no se
-  -- recicla nunca de forma automática (RF-908). Reutilizarlo es un acto
-  -- deliberado que pasa por restaurar la ficha desde la papelera.
+  -- It also counts the withdrawn records: a withdrawn identifier is never
+  -- recycled automatically (RF-908). Reusing it is a deliberate act
+  -- that goes through restoring the record from the wastebasket.
   new.id_catalogacion := public.siguiente_id_catalogacion(new.artista);
   return new;
 end $$;

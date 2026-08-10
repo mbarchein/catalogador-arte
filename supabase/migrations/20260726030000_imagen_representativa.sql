@@ -1,27 +1,27 @@
 -- ============================================================
--- Vista: qué imagen representa a cada obra.
+-- View: which image represents each artwork.
 --
--- Una fila por obra con imágenes activas. Implementa la regla de repliegue de
--- RF-403 en un único sitio.
+-- One row per artwork with active images. It implements RF-403's fallback rule
+-- in a single place.
 --
--- Por qué en la base y no en el cliente, donde estaba antes:
+-- Why in the base and not in the client, where it used to be:
 --
---  1. El listado (RF-604) necesita la miniatura de hasta 500 obras. Calcular la
---     regla en el cliente obligaría a traerse TODAS las imágenes de todas las
---     obras —miles de filas— y encima tropezaría con el tope de filas por
---     petición de PostgREST, dejando obras sin miniatura en silencio.
---  2. El pipeline del catálogo impreso será un script de Python. Con la regla
---     aquí la obtiene gratis; en TypeScript tendría que reimplementarla, y dos
---     implementaciones de la misma regla divergen: es cuestión de tiempo que la
---     web y el catálogo impreso muestren fotos distintas de la misma obra.
+--  1. The listing (RF-604) needs the thumbnail of up to 500 artworks. Computing the
+--     rule in the client would force fetching ALL the images of all the
+--     artworks —thousands of rows— and would besides trip over PostgREST's
+--     rows-per-request cap, leaving artworks with no thumbnail in silence.
+--  2. The printed catalogue's pipeline will be a Python script. With the rule
+--     here it gets it for free; in TypeScript it would have to reimplement it, and two
+--     implementations of the same rule diverge: it is a matter of time before the
+--     web and the printed catalogue show different photos of the same artwork.
 -- ============================================================
 
 create view public.imagen_representativa
 with (
-  -- CRÍTICO. Sin security_invoker la vista se ejecuta con los privilegios de su
-  -- propietario y se salta las políticas RLS de "imagenes": cualquiera con sesión
-  -- vería las rutas de las imágenes retiradas. Es exactamente el agujero que este
-  -- proyecto no se puede permitir, porque las políticas son el único perímetro.
+  -- CRITICAL. Without security_invoker the view runs with the privileges of its
+  -- owner and bypasses the RLS policies of "imagenes": anybody with a session
+  -- would see the paths of the withdrawn images. It is exactly the hole this
+  -- project cannot afford, because the policies are the only perimeter.
   security_invoker = true
 ) as
 select distinct on (i.id_catalogacion)
@@ -30,20 +30,20 @@ select distinct on (i.id_catalogacion)
   i.ruta_miniatura,
   i.ruta_derivada,
   i.tipo_toma,
-  -- Distinguir si la eligió una persona o la regla importa en la interfaz: si fue
-  -- la regla, subir otra foto puede cambiarla sola, y conviene avisar.
+  -- Distinguishing whether a person or the rule chose it matters in the interface: if it was
+  -- the rule, uploading another photo may change it on its own, and it is worth warning.
   i.imagen_indice as elegida_a_mano
 from public.imagenes i
 where i.activo
 order by
   i.id_catalogacion,
-  -- 1. La marcada a mano manda siempre (RF-402).
+  -- 1. The one marked by hand always rules (RF-402).
   i.imagen_indice desc,
-  -- 2. Una general representa la obra; un detalle de firma o un reverso, no.
+  -- 2. A general one represents the artwork; a signature detail or a reverse, no.
   (i.tipo_toma = 'GENERAL') desc,
-  -- 3. La más reciente, por fecha de la fotografía.
+  -- 3. The most recent one, by the photograph's date.
   i.fecha_fotografia desc nulls last,
-  -- 4. A igualdad, la subida más tarde.
+  -- 4. On a tie, the one uploaded later.
   i.id_imagen desc;
 
 comment on view public.imagen_representativa is

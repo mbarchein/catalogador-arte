@@ -199,7 +199,7 @@ create trigger asignar_id_catalogacion
   before insert on public.obras
   for each row execute function public.tg_asignar_id_catalogacion();
 
--- ── Inmutabilidad de la clave primaria (RF-204) ─────────────
+-- ── Immutability of the primary key (RF-204) ────────────────
 
 create function public.tg_id_catalogacion_inmutable()
 returns trigger language plpgsql as $$
@@ -210,7 +210,7 @@ begin
       old.id_catalogacion, new.id_catalogacion
       using hint = 'Es la etiqueta física pegada en la obra y el eje de las tablas relacionadas.';
   end if;
-  -- El fondo tampoco: cambiarlo dejaría el prefijo mintiendo.
+  -- Nor the fund: changing it would leave the prefix lying.
   if new.artista is distinct from old.artista then
     raise exception 'artista no es editable: determina el prefijo de %', old.id_catalogacion;
   end if;
@@ -229,10 +229,10 @@ begin
   new.fecha_actualizacion := now();
   new.actualizado_por := auth.uid();
 
-  -- RF-802: fecha_actualizacion_basica solo se mueve cuando cambia un campo de
-  -- fase 1, es decir, de los que exigen tener la obra delante. Sirve para saber
-  -- cuándo se tocó físicamente la pieza por última vez, dato que se perdería si
-  -- cualquier corrección de una nota bibliográfica lo actualizara.
+  -- RF-802: fecha_actualizacion_basica only moves when a phase-1 field
+  -- changes, that is, one of those that require having the artwork in front. It serves to know
+  -- when the piece was last physically handled, a datum that would be lost if
+  -- any correction of a bibliographic note updated it.
   if (new.tipo_obra, new.tecnica, new.soporte, new.alto_cm, new.ancho_cm,
       new.profundidad_cm, new.firmada, new.firma_descripcion, new.fechada_en_obra,
       new.estado_conservacion, new.ubicacion_fisica)
@@ -244,8 +244,8 @@ begin
     new.fecha_actualizacion_basica := now();
   end if;
 
-  -- Sella quién y cuándo en cada transición de la papelera, sin fiarse de que
-  -- el cliente lo mande.
+  -- Stamps who and when on every wastebasket transition, without trusting that
+  -- the client sends it.
   if new.activo = false and old.activo = true then
     new.fecha_baja := now();
     new.dado_de_baja_por := auth.uid();
@@ -273,18 +273,18 @@ create trigger autoria_obra
   before insert on public.obras
   for each row execute function public.tg_autoria_obra();
 
--- ── Rol: solo lo cambia el superusuario (RF-108) ────────────
+-- ── Role: only the superuser changes it (RF-108) ────────────
 
 create function public.tg_rol_solo_superusuario()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if new.rol is distinct from old.rol then
-    -- Si no hay usuario autenticado, la petición no viene de una sesión de la
-    -- aplicación: es acceso administrativo directo (editor SQL del panel, clave
-    -- service_role, semilla de desarrollo). Ese camino ya tiene poder total por
-    -- definición, de modo que bloquearlo no añadiría ninguna seguridad y sí
-    -- impediría administrar el catálogo — incluido promover al primer
-    -- superusuario, que por fuerza tiene que hacerse desde fuera de la app.
+    -- If there is no authenticated user, the request does not come from a session of the
+    -- application: it is direct administrative access (the panel's SQL editor, the
+    -- service_role key, a development seed). That path already has total power by
+    -- definition, so blocking it would add no security and would
+    -- prevent administering the catalogue — including promoting the first
+    -- superuser, which by necessity has to be done from outside the app.
     if auth.uid() is null or current_user = 'service_role' then
       return new;
     end if;
@@ -303,10 +303,10 @@ create trigger rol_solo_superusuario
   before update on public.perfiles
   for each row execute function public.tg_rol_solo_superusuario();
 
--- ── Ayudantes de autorización ───────────────────────────────
+-- ── Authorisation helpers ───────────────────────────────────
 --
--- SECURITY DEFINER a propósito: una política sobre perfiles que consultara
--- perfiles sin saltarse RLS entraría en recursión infinita.
+-- SECURITY DEFINER on purpose: a policy on profiles that queried
+-- profiles without bypassing RLS would enter infinite recursion.
 
 create function public.mi_rol()
 returns rol_usuario language sql stable security definer set search_path = public as $$
@@ -326,33 +326,33 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.perfiles where id = auth.uid());
 $$;
 
--- ── Políticas RLS ───────────────────────────────────────────
+-- ── RLS policies ────────────────────────────────────────────
 --
--- RF-111: no hay backend. Estas políticas son el único perímetro de seguridad
--- y la clave anónima viaja en el cliente. Una tabla sin política para una
--- operación está cerrada para esa operación, pero una tabla sin RLS activado
--- está completamente abierta: de ahí el test de cierre por omisión, que falla
--- si alguien crea una tabla y olvida esta parte.
+-- RF-111: there is no backend. These policies are the only security perimeter
+-- and the anonymous key travels in the client. A table with no policy for an
+-- operation is closed for that operation, but a table with RLS not enabled
+-- is completely open: hence the closed-by-default test, which fails
+-- if somebody creates a table and forgets this part.
 
 alter table public.perfiles enable row level security;
 alter table public.obras enable row level security;
 
--- La tabla de control de migraciones del stack local (_migraciones) no se
--- asegura aquí: solo existe en local, la crea docker/migrate.sh y es allí
--- donde se le activa RLS. En producción el control lo lleva la CLI de
--- Supabase en su propio esquema y esta tabla no existe.
+-- The local stack's migration-control table (_migraciones) is not
+-- secured here: it only exists locally, docker/migrate.sh creates it and that is where
+-- RLS is enabled on it. In production the control is kept by Supabase's
+-- CLI in its own schema and this table does not exist.
 
--- perfiles: cualquier miembro del equipo ve la lista, porque la ficha muestra
--- «actualizado por» con nombre. Solo el propio usuario edita su perfil, y el
--- trigger de arriba impide que se toque el rol.
+-- perfiles: any member of the team sees the list, because the record shows
+-- «actualizado por» with a name. Only the user themselves edits their profile, and the
+-- trigger above prevents the role from being touched.
 create policy perfiles_select on public.perfiles
   for select using (public.puede_leer());
 
 create policy perfiles_update_propio on public.perfiles
   for update using (id = auth.uid()) with check (id = auth.uid());
 
--- obras: el Lector ve solo las activas; quien puede editar ve también la
--- papelera (RF-906).
+-- obras: the Reader sees only the active ones; whoever can edit also sees the
+-- wastebasket (RF-906).
 create policy obras_select on public.obras
   for select using (
     (activo and public.puede_leer())
@@ -365,40 +365,40 @@ create policy obras_insert on public.obras
 create policy obras_update on public.obras
   for update using (public.puede_editar()) with check (public.puede_editar());
 
--- Sin política de DELETE, a propósito y para todos los roles: RF-901 dice que
--- la eliminación nunca es un borrado real. Dar de baja es un UPDATE de `activo`.
--- Al no existir la política, ni un error de la interfaz ni una llamada directa
--- a la API pueden borrar una fila del catálogo.
+-- With no DELETE policy, on purpose and for every role: RF-901 says that
+-- deletion is never a real delete. Withdrawing is an UPDATE of `activo`.
+-- As the policy does not exist, neither an interface error nor a direct call
+-- to the API can delete a row of the catalogue.
 
--- ── Permisos de tabla ───────────────────────────────────────
--- RLS filtra filas, pero PostgREST necesita además el GRANT. Sin esto, las
--- políticas no llegan a evaluarse.
+-- ── Table privileges ────────────────────────────────────────
+-- RLS filters rows, but PostgREST needs the GRANT as well. Without this, the
+-- policies never get evaluated.
 
--- Partimos de cero y concedemos solo lo necesario. Esto NO es redundante, y
--- descubrirlo costó dos tests en rojo: la imagen de Supabase aplica
--- ALTER DEFAULT PRIVILEGES concediendo *todos* los privilegios de toda tabla
--- nueva a anon, authenticated y service_role. Es decir, por omisión el rol
--- anónimo puede leer cualquier tabla que se cree, y el autenticado puede además
--- borrarla fila a fila. Lo único que lo impide son las políticas RLS.
+-- We start from zero and grant only what is necessary. This is NOT redundant, and
+-- finding it out cost two tests in red: Supabase's image applies
+-- ALTER DEFAULT PRIVILEGES granting *all* the privileges of every new table
+-- to anon, authenticated and service_role. That is, by default the anonymous
+-- role can read any table that gets created, and the authenticated one can also
+-- delete it row by row. The only thing that prevents it are the RLS policies.
 --
--- Revocando primero, una política mal escrita deja de bastar por sí sola para
--- exponer o destruir el catálogo: hacen falta dos errores en vez de uno. En un
--- proyecto cuyo perímetro entero son las políticas, esa segunda barrera es
--- justamente lo que compensa no tener servidor.
+-- By revoking first, a badly written policy stops being enough on its own to
+-- expose or destroy the catalogue: two mistakes are needed instead of one. In a
+-- project whose entire perimeter is the policies, that second barrier is
+-- precisely what makes up for having no server.
 revoke all on all tables in schema public from anon, authenticated;
 revoke all on all sequences in schema public from anon, authenticated;
 revoke all on all functions in schema public from anon, authenticated;
 revoke usage on schema public from anon;
 
--- Y para las tablas que aún no existen, de modo que la próxima migración no
--- reabra el agujero por omisión: quien cree una tabla tendrá que conceder los
--- privilegios a mano, que es cuando se piensa en cuáles hacen falta.
+-- And for the tables that do not exist yet, so that the next migration does not
+-- reopen the hole by default: whoever creates a table will have to grant the
+-- privileges by hand, which is when one thinks about which ones are needed.
 alter default privileges in schema public revoke all on tables from anon, authenticated;
 alter default privileges in schema public revoke all on sequences from anon, authenticated;
 alter default privileges in schema public revoke all on functions from anon, authenticated;
 
--- Ahora sí, lo mínimo que la aplicación necesita. Nótese la ausencia de DELETE:
--- nada se borra de verdad (RF-901), y sin el privilegio no hay forma de intentarlo.
+-- Now, the minimum the application needs. Note the absence of DELETE:
+-- nothing is really deleted (RF-901), and without the privilege there is no way of trying.
 grant usage on schema public to authenticated;
 grant select, insert, update on public.obras to authenticated;
 grant select, update on public.perfiles to authenticated;

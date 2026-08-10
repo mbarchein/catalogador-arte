@@ -1,12 +1,12 @@
 -- ============================================================
--- Tabla "Imágenes" (esquema v11, tabla 2) y su almacenamiento.
+-- "Images" table (schema v11, table 2) and its storage.
 --
--- Implementa RF-401 a RF-404, RF-409 a RF-412, RF-210 e INC-14/INC-15.
+-- Implements RF-401 to RF-404, RF-409 to RF-412, RF-210 and INC-14/INC-15.
 --
--- ADR-002 fija tres niveles por toma. Aquí son tres rutas en la misma fila, no
--- tres filas: son derivaciones del mismo `id_imagen`, y separarlas en filas
--- distintas obligaría a reagruparlas en cada consulta y permitiría que una toma
--- perdiera su miniatura sin que nada avisara.
+-- ADR-002 fixes three levels per shot. Here they are three paths in the same row, not
+-- three rows: they are derivations of the same `id_imagen`, and separating them into different
+-- rows would force regrouping them on every query and would allow a shot
+-- to lose its thumbnail with nothing warning about it.
 -- ============================================================
 
 create type valor_tipo_toma as enum (
@@ -14,17 +14,17 @@ create type valor_tipo_toma as enum (
 );
 
 create table public.imagenes (
-  -- DP-02: el identificador se compone del de la obra más un ordinal, siguiendo
-  -- el mismo criterio que ADR-003. Lo asigna un trigger.
+  -- DP-02: the identifier is composed of the artwork's plus an ordinal, following
+  -- the same criterion as ADR-003. A trigger assigns it.
   id_imagen text primary key,
 
   id_catalogacion text not null
     references public.obras (id_catalogacion) on update cascade,
 
-  -- Rutas dentro del bucket. Se guardan las tres porque la aplicación sirve la
-  -- derivada, el índice usa la miniatura y el máster solo se descarga bajo
-  -- demanda (RF-411). El máster puede faltar si un día se migra a otro
-  -- proveedor y se limpia de aquí; la derivada, no.
+  -- Paths inside the bucket. The three are stored because the application serves the
+  -- derivative, the index uses the thumbnail and the master is only downloaded on
+  -- demand (RF-411). The master may be missing if one day there is a migration to another
+  -- provider and it is cleaned up from here; the derivative, no.
   ruta_miniatura text not null,
   ruta_derivada text not null,
   ruta_master text,
@@ -33,17 +33,17 @@ create table public.imagenes (
   fecha_fotografia date,
   autor_fotografia text not null default '',
 
-  -- RF-402: como máximo una imagen activa por obra puede ser la del índice.
+  -- RF-402: at most one active image per artwork can be the index one.
   imagen_indice boolean not null default false,
 
-  -- Tamaños en bytes, para poder vigilar el crecimiento en disco (RNF-108) sin
-  -- tener que recorrer el bucket.
+  -- Sizes in bytes, so as to be able to watch the growth on disk (RNF-108) without
+  -- having to walk the bucket.
   bytes_master integer,
 
   creado_en timestamptz not null default now(),
   creado_por uuid references public.perfiles (id),
 
-  -- Papelera propia: una imagen mal tomada se retira sin tocar la obra (RF-904).
+  -- Its own wastebasket: a badly taken image is withdrawn without touching the artwork (RF-904).
   activo boolean not null default true,
   fecha_baja timestamptz,
   dado_de_baja_por uuid references public.perfiles (id),
@@ -56,14 +56,14 @@ comment on table public.imagenes is
 
 create index imagenes_por_obra_idx on public.imagenes (id_catalogacion, activo);
 
--- RF-402 / INC-15: una sola imagen de índice por obra, garantizado por la base.
--- Un índice único parcial es mejor que un trigger: no hay ventana de carrera y no
--- depende de que nadie escriba por otro camino.
+-- RF-402 / INC-15: a single index image per artwork, guaranteed by the base.
+-- A partial unique index is better than a trigger: there is no race window and it does not
+-- depend on nobody writing by another route.
 create unique index imagenes_una_sola_indice_idx
   on public.imagenes (id_catalogacion)
   where imagen_indice and activo;
 
--- ── Identificador de la imagen (DP-02) ──────────────────────
+-- ── The image's identifier (DP-02) ──────────────────────────
 
 create function public.tg_asignar_id_imagen()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -74,9 +74,9 @@ begin
     return new;
   end if;
 
-  -- Mismo criterio que ADR-003: se serializa por obra y se cuentan también las
-  -- imágenes dadas de baja, para que un `_v3` retirado no vuelva a usarse y las
-  -- referencias en notas o correos sigan señalando a lo mismo.
+  -- Same criterion as ADR-003: it is serialised per artwork and the withdrawn
+  -- images are counted too, so that a retired `_v3` is not used again and the
+  -- references in notes or emails go on pointing at the same thing.
   perform pg_advisory_xact_lock(hashtext('id_imagen:' || new.id_catalogacion));
 
   select coalesce(max(substring(id_imagen from '_v([0-9]+)$')::integer), 0) + 1
@@ -109,8 +109,8 @@ begin
   if new.activo = false and old.activo = true then
     new.fecha_baja := now();
     new.dado_de_baja_por := auth.uid();
-    -- Una imagen retirada no puede seguir representando a la obra en el índice.
-    -- Sin esto, el índice visual mostraría una foto que ya nadie ve en la ficha.
+    -- A withdrawn image cannot go on representing the artwork in the index.
+    -- Without this, the visual index would show a photo nobody sees in the record any more.
     new.imagen_indice := false;
   end if;
   return new;
@@ -136,9 +136,9 @@ returns void language sql security definer set search_path = public as $$
             where i.id_catalogacion = p_id and i.activo
          )
    where o.id_catalogacion = p_id
-     -- No se escribe si el valor ya es el correcto: así el recálculo no dispara
-     -- el trigger de trazabilidad y no ensucia `fecha_actualizacion` de la obra
-     -- cada vez que alguien toca una foto.
+     -- It is not written if the value is already the correct one: this way the recalculation does not fire
+     -- the traceability trigger and does not dirty the artwork's `fecha_actualizacion`
+     -- every time somebody touches a photo.
      and o.fotografiada is distinct from exists (
            select 1 from public.imagenes i
             where i.id_catalogacion = p_id and i.activo
@@ -179,20 +179,20 @@ create policy imagenes_insert on public.imagenes
 create policy imagenes_update on public.imagenes
   for update using (public.puede_editar()) with check (public.puede_editar());
 
--- Sin política de DELETE, igual que en obras: retirar una imagen es marcarla
--- inactiva. El fichero del bucket se conserva, porque un máster borrado no se
--- recupera y la fotografía puede ser la única prueba de que la obra existió.
+-- With no DELETE policy, the same as in obras: withdrawing an image is marking it
+-- inactive. The bucket's file is kept, because a deleted master is not
+-- recovered and the photograph may be the only proof that the artwork existed.
 
 -- ── Almacenamiento ──────────────────────────────────────────
 
--- Bucket privado: RF-110 y RNF-111 exigen que ningún fichero sea legible por URL
--- pública. El acceso se concede con URL firmada de caducidad corta.
+-- Private bucket: RF-110 and RNF-111 require that no file be readable by a public
+-- URL. Access is granted with a short-lived signed URL.
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('obras', 'obras', false, 62914560)
 on conflict (id) do update set public = false;
 
--- Las políticas de storage.objects se escriben igual que las de cualquier tabla:
--- el bucket es privado, así que sin política no se lee ni se escribe nada.
+-- The storage.objects policies are written like those of any table:
+-- the bucket is private, so with no policy nothing is read and nothing is written.
 create policy imagenes_leer_ficheros on storage.objects
   for select using (bucket_id = 'obras' and public.puede_leer());
 
@@ -202,9 +202,9 @@ create policy imagenes_subir_ficheros on storage.objects
 create policy imagenes_actualizar_ficheros on storage.objects
   for update using (bucket_id = 'obras' and public.puede_editar());
 
--- ── Permisos ────────────────────────────────────────────────
--- RF-113: revocar y conceder uno a uno. La plataforma habría concedido esta tabla
--- nueva entera a anon y authenticated por privilegios por omisión.
+-- ── Privileges ──────────────────────────────────────────────
+-- RF-113: revoke and grant one by one. The platform would have granted this whole
+-- new table to anon and authenticated through default privileges.
 
 revoke all on public.imagenes from anon, authenticated;
 grant select, insert, update on public.imagenes to authenticated;

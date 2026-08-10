@@ -1,22 +1,22 @@
--- La obra apunta al árbol de lugares (ADR-006, RF-215).
+-- The artwork points at the tree of places (ADR-006, RF-215).
 --
--- Segunda mitad de la decisión. La migración anterior creó `physical_places`;
--- esta cuelga `artworks.physical_place_id`, traslada los textos que había y
--- cierra la comprobación que allí quedó pendiente por no existir todavía la
--- columna: un lugar con obras dentro tampoco se retira.
+-- Second half of the decision. The previous migration created `physical_places`;
+-- this one hangs `artworks.physical_place_id`, moves the texts that were there and
+-- closes the check that was left pending there because the column did not yet
+-- exist: a place with artworks inside is not withdrawn either.
 --
--- `physical_location` NO se retira aquí. El despliegue es en dos fases porque el
--- frontend viejo corre unos segundos contra el esquema nuevo (ver el comentario
--- de .github/workflows/desplegar.yml): la columna se va en una migración
--- posterior, cuando ya nadie la lea.
+-- `physical_location` is NOT withdrawn here. The deployment is in two phases because the
+-- old frontend runs for a few seconds against the new schema (see the comment
+-- in .github/workflows/desplegar.yml): the column goes in a later
+-- migration, when nobody reads it any more.
 
--- ── La columna ──────────────────────────────────────────────
+-- ── The column ──────────────────────────────────────────────
 --
--- Nula es una respuesta legítima y no un dato que falte: la captura con la pieza
--- delante no puede exigir decidir dónde está, igual que hoy admite la cadena
--- vacía. `restrict` es coherente con que no haya DELETE concedido a nadie sobre
--- los lugares (RF-901); si alguna vez se borrara uno a mano, esto avisa en vez
--- de dejar obras apuntando al vacío.
+-- Null is a legitimate answer and not a missing datum: capture with the piece
+-- in front cannot require deciding where it is, just as today it admits the empty
+-- string. `restrict` is coherent with nobody being granted DELETE over
+-- the places (RF-901); if one were ever deleted by hand, this warns instead
+-- of leaving artworks pointing at nothing.
 
 alter table public.artworks
   add column physical_place_id uuid references public.physical_places (id) on delete restrict;
@@ -24,8 +24,8 @@ alter table public.artworks
 comment on column public.artworks.physical_place_id is
   'Nodo del árbol de lugares donde está la obra (ADR-006). Nulo es legítimo: una obra puede no tener ubicación registrada.';
 
--- El filtro del listado pregunta «todo lo que hay en la habitación amarilla», y
--- lo resuelve subiendo por el árbol hasta las obras de cada nodo.
+-- The listing's filter asks «everything there is in the yellow room», and
+-- resolves it by climbing the tree down to the artworks of each node.
 create index artworks_physical_place_idx on public.artworks (physical_place_id);
 
 -- ── RF-802: mover la obra sí es haber tenido la pieza delante ─

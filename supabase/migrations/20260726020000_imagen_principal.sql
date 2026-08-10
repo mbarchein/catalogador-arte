@@ -1,11 +1,11 @@
 -- ============================================================
--- RF-405: elegir cuál de las imágenes ya subidas representa a la obra.
+-- RF-405: choosing which of the already uploaded images represents the artwork.
 --
--- Se hace con una función y no con dos UPDATE desde el cliente porque hay un
--- índice único parcial que impide dos imágenes de índice activas en la misma obra
--- (RF-402). Desmarcar y marcar en dos peticiones separadas deja una ventana en la
--- que, si la segunda no llega —se corta la red, se cierra el móvil—, la obra queda
--- sin ninguna imagen principal. Un solo UPDATE lo resuelve de una vez.
+-- It is done with a function and not with two UPDATEs from the client because there is a
+-- partial unique index that prevents two active index images on the same artwork
+-- (RF-402). Unmarking and marking in two separate requests leaves a window in
+-- which, if the second does not arrive —the network drops, the phone is closed—, the artwork is left
+-- with no main image at all. A single UPDATE resolves it in one go.
 -- ============================================================
 
 create function public.marcar_imagen_principal(p_id_imagen text)
@@ -17,9 +17,9 @@ declare
   v_obra text;
   v_activa boolean;
 begin
-  -- Sin SECURITY DEFINER: las políticas RLS siguen en vigor, así que un Lector no
-  -- puede escribir aquí. La comprobación explícita existe solo para devolver un
-  -- error legible en vez de un «no se ha modificado nada» que nadie entiende.
+  -- With no SECURITY DEFINER: the RLS policies remain in force, so a Reader cannot
+  -- write here. The explicit check exists only to return a legible
+  -- error instead of a «nothing has been modified» that nobody understands.
   if not public.puede_editar() then
     raise exception 'No tienes permiso para cambiar la imagen principal';
   end if;
@@ -32,15 +32,15 @@ begin
     raise exception 'No existe la imagen %', p_id_imagen;
   end if;
 
-  -- Una imagen retirada no puede representar a la obra: el índice visual
-  -- mostraría una foto que en la ficha no aparece.
+  -- A withdrawn image cannot represent the artwork: the visual index
+  -- would show a photo that does not appear in the record.
   if not v_activa then
     raise exception 'La imagen % está dada de baja y no puede ser la principal', p_id_imagen;
   end if;
 
-  -- Un único UPDATE: marca la elegida y desmarca el resto a la vez. El índice
-  -- único se comprueba al terminar la sentencia, no fila a fila, así que no hay
-  -- estado intermedio inválido.
+  -- A single UPDATE: it marks the chosen one and unmarks the rest at once. The unique
+  -- index is checked on finishing the statement, not row by row, so there is no
+  -- invalid intermediate state.
   update public.imagenes
      set imagen_indice = (id_imagen = p_id_imagen)
    where id_catalogacion = v_obra

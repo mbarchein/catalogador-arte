@@ -1,11 +1,11 @@
 -- ============================================================
--- Vistas en vivo (ADR-005): publicar los cambios de las tablas que la interfaz
--- observa por WebSocket.
+-- Live views (ADR-005): publishing the changes of the tables the interface
+-- watches over WebSocket.
 --
--- La entrega respeta RLS: Realtime evalúa la política de SELECT de cada
--- suscriptor con su JWT antes de entregarle una fila. Un Lector no recibe por
--- el canal nada que no pudiera leer con una consulta — las fichas de baja, por
--- ejemplo, no le llegan.
+-- Delivery respects RLS: Realtime evaluates each subscriber's SELECT policy
+-- with their JWT before delivering them a row. A Reader receives over
+-- the channel nothing they could not read with a query — the withdrawn records, for
+-- example, do not reach them.
 -- ============================================================
 
 do $$
@@ -18,8 +18,8 @@ end $$;
 do $$
 declare t text;
 begin
-  -- Solo las tablas que alguna vista observa. Publicar de más no es gratis:
-  -- cada tabla publicada es trabajo de descodificación WAL por cada suscriptor.
+  -- Only the tables some view watches. Publishing more than needed is not free:
+  -- every published table is WAL decoding work for every subscriber.
   foreach t in array array['obras', 'imagenes'] loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);
@@ -29,8 +29,8 @@ begin
   end loop;
 end $$;
 
--- Realtime entrega el valor viejo de la fila en los UPDATE según la identidad
--- de réplica; FULL hace que el filtro por columna (p. ej. id_catalogacion=eq.X)
--- funcione también en los DELETE lógicos. Coste asumible a esta escala.
+-- Realtime delivers the row's old value on UPDATEs according to the replica
+-- identity; FULL makes the per-column filter (e.g. id_catalogacion=eq.X)
+-- work on logical DELETEs too. An acceptable cost at this scale.
 alter table public.obras replica identity full;
 alter table public.imagenes replica identity full;

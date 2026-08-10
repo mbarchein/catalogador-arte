@@ -1,41 +1,41 @@
--- El esquema público deja de estar abierto a PUBLIC.
+-- The public schema stops being open to PUBLIC.
 --
--- Tercera aparición del mismo malentendido, y la última que queda. La migración
--- inicial escribió:
+-- Third appearance of the same misunderstanding, and the last one left. The initial
+-- migration wrote:
 --
 --   revoke usage on schema public from anon;
 --
--- y no revocaba nada: el USAGE lo concede PUBLIC —`=U/pg_database_owner` en la
--- ACL del esquema— y `anon` lo hereda por ser su miembro. Igual que con las
--- funciones, revocar de un rol no deshace lo concedido a PUBLIC.
+-- and it revoked nothing: the USAGE is granted by PUBLIC —`=U/pg_database_owner` in the
+-- schema's ACL— and `anon` inherits it for being its member. Just as with the
+-- functions, revoking from a role does not undo what is granted to PUBLIC.
 --
--- Hoy es inocuo: `anon` no tiene privilegio sobre ninguna tabla ni función, así
--- que la puerta abierta no da a ninguna parte. Se cierra igualmente, porque la
--- línea de la migración inicial dice lo que quería el proyecto y conviene que
--- además sea verdad: la próxima tabla que alguien cree con un `grant` de más se
--- encuentra el esquema cerrado, no abierto.
+-- Today it is harmless: `anon` has no privilege over any table or function, so
+-- the open door leads nowhere. It is closed all the same, because the
+-- initial migration's line says what the project wanted and it is worth it
+-- being true as well: the next table somebody creates with one `grant` too many
+-- finds the schema closed, not open.
 
 revoke usage on schema public from public;
 
--- Y a quien sí lo necesita, explícito.
+-- And to whoever does need it, explicitly.
 --
--- `authenticated` y `service_role` ya lo tenían concedido de forma directa. El
--- que faltaba es `authenticator`: es el rol con el que PostgREST se conecta e
--- introspecciona el esquema antes de cambiar de rol en cada petición. Sin esto,
--- la API entera deja de arrancar — comprobado reiniciando PostgREST contra el
--- stack local.
+-- `authenticated` and `service_role` already had it granted directly. The
+-- one that was missing is `authenticator`: it is the role PostgREST connects with and
+-- introspects the schema with before switching role on each request. Without this,
+-- the whole API stops starting up — checked by restarting PostgREST against the
+-- local stack.
 grant usage on schema public to authenticator;
 
--- Deliberadamente NO se conceden:
+-- Deliberately NOT granted:
 --
---   anon                    es el objetivo del cambio.
---   supabase_auth_admin     inserta en auth.users y dispara tg_new_user, que
---                           escribe el perfil. Es SECURITY DEFINER y corre con
---                           los privilegios de su dueño, así que el alta de
---                           cuentas sigue funcionando sin este permiso.
---   supabase_storage_admin  storage-api ejecuta las consultas con el rol de
---                           quien llama, y las políticas del bucket llaman a
---                           public.can_edit() como `authenticated`.
+--   anon                    it is the point of the change.
+--   supabase_auth_admin     it inserts into auth.users and fires tg_new_user, which
+--                           writes the profile. It is SECURITY DEFINER and runs with
+--                           its owner's privileges, so account
+--                           registration goes on working without this permission.
+--   supabase_storage_admin  storage-api runs the queries with the role of
+--                           whoever calls, and the bucket's policies call
+--                           public.can_edit() as `authenticated`.
 --
--- Las dos últimas están verificadas en local, no supuestas: dando de alta una
--- cuenta por la API de administración y subiendo un fichero como catalogador.
+-- The last two are verified locally, not assumed: by registering an
+-- account through the administration API and uploading a file as a cataloguer.

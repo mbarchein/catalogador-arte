@@ -1,14 +1,14 @@
 -- ============================================================
--- El fondo TEST también fotografía: id_imagen admite el prefijo TS-.
+-- The TEST fund photographs too: id_imagen admits the TS- prefix.
 --
--- La migración 20260727030000 dio de alta el fondo de pruebas (TS-) en el
--- formato de `obras`, pero el formato de `id_imagen` no se actualizó y la
--- función Edge de firmas tampoco. Consecuencia en producción: en una ficha
--- TS- ninguna foto podía subirse — la firma del máster devolvía «ruta no
--- válida» y, de haber llegado al insert, esta constraint lo habría rechazado.
+-- Migration 20260727030000 registered the test fund (TS-) in
+-- `obras`' format, but `id_imagen`'s format was not updated and neither was the
+-- signing Edge function. Consequence in production: on a TS-
+-- record no photo could be uploaded — the master's signature returned «ruta no
+-- válida» and, had it reached the insert, this constraint would have rejected it.
 --
--- El prefijo vive en tres reglas que deben moverse juntas: obras_id_formato,
--- imagenes_id_formato y RUTA_VALIDA en supabase/functions/firmar-fichero.
+-- The prefix lives in three rules that must move together: obras_id_formato,
+-- imagenes_id_formato and RUTA_VALIDA in supabase/functions/firmar-fichero.
 -- ============================================================
 
 alter table public.imagenes drop constraint imagenes_id_formato;
