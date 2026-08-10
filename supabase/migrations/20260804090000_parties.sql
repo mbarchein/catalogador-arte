@@ -1,53 +1,53 @@
 -- ============================================================
--- Personas e instituciones (RF-508), y la base común de trazabilidad (RF-804).
+-- People and institutions (RF-508), and the common traceability base (RF-804).
 --
--- Es la tabla 8 del esquema de campos —«Propietarios/Instituciones»— y la
--- primera pieza del catálogo razonado documental, que hasta hoy no existía en
--- absoluto: de las nueve tablas del modelo estaban construidas tres.
+-- It is table 8 of the field schema —«Propietarios/Instituciones»— and the
+-- first piece of the documentary catalogue raisonné, which until today did not exist at
+-- all: of the model's nine tables, three were built.
 --
--- UNA SOLA TABLA para personas e instituciones, y no dos, por dos motivos. El
--- primero es que la mitad de los atributos son los mismos (contacto, estado de
--- contacto, localidad, país) y partirlos obligaría a consultar dos tablas para
--- componer una línea de procedencia. El segundo es que una colección familiar se
--- convierte en fundación sin dejar de ser el mismo eslabón de la cadena, y con
--- dos tablas ese cambio sería borrar una ficha y crear otra: exactamente lo que
--- este proyecto no hace nunca.
+-- A SINGLE TABLE for people and institutions, and not two, for two reasons. The
+-- first is that half the attributes are the same (contact, contact
+-- state, locality, country) and splitting them would force querying two tables to
+-- compose one provenance line. The second is that a family collection
+-- becomes a foundation without stopping being the same link of the chain, and with
+-- two tables that change would be deleting one record and creating another: exactly what
+-- this project never does.
 --
--- Y es MAESTRA con clave sustituta por el criterio de ADR-006 y ADR-007 aplicado
--- tal cual: el Museo de Bellas Artes de Badajoz aparecerá como propietario de
--- unas obras, depositario de otras, sede de una exposición y titular de derechos
--- de una tercera. Si el nombre viaja copiado en cada uno de esos sitios,
--- corregirlo —o añadirle el nombre nuevo tras una fusión de instituciones— es
--- tocar todas las filas. Con clave propia es un update de una fila y lo ve el
--- catálogo entero.
+-- And it is a MASTER table with a surrogate key by ADR-006's and ADR-007's criterion applied
+-- as is: the Museo de Bellas Artes de Badajoz will appear as owner of
+-- some artworks, depositary of others, venue of an exhibition and rights holder
+-- of a third. If the name travels copied into each of those places,
+-- correcting it —or adding its new name after a merger of institutions— is
+-- touching every row. With a key of its own it is an update of one row and the whole
+-- catalogue sees it.
 --
--- Esta migración crea la tabla, sus enumerados y la función de trazabilidad
--- común. Las políticas RLS van en la migración siguiente; lo que SÍ se hace aquí
--- es activar RLS y revocar los privilegios, porque una tabla que existe un solo
--- despliegue sin RLS es una tabla publicada. Con RLS activado y sin ninguna
--- política, la tabla está cerrada para todo el mundo salvo el acceso
--- administrativo directo, que es el estado seguro para esperar.
+-- This migration creates the table, its enumerated types and the common traceability
+-- function. The RLS policies go in the next migration; what IS done here
+-- is enabling RLS and revoking the privileges, because a table that exists for a single
+-- deployment with no RLS is a published table. With RLS enabled and no
+-- policy, the table is closed to everybody except direct
+-- administrative access, which is the safe state to wait in.
 -- ============================================================
 
 
--- ── Dos enumerados, y por qué no son tablas maestras ────────
+-- ── Two enumerated types, and why they are not master tables ──
 --
--- El criterio que separa un enumerado de una maestra en este esquema es si el
--- CÓDIGO mira el valor. `artwork_types` es maestra porque el código nunca lo
--- mira: lo renderiza. Aquí es al revés en los dos casos.
+-- The criterion that separates an enumerated type from a master table in this schema is whether the
+-- CODE looks at the value. `artwork_types` is a master table because the code never
+-- looks at it: it renders it. Here it is the other way round in both cases.
 
--- Persona o institución. NO lleva «Sin revisar», y es una excepción consciente a
--- RF-205 con el mismo argumento con el que RF-203 se lo niega a `artist`: al
--- abrir la ficha ya se sabe si se está escribiendo una persona o un museo, y de
--- ese valor depende cómo se compone la línea de procedencia publicable
--- («Colección privada, España» frente a los créditos de una institución
--- pública). Un dato del que depende la redacción no puede quedar pendiente.
+-- Person or institution. It does NOT carry «Sin revisar», and it is a conscious exception to
+-- RF-205 with the same argument with which RF-203 denies it to `artist`: on
+-- opening the record it is already known whether a person or a museum is being written, and on
+-- that value depends how the publishable provenance line is composed
+-- («Colección privada, España» as against a public institution's
+-- credits). A datum the wording depends on cannot be left pending.
 --
--- Y son dos valores que no crecen: es una distinción ontológica cerrada, no
--- vocabulario que la usuaria amplíe. Lo que sí se ha dejado FUERA a propósito es
--- el tipo de institución (galería, museo, fundación, archivo): eso sí crecería,
--- pero no lo pide nada todavía y una columna de clasificación que nadie consulta
--- se rellena mal. Cuando haga falta será una maestra, no un valor más de aquí.
+-- And they are two values that do not grow: it is a closed ontological distinction, not
+-- vocabulary the user extends. What HAS been left OUT on purpose is
+-- the type of institution (gallery, museum, foundation, archive): that would grow,
+-- but nothing asks for it yet and a classification column nobody consults
+-- gets filled in badly. When it is needed it will be a master table, not one more value from here.
 create type public.party_type_value as enum ('PERSON', 'INSTITUTION');
 
 comment on type public.party_type_value is

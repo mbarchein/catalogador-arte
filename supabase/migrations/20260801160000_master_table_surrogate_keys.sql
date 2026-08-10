@@ -1,36 +1,36 @@
--- Clave sustituta en los tipos de obra y en las series (ADR-007).
+-- Surrogate key in the artwork types and in the series (ADR-007).
 --
--- Primera de las dos entregas de la decisión. Las dos tablas tenían el nombre
--- por clave —`series` la pareja `(artist, name)`— y la obra guardaba ese texto
--- copiado, así que renombrar «Técnica mixta» obligaba a tocar todas las obras que
--- la usaban. Con clave propia, renombrar es una fila y lo ve el catálogo entero,
--- que es lo mismo que ADR-006 hizo con los lugares.
+-- First of the decision's two deliveries. Both tables had the name
+-- as the key —`series` the pair `(artist, name)`— and the artwork stored that text
+-- copied, so renaming «Técnica mixta» forced touching every artwork that
+-- used it. With a key of its own, renaming is one row and the whole catalogue sees it,
+-- which is the same thing ADR-006 did with the places.
 --
--- Aparece además la baja lógica donde no había (RF-901): un tipo o una serie se
--- retiran, no se borran, y no se puede retirar lo que todavía tiene obras dentro.
+-- Logical deletion also appears where there was none (RF-901): a type or a series is
+-- withdrawn, not deleted, and what still has artworks inside cannot be withdrawn.
 --
--- El fondo (`artist_fund`) NO entra aquí. Es un tipo enumerado y sus valores
--- sostienen el prefijo de `catalog_id`, que es la etiqueta pegada al cuadro: va
--- en la segunda entrega, para que esa parte se revise con la numeración por fondo
--- delante y no de refilón.
+-- The fund (`artist_fund`) does NOT come in here. It is an enumerated type and its values
+-- hold up `catalog_id`'s prefix, which is the label stuck to the painting: it goes
+-- in the second delivery, so that that part is reviewed with the per-fund numbering
+-- in front and not in passing.
 --
--- Las columnas de texto `artworks.artwork_type` y `artworks.series` NO se retiran
--- aquí: el frontend viejo corre unos segundos contra el esquema nuevo, así que se
--- van en un despliegue posterior, junto con sus triggers de vocabulario.
+-- The text columns `artworks.artwork_type` and `artworks.series` are NOT withdrawn
+-- here: the old frontend runs for a few seconds against the new schema, so they
+-- go in a later deployment, along with their vocabulary triggers.
 
--- ── Tipos de obra ───────────────────────────────────────────
+-- ── Artwork types ───────────────────────────────────────────
 
 alter table public.artwork_types
   add column id uuid not null default gen_random_uuid(),
-  -- RF-901: nada se borra de verdad. No existía porque no había forma de
-  -- retirar un tipo; ahora que la clave no es el nombre, sí la hay.
+  -- RF-901: nothing is really deleted. It did not exist because there was no way of
+  -- withdrawing a type; now that the key is not the name, there is.
   add column active boolean not null default true,
   add column deactivated_at timestamptz,
   add column deactivated_by uuid references public.profiles (id);
 
--- El nombre deja de ser la clave y pasa a ser un atributo único. Único de
--- verdad, no por costumbre: dos tipos con el mismo nombre son el mismo tipo, y
--- lo que se ha soltado es la identidad, no la unicidad.
+-- The name stops being the key and becomes a unique attribute. Unique for
+-- real, not by custom: two types with the same name are the same type, and
+-- what has been let go of is the identity, not the uniqueness.
 alter table public.artwork_types drop constraint artwork_types_pkey;
 alter table public.artwork_types add constraint artwork_types_pkey primary key (id);
 alter table public.artwork_types add constraint artwork_types_name_key unique (name);
@@ -46,9 +46,9 @@ alter table public.series
   add column deactivated_at timestamptz,
   add column deactivated_by uuid references public.profiles (id);
 
--- La pareja (fondo, nombre) deja de ser la clave y sigue siendo única: cada
--- artista trabaja en sus propias series, y dos series del mismo fondo con el
--- mismo nombre son la misma serie. Lo que ya no es, es la identidad de la fila.
+-- The pair (fund, name) stops being the key and goes on being unique: each
+-- artist works in their own series, and two series of the same fund with the
+-- same name are the same series. What it no longer is, is the row's identity.
 alter table public.series drop constraint series_pkey;
 alter table public.series add constraint series_pkey primary key (id);
 alter table public.series add constraint series_artist_name_key unique (artist, name);
@@ -56,15 +56,15 @@ alter table public.series add constraint series_artist_name_key unique (artist, 
 comment on table public.series is
   'Vocabulario controlado de series, uno por fondo (ADR-007): clave sustituta, y la pareja (fondo, nombre) como única. Lista abierta; nada se borra, se retira.';
 
--- ── La obra apunta por identificador ────────────────────────
+-- ── The artwork points by identifier ────────────────────────
 --
--- `restrict` en las dos, coherente con que no haya DELETE concedido a nadie:
--- si alguna vez se borrara una fila a mano, esto avisa en vez de dejar obras
--- apuntando al vacío.
+-- `restrict` in both, coherent with nobody being granted DELETE:
+-- if a row were ever deleted by hand, this warns instead of leaving artworks
+-- pointing at nothing.
 --
--- Nulo es legítimo en las dos, y no significa lo mismo en cada una: una obra sin
--- serie no pertenece a ninguna, y una obra sin tipo todavía no lo tiene
--- registrado. Es lo que hoy dice la cadena vacía de las columnas de texto.
+-- Null is legitimate in both, and it does not mean the same thing in each: an artwork with no
+-- series belongs to none, and an artwork with no type does not have it
+-- registered yet. It is what the empty string of the text columns says today.
 
 alter table public.artworks
   add column artwork_type_id uuid references public.artwork_types (id) on delete restrict,
@@ -78,16 +78,16 @@ comment on column public.artworks.series_id is
 create index artworks_artwork_type_idx on public.artworks (artwork_type_id);
 create index artworks_series_idx on public.artworks (series_id);
 
--- ── El traslado de los datos ────────────────────────────────
+-- ── The data move ───────────────────────────────────────────
 --
--- Como en 20260801150000: la auditoría se apaga mientras se escribe, porque
--- dentro de una migración `auth.uid()` no es nadie y el trigger borraría el
--- «actualizado por» de todas las obras. Y esto tampoco es haber tenido la pieza
--- delante (RF-802).
+-- As in 20260801150000: the audit is switched off while it writes, because
+-- inside a migration `auth.uid()` is nobody and the trigger would erase the
+-- «actualizado por» of every artwork. And this is not having had the piece
+-- in front either (RF-802).
 --
--- El emparejamiento es por el texto recortado, que es lo que el trigger de
--- vocabulario ya exigía: si una obra tiene un tipo escrito, ese tipo está en el
--- vocabulario, o la fila no habría podido guardarse.
+-- The pairing is by the trimmed text, which is what the vocabulary
+-- trigger already required: if an artwork has a type written, that type is in the
+-- vocabulary, or the row could not have been saved.
 
 alter table public.artworks disable trigger artwork_audit_trail;
 
@@ -97,8 +97,8 @@ update public.artworks a
  where btrim(a.artwork_type) <> ''
    and t.name = btrim(a.artwork_type);
 
--- La serie se empareja por fondo Y nombre: el mismo nombre en otro fondo es otra
--- serie, que es el motivo de que el fondo entrara en la clave.
+-- The series is paired by fund AND name: the same name in another fund is another
+-- series, which is the reason the fund entered the key.
 update public.artworks a
    set series_id = s.id
   from public.series s
@@ -116,9 +116,9 @@ declare
 begin
   select count(*) into v_tipos from public.artworks where artwork_type_id is not null;
   select count(*) into v_series from public.artworks where series_id is not null;
-  -- Si el trigger de vocabulario ha hecho su trabajo desde que existe, esto es
-  -- cero. Si no lo es, hay que saberlo ahora y no cuando falte un dato en una
-  -- ficha.
+  -- If the vocabulary trigger has done its job ever since it existed, this is
+  -- zero. If it is not, it has to be known now and not when a datum is missing from a
+  -- record.
   select count(*) into v_huerfanos
     from public.artworks
    where (btrim(artwork_type) <> '' and artwork_type_id is null)
@@ -130,19 +130,19 @@ begin
   end if;
 end $$;
 
--- ── La serie sigue siendo la del fondo de la obra ───────────
+-- ── The series is still the one of the artwork's fund ───────
 --
--- La clave ajena garantiza que la serie existe, no que sea del fondo de la obra:
--- «Paisajes de la sierra» es una serie de Rotili y ponérsela a una Ruiz Campins
--- es un dato falso. Esa regla la sostenía el trigger que comprueba el texto
--- contra el vocabulario del fondo, y aquí se repite para el identificador.
+-- The foreign key guarantees the series exists, not that it is of the artwork's fund:
+-- «Paisajes de la sierra» is a Rotili series and putting it on a Ruiz Campins
+-- is a false datum. That rule was held up by the trigger that checks the text
+-- against the fund's vocabulary, and here it is repeated for the identifier.
 --
--- Un trigger y no una restricción `check` porque una `check` no puede consultar
--- otra tabla.
+-- A trigger and not a `check` constraint because a `check` cannot query
+-- another table.
 create function public.tg_artwork_series_matches_fund()
 returns trigger language plpgsql
--- SECURITY DEFINER por lo mismo que el del vocabulario: es una regla de
--- integridad de las obras, no una consulta del cliente.
+-- SECURITY DEFINER for the same reason as the vocabulary one: it is an integrity
+-- rule of the artworks, not a client query.
 security definer set search_path = public as $$
 declare v_artist public.artist_fund;
 begin
@@ -162,18 +162,18 @@ create trigger artwork_series_matches_fund
   before insert or update of series_id, artist on public.artworks
   for each row execute function public.tg_artwork_series_matches_fund();
 
--- ── RF-802: la fecha básica vigila el identificador ─────────
+-- ── RF-802: the basic date watches the identifier ───────────
 --
--- El tipo de obra es un campo de fase 1 —se toma con la obra delante— y sigue
--- siéndolo; lo que cambia es que lo dice el identificador. La serie no está en la
--- tupla y sigue sin estarlo: se decide leyendo un catálogo, no midiendo la pieza.
+-- The artwork type is a phase-1 field —it is taken with the artwork in front— and it goes on
+-- being one; what changes is that the identifier says it. The series is not in the
+-- tuple and goes on not being: it is decided by reading a catalogue, not by measuring the piece.
 --
--- `artwork_type` sale de la tupla, con la misma consecuencia acotada que
--- `physical_location`: durante los segundos que duran las dos fases, un tipo
--- escrito por el frontend viejo no moverá la fecha básica.
+-- `artwork_type` leaves the tuple, with the same bounded consequence as
+-- `physical_location`: during the seconds the two phases last, a type
+-- written by the old frontend will not move the basic date.
 --
--- `set search_path = public` se repite porque `create or replace` reemplaza la
--- definición entera y con ella la configuración (ver 20260801150000).
+-- `set search_path = public` is repeated because `create or replace` replaces the
+-- whole definition and with it the configuration (see 20260801150000).
 create or replace function public.tg_artwork_audit_trail()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -209,9 +209,9 @@ begin
   return new;
 end $$;
 
--- ── Autoría y baja, selladas por la base ────────────────────
--- Los dos triggers de autoría solo sellaban el alta, porque no había baja que
--- sellar. Ahora la hay, y con la misma forma que en los lugares.
+-- ── Authorship and withdrawal, stamped by the base ──────────
+-- The two authorship triggers only stamped the creation, because there was no withdrawal to
+-- stamp. Now there is, and with the same shape as in the places.
 
 create or replace function public.tg_artwork_type_authorship()
 returns trigger language plpgsql
@@ -255,10 +255,10 @@ create trigger series_authorship
   before insert or update on public.series
   for each row execute function public.tg_series_authorship();
 
--- ── Lo que tiene obras dentro no se retira ──────────────────
--- Misma regla que los lugares, y por el mismo motivo: retirar un tipo que
--- veintiuna obras usan no es retirarlo, es dejar el catálogo apuntando a algo
--- que la interfaz ya no ofrece. Una obra en la papelera no cuenta.
+-- ── What has artworks inside is not withdrawn ───────────────
+-- Same rule as the places, and for the same reason: withdrawing a type that
+-- twenty-one artworks use is not withdrawing it, it is leaving the catalogue pointing at something
+-- the interface no longer offers. An artwork in the wastebasket does not count.
 
 create function public.tg_artwork_type_deactivation()
 returns trigger language plpgsql
@@ -294,14 +294,14 @@ create trigger series_deactivation
   before update of active on public.series
   for each row execute function public.tg_series_deactivation();
 
--- ── Privilegios ────────────────────────────────────────────
--- Las dos tablas se concedieron con `select, insert` y sin UPDATE, porque
--- renombrar y retirar eran «una función futura del superusuario». Esa función es
--- ahora el motivo de la decisión, y quien la ejerce es el Catalogador, igual que
--- con los lugares: el estudio está en reordenación y esperar a un administrador
--- para corregir un nombre no es viable.
+-- ── Privileges ─────────────────────────────────────────────
+-- The two tables were granted with `select, insert` and with no UPDATE, because
+-- renaming and withdrawing were «a future superuser feature». That feature is
+-- now the point of the decision, and whoever exercises it is the Cataloguer, just as
+-- with the places: the studio is being reorganised and waiting for an administrator
+-- to correct a name is not viable.
 --
--- Sin DELETE, como siempre: ni privilegio ni política.
+-- No DELETE, as always: neither privilege nor policy.
 
 grant update on public.artwork_types to authenticated;
 grant update on public.series to authenticated;
@@ -312,9 +312,9 @@ create policy artwork_types_update on public.artwork_types
 create policy series_update on public.series
   for update using (public.can_edit()) with check (public.can_edit());
 
--- ── Privilegios de las funciones ───────────────────────────
--- Explícito, como en 20260801140000: una función nueva nace con EXECUTE para
--- PUBLIC en esta plataforma, y quien lo caza es function_privileges.test.sql.
+-- ── The functions' privileges ──────────────────────────────
+-- Explicit, as in 20260801140000: a new function is born with EXECUTE for
+-- PUBLIC on this platform, and what catches it is function_privileges.test.sql.
 
 revoke all on function public.tg_artwork_series_matches_fund() from public;
 revoke all on function public.tg_artwork_type_deactivation() from public;

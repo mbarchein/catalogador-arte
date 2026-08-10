@@ -1,45 +1,45 @@
--- La obra que se quedó fuera del árbol de lugares.
+-- The artwork that was left outside the tree of places.
 --
--- El traslado de `physical_location` al árbol lo hizo
--- `20260801150000_artwork_physical_place.sql`, y su test comprueba sobre una base
--- cargada con el volcado que no quedara ninguna ubicación en texto sin nodo. Ese
--- test estaba en rojo por **AR-0002**: lleva **exactamente el mismo texto** de
--- ubicación que AR-0001 y RC-0005 —«museo de arte contemporaneo vicente aguilera
--- cerni macva»—, esas dos apuntan al árbol y la suya se quedó a null. La
--- consecuencia para la usuaria no es cosmética: AR-0002 **no aparece al abrir
--- MACVA** en el árbol, aunque su ficha diga que está ahí.
+-- The move of `physical_location` to the tree was done by
+-- `20260801150000_artwork_physical_place.sql`, and its test checks over a base
+-- loaded with the dump that no location in text was left with no node. That
+-- test was red because of **AR-0002**: it carries **exactly the same** location
+-- text as AR-0001 and RC-0005 —«museo de arte contemporaneo vicente aguilera
+-- cerni macva»—, those two point at the tree and its own was left at null. The
+-- consequence for the user is not cosmetic: AR-0002 **does not appear on opening
+-- MACVA** in the tree, even though its record says it is there.
 --
--- La aplicación **ya no escribe** `physical_location` (solo la nombran comentarios
--- en `types.ts`, `artworksCache.ts` y `usePhysicalPlaces.ts`), así que no van a
--- aparecer huérfanas nuevas por esa vía: esto cierra un hueco, no un grifo.
+-- The application **no longer writes** `physical_location` (only comments
+-- in `types.ts`, `artworksCache.ts` and `usePhysicalPlaces.ts` name it), so no new
+-- orphans are going to appear by that route: this closes a gap, not a tap.
 --
--- **Por qué NO se re-ejecuta el recorrido del traslado**, que es lo primero que
--- uno intenta y está mal: aquel código reparte el texto por comas y busca cada
--- nivel *bajo el nivel anterior*, empezando por la raíz. Pero el árbol ha vivido
--- desde entonces, que es justamente para lo que existe (ADR-006): el nodo de MACVA
--- se renombró con sus mayúsculas y **se movió bajo «Villafamés (Catellón)»**. Un
--- recorrido que busca «museo de arte…» en la raíz ya no lo encuentra ahí, así que
--- crearía un **segundo** nodo con el mismo nombre a nivel raíz y dejaría el
--- catálogo con MACVA duplicado y las obras repartidas entre los dos. Comprobado en
--- local: creaba el duplicado.
+-- **Why the move's walk is NOT re-run**, which is the first thing
+-- one tries and is wrong: that code splits the text by commas and looks for each
+-- level *under the previous level*, starting at the root. But the tree has lived
+-- ever since, which is exactly what it exists for (ADR-006): MACVA's node
+-- was renamed with its capitals and **was moved under «Villafamés (Catellón)»**. A
+-- walk that looks for «museo de arte…» at the root no longer finds it there, so
+-- it would create a **second** node with the same name at root level and would leave the
+-- catalogue with MACVA duplicated and the artworks split between the two. Checked
+-- locally: it created the duplicate.
 --
--- **La regla que sí se sostiene:** una obra huérfana cuyo `physical_location` es
--- idéntico al de una obra que **ya** apunta al árbol hereda su mismo nodo. No
--- inventa estructura, no adivina niveles, no depende de cómo se llame hoy el nodo
--- ni de dónde esté colgado, y sobrevive a los renombrados y a los traslados que el
--- árbol está pensado para permitir. Se exige además que el destino sea **único**:
--- si dos obras con el mismo texto apuntaran a nodos distintos, no hay una respuesta
--- correcta y la fila se queda como está en vez de elegir por sorteo.
+-- **The rule that does hold:** an orphan artwork whose `physical_location` is
+-- identical to that of an artwork that **already** points at the tree inherits its same node. It
+-- invents no structure, guesses no levels, does not depend on what the node is called today
+-- nor on where it is hung, and it survives the renamings and the moves the
+-- tree is designed to allow. It is also required that the destination be **unique**:
+-- if two artworks with the same text pointed at different nodes, there is no correct
+-- answer and the row is left as it is instead of choosing by lottery.
 --
--- Lo que esta migración deliberadamente **no** hace: no toca las obras que ya
--- apuntan a un nodo, no crea ni un lugar nuevo, no retira `physical_location` —eso
--- es la segunda fase del despliegue que la migración del traslado ya explicó— y no
--- resuelve la huérfana de `zzzz`, que era un valor de prueba y no un sitio y sigue
--- sin ubicación a propósito (ADR-006).
+-- What this migration deliberately does **not** do: it does not touch the artworks that already
+-- point at a node, it does not create a single new place, it does not withdraw `physical_location` —that
+-- is the second phase of the deployment the move's migration already explained— and it does not
+-- resolve `zzzz`'s orphan, which was a test value and not a site and goes on
+-- with no location on purpose (ADR-006).
 
--- La auditoría se desactiva por lo mismo que en el traslado original: esto no es
--- que nadie haya editado la obra ni la haya tenido delante (RF-801), así que
--- firmarla con un `auth.uid()` nulo sería mentir sobre quién la tocó.
+-- The audit is switched off for the same reason as in the original move: this is not
+-- somebody having edited the artwork nor having had it in front (RF-801), so
+-- signing it with a null `auth.uid()` would be lying about who touched it.
 alter table public.artworks disable trigger artwork_audit_trail;
 
 do $$
@@ -58,11 +58,11 @@ begin
        and physical_place_id is null
      order by catalog_id
   loop
-    -- El nodo al que apuntan las obras que llevan este mismo texto, y cuántos
-    -- distintos son: con más de uno no hay respuesta correcta.
-    -- `array_agg(distinct …)` y no `min(…)`: en PostgreSQL no hay `min(uuid)`, y
-    -- ordenar uuids no significaría nada de todos modos. El elemento se usa solo
-    -- cuando el recuento de distintos es exactamente uno.
+    -- The node the artworks carrying this same text point at, and how many
+    -- distinct ones they are: with more than one there is no correct answer.
+    -- `array_agg(distinct …)` and not `min(…)`: in PostgreSQL there is no `min(uuid)`, and
+    -- ordering uuids would mean nothing anyway. The element is used only
+    -- when the count of distinct ones is exactly one.
     select count(distinct physical_place_id), (array_agg(distinct physical_place_id))[1]
       into v_matches, v_node
       from public.artworks
@@ -75,9 +75,9 @@ begin
        where catalog_id = v_artwork.catalog_id;
       v_linked := v_linked + 1;
     else
-      -- Sin gemela enlazada, o con varias que discrepan, la fila se queda como
-      -- está y se dice en voz alta. Callarlo dejaría el test en rojo sin explicar
-      -- por qué, y adivinar el nodo es peor que no tocarlo.
+      -- With no linked twin, or with several that disagree, the row is left as
+      -- it is and it is said out loud. Keeping quiet about it would leave the test red without explaining
+      -- why, and guessing the node is worse than not touching it.
       v_left := v_left + 1;
       raise notice
         'La obra % no se ha podido enlazar: % destinos posibles para «%».',
@@ -88,7 +88,7 @@ begin
   raise notice 'Obras huérfanas enlazadas: %. Sin resolver: %.', v_linked, v_left;
 end $$;
 
--- La auditoría vuelve antes de que nadie más pueda escribir, y su reactivación la
--- comprueba `artwork_physical_place.test.sql`: si alguna vez se olvidara, el
--- catálogo perdería la traza sin que nada fallara.
+-- The audit comes back before anybody else can write, and its reactivation is
+-- checked by `artwork_physical_place.test.sql`: if it were ever forgotten, the
+-- catalogue would lose the trace with nothing failing.
 alter table public.artworks enable trigger artwork_audit_trail;

@@ -1,162 +1,162 @@
 -- ============================================================
--- La copia corregida a resolución completa: el cuarto nivel de fichero de una
--- fotografía (RF-420, y RF-411 como su razón de ser; ADR-002).
+-- The corrected copy at full resolution: a photograph's fourth file
+-- level (RF-420, and RF-411 as its reason for being; ADR-002).
 --
--- RF-409 fijó tres niveles por toma: miniatura para el mosaico, derivada de
--- consulta para la ficha, y máster de archivo con el original íntegro. Se añade
--- un cuarto: una copia a resolución completa con **todas** las correcciones ya
--- aplicadas, que se genera y se sube en el momento de aplicar la corrección.
+-- RF-409 fixed three levels per shot: a thumbnail for the mosaic, a consultation
+-- derivative for the record, and an archive master with the whole original. A
+-- fourth is added: a copy at full resolution with **all** the corrections already
+-- applied, which is generated and uploaded at the moment the correction is applied.
 --
--- Esto NO toca el máster y no puede tocarlo: el máster se sube una vez con los
--- bytes originales del fichero y no se vuelve a escribir nunca (ADR-002). Esta
--- migración añade columnas para un fichero NUEVO en una ruta NUEVA. Si alguien
--- lee estas columnas como permiso para reescribir un máster, está leyendo lo
--- contrario de lo que dicen.
+-- This does NOT touch the master and cannot touch it: the master is uploaded once with the
+-- file's original bytes and is never written again (ADR-002). This
+-- migration adds columns for a NEW file at a NEW path. If somebody
+-- reads these columns as permission to rewrite a master, they are reading the
+-- opposite of what they say.
 -- ============================================================
 
 
--- ── Por qué existe ──────────────────────────────────────────
+-- ── Why it exists ───────────────────────────────────────────
 --
--- RF-411 es el caso de uso entero: la ficha ofrece descargar el original por URL
--- firmada, también al Lector, porque mandarlo a una imprenta o a un comisario es
--- exactamente para lo que se guarda. Y ahí se cruzan dos cosas verdaderas que sin
--- este cuarto nivel se contradicen:
+-- RF-411 is the whole use case: the record offers downloading the original by a signed
+-- URL, to the Reader too, because sending it to a printer or to a curator is
+-- exactly what it is stored for. And there two true things cross that without
+-- this fourth level contradict each other:
 --
---   · el máster está intacto, y debe estarlo: es el documento de archivo, y lo
---     que lo hace documento es que nadie lo ha tocado;
---   · por eso mismo, el máster **es la fotografía sin corregir**: lleva la
---     dominante amarilla de la bombilla del almacén, la perspectiva torcida de
---     haber disparado desde un lado y el encuadre con el borde de la pared
---     dentro.
+--   · the master is intact, and it must be: it is the archive document, and what
+--     makes it a document is that nobody has touched it;
+--   · for that very reason, the master **is the uncorrected photograph**: it carries the
+--     yellow cast of the store's bulb, the crooked perspective of
+--     having shot from one side and the framing with the wall's edge
+--     inside.
 --
--- Es decir: hasta hoy, «Descargar máster» entregaba a la imprenta precisamente la
--- versión que la catalogadora había pasado media hora arreglando, y el arreglo se
--- quedaba en la miniatura de 400 px y en la derivada de 2000 px, que son las dos
--- que no sirven para imprimir. El trabajo estaba hecho y no llegaba a su
--- destinatario.
+-- That is: until today, «Descargar máster» handed the printer precisely the
+-- version the cataloguer had spent half an hour fixing, and the fix
+-- stayed in the 400 px thumbnail and in the 2000 px derivative, which are the two
+-- that are of no use for printing. The work was done and it did not reach its
+-- recipient.
 --
--- La copia corregida es lo que se manda. El máster es lo que se conserva. Los dos
--- ficheros existen a la vez y ninguno sustituye al otro, porque no responden a la
--- misma pregunta: uno responde «cómo era la fotografía tal como salió de la
--- cámara» y el otro «cómo es la obra».
+-- The corrected copy is what is sent. The master is what is kept. Both
+-- files exist at once and neither replaces the other, because they do not answer the
+-- same question: one answers «what the photograph was like as it came out of the
+-- camera» and the other «what the artwork is like».
 
 
--- ── Por qué lleva TODAS las correcciones y no solo el color ──
+-- ── Why it carries ALL the corrections and not only the colour ──
 --
--- Giro, recorte, perspectiva y color, las cuatro, en el orden canónico
--- geometría → color que fijó la migración del color.
+-- Rotation, crop, perspective and colour, all four, in the canonical order
+-- geometry → colour that the colour's migration fixed.
 --
--- Una copia con el color arreglado y la perspectiva torcida no le sirve a nadie:
--- el comisario que la abre ve un cuadro trapezoidal de un color correcto, y en
--- una reproducción impresa la deformación se nota más que la dominante, porque un
--- marco que no es rectangular lo delata cualquier borde de página. Media
--- corrección no es media mejora, es un fichero que hay que volver a corregir a
--- mano en la imprenta, y entonces lo que se ha mandado son deberes.
+-- A copy with the colour fixed and the perspective crooked is of no use to anybody:
+-- the curator who opens it sees a trapezoidal painting of a correct colour, and in
+-- a printed reproduction the deformation shows more than the cast, because a
+-- frame that is not rectangular is given away by any page edge. Half a
+-- correction is not half an improvement, it is a file that has to be corrected again by
+-- hand at the printer's, and then what has been sent is homework.
 --
--- De ahí que sea UNA columna de ruta y no una por corrección. No hay «copia con
--- el color aplicado» y «copia enderezada»: hay la copia, con todo lo que la ficha
--- dice que hay que aplicar en el momento en que se aplicó. Los parámetros de cómo
--- se llegó a ella siguen viviendo en sus columnas (`rotation`, `crop_*`,
--- `corner_*`, `color_*`), absolutos sobre el máster y reversibles; esta ruta es
--- solo dónde quedó el resultado.
+-- Hence it being ONE path column and not one per correction. There is no «copy with
+-- the colour applied» and «straightened copy»: there is the copy, with everything the record
+-- says has to be applied at the moment it was applied. The parameters of how
+-- it was arrived at go on living in their columns (`rotation`, `crop_*`,
+-- `corner_*`, `color_*`), absolute over the master and reversible; this path is
+-- only where the result ended up.
 
 
--- ── Esta ruta NUNCA es la del máster ────────────────────────
+-- ── This path is NEVER the master's ─────────────────────────
 --
--- Regla, no recomendación. El máster no se reescribe jamás, y la forma realista
--- de romperlo no es un `update` malicioso: es derivar la ruta de la copia de la
--- del máster —cambiarle la extensión, añadirle un sufijo, reutilizar la base— y
--- que un día coincidan. Por eso:
+-- A rule, not a recommendation. The master is never rewritten, and the realistic way
+-- of breaking it is not a malicious `update`: it is deriving the copy's path from the
+-- master's —changing its extension, adding a suffix, reusing the base— and
+-- having them coincide one day. That is why:
 --
---   · la restricción `images_corrected_not_master` prohíbe que las dos columnas
---     tengan el mismo valor, y **hay un test que lo comprueba** en las dos
---     direcciones (mover la copia sobre el máster y mover el máster sobre la
---     copia), en `supabase/tests/image_corrected_copy.test.sql`;
---   · las rutas del almacén ya son inmutables por otra razón que aquí también
---     vale: el service worker cachea por ruta con `CacheFirst`, así que
---     sobrescribir una ruta serviría los bytes viejos desde el teléfono para
---     siempre. Reeditar escribe una ruta nueva y la copia anterior se queda en el
---     almacén sin que nada la borre, que es la disciplina de «nunca un borrado
---     real» aplicada a los ficheros.
+--   · the `images_corrected_not_master` constraint forbids the two columns
+--     from having the same value, and **there is a test that checks it** in both
+--     directions (moving the copy onto the master and moving the master onto the
+--     copy), in `supabase/tests/image_corrected_copy.test.sql`;
+--   · the store's paths are already immutable for another reason that holds here
+--     too: the service worker caches by path with `CacheFirst`, so
+--     overwriting a path would serve the old bytes from the phone for
+--     ever. Re-editing writes a new path and the previous copy stays in the
+--     store with nothing deleting it, which is the discipline of «never a real
+--     delete» applied to the files.
 --
--- La restricción no compara con `thumbnail_path` ni con `derivative_path`, y no es
--- un olvido: esos dos viven en el bucket de Supabase Storage y la copia corregida
--- va a Backblaze B2 con el máster, por tamaño (RNF-110). Una colisión con ellos no
--- es posible por el almacén, y una con el máster sí lo es porque comparten
--- almacén, esquema de nombres y firma de subida. La restricción está donde está el
--- riesgo.
+-- The constraint does not compare with `thumbnail_path` nor with `derivative_path`, and it is not
+-- an oversight: those two live in Supabase Storage's bucket and the corrected copy
+-- goes to Backblaze B2 with the master, because of size (RNF-110). A collision with them is not
+-- possible because of the store, and one with the master is because they share a
+-- store, a naming scheme and an upload signature. The constraint is where the
+-- risk is.
 --
--- Y como el máster: **esta ruta no entra en ninguna vista**. La vista
--- `representative_image` sigue publicando miniatura y derivada y nada más. Un
--- fichero de resolución completa se entrega por URL firmada de la función Edge o
--- no se entrega (RF-411).
+-- And like the master: **this path enters no view**. The
+-- `representative_image` view goes on publishing thumbnail and derivative and nothing else. A
+-- full-resolution file is delivered by a signed URL from the Edge function or
+-- it is not delivered (RF-411).
 
 
--- ── Por qué `corrected_pending` es una columna ──────────────
+-- ── Why `corrected_pending` is a column ─────────────────────
 --
--- Y no la simple ausencia de `corrected_path`. Sin ella, estas dos filas serían la
--- misma fila:
+-- And not the mere absence of `corrected_path`. Without it, these two rows would be the
+-- same row:
 --
---   1. «no hace falta ninguna copia, porque esta fotografía no tiene ninguna
---      corrección aplicada»: nada que generar, nada que subir, y el máster ya es
---      la respuesta correcta a RF-411;
---   2. «hace falta, se intentó y este dispositivo no ha podido generarla».
+--   1. «no copy is needed, because this photograph has no
+--      correction applied»: nothing to generate, nothing to upload, and the master already is
+--      the correct answer to RF-411;
+--   2. «one is needed, it was attempted and this device has not been able to generate it».
 --
--- Las dos se leerían como «no hay copia», y la primera —que es la mayoría—
--- taparía la segunda hasta hacerla invisible. Nadie volvería a intentarlo porque
--- nada diría que quedó pendiente, y la ficha entregaría el máster sin corregir
--- creyendo que era lo que había que entregar.
+-- Both would be read as «there is no copy», and the first —which is the majority—
+-- would cover the second up to the point of making it invisible. Nobody would try again because
+-- nothing would say it was left pending, and the record would deliver the uncorrected master
+-- believing that was what had to be delivered.
 --
--- El fallo del que hablamos es real y es silencioso, que es lo peor de las dos
--- cosas: el área máxima de un `canvas` está limitada por el dispositivo (en WebKit
--- antiguo, del orden de 16,7 millones de píxeles, y un máster de 4000×3000 con
--- perspectiva rectificada se acerca), y **al superarla el lienzo sale en blanco
--- sin lanzar ningún error**. No hay excepción que capturar. Si nadie comprueba la
--- capacidad antes y sondea un píxel después, lo que se sube es un JPEG blanco del
--- tamaño correcto, con su `corrected_bytes` plausible, y la imprenta recibe una
--- hoja en blanco de una obra.
+-- The failure we are talking about is real and it is silent, which is the worst of the two
+-- things: a `canvas`'s maximum area is limited by the device (on old
+-- WebKit, of the order of 16.7 million pixels, and a 4000×3000 master with
+-- rectified perspective gets close), and **on exceeding it the canvas comes out blank
+-- without throwing any error**. There is no exception to catch. If nobody checks the
+-- capacity before and probes a pixel afterwards, what is uploaded is a white JPEG of the
+-- correct size, with its plausible `corrected_bytes`, and the printer receives a
+-- blank sheet of an artwork.
 --
--- Así que la fila tiene que poder decir que la copia falta. Es la disciplina de
--- «sin revisar» no es «no», que es criterio del proyecto: el dato pendiente no se
--- escribe igual que el dato que no hace falta. Con la columna hay tres estados
--- distinguibles y los tres significan algo:
+-- So the row has to be able to say that the copy is missing. It is the discipline of
+-- «sin revisar» is not «no», which is a project criterion: the pending datum is not
+-- written the same as the datum that is not needed. With the column there are three
+-- distinguishable states and all three mean something:
 --
---   corrected_path no nulo                     la copia está, y está completa
---   todo nulo, corrected_pending false         no hace falta: no hay correcciones
---   corrected_pending true                     hace falta y falta: pendiente
+--   corrected_path not null                    the copy is there, and it is complete
+--   all null, corrected_pending false          not needed: there are no corrections
+--   corrected_pending true                     needed and missing: pending
 --
--- El tercero es el que la interfaz dice con su razón, y el que permite generarla
--- después desde un ordenador con más memoria. Los dos primeros son excluyentes
--- del tercero por restricción: si la copia está, no está pendiente.
+-- The third is the one the interface states with its reason, and the one that allows generating it
+-- afterwards from a computer with more memory. The first two are mutually exclusive with
+-- the third by constraint: if the copy is there, it is not pending.
 
 
--- ── El coste que se acepta, con los números delante ─────────
+-- ── The cost that is accepted, with the numbers in front ────
 --
--- Consta aquí porque es una decisión del propietario y no un efecto colateral, y
--- porque el sitio donde se va a notar es la factura del almacén:
+-- It is on record here because it is an owner's decision and not a side effect, and
+-- because the place where it is going to show is the store's bill:
 --
---   · **el almacenamiento en B2 se duplica** respecto al dimensionado de RNF-108.
---     Ese supuesto proyecta del orden de 5000 tomas y 10-40 GB de másteres (con la
---     corrección medida: los másteres reales van de 0,2 a 19 MB, no de 2 a 8). Una
---     copia corregida por toma corregida es, en el límite, otro tanto de lo mismo:
---     20-80 GB en vez de 10-40;
---   · **cada «Aplicar» sube un fichero del tamaño del máster** —hasta 19 MB— por
---     la cola offline, desde un almacén con mala cobertura. No es una subida más
---     entre las tres que ya había: es la más grande de todas, y se repite cada vez
---     que se afloja un parámetro y se vuelve a aplicar.
+--   · **storage on B2 doubles** with respect to RNF-108's sizing.
+--     That assumption projects of the order of 5000 shots and 10-40 GB of masters (with the
+--     measured correction: the real masters go from 0.2 to 19 MB, not from 2 to 8). One
+--     corrected copy per corrected shot is, at the limit, as much again:
+--     20-80 GB instead of 10-40;
+--   · **every «Aplicar» uploads a file the size of the master** —up to 19 MB— through
+--     the offline queue, from a store with bad coverage. It is not one more upload
+--     among the three that were already there: it is the biggest of all, and it is repeated every time
+--     a parameter is eased off and applied again.
 --
--- Se acepta a cambio de que RF-411 entregue la fotografía corregida en lugar de la
--- fotografía con la luz de la bombilla. Está tomada con estos números a la vista y
--- **no se reabre**; lo que sí se hace es dejarla escrita aquí, en RNF-108 y en
--- `docs/decisiones/`, para que dentro de un año el consumo de B2 tenga una
--- explicación y no una sorpresa.
+-- It is accepted in exchange for RF-411 delivering the corrected photograph instead of the
+-- photograph with the bulb's light. It is taken with these numbers in sight and
+-- **it is not reopened**; what is done is leaving it written here, in RNF-108 and in
+-- `docs/decisiones/`, so that a year from now B2's consumption has an
+-- explanation and not a surprise.
 
 
--- ── Las columnas ────────────────────────────────────────────
+-- ── The columns ─────────────────────────────────────────────
 --
--- Tres, y del mismo tipo que sus hermanas: `text` para la ruta, como
--- `master_path`, e `integer` para el tamaño, como `master_bytes`. Un `integer`
--- llega a 2 GB y el techo real de una fotografía es 19 MB.
+-- Three, and of the same type as their sisters: `text` for the path, like
+-- `master_path`, and `integer` for the size, like `master_bytes`. An `integer`
+-- reaches 2 GB and a photograph's real ceiling is 19 MB.
 alter table public.images
   add column corrected_path    text,
   add column corrected_bytes   integer,
@@ -170,103 +170,103 @@ comment on column public.images.corrected_pending is
   'La copia corregida hace falta y no está: este dispositivo no ha podido generarla. Existe como columna propia porque sin ella «no ha podido» y «no hace falta» serían la misma fila, y la segunda —que es la mayoría— taparía la primera: el área máxima de un lienzo la limita el dispositivo y al superarla sale en blanco sin lanzar ningún error, así que el fallo hay que poder anotarlo. La interfaz lo dice con su razón y la copia se puede generar después desde un ordenador. Cierto y corrected_path no nulo son estados excluyentes.';
 
 
--- ── Las restricciones, una por regla y con nombre propio ────
+-- ── The constraints, one per rule and with a name of its own ──
 --
--- Igual que en la migración del color: lo único que Postgres dice al rechazar es
--- el nombre de la restricción, así que cada regla lleva el suyo y un rechazo
--- explica qué regla se rompió sin tener que deducirlo.
+-- Just as in the colour's migration: the only thing Postgres says on rejecting is
+-- the constraint's name, so each rule carries its own and a rejection
+-- explains which rule was broken without having to deduce it.
 
--- Cero bytes es un fichero vacío y un negativo es una cuenta mal hecha. Ni uno ni
--- otro son un tamaño, y los dos llegarían a la ficha como una descarga que
--- promete algo que no está. `master_bytes` no lleva esta comprobación porque nació
--- antes de que el proyecto la tuviera por costumbre; la columna nueva sí.
+-- Zero bytes is an empty file and a negative one is a badly done computation. Neither one nor
+-- the other is a size, and both would reach the record as a download that
+-- promises something that is not there. `master_bytes` does not carry this check because it was born
+-- before the project had it as a custom; the new column does.
 alter table public.images
   add constraint images_corrected_bytes_positive
   check (corrected_bytes is null or corrected_bytes > 0);
 
--- Los dos o ninguno. La ruta y el tamaño no son dos datos, son un fichero: media
--- descripción de un fichero es la que obliga a quien la lee a ir a preguntarle al
--- almacén, que es exactamente el viaje que la columna existe para ahorrar.
+-- Both or neither. The path and the size are not two data, they are a file: half a
+-- description of a file is the one that forces whoever reads it to go and ask the
+-- store, which is exactly the trip the column exists to save.
 alter table public.images
   add constraint images_corrected_copy_pair
   check (num_nonnulls(corrected_path, corrected_bytes) in (0, 2));
 
--- Pendiente y presente son excluyentes: si la copia está, no está pendiente.
--- Admitir las dos cosas a la vez dejaría una fila que dice «hay copia» y «falta
--- la copia», y quien la leyera tendría que elegir a cuál de las dos creer.
+-- Pending and present are mutually exclusive: if the copy is there, it is not pending.
+-- Admitting both things at once would leave a row that says «there is a copy» and «the copy
+-- is missing», and whoever read it would have to choose which of the two to believe.
 alter table public.images
   add constraint images_corrected_pending_exclusive
   check (not (corrected_pending and corrected_path is not null));
 
--- La regla de ADR-002 escrita donde la base la pueda defender: la copia corregida
--- no comparte ruta con el máster.
+-- ADR-002's rule written where the base can defend it: the corrected copy
+-- does not share a path with the master.
 --
--- `is distinct from` y no `<>`, y conviene ser exacto sobre el motivo, porque es
--- fácil contarlo como un fallo evitado y no lo es: **con la guarda
--- `corrected_path is null` delante, las dos formas admiten exactamente las mismas
--- filas** (comprobado en esta base: con `master_path` nulo, `<>` da nulo y un
--- `check` con nulo pasa, igual que `is distinct from` dando cierto). Se elige `is
--- distinct from` porque el predicado es total y no evalúa a nulo nunca: la regla no
--- depende de que un `check` acepte lo que no sabe, se lee sin seguir la lógica de
--- tres valores, y sigue diciendo lo mismo el día en que alguien reordene la
--- expresión o quite la guarda.
+-- `is distinct from` and not `<>`, and it is worth being exact about the reason, because it is
+-- easy to tell it as an avoided failure and it is not: **with the
+-- `corrected_path is null` guard in front, both forms admit exactly the same
+-- rows** (checked in this base: with `master_path` null, `<>` gives null and a
+-- `check` with null passes, just as `is distinct from` giving true). `is
+-- distinct from` is chosen because the predicate is total and never evaluates to null: the rule does not
+-- depend on a `check` accepting what it does not know, it is read without following three-valued
+-- logic, and it goes on saying the same thing the day somebody reorders the
+-- expression or removes the guard.
 alter table public.images
   add constraint images_corrected_not_master
   check (corrected_path is null or corrected_path is distinct from master_path);
 
 
--- ── Lo que la base NO prohíbe, a propósito ──────────────────
+-- ── What the base does NOT forbid, on purpose ───────────────
 --
--- No hay restricción que exija `master_path` para tener `corrected_path`. Hoy no
--- se puede llegar ahí —sin máster el color se prohíbe con el mismo interruptor
--- `canRestoreOriginal` que ya usa la perspectiva—, pero la regla es de
--- renderizado y vive en el cliente; escribirla aquí impediría el caso legítimo de
--- una copia ya generada cuyo máster se reclasifique o se reubique, y lo impediría
--- al guardar, cuando ya no hay nada que hacer.
+-- There is no constraint requiring `master_path` in order to have `corrected_path`. Today
+-- one cannot get there —with no master the colour is forbidden with the same
+-- `canRestoreOriginal` switch the perspective already uses—, but the rule is a
+-- rendering one and lives in the client; writing it here would prevent the legitimate case of
+-- a copy already generated whose master gets reclassified or relocated, and it would prevent it
+-- on saving, when there is no longer anything to be done.
 --
--- Tampoco hay restricción que ligue `corrected_pending` a que existan
--- correcciones. Marcar pendiente una fotografía sin ninguna corrección es
--- inofensivo —quien lo lea reintentará, generará un fichero idéntico al máster y
--- lo dejará hecho— mientras que un `check` que enumerara «hay algo que aplicar»
--- tendría que repetir aquí la definición de las cuatro correcciones y quedaría
--- desalineado la primera vez que se añadiera una quinta.
+-- Nor is there a constraint tying `corrected_pending` to corrections existing.
+-- Marking a photograph with no correction as pending is
+-- harmless —whoever reads it will retry, will generate a file identical to the master and
+-- will leave it done— whereas a `check` that enumerated «there is something to apply»
+-- would have to repeat the definition of the four corrections here and would end up
+-- out of line the first time a fifth was added.
 --
--- Y no se reescribe ninguna fila hacia atrás. Las 39 filas activas se quedan con
--- la copia a nulo y `corrected_pending` en falso, que es la verdad: no hay copia y
--- no falta ninguna, porque no se ha aplicado ninguna corrección desde que existe
--- este nivel. La primera vez que se abra y se aplique una, se generará.
+-- And no row is rewritten backwards. The 39 active rows are left with
+-- the copy null and `corrected_pending` false, which is the truth: there is no copy and
+-- none is missing, because no correction has been applied since this level
+-- has existed. The first time one is opened and one is applied, it will be generated.
 
 
--- ── Privilegios: comprobado, no supuesto ────────────────────
+-- ── Privileges: checked, not assumed ────────────────────────
 --
--- CLAUDE.md avisa de que la plataforma concede por omisión todos los privilegios
--- de cada tabla nueva a `anon` y `authenticated`, `delete` incluido, y de que
--- conviene comprobarlo en vez de creerlo. La migración hermana del color ya lo
--- midió; aquí se ha vuelto a medir sobre esta misma base, con estas tres columnas
--- ya creadas, consultando `information_schema.column_privileges` y
+-- CLAUDE.md warns that the platform grants by default all the privileges
+-- of every new table to `anon` and `authenticated`, `delete` included, and that it is
+-- worth checking it instead of believing it. The colour's sister migration already
+-- measured it; here it has been measured again over this very base, with these three columns
+-- already created, querying `information_schema.column_privileges` and
 -- `information_schema.role_table_grants`:
 --
---   · `anon` **no aparece ni una vez**: ningún privilegio sobre `public.images`,
---     tampoco `select`, y tampoco `usage` sobre el esquema `public`. Las tres
---     columnas nuevas no le abren nada.
---   · `authenticated` tiene `select`, `insert` y `update` **sobre la tabla**, no
---     sobre una lista de columnas, y un privilegio de tabla alcanza a las columnas
---     que se añadan después: las tres nuevas aparecen ya con esos tres
---     privilegios, 54 columnas × 3, y por tanto **no hay nada que conceder**.
---     Ningún `delete`, que es el que había que vigilar: `delete` sobre esta tabla
---     lo tienen solo `postgres`, `service_role` y `supabase_admin`.
+--   · `anon` **does not appear even once**: no privilege over `public.images`,
+--     not `select` either, and no `usage` over the `public` schema either. The three
+--     new columns open nothing to it.
+--   · `authenticated` has `select`, `insert` and `update` **over the table**, not
+--     over a list of columns, and a table privilege reaches the columns
+--     added afterwards: the three new ones already appear with those three
+--     privileges, 54 columns × 3, and therefore **there is nothing to grant**.
+--     No `delete`, which is the one that had to be watched: `delete` over this table
+--     is held only by `postgres`, `service_role` and `supabase_admin`.
 --
--- No hay tipos nuevos, así que no hay ningún `grant usage` que hacer: esta
--- migración añade `text`, `integer` y `boolean`.
+-- There are no new types, so there is no `grant usage` to do: this
+-- migration adds `text`, `integer` and `boolean`.
 --
--- Quién puede escribir estas tres columnas lo decide la política `images_update`
--- con `can_edit()`, igual que para el resto de la fila: un Lector no escribe
--- ninguna, y eso se verifica **autenticándose de verdad** en la sección 8 de
--- `supabase/tests/image_corrected_copy.test.sql`, no leyendo esta migración.
+-- Who can write these three columns is decided by the `images_update` policy
+-- with `can_edit()`, just as for the rest of the row: a Reader writes
+-- none, and that is verified **by authenticating for real** in section 8 of
+-- `supabase/tests/image_corrected_copy.test.sql`, not by reading this migration.
 --
--- Ojo con la asimetría deliberada de RF-411, que aquí importa y que el test
--- comprueba en los dos sentidos: el Lector **descarga** la copia corregida —para
--- eso está, y por tanto tiene que poder leer `corrected_path` y
--- `corrected_bytes`— y **no escribe** ninguna de las tres. Negarle la lectura no
--- daría ningún error: dejaría el botón de descarga sin ruta que firmar, y la
--- ficha entregaría el máster sin corregir creyendo que no había copia.
+-- Mind RF-411's deliberate asymmetry, which matters here and which the test
+-- checks in both directions: the Reader **downloads** the corrected copy —that is
+-- what it is for, and therefore they have to be able to read `corrected_path` and
+-- `corrected_bytes`— and **does not write** any of the three. Denying them the read would
+-- give no error: it would leave the download button with no path to sign, and the
+-- record would deliver the uncorrected master believing there was no copy.

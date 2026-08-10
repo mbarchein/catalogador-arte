@@ -1,110 +1,110 @@
 -- ============================================================
--- Ajuste de color de una fotografía, guardado como DATO, más la fecha que trae
--- el fichero, el tamaño del original y la procedencia
+-- Colour adjustment of a photograph, stored as a DATUM, plus the date the
+-- file carries, the original's size and the provenance
 -- (RF-414, RF-416, RF-417, RF-418, ADR-002).
 --
--- La luz de un almacén tiñe las obras: bajo una bombilla incandescente un lienzo
--- sale amarillento, y ese amarillo no es del cuadro, es de la bombilla.
--- Quitárselo es catalogación y no retoque, porque lo que la fotografía tiene que
--- documentar es la obra y no la luz que había ese día.
+-- A store's light tints the artworks: under an incandescent bulb a canvas
+-- comes out yellowish, and that yellow is not the painting's, it is the bulb's.
+-- Taking it off is cataloguing and not retouching, because what the photograph has to
+-- document is the artwork and not the light there was that day.
 --
--- El ajuste vive aquí y no cocido en los píxeles, por lo mismo que el giro y el
--- recorte: el máster no se toca nunca (ADR-002), las derivadas se regeneran desde
--- él, y el futuro pipeline de Python del catálogo impreso necesita estas columnas
--- para imprimir el mismo color que se ve en la web —la divergencia que la vista
--- representative_image existe para evitar—. Un ajuste que es dato se puede leer,
--- aflojar, corregir y deshacer dentro de un año.
+-- The adjustment lives here and not baked into the pixels, for the same reason as the rotation and the
+-- crop: the master is never touched (ADR-002), the derivatives are regenerated from
+-- it, and the printed catalogue's future Python pipeline needs these columns
+-- in order to print the same colour that is seen on the web —the divergence the
+-- representative_image view exists to avoid—. An adjustment that is a datum can be read,
+-- eased off, corrected and undone a year from now.
 --
--- Lo que NO se guarda porque no se implementa (RF-415, requisito negativo):
--- saturación, vibrancia, contraste global, sombras y altas luces por separado,
--- nitidez, reducción de velo y eliminación de reflejos. Un barniz que ha
--- amarilleado y un color que ha perdido intensidad son estado de la obra, y son
--- justo lo que hay que testificar: avivarlos sería catalogar una obra que no
--- existe. No hay columna para ellos y su ausencia es deliberada; si algún día
--- aparece una, es un error y no una mejora.
+-- What is NOT stored because it is not implemented (RF-415, a negative requirement):
+-- saturation, vibrance, global contrast, shadows and highlights separately,
+-- sharpness, dehaze and reflection removal. A varnish that has
+-- yellowed and a colour that has lost intensity are the artwork's state, and they are
+-- exactly what has to be testified: brightening them would be cataloguing an artwork that does not
+-- exist. There is no column for them and their absence is deliberate; if one day
+-- one appears, it is a mistake and not an improvement.
 -- ============================================================
 
 
--- ── Escalares con `check`, y no un `jsonb` ──────────────────
+-- ── Scalars with a `check`, and not a `jsonb` ───────────────
 --
--- El argumento ya está escrito en la migración del recorte y sigue siendo el
--- decisivo: la base es la última línea que dice no, y solo puede decirlo de lo
--- que sabe leer. `color_gamma between 0.60 and 1.60` es comprobable sobre una
--- columna. Sobre un `jsonb` se convierte en una expresión sobre claves que pueden
--- no existir, de tipos que nadie garantiza: un `{"gamma": "bastante"}` entraría
--- sin una queja y saldría como NaN en la tabla de consulta del navegador, es
--- decir, como un canal en blanco en la miniatura de una obra. Dieciséis columnas
--- son más de escribir una vez y mucho menos de arreglar después.
+-- The argument is already written in the crop's migration and it goes on being the
+-- decisive one: the base is the last line that says no, and it can only say it about
+-- what it knows how to read. `color_gamma between 0.60 and 1.60` is checkable over a
+-- column. Over a `jsonb` it becomes an expression over keys that may
+-- not exist, of types nobody guarantees: a `{"gamma": "bastante"}` would go in
+-- without a complaint and would come out as NaN in the browser's lookup table, that
+-- is, as a blank channel in an artwork's thumbnail. Sixteen columns
+-- are more to write once and much less to fix afterwards.
 
 
--- ── Nulo es identidad, no desconocido ──────────────────────
+-- ── Null is identity, not unknown ──────────────────────────
 --
--- Salvo en `color_source`, nulo aquí significa «este parámetro no hace nada»:
--- temperatura y matiz 0, exposición 0 EV, negros 0, blancos 255, gamma 1,00,
--- hombro 0. Cada parámetro ausente tiene un valor identidad, y de ahí salen dos
--- consecuencias que conviene dejar escritas:
+-- Except in `color_source`, null here means «this parameter does nothing»:
+-- temperature and tint 0, exposure 0 EV, blacks 0, whites 255, gamma 1.00,
+-- shoulder 0. Every absent parameter has an identity value, and out of that come two
+-- consequences worth leaving written down:
 --
---  1. **Cada columna de color es independiente.** No hay regla de «todas o
---     ninguna» como la que sí tienen el recorte y las ocho esquinas, y no la hay
---     porque no haría falta ninguna: una fila con solo la temperatura corregida y
---     el resto en nulo es un ajuste perfectamente aplicable, mientras que medio
---     rectángulo es un rectángulo que nadie puede dibujar. Solo van en pareja las
---     dos columnas que juntas son un punto —el gris que se tocó con el
---     cuentagotas— y las dos que juntas son un tamaño.
---  2. **El despliegue es de una sola fase.** Las 39 filas activas se quedan a
---     nulo y se leen como neutras, y el frontend viejo —que no conoce estas
---     columnas— sirve esas mismas filas sin enterarse durante los segundos que el
---     despliegue tiene las dos versiones en el aire.
+--  1. **Every colour column is independent.** There is no «all or
+--     none» rule like the one the crop and the eight corners do have, and there is not one
+--     because none would be needed: a row with only the temperature corrected and
+--     the rest null is a perfectly applicable adjustment, whereas half a
+--     rectangle is a rectangle nobody can draw. Only in pairs go the
+--     two columns that together are a point —the grey touched with the
+--     eyedropper— and the two that together are a size.
+--  2. **The deployment is single-phase.** The 39 active rows stay
+--     null and are read as neutral, and the old frontend —which does not know these
+--     columns— serves those same rows without noticing during the seconds the
+--     deployment has both versions in the air.
 --
--- Y no se reescribe ninguna fila hacia atrás. No hay servidor que recalcule 39
--- ajustes de color, y aunque lo hubiera: el color de una fotografía se decide con
--- la obra delante y esa luz en la cara, no con estadística sobre el fichero.
+-- And no row is rewritten backwards. There is no server to recompute 39
+-- colour adjustments, and even if there were: a photograph's colour is decided with
+-- the artwork in front and that light in your face, not with statistics over the file.
 
 
--- ── El orden canónico del renderizado ───────────────────────
+-- ── The canonical rendering order ───────────────────────────
 --
--- **geometría → reducción al nivel → color.** Desarrollado: girar el máster,
--- rectificar la perspectiva y recortar (la migración del recorte ya fijó «girar
--- primero, recortar después», y la de las esquinas que las esquinas mandan sobre
--- el recorte); después reducir al tamaño del nivel que se va a escribir —400 px
--- la miniatura, 2000 px la copia de consulta—; y solo entonces aplicar la tabla
--- de color al resultado, código a código.
+-- **geometry → reduction to the level → colour.** Spelled out: rotate the master,
+-- rectify the perspective and crop (the crop's migration already fixed «rotate
+-- first, crop afterwards», and the corners' one that the corners rule over the
+-- crop); then reduce to the size of the level that is going to be written —400 px
+-- the thumbnail, 2000 px the consultation copy—; and only then apply the colour
+-- table to the result, code by code.
 --
--- El orden es normativo porque cambia el resultado: **reducir-y-luego-tabla no es
--- lo mismo que tabla-y-luego-reducir.** La reducción promedia píxeles y la curva
--- de color no es lineal, así que la media de dos valores transformados no es la
--- transformación de su media. La diferencia no se ve en una superficie plana y
--- aparece exactamente en los bordes de alta frecuencia: el filo de un marco, una
--- firma fina, la trama de un lienzo. Es decir, donde más se mira.
+-- The order is normative because it changes the result: **reduce-then-table is not
+-- the same as table-then-reduce.** The reduction averages pixels and the colour
+-- curve is not linear, so the mean of two transformed values is not the
+-- transformation of their mean. The difference is not seen on a flat surface and
+-- appears exactly on the high-frequency edges: a frame's edge, a
+-- thin signature, a canvas's weave. That is, where one looks most.
 --
--- Se eligió reducir antes porque es el único orden que cabe en el móvil, que es
--- el dispositivo principal: la tabla se aplica sobre 2000×1500 en lugar de sobre
--- 4000×3000 —una cuarta parte de los píxeles— y sobre un `ImageData` que el
--- camino ya tiene en la mano. Por eso tampoco se pliega la tabla dentro del bucle
--- bilineal del rectificado, aunque ahí saldría gratis: pondría el color antes de
--- reducir en las fotos con perspectiva corregida y después en las demás, y dos
--- derivadas de la misma obra dejarían de coincidir por el camino que tomaron.
+-- Reducing first was chosen because it is the only order that fits on the phone, which is
+-- the main device: the table is applied over 2000×1500 instead of over
+-- 4000×3000 —a quarter of the pixels— and over an `ImageData` the
+-- path already has in hand. That is also why the table is not folded inside the
+-- rectification's bilinear loop, although there it would come for free: it would put the colour before
+-- reducing in the photos with corrected perspective and afterwards in the rest, and two
+-- derivatives of the same artwork would stop matching because of the path they took.
 --
--- Los dos extremos —el navegador y el pipeline de Python— aplican este orden, o
--- el catálogo impreso y la web enseñan colores distintos de la misma obra.
+-- The two ends —the browser and the Python pipeline— apply this order, or
+-- the printed catalogue and the web show different colours of the same artwork.
 
 
--- ── De dónde salió el ajuste ────────────────────────────────
+-- ── Where the adjustment came from ──────────────────────────
 --
--- Calcado de `crop_source`, que resolvió este mismo problema para el encuadre:
--- sin la columna es imposible distinguir el ajuste que ella decidió del que
--- aceptó de una sugerencia, y toda medición futura del automático arrastraría esa
--- duda.
+-- Traced from `crop_source`, which solved this same problem for the framing:
+-- without the column it is impossible to distinguish the adjustment she decided from the one she
+-- accepted from a suggestion, and every future measurement of the automatic one would drag that
+-- doubt.
 --
--- `REVIEWED_UNCHANGED` existe porque **«sin revisar» no es «no»**, que es
--- criterio del proyecto y no un detalle: sin ese valor, una fila con todo el
--- color a nulo no distingue «se miró con la obra delante, la luz era buena y se
--- dejó como estaba» de «nunca se miró». Lo primero es trabajo hecho y lo segundo
--- es trabajo pendiente, y la diferencia entre los dos es la que dice cuánto falta.
+-- `REVIEWED_UNCHANGED` exists because **«sin revisar» is not «no»**, which is
+-- a project criterion and not a detail: without that value, a row with all the
+-- colour null does not distinguish «it was looked at with the artwork in front, the light was good and it
+-- was left as it was» from «it was never looked at». The first is work done and the second
+-- is work pending, and the difference between the two is what says how much is left.
 --
--- Las 39 filas existentes se quedan en nulo —«no se sabe»— y **nunca en
--- 'MANUAL'** ni en 'REVIEWED_UNCHANGED', que sería inventar el dato justo en la
--- columna que existe para no inventarlo.
+-- The 39 existing rows stay null —«not known»— and **never at
+-- 'MANUAL'** nor at 'REVIEWED_UNCHANGED', which would be inventing the datum in precisely
+-- the column that exists so as not to invent it.
 create type public.color_source as enum (
   'MANUAL',
   'NEUTRAL_PICKED',
@@ -118,33 +118,33 @@ comment on type public.color_source is
   'De dónde salió el ajuste de color: a mano, tomando un gris de la foto, del ajuste automático, del automático y después retocado, de un preset de tipo de luz, o revisado y dejado como estaba. Nulo es «no se sabe», que es lo que llevan las filas anteriores a esta columna: nadie miró todavía el color de esa fotografía.';
 
 
--- ── De dónde salió la referencia neutra (RF-418) ────────────
+-- ── Where the neutral reference came from (RF-418) ──────────
 --
--- Un gris liso es indistinguible de una pared gris, así que lo que se detecta no
--- es «un gris» sino una escalera de parches uniformes y acromáticos, contiguos y
--- alineados, cuyos tonos guardan la relación blanco / medio / negro. Eso reconoce
--- igual la carta comprada de tres parches y la hoja impresa en casa, y no
--- confunde ninguna de las dos con una pared, que no tiene escalones. No se
--- codifica ningún producto concreto.
+-- A plain grey is indistinguishable from a grey wall, so what is detected is not
+-- «a grey» but a staircase of uniform and achromatic patches, contiguous and
+-- aligned, whose tones keep the white / mid / black relation. That recognises
+-- the bought three-patch card and the sheet printed at home alike, and does not
+-- confuse either of the two with a wall, which has no steps. No
+-- particular product is encoded.
 --
--- Los tres estados se guardan porque **no se creen lo mismo**, y esa es toda la
--- razón de que sea un enumerado y no un booleano «había testigo»:
+-- The three states are stored because **they are not believed equally**, and that is the whole
+-- reason it is an enumerated type and not a boolean «there was a witness»:
 --
---   TARGET_CARD   su gris es fiable
---   TARGET_PRINT  su gris NO es fiable: la tinta de una impresora doméstica no es
---                 neutra —tiene su propia dominante y cambia con el papel y con
---                 el cartucho—, así que la escalera sirve para reconocer el
---                 patrón y para situar los puntos negro y blanco, que solo
---                 dependen de cuál es el parche más claro y cuál el más oscuro,
---                 pero no como referencia de dominante. Distinguirlo de la carta
---                 es lo único que evita corregir el color de una obra con el
---                 error de color de una impresora
---   SCENE         razonable: pared, cartón liso o paño tomado con el cuentagotas
---   NONE          corregido a ojo, y consta que fue a ojo
+--   TARGET_CARD   its grey is reliable
+--   TARGET_PRINT  its grey is NOT reliable: a home printer's ink is not
+--                 neutral —it has its own cast and it changes with the paper and with
+--                 the cartridge—, so the staircase serves to recognise the
+--                 pattern and to place the black and white points, which depend
+--                 only on which is the lightest patch and which the darkest,
+--                 but not as a cast reference. Distinguishing it from the card
+--                 is the only thing that avoids correcting an artwork's colour with
+--                 a printer's colour error
+--   SCENE         reasonable: a wall, plain cardboard or cloth taken with the eyedropper
+--   NONE          corrected by eye, and it is on record that it was by eye
 --
--- La detección nunca aplica nada sola: señala el candidato sobre la foto y lo
--- ofrece. Un año después, esta columna es lo que responde «¿de dónde salió este
--- blanco?» sin tener que creerse el resultado a ciegas.
+-- The detection never applies anything on its own: it points out the candidate over the photo and
+-- offers it. A year later, this column is what answers «where did this
+-- white come from?» without having to believe the result blindly.
 create type public.color_reference as enum (
   'TARGET_CARD',
   'TARGET_PRINT',
@@ -156,14 +156,14 @@ comment on type public.color_reference is
   'De dónde salió la referencia neutra del ajuste: carta de grises comprada, hoja de parches impresa en casa (su gris no es fiable, la tinta doméstica no es neutra: vale para los puntos negro y blanco, no para la dominante), una zona neutra de la propia escena, o nada, corregido a ojo.';
 
 
--- ── Tipo de luz (RF-414) ────────────────────────────────────
+-- ── Type of light (RF-414) ──────────────────────────────────
 --
--- Lista de opciones y **no una deducción**: cada valor es un punto de partida
--- para la temperatura y el matiz que se puede tocar después, y la interfaz lo
--- etiqueta como punto de partida y nunca como medición. Se guarda cuál se eligió
--- porque es la respuesta a «por qué este número y no otro» cuando el número ya no
--- se recuerda; nulo significa que no se usó ninguno, no que no se sepa qué luz
--- había.
+-- A list of options and **not a deduction**: each value is a starting point
+-- for the temperature and the tint that can be touched afterwards, and the interface
+-- labels it as a starting point and never as a measurement. Which one was chosen is stored
+-- because it is the answer to «why this number and not another» when the number is no longer
+-- remembered; null means none was used, not that it is not known what light
+-- there was.
 create type public.light_preset as enum (
   'DAYLIGHT',
   'OVERCAST',
@@ -179,17 +179,17 @@ comment on type public.light_preset is
   'Tipo de luz elegido como punto de partida del ajuste: luz de ventana, día nublado, fluorescente frío, fluorescente cálido, LED neutro, bombilla incandescente, mezcla de ventana y techo, o flash del móvil. Es un punto de partida ajustable, nunca una medición de la luz que había.';
 
 
--- ── Procedencia de la fotografía (RF-417) ───────────────────
+-- ── The photograph's provenance (RF-417) ────────────────────
 --
--- Cuatro fotografías del catálogo son reproducciones tomadas de otros catálogos
--- en línea: 1080×2400 y sin datos de cámara. No son un error de catalogación, son
--- lo único que hay de esas obras.
+-- Four photographs of the catalogue are reproductions taken from other catalogues
+-- online: 1080×2400 and with no camera data. They are not a cataloguing error, they are
+-- the only thing there is of those artworks.
 --
--- En las que no son propias **el ajuste de color no se ofrece**, y el motivo es de
--- fondo y no técnico: se estaría corrigiendo el revelado que hizo otra persona,
--- sobre una obra que quien corrige no ha visto nunca con esa luz. Lo que saliera
--- de ahí no sería una fotografía mejor, sería una invención con aspecto de
--- documento.
+-- On those that are not our own **the colour adjustment is not offered**, and the reason is a
+-- matter of principle and not technical: one would be correcting the development another person did,
+-- over an artwork whoever corrects has never seen with that light. What came out
+-- of there would not be a better photograph, it would be an invention with the look of a
+-- document.
 create type public.photo_provenance as enum (
   'OWN',
   'OTHER_CATALOG',
@@ -200,27 +200,27 @@ comment on type public.photo_provenance is
   'Procedencia de la fotografía: hecha para el catálogo, tomada de otro catálogo, o recibida de un tercero. En las que no son propias no se ofrece el ajuste de color: sería retocar el revelado de otra persona sobre una obra que no se ha visto con esa luz.';
 
 
--- ── Las columnas ────────────────────────────────────────────
+-- ── The columns ─────────────────────────────────────────────
 --
--- Los tipos y los rangos son los de la especificación, literales, porque el
--- código del cliente se escribe contra ellos: la escala de cada parámetro es la
--- misma en el mando de la interfaz, en la tabla de consulta y en esta columna, y
--- una sola de las tres desalineada da un color distinto según por dónde entre.
+-- The types and the ranges are those of the specification, literally, because the
+-- client's code is written against them: each parameter's scale is the
+-- same in the interface's control, in the lookup table and in this column, and
+-- a single one of the three out of line gives a different colour depending on which way it comes in.
 --
--- Dos avisos sobre los tipos, los dos comprobados contra esta base:
+-- Two warnings about the types, both checked against this base:
 --
---   · `numeric(4,2)` de los dos porcentajes de recorte llega hasta 99,99 y **un
---     100,00 no cabe**: Postgres lo rechaza con «numeric field overflow», que no
---     es un mensaje que la usuaria deba ver nunca. Un ajuste que empasta la foto
---     entera es alcanzable —punto negro alto sobre una toma oscura— así que quien
---     escribe satura el valor en 99,99. Y satura sin perder nada: entre «99,99 %
---     empastado» y «100 %» no hay ninguna decisión distinta que tomar.
---   · `numeric(3,2)` de la exposición guarda dos decimales y el paso del mando es
---     1/6 de EV, que no cabe exacto en dos. Lo que se guarda es el valor
---     redondeado, y **es ese el valor de referencia**: la tabla de consulta se
---     reconstruye desde lo guardado y no desde el número de pasos, para que abrir
---     una fotografía, mirarla y volver a aplicar dé el mismo resultado y no
---     reescriba ficheros por una diezmilésima.
+--   · the `numeric(4,2)` of the two clipping percentages reaches up to 99.99 and **a
+--     100.00 does not fit**: Postgres rejects it with «numeric field overflow», which is not
+--     a message the user should ever see. An adjustment that flattens the whole
+--     photo is reachable —a high black point over a dark shot— so whoever
+--     writes saturates the value at 99.99. And it saturates without losing anything: between «99.99 %
+--     flattened» and «100 %» there is no different decision to take.
+--   · the `numeric(3,2)` of the exposure stores two decimals and the control's step is
+--     1/6 of an EV, which does not fit exactly in two. What is stored is the rounded
+--     value, and **that is the reference value**: the lookup table is
+--     rebuilt from what is stored and not from the number of steps, so that opening
+--     a photograph, looking at it and applying again gives the same result and does not
+--     rewrite files over a ten-thousandth.
 alter table public.images
   add column color_temperature  smallint,
   add column color_tint         smallint,
@@ -288,13 +288,13 @@ comment on column public.images.provenance is
   'Procedencia de la fotografía (RF-417). Por omisión propia, que es lo que son 35 de las 39; las cuatro reproducciones tomadas de otros catálogos se marcan a mano. En las que no son propias no se ofrece el ajuste de color.';
 
 
--- ── Los rangos, uno por columna y con nombre propio ─────────
+-- ── The ranges, one per column and with a name of its own ───
 --
--- Una restricción por parámetro, y no un `check` grande con todo dentro, porque
--- lo que Postgres dice al rechazar es el nombre de la restricción: con uno solo,
--- un ajuste rechazado no diría qué mando se fue de rango. Son también los rangos
--- de los mandos de la interfaz, y tenerlos aquí es lo que hace que un cliente con
--- un error de escala no pueda escribir un ajuste que nadie podrá volver a abrir.
+-- One constraint per parameter, and not a big `check` with everything inside, because
+-- what Postgres says on rejecting is the constraint's name: with a single one,
+-- a rejected adjustment would not say which control went out of range. They are also the ranges
+-- of the interface's controls, and having them here is what makes it impossible for a client with
+-- a scale error to write an adjustment nobody will be able to open again.
 alter table public.images
   add constraint images_color_temperature_range
   check (color_temperature between -60 and 60);
@@ -323,10 +323,10 @@ alter table public.images
   add constraint images_color_shoulder_range
   check (color_shoulder between 0 and 100);
 
--- El punto del cuentagotas está dentro de la fotografía, y no admite el margen de
--- un cuarto que sí admiten las esquinas: una esquina fuera del encuadre es un
--- caso real —la obra se sale de la toma en cinco fotografías del lote—, pero un
--- gris fuera del encuadre no existe, no hay píxeles ahí de donde leerlo.
+-- The eyedropper's point is inside the photograph, and it does not admit the margin of
+-- a quarter that the corners do admit: a corner outside the frame is a
+-- real case —the artwork goes outside the shot in five photographs of the batch—, but a
+-- grey outside the frame does not exist, there are no pixels there to read it from.
 alter table public.images
   add constraint images_color_neutral_inside_image
   check (
@@ -335,33 +335,33 @@ alter table public.images
     )
   );
 
--- Los dos o ninguno: media coordenada no es medio punto, es ningún punto, y quien
--- lo leyera tendría que adivinar la otra mitad. Es la única regla de conjunto que
--- hay entre las columnas de color, y está aquí porque estas dos no son dos
--- parámetros: son un sitio.
+-- Both or neither: half a coordinate is not half a point, it is no point, and whoever
+-- read it would have to guess the other half. It is the only set rule there
+-- is among the colour columns, and it is here because these two are not two
+-- parameters: they are a place.
 alter table public.images
   add constraint images_color_neutral_pair
   check (num_nonnulls(color_neutral_x, color_neutral_y) in (0, 2));
 
--- La curva no se puede invertir ni colapsar: entre el punto negro y el punto
--- blanco tienen que quedar al menos 128 códigos de los 256, la mitad de la
--- escala. Los `coalesce` son los que hacen que la regla también valga cuando solo
--- se ha tocado uno de los dos, porque nulo aquí es identidad (0 y 255).
+-- The curve cannot be inverted nor collapsed: between the black point and the white
+-- point at least 128 codes out of the 256 have to be left, half the
+-- scale. The `coalesce`s are what make the rule hold too when only
+-- one of the two has been touched, because null here is identity (0 and 255).
 --
--- Y sí, hoy esto ya se deduce de las dos restricciones anteriores: con el negro
--- como máximo en 64 y el blanco como mínimo en 192, la diferencia nunca baja de
--- 128. Se escribe igual porque **la propiedad que importa es esta**, no la
--- coincidencia aritmética de dos topes que se eligieron por separado: si algún día
--- se ensancha uno de los dos rangos, la regla que impide una fotografía negra
--- sigue estando escrita en el sitio donde se puede leer, en vez de haber
--- desaparecido sin que nadie lo note.
+-- And yes, today this already follows from the two previous constraints: with the black
+-- at 64 at most and the white at 192 at least, the difference never falls below
+-- 128. It is written all the same because **the property that matters is this one**, not the
+-- arithmetic coincidence of two caps that were chosen separately: if one day
+-- one of the two ranges is widened, the rule that prevents a black photograph
+-- is still written in the place where it can be read, instead of having
+-- disappeared with nobody noticing.
 alter table public.images
   add constraint images_color_range_usable
   check (coalesce(color_white, 255) - coalesce(color_black, 0) >= 128);
 
--- El tamaño del original: los dos lados o ninguno, y los dos positivos. Un ancho
--- sin alto no es un tamaño, y un cero significaría una fotografía sin píxeles,
--- que es un dato que solo puede venir de una cuenta mal hecha.
+-- The original's size: both sides or neither, and both positive. A width
+-- with no height is not a size, and a zero would mean a photograph with no pixels,
+-- which is a datum that can only come from a badly done computation.
 alter table public.images
   add constraint images_original_size_pair
   check (num_nonnulls(original_width, original_height) in (0, 2));
@@ -372,81 +372,81 @@ alter table public.images
     original_width is null or (original_width > 0 and original_height > 0)
   );
 
--- Una fecha del fichero sin decir si es exacta no sirve para nada: la duda es
--- justo el dato. De los 44 másteres, 21 traen DateTimeOriginal y **los 14
--- críticos de 2022 solo traen el DateTime del IFD0**, que por especificación es
--- la fecha de modificación del fichero y por tanto solo se aproxima a la de la
--- toma. Guardar las dos cosas en una columna —«2022-10-09, y quién sabe»— es lo
--- que la aplicación no puede permitirse: «sin revisar» no es «no», y aproximado
--- no es exacto.
+-- A date from the file without saying whether it is exact is of no use: the doubt is
+-- exactly the datum. Of the 44 masters, 21 carry DateTimeOriginal and **the 14
+-- critical ones from 2022 carry only the IFD0's DateTime**, which by specification is
+-- the file's modification date and therefore only approximates the shot's.
+-- Storing both things in one column —«2022-10-09, and who knows»— is what
+-- the application cannot afford: «sin revisar» is not «no», and approximate
+-- is not exact.
 alter table public.images
   add constraint images_file_photo_date_precision
   check (file_photo_date is null or file_photo_date_exact is not null);
 
 
--- ── Las dos fechas, y por qué son dos ───────────────────────
+-- ── The two dates, and why they are two ─────────────────────
 --
--- Decisión explícita del propietario: `file_photo_date` **no sustituye a**
--- `photo_date` y no lo pisa nunca. Las dos pueden diferir con toda legitimidad
--- —una obra fotografiada en 2022 y catalogada en 2026, una toma repetida, un
--- fichero copiado— y son dos hechos distintos: una es lo que dice el fichero y la
--- otra es lo que declara quien cataloga. Reducirlas a una sería tirar la que
--- estorbe, y la que estorba cambia según el caso.
+-- An explicit decision of the owner: `file_photo_date` **does not replace**
+-- `photo_date` and never runs over it. The two may differ with every legitimacy
+-- —an artwork photographed in 2022 and catalogued in 2026, a repeated shot, a
+-- copied file— and they are two different facts: one is what the file says and the
+-- other is what whoever catalogues declares. Reducing them to one would be throwing away the one that
+-- gets in the way, and which one gets in the way changes with the case.
 --
--- Hoy **las 39 filas activas tienen `photo_date` = fecha de subida**: ninguna
--- ficha tiene la fecha real de la toma. Y **esta migración no repara ninguna fila
--- hacia atrás**: rellenar `file_photo_date` exigiría descargar y parsear 39
--- másteres, no hay servidor que lo haga, y hacerlo desde el navegador de una
--- catalogadora sería trabajo suyo pagado con datos que la aplicación puede leer
--- sola la próxima vez que abra cada fotografía. Nulo aquí significa «no se ha
--- leído el fichero todavía», que es la verdad.
+-- Today **the 39 active rows have `photo_date` = upload date**: no
+-- record has the shot's real date. And **this migration repairs no row
+-- backwards**: filling in `file_photo_date` would require downloading and parsing 39
+-- masters, there is no server to do it, and doing it from a cataloguer's
+-- browser would be her work paid for with data the application can read
+-- on its own the next time it opens each photograph. Null here means «the file has not
+-- been read yet», which is the truth.
 --
--- La interfaz enseña la diferencia en voz baja —«la foto dice 9 de octubre de
--- 2022»— y sin alarma, porque hoy difieren las 39 y una alarma que salta siempre
--- deja de ser una alarma.
+-- The interface shows the difference quietly —«la foto dice 9 de octubre de
+-- 2022»— and with no alarm, because today all 39 differ and an alarm that always goes off
+-- stops being an alarm.
 
 
--- ── Lo que la base NO prohíbe, a propósito ──────────────────
+-- ── What the base does NOT forbid, on purpose ───────────────
 --
--- No hay restricción que impida color en una fila con `provenance <> 'OWN'`,
--- aunque el ajuste no se ofrezca ahí. Si la hubiera, reclasificar como ajena una
--- fotografía que ya se corrigió fallaría al guardar, y la usuaria se quedaría sin
--- poder anotar la procedencia correcta justo en el caso en el que más importa
--- anotarla. La regla vive en la interfaz, que no ofrece el ajuste, y en
--- `composeEdits`, que lanza; la base guarda los dos hechos y no obliga a elegir.
+-- There is no constraint preventing colour on a row with `provenance <> 'OWN'`,
+-- even though the adjustment is not offered there. If there were one, reclassifying as somebody else's a
+-- photograph that has already been corrected would fail on saving, and the user would be left unable
+-- to note the correct provenance in precisely the case where noting it matters
+-- most. The rule lives in the interface, which does not offer the adjustment, and in
+-- `composeEdits`, which throws; the base stores both facts and does not force a choice.
 --
--- Tampoco hay restricción que ligue `color_reference` a `color_source`. Un ajuste
--- puede empezar en un preset, seguir con el cuentagotas sobre un cartón y acabar
--- retocado a mano: las combinaciones razonables son casi todas, y un `check` que
--- las enumerara envejecería peor que el enumerado.
+-- Nor is there a constraint tying `color_reference` to `color_source`. An adjustment
+-- may start at a preset, go on with the eyedropper over a piece of cardboard and end up
+-- retouched by hand: the reasonable combinations are almost all of them, and a `check` that
+-- enumerated them would age worse than the enumerated type.
 
 
--- ── Privilegios: comprobado, no supuesto ────────────────────
+-- ── Privileges: checked, not assumed ────────────────────────
 --
--- CLAUDE.md avisa de que la plataforma concede por omisión todos los privilegios
--- de cada tabla nueva a `anon` y `authenticated`, y de que conviene comprobarlo en
--- vez de creerlo. Comprobado contra esta base, en `information_schema` y antes y
--- después del `alter table` de arriba:
+-- CLAUDE.md warns that the platform grants by default all the privileges
+-- of every new table to `anon` and `authenticated`, and that it is worth checking it instead
+-- of believing it. Checked against this base, in `information_schema` and before and
+-- after the `alter table` above:
 --
---   · `anon` no tiene ningún privilegio sobre public.images —ni uno, tampoco
---     `select`—, y tampoco tiene `usage` sobre el esquema public. Las 21 columnas
---     nuevas no le abren nada.
---   · `authenticated` tiene `select`, `insert` y `update` **sobre la tabla**, no
---     sobre una lista de columnas. Un privilegio de tabla alcanza a las columnas
---     que se añadan después, así que las 21 nuevas aparecen ya con esos tres
---     privilegios en `information_schema.column_privileges` y **no hay nada que
---     conceder**: 51 columnas × 3 privilegios, y ningún `delete`, que es el que
---     había que vigilar.
+--   · `anon` has no privilege at all over public.images —not one, not even
+--     `select`—, and nor does it have `usage` over the public schema. The 21 new
+--     columns open nothing to it.
+--   · `authenticated` has `select`, `insert` and `update` **over the table**, not
+--     over a list of columns. A table privilege reaches the columns
+--     added afterwards, so the 21 new ones already appear with those three
+--     privileges in `information_schema.column_privileges` and **there is nothing to
+--     grant**: 51 columns × 3 privileges, and no `delete`, which is the one
+--     that had to be watched.
 --
--- Es decir: un `alter table add column` hereda los privilegios de la tabla, y
--- aquí eso es exactamente lo que se quiere. Quien puede editar una fotografía
--- puede editar su color, y la política `images_update` (`can_edit()`) es la que
--- decide quién es ese: un Lector no escribe ninguna de estas columnas, y eso se
--- verifica autenticándose de verdad en `rls_role_matrix.test.sql`, no leyendo esta
--- migración.
+-- That is: an `alter table add column` inherits the table's privileges, and
+-- here that is exactly what is wanted. Whoever can edit a photograph
+-- can edit its colour, and the `images_update` policy (`can_edit()`) is what
+-- decides who that is: a Reader writes none of these columns, and that is
+-- verified by authenticating for real in `rls_role_matrix.test.sql`, not by reading this
+-- migration.
 --
--- Los cuatro enumerados sí necesitan su concesión, porque el `usage` de un tipo
--- nuevo lo tiene `public` por omisión. Se cierra igual que se cerró `crop_source`.
+-- The four enumerated types do need their grant, because `public` has a new type's
+-- `usage` by default. It is closed just as `crop_source` was closed.
 revoke all on type public.color_source from public;
 revoke all on type public.color_reference from public;
 revoke all on type public.light_preset from public;

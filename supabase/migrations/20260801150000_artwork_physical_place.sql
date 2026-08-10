@@ -28,24 +28,24 @@ comment on column public.artworks.physical_place_id is
 -- resolves it by climbing the tree down to the artworks of each node.
 create index artworks_physical_place_idx on public.artworks (physical_place_id);
 
--- ── RF-802: mover la obra sí es haber tenido la pieza delante ─
+-- ── RF-802: moving the artwork IS having had the piece in front ──
 --
--- `basic_updated_at` cambia de campo vigilado: lo que registra es cuándo se
--- examinó físicamente la obra, y eso lo dice ahora el nodo al que apunta, no el
--- texto. Renombrar o mover un LUGAR no toca ninguna fila de obras, así que deja
--- de mover la fecha por construcción, que es justo lo que dice el ADR: no es
--- haber tenido la pieza delante. Cambiar una obra de sitio sí.
+-- `basic_updated_at` changes the field it watches: what it records is when the
+-- artwork was physically examined, and that is now said by the node it points at, not by the
+-- text. Renaming or moving a PLACE does not touch a single row of artworks, so it stops
+-- moving the date by construction, which is exactly what the ADR says: it is not
+-- having had the piece in front. Moving an artwork elsewhere is.
 --
--- `physical_location` sale de la tupla, con una consecuencia acotada: durante
--- los segundos que duran las dos fases, una ubicación escrita desde el frontend
--- viejo no moverá la fecha básica. Es un campo y son segundos; la alternativa
--- —vigilar los dos— obligaría a rehacer esta función otra vez al retirar la
--- columna, y esa es la clase de deuda que se olvida.
+-- `physical_location` leaves the tuple, with one bounded consequence: during
+-- the seconds the two phases last, a location written from the old frontend
+-- will not move the basic date. It is one field and it is seconds; the alternative
+-- —watching both— would force redoing this function again on withdrawing the
+-- column, and that is the class of debt that gets forgotten.
 --
--- `set search_path = public` está aquí porque `create or replace` reemplaza la
--- definición ENTERA, y con ella la configuración que 20260801120000 puso con un
--- `alter function`: sin repetirlo, esta función se quedaría sin él y el aserto de
--- function_privileges.test.sql lo cazaría.
+-- `set search_path = public` is here because `create or replace` replaces the
+-- WHOLE definition, and with it the configuration 20260801120000 set with an
+-- `alter function`: without repeating it, this function would be left without it and
+-- function_privileges.test.sql's assertion would catch it.
 create or replace function public.tg_artwork_audit_trail()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -81,11 +81,11 @@ begin
   return new;
 end $$;
 
--- ── Un lugar con obras dentro no se retira ──────────────────
+-- ── A place with artworks inside is not withdrawn ───────────
 --
--- La otra mitad de la comprobación que 20260801140000 dejó a medias. Una obra en
--- la papelera no cuenta: está de baja lógica, y exigir vaciarla antes de retirar
--- una balda sería hacer que la papelera estorbe.
+-- The other half of the check 20260801140000 left half done. An artwork in
+-- the wastebasket does not count: it is logically withdrawn, and requiring it to be emptied before withdrawing
+-- a shelf would be making the wastebasket get in the way.
 create or replace function public.tg_physical_place_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -106,21 +106,21 @@ begin
   return new;
 end $$;
 
--- ── El traslado de los datos ────────────────────────────────
+-- ── The data move ───────────────────────────────────────────
 --
--- Los textos se parten por comas, que es lo que la convención anterior usaba de
--- separador, y cada nivel se busca o se crea bajo el nivel anterior. Sale un
--- árbol en minúsculas y sin tildes, porque es como está guardado el texto: los
--- nombres se curan después desde la interfaz, una vez por lugar y no una vez por
--- obra, que es la mitad del valor de la decisión.
+-- The texts are split by commas, which is what the previous convention used as a
+-- separator, and each level is looked up or created under the previous level. What comes out is a
+-- tree in lower case and with no accents, because that is how the text is stored: the
+-- names are cured afterwards from the interface, once per place and not once per
+-- artwork, which is half the value of the decision.
 --
--- Dos textos que solo se diferencien en mayúsculas o tildes caen en el mismo
--- nodo, porque el nodo se busca por `place_key`. Es la misma regla que impide
--- que existan dos hermanos homónimos.
+-- Two texts differing only in capitals or accents fall into the same
+-- node, because the node is looked up by `place_key`. It is the same rule that prevents
+-- two homonymous siblings from existing.
 --
--- `created_by` se queda nulo a propósito: dentro de una migración `auth.uid()`
--- no es nadie, y firmar estos ocho nodos con una persona sería inventar una
--- traza.
+-- `created_by` is left null on purpose: inside a migration `auth.uid()`
+-- is nobody, and signing these eight nodes with a person would be inventing a
+-- trace.
 
 alter table public.artworks disable trigger artwork_audit_trail;
 
@@ -137,9 +137,9 @@ begin
     select catalog_id, physical_location
       from public.artworks
      where btrim(coalesce(physical_location, '')) <> ''
-       -- `zzzz` era un valor de prueba y no un sitio: la obra que lo lleva queda
-       -- sin ubicación (ADR-006). Nombrar la excepción es más honesto que una
-       -- heurística que mañana descarte un lugar de verdad.
+       -- `zzzz` was a test value and not a site: the artwork carrying it is left
+       -- with no location (ADR-006). Naming the exception is more honest than a
+       -- heuristic that tomorrow discards a real place.
        and public.place_key(physical_location) <> 'zzzz'
      order by catalog_id
   loop
@@ -176,8 +176,8 @@ begin
   raise notice 'Lugares creados: %. Obras apuntando al árbol: %.', v_places, v_artworks;
 end $$;
 
--- La auditoría vuelve antes de que nadie más pueda escribir: el traslado no es
--- que alguien haya editado las obras (RF-801) ni que las haya tenido delante
--- (RF-802), y con `auth.uid()` nulo el trigger habría borrado `updated_by` de
--- todas ellas.
+-- The audit comes back before anybody else can write: the move is not
+-- somebody having edited the artworks (RF-801) nor having had them in front
+-- (RF-802), and with `auth.uid()` null the trigger would have erased `updated_by` from
+-- all of them.
 alter table public.artworks enable trigger artwork_audit_trail;

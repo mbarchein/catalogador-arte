@@ -1,32 +1,32 @@
--- El cuadrilátero de las esquinas tiene que ser CONVEXO, no solo tener área.
+-- The corners' quadrilateral has to be CONVEX, not merely have an area.
 --
--- La migración anterior comprobaba el signo del área con signo y su comentario
--- afirmaba que eso rechaza un cuadrilátero que se cruza consigo mismo. **No lo
--- hace.** Un polígono que se autointersecta conserva área positiva siempre que gane
--- su lóbulo mayor, así que la restricción aceptaba cuadriláteros cruzados: probado
--- contra esta misma base con las esquinas (0,95 0,16) (0,7 0,15) (0,85 0,9)
--- (0,15 0,9), que cruzan dos lados y puntúan 0,332 de área.
+-- The previous migration checked the sign of the signed area and its comment
+-- claimed that that rejects a quadrilateral that crosses itself. **It does not
+-- do so.** A self-intersecting polygon keeps a positive area as long as its
+-- larger lobe wins, so the constraint accepted crossed quadrilaterals: tested
+-- against this very base with the corners (0.95 0.16) (0.7 0.15) (0.85 0.9)
+-- (0.15 0.9), which cross two sides and score 0.332 of area.
 --
--- Rectificar uno de esos da una imagen doblada sobre sí misma, que es justo el daño
--- que la restricción existía para impedir.
+-- Rectifying one of those gives an image folded over itself, which is exactly the damage
+-- the constraint existed to prevent.
 --
--- Va en una migración nueva y no corrigiendo la anterior porque aquella ya está
--- aplicada: en esta base local, y eso basta — reescribir un fichero cuya migración
--- ya corrió deja la base con la regla vieja y el repositorio diciendo otra cosa,
--- que es peor que un fichero de más.
+-- It goes in a new migration and not by correcting the previous one because that one is already
+-- applied: in this local base, and that is enough — rewriting a file whose migration
+-- already ran leaves the base with the old rule and the repository saying something else,
+-- which is worse than one file too many.
 --
--- **La convexidad no es solo una regla más estricta: es la regla correcta.** La
--- imagen proyectiva de un rectángulo es convexa, siempre. Así que un cuadrilátero no
--- convexo no es la fotografía de un cuadro visto en ángulo, sea lo que sea.
+-- **Convexity is not just a stricter rule: it is the correct rule.** The
+-- projective image of a rectangle is convex, always. So a non-convex
+-- quadrilateral is not the photograph of a painting seen at an angle, whatever it is.
 
 alter table public.images drop constraint images_corners_simple_quadrilateral;
 
--- El signo del producto vectorial en cada vértice: los cuatro iguales es convexo, y
--- con este recorrido —NW, NE, SE, SW, con la Y hacia abajo— los cuatro positivos.
--- Comprobado con el cuadrado unidad, donde los cuatro valen 1.
+-- The sign of the cross product at each vertex: the four equal is convex, and
+-- with this walk —NW, NE, SE, SW, with Y downwards— the four positive.
+-- Checked with the unit square, where the four are worth 1.
 --
--- El área se queda al lado con un trabajo propio, que la convexidad no cubre:
--- descartar el cuadrilátero técnicamente convexo y demasiado pequeño para ser nada.
+-- The area stays alongside with a job of its own, which convexity does not cover:
+-- discarding the technically convex quadrilateral that is too small to be anything.
 alter table public.images
   add constraint images_corners_convex
   check (
