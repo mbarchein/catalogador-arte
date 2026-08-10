@@ -2,6 +2,16 @@
 
 ### Interfaz
 
+**El código QR de la ficha impresa: con su pie, y pulsable**
+
+- La frase que explicaba el código estaba **al pie de la hoja**, con la fecha de generación, y por
+  eso empezaba diciendo dónde estaba: «El código QR de la cabecera abre…». Ahora va **debajo del
+  propio código**, más pequeña y con su aire, y dice lo que hace sin nombrar dónde está: «Abre esta
+  ficha en la aplicación, al día».
+- Y **el código es además un enlace**: en la pantalla de un ordenador no hay cámara con la que
+  apuntarle, así que el mismo cuadrado que en el almacén se escanea con el móvil aquí se pulsa. Sin
+  recuadro azul alrededor: lo que se imprime se imprime para siempre.
+
 **El porcentaje, pegado al número**
 
 - «115 %» pasa a **«115%»**, sin espacio, en todas partes: el tamaño de letra, el progreso de una
