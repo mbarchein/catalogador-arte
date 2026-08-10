@@ -71,7 +71,7 @@ describe('la única combinación que la base prohíbe (RF-218)', () => {
     }
   })
 
-  /** La misma frase sirve a eslabones, referencias, exposiciones y documentos: por eso no tiene género. */
+  /** The same sentence serves links, references, exhibitions and documents: that is why it has no gender. */
   it('la negativa se adapta al bloque y no arrastra el género de otro', () => {
     const text = statusChangeBlocked(bibliography, 'NONE_FOUND', 1)
     expect(text).toContain('1 referencia')
@@ -86,7 +86,7 @@ describe('el botón que abre el selector', () => {
     )
   })
 
-  /** Un estado que no se ha podido leer no se puede cambiar: se diría que sí y se sobrescribiría una tarde de archivo. */
+  /** A state that could not be read cannot be changed: it would say it could and would overwrite an afternoon in the archive. */
   it('sin poder leer el estado, lo dice en vez de fingir «sin revisar»', () => {
     expect(researchStatusButtonText(null)).toBe('Estado de la investigación: sin leer')
   })

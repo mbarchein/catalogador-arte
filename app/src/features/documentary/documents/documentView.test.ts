@@ -88,7 +88,7 @@ describe('los datos de un documento en la ficha', () => {
     expect(documentView(withDocument({ date_text: 'c. 1978-1980 [?]' })).dateText).toBe(
       'c. 1978-1980 [?]',
     )
-    // Sin la columna generada, el espejo de documentaryFormat da lo mismo.
+    // Without the generated column, documentaryFormat's mirror gives the same.
     expect(
       documentView(
         withDocument({ date_text: '', start_year: 1978, end_year: 1978 }),
@@ -149,7 +149,7 @@ describe('el documento que no se puede leer (RF-304)', () => {
     expect(view.title).toBe('Documento no disponible')
     expect(view.file).toBeNull()
     expect(view.fileNote).toContain('no se puede leer')
-    // La nota del enlace es NUESTRA, no del documento: se sigue leyendo.
+    // The link's note is OURS, not the document's: it keeps being read.
     expect(view.linkNote).toBe('Sale en la página 3')
     expect(view.documentId).toBe('doc-1')
   })
@@ -211,7 +211,7 @@ describe('el fichero digitalizado, o su ausencia (RF-408)', () => {
 })
 
 describe('el resumen que encabeza el bloque abierto', () => {
-  /** Una fila reducida a lo que el resumen mira: si hay fichero y cuánto pesa. */
+  /** A row reduced to what the summary looks at: whether there is a file and how much it weighs. */
   function view(bytes: number | null): { file: { bytes: number | null } | null } {
     return { file: bytes === null ? null : { bytes } }
   }

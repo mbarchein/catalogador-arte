@@ -124,7 +124,7 @@ describe('la sede de la muestra (RF-502, RF-512)', () => {
     )
   })
 
-  /** Dos tablas distintas, rellenadas a mano con meses de diferencia: si la sede ya lleva el nombre de la institución, no se imprime dos veces en la misma línea de un móvil. */
+  /** Two different tables, filled in by hand months apart: if the venue already carries the institution's name, it is not printed twice on the same line of a phone. */
   it('no repite la institución cuando la sede ya la nombra, aunque cambien tildes y mayúsculas', () => {
     const row = exhibition({
       venue: venue({
@@ -227,7 +227,7 @@ describe('el catálogo de la muestra (RF-503)', () => {
     expect(catalogueText(row)).toBe('Sin catálogo')
   })
 
-  /** Una muestra cuyo catálogo nadie ha buscado no es una muestra sin catálogo. */
+  /** A show whose catalogue nobody has looked for is not a show without a catalogue. */
   it('RF-218: sin revisar el catálogo no se lee como que no lo hubo', () => {
     const row = exhibition({ catalogue_published: 'UNREVIEWED', catalogue_reference_id: null })
     expect(catalogueText(row)).toBe('Sin revisar si hubo catálogo')
@@ -323,7 +323,7 @@ describe('de qué está hecho el historial (RF-501)', () => {
     )
   })
 
-  /** Con una sola fila, la insignia de esa fila ya lo dice: el resumen sería una línea de móvil gastada en nada. */
+  /** With a single row, that row's badge already says it: the summary would be a line of phone spent on nothing. */
   it('no resume una sola exposición, ni cuando no hay ninguna legible', () => {
     expect(exhibitionKindSummary([participation()])).toBeNull()
     expect(exhibitionKindSummary([])).toBeNull()

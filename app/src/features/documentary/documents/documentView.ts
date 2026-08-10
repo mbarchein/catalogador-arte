@@ -61,7 +61,7 @@ export interface DocumentViewOptions {
    * simply says nothing about the location, which is honest — it never guesses.
    */
   placeText?: (placeId: string) => string | null | undefined
-  /** Por omisión una obra, que es de donde viene este bloque. */
+  /** An artwork by default, which is where this block comes from. */
   owner?: DocumentOwner
 }
 

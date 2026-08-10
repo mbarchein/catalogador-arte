@@ -70,7 +70,7 @@ function photo(over: Partial<PhotoRef> = {}): PhotoRef {
 
 const NOW = new Date('2026-08-05T12:00:00Z')
 
-// ── El destino que se ve antes de tocar ──────────────────────
+// ── The destination seen before touching ─────────────────────
 
 describe('linkDomain · RF-1408: el dominio dice a dónde lleva', () => {
   it('saca el nombre del sitio y le quita el www', () => {
@@ -94,11 +94,11 @@ describe('linkDomain · RF-1408: el dominio dice a dónde lleva', () => {
   })
 
   it('NO enseña un dominio cuando la autoridad no es un nombre de sitio llano', () => {
-    // Credenciales antes del anfitrión: se lee como del MACVA y va a otro sitio.
+    // Credentials before the host: it reads as MACVA's and goes somewhere else.
     expect(linkDomain('https://www.macvac.es@evil.example/obra')).toBe('')
-    // La barra invertida, que el navegador trata como barra.
+    // The backslash, which the browser treats as a slash.
     expect(linkDomain('https://evil.example\\.ejemplo.es/')).toBe('')
-    // Ancho cero dentro del nombre del sitio.
+    // Zero width inside the site's name.
     expect(linkDomain('https://macvac\u200b.es/')).toBe('')
     // Direcciones IP y localhost.
     expect(linkDomain('https://192.168.1.7/obra')).toBe('')
@@ -149,7 +149,7 @@ describe('linkTypeText · RF-1402: «sin clasificar» no es «no encaja»', () =
   })
 })
 
-// ── El recuento y el vacío ──────────────────────────────────
+// ── The count and the empty case ────────────────────────────
 
 describe('linkCountText · nunca un cero pelado', () => {
   it('cuenta en singular y en plural', () => {
@@ -170,7 +170,7 @@ describe('EMPTY_TEXT · el bloque sin estado de investigación lo dice', () => {
   })
 })
 
-// ── La comprobación a mano ──────────────────────────────────
+// ── The check done by hand ──────────────────────────────────
 
 describe('agoText y daysSince', () => {
   it('cuenta los días enteros que han pasado', () => {
@@ -249,7 +249,7 @@ describe('retiredNotice · RF-1406: se retira, no se borra', () => {
   })
 })
 
-// ── El orden y los grupos ───────────────────────────────────
+// ── The order and the groups ────────────────────────────────
 
 describe('sortLinks · lo vigente primero, luego por tipo y por alta', () => {
   it('lo retirado va al final aunque su tipo mande', () => {
@@ -276,8 +276,8 @@ describe('sortLinks · lo vigente primero, luego por tipo y por alta', () => {
       link({ id: 'viejo', created_at: '2026-08-01T10:00:00Z' }),
       link({ id: 'empate-z', created_at: '2026-08-01T10:00:00Z', url: 'https://z.ejemplo.es/' }),
     ]
-    // El empate exacto de fecha existe de verdad: las dos filas que trasladó la
-    // migración de notas comparten el mismo `now()`.
+    // The exact date tie really happens: the two rows the notes migration moved
+    // share the same `now()`.
     expect(sortLinks(rows).map((r) => r.id)).toEqual(['viejo', 'empate-z', 'nuevo'])
   })
 
@@ -352,7 +352,7 @@ describe('groupLinks · el arco exclusivo, repartido en pantalla (RF-1401)', () 
   })
 })
 
-// ── El par que cierra RF-1407 ───────────────────────────────
+// ── The pair that closes RF-1407 ────────────────────────────
 
 describe('reproductionsWithoutSource · una reproducción dice de dónde salió', () => {
   const source = link({

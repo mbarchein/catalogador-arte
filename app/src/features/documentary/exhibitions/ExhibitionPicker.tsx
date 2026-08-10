@@ -77,8 +77,8 @@ export function ExhibitionPicker({
     return <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">{blockedReason}</p>
   }
 
-  // Igual que el selector de personas: lista mientras se busca la muestra, formulario en
-  // cuanto hay una elegida.
+  // Same as the person selector: a list while the show is being searched for, a form as
+  // soon as one is chosen.
   const guard = useSheetGuard({
     onClose: close,
     backdropCloses: chosen === null,

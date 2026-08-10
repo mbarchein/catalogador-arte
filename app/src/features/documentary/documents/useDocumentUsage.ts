@@ -29,8 +29,8 @@ export function useDocumentUsage(
 ): DocumentReach {
   const [reach, setReach] = useState<DocumentReach>({ otherArtworks: null, exhibitions: null })
 
-  // El panel se cierra con el recuento en el aire, y la ficha entera se pasa con el
-  // pulgar.
+  // The panel is closed with the count in the air, and the whole record is flicked past with the
+  // thumb.
   const alive = useRef(true)
   useEffect(() => {
     alive.current = true

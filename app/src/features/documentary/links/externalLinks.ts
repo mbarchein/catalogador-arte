@@ -42,7 +42,7 @@ export interface ExternalLinkRow extends ExternalLink {
   readonly created_at: string
 }
 
-/** Una fotografía de la obra, con lo justo para nombrarla y para el par de RF-1407. */
+/** A photograph of the artwork, with just enough to name it and for RF-1407's pair. */
 export interface PhotoRef {
   readonly image_id: string
   readonly shot_type: ShotTypeValue
@@ -51,7 +51,7 @@ export interface PhotoRef {
   readonly active: boolean
 }
 
-// ── El destino, que se ve antes de tocar (RF-1408) ───────────
+// ── The destination, seen before touching (RF-1408) ──────────
 
 /**
  * El nombre del sitio, y **el mismo trozo de la dirección que miró la base**.
@@ -78,8 +78,8 @@ export function linkDomain(url: string): string {
   if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}(:\d{1,5})?$/.test(host)) {
     return ''
   }
-  // `www.` se quita solo para leer: no dice nada y ocupa cuatro caracteres de una
-  // pantalla estrecha. La dirección que se guarda y a la que se va no se toca.
+  // `www.` is dropped only for reading: it says nothing and takes up four characters of a
+  // narrow screen. The address that is stored and travelled to is untouched.
   return host.startsWith('www.') ? host.slice(4) : host
 }
 
@@ -112,12 +112,12 @@ export function linkDestination(link: Pick<ExternalLinkRow, 'title' | 'url'>): s
   return linkLabel(link) === domain ? null : domain
 }
 
-/** La clase de sitio. Nulo es «Sin clasificar», que **no** es `OTHER` (RF-1402, RF-205). */
+/** The kind of site. Null is «Sin clasificar», which is **not** `OTHER` (RF-1402, RF-205). */
 export function linkTypeText(type: ExternalLinkType | null): string {
   return type === null ? 'Sin clasificar' : EXTERNAL_LINK_TYPE_LABEL[type]
 }
 
-// ── El recuento y el bloque vacío ────────────────────────────
+// ── The count and the empty block ────────────────────────────
 
 /**
  * `3 enlaces`, `1 enlace`, `Ninguno registrado`.
@@ -143,22 +143,22 @@ export const EMPTY_TEXT =
   'Sin enlaces registrados. Este bloque no lleva estado de investigación: que esté vacío no ' +
   'dice si se ha buscado o no, solo que nadie ha pegado todavía una dirección aquí.'
 
-/** Y dónde se añade uno, para que el vacío no sea un callejón sin salida. */
+/** And where one is added, so the empty case is not a dead end. */
 export const EMPTY_HINT_READONLY =
   'Los enlaces se añaden desde la zona de edición de la ficha.'
 
-// ── El estado de comprobación (RF-1405) ─────────────────────
+// ── The check state (RF-1405) ───────────────────────────────
 
-/** El color de la etiqueta de comprobación. Los mismos cuatro tonos que ya habla la ficha. */
+/** The colour of the check label. The same four tones the record already speaks. */
 export type CheckTone = 'unchecked' | 'working' | 'changed' | 'broken'
 
 export interface CheckBadge {
-  /** Lo que se lee en la etiqueta. Nunca vacío. */
+  /** What is read on the label. Never empty. */
   readonly label: string
   readonly tone: CheckTone
-  /** Cuándo se comprobó, o por qué no consta. Null cuando no hay nada que añadir. */
+  /** When it was checked, or why it is not recorded. Null when there is nothing to add. */
   readonly detail: string | null
-  /** La comprobación es vieja: la etiqueta sigue siendo la que es, pero envejecida. */
+  /** The check is old: the label is still what it is, but aged. */
   readonly stale: boolean
 }
 
@@ -172,7 +172,7 @@ export interface CheckBadge {
  */
 export const STALE_DAYS = 365
 
-/** Días enteros entre dos momentos, o null si la fecha no se puede leer. */
+/** Whole days between two moments, or null if the date cannot be read. */
 export function daysSince(iso: string | null, now: Date): number | null {
   if (iso === null) return null
   const at = new Date(iso).getTime()
@@ -239,14 +239,14 @@ export function checkBadge(
   }
 }
 
-/** Un enlace retirado sigue leyéndose, y se dice que lo está (RF-901, RF-1406). */
+/** A withdrawn link is still read, and it is said that it is (RF-901, RF-1406). */
 export function retiredNotice(link: Pick<ExternalLinkRow, 'active'>): string | null {
   return link.active
     ? null
     : 'Retirado del catálogo. Se sigue viendo porque puedes editar; quien solo consulta no lo ve.'
 }
 
-// ── El orden y los grupos ────────────────────────────────────
+// ── The order and the groups ─────────────────────────────────
 
 /**
  * El orden de los tipos en pantalla, que es el del enumerado de la base y no el
@@ -312,7 +312,7 @@ export function sortLinks(rows: readonly ExternalLinkRow[]): readonly ExternalLi
   })
 }
 
-/** Los enlaces de una fotografía, con la fotografía nombrada. */
+/** A photograph's links, with the photograph named. */
 export interface PhotoLinkGroup {
   readonly imageId: string
   /** «General», «Reverso»… y la posición, que es como se nombra una toma en la galería. */

@@ -274,7 +274,7 @@ export function ExternalLinksSection({
   )
 }
 
-/** Los enlaces de una fotografía, bajo el nombre de la toma. */
+/** A photograph's links, under the shot's name. */
 function PhotoGroup({
   group,
   now,
@@ -318,8 +318,8 @@ function PhotoGroup({
 }
 
 const CHECK_TONE_CLASS: Record<CheckTone, string> = {
-  // «Sin comprobar» en tono neutro y NO en rojo: es el estado en el que nace todo
-  // enlace, y pintar de rojo el caso normal enseña al ojo a saltárselo.
+  // «Sin comprobar» in a neutral tone and NOT in red: it is the state every link is born
+  // in, and painting the normal case red teaches the eye to skip it.
   unchecked: 'bg-stone-200 text-stone-700',
   working: 'bg-green-100 text-green-900',
   changed: 'bg-amber-100 text-amber-900',
@@ -353,7 +353,7 @@ function LinkItem({
   actions: ReturnType<typeof useLinkActions>
   onDone: (failure: string | null) => Promise<string | null>
   onEdit: () => void
-  /** Este enlace es el que se está corrigiendo, y el formulario está más abajo. */
+  /** This link is the one being corrected, and the form is further down. */
   editing: boolean
 }) {
   const [confirming, setConfirming] = useState(false)

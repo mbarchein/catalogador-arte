@@ -108,7 +108,7 @@ describe('las columnas de las exposiciones que se pueden elegir', () => {
     check(row.venue!.party!)
   })
 
-  /** Dato personal de terceros que la ficha no imprime nunca (RF-105). */
+  /** Third parties' personal data that the record never prints (RF-105). */
   it('no pide el contacto de la institución', () => {
     expect(EXHIBITION_OPTION_COLUMNS).not.toMatch(/\bcontact\b/)
   })
@@ -198,7 +198,7 @@ describe('RF-304: el selector nunca se queda en blanco', () => {
     expect(text).not.toContain('pendiente')
   })
 
-  /** Si no, se teclea el título del catálogo que se tiene en la mano, no sale nada y se concluye que la búsqueda está rota. */
+  /** Otherwise the title of the catalogue held in hand gets typed, nothing comes out, and the conclusion is that the search is broken. */
   it('sin coincidencias, repite lo buscado y dice dónde se crean las exposiciones', () => {
     const text = noOptionsText(12, ' Antológica ')
     expect(text).toContain('«Antológica»')
@@ -242,7 +242,7 @@ describe('lo que se manda a la base', () => {
     })
   })
 
-  /** Lo que no se manda no se borra: la RPC conserva lo que ya hubiera. */
+  /** What is not sent is not erased: the RPC keeps whatever was already there. */
   it('un formulario en blanco manda cadenas vacías, no nulos', () => {
     expect(participationPayload('AR-0001', 'ex-1', '', '')).toMatchObject({
       p_catalogue_number: '',

@@ -57,19 +57,19 @@ export function LinkForm({
   onRestore,
   onCancel,
 }: {
-  /** De qué cuelga el enlace nuevo. La obra, por omisión, o una fotografía concreta. */
+  /** What the new link hangs from. The artwork, by default, or one particular photograph. */
   anchor: LinkAnchor
-  /** Las fotografías de la ficha, para poder anclarlo a una toma (RF-1407). */
+  /** The record's photographs, so it can be anchored to one shot (RF-1407). */
   photos: readonly PhotoRef[]
-  /** Lo que ya hay en la ficha, para predecir la dirección repetida sin ir a la base. */
+  /** What is already in the record, to predict the repeated address without going to the base. */
   rows: readonly ExternalLinkRow[]
-  /** El enlace que se está corrigiendo, o null si es nuevo. */
+  /** The link being corrected, or null if it is new. */
   editing?: ExternalLinkRow | null
   saving: boolean
   verifyUrl: (url: string) => Promise<UrlVerdict>
-  /** Guarda. Contesta null si ha ido bien, y la frase en español si no. */
+  /** Saves. Answers null if it went well, and the sentence in Spanish if not. */
   onSubmit: (draft: LinkDraft) => Promise<string | null>
-  /** Recupera el enlace retirado que tiene esta misma dirección (RF-1406). */
+  /** Recovers the withdrawn link having this same address (RF-1406). */
   onRestore: (link: ExternalLinkRow) => Promise<string | null>
   onCancel: () => void
 }) {
@@ -77,7 +77,7 @@ export function LinkForm({
     editing === null ? emptyDraft(anchor) : draftFrom(editing),
   )
   const [problem, setProblem] = useState<string | null>(null)
-  /** El retirado con la misma dirección: en vez de un «no», una salida (RF-1406). */
+  /** The withdrawn one with the same address: instead of a «no», a way out (RF-1406). */
   const [twin, setTwin] = useState<ExternalLinkRow | null>(null)
   const [asking, setAsking] = useState(false)
 
