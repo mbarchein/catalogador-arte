@@ -76,9 +76,9 @@ const OPERATIONS = [
   'multipart-start',
   'multipart-complete',
   'multipart-abort',
-  // Cuánto ocupa el bucket. Está aquí y no en una función aparte porque las
-  // credenciales del almacén solo pueden vivir en un sitio, y ese sitio es este:
-  // una segunda función significaría una segunda copia de la clave.
+  // How much the bucket takes up. It is here and not in a separate function because the
+  // store's credentials can only live in one place, and that place is this one:
+  // a second function would mean a second copy of the key.
   'usage',
 ] as const
 type Operation = (typeof OPERATIONS)[number]
@@ -111,8 +111,8 @@ Deno.serve(async (request) => {
   if (!OPERATIONS.includes(operation as Operation)) {
     return reply(400, { error: `operation debe ser una de: ${OPERATIONS.join(', ')}` })
   }
-  // «usage» habla del bucket entero y no de un fichero, así que es la única
-  // operación sin ruta. Todas las demás la exigen antes de mirar nada más.
+  // «usage» speaks of the whole bucket and not of a file, so it is the only
+  // operation with no path. Every other one requires it before looking at anything else.
   if (operation !== 'usage' && !isSignablePath(path)) {
     return reply(400, { error: 'ruta no válida para un fichero de archivo' })
   }
@@ -136,12 +136,12 @@ Deno.serve(async (request) => {
 
   const objectUrl = () => new URL(`${S3_ENDPOINT}/${S3_BUCKET}/${path}`)
 
-  // ── Cuánto ocupa el archivo ──
+  // ── How much the archive takes up ──
   //
-  // Se pagina hasta el final y se suma aquí, no en el navegador: el listado de un
-  // bucket con versiones son cientos de kilobytes de XML que no pintan nada en
-  // pantalla, y mandarlos al móvil de quien cataloga sería gastarle los datos en
-  // enseñar un número.
+  // It is paginated to the end and summed here, not in the browser: the listing of a
+  // bucket with versions is hundreds of kilobytes of XML that paint nothing on
+  // screen, and sending them to the phone of whoever catalogues would be spending their data on
+  // showing one number.
 
   if (operation === 'usage') {
     let bytes = 0
@@ -167,9 +167,9 @@ Deno.serve(async (request) => {
       pages += 1
     } while (next !== null && pages < MAX_USAGE_PAGES)
 
-    // Si se ha llegado al tope, lo que hay es un mínimo y no un total. Se dice,
-    // porque una suma parcial presentada como total es la clase de cifra que
-    // tranquiliza justo el día que no debería.
+    // If the cap has been reached, what there is is a minimum and not a total. It is said,
+    // because a partial sum presented as a total is the kind of figure that
+    // reassures precisely on the day it should not.
     return reply(200, { bytes, objects, truncated: next !== null })
   }
 

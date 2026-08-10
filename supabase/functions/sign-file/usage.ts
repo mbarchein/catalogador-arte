@@ -1,36 +1,36 @@
-// Lectura del listado de objetos del almacén, para saber cuánto ocupa.
+// Reading the store's object listing, to know how much it takes up.
 //
-// Sin Deno y sin red, como `multipart.ts` y por el mismo motivo: aquí no hay
-// forma de ejecutar tests, y la suite del frontend sí importa este módulo. Lo
-// que se puede equivocar de verdad —contar mal, o dar por terminado un listado
-// que sigue— queda cubierto ahí.
+// Without Deno and without network, like `multipart.ts` and for the same reason: here there is no
+// way of running tests, and the frontend's suite does import this module. What
+// can really go wrong —counting badly, or taking as finished a listing
+// that continues— is covered there.
 //
-// ── POR QUÉ SE CUENTAN LAS VERSIONES ────────────────────────
+// ── WHY THE VERSIONS ARE COUNTED ────────────────────────────
 //
-// El bucket conserva todas las versiones a propósito (infra/b2.tf): un máster es
-// el documento, y una sobrescritura tiene que ser recuperable. Eso significa que
-// el almacén cobra por lo que hay guardado, no por lo que se ve: un listado de
-// objetos corrientes diría menos de lo que se está pagando, y una cifra que dice
-// de menos en la pantalla que sirve para no quedarse sin sitio es peor que no
-// tenerla. Por eso se pide `?versions`, que es lo que devuelve también las
-// anteriores.
+// The bucket keeps every version on purpose (infra/b2.tf): a master is
+// the document, and an overwrite has to be recoverable. That means the
+// store charges for what is stored, not for what is visible: a listing of
+// ordinary objects would say less than what is being paid, and a figure that says
+// less on the screen that serves to avoid running out of room is worse than not
+// having it. That is why `?versions` is asked for, which is what also returns the
+// previous ones.
 
-/** Un tramo del listado, ya sumado, y por dónde sigue. */
+/** One stretch of the listing, already summed, and where it continues. */
 export interface UsagePage {
   bytes: number
   objects: number
-  /** Los dos marcadores con los que se pide el tramo siguiente, o null si no hay. */
+  /** The two markers the next stretch is asked for with, or null if there is none. */
   next: { keyMarker: string; versionIdMarker: string } | null
 }
 
 /**
- * Cuántos tramos se piden como mucho.
+ * How many stretches are asked for at most.
  *
- * Cada uno son mil objetos, así que esto son doscientos mil ficheros: muy por
- * encima de lo que este catálogo va a tener, y aun así un tope, porque un bucle
- * que pagina contra un servicio remoto sin límite es un bucle que un día no
- * termina. Cuando se alcanza, la respuesta lo DICE en vez de dar la suma parcial
- * por total: ver `truncated` en la función Edge.
+ * Each one is a thousand objects, so this is two hundred thousand files: well
+ * above what this catalogue is going to have, and even so a cap, because a loop
+ * that paginates against a remote service with no limit is a loop that one day does not
+ * finish. When it is reached, the answer SAYS so instead of taking the partial sum
+ * as the total: see `truncated` in the Edge function.
  */
 export const MAX_USAGE_PAGES = 200
 
@@ -40,9 +40,9 @@ function tag(xml: string, name: string): string | null {
 }
 
 /**
- * Suma un tramo del listado y dice por dónde continuar.
+ * Sums one stretch of the listing and says where to continue.
  *
- * Las marcas de borrado no traen `<Size>` y por eso no suman: no ocupan.
+ * Delete markers carry no `<Size>` and that is why they do not add: they take up nothing.
  */
 export function usagePage(xml: string): UsagePage {
   let bytes = 0
@@ -56,8 +56,8 @@ export function usagePage(xml: string): UsagePage {
   const keyMarker = tag(xml, 'NextKeyMarker')
   const versionIdMarker = tag(xml, 'NextVersionIdMarker')
 
-  // Truncado pero sin marcador es un listado que no dice por dónde sigue: se
-  // trata como terminado en vez de repetir el mismo tramo para siempre.
+  // Truncated but with no marker is a listing that does not say where it continues: it is
+  // treated as finished instead of repeating the same stretch forever.
   const next =
     truncated && keyMarker !== null && versionIdMarker !== null
       ? { keyMarker, versionIdMarker }
