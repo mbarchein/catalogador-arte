@@ -20,20 +20,20 @@ import {
 } from './artistFunds'
 
 /**
- * Los fondos, mantenidos desde Tablas (RF-1106, RF-901, ADR-007 segunda entrega).
+ * The funds, maintained from Tablas (RF-1106, RF-901, ADR-007 second delivery).
  *
- * Hace menos que las otras cinco maestras y el motivo está en `artistFunds.ts`: no
- * crea, no borra y no toca el prefijo. Lo que sí, y es lo que se pidió: renombrar,
- * retirar y apartar las obras — dos interruptores distintos, cada uno con su
- * explicación al lado, porque «deja de ofrecerse» y «sus obras no salen» se
- * confunden con facilidad y solo uno de los dos cambia lo que se ve del catálogo.
+ * It does less than the other five master tables and the reason is in `artistFunds.ts`: it does not
+ * create, does not delete and does not touch the prefix. What it does, and it is what was asked for: renaming,
+ * withdrawing and setting the artworks aside — two different switches, each with its
+ * explanation alongside, because «it stops being offered» and «its artworks do not show up» are
+ * easily confused and only one of the two changes what is seen of the catalogue.
  *
- * No lleva fila compartida (`MasterTableRow`): esa fila es nombre + retirar, y aquí
- * hay un interruptor más y un prefijo que enseñar. Sí comparte `useTableAction`,
- * que es lo que ordena el «ocupado / fallo / desplaza al fallo».
+ * It does not carry the shared row (`MasterTableRow`): that row is name + withdraw, and here
+ * there is one more switch and a prefix to show. It does share `useTableAction`,
+ * which is what orders the «busy / failure / scroll to the failure».
  *
- * Catalogador solo. Quien solo consulta y llegue a la dirección se va al listado:
- * el fondo se lee desde cualquier obra, y aquí no hay nada que leer que no esté ahí.
+ * Cataloguer only. Whoever only consults and reaches the address goes to the listing:
+ * the fund is read from any artwork, and here there is nothing to read that is not there.
  */
 export function ArtistFundsPage() {
   const access = useEditingAccess()

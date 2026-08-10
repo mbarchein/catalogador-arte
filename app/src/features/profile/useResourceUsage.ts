@@ -49,9 +49,9 @@ export function useResourceUsage() {
   const refresh = useCallback(async () => {
     setLoading(true)
 
-    // Las dos a la vez: son servicios distintos y encadenarlas solo sumaría la
-    // espera de una a la de la otra. `allSettled` y no `all` porque el objetivo
-    // es justo que una caída no se lleve por delante a la otra.
+    // Both at once: they are different services and chaining them would only add
+    // one's wait to the other's. `allSettled` and not `all` because the aim
+    // is precisely that one falling over does not take the other with it.
     const [fromDatabase, fromArchive] = await Promise.allSettled([
       supabase.rpc('resource_usage'),
       supabase.functions.invoke('sign-file', { body: { operation: 'usage' } }),

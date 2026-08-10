@@ -289,10 +289,10 @@ function PartyRow({
 
   return (
     <li
-      // El nombre se lleva su línea y las acciones van debajo, alineadas a la
-      // derecha: con los botones al lado, un nombre como «Museo de Arte
-      // Contemporáneo Vicente Aguilera Cerni (MACVA)» se partía en varias líneas
-      // de dos palabras. El móvil es el dispositivo principal.
+      // The name takes its own line and the actions go below, aligned to the
+      // right: with the buttons alongside, a name like «Museo de Arte
+      // Contemporáneo Vicente Aguilera Cerni (MACVA)» broke into several lines
+      // of two words. The phone is the primary device.
       className={`card flex flex-wrap items-center gap-2 ${party.active ? '' : 'opacity-60'}`}
     >
       {editing !== null ? (
@@ -469,10 +469,10 @@ function PartyRow({
               disabled={asking}
               onClick={() =>
                 void withContact().then((contact) => {
-                  // El formulario se abre igual si el contacto no se pudo leer:
-                  // corregir el nombre de un museo no depende de su teléfono. La
-                  // explicación pasa al aviso del campo, así que el mensaje de la
-                  // fila se retira para no decirlo dos veces.
+                  // The form opens all the same if the contact could not be read:
+                  // correcting a museum's name does not depend on its phone number. The
+                  // explanation moves to the field's warning, so the row's message
+                  // is withdrawn so as not to say it twice.
                   setContactFailure(null)
                   const opened = partyDraft(party, contact)
                   setEditing({ opened, draft: { ...opened } })

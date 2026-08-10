@@ -191,10 +191,10 @@ function VenueRow({
 
   return (
     <li
-      // El nombre se lleva su línea y las acciones van debajo, alineadas a la
-      // derecha: con los botones al lado, un nombre como «Museo de Bellas Artes de
-      // Badajoz (MUBA)» se partía en varias líneas de dos palabras. El móvil es el
-      // dispositivo principal.
+      // The name takes its own line and the actions go below, aligned to the
+      // right: with the buttons alongside, a name like «Museo de Bellas Artes de
+      // Badajoz (MUBA)» broke into several lines of two words. The phone is the
+      // primary device.
       className={`card flex flex-wrap items-center gap-2 ${venue.active ? '' : 'opacity-60'}`}
     >
       {draft !== null ? (

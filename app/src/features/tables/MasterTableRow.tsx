@@ -36,10 +36,10 @@ export function MasterTableRow({
 
   return (
     <li
-      // El nombre se lleva su línea y las acciones van debajo, alineadas a la
-      // derecha: con los botones al lado, un nombre como «Collage-Décollage
-      // sobre tabla» se partía en varias líneas de dos palabras. El móvil es el
-      // dispositivo principal.
+      // The name takes its own line and the actions go below, aligned to the
+      // right: with the buttons alongside, a name like «Collage-Décollage
+      // sobre tabla» broke into several lines of two words. The phone is the
+      // primary device.
       className={`card flex flex-wrap items-center gap-2 ${entry.active ? '' : 'opacity-60'}`}
     >
       {draft !== null ? (

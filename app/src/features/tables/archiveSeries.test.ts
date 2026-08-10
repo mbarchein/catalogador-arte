@@ -27,17 +27,17 @@ import {
 } from './archiveSeries'
 
 /**
- * RF-515: la clasificación archivística es un ÁRBOL —fondo, serie, subserie— y no
- * una jerarquía metida dentro de un texto, con la forma que ADR-006 fijó para los
- * lugares: nombre tal cual se escribe, clave de comparación normalizada, padre
- * mutable, hermanos sin nombres repetidos y sin ciclos.
- * RF-901: nada se borra, se retira.
- * RF-1106: se mantiene desde la sección «Tablas», no desde la ficha de nada.
+ * RF-515: the archival classification is a TREE —fund, series, subseries— and not
+ * a hierarchy stuffed inside a text, with the shape ADR-006 set for the
+ * places: name as it is written, normalised comparison key, mutable
+ * parent, siblings with no repeated names and no cycles.
+ * RF-901: nothing is deleted, it is withdrawn.
+ * RF-1106: it is maintained from the «Tablas» section, not from any record.
  *
- * Los códigos y los mensajes que se afirman aquí son los que devuelve de verdad la
- * base local, provocados uno a uno por psql con BEGIN/ROLLBACK y otra vez por HTTP
- * contra el mismo PostgREST que usa la aplicación, autenticado como
- * catalogador@local.test y como lector@local.test.
+ * The codes and the messages asserted here are the ones the local base really
+ * returns, provoked one by one through psql with BEGIN/ROLLBACK and again over HTTP
+ * against the same PostgREST the application uses, authenticated as
+ * catalogador@local.test and as lector@local.test.
  */
 
 function node(over: Partial<ArchiveSeries> & { id: string }): ArchiveSeries {
@@ -45,13 +45,13 @@ function node(over: Partial<ArchiveSeries> & { id: string }): ArchiveSeries {
 }
 
 /**
- * Un árbol de tres niveles, con una rama retirada:
+ * A three-level tree, with one withdrawn branch:
  *
- *   Correspondencia (fondo)
+ *   Correspondencia (fund)
  *     Cartas recibidas
  *       Galerías
- *     Cartas enviadas (retirada)
- *   Álbumes (fondo)
+ *     Cartas enviadas (withdrawn)
+ *   Álbumes (fund)
  */
 const FONDO = node({ id: 'f1', name: 'Correspondencia' })
 const RECIBIDAS = node({ id: 's1', parent_id: 'f1', name: 'Cartas recibidas' })
@@ -149,8 +149,8 @@ describe('la clave de comparación de un nombre', () => {
   })
 
   /**
-   * La trampa del proyecto: `place_key` deja la ñ en pie, y una clave que la
-   * aplanara contestaría «ya está» a un nombre que la base habría aceptado.
+   * The project's trap: `place_key` leaves the ñ standing, and a key that
+   * flattened it would answer «it is already there» to a name the base would have accepted.
    */
   it('la ñ es una letra y no una tilde, así que «Niñeces» y «Nineces» son dos', () => {
     expect(seriesKey('Niñeces')).not.toBe(seriesKey('Nineces'))
@@ -282,8 +282,8 @@ describe('renombrar una serie (RF-515, ADR-006)', () => {
   })
 
   /**
-   * Lo que esta pantalla existe para curar: la migración de los textos de v11 dejó
-   * la jerarquía en minúsculas y sin tildes.
+   * What this screen exists to cure: v11's text migration left
+   * the hierarchy in lower case and with no accents.
    */
   it('corregir solo mayúsculas o tildes del propio nombre sigue siendo posible', () => {
     const tree = buildSeriesTree([node({ id: 'a', name: 'correspondencia' })])
@@ -387,9 +387,9 @@ describe('la frase del nombre repetido', () => {
 
 describe('lo que contesta la base, traducido (RF-1106)', () => {
   /**
-   * Comprobado con el token de lector@local.test: un PATCH que las políticas
-   * niegan vuelve 204, o 200 con lista vacía, y NINGÚN error. Sin contar las filas
-   * tocadas la pantalla diría «guardado» sin haber guardado.
+   * Checked with lector@local.test's token: a PATCH the policies
+   * deny comes back 204, or 200 with an empty list, and NO error. Without counting the rows
+   * touched the screen would say «guardado» without having saved.
    */
   it('cero filas tocadas y sin error no es un éxito', () => {
     const text = describeArchiveSeriesFailure('rename', null)
@@ -427,8 +427,8 @@ describe('lo que contesta la base, traducido (RF-1106)', () => {
   })
 
   /**
-   * El disparador escribe en español y para la usuaria, y la pista es la mitad que
-   * dice qué hacer. Se muestran las dos, que llegan en campos separados.
+   * The trigger writes in Spanish and for the user, and the hint is the half that
+   * says what to do. Both are shown, which arrive in separate fields.
    */
   it('el aviso de los documentos dentro se muestra con su pista', () => {
     expect(
@@ -483,8 +483,8 @@ describe('lo que contesta la base, traducido (RF-1106)', () => {
   })
 
   /**
-   * La única clave ajena que puede fallar desde esta pantalla es `parent_id`, y
-   * solo en un sentido, porque aquí no se borra nada: el padre elegido ya no está.
+   * The only foreign key that can fail from this screen is `parent_id`, and
+   * only in one direction, because nothing is deleted here: the chosen parent is no longer there.
    */
   it('un padre que ya no existe manda a elegir otra vez, no habla de claves', () => {
     const text = describeArchiveSeriesFailure('add', {
@@ -717,9 +717,9 @@ describe('lo que dice una lista sin filas (RF-515)', () => {
   })
 
   /**
-   * El descuido que arrastran las otras pantallas de la sección: pintan «todavía
-   * no hay ninguno» también cuando la carga FALLÓ, afirmando que la tabla está
-   * vacía cuando nadie lo sabe. Aquí calla, que el error ya tiene su párrafo.
+   * The oversight the section's other screens carry: they paint «todavía
+   * no hay ninguno» also when the load FAILED, stating that the table is
+   * empty when nobody knows. Here it keeps quiet, since the error already has its paragraph.
    */
   it('si la carga falló, no se afirma que la tabla esté vacía', () => {
     expect(seriesListNotice({ loading: false, error: 'no hay conexión', count: 0 })).toBeNull()

@@ -266,10 +266,10 @@ function RelationshipTypeRow({
 
   return (
     <li
-      // El nombre y sus lecturas se llevan su línea y las acciones van debajo,
-      // alineadas a la derecha: con los botones al lado, «Parte del mismo
-      // políptico que» se partía en líneas de dos palabras. El móvil es el
-      // dispositivo principal.
+      // The name and its readings take their own line and the actions go below,
+      // aligned to the right: with the buttons alongside, «Parte del mismo
+      // políptico que» broke into lines of two words. The phone is the
+      // primary device.
       className={`card flex flex-wrap items-center gap-2 ${entry.active ? '' : 'opacity-60'}`}
     >
       {draft !== null ? (

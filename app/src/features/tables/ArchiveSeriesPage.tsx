@@ -163,10 +163,10 @@ export function ArchiveSeriesPage() {
         {rows.map(({ series, depth }) => (
           <li
             key={series.id}
-            // El nombre se lleva su línea y las acciones van debajo, alineadas a
-            // la derecha: con tres botones al lado, un nombre como
-            // «Correspondencia con galerías y salas de exposiciones» se partía en
-            // líneas de dos palabras. El móvil es el dispositivo principal.
+            // The name takes its own line and the actions go below, aligned to
+            // the right: with three buttons alongside, a name like
+            // «Correspondencia con galerías y salas de exposiciones» broke into
+            // lines of two words. The phone is the primary device.
             className={`card flex flex-wrap items-center gap-2 ${series.active ? '' : 'opacity-60'}`}
             // Indentation as margin, so a long name wrapping keeps its level.
             style={{ marginLeft: `${depth * 1}rem` }}
