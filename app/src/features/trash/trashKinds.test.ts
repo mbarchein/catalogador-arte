@@ -49,8 +49,8 @@ const TABLES_WITH_TRASH = [
 
 describe('la papelera cubre todo lo que tiene baja lógica (RF-901)', () => {
   it('hay una clase por cada tabla que puede retirar filas', () => {
-    // Una tabla con `active` y sin sitio en la papelera es una tabla cuyas bajas no
-    // tienen salida: eso era exactamente el pendiente que esta pieza cierra.
+    // A table with `active` and no place in the wastebasket is a table whose withdrawals have
+    // no way out: that was exactly the pending item this piece closes.
     expect([...TRASH_KINDS.map((kind) => kind.table)].sort()).toEqual(
       [...TABLES_WITH_TRASH].sort(),
     )
@@ -86,8 +86,8 @@ describe('cada clase se sabe nombrar en español', () => {
   })
 
   it('el singular y el plural no son la misma palabra, salvo donde el español lo es', () => {
-    // «serie» / «series» sí cambia; la excepción real es la que no cambia en plural.
-    // Se comprueba que nadie ha rellenado el plural copiando el singular por descuido.
+    // «serie» / «series» does change; the real exception is the one that does not change in the plural.
+    // It is checked that nobody has filled the plural by copying the singular out of carelessness.
     const suspicious = TRASH_KINDS.filter((kind) => kind.one === kind.many).map((kind) => kind.id)
     expect(suspicious).toEqual([])
   })
@@ -95,18 +95,18 @@ describe('cada clase se sabe nombrar en español', () => {
   it('la clave y las columnas están puestas, o el update no sabría a quién tocar', () => {
     for (const kind of TRASH_KINDS) {
       expect(kind.key.trim()).not.toBe('')
-      // La traza es lo que hace decidible la papelera: si estas dos columnas no se
-      // piden, la línea no puede decir cuándo ni quién.
+      // The trace is what makes the wastebasket decidable: if these two columns are not
+      // asked for, the line cannot say when or who.
       expect(kind.columns).toContain('deactivated_at')
       expect(kind.columns).toContain('deactivated_by')
-      // La clave tiene que venir en el select o no habría con qué recuperar la fila.
+      // The key has to come in the select or there would be nothing to recover the row with.
       expect(kind.columns).toContain(kind.key)
     }
   })
 
   it('las columnas de un incrustado que hace de padre traen su «active»', () => {
-    // Sin `active` en el incrustado, `restoreBlock` no puede saber si el padre sigue
-    // retirado, y la comprobación previa se volvería un adorno que siempre pasa.
+    // Without `active` in the embedded row, `restoreBlock` cannot know whether the parent is still
+    // withdrawn, and the prior check would become an ornament that always passes.
     for (const kind of TRASH_KINDS) {
       for (const parent of kind.parents) {
         if (parent.via !== 'embed') continue
@@ -148,8 +148,8 @@ describe('ninguna línea de la papelera puede quedarse muda', () => {
   })
 
   it('el contexto nunca deja un separador suelto', () => {
-    // « · » al principio o al final es la señal de que un trozo vacío se ha colado en
-    // la unión, y es lo que se ve en pantalla.
+    // « · » at the start or the end is the sign that an empty piece has slipped into
+    // the join, and it is what is seen on screen.
     for (const kind of TRASH_KINDS) {
       const context = kind.context({})
       expect(context.startsWith(' · ')).toBe(false)
@@ -175,8 +175,8 @@ describe('las obras y las fotografías se reconocen por lo que está pegado al c
   })
 
   it('una obra sin título no deja un hueco: lo dice entre corchetes', () => {
-    // `displayTitle` ya fijó que un título vacío se lee «[Sin título]» y que los
-    // corchetes son lo único que lo separa de una obra que el artista tituló así.
+    // `displayTitle` already settled that an empty title reads «[Sin título]» and that the
+    // brackets are the only thing separating it from an artwork the artist titled that way.
     const spec = kindSpec('artworks')
     expect(spec.label({ catalog_id: 'RC-0001', title: '' })).toBe('RC-0001 · [Sin título]')
   })
@@ -212,8 +212,8 @@ describe('un eslabón de procedencia se nombra por su parte o por su nota', () =
   })
 
   it('sin parte, la nota, que la base garantiza que no está vacía', () => {
-    // `provenance_events_link_has_an_end` exige parte O nota, así que este es el otro
-    // caso legítimo y no una fila corrupta.
+    // `provenance_events_link_has_an_end` requires a party OR a note, so this is the other
+    // legitimate case and not a corrupt row.
     expect(spec.label({ parties: null, party_note: 'Colección particular, Madrid' })).toBe(
       'Colección particular, Madrid',
     )
@@ -279,8 +279,8 @@ describe('buscar una clase o un grupo por su identificador', () => {
   })
 
   it('un identificador inventado avisa en vez de devolver algo a medias', () => {
-    // Inalcanzable por el tipo, pero un `undefined` viajando hacia la pantalla se
-    // convertiría en una línea en blanco muy lejos de aquí.
+    // Unreachable by the type, but an `undefined` travelling towards the screen would
+    // turn into a blank line a long way from here.
     expect(() => kindSpec('inventado' as TrashKindSpec['id'])).toThrow(/desconocida/)
     expect(() => groupSpec('inventado' as never)).toThrow(/desconocido/)
   })
@@ -302,8 +302,8 @@ describe('los lectores de una fila cruda', () => {
   })
 
   it('«no hay padre» y «el padre está retirado» no se confunden', () => {
-    // La distinción decide si se bloquea la recuperación. Un documento sin serie de
-    // archivo llega con el incrustado nulo, y eso NO es un padre retirado.
+    // The distinction decides whether recovery is blocked. A document with no archive
+    // series arrives with the embedded row null, and that is NOT a withdrawn parent.
     expect(embeddedRetired({ artworks: { active: false } }, 'artworks')).toBe(true)
     expect(embeddedRetired({ artworks: { active: true } }, 'artworks')).toBe(false)
     expect(embeddedRetired({ artworks: null }, 'artworks')).toBeNull()

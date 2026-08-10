@@ -43,8 +43,8 @@ describe('un disparador que dice no ya escribe en español, y su pista es la mit
 
 describe('el hueco ocupado mientras algo estaba en la papelera (23505)', () => {
   it('los enlaces externos lo cuentan a su manera, porque son los únicos donde ocurre', () => {
-    // Medido: los índices de `external_links` son parciales —`where ... and active`—,
-    // así que la dirección de un enlace retirado SÍ se libera y otro puede ocuparla.
+    // Measured: `external_links`' indexes are partial —`where ... and active`—,
+    // so a withdrawn link's address IS freed and another one can take it.
     const text = describeRestoreRefusal('external_links', {
       code: '23505',
       message: 'duplicate key value violates unique constraint "external_links_artwork_url_unique"',
@@ -52,7 +52,7 @@ describe('el hueco ocupado mientras algo estaba en la papelera (23505)', () => {
     })
     expect(text).toContain('la misma dirección')
     expect(text).toContain('retira antes el otro')
-    // El mensaje crudo nombra un índice y no ayuda a nadie: no debe llegar a pantalla.
+    // The raw message names an index and helps nobody: it must not reach the screen.
     expect(text).not.toContain('external_links_artwork_url_unique')
     expect(text).not.toContain('duplicate key')
   })
@@ -96,8 +96,8 @@ describe('la sesión que ya no puede escribir (42501)', () => {
 
 describe('lo que no debería poder pasar se dice, no se traga', () => {
   it('una clave ajena rota se cuenta como la anomalía que es', () => {
-    // En este catálogo nada se borra de verdad, así que un 23503 al recuperar significa
-    // que algo se ha ido de la base por un camino que no existe.
+    // In this catalogue nothing is really deleted, so a 23503 on recovery means
+    // something has left the base by a path that does not exist.
     const text = describeRestoreRefusal('provenance_events', {
       code: '23503',
       message: 'insert or update on table "provenance_events" violates foreign key constraint',

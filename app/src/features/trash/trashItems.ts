@@ -163,8 +163,8 @@ export function toTrashItems(
   rows: readonly TrashRow[],
   authors: ReadonlyMap<string, TrashAuthor>,
 ): readonly TrashItem[] {
-  // El conjunto se calcula una vez por clase, no una por fila: es lo que resuelve
-  // el padre de las tablas anidadas sobre sí mismas.
+  // The set is computed once per class, not once per row: it is what resolves
+  // the parent of the tables nested on themselves.
   const retiredKeys = new Set(rows.map((row) => cell(row, spec.key)))
   return rows.map((row) => {
     const by = cell(row, 'deactivated_by')
@@ -193,13 +193,13 @@ export function kindCountText(spec: TrashKindSpec, count: number): string {
   return `${count} ${count === 1 ? spec.one : spec.many}`
 }
 
-/** Una clase con lo que tiene dentro, para pintar su bloque. */
+/** A class with what it has inside, to paint its block. */
 export interface TrashKindView {
   readonly spec: TrashKindSpec
   readonly items: readonly TrashItem[]
-  /** Si la base tenía más de las que caben en una página. */
+  /** Whether the base had more than fit on one page. */
   readonly truncated: boolean
-  /** Lo que salió mal al leer justo esta clase, si salió algo. */
+  /** What went wrong reading this class in particular, if anything did. */
   readonly error: string | null
 }
 

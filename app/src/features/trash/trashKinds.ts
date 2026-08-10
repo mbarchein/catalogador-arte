@@ -48,10 +48,10 @@ import {
   type ShotTypeValue,
 } from '../../lib/types'
 
-/** Una fila tal como llega de PostgREST, con sus incrustados. */
+/** A row just as it arrives from PostgREST, with its embedded rows. */
 export type TrashRow = Readonly<Record<string, unknown>>
 
-/** El texto de una columna, ya recortado y **nunca** `undefined`. */
+/** A column's text, already trimmed and **never** `undefined`. */
 export function cell(row: TrashRow, key: string): string {
   const value = row[key]
   if (typeof value === 'string') return value.trim()
@@ -89,7 +89,7 @@ export function embeddedRetired(row: TrashRow, key: string): boolean | null {
   return typeof active === 'boolean' ? !active : null
 }
 
-/** Une los trozos de una línea descartando los vacíos, para no dejar « · » suelto. */
+/** Joins a line's pieces discarding the empty ones, so as not to leave a stray « · ». */
 export function joinParts(parts: readonly string[]): string {
   return parts.filter((part) => part !== '').join(' · ')
 }
@@ -105,21 +105,21 @@ export function joinParts(parts: readonly string[]): string {
  * pedir nada: el conjunto de claves retiradas de su propia tabla.
  */
 export type TrashParent =
-  /** El padre viaja incrustado en la fila, con su `active`. */
+  /** The parent travels embedded in the row, with its `active`. */
   | {
       readonly via: 'embed'
-      /** Cómo se nombra la clase de padre: «la obra», «la exposición». */
+      /** How the parent's class is named: «la obra», «la exposición». */
       readonly what: string
-      /** La clave del incrustado dentro de la fila. */
+      /** The embedded row's key inside the row. */
       readonly key: string
-      /** Cómo se nombra ese padre concreto para la frase. */
+      /** How that particular parent is named for the sentence. */
       readonly name: (row: TrashRow) => string
     }
-  /** El padre está en la misma tabla, y se sabe por el conjunto de retiradas. */
+  /** The parent is in the same table, and is known through the set of withdrawn ones. */
   | {
       readonly via: 'self'
       readonly what: string
-      /** La columna con la clave del padre. */
+      /** The column with the parent's key. */
       readonly column: string
       readonly name: (row: TrashRow) => string
     }
@@ -152,9 +152,9 @@ export type TrashKindId =
 export interface TrashKindSpec {
   readonly id: TrashKindId
   readonly group: TrashGroupId
-  /** La tabla, tal como la nombra PostgREST. */
+  /** The table, as PostgREST names it. */
   readonly table: string
-  /** La columna que identifica la fila, para el `update` de la recuperación. */
+  /** The column identifying the row, for the recovery's `update`. */
   readonly key: string
   /** «una obra». */
   readonly one: string
@@ -168,13 +168,13 @@ export interface TrashKindSpec {
    * intentar deducirlo de la terminación del nombre.
    */
   readonly retired: 'retirada' | 'retirado'
-  /** El `select` de PostgREST, con los incrustados que hacen legible la línea. */
+  /** PostgREST's `select`, with the embedded rows that make the line readable. */
   readonly columns: string
-  /** Qué se lee en la línea. **Nunca vacío.** */
+  /** What is read on the line. **Never empty.** */
   readonly label: (row: TrashRow) => string
-  /** La segunda línea: de qué cuelga, para poder decidir. Vacía si no aporta. */
+  /** The second line: what it hangs from, so a decision can be made. Empty if it adds nothing. */
   readonly context: (row: TrashRow) => string
-  /** De qué depende para que recuperarla se vea. */
+  /** What it depends on for recovering it to be visible. */
   readonly parents: readonly TrashParent[]
   /**
    * La pantalla propia desde la que esta clase TAMBIÉN se recupera, si existe.
@@ -197,7 +197,7 @@ export interface TrashKindSpec {
   readonly duplicateText?: string
 }
 
-/** Un grupo de la papelera: por qué está junto y qué dice de sí mismo. */
+/** A group of the wastebasket: why it is together and what it says about itself. */
 export interface TrashGroupSpec {
   readonly id: TrashGroupId
   readonly title: string
@@ -236,21 +236,21 @@ export const TRASH_GROUPS: readonly TrashGroupSpec[] = [
   },
 ]
 
-/** La especificación de un grupo por su identificador. */
+/** A group's specification by its identifier. */
 export function groupSpec(id: TrashGroupId): TrashGroupSpec {
   const found = TRASH_GROUPS.find((group) => group.id === id)
-  // Inalcanzable por el tipo, y más barato estrechar que afirmar.
+  // Unreachable by the type, and cheaper to narrow than to assert.
   if (!found) throw new Error(`Grupo de la papelera desconocido: ${id}`)
   return found
 }
 
-/** «la obra AR-0012», para las frases que nombran un padre. */
+/** «la obra AR-0012», for the sentences that name a parent. */
 function artworkName(row: TrashRow, column = 'catalog_id'): string {
   const code = cell(row, column)
   return code === '' ? 'la obra de la que cuelga' : code
 }
 
-/** El nombre de un incrustado, con respaldo cuando llega vacío o no llega. */
+/** An embedded row's name, with a fallback when it arrives empty or does not arrive. */
 function embeddedName(row: TrashRow, key: string, column: string, fallback: string): string {
   const parent = embedded(row, key)
   if (parent === null) return fallback
@@ -258,7 +258,7 @@ function embeddedName(row: TrashRow, key: string, column: string, fallback: stri
   return name === '' ? fallback : name
 }
 
-/** El tipo de toma en español, y no el valor del enum. */
+/** The kind of shot in Spanish, and not the enum's value. */
 function shotLabel(row: TrashRow): string {
   const value = cell(row, 'shot_type') as ShotTypeValue
   return SHOT_TYPE_LABEL[value] ?? 'Toma sin clasificar'
@@ -282,8 +282,8 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     retired: 'retirada',
     columns:
       'catalog_id, title, artwork_type, execution_date, deactivated_at, deactivated_by',
-    // El identificador de catalogación va delante porque es la etiqueta pegada al
-    // cuadro real: es lo que se tiene en la mano al buscar una obra que falta.
+    // The cataloguing identifier goes first because it is the label stuck to the
+    // real painting: it is what is in hand when looking for a missing artwork.
     label: (row) => joinParts([cell(row, 'catalog_id'), displayTitle(cell(row, 'title'))]),
     context: (row) => joinParts([cell(row, 'artwork_type'), cell(row, 'execution_date')]),
     // Una obra no cuelga de nada: es la raíz. Su tipo, su serie y su ubicación
@@ -312,7 +312,7 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     parents: [{ via: 'embed', what: 'la obra', key: 'artworks', name: (row) => artworkName(row) }],
   },
 
-  // ── Lo que cuelga de una ficha ───────────────────────────────
+  // ── What hangs from a record ─────────────────────────────────
   {
     id: 'provenance_events',
     group: 'record',
@@ -324,8 +324,8 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     columns:
       'id, catalog_id, party_note, date_text, deactivated_at, deactivated_by, ' +
       'artworks(title, active), parties(name, active)',
-    // Un eslabón tiene parte o nota, nunca las dos vacías: lo garantiza
-    // `provenance_events_link_has_an_end`. Así que la etiqueta no puede quedar muda.
+    // A link has a party or a note, never both empty:
+    // `provenance_events_link_has_an_end` guarantees it. So the label cannot fall mute.
     label: (row) => {
       const party = embeddedName(row, 'parties', 'name', '')
       const note = cell(row, 'party_note')
@@ -434,8 +434,8 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     one: 'relación entre dos obras',
     many: 'relaciones entre obras',
     retired: 'retirada',
-    // Dos incrustados de la MISMA tabla, así que hay que decirle a PostgREST por
-    // qué clave ajena entra en cada uno. Comprobado que resuelve las dos.
+    // Two embedded rows from the SAME table, so PostgREST has to be told which
+    // foreign key each one enters by. Verified that it resolves both.
     columns:
       'id, from_catalog_id, to_catalog_id, deactivated_at, deactivated_by, ' +
       'from_artwork:artworks!artwork_relationships_from_catalog_id_fkey(title, active), ' +
@@ -445,8 +445,8 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
       const type = embeddedName(row, 'artwork_relationship_types', 'name', 'Relación')
       const from = cell(row, 'from_catalog_id')
       const to = cell(row, 'to_catalog_id')
-      // La flecha solo se pinta si hay dos extremos que unir: «→ Pareja de» sería una
-      // línea que promete una relación y no dice entre qué.
+      // The arrow is painted only if there are two ends to join: «→ Pareja de» would be a
+      // line promising a relationship and not saying between what.
       const ends = from !== '' && to !== '' ? `${from} → ${to}` : joinParts([from, to])
       return joinParts([ends, type])
     },
@@ -525,7 +525,7 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
       'Ya hay otro enlace activo con la misma dirección en el mismo sitio. Si el bueno es este, retira antes el otro.',
   },
 
-  // ── El archivo, la bibliografía y las exposiciones ───────────
+  // ── The archive, the bibliography and the exhibitions ────────
   {
     id: 'archive_documents',
     group: 'archive',
@@ -668,7 +668,7 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
     ],
   },
 
-  // ── Las listas del catálogo ──────────────────────────────────
+  // ── The catalogue's lists ────────────────────────────────────
   {
     id: 'parties',
     group: 'lists',
@@ -744,8 +744,8 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
       const name = cell(row, 'name')
       return name === '' ? 'Sin nombre' : name
     },
-    // El fondo se dice porque cada uno tiene sus propias series y dos fondos pueden
-    // tener una serie con el mismo nombre: sin él, dos líneas iguales.
+    // The fund is said because each one has its own series and two funds can
+    // have a series with the same name: without it, two identical lines.
     context: (row) => `Fondo ${cell(row, 'artist')}`,
     parents: [],
     ownScreen: '/series',
@@ -764,8 +764,8 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
       return name === '' ? 'Sin nombre' : name
     },
     context: () => '',
-    // Anidada sobre sí misma: PostgREST no la incrusta, así que el padre se
-    // reconoce por el conjunto de claves retiradas de esta misma tabla.
+    // Nested on itself: PostgREST does not embed it, so the parent is
+    // recognised through the set of withdrawn keys of this same table.
     parents: [
       { via: 'self', what: 'la ubicación que la contiene', column: 'parent_id', name: () => 'la de dentro' },
     ],
@@ -846,15 +846,15 @@ export const TRASH_KINDS: readonly TrashKindSpec[] = [
   },
 ]
 
-/** La especificación de una clase por su identificador. */
+/** A class's specification by its identifier. */
 export function kindSpec(id: TrashKindId): TrashKindSpec {
   const found = TRASH_KINDS.find((kind) => kind.id === id)
-  // Inalcanzable por el tipo, y más barato estrechar que afirmar.
+  // Unreachable by the type, and cheaper to narrow than to assert.
   if (!found) throw new Error(`Clase de la papelera desconocida: ${id}`)
   return found
 }
 
-/** Las clases de un grupo, en el orden del registro. */
+/** A group's classes, in the register's order. */
 export function kindsOfGroup(group: TrashGroupId): readonly TrashKindSpec[] {
   return TRASH_KINDS.filter((kind) => kind.group === group)
 }
