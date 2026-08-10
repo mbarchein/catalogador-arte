@@ -1,29 +1,29 @@
--- RF-215 (ADR-006): el árbol de lugares físicos.
+-- RF-215 (ADR-006): the tree of physical places.
 --
--- Lo que se comprueba es lo que la convención de texto no podía garantizar: que
--- dos sitios iguales no puedan coexistir escritos distinto, que el árbol no se
--- pueda enredar, que renombrar y mover sean operaciones de una fila, y que un
--- lugar no se retire con cosas dentro.
+-- What is checked is what the text convention could not guarantee: that
+-- two identical places cannot coexist written differently, that the tree cannot
+-- be tangled, that renaming and moving are one-row operations, and that a
+-- place is not withdrawn with things inside.
 \set ON_ERROR_STOP on
 begin;
 
--- Fixtures: un catalogador y un lector. Los perfiles los crea el trigger.
+-- Fixtures: one cataloguer and one reader. The profiles are created by the trigger.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000e1', 'cat-lugares@test.local'),
   ('00000000-0000-0000-0000-0000000000e2', 'lec-lugares@test.local');
 update public.profiles set role = 'CATALOGER' where id = '00000000-0000-0000-0000-0000000000e1';
 update public.profiles set role = 'READER'    where id = '00000000-0000-0000-0000-0000000000e2';
 
--- Y el árbol vacío, haya lo que haya en la base. Estos tests corren tanto sobre
--- una base recién migrada como sobre una copia local del volcado de producción,
--- donde el traslado de datos de 20260801150000 ya creó lugares que se llaman
--- igual que estos fixtures: sin esto el test fallaría por el índice de raíces
--- homónimas y no por lo que pretende comprobar. Todo vive dentro de la
--- transacción que se deshace al final.
+-- And the tree emptied, whatever there is in the base. These tests run both over
+-- a freshly migrated base and over a local copy of the production dump,
+-- where 20260801150000's data move already created places named
+-- like these fixtures: without this the test would fail over the homonymous-roots
+-- index and not over what it means to check. Everything lives inside the
+-- transaction that is rolled back at the end.
 --
--- Se vacía por hojas y en bucle porque `parent_id` es `on delete restrict`: un
--- solo `delete` que se llevara padre e hijo a la vez lo rechazaría la propia
--- restricción.
+-- It is emptied leaf by leaf and in a loop because `parent_id` is `on delete restrict`: a
+-- single `delete` taking parent and child at once would be rejected by the
+-- constraint itself.
 update public.artworks set physical_place_id = null;
 do $$
 begin
@@ -34,9 +34,9 @@ begin
   end loop;
 end $$;
 
--- ── 1. El nombre se guarda tal cual ──────────────────────────
--- Es el motivo de la decisión: la convención anterior escribía en la ficha y en
--- el PDF «museo de bellas artes de badajoz».
+-- ── 1. The name is stored as is ──────────────────────────────
+-- It is the reason for the decision: the previous convention wrote in the record and in
+-- the PDF «museo de bellas artes de badajoz».
 do $$
 declare v_nombre text;
 begin
@@ -49,7 +49,7 @@ begin
   raise notice 'OK: el nombre conserva mayúsculas, tildes y paréntesis';
 end $$;
 
--- ── 2. Dos hermanos no se llaman igual ───────────────────────
+-- ── 2. Two siblings are not called the same ──────────────────
 do $$
 declare v_padre uuid;
 begin
@@ -57,15 +57,15 @@ begin
   insert into public.physical_places (parent_id, name) values (v_padre, 'Habitación amarilla');
 
   begin
-    -- Misma clave de comparación: sin tildes y en minúsculas es la misma.
+    -- Same comparison key: with no accents and in lower case it is the same one.
     insert into public.physical_places (parent_id, name) values (v_padre, 'habitacion AMARILLA');
     raise exception 'FAIL: han entrado dos hermanos con el mismo nombre';
   exception when unique_violation then
     raise notice 'OK: dos hermanos con el mismo nombre, escritos distinto, se rechazan';
   end;
 
-  -- Pero el mismo nombre en OTRO padre es otro sitio y sí entra: «balda 2» hay
-  -- una en cada estantería.
+  -- But the same name under ANOTHER parent is another place and does go in: there is one
+  -- «balda 2» in every shelving unit.
   insert into public.physical_places (name) values ('Villafranca de los Barros');
   insert into public.physical_places (parent_id, name)
   values ((select id from public.physical_places where name = 'Villafranca de los Barros'),
@@ -73,9 +73,9 @@ begin
   raise notice 'OK: el mismo nombre bajo otro padre es otro lugar';
 end $$;
 
--- ── 3. Dos raíces tampoco ────────────────────────────────────
--- En SQL un nulo no es igual a otro nulo, así que sin el índice parcial esto
--- pasaría sin que nadie se diera cuenta.
+-- ── 3. Two roots do not either ───────────────────────────────
+-- In SQL one null is not equal to another null, so without the partial index this
+-- would pass with nobody noticing.
 do $$
 begin
   insert into public.physical_places (name) values ('castelar 4');
@@ -84,7 +84,7 @@ exception when unique_violation then
   raise notice 'OK: dos raíces con el mismo nombre se rechazan';
 end $$;
 
--- ── 4. El árbol no se puede enredar ──────────────────────────
+-- ── 4. The tree cannot be tangled ────────────────────────────
 do $$
 declare v_padre uuid; v_hijo uuid; v_nieto uuid;
 begin
@@ -109,9 +109,9 @@ begin
   end;
 end $$;
 
--- ── 5. Renombrar y mover son de una fila ─────────────────────
--- Es el requisito que ordena toda la decisión: la obra apunta por identificador,
--- así que el nombre nuevo lo ve todo el catálogo sin tocar ninguna obra.
+-- ── 5. Renaming and moving are one row ───────────────────────
+-- It is the requirement that orders the whole decision: the artwork points by identifier,
+-- so the new name is seen by the whole catalogue without touching any artwork.
 do $$
 declare v_id uuid; v_raiz uuid;
 begin

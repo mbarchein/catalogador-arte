@@ -1,11 +1,11 @@
--- De quién es la fotografía y de dónde salió (RF-417, RF-106).
+-- Whose the photograph is and where it came from (RF-417, RF-106).
 --
--- Dos columnas y no una, y aquí se fija por qué: **cambiar la procedencia no
--- puede fallar**. La tentación era una restricción cruzada que exigiera vacía la
--- columna que no toca; el precio habría sido un error del esquema en mitad de una
--- pantalla de captura, por un dato que no estorba. Lo que se guarda se guarda, y
--- lo que se enseña lo decide la procedencia — eso vive en la aplicación, con sus
--- propios tests.
+-- Two columns and not one, and here it is pinned down why: **changing the provenance
+-- cannot fail**. The temptation was a cross constraint requiring the column that is not
+-- touched to be empty; the price would have been a schema error in the middle of a
+-- capture screen, over a datum that is not in the way. What is stored is stored, and
+-- what is shown is decided by the provenance — that lives in the application, with its
+-- own tests.
 \set ON_ERROR_STOP on
 begin;
 
@@ -22,7 +22,7 @@ values ('AR-9700', 'ROTILI', 'Obra con procedencias', 'UNCONFIRMED');
 insert into public.images (catalog_id, thumbnail_path, derivative_path)
 values ('AR-9700', 'm/9700', 'd/9700');
 
--- ── Nacen vacías, que es lo que hay hoy ─────────────────────
+-- ── They are born empty, which is what there is today ───────
 
 do $$
 declare v_row record;
@@ -30,8 +30,8 @@ begin
   select photo_credit, provenance_source, provenance into v_row
     from public.images where image_id = 'AR-9700_v1';
 
-  -- Vacías y NO nulas: la diferencia importa porque la pantalla las mete en un
-  -- campo de texto, y un nulo ahí se pinta como «null».
+  -- Empty and NOT null: the difference matters because the screen puts them in a
+  -- text field, and a null there is painted as «null».
   if v_row.photo_credit is null or v_row.photo_credit <> '' then
     raise exception 'FAIL: la autoría no nace vacía (%)', coalesce(v_row.photo_credit, '(nulo)');
   end if;
@@ -45,7 +45,7 @@ begin
   raise notice 'OK: las dos nacen vacías, y la fotografía nace propia';
 end $$;
 
--- ── Cambiar la procedencia NO se lleva por delante lo escrito ──
+-- ── Changing the provenance does NOT run over what was written ──
 
 do $$
 declare v_row record;
@@ -55,9 +55,9 @@ begin
          provenance_source = 'Catálogo del MACVA, https://www.macvac.es/obra/x'
    where image_id = 'AR-9700_v1';
 
-  -- Las dos a la vez y con la procedencia propia: es el estado que una
-  -- restricción cruzada habría prohibido, y es el que se produce solo al marcar
-  -- como propia una fotografía que antes venía de fuera.
+  -- Both at once and with our own provenance: it is the state a
+  -- cross constraint would have forbidden, and it is the one produced simply by marking
+  -- as our own a photograph that previously came from outside.
   update public.images set provenance = 'OTHER_CATALOG' where image_id = 'AR-9700_v1';
   update public.images set provenance = 'OWN' where image_id = 'AR-9700_v1';
 
@@ -73,13 +73,13 @@ begin
   raise notice 'OK: la procedencia se cambia de ida y vuelta sin perder lo escrito';
 end $$;
 
--- ── Texto libre de verdad: una procedencia sin dirección vale ──
+-- ── Real free text: a provenance with no address is valid ──
 
 do $$
 begin
-  -- «Me la pasó la familia en 2019» es una procedencia legítima y no cabe en una
-  -- URL. Si algún día alguien añade aquí una validación de dirección, esto se
-  -- pone rojo, que es lo que tiene que pasar.
+  -- «Me la pasó la familia en 2019» is a legitimate provenance and does not fit in a
+  -- URL. If somebody ever adds an address validation here, this goes
+  -- red, which is what has to happen.
   update public.images
      set provenance = 'THIRD_PARTY',
          provenance_source = 'Enviada por la familia en 2019, sin más datos'
@@ -126,8 +126,8 @@ begin
   if v_affected <> 0 then
     raise exception 'FAIL: el Lector ha modificado % fila(s) (RF-106)', v_affected;
   end if;
-  -- Y lo que importa de verdad: que no quedara nada escrito. Cero filas con el
-  -- dato cambiado sería un `update` que la política dejó pasar a medias.
+  -- And what really matters: that nothing was left written. Zero rows with the
+  -- datum changed would be an `update` the policy let through halfway.
   if v_after <> 'Quien cataloga' then
     raise exception 'FAIL: el update del Lector dejó algo escrito (%)', v_after;
   end if;

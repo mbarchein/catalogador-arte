@@ -47,9 +47,9 @@ begin
   raise notice 'OK: una ficha mínima entra y sus opcionales nacen vacíos';
 end $$;
 
--- ── 2. El tipo es obligatorio y cerrado ──────────────────────
--- Sin «Sin revisar» a propósito (RF-508, con el argumento de RF-203): de este
--- valor depende cómo se redacta la línea de procedencia.
+-- ── 2. The type is compulsory and closed ─────────────────────
+-- With no «Sin revisar» on purpose (RF-508, with RF-203's argument): on this
+-- value depends how the provenance line is worded.
 do $$
 begin
   begin
@@ -73,12 +73,12 @@ begin
     raise notice 'OK: el tipo de parte es un enumerado cerrado';
   end;
 
-  -- Y los dos valores que sí existen entran.
+  -- And the two values that do exist go in.
   insert into public.parties (party_type, name) values ('PERSON', 'Almudena Hormeño');
   raise notice 'OK: persona e institución son los dos valores del enumerado';
 end $$;
 
--- ── 3. El estado de contacto tampoco admite texto libre ──────
+-- ── 3. The contact state does not admit free text either ─────
 do $$
 declare v_id uuid;
 begin
@@ -97,9 +97,9 @@ begin
   end;
 end $$;
 
--- ── 4. Un nombre en blanco no identifica a nadie ─────────────
--- Y uno con espacios alrededor rompería la comparación de duplicados sin que se
--- vea en pantalla, que es la peor clase de dato malo.
+-- ── 4. A blank name identifies nobody ────────────────────────
+-- And one with spaces around it would break the duplicate comparison without it being
+-- visible on screen, which is the worst kind of bad datum.
 do $$
 begin
   begin
@@ -117,9 +117,9 @@ begin
   end;
 end $$;
 
--- ── 5. Un nombre, una ficha ──────────────────────────────────
--- El motivo es la procedencia: dos filas del mismo museo escritas con y sin
--- tilde parten la cadena de una obra, y eso no se ve al escribirlo.
+-- ── 5. One name, one record ──────────────────────────────────
+-- The reason is the provenance: two rows of the same museum written with and without
+-- an accent split an artwork's chain, and that is not visible while writing it.
 do $$
 begin
   begin
@@ -130,21 +130,21 @@ begin
     raise notice 'OK: dos escrituras del mismo nombre son la misma ficha';
   end;
 
-  -- Pero la ñ es una letra y no un acento: son dos apellidos distintos y las dos
-  -- fichas entran. Es la misma regla de `place_key`, y aquí se comprueba que la
-  -- reutilización no la ha cambiado.
+  -- But the ñ is a letter and not an accent: they are two different surnames and both
+  -- records go in. It is `place_key`'s same rule, and here it is checked that the
+  -- reuse has not changed it.
   insert into public.parties (party_type, name) values ('PERSON', 'Muñoz');
   insert into public.parties (party_type, name) values ('PERSON', 'Munoz');
   raise notice 'OK: la ñ distingue dos nombres, como en el árbol de lugares';
 end $$;
 
--- ── 6. La traza de autoría la sella la base ──────────────────
--- RF-804 y RF-803: quién y cuándo salen de la sesión, no de lo que mande el
--- cliente.
+-- ── 6. The authorship trace is stamped by the base ───────────
+-- RF-804 and RF-803: who and when come from the session, not from what the
+-- client sends.
 --
--- La fecha se comprueba mandando una falsa y viendo que el trigger la pisa, y no
--- comparando dos instantes: dentro de una transacción `now()` no avanza, así que
--- «después es mayor que antes» sería un aserto que no puede fallar nunca.
+-- The date is checked by sending a false one and seeing that the trigger overrides it, and not
+-- by comparing two instants: inside a transaction `now()` does not advance, so
+-- «after is greater than before» would be an assertion that can never fail.
 do $$
 declare
   v_id uuid;
@@ -154,8 +154,8 @@ begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated"}';
 
   insert into public.parties (party_type, name, created_by, updated_by)
-  -- Se mandan a propósito los dos campos de autoría rellenos con otro usuario:
-  -- el trigger tiene que pisarlos.
+  -- Both authorship fields are deliberately sent filled with another user:
+  -- the trigger has to override them.
   values ('INSTITUTION', 'MACVA', '00000000-0000-0000-0000-0000000000c2',
           '00000000-0000-0000-0000-0000000000c2')
   returning id, created_by, updated_by
@@ -185,9 +185,9 @@ begin
   raise notice 'OK: la autoría y la fecha de actualización las sella la base (RF-801, RF-803, RF-804)';
 end $$;
 
--- ── 7. La papelera: baja, traza y restauración ───────────────
--- RF-901 y RF-902: la fila sigue ahí, la baja se sella sola, y restaurar NO borra
--- la traza de la baja anterior — se guarda el último evento de cada clase.
+-- ── 7. The wastebasket: withdrawal, trace and restoration ────
+-- RF-901 and RF-902: the row is still there, the withdrawal stamps itself, and restoring does NOT erase
+-- the trace of the previous withdrawal — the last event of each class is kept.
 do $$
 declare
   v_id uuid;
@@ -224,19 +224,19 @@ begin
   raise notice 'OK: la baja y la restauración se sellan solas y conservan su traza';
 end $$;
 
--- ── 8. La trazabilidad genérica no toca nada que no sea suyo ─
+-- ── 8. The generic traceability touches nothing that is not its own ─
 --
--- Es el riesgo propio de `tg_row_audit`, que lee la fila como jsonb y la
--- devuelve: si el parche llevara la fila entera, cualquier columna pasaría por
--- una conversión de ida y vuelta y un día una de ellas volvería distinta. Se
--- comprueba con la fila llena y cambiando un solo campo.
+-- It is `tg_row_audit`'s particular risk, which reads the row as jsonb and
+-- returns it: if the patch carried the whole row, any column would go through
+-- a round-trip conversion and one day one of them would come back different. It is
+-- checked with the row full and changing a single field.
 --
--- El nombre del fixture es inventado A PROPÓSITO y no el de una colección real:
--- la unicidad de `parties` es global y el traslado de la procedencia
--- (20260804100000) ya creó las fichas de las colecciones y los museos que
--- estaban escondidos en el árbol de lugares. Un fixture que se llame como un
--- dato de verdad choca contra el índice en cuanto la base lleva el volcado, y
--- deja rojo un test que no verifica nada de eso.
+-- The fixture's name is invented ON PURPOSE and is not that of a real collection:
+-- `parties`' uniqueness is global and the provenance's move
+-- (20260804100000) already created the records of the collections and the museums that
+-- were hidden in the place tree. A fixture named like a real
+-- datum clashes against the index as soon as the base carries the dump, and
+-- leaves red a test that verifies none of that.
 do $$
 declare v_id uuid; v_fila public.parties%rowtype;
 begin
@@ -264,7 +264,7 @@ begin
   raise notice 'OK: el sello genérico solo escribe sus columnas, y los acentos vuelven intactos';
 end $$;
 
--- ── 9. Nadie borra de verdad ─────────────────────────────────
+-- ── 9. Nobody really deletes ─────────────────────────────────
 do $$
 begin
   if exists (select 1 from pg_policies
@@ -279,11 +279,11 @@ begin
   raise notice 'OK: retirar es un update; borrar no está concedido a nadie (RF-901)';
 end $$;
 
--- ── 10. La tabla nace cerrada ────────────────────────────────
--- RF-111 y RF-113: RLS activado y el rol anónimo sin privilegio ninguno, que es
--- lo que impide que la política sea la única barrera. Es el aserto que importa
--- mientras las políticas no existen, y sigue importando después: `contacto` es
--- dato personal de un tercero.
+-- ── 10. The table is born closed ─────────────────────────────
+-- RF-111 and RF-113: RLS enabled and the anonymous role with no privilege at all, which is
+-- what prevents the policy from being the only barrier. It is the assertion that matters
+-- while the policies do not exist, and it goes on mattering afterwards: `contacto` is
+-- a third party's personal datum.
 do $$
 begin
   if not (select relrowsecurity from pg_class where oid = 'public.parties'::regclass) then
