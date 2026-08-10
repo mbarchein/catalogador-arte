@@ -13,11 +13,11 @@ import {
 } from './documentFile'
 
 /**
- * El fichero digitalizado de un documento de archivo: cómo se llama al salir de la
- * aplicación, cuánto pesa y qué se dice cuando no hay ninguno (RF-408, RF-411).
+ * An archive document's digitised file: what it is called on leaving the
+ * application, how much it weighs and what is said when there is none (RF-408, RF-411).
  *
- * Todo se decide sin navegador, que es la única manera de que esta batería lo
- * verifique: los dos bordes impuros —firmar y guardar— se inyectan.
+ * Everything is decided with no browser, which is the only way for this suite to
+ * verify it: the two impure edges —signing and storing— are injected.
  */
 
 function document(over: Partial<DocumentFileColumns> = {}): DocumentFileColumns {

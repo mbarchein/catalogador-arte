@@ -12,20 +12,20 @@ import {
 } from './documentEdit'
 
 /**
- * Corregir un documento del archivo, y darle el escaneo que le faltaba (RF-515,
+ * Correcting an archive document, and giving it the scan it was missing (RF-515,
  * RF-408, RF-516).
  *
- * Estos tests cubren un hueco que la ficha de obra declaraba en voz alta: un documento
- * se subía y se quedaba como se hubiera subido. Y cubren, sobre todo, las dos cosas que
- * un formulario de corrección puede hacer mal sin que se note al mirarlo:
+ * These tests cover a gap the artwork record declared out loud: a document
+ * was uploaded and stayed however it had been uploaded. And they cover, above all, the two things
+ * a correction form can do wrong without it showing when you look at it:
  *
- *   · **guardar cuando no hay nada que guardar.** Escribir la fila mueve `updated_at`,
- *     `updated_by` y una entrada del historial de cambios (RF-1501). Un documento que
- *     consta corregido hoy sin que nadie haya corregido nada es una traza que miente, y
- *     el historial existe para lo contrario.
- *   · **decir «no lo tiene enlazado nada más» cuando el recuento se ha caído.** Eso es
- *     cómo alguien reescribe la signatura de un expediente creyendo que es cosa de su
- *     ficha. Null es «no se sabe» y nunca cero.
+ *   · **saving when there is nothing to save.** Writing the row moves `updated_at`,
+ *     `updated_by` and an entry of the change history (RF-1501). A document that
+ *     is recorded as corrected today without anybody having corrected anything is a trace that lies, and
+ *     the history exists for the opposite.
+ *   · **saying «nothing else has it linked» when the count has fallen over.** That is
+ *     how somebody rewrites a file's shelfmark believing it is a matter for their own
+ *     record. Null is «not known» and never zero.
  */
 
 function document(over: Partial<EditableDocument> = {}): EditableDocument {
@@ -82,9 +82,9 @@ describe('planDocumentEdit, qué hacer con lo que hay en el formulario (RF-1501)
   })
 
   it('cambiar solo las mayúsculas de la signatura no es una corrección', () => {
-    // El índice único es sobre `place_key(archive_code)`: para la base «ar-arch-1» y
-    // «AR-ARCH-1» son la misma signatura, así que escribir la fila no cambiaría nada y
-    // dejaría una traza de un cambio que no existe.
+    // The unique index is on `place_key(archive_code)`: for the base «ar-arch-1» and
+    // «AR-ARCH-1» are the same shelfmark, so writing the row would change nothing and
+    // would leave a trace of a change that does not exist.
     const row = document({ archive_code: 'ar-arch-0001' })
     const plan = planDocumentEdit(row, { ...draftOf(row), archiveCode: 'AR-ARCH-0001' })
     expect(plan).toEqual({ action: 'unchanged' })
@@ -106,10 +106,10 @@ describe('planDocumentEdit, qué hacer con lo que hay en el formulario (RF-1501)
   })
 
   it('quitarle el año a un documento marcado «c.» se avisa, no se desmarca en silencio', () => {
-    // `archive_documents_flags_require_year`. Se podría normalizar y mandar —el payload
-    // lo hace por su cuenta, que es la red de debajo— pero lo que la catalogadora
-    // necesita saber es que la marca que ella puso deja de tener sentido: desmarcarla
-    // sin decírselo es cambiarle un dato investigado por la espalda.
+    // `archive_documents_flags_require_year`. It could be normalised and sent —the payload
+    // does it on its own, which is the net underneath— but what the cataloguer
+    // needs to know is that the mark she set stops making sense: unmarking it
+    // without telling her is changing a researched datum behind her back.
     const row = document({ start_year: 1985, approximate_date: true })
     const plan = planDocumentEdit(row, { ...draftOf(row), startYear: null, approximate: true })
     expect(plan.action).toBe('problems')
@@ -172,9 +172,9 @@ describe('documentReachNotice, el alcance de la corrección medido (RF-516)', ()
   })
 
   it('un recuento sin terminar NO dice que no haya nada', () => {
-    // El caso que importa: null es «no se sabe». Decir «no lo tiene enlazado nada más»
-    // sobre un recuento caído es cómo alguien reescribe una signatura creyendo que es
-    // cosa de su ficha.
+    // The case that matters: null is «not known». Saying «nothing else has it linked»
+    // over a fallen count is how somebody rewrites a shelfmark believing it is
+    // a matter for their own record.
     for (const reach of [
       { otherArtworks: null, exhibitions: 0 },
       { otherArtworks: 0, exhibitions: null },

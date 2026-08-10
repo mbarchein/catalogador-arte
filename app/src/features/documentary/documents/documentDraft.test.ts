@@ -195,9 +195,9 @@ describe('lo que viaja a la base', () => {
 describe('cuando la base dice no, medido contra la base local', () => {
   /**
    * «duplicate key value violates unique constraint "archive_documents_code_unique"»,
-   * con el detalle «Key (place_key(archive_code))=(ar-arch-0001) already exists». El
-   * índice es sobre `place_key`, así que mayúsculas y tildes no distinguen dos
-   * signaturas — que es justo la mitad de la regla que el mensaje crudo no dice.
+   * with the detail «Key (place_key(archive_code))=(ar-arch-0001) already exists». The
+   * index is on `place_key`, so capitals and accents do not distinguish two
+   * shelfmarks — which is precisely the half of the rule the raw message does not say.
    */
   it('una signatura repetida se explica, y con lo que hay que hacer en su lugar', () => {
     const said = describeDocumentRefusal('create', {
@@ -231,9 +231,9 @@ describe('cuando la base dice no, medido contra la base local', () => {
   })
 
   /**
-   * RF-218. El trigger lo escribió en español y para ella, y el hint es la mitad que
-   * dice qué hacer: los dos se muestran, unidos. Reescribirlo aquí sería una segunda
-   * copia de una regla que vive al lado del dato.
+   * RF-218. The trigger wrote it in Spanish and for her, and the hint is the half that
+   * says what to do: both are shown, joined. Rewriting it here would be a second
+   * copy of a rule that lives next to the datum.
    */
   it('el rechazo de «investigado, sin resultados» se muestra tal cual, con su pista', () => {
     const said = describeDocumentRefusal('link', {
@@ -280,9 +280,9 @@ describe('cuando la base dice no, medido contra la base local', () => {
   })
 
   /**
-   * El fallo silencioso, y el que más vale: un update que las políticas niegan vuelve
-   * 204 sin error. Sin contar las filas afectadas la pantalla diría «guardado» y no
-   * habría cambiado nada.
+   * The silent failure, and the most valuable one: an update the policies deny comes back
+   * 204 with no error. Without counting the affected rows the screen would say «guardado» and
+   * nothing would have changed.
    */
   it('cero filas afectadas y ningún error no es un éxito', () => {
     const said = describeDocumentRefusal('retire', null)

@@ -340,11 +340,11 @@ export function describeDocumentRefusal(
   refusal: DatabaseRefusal | null,
 ): string {
   if (refusal === null) {
-    // El silencio de `addFile` tiene una causa MÁS y es la primera que hay que
-    // nombrar: la actualización solo toca la fila si sigue sin fichero, así que
-    // «cero filas» es sobre todo que alguien se ha adelantado. Sin decirlo, la
-    // catalogadora vuelve a subir el mismo escaneo contra un documento que ya tiene
-    // uno, y lo que consigue son dos ficheros de los que solo uno consta.
+    // `addFile`'s silence has ONE more cause and it is the first one to be
+    // named: the update only touches the row if it is still without a file, so
+    // «zero rows» is above all that somebody has got there first. Without saying so, the
+    // cataloguer uploads the same scan again against a document that already has
+    // one, and what she gets is two files of which only one is recorded.
     if (action === 'addFile') {
       return (
         'No se ha añadido el escaneo: lo más probable es que el documento ya tenga uno. Vuelve a cargar la ficha y míralo antes de repetirlo.'

@@ -1,27 +1,27 @@
 /**
- * Corregir los datos de un documento del archivo, y darle el escaneo que le falte
+ * Correcting an archive document's data, and giving it whatever scan it is missing
  * (RF-515, RF-408, RF-516).
  *
- * Hasta hoy un documento se registraba y se quedaba como se hubiera registrado: la
- * signatura mal copiada, el tipo sin clasificar y el escaneo que no se tenía a mano
- * eran definitivos, y los dos paneles que lo subían lo advertían antes de guardar
- * porque no había ninguna pantalla que lo arreglara. Las columnas eran editables y
- * la política `archive_documents_update` estaba puesta desde el primer día: lo que
- * faltaba era esto.
+ * Until today a document was registered and stayed however it had been registered: the
+ * badly copied shelfmark, the unclassified type and the scan that was not at hand
+ * were final, and the two panels that uploaded it warned about it before saving
+ * because there was no screen that fixed it. The columns were editable and
+ * the `archive_documents_update` policy had been in place since day one: what
+ * was missing was this.
  *
- * **Lo que hace este módulo es decidir, y por eso está fuera del formulario.** Qué
- * ha cambiado de verdad, qué se va a mandar, a cuánta gente le cambia lo que lee y
- * qué se dice cuando el documento ya tiene fichero. La batería corre en node y no
- * puede abrir un panel ni elegir un fichero, así que una regla dentro del JSX es una
- * regla que nadie comprueba.
+ * **What this module does is decide, and that is why it is outside the form.** What
+ * has really changed, what is going to be sent, how many people have what they read changed and
+ * what is said when the document already has a file. The suite runs in node and cannot
+ * open a panel or choose a file, so a rule inside the JSX is a
+ * rule nobody checks.
  *
- * ── UN DOCUMENTO NO ES UN CAMPO DE ESTA OBRA ──
- * Es la misma frontera que la referencia bibliográfica, y se cruza igual de fácil:
- * el panel se abre desde la ficha de una obra, así que parece que corrige la ficha.
- * Corrige el ARCHIVO. Un recorte de prensa enlazado con tres obras y con una
- * exposición cambia en los cuatro sitios, y el aviso lo dice con el número delante,
- * porque «lo verán las demás» es abstracto y «lo verán las otras tres obras y una
- * exposición» cambia la decisión.
+ * ── A DOCUMENT IS NOT A FIELD OF THIS ARTWORK ──
+ * It is the bibliographic reference's same boundary, and it is crossed just as easily:
+ * the panel opens from an artwork's record, so it looks as if it corrects the record.
+ * It corrects the ARCHIVE. A press clipping linked to three artworks and to one
+ * exhibition changes in all four places, and the warning says so with the number first,
+ * because «the others will see it» is abstract and «the other three artworks and one
+ * exhibition will see it» changes the decision.
  */
 
 import { placeKey } from '../../../lib/places'
@@ -34,9 +34,9 @@ import {
 } from './documentDraft'
 
 /**
- * Lo que este módulo necesita de la fila. Un subconjunto estructural de
- * `DocumentRow`, para que un test construya el caso sin las dos maestras
- * incrustadas ni las cuatro columnas de auditoría.
+ * What this module needs from the row. A structural subset of
+ * `DocumentRow`, so a test can build the case without the two embedded
+ * master tables or the four audit columns.
  */
 export interface EditableDocument {
   id: string
@@ -57,11 +57,11 @@ export interface EditableDocument {
 }
 
 /**
- * La fila como el formulario la escribe.
+ * The row as the form writes it.
  *
- * Los nulos de texto se abren a cadena vacía porque un `input` controlado con `null`
- * es un campo que React da por no controlado; los nulos de las claves ajenas se
- * conservan, porque ahí el nulo ES una respuesta —«sin clasificar»— y no un hueco.
+ * The text nulls are opened to an empty string because a controlled `input` with `null`
+ * is a field React takes as uncontrolled; the foreign keys' nulls are
+ * kept, because there null IS an answer —«sin clasificar»— and not a gap.
  */
 export function documentEditDraft(document: EditableDocument): DocumentFields {
   return {
@@ -88,21 +88,21 @@ export type DocumentEditPlan =
   | { action: 'update'; payload: Record<string, unknown> }
 
 /**
- * Qué hacer con lo que hay en el formulario.
+ * What to do with what is in the form.
  *
- * El caso `unchanged` no es una comodidad: sin él, abrir el panel y cerrarlo con
- * «Guardar» escribiría la fila, y escribir la fila mueve `updated_at`, `updated_by`
- * y una entrada del historial de cambios (RF-1501). Un documento que consta
- * corregido hoy sin que nadie haya corregido nada es una traza que miente, y el
- * historial de esta aplicación existe justamente para que no mienta.
+ * The `unchanged` case is not a convenience: without it, opening the panel and closing it with
+ * «Guardar» would write the row, and writing the row moves `updated_at`, `updated_by`
+ * and an entry of the change history (RF-1501). A document that is recorded as
+ * corrected today without anybody having corrected anything is a trace that lies, and this
+ * application's history exists precisely so that it does not lie.
  *
- * La signatura duplicada NO se comprueba aquí, al contrario que la clave BibTeX de
- * una referencia: aquel panel tiene la lista entera de referencias cargada y este no
- * tiene la del archivo, así que compararla sería compararla contra nada. La contesta
- * el índice único sobre `place_key(archive_code)` y la traduce
- * `describeDocumentRefusal`. Lo que sí se hace es normalizar la signatura igual que
- * el índice la compara, para que cambiar «ar-arch-1» por «AR-ARCH-1» no salga como
- * una corrección: para la base es la misma.
+ * The duplicate shelfmark is NOT checked here, unlike a reference's BibTeX key:
+ * that panel has the whole reference list loaded and this one does not
+ * have the archive's, so comparing it would be comparing it against nothing. It is answered
+ * by the unique index on `place_key(archive_code)` and translated by
+ * `describeDocumentRefusal`. What is done is normalising the shelfmark the same way
+ * the index compares it, so that changing «ar-arch-1» for «AR-ARCH-1» does not come out as
+ * a correction: for the base it is the same one.
  */
 export function planDocumentEdit(
   document: EditableDocument,
@@ -143,17 +143,17 @@ export interface DocumentReach {
 }
 
 /**
- * El aviso de encima de los campos, con el alcance MEDIDO cuando se puede.
+ * The warning above the fields, with the scope MEASURED when it can be.
  *
- * `null` es «no contado» y no «cero», y es el caso que no puede mentir: mientras el
- * recuento viaja, o cuando se cayó —una barra de cobertura en un almacén—, el aviso
- * conserva la parte que es cierta y dice en voz alta que el número no se sabe.
- * Escribir «no lo tiene enlazado nada más» sobre un recuento fallido es cómo alguien
- * reescribe una signatura creyendo que es cosa suya.
+ * `null` is «not counted» and not «zero», and it is the case that cannot lie: while the
+ * count travels, or when it fell over —one bar of coverage in a storeroom—, the warning
+ * keeps the part that is true and says out loud that the number is not known.
+ * Writing «nothing else has it linked» over a failed count is how somebody
+ * rewrites a shelfmark believing it is a matter of their own.
  *
- * Las dos mitades se cuentan aparte porque son dos tablas puente (RF-516) y una
- * exposición no es una obra: un cartel enlazado con la muestra y con ninguna obra
- * más sigue siendo un cartel que otra ficha lee.
+ * The two halves are counted separately because they are two bridge tables (RF-516) and an
+ * exhibition is not an artwork: a poster linked to the show and to no other
+ * artwork is still a poster another record reads.
  */
 export function documentReachNotice(reach: DocumentReach): string {
   const { otherArtworks, exhibitions } = reach
@@ -173,13 +173,13 @@ export function documentReachNotice(reach: DocumentReach): string {
 }
 
 /**
- * Lo que dice el panel cuando el documento que se corrige está retirado del archivo
- * (RF-901), o null cuando está en circulación.
+ * What the panel says when the document being corrected is withdrawn from the archive
+ * (RF-901), or null when it is in circulation.
  *
- * Un Catalogador ve documentos retirados —la ficha de una obra enlazada con uno lo
- * muestra con su etiqueta—, así que el panel se puede abrir sobre uno, y corregirlo
- * es legítimo: el vínculo es real y su título se lee. Lo que no puede pasar es que
- * la corrección lo devuelva a circulación sin que nadie lo haya pedido.
+ * A Cataloguer sees withdrawn documents —the record of an artwork linked to one shows
+ * it with its label—, so the panel can be opened over one, and correcting it
+ * is legitimate: the link is real and its title is read. What cannot happen is that
+ * the correction puts it back in circulation without anybody having asked.
  */
 export function documentRetiredNotice(document: Pick<EditableDocument, 'active'>): string | null {
   if (document.active) return null
@@ -198,17 +198,17 @@ export function documentEditedNotice(title: string): string {
 // ── The scan that was missing ─────────────────────────────────
 
 /**
- * Por qué no se puede añadir un escaneo a este documento, o null cuando sí.
+ * Why a scan cannot be added to this document, or null when it can.
  *
- * Una sola negativa y es la que importa: **ya tiene fichero**. Las rutas de este
- * almacén son inmutables porque el *service worker* cachea por ruta, así que
- * «cambiar el escaneo» no es sobrescribir: es subir otro fichero y dejar huérfano el
- * anterior, con la ficha diciendo un peso que ya no es el que hay detrás. Eso es una
- * decisión aparte —qué se hace con el que sobra— y hasta que se tome, este panel
- * añade lo que falta y no sustituye lo que hay.
+ * A single refusal and it is the one that matters: **it already has a file**. This store's
+ * paths are immutable because the *service worker* caches by path, so
+ * «changing the scan» is not overwriting: it is uploading another file and orphaning the
+ * previous one, with the record saying a weight that is no longer the one behind it. That is
+ * a separate decision —what is done with the leftover one— and until it is taken, this panel
+ * adds what is missing and does not replace what is there.
  *
- * No se comprueba si el documento está retirado: un expediente que se retiró del
- * archivo sigue mereciendo su escaneo, y digitalizarlo no lo devuelve a circulación.
+ * Whether the document is withdrawn is not checked: a file withdrawn from the
+ * archive still deserves its scan, and digitising it does not put it back in circulation.
  */
 export function scanTargetProblem(document: Pick<EditableDocument, 'file_path'>): string | null {
   const path = document.file_path?.trim() ?? ''
