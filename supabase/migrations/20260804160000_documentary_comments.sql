@@ -1,28 +1,28 @@
 -- ============================================================
--- Los porqués que faltaban: `comment on` de las columnas del catálogo razonado
--- documental que llevan una decisión dentro.
+-- The reasons that were missing: `comment on` for the columns of the documentary
+-- catalogue raisonné that carry a decision inside.
 --
--- Las seis migraciones del 4 de agosto (parties, provenance, bibliography,
--- exhibitions, archive_documents, artwork_relationships) dejaron comentada la
--- tabla entera y las columnas más discutibles, pero no todas. Faltan justo las
--- que un enumerado o un nulo hacen parecer obvias y no lo son: por qué
--- `party_type` no admite «Sin revisar» cuando casi todo lo demás sí, por qué la
--- calidad de la tenencia y la forma de adquisición son DOS columnas y no una,
--- por qué una fecha de exposición es todo o nada.
+-- The six migrations of 4 August (parties, provenance, bibliography,
+-- exhibitions, archive_documents, artwork_relationships) left the whole
+-- table commented and the most debatable columns, but not all of them. Missing are exactly
+-- those an enumerated type or a null make seem obvious and are not: why
+-- `party_type` does not admit «Sin revisar» when almost everything else does, why the
+-- quality of tenure and the form of acquisition are TWO columns and not one,
+-- why an exhibition date is all or nothing.
 --
--- Esta migración NO cambia el esquema. Solo escribe comentarios: ni una columna,
--- ni una restricción, ni un privilegio, ni una fila de datos. Es reversible sin
--- consecuencias y no puede romper nada en marcha.
+-- This migration does NOT change the schema. It only writes comments: not one column,
+-- not one constraint, not one privilege, not one row of data. It is reversible with no
+-- consequences and it cannot break anything in service.
 --
--- Se escribe como migración nueva y no editando las seis anteriores porque esas
--- ya están aplicadas, y las migraciones aplicadas no se reescriben (CLAUDE.md).
+-- It is written as a new migration and not by editing the six previous ones because those
+-- are already applied, and applied migrations are not rewritten (CLAUDE.md).
 --
--- El criterio de qué se comenta y qué no es el de siempre: se comenta el POR QUÉ
--- de lo que se decidió, no el QUÉ de lo que se lee en el nombre. `note`,
--- `created_at` o la segunda clave ajena de una tabla puente no llevan comentario
--- porque no hay nada que explicar; las tres maestras viejas (`artwork_types`,
--- `series`, `physical_places`) tampoco tienen comentarios de columna y esto no
--- las toca.
+-- The criterion of what is commented and what is not is the usual one: the WHY
+-- of what was decided is commented, not the WHAT that is read in the name. `note`,
+-- `created_at` or a bridge table's second foreign key carry no comment
+-- because there is nothing to explain; the three old master tables (`artwork_types`,
+-- `series`, `physical_places`) have no column comments either and this does not
+-- touch them.
 -- ============================================================
 
 
@@ -54,7 +54,7 @@ comment on column public.parties.note is
   'maestra, no un texto ni un valor más del enumerado.';
 
 
--- ── La cadena de procedencia ────────────────────────────────
+-- ── The provenance chain ────────────────────────────────────
 
 comment on column public.provenance_events.capacity is
   'En qué calidad tuvo la obra esta parte. Es la MITAD del `estatus_legal` que '
@@ -87,7 +87,7 @@ comment on column public.provenance_events.start_year is
   'contrario que el de la obra: comprada y vendida en 1985 es un eslabón normal.';
 
 
--- ── La obra: titular de derechos y estados de investigación ─
+-- ── The artwork: rights holder and research states ──────────
 
 comment on column public.artworks.rights_holder_note is
   'Lo que no encaja en la relación: derechos compartidos, un titular del que solo '

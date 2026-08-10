@@ -60,29 +60,29 @@ create table public.artwork_relationship_types (
   -- what is normalised is the comparison key, not the datum.
   name text not null,
 
-  -- La etiqueta que ve la obra del otro extremo: «Obra final de». Es la columna
-  -- que evita la segunda fila. Sin ella, registrar que AR-0012 es estudio previo
-  -- de AR-0013 obligaría a escribir a mano la relación contraria para que la
-  -- ficha de AR-0013 dijera algo, y ese par de filas puede divergir: se edita
-  -- una, se retira la otra, y el catálogo se contradice consigo mismo.
+  -- The label the artwork at the other end sees: «Obra final de». It is the column
+  -- that avoids the second row. Without it, recording that AR-0012 is a preliminary study
+  -- of AR-0013 would force writing the opposite relationship by hand so that
+  -- AR-0013's record said something, and that pair of rows can diverge: one is edited,
+  -- the other is withdrawn, and the catalogue contradicts itself.
   --
-  -- Vacía en las relaciones simétricas, donde las dos fichas dicen lo mismo.
+  -- Empty in the symmetric relationships, where both records say the same thing.
   inverse_name text not null default '',
 
-  -- Simétrica quiere decir que la relación no tiene dirección: si A es pareja de
-  -- B, B es pareja de A, y es UN hecho y no dos. De esta bandera dependen la
-  -- canonicalización de la fila y la comprobación de la contraria, más abajo.
+  -- Symmetric means that the relationship has no direction: if A is the pair of
+  -- B, B is the pair of A, and it is ONE fact and not two. On this flag depend the
+  -- row's canonicalisation and the check for the opposite one, further below.
   --
-  -- Se llama `is_symmetric` y no `symmetric` porque `symmetric` es palabra
-  -- RESERVADA en SQL —la del `between symmetric`— y una columna así solo se
-  -- puede nombrar entrecomillada para siempre, en el esquema, en las consultas y
-  -- en el cliente. El prefijo es más feo que la alternativa y bastante menos
-  -- frágil.
+  -- It is called `is_symmetric` and not `symmetric` because `symmetric` is a RESERVED
+  -- word in SQL —the one from `between symmetric`— and a column like that can only
+  -- be named in quotes for ever, in the schema, in the queries and
+  -- in the client. The prefix is uglier than the alternative and a good deal less
+  -- fragile.
   is_symmetric boolean not null default false,
 
-  -- RF-901: nada se borra, se retira. Sin `restored_at`, como en las demás
-  -- maestras de vocabulario: restaurar deja la fila como si nunca se hubiera
-  -- retirado, y `tg_row_audit` distingue ese caso por la ausencia de la columna.
+  -- RF-901: nothing is deleted, it is withdrawn. With no `restored_at`, as in the other
+  -- vocabulary master tables: restoring leaves the row as if it had never been
+  -- withdrawn, and `tg_row_audit` distinguishes that case by the column's absence.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
@@ -90,24 +90,24 @@ create table public.artwork_relationship_types (
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
 
-  -- Un tipo en blanco no dice nada, y uno con espacios alrededor rompería la
-  -- comparación de duplicados sin que se vea en pantalla.
+  -- A blank type says nothing, and one with spaces around it would break the
+  -- duplicate comparison without it being visible on screen.
   constraint artwork_relationship_types_name_not_blank
     check (btrim(name) <> '' and name = btrim(name)),
 
   constraint artwork_relationship_types_inverse_name_trimmed
     check (inverse_name = btrim(inverse_name)),
 
-  -- La coherencia que sostiene todo lo demás, y por eso es una restricción y no
-  -- una convención:
+  -- The coherence that holds up everything else, and that is why it is a constraint and not
+  -- a convention:
   --
-  --   • Una relación SIMÉTRICA no tiene inversa. Si la tuviera, habría dos
-  --     etiquetas para el mismo hecho y la ficha elegiría una al azar según de
-  --     qué lado se mire.
-  --   • Una relación ASIMÉTRICA la tiene que tener, y distinta del nombre
-  --     directo. Sin inversa, la ficha de la otra obra se queda sin nada que
-  --     escribir; con la inversa igual al nombre, el tipo es simétrico mal
-  --     declarado y la canonicalización no se aplicaría.
+  --   • A SYMMETRIC relationship has no inverse. If it had one, there would be two
+  --     labels for the same fact and the record would choose one at random depending on which
+  --     side it is looked at from.
+  --   • An ASYMMETRIC relationship has to have one, and different from the direct
+  --     name. With no inverse, the other artwork's record is left with nothing to
+  --     write; with the inverse equal to the name, the type is symmetric badly
+  --     declared and the canonicalisation would not be applied.
   constraint artwork_relationship_types_inverse_coherent check (
     (is_symmetric and inverse_name = '')
     or (not is_symmetric and inverse_name <> '' and inverse_name <> name)
@@ -122,16 +122,16 @@ comment on column public.artwork_relationship_types.inverse_name is
 comment on column public.artwork_relationship_types.is_symmetric is
   'La relación no tiene dirección: A pareja de B es UN hecho, no dos. De aquí dependen la canonicalización de la fila y el rechazo de la contraria.';
 
--- Unicidad por clave de comparación y no por el nombre literal, como en el
--- resto del esquema: «Estudio previo de» y «estudio previo de» son el mismo
--- tipo. El índice cubre también los tipos retirados, porque volver a dar de alta
--- uno que está en la papelera tiene que poder encontrarlo.
+-- Uniqueness by comparison key and not by the literal name, as in the
+-- rest of the schema: «Estudio previo de» and «estudio previo de» are the same
+-- type. The index also covers the withdrawn types, because registering again
+-- one that is in the wastebasket has to be able to find it.
 --
--- NO se impone unicidad cruzada entre `name` e `inverse_name`. Sería posible y
--- se ha descartado: dar de alta «Obra final de» como tipo directo sería
--- redundante, pero no corrompe nada —la ficha mostraría dos formas de decir lo
--- mismo— y la regla es de las que se explican peor de lo que valen. Los
--- duplicados de vocabulario se resuelven por revisión (RF-909).
+-- Cross uniqueness between `name` and `inverse_name` is NOT imposed. It would be possible and
+-- it has been discarded: registering «Obra final de» as a direct type would be
+-- redundant, but it corrupts nothing —the record would show two ways of saying the same
+-- thing— and the rule is one of those that are explained worse than they are worth. The
+-- vocabulary duplicates are resolved by review (RF-909).
 create unique index artwork_relationship_types_name_unique
   on public.artwork_relationship_types (public.place_key(name));
 
@@ -142,19 +142,19 @@ create trigger artwork_relationship_type_row_audit
   before insert or update on public.artwork_relationship_types
   for each row execute function public.tg_row_audit();
 
--- La siembra: los seis casos que el catálogo ya tiene delante. Una maestra vacía
--- deja el selector en blanco y obliga a inventar el vocabulario mientras se
--- cataloga, que es como se acaban teniendo «Pareja» y «Pareja de» en la misma
--- lista. Ampliarla no requiere migración: ese es el motivo entero de que sea una
--- maestra.
+-- The seeding: the six cases the catalogue already has in front of it. An empty master table
+-- leaves the selector blank and forces inventing the vocabulary while
+-- cataloguing, which is how one ends up with «Pareja» and «Pareja de» in the same
+-- list. Extending it requires no migration: that is the whole reason it is a
+-- master table.
 --
--- «Versión de» va como simétrica porque entre dos versiones de una misma
--- composición no hay una que sea la versión de la otra: son versiones la una de
--- la otra. Cuando una precede claramente a la otra, lo que se registra es
--- «Estudio previo de», que sí tiene dirección.
+-- «Versión de» goes as symmetric because between two versions of the same
+-- composition there is not one that is the version of the other: they are versions of one
+-- another. When one clearly precedes the other, what is recorded is
+-- «Estudio previo de», which does have a direction.
 --
--- `created_by` queda nulo a propósito: dentro de una migración `auth.uid()` no
--- es nadie, y estas filas no las creó ninguna persona.
+-- `created_by` is left null on purpose: inside a migration `auth.uid()` is
+-- nobody, and these rows were created by no person.
 insert into public.artwork_relationship_types (name, inverse_name, is_symmetric) values
   ('Pareja de',                     '',              true),
   ('Parte del mismo políptico que', '',              true),
@@ -164,13 +164,13 @@ insert into public.artwork_relationship_types (name, inverse_name, is_symmetric)
   ('Copia de',                      'Original de',   false);
 
 
--- ── Lo que no se puede hacer con un tipo en uso ─────────────
+-- ── What cannot be done with a type in use ──────────────────
 
--- Un tipo que todavía relaciona obras no se retira, con la misma regla que
--- `tg_artwork_type_deactivation`, `tg_series_deactivation` y
--- `tg_publication_type_deactivation`: retirarlo no lo retira, deja el catálogo
--- apuntando a algo que la interfaz ya no ofrece. Una relación en la papelera no
--- cuenta, como en las demás.
+-- A type that still relates artworks is not withdrawn, with the same rule as
+-- `tg_artwork_type_deactivation`, `tg_series_deactivation` and
+-- `tg_publication_type_deactivation`: withdrawing it does not withdraw it, it leaves the catalogue
+-- pointing at something the interface no longer offers. A relationship in the wastebasket does not
+-- count, as in the others.
 create function public.tg_artwork_relationship_type_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -187,19 +187,19 @@ end $$;
 comment on function public.tg_artwork_relationship_type_deactivation is
   'Impide retirar un tipo de relación que todavía relaciona obras activas (RF-217).';
 
--- Y la simetría de un tipo no se cambia cuando ya tiene relaciones guardadas.
+-- And a type's symmetry is not changed once it already has relationships stored.
 --
--- No es una regla de purismo: las filas de un tipo simétrico están
--- CANONICALIZADAS —el identificador menor va siempre en el extremo de salida—, y
--- las de uno asimétrico no. Cambiar la bandera dejaría filas guardadas con una
--- convención y filas nuevas con otra, de modo que la misma pareja de obras
--- podría entrar dos veces sin que la unicidad lo notase. Es el fallo silencioso
--- que este grupo entero está escrito para evitar, y solo se puede evitar aquí:
--- una vez guardadas las dos filas, ya no hay forma de saber cuál sobra.
+-- It is not a rule of purism: the rows of a symmetric type are
+-- CANONICALISED —the lesser identifier always goes at the outgoing end—, and
+-- those of an asymmetric one are not. Changing the flag would leave rows stored with one
+-- convention and new rows with another, so that the same pair of artworks
+-- could go in twice without the uniqueness noticing. It is the silent failure
+-- this whole group is written to avoid, and it can only be avoided here:
+-- once both rows are stored, there is no longer any way of knowing which one is superfluous.
 --
--- Se miran también las relaciones RETIRADAS, al contrario que en la regla de
--- arriba: una relación en la papelera se puede restaurar, y restauraría una fila
--- escrita con la convención antigua.
+-- The WITHDRAWN relationships are looked at too, unlike in the rule
+-- above: a relationship in the wastebasket can be restored, and it would restore a row
+-- written with the old convention.
 create function public.tg_artwork_relationship_type_symmetry_locked()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -225,54 +225,54 @@ create trigger artwork_relationship_type_symmetry_locked
   for each row execute function public.tg_artwork_relationship_type_symmetry_locked();
 
 
--- ── La relación entre dos obras ─────────────────────────────
+-- ── The relationship between two artworks ───────────────────
 
 create table public.artwork_relationships (
   id uuid primary key default gen_random_uuid(),
 
-  -- Misma forma que `images`, `provenance_events` y las tres puentes
-  -- anteriores: `on update cascade` porque el identificador de catalogación es
-  -- texto, y sin `on delete` porque de `artworks` no se borra nada (RF-901).
+  -- Same shape as `images`, `provenance_events` and the three previous
+  -- bridges: `on update cascade` because the cataloguing identifier is
+  -- text, and with no `on delete` because nothing is deleted from `artworks` (RF-901).
   --
-  -- Los dos extremos son iguales de nombre y de tipo a propósito: en una
-  -- relación simétrica no hay origen ni destino, y en una asimétrica el sentido
-  -- lo pone el tipo y no la columna.
+  -- The two ends are the same in name and in type on purpose: in a
+  -- symmetric relationship there is no origin and no destination, and in an asymmetric one the direction
+  -- is set by the type and not by the column.
   from_catalog_id text not null references public.artworks (catalog_id) on update cascade,
   to_catalog_id   text not null references public.artworks (catalog_id) on update cascade,
 
   relationship_type_id uuid not null
     references public.artwork_relationship_types (id) on delete restrict,
 
-  -- La circunstancia de esta relación concreta: «el reverso se separó del
+  -- The circumstance of this particular relationship: «el reverso se separó del
   -- soporte en la restauración de 1998», «la pareja se subastó por separado».
   note text not null default '',
 
-  -- RF-804: trazabilidad completa, sellada por `tg_row_audit`.
+  -- RF-804: complete traceability, stamped by `tg_row_audit`.
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-517, que revisa RF-903: nada se borra, tampoco aquí. Sin `restored_at`,
-  -- como en las tres puentes anteriores: esta fila no tiene pantalla de papelera
-  -- propia, se restaura desde la ficha de la obra de la que cuelga, y volver a
-  -- añadirla la deja como si nunca se hubiera retirado.
+  -- RF-517, which revises RF-903: nothing is deleted, here either. With no `restored_at`,
+  -- as in the three previous bridges: this row has no wastebasket screen
+  -- of its own, it is restored from the record of the artwork it hangs from, and adding it
+  -- again leaves it as if it had never been withdrawn.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
 
-  -- Una obra no es estudio previo de sí misma. Es la clase de fila que produce
-  -- un selector con la obra actual dentro, y que después pinta en la ficha un
-  -- enlace a la propia ficha.
+  -- An artwork is not a preliminary study of itself. It is the class of row produced
+  -- by a selector with the current artwork inside, and which afterwards paints in the record a
+  -- link to the record itself.
   constraint artwork_relationships_two_artworks
     check (from_catalog_id <> to_catalog_id),
 
-  -- La misma relación entre las mismas dos obras es un hecho, no dos. La
-  -- restricción cubre también las relaciones retiradas, que es lo que permite
-  -- que volver a añadir una restaure en vez de duplicar (ver `relate_artworks`).
+  -- The same relationship between the same two artworks is one fact, not two. The
+  -- constraint also covers the withdrawn relationships, which is what allows
+  -- adding one again to restore instead of duplicating (see `relate_artworks`).
   --
-  -- Dos tipos distintos entre las mismas dos obras SÍ conviven: el anverso y el
-  -- reverso de una tabla pueden ser además parte del mismo políptico.
+  -- Two different types between the same two artworks DO coexist: the front and the
+  -- back of a panel can also be part of the same polyptych.
   constraint artwork_relationships_unique
     unique (from_catalog_id, to_catalog_id, relationship_type_id)
 );
@@ -283,9 +283,9 @@ comment on table public.artwork_relationships is
 comment on column public.artwork_relationships.from_catalog_id is
   'Extremo de salida. En un tipo simétrico es siempre el identificador menor, puesto ahí por el trigger de canonicalización: la pareja se guarda una sola vez.';
 
--- La ficha se consulta desde los dos lados —«qué obras se relacionan con esta»
--- no distingue de qué extremo salió la flecha—, así que hacen falta los dos
--- índices. El de salida lo sirve el índice único, que ya empieza por
+-- The record is consulted from both sides —«which artworks are related to this one»
+-- does not distinguish which end the arrow came out of—, so both
+-- indexes are needed. The outgoing one is served by the unique index, which already starts with
 -- `from_catalog_id`.
 create index artwork_relationships_to_idx
   on public.artwork_relationships (to_catalog_id);
@@ -293,20 +293,20 @@ create index artwork_relationships_type_idx
   on public.artwork_relationships (relationship_type_id);
 
 
--- ── Una relación simétrica se guarda UNA vez ────────────────
+-- ── A symmetric relationship is stored ONCE ─────────────────
 --
--- «AR-0003 pareja de AR-0007» y «AR-0007 pareja de AR-0003» son el mismo hecho.
--- Sin canonicalizar, la unicidad no los ve iguales y entran las dos filas: dos
--- notas que pueden decir cosas distintas, dos bajas que hay que acordarse de
--- hacer, y la ficha mostrando la pareja dos veces. Se guarda siempre con el
--- identificador menor en el extremo de salida, de modo que la segunda escritura
--- choque contra la restricción de unicidad y `relate_artworks` la resuelva.
+-- «AR-0003 pareja de AR-0007» and «AR-0007 pareja de AR-0003» are the same fact.
+-- Without canonicalising, the uniqueness does not see them as equal and both rows go in: two
+-- notes that can say different things, two withdrawals that have to be remembered,
+-- and the record showing the pair twice. It is always stored with the
+-- lesser identifier at the outgoing end, so that the second write
+-- clashes against the uniqueness constraint and `relate_artworks` resolves it.
 --
--- La comparación va con `collate "C"`, byte a byte, y no con la de la base: los
--- identificadores son ASCII y cualquier collation da hoy el mismo orden, pero si
--- la de la base cambiara alguna vez, las filas guardadas quedarían
--- canonicalizadas con un criterio y las nuevas con otro — y entonces la misma
--- pareja entraría dos veces. El criterio tiene que ser el mismo para siempre.
+-- The comparison goes with `collate "C"`, byte by byte, and not with the base's: the
+-- identifiers are ASCII and any collation gives the same order today, but if
+-- the base's changed at some point, the stored rows would be left
+-- canonicalised with one criterion and the new ones with another — and then the same
+-- pair would go in twice. The criterion has to be the same for ever.
 create function public.tg_canonicalize_artwork_relationship()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -318,9 +318,9 @@ begin
     from public.artwork_relationship_types
    where id = new.relationship_type_id;
 
-  -- El tipo no existe todavía a ojos de esta comprobación: las claves ajenas se
-  -- verifican DESPUÉS de los triggers `before`, así que aquí no se inventa un
-  -- error propio y se deja hablar a la clave ajena, que dirá lo mismo mejor.
+  -- The type does not yet exist in the eyes of this check: the foreign keys are
+  -- verified AFTER the `before` triggers, so here no error of our own is invented
+  -- and the foreign key is left to speak, which will say the same thing better.
   if v_symmetric is null then
     return new;
   end if;
@@ -338,17 +338,17 @@ comment on function public.tg_canonicalize_artwork_relationship is
   'Una relación simétrica se guarda con el identificador menor en el extremo de salida (RF-217): así «A pareja de B» y «B pareja de A» son la misma fila y no dos que pueden divergir.';
 
 
--- ── Y una asimétrica no admite su contraria ─────────────────
+-- ── And an asymmetric one does not admit its opposite ───────
 --
--- Si ya consta que A es estudio previo de B, que B sea estudio previo de A no es
--- un dato más: es una contradicción documental, y de las que no se ven al
--- escribirlas porque cada una se da de alta desde la ficha de su obra. La ficha
--- de B ya dice «obra final de A» sin que nadie escriba nada, que es justamente
--- para lo que existe `inverse_name`.
+-- If it is already on record that A is a preliminary study of B, B being a preliminary study of A is not
+-- one more datum: it is a documentary contradiction, and one of those that are not seen on
+-- writing them because each one is registered from its own artwork's record. B's
+-- record already says «obra final de A» without anybody writing anything, which is exactly
+-- what `inverse_name` exists for.
 --
--- Se comprueba también al RESTAURAR una relación retirada, que es el camino por
--- el que la contradicción entraría de verdad: la contraria se escribió mientras
--- esta estaba en la papelera.
+-- It is checked on RESTORING a withdrawn relationship too, which is the route
+-- by which the contradiction would really come in: the opposite one was written while
+-- this one was in the wastebasket.
 create function public.tg_artwork_relationship_not_reversed()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -363,7 +363,7 @@ begin
     from public.artwork_relationship_types
    where id = new.relationship_type_id;
 
-  -- Como arriba: si el tipo no se ve, habla la clave ajena.
+  -- As above: if the type is not visible, the foreign key speaks.
   if v_type.id is null or v_type.is_symmetric then
     return new;
   end if;
@@ -386,10 +386,10 @@ comment on function public.tg_artwork_relationship_not_reversed is
   'Rechaza la pareja inversa de una relación asimétrica (RF-217): «A es estudio previo de B» y «B es estudio previo de A» no pueden ser ciertas a la vez.';
 
 
--- Los dos triggers de regla disparan en orden alfabético de nombre, y ese orden
--- importa: la canonicalización tiene que haber puesto los extremos en su sitio
--- antes de que nadie busque la relación contraria. `canonicalize` va antes que
--- `not_reversed`, y `row_audit` después, que le da igual.
+-- The two rule triggers fire in alphabetical order of name, and that order
+-- matters: the canonicalisation has to have put the ends in their place
+-- before anybody looks for the opposite relationship. `canonicalize` goes before
+-- `not_reversed`, and `row_audit` afterwards, which does not care.
 create trigger artwork_relationship_canonicalize
   before insert or update on public.artwork_relationships
   for each row execute function public.tg_canonicalize_artwork_relationship();
@@ -403,27 +403,27 @@ create trigger artwork_relationship_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── Volver a relacionar dos obras RESTAURA la relación ──────
+-- ── Relating two artworks again RESTORES the relationship ───
 --
--- Mismo caso y misma solución que `cite_artwork`, `exhibit_artwork`,
--- `document_artwork` y `document_exhibition`: con la unicidad cubriendo también
--- las relaciones retiradas, un `insert` de una pareja que está en la papelera
--- choca contra el índice, y la interfaz convertiría un «Añadir» en una violación
--- de unicidad incomprensible.
+-- Same case and same solution as `cite_artwork`, `exhibit_artwork`,
+-- `document_artwork` and `document_exhibition`: with the uniqueness also covering
+-- the withdrawn relationships, an `insert` of a pair that is in the wastebasket
+-- clashes against the index, and the interface would turn an «Añadir» into a
+-- uniqueness violation that makes no sense.
 --
--- Aquí hace además una segunda cosa que las otras cuatro no necesitaban: como el
--- trigger de canonicalización ya ha puesto los extremos en su sitio antes de la
--- comprobación de conflicto, añadir «AR-0007 pareja de AR-0003» encuentra y
--- restaura la fila «AR-0003 pareja de AR-0007» que ya existía. La usuaria no
--- tiene que acordarse de en qué orden la escribió la primera vez.
+-- Here it also does a second thing the other four did not need: since the
+-- canonicalisation trigger has already put the ends in their place before the
+-- conflict check, adding «AR-0007 pareja de AR-0003» finds and
+-- restores the row «AR-0003 pareja de AR-0007» that already existed. The user does not
+-- have to remember in which order she wrote it the first time.
 --
--- Función y no un trigger `before insert` que devuelva `null`: un trigger así
--- deja el `insert` sin filas afectadas y quien llame desde la API pidiendo la
--- fila creada no recibirá ninguna. La función devuelve siempre la fila.
+-- A function and not a `before insert` trigger returning `null`: a trigger like that
+-- leaves the `insert` with no affected rows and whoever calls from the API asking for the
+-- created row will receive none. The function always returns the row.
 --
--- Sin SECURITY DEFINER: las políticas siguen en vigor y un Lector no escribe
--- aquí. La comprobación explícita solo convierte el silencioso «no ha cambiado
--- nada» en un error legible, y en español porque lo lee ella.
+-- With no SECURITY DEFINER: the policies remain in force and a Reader does not write
+-- here. The explicit check only turns the silent «nothing has
+-- changed» into a legible error, and in Spanish because she reads it.
 create function public.relate_artworks(
   p_from_catalog_id text,
   p_to_catalog_id text,
@@ -447,10 +447,10 @@ begin
           coalesce(p_note, ''))
   on conflict (from_catalog_id, to_catalog_id, relationship_type_id) do update
      set active = true,
-         -- Lo que no se manda no se borra: volver a añadir una relación que ya
-         -- existía no puede vaciar la nota que alguien escribió, porque el
-         -- formulario de «Añadir» viene en blanco. Vaciarla es editar la
-         -- relación, que es otra operación.
+         -- What is not sent is not deleted: adding again a relationship that already
+         -- existed cannot empty the note somebody wrote, because the
+         -- «Añadir» form comes in blank. Emptying it is editing the
+         -- relationship, which is another operation.
          note = case when btrim(excluded.note) <> ''
                      then excluded.note
                      else artwork_relationships.note end
@@ -463,17 +463,17 @@ comment on function public.relate_artworks is
   'Relaciona dos obras, o RESTAURA la relación que estuviera retirada en vez de chocar contra la unicidad (RF-217, RF-517). En un tipo simétrico da igual el orden en que se pasen las obras.';
 
 
--- ── RLS y privilegios ───────────────────────────────────────
+-- ── RLS and privileges ──────────────────────────────────────
 --
--- Se revoca primero y se concede después, uno a uno: la plataforma concede por
--- omisión todos los privilegios de cada tabla nueva a los roles anónimo y
--- autenticado, incluido `delete` (RF-113).
+-- It is revoked first and granted afterwards, one by one: the platform grants by
+-- default all the privileges of every new table to the anonymous and
+-- authenticated roles, `delete` included (RF-113).
 --
--- Sin DELETE en ninguna de las dos: ni privilegio ni política, nunca (RF-901,
--- RF-517). Retirar una relación es un update de `active`.
+-- No DELETE in either of the two: neither privilege nor policy, ever (RF-901,
+-- RF-517). Withdrawing a relationship is an update of `active`.
 --
--- Las políticas van en la migración siguiente. Hasta que existan, estas tablas
--- no las lee ni las escribe nadie con sesión: RLS activado sin política niega.
+-- The policies go in the next migration. Until they exist, nobody with a session
+-- reads or writes these tables: RLS enabled with no policy denies.
 
 alter table public.artwork_relationship_types enable row level security;
 alter table public.artwork_relationships enable row level security;
@@ -484,10 +484,10 @@ revoke all on public.artwork_relationships from anon, authenticated;
 grant select, insert, update on public.artwork_relationship_types to authenticated;
 grant select, insert, update on public.artwork_relationships to authenticated;
 
--- Explícito, como en 20260801140000 y en los cuatro grupos anteriores: en esta
--- plataforma una función nueva nace con EXECUTE para PUBLIC pese al `alter
--- default privileges`, y quien lo caza es `function_privileges.test.sql`. Una
--- función de trigger no la invoca nadie desde la API, y aun así dispara.
+-- Explicit, as in 20260801140000 and in the four previous groups: on this
+-- platform a new function is born with EXECUTE for PUBLIC despite the `alter
+-- default privileges`, and what catches it is `function_privileges.test.sql`. A
+-- trigger function is invoked by nobody from the API, and it fires all the same.
 revoke all on function public.tg_artwork_relationship_type_deactivation() from public;
 revoke all on function public.tg_artwork_relationship_type_symmetry_locked() from public;
 revoke all on function public.tg_canonicalize_artwork_relationship() from public;

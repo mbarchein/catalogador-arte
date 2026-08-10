@@ -1,79 +1,79 @@
 -- ============================================================
--- Enlaces a sitios externos (RF-1401 a RF-1408).
+-- Links to external sites (RF-1401 to RF-1408).
 --
--- Hoy una dirección web que documenta una obra solo tiene un sitio donde caber:
--- dentro de una nota. Ahí no se puede pulsar, no se puede buscar, no se puede
--- comprobar y no se puede atribuir a la fotografía que salió de ella. Y no es
--- hipotético: dos notas de inventario del volcado llevan dentro la dirección de
--- la ficha del MACVA de la que se tomaron todos los datos, imagen incluida.
+-- Today a web address that documents an artwork has only one place where it can fit:
+-- inside a note. There it cannot be clicked, it cannot be searched, it cannot be
+-- checked and it cannot be attributed to the photograph that came out of it. And it is not
+-- hypothetical: two inventory notes of the dump carry inside the address of
+-- the MACVA record from which all the data were taken, image included.
 --
--- ── POR QUÉ UNA TABLA PROPIA Y NO UNA COLUMNA EN OTRA ───────
+-- ── WHY A TABLE OF ITS OWN AND NOT A COLUMN IN ANOTHER ──────
 --
--- NO una columna `url` en `archive_documents`. No es cuestión de forma sino de
--- naturaleza. Un documento del archivo es un fichero del que somos custodios:
--- vive en el bucket privado, se sirve con URL firmada (RF-110, RNF-111), tiene
--- tamaño y tipo MIME, y la regla 3-2-1 de RNF-112 se le aplica. Un enlace es lo
--- contrario: contenido de un tercero que puede cambiar, mudarse o desaparecer
--- sin avisar, del que no se puede hacer copia de seguridad y cuyo ciclo de vida
--- es la caducidad. Fundirlos convertiría el `check` de todo-o-nada del fichero
--- en una disyunción de dos conjuntos de columnas ajenos entre sí, dejaría la
--- mitad de las columnas nulas en cada caso, obligaría a que cada regla de
--- permanencia del documento llevara escrita la cláusula «salvo si es un enlace»,
--- y arrastraría vocabularios que no aplican: una página de museo no tiene tipo
--- documental ni serie archivística.
+-- NOT a `url` column in `archive_documents`. It is not a question of form but of
+-- nature. An archive document is a file we are custodians of: it
+-- lives in the private bucket, it is served with a signed URL (RF-110, RNF-111), it has
+-- a size and a MIME type, and RNF-112's 3-2-1 rule applies to it. A link is the
+-- opposite: a third party's content that can change, move or disappear
+-- with no warning, of which no backup can be made and whose life cycle
+-- is expiry. Merging them would turn the file's all-or-nothing `check`
+-- into a disjunction of two sets of columns alien to each other, would leave
+-- half the columns null in each case, would force every permanence rule of the
+-- document to carry the clause «unless it is a link» written in,
+-- and would drag along vocabularies that do not apply: a museum page has no
+-- document type and no archival series.
 --
--- NO una tabla puente. El glosario del proyecto define tabla puente como la que
--- modela un dato que depende de la combinación de dos entidades y no pertenece
--- de forma natural a ninguna de las dos por separado. El título de un enlace, su
--- tipo, su nota y su estado de comprobación pertenecen al enlace, y el enlace
--- pertenece a una ficha: el criterio no aplica. La puente de documentos existe
--- para no duplicar un PDF de 8 MB entre tres obras; una URL de ochenta
--- caracteres no se duplica, se escribe otra vez, y cada copia gana su propia
--- nota. El caso que sí la justificaría —el recorte de prensa de una colectiva,
--- repetido en quince obras— se resuelve anclando el enlace A LA EXPOSICIÓN, que
--- además es el dato honesto: el artículo es sobre la exposición y no sobre cada
--- cuadro. Esa ancla llega en su propia migración, cuando el catálogo razonado
--- documental esté cerrado.
+-- NOT a bridge table. The project's glossary defines a bridge table as the one that
+-- models a datum depending on the combination of two entities and not belonging
+-- naturally to either of the two separately. A link's title, its
+-- type, its note and its check state belong to the link, and the link
+-- belongs to a record: the criterion does not apply. The documents' bridge exists
+-- so as not to duplicate an 8 MB PDF between three artworks; an eighty-character
+-- URL is not duplicated, it is written again, and each copy gains its own
+-- note. The case that would justify it —the press clipping of a group show,
+-- repeated in fifteen artworks— is resolved by anchoring the link TO THE EXHIBITION, which
+-- is besides the honest datum: the article is about the exhibition and not about each
+-- painting. That anchor arrives in its own migration, when the documentary catalogue
+-- raisonné is closed.
 --
--- NO clave ajena polimórfica. En PostgreSQL no se puede declarar: dejaría entrar
--- filas apuntando a obras inexistentes, no se podría expresar el `restrict` y la
--- política de SELECT tendría que ramificar por tipo sin poder apoyarse en la
--- política de la tabla padre. Se usa el ARCO EXCLUSIVO: una columna de clave
--- ajena declarada por ancla, nulables, y un `check` de que hay exactamente una
--- no nula. Coste aceptado y escrito: añadir un ancla obliga a rehacer el `check`
--- en una migración nueva.
+-- NOT a polymorphic foreign key. In PostgreSQL it cannot be declared: it would let in
+-- rows pointing at non-existent artworks, the `restrict` could not be expressed and the
+-- SELECT policy would have to branch by type without being able to lean on
+-- the parent table's policy. The EXCLUSIVE ARC is used: one foreign-key column
+-- declared per anchor, nullable, and a `check` that there is exactly one
+-- not null. An accepted and written cost: adding an anchor forces redoing the `check`
+-- in a new migration.
 --
--- ── LO QUE ESTA MIGRACIÓN NO LLEVA, Y POR QUÉ ───────────────
+-- ── WHAT THIS MIGRATION DOES NOT CARRY, AND WHY ─────────────
 --
--- Escrito para que no se añada dentro de seis meses sin argumento:
+-- Written down so that it is not added six months from now with no argument:
 --
---  * Ni `sort_order`: son cuatro enlaces por ficha, el orden es por tipo y por
---    fecha de alta, y reordenar a mano no lo ha pedido nadie.
---  * Ni publicación en `supabase_realtime`: la propia migración de vistas en
---    vivo dice que publicar de más no es gratis, y un enlace lo añade la misma
---    persona que está mirando la ficha. Añadirlo después es una línea.
---  * Ni entrada en la papelera (RF-906): un enlace no es una de las seis fichas
---    con identificador propio de RF-901.
---  * Ni normalización de URL, ni rastreador, ni descarga de icono, título o
---    previsualización del sitio enlazado — eso filtraría a un tercero qué obra
---    se está catalogando y desde qué dirección, y convertiría un enlace en
---    contenido incrustado (RF-1404).
---  * Ni acortadores, ni generados ni resueltos: un acortador esconde a dónde va
---    el enlace, que es lo contrario de enseñar el dominio.
---  * Ni *share target* de la PWA. Sería el gesto perfecto en el móvil y es una
---    entrega en sí misma —manifiesto, ruta de aterrizaje y selector de obra—;
---    queda anotado como lo primero que valorar si añadir enlaces se vuelve
---    frecuente.
+--  * No `sort_order`: there are four links per record, the order is by type and by
+--    creation date, and reordering by hand has been asked for by nobody.
+--  * No publication in `supabase_realtime`: the live views' own
+--    migration says that publishing more than needed is not free, and a link is added by the same
+--    person who is looking at the record. Adding it afterwards is one line.
+--  * No entry in the wastebasket (RF-906): a link is not one of the six records
+--    with an identifier of their own from RF-901.
+--  * No URL normalisation, no crawler, no download of the icon, title or
+--    preview of the linked site — that would leak to a third party which artwork
+--    is being catalogued and from which address, and would turn a link into
+--    embedded content (RF-1404).
+--  * No shorteners, neither generated nor resolved: a shortener hides where
+--    the link goes, which is the opposite of showing the domain.
+--  * No PWA *share target*. It would be the perfect gesture on the phone and it is a
+--    delivery in itself —a manifest, a landing route and an artwork selector—;
+--    it is noted as the first thing to consider if adding links becomes
+--    frequent.
 -- ============================================================
 
 
--- ── Dos enumerados, y por qué no son tablas maestras ────────
+-- ── Two enumerated types, and why they are not master tables ──
 --
--- El criterio que separa un enumerado de una maestra en este esquema es quién es
--- dueño de las entradas. Los lugares, los tipos de obra y las series son tablas
--- porque la catalogadora las inventa y las renombra; estos los escribe el
--- esquema, y nadie renombra «Prensa» ni la reorganiza en un árbol. Por eso no
--- necesitan pantalla de mantenimiento.
+-- The criterion that separates an enumerated type from a master table in this schema is who
+-- owns the entries. The places, the artwork types and the series are tables
+-- because the cataloguer invents them and renames them; these are written by the
+-- schema, and nobody renames «Prensa» nor reorganises it into a tree. That is why they do not
+-- need a maintenance screen.
 
 create type public.external_link_type as enum (
   'MUSEUM_PAGE',     -- Página de museo
@@ -86,10 +86,10 @@ create type public.external_link_type as enum (
   'OTHER'            -- Se miró y no encaja en ninguno
 );
 
--- AUCTION_RECORD se deja fuera a propósito hasta que alguien lo necesite: añadir
--- un valor es `alter type ... add value` en una migración nueva —con el aviso de
--- que el valor nuevo no se puede usar en la misma transacción que lo crea— y
--- quitarlo no se puede.
+-- AUCTION_RECORD is left out on purpose until somebody needs it: adding
+-- a value is `alter type ... add value` in a new migration —with the warning
+-- that the new value cannot be used in the same transaction that creates it— and
+-- removing it cannot be done.
 comment on type public.external_link_type is
   'Clase de sitio enlazado. Enumerado y no tabla maestra: la línea que las separa en este esquema es quién es dueño de las entradas. Los lugares, los tipos de obra y las series son tablas porque la catalogadora las inventa y las renombra; estos los escribe el esquema, nadie renombra «Prensa» ni los reorganiza en un árbol. Nulo es «sin clasificar» y OTHER es «se miró y no encaja»: no son lo mismo (RF-1402).';
 
@@ -102,8 +102,8 @@ create type public.link_check_status as enum (
 comment on type public.link_check_status is
   'Resultado de comprobar un enlace a mano. Tres valores y no dos: «ha cambiado» —la página carga pero ya no muestra lo que documentaba— es justo lo que ningún rastreador detectaría. El cuarto estado es el nulo: sin comprobar no es roto (RF-1405).';
 
--- Explícito, como en la migración de color: en esta plataforma conviene revocar
--- primero y conceder después, uno a uno.
+-- Explicit, as in the colour's migration: on this platform it is worth revoking
+-- first and granting afterwards, one by one.
 revoke all on type public.external_link_type from public;
 revoke all on type public.link_check_status  from public;
 
@@ -111,69 +111,69 @@ grant usage on type public.external_link_type to authenticated;
 grant usage on type public.link_check_status  to authenticated;
 
 
--- ── La validación de la dirección (RF-1403) ─────────────────
+-- ── The address validation (RF-1403) ────────────────────────
 --
--- Esta es la única línea del sistema que dice que NO a una dirección, y es un
--- riesgo de seguridad real y no una comodidad: no hay backend, la clave anónima
--- viaja en el cliente, y lo que entre en esta columna acabará dentro de un
--- `href` en la ficha que ve todo el equipo. La comprobación vive en la base
--- porque es la última línea y no se puede saltar atacando la API; la aplicación
--- aplica exactamente la misma regla antes de guardar, pero solo para poder
--- explicar el rechazo en español.
+-- This is the only line in the system that says NO to an address, and it is a
+-- real security risk and not a convenience: there is no backend, the anonymous key
+-- travels in the client, and whatever goes into this column will end up inside an
+-- `href` in the record the whole team sees. The check lives in the base
+-- because it is the last line and it cannot be got round by attacking the API; the application
+-- applies exactly the same rule before saving, but only so as to be able to
+-- explain the rejection in Spanish.
 --
--- Predicado a predicado, porque quien los lea dentro de un año tiene que poder
--- decidir si puede tocarlos:
+-- Predicate by predicate, because whoever reads them a year from now has to be able to
+-- decide whether they can touch them:
 --
---  1. `btrim` — « javascript:alert(1)» con un espacio delante lo ejecuta el
---     navegador, que recorta, y lo deja pasar cualquier comparación ingenua que
---     no recorte antes. Aquí no se recorta el dato: se RECHAZA, para que lo que
---     se guarda sea idéntico a lo que se validó.
---  2. Longitud entre 11 (`http://a.bc`) y 2048, que es el límite práctico de los
---     navegadores: más allá es un pegado accidental y no una dirección.
---  3. Ni espacios ni caracteres de control EN NINGUNA POSICIÓN: `java<tab>script:`
---     y `java<nl>script:` los han ejecutado navegadores reales, y ninguna
---     dirección legítima los lleva sin escapar.
---  4. LISTA BLANCA de esquemas y no lista negra: empieza por `http://` o
---     `https://`, comparado en minúsculas. Rechaza de una vez `javascript:`,
---     `data:`, `vbscript:`, `file:`, `blob:`, `intent:`, `mailto:`, `tel:` y todo
---     lo que se invente después, además de la forma relativa al protocolo
---     `//evil.example`. Una lista negra habría que ampliarla cada vez que
---     aparece un esquema nuevo.
---     Se admite `http` además de `https` y es deliberado: hay museos y archivos
---     regionales sin cifrar, y si su dirección no cabe en la tabla acabará dentro
---     de una nota, que es el fallo que todo esto existe para terminar. Lo que
---     decide la seguridad no es el cifrado del destino sino esta lista blanca y
---     que nada de lo enlazado se incruste.
---  5. LISTA BLANCA ASCII SOBRE LA AUTORIDAD, y no la regla «sin @ y con un punto
---     en medio», que es insuficiente. La autoridad es lo que hay entre `://` y la
---     primera `/`, `?` o `#`, en minúsculas, y tiene que ser un nombre de
---     dominio: etiquetas de letras, cifras y guiones separadas por puntos, sin
---     guion inicial ni final en ninguna etiqueta, un dominio de primer nivel de
---     dos letras o más, y un puerto opcional de hasta cinco cifras. Esa sola
---     línea cierra, comprobadas una a una:
+--  1. `btrim` — « javascript:alert(1)» with a space in front is executed by the
+--     browser, which trims, and it is let through by any naive comparison that
+--     does not trim first. Here the datum is not trimmed: it is REJECTED, so that what
+--     is stored is identical to what was validated.
+--  2. Length between 11 (`http://a.bc`) and 2048, which is the browsers' practical
+--     limit: beyond that it is an accidental paste and not an address.
+--  3. No spaces and no control characters IN ANY POSITION: `java<tab>script:`
+--     and `java<nl>script:` have been executed by real browsers, and no
+--     legitimate address carries them unescaped.
+--  4. A WHITELIST of schemes and not a blacklist: it starts with `http://` or
+--     `https://`, compared in lower case. It rejects in one go `javascript:`,
+--     `data:`, `vbscript:`, `file:`, `blob:`, `intent:`, `mailto:`, `tel:` and everything
+--     invented afterwards, as well as the protocol-relative form
+--     `//evil.example`. A blacklist would have to be extended every time
+--     a new scheme appears.
+--     `http` is admitted as well as `https` and it is deliberate: there are museums and regional
+--     archives with no encryption, and if their address does not fit in the table it will end up inside
+--     a note, which is the failure all this exists to end. What
+--     decides the security is not the destination's encryption but this whitelist and
+--     the fact that nothing linked gets embedded.
+--  5. AN ASCII WHITELIST OVER THE AUTHORITY, and not the rule «no @ and with a dot
+--     in the middle», which is insufficient. The authority is what there is between `://` and the
+--     first `/`, `?` or `#`, in lower case, and it has to be a domain
+--     name: labels of letters, digits and hyphens separated by dots, with no
+--     leading or trailing hyphen in any label, a top-level domain of
+--     two letters or more, and an optional port of up to five digits. That single
+--     line closes, checked one by one:
 --
---       · https://macvac.es@evil.example/obra — credenciales antes del
---         anfitrión: se lee como del MACVA y va a otro sitio. Es la única
---         suplantación que se puede rechazar sin resolver nada por la red.
---       · https://evil.example\.ejemplo.es/ — LA BARRA INVERTIDA, que los
---         navegadores tratan como barra: el anfitrión real es `evil.example` y lo
---         que parece el dominio es la ruta.
---       · Caracteres invisibles dentro del nombre del sitio (U+200B y compañía).
---         `[[:space:]]` de PostgreSQL no caza U+200B ni ningún carácter de
---         categoría Cf, así que la lista blanca es la única forma de cerrarlo.
---       · Direcciones IP, `https://192.168.1.7/obra` y `https://[::1]/obra`, por
---         el mismo motivo por el que se rechaza `localhost`: no son una fuente
---         que un catálogo pueda citar.
+--       · https://macvac.es@evil.example/obra — credentials before the
+--         host: it reads as being the MACVA's and it goes elsewhere. It is the only
+--         impersonation that can be rejected without resolving anything over the network.
+--       · https://evil.example\.ejemplo.es/ — THE BACKSLASH, which
+--         browsers treat as a slash: the real host is `evil.example` and what
+--         looks like the domain is the path.
+--       · Invisible characters inside the site's name (U+200B and company).
+--         PostgreSQL's `[[:space:]]` does not catch U+200B nor any character of
+--         category Cf, so the whitelist is the only way of closing it.
+--       · IP addresses, `https://192.168.1.7/obra` and `https://[::1]/obra`, for
+--         the same reason `localhost` is rejected: they are not a source
+--         a catalogue can cite.
 --       · `https://.ejemplo.es`, `https://ejemplo.es.`, `https://ejemplo..es`,
 --         `https://ejemplo_a.es`.
 --
---     COSTE ACEPTADO: se rechazan los dominios internacionalizados escritos en
---     Unicode (`https://münchen.example`). Se guardan en su forma punycode
---     (`https://xn--mnchen-3ya.example`), que es la que copia el navegador al
---     pegar, y el mensaje de la interfaz lo dice con esas palabras.
+--     AN ACCEPTED COST: internationalised domains written in
+--     Unicode (`https://münchen.example`) are rejected. They are stored in their punycode form
+--     (`https://xn--mnchen-3ya.example`), which is the one the browser copies on
+--     pasting, and the interface's message says so in those words.
 --
--- La función NO comprueba que el sitio exista ni que la página cargue: eso no se
--- puede hacer desde un `check`, y fingirlo sería peor que no tenerlo.
+-- The function does NOT check that the site exists nor that the page loads: that cannot
+-- be done from a `check`, and pretending to would be worse than not having it.
 create function public.is_web_url(p_url text) returns boolean
 language sql immutable strict set search_path = public as $$
   select p_url = btrim(p_url)
@@ -190,33 +190,33 @@ comment on function public.is_web_url is
 revoke all on function public.is_web_url(text) from public;
 grant execute on function public.is_web_url(text) to authenticated;
 
--- REGLA DE FRONTERA, que vale para todo el esquema: toda columna que guarde una
--- dirección web, en cualquier tabla presente o futura, se valida con
--- `is_web_url`. Y una dirección web vive en `external_links`, salvo el
--- identificador canónico de una publicación (DOI o enlace al ejemplar), que sería
--- de `bibliography` el día que tenga columna propia — hoy no la tiene, así que
--- `external_links` es el único sitio. `parties` NO recibe columna de sitio web:
--- para eso está el ancla a la parte, que llega con el resto de anclas.
+-- A BOUNDARY RULE, which holds for the whole schema: every column storing a
+-- web address, in any present or future table, is validated with
+-- `is_web_url`. And a web address lives in `external_links`, except the
+-- canonical identifier of a publication (a DOI or a link to the copy), which would be
+-- `bibliography`'s the day it has a column of its own — today it does not, so
+-- `external_links` is the only place. `parties` does NOT get a website column:
+-- that is what the anchor to the party is for, which arrives with the rest of the anchors.
 --
--- UN `check` QUE LLAMA A UNA FUNCIÓN NO REVALIDA LAS FILAS VIEJAS CUANDO LA
--- FUNCIÓN CAMBIA. Queda escrito aquí: el día que `is_web_url` se endurezca, la
--- migración que la reemplace lleva a continuación un bloque `do` que cuenta las
--- filas de `external_links` que dejan de pasar y FALLA si hay alguna. Es también
--- la segunda razón por la que la interfaz vuelve a validar al pintar.
+-- A `check` THAT CALLS A FUNCTION DOES NOT REVALIDATE THE OLD ROWS WHEN THE
+-- FUNCTION CHANGES. It is written here: the day `is_web_url` is tightened, the
+-- migration that replaces it carries next a `do` block that counts the
+-- rows of `external_links` that stop passing and FAILS if there is any. It is also
+-- the second reason why the interface validates again on painting.
 
 
--- ── La tabla ────────────────────────────────────────────────
+-- ── The table ───────────────────────────────────────────────
 
 create table public.external_links (
-  -- Clave sustituta (ADR-007, RF-204) y no la URL: la URL es precisamente lo que
-  -- cambia cuando el museo reorganiza su web, y una clave primaria no se edita.
+  -- Surrogate key (ADR-007, RF-204) and not the URL: the URL is precisely what
+  -- changes when the museum reorganises its site, and a primary key is not edited.
   id uuid primary key default gen_random_uuid(),
 
-  -- El arco exclusivo. `on update cascade` en las dos anclas por coherencia con
-  -- `images.catalog_id` y `provenance_events.catalog_id`, aunque `catalog_id` sea
-  -- inmutable por trigger: es cinturón, no mecanismo. `on delete restrict` por lo
-  -- mismo que en las maestras: nadie tiene DELETE, y si algún día se borrara una
-  -- fila a mano, esto avisa en vez de dejar enlaces colgando del vacío.
+  -- The exclusive arc. `on update cascade` in both anchors for coherence with
+  -- `images.catalog_id` and `provenance_events.catalog_id`, even though `catalog_id` is
+  -- immutable by trigger: it is a belt, not a mechanism. `on delete restrict` for the
+  -- same reason as in the master tables: nobody has DELETE, and if a row were ever
+  -- deleted by hand, this warns instead of leaving links hanging from nothing.
   artwork_id text references public.artworks (catalog_id)
     on update cascade on delete restrict,
   image_id text references public.images (image_id)
@@ -224,21 +224,21 @@ create table public.external_links (
 
   url text not null,
 
-  -- Puede estar vacío: exigir un título al pegar rompe la captura de una mano
-  -- (RNF-106, RF-1408). Cuando falta, la interfaz muestra el DOMINIO y nunca la
-  -- dirección entera, así que no hay hueco. Se guarda recortado.
+  -- It can be empty: requiring a title on pasting breaks one-handed capture
+  -- (RNF-106, RF-1408). When it is missing, the interface shows the DOMAIN and never the
+  -- whole address, so there is no gap. It is stored trimmed.
   title text not null default '',
 
   link_type public.external_link_type,
 
-  -- Por qué importa este enlace. Texto largo, sin recorte forzado, como el resto
-  -- de notas del catálogo.
+  -- Why this link matters. Long text, with no forced trimming, like the rest
+  -- of the catalogue's notes.
   note text not null default '',
 
   archive_url text,
 
-  -- Las tres columnas de comprobación. Las escribe `record_link_check` y no el
-  -- cliente: ver más abajo.
+  -- The three check columns. `record_link_check` writes them and not the
+  -- client: see further below.
   check_status public.link_check_status,
   checked_at timestamptz,
   checked_by uuid references public.profiles (id),
@@ -246,31 +246,31 @@ create table public.external_links (
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
 
-  -- `updated_at`/`updated_by` existen aquí y no en `images` a propósito: la URL
-  -- es el único campo del catálogo que cambia por motivos que están FUERA del
-  -- catálogo, y «quién la tocó por última vez» es justo la auditoría que hace
-  -- falta cuando una dirección deja de llevar donde llevaba.
+  -- `updated_at`/`updated_by` exist here and not in `images` on purpose: the URL
+  -- is the only field of the catalogue that changes for reasons that are OUTSIDE the
+  -- catalogue, and «who touched it last» is exactly the audit that is
+  -- needed when an address stops leading where it led.
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- Baja lógica con la forma de `images` y `physical_places`: sin `restored_at`
-  -- ni `restored_by`. Un enlace no es una de las seis fichas de RF-901 y no entra
-  -- en la papelera (RF-906): es una fila subordinada, como una fotografía, y se
-  -- restaura desde la propia ficha. `tg_row_audit` detecta la ausencia de
-  -- `restored_at` y devuelve a nulo las dos columnas de baja al restaurar, igual
-  -- que hace en `physical_places`.
+  -- Logical deletion with the shape of `images` and `physical_places`: with no `restored_at`
+  -- and no `restored_by`. A link is not one of RF-901's six records and it does not enter
+  -- the wastebasket (RF-906): it is a subordinate row, like a photograph, and it is
+  -- restored from the record itself. `tg_row_audit` detects the absence of
+  -- `restored_at` and returns the two withdrawal columns to null on restoring, just
+  -- as it does in `physical_places`.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
 
-  -- `= 1` y no `in (0, 1)`: un enlace sin ancla no es un enlace pendiente de
-  -- colocar, es basura invisible que nadie volverá a ver.
+  -- `= 1` and not `in (0, 1)`: a link with no anchor is not a link pending
+  -- placement, it is invisible rubbish nobody will ever see again.
   constraint external_links_exactly_one_owner
     check (num_nonnulls(artwork_id, image_id) = 1),
 
-  -- Cada restricción con su nombre propio, por el mismo criterio que los rangos
-  -- de color: lo que PostgreSQL dice al rechazar es el nombre, y es lo que la
-  -- interfaz traduce.
+  -- Each constraint with a name of its own, by the same criterion as the colour
+  -- ranges: what PostgreSQL says on rejecting is the name, and it is what the
+  -- interface translates.
   constraint external_links_url_is_web
     check (public.is_web_url(url)),
   constraint external_links_archive_url_is_web
@@ -278,8 +278,8 @@ create table public.external_links (
   constraint external_links_title_trimmed
     check (title = btrim(title)),
 
-  -- O las dos o ninguna: una fecha de comprobación sin resultado no dice nada, y
-  -- un resultado sin fecha no se puede envejecer en pantalla.
+  -- Either both or neither: a check date with no result says nothing, and
+  -- a result with no date cannot be aged on screen.
   constraint external_links_check_pair
     check (num_nonnulls(check_status, checked_at) = any (array[0, 2]))
 );
@@ -303,13 +303,13 @@ comment on column public.external_links.checked_at is
   'La sella la base a través de record_link_check. Nulo es «sin comprobar», que no es «roto» (RF-1405).';
 
 
--- ── Índices ─────────────────────────────────────────────────
+-- ── Indexes ─────────────────────────────────────────────────
 --
--- Los dos únicos parciales impiden el accidente real —pegar dos veces lo mismo en
--- la misma ficha— y NO intentan normalizar la URL: comparar `http` con `https`,
--- la barra final o el orden de los parámetros es un pozo sin fondo, y esas
--- variantes no se cazan. Son parciales sobre `active` para que retirar un enlace
--- y volver a añadirlo funcione (RF-1406).
+-- The only two partial ones prevent the real accident —pasting the same thing twice in
+-- the same record— and do NOT try to normalise the URL: comparing `http` with `https`,
+-- the trailing slash or the order of the parameters is a bottomless pit, and those
+-- variants are not caught. They are partial over `active` so that withdrawing a link
+-- and adding it again works (RF-1406).
 
 create index external_links_artwork_idx
   on public.external_links (artwork_id, active) where artwork_id is not null;
@@ -324,11 +324,11 @@ create unique index external_links_image_url_unique
   on public.external_links (image_id, url) where image_id is not null and active;
 
 
--- ── Autoría y papelera ──────────────────────────────────────
+-- ── Authorship and wastebasket ──────────────────────────────
 --
--- Las sella `tg_row_audit`, la función común de RF-804 que creó
--- 20260804090000_parties.sql. No se escribe una función propia: seis copias de
--- veinte líneas es la divergencia garantizada.
+-- `tg_row_audit` stamps them, RF-804's common function that
+-- 20260804090000_parties.sql created. No function of its own is written: six copies of
+-- twenty lines is guaranteed divergence.
 
 create trigger external_link_row_audit
   before insert or update on public.external_links

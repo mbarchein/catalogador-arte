@@ -1,84 +1,84 @@
 -- ============================================================
--- Las políticas RLS del catálogo razonado documental
+-- The RLS policies of the documentary catalogue raisonné
 -- (RF-101, RF-103, RF-105, RF-106, RF-109, RF-111, RF-113, RF-901, RF-906).
 --
--- Los seis grupos anteriores (20260804090000 a 20260804140000) crearon QUINCE
--- tablas con `enable row level security` y CERO políticas. Ese es el estado
--- seguro para quedarse a medias —RLS activado sin política niega a todo el
--- mundo con sesión— pero también significa que hoy la aplicación no puede leer
--- ni escribir una sola fila de ellas. Esta migración es la que las abre, y solo
--- lo que cada papel necesita.
+-- The six previous groups (20260804090000 to 20260804140000) created FIFTEEN
+-- tables with `enable row level security` and ZERO policies. That is the
+-- safe state to be left half way in —RLS enabled with no policy denies everybody
+-- with a session— but it also means that today the application cannot read
+-- or write a single row of them. This migration is the one that opens them, and only
+-- what each role needs.
 --
--- Va antes de la primera pantalla a propósito, que es lo que dice
--- `docs/plan-de-pruebas.md`: no hay backend, la clave anónima viaja en el
--- cliente y estas políticas son el único perímetro. Un fallo aquí no corrompe
--- datos, los expone — y el dato más expuesto de este grupo es `parties.contact`,
--- el teléfono o el correo de un coleccionista particular, que es de un tercero
--- y no del estudio.
+-- It goes before the first screen on purpose, which is what
+-- `docs/plan-de-pruebas.md` says: there is no backend, the anonymous key travels in the
+-- client and these policies are the only perimeter. A failure here does not corrupt
+-- data, it exposes it — and the most exposed datum of this group is `parties.contact`,
+-- the telephone number or the email of a private collector, which belongs to a third party
+-- and not to the studio.
 --
--- ── LA FORMA, QUE NO SE INVENTA AQUÍ ────────────────────────
+-- ── THE SHAPE, WHICH IS NOT INVENTED HERE ───────────────────
 --
--- Se copia la de `artworks` y `images`, que llevan desde la primera migración:
+-- That of `artworks` and `images` is copied, which have been there since the first migration:
 --
 --   select  ->  (active and public.can_read()) or public.can_edit()
 --   insert  ->  public.can_edit()
---   update  ->  public.can_edit()  (using Y with check)
---   delete  ->  NO EXISTE, en ninguna tabla y para ningún papel
+--   update  ->  public.can_edit()  (using AND with check)
+--   delete  ->  DOES NOT EXIST, in any table and for any role
 --
--- `can_read()` es «tener perfil», es decir, haber iniciado sesión; `can_edit()`
--- es ser CATALOGER o SUPERUSER. Las dos son SECURITY DEFINER porque consultan
--- `profiles`, que también tiene RLS, y una política que consultara la tabla que
--- está filtrando recursaría para siempre.
+-- `can_read()` is «having a profile», that is, having logged in; `can_edit()`
+-- is being a CATALOGER or a SUPERUSER. Both are SECURITY DEFINER because they query
+-- `profiles`, which also has RLS, and a policy that queried the table it
+-- is filtering would recurse for ever.
 --
--- POR QUÉ EL `active` EN EL SELECT, TAMBIÉN EN EL VOCABULARIO. Las tres
--- maestras viejas (`artwork_types`, `series`, `physical_places`) tienen un
--- select de `public.can_read()` a secas, sin filtrar la papelera. Aquí se ha
--- elegido la forma de `artworks` para las quince, y la razón es que la papelera
--- del vocabulario es papelera igual: RF-906 dice que la ve quien puede editar,
--- y un Lector que ve «Recorte de prensa (retirado)» en un desplegable no está
--- leyendo el catálogo, está leyendo el trabajo de otro. Lo que hace que esto no
--- rompa nada es que las seis maestras nuevas nacieron con su trigger de
--- desactivación: no se retira un tipo de publicación que use una referencia
--- activa, ni una sede con exposiciones activas, ni una serie con documentos
--- dentro, ni una parte que sostenga una cadena de procedencia. Es decir, una
--- fila retirada del vocabulario NO puede estar colgando de nada que el Lector
--- vea, así que ocultársela no le deja ningún nombre sin resolver.
+-- WHY THE `active` IN THE SELECT, IN THE VOCABULARY TOO. The three
+-- old master tables (`artwork_types`, `series`, `physical_places`) have a
+-- select of `public.can_read()` on its own, without filtering the wastebasket. Here
+-- `artworks`' shape has been chosen for the fifteen, and the reason is that the vocabulary's
+-- wastebasket is a wastebasket just the same: RF-906 says whoever can edit sees it,
+-- and a Reader who sees «Recorte de prensa (retirado)» in a dropdown is not
+-- reading the catalogue, they are reading somebody else's work. What makes this not
+-- break anything is that the six new master tables were born with their deactivation
+-- trigger: a publication type used by an active reference is not withdrawn,
+-- nor a venue with active exhibitions, nor a series with documents
+-- inside, nor a party that holds up a provenance chain. That is, a
+-- withdrawn vocabulary row CANNOT be hanging from anything the Reader
+-- sees, so hiding it from them leaves them with no unresolved name.
 --
--- No se toca el select de las tres maestras viejas: cambiar una política que
--- lleva meses en producción no es trabajo de esta migración, y la divergencia
--- queda anotada aquí para que se decida de una vez cuando alguien la unifique.
+-- The select of the three old master tables is not touched: changing a policy that
+-- has been in production for months is not this migration's job, and the divergence
+-- is noted here so that it is decided once and for all when somebody unifies it.
 --
--- POR QUÉ NO HAY POLÍTICA DE DELETE. Porque nada se borra nunca (RF-901,
--- RF-517), y porque `rls_default_deny.test.sql` lanza excepción ante cualquier
--- política DELETE o ALL en `public`. La ausencia de política ya cierra la
--- operación; el privilegio revocado la cierra otra vez, y hacen falta dos
--- errores en vez de uno para abrirla. Las dos barreras se comprueban abajo.
+-- WHY THERE IS NO DELETE POLICY. Because nothing is ever deleted (RF-901,
+-- RF-517), and because `rls_default_deny.test.sql` throws an exception on any
+-- DELETE or ALL policy in `public`. The absence of a policy already closes the
+-- operation; the revoked privilege closes it again, and two
+-- mistakes are needed instead of one to open it. Both barriers are checked below.
 --
--- LA CASCADA HACIA ABAJO DE RF-905 NO VIVE AQUÍ. Ocultar los eslabones de
--- procedencia, las citas o las participaciones de una obra dada de baja es cosa
--- de la consulta, exactamente como se hace hoy con las imágenes: la política de
--- `images` mira `images.active` y no `artworks.active`. La alternativa —una
--- política que exija que el padre también sea visible— es más difícil de
--- saltarse y bastante más cara de evaluar, y es una de las preguntas abiertas
--- del diseño. Mientras no se decida, el perímetro es el perímetro y el filtrado
--- por contexto es de quien consulta.
+-- RF-905'S DOWNWARD CASCADE DOES NOT LIVE HERE. Hiding the provenance links,
+-- the citations or the participations of a withdrawn artwork is a matter
+-- for the query, exactly as is done today with the images: `images`'
+-- policy looks at `images.active` and not at `artworks.active`. The alternative —a
+-- policy requiring the parent to be visible too— is harder to
+-- get round and a good deal more expensive to evaluate, and it is one of the design's open
+-- questions. Until it is decided, the perimeter is the perimeter and the filtering
+-- by context belongs to whoever queries.
 --
--- CONTRA QUÉ SE COMPRUEBA. `supabase/tests/documentary_policies.test.sql`
--- (el perímetro tabla a tabla) y `supabase/tests/rls_role_matrix.test.sql`
--- (los tres papeles, autenticándose de verdad). Al final de este fichero hay
--- además un bloque `do` que mide lo que ha quedado en el catálogo del sistema
--- y aborta la migración si no cuadra: la plataforma concede por omisión todos
--- los privilegios de cada tabla nueva a `anon` y `authenticated` —incluido
--- `delete`—, y eso no se da por sabido, se mide.
+-- WHAT IT IS CHECKED AGAINST. `supabase/tests/documentary_policies.test.sql`
+-- (the perimeter table by table) and `supabase/tests/rls_role_matrix.test.sql`
+-- (the three roles, authenticating for real). At the end of this file there is
+-- besides a `do` block that measures what has been left in the system catalogue
+-- and aborts the migration if it does not add up: the platform grants by default all
+-- the privileges of every new table to `anon` and `authenticated` —including
+-- `delete`—, and that is not taken as known, it is measured.
 -- ============================================================
 
 
--- ── 1. Personas e instituciones (RF-508) ────────────────────
+-- ── 1. People and institutions (RF-508) ─────────────────────
 --
--- La fila que más importa de toda la matriz. RF-105 decide expresamente que el
--- Lector ve `contact`: no hay recorte por columnas, y por eso el aserto de la
--- matriz sobre esta tabla es el que hay que mirar dos veces. Que sea una
--- decisión escrita es lo que la separa de un descuido.
+-- The row that matters most in the whole matrix. RF-105 decides expressly that the
+-- Reader sees `contact`: there is no per-column trimming, and that is why the matrix's
+-- assertion about this table is the one to look at twice. Its being a
+-- written decision is what separates it from an oversight.
 
 revoke all on public.parties from anon, authenticated;
 grant select, insert, update on public.parties to authenticated;
@@ -96,13 +96,13 @@ create policy parties_update on public.parties
   for update using (public.can_edit()) with check (public.can_edit());
 
 
--- ── 2. La cadena de procedencia (RF-509, RF-510, RF-511) ────
+-- ── 2. The provenance chain (RF-509, RF-510, RF-511) ────────
 --
--- `reorder_provenance_events` es SECURITY INVOKER a propósito: reordenar sigue
--- sujeto a estas políticas, y sin la de select la función no encontraría la
--- cadena. Con ella puesta, el Catalogador la reordena y el Lector recibe el
--- mensaje en español que la propia función lanza, en vez del silencio de un
--- update que no afecta a ninguna fila.
+-- `reorder_provenance_events` is SECURITY INVOKER on purpose: reordering remains
+-- subject to these policies, and without the select one the function would not find the
+-- chain. With it in place, the Cataloguer reorders it and the Reader receives the
+-- message in Spanish the function itself throws, instead of the silence of an
+-- update that affects no row.
 
 revoke all on public.provenance_events from anon, authenticated;
 grant select, insert, update on public.provenance_events to authenticated;
@@ -120,11 +120,11 @@ create policy provenance_events_update on public.provenance_events
   for update using (public.can_edit()) with check (public.can_edit());
 
 
--- ── 3. Bibliografía (RF-504, RF-506, RF-514) ────────────────
+-- ── 3. Bibliography (RF-504, RF-506, RF-514) ────────────────
 --
--- `cite_artwork` hace `insert ... on conflict do update ... returning`, así que
--- necesita las tres políticas de la puente a la vez: sin la de update no
--- restaura una cita retirada, y sin la de select no puede devolver la fila.
+-- `cite_artwork` does `insert ... on conflict do update ... returning`, so
+-- it needs the bridge's three policies at once: without the update one it does not
+-- restore a withdrawn citation, and without the select one it cannot return the row.
 
 revoke all on public.publication_types from anon, authenticated;
 grant select, insert, update on public.publication_types to authenticated;
@@ -220,14 +220,14 @@ create policy artwork_exhibitions_update on public.artwork_exhibitions
   for update using (public.can_edit()) with check (public.can_edit());
 
 
--- ── 5. Archivo y documentación (RF-310, RF-515, RF-516) ─────
+-- ── 5. Archive and documentation (RF-310, RF-515, RF-516) ───
 --
--- El fichero digitalizado NO necesita política nueva de almacenamiento: vive en
--- el bucket `obras`, que es privado, y las tres políticas de `storage.objects`
--- que escribió 20260726010000 están puestas sobre el bucket entero
--- (`bucket_id = 'obras'` y `can_read()` / `can_edit()`), de modo que cubren el
--- prefijo del documento tal cual. Lo que aquí se protege es la FICHA del
--- documento, que es donde está la ruta: sin ella nadie sabe qué firmar.
+-- The digitised file needs NO new storage policy: it lives in
+-- the `obras` bucket, which is private, and the three `storage.objects` policies
+-- 20260726010000 wrote are placed over the whole bucket
+-- (`bucket_id = 'obras'` and `can_read()` / `can_edit()`), so they cover the
+-- document's prefix as they are. What is protected here is the document's RECORD,
+-- which is where the path is: without it nobody knows what to sign.
 
 revoke all on public.document_types from anon, authenticated;
 grant select, insert, update on public.document_types to authenticated;
@@ -305,7 +305,7 @@ create policy exhibition_documents_update on public.exhibition_documents
   for update using (public.can_edit()) with check (public.can_edit());
 
 
--- ── 6. Obras relacionadas entre sí (RF-212, RF-217) ─────────
+-- ── 6. Artworks related to each other (RF-212, RF-217) ──────
 
 revoke all on public.artwork_relationship_types from anon, authenticated;
 grant select, insert, update on public.artwork_relationship_types to authenticated;
@@ -338,13 +338,13 @@ create policy artwork_relationships_update on public.artwork_relationships
   for update using (public.can_edit()) with check (public.can_edit());
 
 
--- ── 7. La migración se mide a sí misma ──────────────────────
+-- ── 7. The migration measures itself ────────────────────────
 --
--- No es adorno ni es lo mismo que el test: esto corre DENTRO de la transacción
--- que aplica la migración, así que si algo no cuadra la migración no se aplica
--- a medias — y una tabla a medias de perímetro es exactamente el estado que hay
--- que evitar. El test de al lado vuelve a medirlo desde fuera y además ataca la
--- base con la sesión de cada papel, que es lo único que verifica de verdad.
+-- It is neither an ornament nor the same as the test: this runs INSIDE the transaction
+-- that applies the migration, so if something does not add up the migration is not applied
+-- half way — and a table with half a perimeter is exactly the state that has
+-- to be avoided. The test alongside measures it again from outside and besides attacks the
+-- base with each role's session, which is the only thing that verifies for real.
 
 do $$
 declare
@@ -366,14 +366,14 @@ begin
   end if;
 
   foreach v_table in array v_tables loop
-    -- RLS activado. Sin esto, las políticas de abajo son decoración.
+    -- RLS enabled. Without this, the policies below are decoration.
     if not (select c.relrowsecurity
               from pg_class c join pg_namespace n on n.oid = c.relnamespace
              where n.nspname = 'public' and c.relname = v_table) then
       raise exception 'FAIL: public.% no tiene RLS activado', v_table;
     end if;
 
-    -- Las tres políticas, ni una más ni una menos.
+    -- The three policies, not one more and not one fewer.
     select coalesce(array_agg(cmd::text order by cmd::text), '{}')
       into v_found
       from pg_policies
@@ -384,18 +384,18 @@ begin
         v_table, array_to_string(v_found, ', ');
     end if;
 
-    -- El rol anónimo, ni un privilegio. Se mira `column_privileges` y no solo
-    -- `role_table_grants` porque un `grant update (columna)` no aparece en la
-    -- segunda: sería un agujero de una columna, invisible desde donde se suele
-    -- mirar.
+    -- The anonymous role, not one privilege. `column_privileges` is looked at and not only
+    -- `role_table_grants` because a `grant update (column)` does not appear in the
+    -- second: it would be a one-column hole, invisible from where one usually
+    -- looks.
     if exists (select 1 from information_schema.column_privileges
                 where table_schema = 'public' and table_name = v_table
                   and grantee = 'anon') then
       raise exception 'FAIL: el rol anónimo tiene algún privilegio sobre public.%', v_table;
     end if;
 
-    -- Y el autenticado, exactamente tres. Nótese la ausencia de DELETE: sin el
-    -- privilegio no hay ni forma de intentarlo (RF-901).
+    -- And the authenticated one, exactly three. Note the absence of DELETE: without the
+    -- privilege there is not even a way of trying (RF-901).
     select string_agg(distinct privilege_type, ',' order by privilege_type)
       into v_privs
       from information_schema.column_privileges
