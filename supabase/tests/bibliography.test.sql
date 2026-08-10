@@ -161,7 +161,7 @@ begin
     raise notice 'OK: la clave BibTeX es única (DP-03)';
   end;
 
-  -- Editable, que es justo lo que no era siendo clave primaria.
+  -- Editable, which is precisely what it was not as a primary key.
   update public.bibliography set bibtex_key = 'rotili1985badajoz' where id = v_id;
   if (select bibtex_key from public.bibliography where id = v_id) <> 'rotili1985badajoz' then
     raise exception 'FAIL: la clave BibTeX no se ha podido corregir';
@@ -169,9 +169,9 @@ begin
   raise notice 'OK: la clave BibTeX se corrige con un update de una fila (DP-03, ADR-007)';
 end $$;
 
--- ── 7. Y si hay clave, que sea una clave ─────────────────────
--- Un espacio o una coma parten la entrada de un fichero `.bib`, y las llaves la
--- cierran antes de tiempo. Rechazarlo aquí cuesta una línea.
+-- ── 7. And if there is a key, let it be a key ────────────────
+-- A space or a comma breaks the entry of a `.bib` file, and braces close it
+-- ahead of time. Rejecting it here costs one line.
 do $$
 begin
   begin
@@ -203,9 +203,9 @@ begin
   end;
 end $$;
 
--- ── 8. El año, plausible o ninguno ───────────────────────────
--- `s.f.` existe y es un dato: el nulo se admite. Un año de tres cifras o del
--- siglo XXII es una errata (ADR-004).
+-- ── 8. The year, plausible or none ───────────────────────────
+-- `s.f.` exists and is a datum: null is admitted. A three-digit year or one from the
+-- 22nd century is a typo (ADR-004).
 do $$
 begin
   insert into public.bibliography (title, year) values ('Sin fecha, s.f.', null);
@@ -225,10 +225,10 @@ begin
   end;
 end $$;
 
--- ── 9. El tipo de publicación, y lo que sostiene ─────────────
--- La clave ajena garantiza que el tipo existe; el trigger de baja garantiza que
--- no se retira uno que todavía clasifica referencias activas. Sin él, retirarlo
--- no lo retira: deja el catálogo apuntando a algo que la interfaz ya no ofrece.
+-- ── 9. The publication type, and what it holds up ────────────
+-- The foreign key guarantees the type exists; the withdrawal trigger guarantees
+-- that one still classifying active references is not withdrawn. Without it, withdrawing it
+-- does not withdraw it: it leaves the catalogue pointing at something the interface no longer offers.
 do $$
 declare
   v_tipo uuid;
@@ -255,14 +255,14 @@ begin
     raise notice 'OK: un tipo en uso no se retira: %', sqlerrm;
   end;
 
-  -- Una referencia en la papelera no cuenta, como en las demás maestras: exigir
-  -- vaciar la papelera antes de retirar un tipo sería hacer que la papelera
-  -- estorbe.
+  -- A reference in the wastebasket does not count, as in the other master tables: requiring
+  -- the wastebasket to be emptied before withdrawing a type would make the wastebasket
+  -- get in the way.
   update public.bibliography set active = false where id = v_ref;
   update public.publication_types set active = false where id = v_tipo;
   raise notice 'OK: una referencia retirada no impide retirar su tipo (RF-905)';
 
-  -- Y se deja todo como estaba para lo que viene después.
+  -- And everything is left as it was for what comes afterwards.
   update public.publication_types set active = true where id = v_tipo;
   update public.bibliography set active = true where id = v_ref;
 
@@ -274,10 +274,10 @@ begin
   end;
 end $$;
 
--- ── 10. La cita: páginas y nota, dos columnas (RF-504) ───────
--- v11 v9 revirtió la fusión con el argumento correcto: la página es un dato
--- citable de forma exacta y de uso recurrente, y la nota es prosa. Lo que este
--- test demuestra es que la página se consulta SIN analizar texto libre.
+-- ── 10. The citation: pages and note, two columns (RF-504) ───
+-- v11 v9 reverted the merge with the right argument: the page is a datum
+-- citable exactly and of recurrent use, and the note is prose. What this
+-- test demonstrates is that the page is queried WITHOUT parsing free text.
 do $$
 declare
   v_ref uuid;
@@ -301,17 +301,17 @@ begin
     raise exception 'FAIL: una cita nueva no nace activa';
   end if;
 
-  -- «s/p» y «lám. XII» son páginas reales: por eso la columna es texto y no un
-  -- número.
+  -- «s/p» and «lám. XII» are real pages: that is why the column is text and not a
+  -- number.
   insert into public.artwork_bibliography (catalog_id, bibliography_id, pages)
   values ('AR-9601', v_ref, 'lám. XII');
 
   raise notice 'OK: la página se guarda y se consulta como dato aislado (RF-504)';
 end $$;
 
--- ── 11. Una obra se cita una vez en cada referencia ──────────
--- Dos páginas de la misma referencia son una cita con dos páginas dentro
--- («34, 51»), no dos filas que después habría que sumar para leer la ficha.
+-- ── 11. An artwork is cited once in each reference ───────────
+-- Two pages of the same reference are one citation with two pages inside
+-- («34, 51»), not two rows that would afterwards have to be added up to read the record.
 do $$
 declare v_ref uuid;
 begin
@@ -342,13 +342,13 @@ begin
   end;
 end $$;
 
--- ── 12. Volver a añadir una cita retirada la RESTAURA ────────
+-- ── 12. Adding a withdrawn citation again RESTORES it ────────
 --
--- RF-517. Con la unicidad cubriendo también las citas retiradas, un `insert`
--- crudo choca contra el índice y la interfaz convertiría un «Añadir» en una
--- violación de unicidad incomprensible. Se comprueban las dos mitades: que el
--- `insert` crudo efectivamente choca —que es por lo que la función existe— y
--- que la función restaura.
+-- RF-517. With uniqueness also covering the withdrawn citations, a raw
+-- `insert` clashes against the index and the interface would turn an «Añadir» into an
+-- incomprehensible uniqueness violation. Both halves are checked: that the
+-- raw `insert` does clash —which is why the function exists— and
+-- that the function restores.
 do $$
 declare
   v_ref uuid;
@@ -371,8 +371,8 @@ begin
     raise notice 'OK: el insert crudo choca — que es por lo que existe cite_artwork';
   end;
 
-  -- Y la función la recupera. Sin páginas: el formulario de «Añadir» viene en
-  -- blanco, y lo que no se manda no puede borrar lo que alguien investigó.
+  -- And the function recovers it. With no pages: the «Añadir» form comes in
+  -- blank, and what is not sent cannot erase what somebody researched.
   v_fila := public.cite_artwork('AR-9600', v_ref);
 
   if not v_fila.active then
@@ -388,14 +388,14 @@ begin
     raise exception 'FAIL: la cita restaurada conserva la traza de una baja que ya no existe';
   end if;
 
-  -- Y con páginas nuevas, manda lo que se manda.
+  -- And with new pages, what is sent rules.
   v_fila := public.cite_artwork('AR-9600', v_ref, '34-36, 51');
   if v_fila.pages <> '34-36, 51' then
     raise exception 'FAIL: la función no ha actualizado las páginas (%)', v_fila.pages;
   end if;
 
-  -- Una pareja que no existía se crea, que es el otro camino de la misma
-  -- función.
+  -- A pair that did not exist is created, which is the same function's other
+  -- path.
   v_fila := public.cite_artwork('AR-9601', (select id from public.bibliography
                                              where title = 'Alberto Rotili' and year = 2003),
                                 '12', 'Mencionada en pie de foto');
@@ -421,12 +421,12 @@ exception when others then
   raise notice 'OK: el lector no cita: %', sqlerrm;
 end $$;
 
--- ── 14. «Sin revisar» no es «no», por las dos puertas ────────
+-- ── 14. «Sin revisar» is not «no», through both doors ────────
 --
--- RF-218. Una obra sin citas registradas no es una obra que nadie ha publicado.
--- La columna solo vale si no puede mentir, y para eso hacen falta las dos
--- puertas: ni se declara «investigado sin resultado» con citas debajo, ni se
--- añade una cita a una obra declarada así.
+-- RF-218. An artwork with no registered citations is not an artwork nobody has published.
+-- The column is only worth something if it cannot lie, and for that both
+-- doors are needed: «researched with no result» is not declared with citations underneath, nor is
+-- a citation added to an artwork declared that way.
 do $$
 declare v_ref uuid;
 begin
@@ -437,8 +437,8 @@ begin
     raise exception 'FAIL: el estado de la bibliografía no nace «Sin revisar» (RF-205)';
   end if;
 
-  -- Lo que SÍ se permite, y es intencionado: citas con el estado en «Sin
-  -- revisar». Tener un dato no es haber hecho la investigación.
+  -- What IS allowed, and it is intentional: citations with the state on «Sin
+  -- revisar». Having a datum is not having done the research.
   if not exists (select 1 from public.artwork_bibliography
                   where catalog_id = 'AR-9600' and active) then
     raise exception 'FAIL: el fixture de este bloque no tiene la cita que necesita';
@@ -452,11 +452,11 @@ begin
     raise notice 'OK: primera puerta — la columna no puede contradecir a las citas: %', sqlerrm;
   end;
 
-  -- Retiradas las citas, sí se puede declarar.
+  -- With the citations withdrawn, it can be declared.
   update public.artwork_bibliography set active = false where catalog_id = 'AR-9600';
   update public.artworks set bibliography_status = 'NONE_FOUND' where catalog_id = 'AR-9600';
 
-  -- Y entonces la segunda puerta cierra por el otro lado.
+  -- And then the second door closes from the other side.
   select id into v_ref from public.bibliography where title = 'Alberto Rotili' and year = 1985;
   begin
     insert into public.artwork_bibliography (catalog_id, bibliography_id)
@@ -466,8 +466,8 @@ begin
     raise notice 'OK: segunda puerta — no se cita una obra declarada sin bibliografía: %', sqlerrm;
   end;
 
-  -- Restaurar una cita retirada es la misma puerta, y es el camino que la
-  -- interfaz usará de verdad.
+  -- Restoring a withdrawn citation is the same door, and it is the path the
+  -- interface will really use.
   begin
     update public.artwork_bibliography set active = true
      where catalog_id = 'AR-9600' and bibliography_id =
@@ -477,20 +477,20 @@ begin
     raise notice 'OK: restaurar una cita pasa por la misma puerta';
   end;
 
-  -- Y una edición cualquiera de la obra no se bloquea por un estado que no
-  -- cambia: la comprobación solo hace trabajo cuando el estado se mueve.
+  -- And any edit of the artwork is not blocked by a state that does not
+  -- change: the check only does work when the state moves.
   update public.artworks set bibliography_status = 'IN_PROGRESS' where catalog_id = 'AR-9600';
   update public.artwork_bibliography set active = true where catalog_id = 'AR-9600';
   raise notice 'OK: con el estado corregido, las citas vuelven';
 end $$;
 
--- ── 15. Y la puerta de la procedencia sigue en pie ───────────
+-- ── 15. And the provenance's door still stands ───────────────
 --
--- Este grupo REEMPLAZA `tg_artwork_research_status_coherent` con `create or
--- replace` para añadir su bloque, y un reemplazo puede comerse el bloque
--- anterior sin que nada avise: la migración de la procedencia se aplicó hace
--- rato y su test pasa igual porque comprueba la función que hay, no la que
--- había. Esta es la regresión que hay que cazar aquí.
+-- This group REPLACES `tg_artwork_research_status_coherent` with `create or
+-- replace` to add its block, and a replacement can swallow the previous
+-- block with nothing warning: the provenance's migration was applied a
+-- while ago and its test passes all the same because it checks the function that is there, not the one that
+-- was. This is the regression to be caught here.
 do $$
 begin
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
@@ -506,9 +506,9 @@ begin
     raise notice 'OK: la puerta de la procedencia sigue en pie tras el reemplazo (RF-218)';
   end;
 
-  -- Y las dos son independientes: cada bloque mira SUS filas y ninguna de las
-  -- dos comprobaciones se activa por lo que haya debajo de la otra. Retirado el
-  -- eslabón, la procedencia se declara aunque la obra siga teniendo citas.
+  -- And the two are independent: each block looks at ITS rows and neither of the
+  -- two checks is triggered by what lies under the other. With the
+  -- link withdrawn, the provenance is declared even if the artwork still has citations.
   update public.provenance_events set active = false where catalog_id = 'AR-9601';
   update public.artworks set provenance_status = 'NONE_FOUND' where catalog_id = 'AR-9601';
 
@@ -519,7 +519,7 @@ begin
   raise notice 'OK: los dos bloques documentales se declaran por separado';
 end $$;
 
--- ── 16. El estado de investigación es un enumerado cerrado ───
+-- ── 16. The research state is a closed enum ──────────────────
 do $$
 begin
   update public.artworks set bibliography_status = 'PENDIENTE' where catalog_id = 'AR-9601';
@@ -528,14 +528,14 @@ exception when invalid_text_representation then
   raise notice 'OK: el estado de investigación no admite texto libre';
 end $$;
 
--- ── 17. La papelera de la referencia y la de la cita ─────────
+-- ── 17. The reference's wastebasket and the citation's ───────
 --
--- La referencia es una ficha con nombre propio y lleva papelera completa
--- (RF-902): restaurar NO borra la traza de la baja anterior. La cita cuelga de
--- ella y no tiene pantalla de papelera propia, así que restaurarla la deja como
--- si nunca se hubiera retirado — la misma decisión que en las maestras de
--- vocabulario, y por eso se comprueba, para que la diferencia sea deliberada y
--- no un olvido.
+-- The reference is a record with a name of its own and carries a complete wastebasket
+-- (RF-902): restoring does NOT erase the trace of the previous withdrawal. The citation hangs from
+-- it and has no wastebasket screen of its own, so restoring it leaves it as
+-- if it had never been withdrawn — the same decision as in the vocabulary master
+-- tables, and that is why it is checked, so the difference is deliberate and
+-- not an oversight.
 do $$
 declare
   v_ref uuid; v_cita uuid;
@@ -583,11 +583,11 @@ begin
   raise notice 'OK: la referencia guarda las dos trazas y la cita vuelve limpia';
 end $$;
 
--- ── 18. La autoría la sella la base ──────────────────────────
--- RF-803 y RF-804 con la función genérica: quién y cuándo salen de la sesión,
--- no de lo que mande el cliente. Se comprueba mandando una fecha falsa y viendo
--- que el trigger la pisa; comparar dos instantes no valdría, porque dentro de
--- una transacción `now()` no avanza.
+-- ── 18. The authorship is stamped by the base ────────────────
+-- RF-803 and RF-804 with the generic function: who and when come from the session,
+-- not from what the client sends. It is checked by sending a false date and seeing
+-- that the trigger overrides it; comparing two instants would not do, because inside
+-- a transaction `now()` does not advance.
 do $$
 declare
   v_id uuid; v_creado uuid; v_actualizado uuid; v_cuando timestamptz;
@@ -620,11 +620,11 @@ begin
   raise notice 'OK: la autoría y la fecha de actualización las sella la base (RF-801, RF-803, RF-804)';
 end $$;
 
--- ── 19. Nadie borra de verdad, y las tres nacen cerradas ─────
--- RF-901, RF-111, RF-113. Las políticas las escribe la migración siguiente; con
--- RLS activado y sin política, la tabla está cerrada, que es el estado seguro
--- para esperar. Lo que no puede pasar nunca es lo contrario: privilegios
--- concedidos sin RLS.
+-- ── 19. Nobody really deletes, and all three are born closed ─
+-- RF-901, RF-111, RF-113. The policies are written by the next migration; with
+-- RLS enabled and no policy, the table is closed, which is the safe state
+-- to wait in. What can never happen is the opposite: privileges
+-- granted with no RLS.
 do $$
 declare
   v_tabla text;

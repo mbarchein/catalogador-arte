@@ -1,52 +1,52 @@
--- El registro de cambios: RF-1501 a RF-1508.
--- Y, por delante de todo, el perímetro: RF-101, RF-105, RF-106, RF-109, RF-111,
+-- The change log: RF-1501 to RF-1508.
+-- And, ahead of everything, the perimeter: RF-101, RF-105, RF-106, RF-109, RF-111,
 -- RF-113, RF-609, RF-901.
 --
--- LO QUE ESTE FICHERO DEFIENDE DE VERDAD SON LOS PERMISOS. Un registro de
--- auditoría que el auditado puede editar no es un registro de auditoría, es una
--- nota; y uno al que se le pueden AÑADIR líneas inventadas está tan roto como
--- uno al que se le pueden quitar las verdaderas. Así que aquí no se comprueba
--- «que la tabla existe»: se ataca con la sesión de cada papel —Catalogador,
--- Lector, anónimo— y con los dos roles que se saltan la RLS —el propietario de
--- la tabla y `postgres`—, y se afirma el TIPO de fallo, porque un `insert`
--- parado por falta de privilegio y uno parado por falta de política son cosas
--- distintas y aquí tienen que ocurrir las dos.
+-- WHAT THIS FILE REALLY DEFENDS ARE THE PERMISSIONS. An audit
+-- log the audited can edit is not an audit log, it is a
+-- note; and one to which invented lines can be ADDED is as broken as
+-- one from which the true ones can be removed. So here it is not checked
+-- «that the table exists»: it is attacked with each role's session —Cataloguer,
+-- Reader, anonymous— and with the two roles that bypass the RLS —the table's
+-- owner and `postgres`—, and the KIND of failure is asserted, because an `insert`
+-- stopped by lack of privilege and one stopped by lack of policy are different
+-- things and here both have to happen.
 --
--- EL ESCRITOR YA EXISTE, y este comentario decía lo contrario hasta que se
--- auditó: 20260805120000 anunció que «el trigger que rellena el registro llega en
--- la migración siguiente» y la siguiente no lo traía, así que durante un día el
--- registro estuvo cerrado y vacío. Lo trae 20260805140000, y su mitad —que el
--- registro SÍ se escribe, con el autor correcto y por todos los caminos— se
--- verifica en `change_log_writer.test.sql`.
+-- THE WRITER ALREADY EXISTS, and this comment said the opposite until it was
+-- audited: 20260805120000 announced that «the trigger that fills the log arrives in
+-- the next migration» and the next one did not bring it, so for a day the
+-- log was closed and empty. 20260805140000 brings it, and its half —that the
+-- log IS written, with the right author and by every path— is
+-- verified in `change_log_writer.test.sql`.
 --
--- Este fichero sigue insertando sus filas de prueba A MANO, DESACTIVANDO
--- `change_log_insert_guard` dentro de la transacción del test y reactivándolo
--- después, y ahora es una decisión y no una necesidad: aquí se mide EL PERÍMETRO,
--- y para eso hacen falta filas con valores elegidos —un `old_value` concreto, un
--- `changed_by` nulo, una obra en la papelera— que un cambio real no da a pedir.
--- De paso demuestra dos veces que el candado está puesto: antes de quitarlo y
--- después de devolverlo. Las filas que escribe el trigger de verdad se leen en el
--- otro fichero.
+-- This file still inserts its test rows BY HAND, DISABLING
+-- `change_log_insert_guard` inside the test's transaction and reactivating it
+-- afterwards, and now it is a decision and not a necessity: here THE PERIMETER is measured,
+-- and for that rows with chosen values are needed —a specific `old_value`, a
+-- null `changed_by`, an artwork in the wastebasket— that a real change does not give on request.
+-- Incidentally it demonstrates twice that the padlock is in place: before removing it and
+-- after putting it back. The rows the real trigger writes are read in the
+-- other file.
 --
--- Consecuencia de que el escritor exista, y por eso está escrito: los fixtures de
--- obras y fotografías de más abajo YA ESCRIBEN sus propias líneas en el registro.
--- Por eso todas las cuentas de este fichero van acotadas por `change_id` y no por
--- la tabla entera. Esa precaución estaba desde el principio, y hoy es la que
--- sostiene el fichero.
+-- A consequence of the writer existing, and that is why it is written down: the artwork and
+-- photograph fixtures below ALREADY WRITE their own lines in the log.
+-- That is why every count in this file is bounded by `change_id` and not by
+-- the whole table. That precaution was there from the start, and today it is what
+-- holds the file up.
 --
--- Todas las cuentas van acotadas por los `change_id` de este fichero y no por la
--- tabla entera, para que el día que exista el escritor —y las altas de estos
--- mismos fixtures empiecen a escribir sus propias filas— este test siga midiendo
--- lo que dice medir.
+-- Every count is bounded by this file's `change_id`s and not by the whole
+-- table, so that the day the writer exists —and the creations of these very
+-- fixtures start writing their own rows— this test goes on measuring
+-- what it says it measures.
 \set ON_ERROR_STOP on
 begin;
 
 -- ── Fixtures ─────────────────────────────────────────────────
 --
--- Un catalogador y un lector de verdad; los perfiles los crea el trigger de
--- auth.users. Dos obras —una activa y otra retirada— y dos fotografías de la
--- activa —una activa y otra retirada—, que es el mínimo para ejercer la
--- visibilidad heredada por las dos entidades auditadas.
+-- A real cataloguer and a real reader; the profiles are created by the
+-- auth.users trigger. Two artworks —one active and one withdrawn— and two photographs of the
+-- active one —one active and one withdrawn—, which is the minimum for exercising the
+-- visibility inherited by the two audited entities.
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000e1', 'cat-registro@test.local'),
@@ -66,12 +66,12 @@ update public.images   set active = false where image_id   = 'AR-9800_v2';
 update public.artworks set active = false where catalog_id = 'AR-9801';
 
 
--- ── 1. La tabla nace cerrada (RF-111, RF-113, RF-901) ────────
+-- ── 1. The table is born closed (RF-111, RF-113, RF-901) ─────
 --
--- Prioridad absoluta y antes que nada: sin backend, estos privilegios y estas
--- políticas son el único perímetro, y la clave anónima viaja en el cliente. Se
--- mide el catálogo del sistema, que es donde se ve el `grant` que alguien
--- añadió sin pensar.
+-- Absolute priority and before anything else: with no backend, these privileges and these
+-- policies are the only perimeter, and the anonymous key travels in the client. The
+-- system catalogue is measured, which is where the `grant` somebody
+-- added without thinking is visible.
 do $$
 declare v_privilegios text[];
 begin
