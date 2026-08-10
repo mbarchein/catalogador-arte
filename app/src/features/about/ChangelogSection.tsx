@@ -11,21 +11,21 @@ import {
 } from './changelogText'
 
 /**
- * El registro de cambios, dentro de la aplicación y sin conexión (RF-1202).
+ * The change log, inside the application and offline (RF-1202).
  *
- * ── CÓMO LLEGA HASTA AQUÍ ───────────────────────────────────
+ * ── HOW IT GETS HERE ────────────────────────────────────────
  *
- * `CHANGELOG.md` se incrusta al compilar, con `?raw`, y **se pide solo al abrir esta
- * sección**: son noventa y cinco kilobytes de texto y esta es una pantalla que se visita
- * de tarde en tarde, así que no puede ir en lo que se descarga al entrar. Al ser un trozo
- * más de la compilación, el trabajador de servicio lo guarda con el resto del armazón y
- * queda disponible sin cobertura — que es el motivo de traerlo aquí y no pedirlo a la red.
+ * `CHANGELOG.md` is embedded at build time, with `?raw`, and **it is asked for only on opening this
+ * section**: it is ninety-five kilobytes of text and this is a screen visited
+ * once in a while, so it cannot go in what is downloaded on entering. Being one more piece
+ * of the build, the service worker stores it with the rest of the shell and
+ * it stays available with no coverage — which is the reason for bringing it here and not asking the network for it.
  *
- * ── PLEGADO, MENOS EL PRIMERO ───────────────────────────────
+ * ── FOLDED, EXCEPT THE FIRST ────────────────────────────────
  *
- * Quince meses de trabajo en una pantalla de móvil son un muro que no se lee. Lo que se
- * viene a mirar casi siempre es qué trae la versión que se acaba de instalar, así que la
- * entrada más reciente sale abierta y las demás esperan a que se toquen.
+ * Fifteen months of work on a phone screen are a wall nobody reads. What people
+ * come to look at almost always is what the version just installed brings, so
+ * the most recent entry comes out open and the rest wait to be touched.
  */
 export function ChangelogSection() {
   const [entries, setEntries] = useState<ChangelogEntry[] | null>(null)
@@ -69,10 +69,10 @@ export function ChangelogSection() {
 }
 
 /**
- * Una fecha con lo suyo debajo.
+ * A date with its own below it.
  *
- * `<details>` del navegador y no un estado propio: sabe plegar solo, lo anuncia bien a un
- * lector de pantalla y el buscador del navegador encuentra dentro de lo cerrado.
+ * The browser's `<details>` and not state of our own: it knows how to fold on its own, announces it properly to a
+ * screen reader and the browser's finder searches inside what is closed.
  */
 function Entry({ entry, open }: { entry: ChangelogEntry; open: boolean }) {
   return (
@@ -127,10 +127,10 @@ function Block({ block }: { block: ChangelogBlock }) {
 }
 
 /**
- * Los trozos de una línea, pintados con elementos.
+ * A line's pieces, painted with elements.
  *
- * Nada de `dangerouslySetInnerHTML`: lo que llega de `changelogText` son datos, y así un
- * asterisco de más en el fichero no puede convertirse en marcado.
+ * No `dangerouslySetInnerHTML`: what arrives from `changelogText` is data, and this way an
+ * extra asterisk in the file cannot turn into markup.
  */
 function Spans({ spans }: { spans: readonly Span[] }) {
   return (

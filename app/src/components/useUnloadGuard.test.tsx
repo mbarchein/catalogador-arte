@@ -4,13 +4,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { useUnloadGuard } from './useUnloadGuard'
 
 /**
- * RNF-106: no perder trabajo por una recarga sin querer.
+ * RNF-106: not losing work to an accidental reload.
  *
- * En jsdom porque lo que hay que comprobar es el cableado y no una decisión: que el
- * navegador reciba la cancelación cuando hay algo que perder, que NO la reciba cuando no
- * lo hay, y que el oyente se quite. Un gancho que se deja el oyente puesto produce el
- * diálogo para siempre, y un diálogo que sale siempre se despacha sin leerlo, que es
- * justo el reflejo que lo inutiliza el día que importa.
+ * In jsdom because what has to be checked is the wiring and not a decision: that the
+ * browser receives the cancellation when there is something to lose, that it does NOT receive it when there
+ * is not, and that the listener is removed. A hook that leaves the listener in place produces the
+ * dialogue forever, and a dialogue that always comes up is dismissed unread, which is
+ * exactly the reflex that makes it useless on the day it matters.
  */
 
 function Guarded({ active }: { active: boolean }) {
@@ -61,10 +61,10 @@ describe('useUnloadGuard', () => {
   })
 
   it('rellena también `returnValue`, que es lo que leen varios navegadores', () => {
-    // Invocando el manejador y no despachando un evento: en jsdom `Event.returnValue` es
-    // la propiedad heredada que refleja `!defaultPrevented`, así que después de
-    // `preventDefault` vale `false` y no lo que se le haya escrito. Un `BeforeUnloadEvent`
-    // de verdad sí lleva su propio campo de texto, y es ese el que hay que fijar.
+    // Invoking the handler and not dispatching an event: in jsdom `Event.returnValue` is
+    // the inherited property reflecting `!defaultPrevented`, so after
+    // `preventDefault` it is `false` and not whatever was written to it. A real `BeforeUnloadEvent`
+    // does carry its own text field, and that is the one to set.
     const handlers: EventListener[] = []
     const add = vi.spyOn(window, 'addEventListener').mockImplementation((type, listener) => {
       if (type === 'beforeunload') handlers.push(listener as EventListener)

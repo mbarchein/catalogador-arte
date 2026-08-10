@@ -8,13 +8,13 @@ import {
 } from './changelogText'
 
 /**
- * El registro de cambios leído dentro de la aplicación.
+ * The change log read inside the application.
  *
- * Además de los casos de siempre, esta batería **lee el `CHANGELOG.md` de verdad** y
- * comprueba que sale entero. Es lo que protege de la avería silenciosa de esta pantalla:
- * un lector de Markdown mínimo no falla, se come cosas — una sección que desaparece, un
- * párrafo que se traga la viñeta siguiente— y eso no se nota mirando la pantalla, porque
- * lo que queda sigue leyéndose bien.
+ * Besides the usual cases, this suite **reads the real `CHANGELOG.md`** and
+ * checks that it comes out whole. It is what protects against this screen's silent breakdown:
+ * a minimal Markdown reader does not fail, it eats things — a section that disappears, a
+ * paragraph that swallows the next bullet— and that is not noticed looking at the screen, because
+ * what is left still reads fine.
  */
 
 const MARKDOWN = readFileSync(new URL('../../../../CHANGELOG.md', import.meta.url), 'utf8')
@@ -97,9 +97,9 @@ describe('parseChangelog, la estructura del fichero', () => {
   })
 
   it('una viñeta de varias líneas se une, y no se parte en viñeta y párrafo', () => {
-    // El fichero está ajustado a cien columnas, así que casi toda viñeta ocupa dos o tres
-    // líneas. Sin esto, la primera era la viñeta y el resto salía como un párrafo suelto
-    // detrás de la lista: el texto no se perdía, pero se leía descolgado.
+    // The file is wrapped to a hundred columns, so almost every bullet takes two or three
+    // lines. Without this, the first was the bullet and the rest came out as a stray paragraph
+    // after the list: the text was not lost, but it read detached.
     const blocks = parseChangelog('- una viñeta que sigue\n  en la línea de abajo\n- otra')
     expect(blocks).toHaveLength(1)
     expect(blocks[0]?.kind).toBe('list')

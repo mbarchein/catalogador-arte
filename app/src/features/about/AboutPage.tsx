@@ -22,11 +22,11 @@ function DataRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * Qué versión está corriendo, en los dos lados.
+ * Which version is running, on both sides.
  *
- * Existe porque «en local funciona y en producción no» se contesta comparando estas
- * líneas, sin abrir ningún panel de administración. Estaba en el perfil y se ha traído
- * aquí: es información de la APLICACIÓN, y el perfil es de la cuenta.
+ * It exists because «it works locally and not in production» is answered by comparing these
+ * lines, without opening any administration panel. It was in the profile and has been brought
+ * here: it is information about the APPLICATION, and the profile is about the account.
  */
 function Diagnostics() {
   const [platform, setPlatform] = useState<PlatformInfo | null>(null)
@@ -89,21 +89,21 @@ function Diagnostics() {
 }
 
 /**
- * Lo que todavía no se puede hacer, y dónde se hace lo que no es aquí.
+ * What cannot be done yet, and where what is not here gets done.
  *
- * ── POR QUÉ ESTÁ AQUÍ Y NO EN LA FICHA DE UNA OBRA ──────────
+ * ── WHY IT IS HERE AND NOT IN AN ARTWORK'S RECORD ───────────
  *
- * Estuvo en la ficha, y **envejeció mal cuatro veces**: era una lista de carencias
- * escrita de memoria, y cada vez que se construía una de ellas la tarjeta seguía diciendo
- * que no se podía. Nombró los cinco bloques documentales cuando ya estaban justo encima;
- * dijo que los vocabularios no tenían pantalla cuando las series la han tenido siempre;
- * que una exposición no se podía dar de alta, que una referencia no se podía corregir,
- * que un documento no se podía subir; y que enlazarlo con una exposición no se hacía
- * desde ninguna pantalla. Todo eso se hace.
+ * It was in the record, and **it aged badly four times**: it was a list of shortcomings
+ * written from memory, and every time one of them was built the card kept saying
+ * it could not be done. It named the five documentary blocks when they were already right above;
+ * it said the vocabularies had no screen when the series have always had one;
+ * that an exhibition could not be created, that a reference could not be corrected,
+ * that a document could not be uploaded; and that linking it to an exhibition was not done
+ * from any screen. All of that is done.
  *
- * El problema no era el texto, era el sitio: media pantalla de advertencias al pie de la
- * ficha que más se usa, leídas cien veces al día por quien ya sabe lo que dicen. Aquí se
- * consultan cuando se buscan, que es una vez, y son cuatro líneas.
+ * The problem was not the text, it was the place: half a screen of warnings at the foot of the
+ * most used record, read a hundred times a day by somebody who already knows what they say. Here they are
+ * consulted when they are looked for, which is once, and they are four lines.
  */
 function WhatIsMissing() {
   return (
@@ -156,12 +156,12 @@ function WhatIsMissing() {
 }
 
 /**
- * Sobre la aplicación: qué versión corre, qué trajo y qué falta (RF-1202).
+ * About the application: which version runs, what it brought and what is missing (RF-1202).
  *
- * Las tres cosas que antes estaban repartidas —el diagnóstico de versión en el perfil, la
- * lista de carencias al pie de cada ficha de obra, y el registro de cambios solo en el
- * repositorio— puestas donde se van a buscar: una pantalla que se abre cuando surge la
- * pregunta, en vez de tres textos que se leen sin querer todos los días.
+ * The three things that used to be scattered —the version diagnostics in the profile, the
+ * list of shortcomings at the foot of every artwork record, and the change log only in the
+ * repository— put where they are going to be looked for: a screen opened when the
+ * question comes up, instead of three texts read unintentionally every day.
  */
 export function AboutPage() {
   return (

@@ -64,10 +64,10 @@ export function useSheetGuard(input: {
   backdropCloses?: boolean
   discardNotice?: string | null
   /**
-   * La hoja apunta lo escrito con `useFormDraft` y lo ofrece a la vuelta.
+   * The sheet notes down what was written with `useFormDraft` and offers it on returning.
    *
-   * Cambia lo que la pregunta puede prometer, y eso importa: decir «vas a perderlo» sobre
-   * algo que no se pierde es la forma de que la pregunta deje de creerse.
+   * It changes what the question can promise, and that matters: saying «you are going to lose it» about
+   * something that is not lost is the way for the question to stop being believed.
    */
   draftKept?: boolean
 }): SheetGuard {
@@ -80,9 +80,9 @@ export function useSheetGuard(input: {
   } = input
   const [confirming, setConfirming] = useState(false)
 
-  // Lo que el árbitro necesita saber, en un ref: `request` se registra en el listener del
-  // botón de atrás y en el del teclado, y volver a registrarlos en cada pulsación de tecla
-  // del formulario podría perderse una.
+  // What the arbiter needs to know, in a ref: `request` is registered in the back
+  // button's listener and in the keyboard's, and registering them again on every keystroke
+  // of the form could miss one.
   const state = useRef({ dirty, backdropCloses, onClose, confirming })
   state.current = { dirty, backdropCloses, onClose, confirming }
 
