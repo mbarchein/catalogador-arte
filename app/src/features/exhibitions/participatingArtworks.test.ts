@@ -12,13 +12,13 @@ import {
 } from './participatingArtworks'
 
 /**
- * «Obras participantes»: qué obras del catálogo constan en esta exposición
+ * «Obras participantes»: which artworks of the catalogue are recorded in this exhibition
  * (RF-505, RF-513, RF-304).
  *
- * El bloque solo LEE, y eso no es una carencia de la entrega: una participación es
- * un hecho sobre una OBRA y se añade desde su ficha, donde está el estado de
- * investigación que hay que mantener coherente. Aquí se comprueba lo que decide:
- * el orden del bloque, lo que dice cada fila y qué se dice cuando no hay ninguna.
+ * The block only READS, and that is not a shortcoming of the delivery: a participation is
+ * a fact about an ARTWORK and is added from its record, where the research
+ * state that has to be kept coherent is. Here what decides is checked:
+ * the block's order, what each row says and what is said when there is none.
  */
 
 function row(over: Partial<ParticipantRow> = {}): ParticipantRow {
@@ -55,9 +55,9 @@ describe('lo que se le pide a la base', () => {
 
 describe('RF-513: el bloque se ordena por el número del catálogo de la muestra', () => {
   /**
-   * EL ASERTO QUE JUSTIFICA LA FUNCIÓN. Comparados como texto, «12 bis» va delante
-   * de «2» y el bloque deja de leerse como el catálogo que la catalogadora tiene
-   * abierto encima de la mesa. Se comparan primero como número.
+   * THE ASSERTION THAT JUSTIFIES THE FUNCTION. Compared as text, «12 bis» goes before
+   * «2» and the block stops reading like the catalogue the cataloguer has
+   * open on the table. They are compared first as numbers.
    */
   it('«2» va antes que «12 bis», que es lo que la comparación de texto rompe', () => {
     const ordered = sortParticipants([
@@ -78,8 +78,8 @@ describe('RF-513: el bloque se ordena por el número del catálogo de la muestra
   })
 
   /**
-   * Un número vacío es un dato que nadie ha copiado todavía. Ordenarlo al principio
-   * lo haría parecer la pieza número uno de la muestra.
+   * An empty number is a datum nobody has copied yet. Ordering it first
+   * would make it look like the show's piece number one.
    */
   it('las que no tienen número van al final y no al principio', () => {
     const ordered = sortParticipants([

@@ -232,9 +232,9 @@ describe('RF-606: la búsqueda del listado', () => {
   })
 
   /**
-   * Sin nada teclado todo empata, y entonces el listado es puramente cronológico,
-   * que es exactamente lo que parece que es. Este aserto es el que fija que
-   * ordenar ANTES de puntuar no fue casual.
+   * With nothing typed everything ties, and then the listing is purely chronological,
+   * which is exactly what it looks like being. This assertion is the one that pins down that
+   * sorting BEFORE scoring was not accidental.
    */
   it('sin nada teclado el listado queda cronológico y no en el orden en que llegó', () => {
     expect(rankExhibitions(rows, '').map((entry) => entry.row.id)).toEqual(['caceres', 'badajoz'])
@@ -254,9 +254,9 @@ describe('RF-606: la búsqueda del listado', () => {
 
 describe('RF-909: un título repetido se avisa, nunca se rechaza', () => {
   /**
-   * `exhibitions` NO tiene índice único por título, y es una decisión escrita en su
-   * migración: dos itinerantes de años distintos se llaman igual. Así que esto solo
-   * puede avisar.
+   * `exhibitions` does NOT have a unique index on the title, and it is a decision written in its
+   * migration: two touring shows from different years are called the same. So this can only
+   * warn.
    */
   it('encuentra el homónimo ignorando mayúsculas, tildes y espacios de sobra', () => {
     const rows = [row({ id: 'ex-1', title: 'Alberto Rotili. Antológica' })]
@@ -266,9 +266,9 @@ describe('RF-909: un título repetido se avisa, nunca se rechaza', () => {
   })
 
   /**
-   * Y NO ignora la puntuación, a diferencia de `normalizeForSearch`: un título está
-   * puntuado a propósito, y dos que solo difieren en un punto son dos títulos que
-   * se teclearon distinto.
+   * And it does NOT ignore punctuation, unlike `normalizeForSearch`: a title is
+   * punctuated on purpose, and two that differ only in a full stop are two titles that
+   * were typed differently.
    */
   it('no confunde dos títulos que solo difieren en la puntuación', () => {
     const rows = [row({ id: 'ex-1', title: 'Rotili. Obra reciente' })]
@@ -280,9 +280,9 @@ describe('RF-909: un título repetido se avisa, nunca se rechaza', () => {
   })
 
   /**
-   * Las retiradas cuentan: un duplicado de algo que está en la papelera sigue
-   * siendo un duplicado, y saber que está ahí es lo que hace que alguien lo
-   * recupere en vez de crearlo otra vez.
+   * The withdrawn ones count: a duplicate of something that is in the wastebasket is still
+   * a duplicate, and knowing it is there is what makes somebody
+   * recover it instead of creating it again.
    */
   it('una homónima retirada cuenta, y la frase manda a recuperarla', () => {
     const rows = [row({ id: 'ex-1', title: 'Antológica', active: false })]

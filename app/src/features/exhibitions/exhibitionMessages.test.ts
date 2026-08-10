@@ -10,16 +10,16 @@ import {
 } from './exhibitionMessages'
 
 /**
- * Lo que dicen las pantallas de exposiciones cuando la base dice no, y lo que dicen
- * donde irían las filas (RF-304, RF-901, RF-905).
+ * What the exhibition screens say when the base says no, and what they say
+ * where the rows would go (RF-304, RF-901, RF-905).
  *
- * **Los códigos y los mensajes de esta batería están MEDIDOS**, provocados el 4 de
- * agosto de 2026 contra la base local por la misma pasarela REST que usa la
- * aplicación, con la sesión de un Catalogador de verdad y la de un Lector de
- * verdad. Los ocho rechazos de `exhibitions` llegan todos con el mismo código
- * —`23514`— y lo único que los distingue es el nombre del check dentro del
- * mensaje, en inglés. De ahí que las cadenas de estas pruebas sean literales: son
- * la respuesta copiada, no una imitación.
+ * **This suite's codes and messages are MEASURED**, provoked on 4
+ * August 2026 against the local base through the same REST gateway the
+ * application uses, with a real Cataloguer's session and a real Reader's.
+ * `exhibitions`' eight rejections all arrive with the same code
+ * —`23514`— and the only thing distinguishing them is the check's name inside the
+ * message, in English. Hence this suite's strings being
+ * literal: they are the answer copied, not an imitation.
  */
 
 /** The gateway's literal answer for an `exhibitions` check. */
@@ -73,8 +73,8 @@ describe('los ocho rechazos de la base, en español y con la consecuencia', () =
   })
 
   /**
-   * Dos claves ajenas se pueden romper por el mismo motivo —lo del otro extremo ya
-   * no está— y no con la misma consecuencia, así que no comparten frase.
+   * Two foreign keys can break for the same reason —what was at the other end is
+   * no longer there— and not with the same consequence, so they do not share a sentence.
    */
   it('la sede desaparecida ofrece la salida que de verdad existe', () => {
     const text = exhibitionFailureText(
@@ -123,8 +123,8 @@ describe('los ocho rechazos de la base, en español y con la consecuencia', () =
   })
 
   /**
-   * Una dirección de una ficha que no está: un enlace pegado mal, o el marcador de
-   * algo que nunca se creó. No es un fallo del catálogo y no puede leerse como uno.
+   * An address of a record that is not there: a badly pasted link, or the bookmark of
+   * something that was never created. It is not a failure of the catalogue and cannot read as one.
    */
   it('una ficha que no existe no se cuenta como avería', () => {
     const text = exhibitionFailureText(
@@ -136,9 +136,9 @@ describe('los ocho rechazos de la base, en español y con la consecuencia', () =
   })
 
   /**
-   * Un mensaje que un trigger ya escribió en español PARA la usuaria se pasa tal
-   * cual, con su pista pegada: reescribirlo aquí sería una segunda copia de una
-   * frase que vive al lado de la regla.
+   * A message a trigger already wrote in Spanish FOR the user is passed as
+   * is, with its hint attached: rewriting it here would be a second copy of a
+   * sentence that lives next to the rule.
    */
   it('lo que la base escribió en español se muestra tal cual, con su pista', () => {
     expect(
@@ -156,9 +156,9 @@ describe('los ocho rechazos de la base, en español y con la consecuencia', () =
   })
 
   /**
-   * En un almacén sin cobertura es el fallo más probable de todos, y sin esta rama
-   * la pantalla enseñaba el inglés del navegador sobre `fetch`. Falta además la
-   * mitad que importa: no se ha enviado, así que no se ha perdido.
+   * In a storeroom with no coverage it is the most likely failure of all, and without this branch
+   * the screen showed the browser's English about `fetch`. It also misses the
+   * half that matters: it has not been sent, so it has not been lost.
    */
   it('RNF-111: la red caída se dice en español y nombra la operación', () => {
     const text = exhibitionFailureText({ message: 'Failed to fetch' }, 'save')
@@ -186,10 +186,10 @@ describe('el resultado de una escritura', () => {
   })
 
   /**
-   * Medido: PostgREST contesta `[]` y ningún error a un `patch` que no encaja con
-   * nada. Fiarse de «no hubo error» haría que la pantalla dijera que la exposición
-   * se corrigió cuando no se corrigió, que es el único fallo que una pantalla de
-   * mantenimiento no puede tener.
+   * Measured: PostgREST answers `[]` and no error to a `patch` that matches
+   * nothing. Trusting «there was no error» would make the screen say that the exhibition
+   * was corrected when it was not, which is the one failure a maintenance
+   * screen cannot have.
    */
   it('cero filas tocadas no es un éxito', () => {
     const text = exhibitionWriteResult('save', { failure: null, rows: 0 })
@@ -210,11 +210,11 @@ describe('el resultado de una escritura', () => {
 
 describe('retirar una exposición dice a cuántas obras se lleva (RF-901, RF-905)', () => {
   /**
-   * El esquema NO lo impide, y está medido: a diferencia de una sede —que
-   * `tg_exhibition_venue_deactivation` protege— una exposición con participaciones se
-   * retira sin protestar, y lo que pasa es que sus filas puente dejan de verse
-   * (RF-905). Así que aquí no hay un rechazo que traducir: hay una consecuencia que
-   * nadie ve desde esta pantalla y que la confirmación tiene que nombrar y contar.
+   * The schema does NOT prevent it, and it is measured: unlike a venue —which
+   * `tg_exhibition_venue_deactivation` protects— an exhibition with participations is
+   * withdrawn without protest, and what happens is that its bridge rows stop being visible
+   * (RF-905). So here there is no rejection to translate: there is a consequence
+   * nobody sees from this screen and that the confirmation has to name and tell.
    */
   it('cuenta las obras y concuerda en número', () => {
     expect(retireImpactText(1)).toContain('1 obra')
@@ -260,9 +260,9 @@ describe('lo que el listado dice cuando no tiene filas (RF-304, RF-605)', () => 
   })
 
   /**
-   * Mientras la consulta está en vuelo NO se afirma que no haya exposiciones: es la
-   * afirmación que hace que alguien cree una segunda ficha de una muestra que ya
-   * tiene una.
+   * While the query is in flight it is NOT stated that there are no exhibitions: it is the
+   * statement that makes somebody create a second record for a show that already
+   * has one.
    */
   it('cargando no afirma que el catálogo esté vacío', () => {
     const text = exhibitionListNotice({ ...settled, loading: true, total: 0, shown: 0 })

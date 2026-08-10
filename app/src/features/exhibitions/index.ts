@@ -1,12 +1,12 @@
 /**
- * La ficha de una exposición y su índice (RF-309, RF-501, RF-502, RF-505, RF-606).
+ * An exhibition's record and its index (RF-309, RF-501, RF-502, RF-505, RF-606).
  *
- * El hueco que más estorbaba: desde la ficha de una obra ya se podía AFIRMAR que
- * estuvo en una muestra, pero la muestra no se podía crear —«dar de alta una
- * exposición nueva es otra pantalla», decía el propio código—. Esta es esa
- * pantalla.
+ * The gap that got in the way most: from an artwork's record one could already STATE that
+ * it was in a show, but the show could not be created —«creating a new
+ * exhibition is another screen», the code itself said—. This is that
+ * screen.
  *
- * Tres rutas y ninguna más. Se montan en `App.tsx`:
+ * Three routes and no more. They are mounted in `App.tsx`:
  *
  * ```tsx
  * import { ExhibitionsPage, NewExhibitionPage, ExhibitionPage } from './features/exhibitions'
@@ -17,19 +17,19 @@
  * <Route path="/exhibitions/:id/edit" element={<ExhibitionPage />} />
  * ```
  *
- * El orden importa: `/exhibitions/new` va ANTES de `/exhibitions/:id`, o «new» se
- * lee como el identificador de una ficha y la pantalla contesta que esa exposición
- * no existe.
+ * The order matters: `/exhibitions/new` goes BEFORE `/exhibitions/:id`, or «new» is
+ * read as a record's identifier and the screen answers that that exhibition
+ * does not exist.
  *
- * `/exhibitions` lo lee cualquiera que pueda leer —una exposición es una ficha del
- * catálogo, no una lista de mantenimiento—, y crear y corregir son del Catalogador,
- * comprobado dentro de cada pantalla. La edición es una ruta y no un estado local,
- * por lo mismo que en la ficha de obra: sobrevive a una recarga, se comparte como
- * enlace y el botón «atrás» del móvil sale del formulario y no de la ficha.
+ * `/exhibitions` is read by anybody who can read —an exhibition is a record of the
+ * catalogue, not a maintenance list—, and creating and correcting belong to the Cataloguer,
+ * checked inside each screen. Editing is a route and not local state,
+ * for the same reason as in the artwork record: it survives a reload, it is shared as a
+ * link and the phone's «back» button leaves the form and not the record.
  *
- * Cuatro exportaciones y el resto de la carpeta —el orden del índice, las frases,
- * el selector de sedes— sigue alcanzable por su ruta para quien tenga un motivo, y
- * los tests lo tienen, sin que parezca contrato.
+ * Four exports and the rest of the folder —the index's order, the sentences,
+ * the venue selector— is still reachable by its path for whoever has a reason, and
+ * the tests do, without looking like a contract.
  */
 
 export { ExhibitionsPage } from './ExhibitionsPage'
