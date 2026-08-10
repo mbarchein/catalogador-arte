@@ -48,9 +48,9 @@ describe('uploadStatusText', () => {
   })
 
   it('NO cuenta fotografías cuando solo hay una', () => {
-    // «Subiendo 1 de 1» no dice qué está contando, y la lectura obvia —un fichero— es
-    // falsa cuatro veces: una fotografía son la miniatura, la copia de consulta, el
-    // original y la copia corregida. Preguntado por la catalogadora tal cual.
+    // «Subiendo 1 de 1» does not say what it is counting, and the obvious reading —one file— is
+    // false four times over: a photograph is the thumbnail, the reference copy, the
+    // original and the corrected copy. Asked about by the cataloguer word for word.
     expect(uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 1, total: 2 })).not.toContain(
       '1 de 1',
     )
@@ -94,9 +94,9 @@ describe('uploadStatusText', () => {
   })
 
   it('dice que es un reintento, porque el contador vuelve a cero', () => {
-    // Un PUT interrumpido no reanuda nada: los bytes se mandan otra vez desde el
-    // principio. Sin decirlo, la línea baja de «80 %» a «0 %» sola, que es exactamente
-    // como se lee una avería.
+    // An interrupted PUT resumes nothing: the bytes are sent again from the
+    // start. Without saying so, the line drops from «80 %» to «0 %» on its own, which is exactly
+    // how a breakdown reads.
     expect(
       uploadStatusText({ index: 1, count: 1, step: 'master', loaded: 0, total: 8_000_000, attempt: 2 }),
     ).toBe('Subiendo el original: 0 kB de 7,6 MB (0%) · reintento 1')
@@ -132,11 +132,11 @@ describe('uploadStatusText', () => {
 
 describe('el aviso de que no se ha podido subir', () => {
   it('dice DÓNDE se quedó, no solo qué se rompió', () => {
-    // «No se han podido subir 1 de 1: La conexión se ha cortado durante el envío» vale
-    // igual para un enlace que muere en el primer kilobyte y para uno que muere en el
-    // mismo 2 MB del mismo fichero cada vez, y son problemas distintos: uno es mala
-    // cobertura y el otro es algo determinista. Leerlo en la pantalla mientras pasa no
-    // es lo mismo que tenerlo escrito después.
+    // «No se han podido subir 1 de 1: La conexión se ha cortado durante el envío» serves
+    // equally for a link dying in the first kilobyte and for one dying at the
+    // same 2 MB of the same file every time, and they are different problems: one is poor
+    // coverage and the other is something deterministic. Reading it on the screen while it happens is
+    // not the same as having it written down afterwards.
     expect(
       uploadFailureText({
         failed: 1,
@@ -152,11 +152,11 @@ describe('el aviso de que no se ha podido subir', () => {
   })
 
   it('el tiempo es lo que separa la mala cobertura de un corte determinista', () => {
-    // Los bytes solos no los distinguen: un navegador entrega varios megas al socket
-    // antes de que la red haya mandado ninguno, así que el contador puede pararse en el
-    // mismo sitio por motivos que no tienen que ver con por qué acaba. Morir siempre a
-    // los mismos cuarenta segundos, en cambio, es un plazo de espera en algún punto del
-    // camino, y por muchos reintentos que se den no se arregla.
+    // The bytes alone do not tell them apart: a browser hands several megabytes to the socket
+    // before the network has sent any, so the counter can stop at the
+    // same place for reasons that have nothing to do with why it ends. Always dying at
+    // the same forty seconds, by contrast, is a timeout at some point along the
+    // way, and no number of retries fixes it.
     expect(uploadFailureText({ failed: 1, total: 1, message: 'Vaya.', seconds: 41.6 })).toBe(
       'No se ha podido subir la fotografía: Vaya. Tardó 42 s en fallar.',
     )

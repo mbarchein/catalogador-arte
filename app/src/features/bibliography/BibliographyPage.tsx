@@ -12,29 +12,29 @@ import {
 import { useReferences } from './useReferences'
 
 /**
- * El listado de la bibliografía, con su búsqueda dedicada (RF-606, RF-506, RF-609).
+ * The bibliography's listing, with its dedicated search (RF-606, RF-506, RF-609).
  *
- * **Es la mitad barata de un hueco que la ficha de obra declaraba en voz alta.** Una
- * referencia se creaba y se corregía solo desde una obra que la citara, así que a una
- * referencia sin citas no se llegaba desde ningún sitio: seguía en el catálogo,
- * seguía ocupando su clave BibTeX, y era invisible. Desde aquí se encuentra.
+ * **It is the cheap half of a gap the artwork record declared out loud.** A
+ * reference was created and corrected only from an artwork that cited it, so a
+ * reference with no citations was not reachable from anywhere: it was still in the catalogue,
+ * still taking up its BibTeX key, and it was invisible. From here it is found.
  *
- * **Lo legible por cualquiera que pueda leer, como las exposiciones y al contrario
- * que las tablas maestras.** Una referencia es contenido del catálogo y no una lista
- * de mantenimiento: un Lector la consulta igual que consulta una obra, y la RLS ya le
- * entrega solo las vivas.
+ * **Readable by anybody who can read, like the exhibitions and unlike
+ * the master tables.** A reference is catalogue content and not a maintenance
+ * list: a Reader consults it just as they consult an artwork, and the RLS already
+ * hands them only the live ones.
  *
- * **No hay botón de «nueva referencia», y su ausencia es la decisión.** Una referencia
- * existe porque algo la cita: se crea desde la bibliografía de una obra, al citarla, y
- * un alta suelta desde aquí produciría referencias que nadie cita — exactamente lo
- * que esta pantalla existe para poder encontrar. Lo dice el aviso del catálogo vacío,
- * en vez de dejar un hueco donde se busca un botón.
+ * **There is no «nueva referencia» button, and its absence is the decision.** A reference
+ * exists because something cites it: it is created from an artwork's bibliography, on citing it, and
+ * a standalone creation from here would produce references nobody cites — exactly
+ * what this screen exists to be able to find. The empty-catalogue notice says so,
+ * instead of leaving a gap where a button is looked for.
  *
- * **La fila entera es el enlace a su ficha** (RF-506), como en el listado de
- * exposiciones: en un móvil, un trozo de texto pequeño como única zona pulsable es un
- * objetivo que se falla. Mientras no existió la ficha, la fila no era pulsable a
- * propósito —un `card` que no lleva a ningún sitio se toca una vez y se aprende que no
- * responde—; ahora lleva.
+ * **The whole row is the link to its record** (RF-506), as in the exhibition
+ * listing: on a phone, a small piece of text as the only tappable area is a
+ * target that gets missed. While the record did not exist, the row was deliberately not tappable
+ * —a `card` that leads nowhere is touched once and one learns that it does not
+ * respond—; now it leads.
  */
 export function BibliographyPage() {
   const { canEdit } = useAuth()

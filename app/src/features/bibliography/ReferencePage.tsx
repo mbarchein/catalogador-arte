@@ -21,37 +21,37 @@ import { useCitedArtworks } from './useCitedArtworks'
 import { useReferences } from './useReferences'
 
 /**
- * La ficha de una referencia bibliográfica (RF-506, RF-309, RF-609).
+ * The record of a bibliographic reference (RF-506, RF-309, RF-609).
  *
- * Lo que añade y no existía en ningún sitio: **leer la referencia por el otro lado**,
- * es decir qué obras del catálogo la citan y en qué página de ella sale cada una. Eso
- * es el bloque «Obras citadas» de RF-506, con el código enlazado y las páginas y las
- * notas, y **sin miniatura**, que lo dice el requisito.
+ * What it adds and did not exist anywhere: **reading the reference from the other side**,
+ * that is, which artworks of the catalogue cite it and on which of its pages each one appears. That
+ * is RF-506's «Obras citadas» block, with the code linked and the pages and the
+ * notes, and **with no thumbnail**, which the requirement states.
  *
- * **Corregirla es el MISMO panel que abre la ficha de una obra**, tal cual: una
- * referencia se corrige igual desde donde se la cita que desde aquí, o son dos
- * formularios que tienen que ponerse de acuerdo. Y el planificador es el mismo, así
- * que el choque de la clave BibTeX y el «no has cambiado nada» se comportan igual por
- * los dos caminos.
+ * **Correcting it is the SAME panel an artwork's record opens**, exactly: a
+ * reference is corrected the same from where it is cited as from here, or they are two
+ * forms that have to agree with each other. And the planner is the same, so
+ * the BibTeX key clash and the «you have not changed anything» behave alike by
+ * both paths.
  *
- * **No hay retirada desde aquí, y su ausencia es la decisión.** Una referencia se
- * retira desde la papelera, donde también se recupera; poner el botón en esta pantalla
- * dejaría media operación en un sitio y la otra media en otro. Lo dice el pie en vez de
- * dejar buscarlo.
+ * **There is no withdrawal from here, and its absence is the decision.** A reference is
+ * withdrawn from the wastebasket, where it is also recovered; putting the button on this screen
+ * would leave half an operation in one place and the other half in another. The foot says so instead of
+ * letting it be hunted for.
  *
- * La lista entera de referencias se carga para esta ficha, y no es un descuido: es lo
- * que necesita la comprobación del choque de clave al corregir (`planReferenceEdit`),
- * y de paso es de donde sale la referencia de esta dirección sin una segunda consulta.
- * La decisión de cargarla entera está razonada en `useReferences`.
+ * The whole reference list is loaded for this record, and it is not an oversight: it is what
+ * the key clash check on correcting needs (`planReferenceEdit`),
+ * and incidentally it is where this address's reference comes from with no second query.
+ * The decision to load it whole is reasoned in `useReferences`.
  */
 export function ReferencePage() {
   const { id = '' } = useParams()
   const { canEdit } = useAuth()
-  // El permiso para escribir se pregunta con su tercera respuesta y no con `canEdit` a
-  // secas: el rol llega DESPUÉS de la sesión, así que decidir en el primer render echa
-  // de aquí a la catalogadora a la que la pantalla pertenece, y solo al recargar su
-  // dirección — el fallo que este proyecto ya pagó tres veces. La ficha que se LEE no
-  // usa esto y no espera a nada.
+  // The permission to write is asked about with its third answer and not with a bare
+  // `canEdit`: the role arrives AFTER the session, so deciding on the first render throws
+  // out of here the cataloguer the screen belongs to, and only on reloading its
+  // address — the failure this project has already paid for three times. The record that is READ does not
+  // use this and waits for nothing.
   const editAccess = useEditingAccess()
 
   const { references, loading, error, updateReference } = useReferences()
@@ -193,10 +193,10 @@ export function ReferencePage() {
           onClose={() => setEditing(false)}
           reference={reference}
           publicationTypes={types.entries}
-          // El aviso de alcance de la ficha de obra cuenta las OTRAS obras que la
-          // citan, porque allí se corrige desde una de ellas. Aquí no se corrige desde
-          // ninguna, así que el alcance es el número entero de citas vivas, que además
-          // ya está contado y en pantalla justo encima.
+          // The artwork record's scope warning counts the OTHER artworks that
+          // cite it, because there it is corrected from one of them. Here it is not corrected from
+          // any, so the scope is the whole number of live citations, which besides
+          // is already counted and on screen right above.
           otherArtworks={views.length}
           onSave={(draft) => updateReference(reference.id, draft)}
         />

@@ -10,15 +10,15 @@ import {
 } from './bibliographyIndex'
 
 /**
- * El índice de la bibliografía (RF-506, RF-606, RF-609).
+ * The bibliography's index (RF-506, RF-606, RF-609).
  *
- * Lo que estos tests fijan es lo que una lista decide y una ficha no: el orden de la
- * tabla entera, qué caza la búsqueda, y qué se dice donde irían las filas cuando no
- * hay ninguna — que es el criterio «nunca una página en blanco» aplicado, y el que
- * más fácil se pierde en una refactorización.
+ * What these tests pin down is what a list decides and a record does not: the whole
+ * table's order, what the search catches, and what is said where the rows would go when there
+ * are none — which is the «never a blank page» criterion applied, and the one
+ * most easily lost in a refactor.
  *
- * Y fija la razón de existir de la pantalla: una referencia que ninguna obra cita
- * seguía en el catálogo y no se podía encontrar desde ningún sitio.
+ * And it pins down the screen's reason to exist: a reference no artwork cites
+ * was still in the catalogue and could not be found from anywhere.
  */
 
 function reference(over: Partial<ReferenceRow> = {}): ReferenceRow {
@@ -149,12 +149,12 @@ describe('rankReferences, lo que la búsqueda encuentra (RF-606)', () => {
   })
 
   it('caza por la clave BibTeX, que es como se cita en el ensayo, y la pone primero', () => {
-    // La coincidencia es por SUBSECUENCIA y no por substring —es la misma de las
-    // sugerencias de ubicación—, así que «rotili85» encaja también en «Rotili,
-    // Alberto … 1985»: las letras cuentan aunque estén separadas. Eso no es un
-    // fallo, es lo que hace que se encuentre algo teclando poco. Lo que importa es
-    // que la coincidencia apretada gane, y por eso se afirma el ORDEN y no el
-    // conjunto: exigir un único resultado sería exigir otro buscador.
+    // The match is by SUBSEQUENCE and not by substring —it is the same one as the
+    // location suggestions—, so «rotili85» also fits «Rotili,
+    // Alberto … 1985»: the letters count even when separated. That is not a
+    // failure, it is what makes something findable by typing little. What matters is
+    // that the tight match wins, and that is why the ORDER is asserted and not the
+    // set: demanding a single result would be demanding a different finder.
     const conClave = [...catalogo, reference({ id: 'con-clave', bibtex_key: 'rotili85', title: 'Otra' })]
     const ids = rankReferences(conClave, 'rotili85').map((e) => e.row.id)
     expect(ids[0]).toBe('con-clave')

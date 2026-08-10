@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { liftTakesSample, pointerIntent } from './pickGesture'
 
 /**
- * La incidencia que estos casos reproducen, contada tal como se notó con el dedo:
+ * The incident these cases reproduce, told as it was noticed with the finger:
  * «el cuentagotas no me deja arrastrar el dedo para seleccionar otro punto, la imagen se
  * mueve a la par».
  *
- * El diseño original armaba el cuentagotas sin quitarle el gesto al desplazamiento: un
- * arrastre seguía moviendo la fotografía y solo un toque que no viajaba tomaba la muestra.
- * Resultado: apuntar era imposible, porque acercarse al gris que se quiere arrastra la
- * imagen justo debajo del dedo, y corregir la puntería obligaba a levantar, mirar y volver
- * a tocar a ciegas.
+ * The original design armed the eyedropper without taking the gesture away from scrolling: a
+ * drag still moved the photograph and only a tap that did not travel took the sample.
+ * Result: aiming was impossible, because getting close to the grey you want drags the
+ * image right under the finger, and correcting your aim forced you to lift, look and touch
+ * again blind.
  *
- * Los dos primeros casos de cada bloque son los que fallaban antes del arreglo.
+ * The first two cases of each block are the ones that failed before the fix.
  */
 describe('el gesto del cuentagotas (RF-414, RF-418)', () => {
   const touch = { pointerType: 'touch', button: 0 }

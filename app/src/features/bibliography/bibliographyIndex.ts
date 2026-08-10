@@ -1,28 +1,28 @@
 /**
- * El índice de la bibliografía: en qué orden se lee, qué busca la búsqueda y qué
- * dice cada fila (RF-506, RF-606, RF-609).
+ * The bibliography's index: in what order it is read, what the search looks for and what
+ * each row says (RF-506, RF-606, RF-609).
  *
- * Puro y sin React, como todo lo que decide en este proyecto: la batería corre en
- * node sin DOM, así que el orden de una lista y las palabras de una fila se
- * verifican aquí o no se verifican.
+ * Pure and without React, like everything that decides in this project: the suite runs in
+ * node with no DOM, so a list's order and a row's words are
+ * verified here or they are not verified.
  *
- * **Casi nada de cómo se lee una referencia está escrito aquí, y eso es lo suyo.**
- * La ficha de una obra ya tenía que nombrar a los autores, poner «s.f.» cuando no
- * hay año y componer el pie de imprenta, y lo hace en `documentary/bibliography/`.
- * Este índice reutiliza esas funciones tal cual: una referencia tiene que leerse
- * IGUAL en su listado que dentro de la ficha que la cita, o la catalogadora está
- * leyendo dos dialectos del mismo catálogo. Lo nuevo es solo lo que necesita una
- * lista y una ficha no: el orden de la tabla entera, la búsqueda y el recuento.
+ * **Almost nothing about how a reference reads is written here, and that is as it should be.**
+ * An artwork's record already had to name the authors, put «s.f.» when there is
+ * no year and compose the imprint, and it does so in `documentary/bibliography/`.
+ * This index reuses those functions as is: a reference has to read
+ * THE SAME in its listing as inside the record that cites it, or the cataloguer is
+ * reading two dialects of the same catalogue. What is new is only what a
+ * list needs and a record does not: the whole table's order, the search and the count.
  *
- * ── POR QUÉ EXISTE ESTA PANTALLA ────────────────────────────
+ * ── WHY THIS SCREEN EXISTS ──────────────────────────────────
  *
- * Una referencia se creaba y se corregía **solo desde una obra que la citara**, así
- * que una referencia a la que no le quedaba ninguna cita no se podía encontrar
- * desde ningún sitio: seguía en el catálogo, contando para el índice único de la
- * clave BibTeX, y era invisible. La ficha de obra lo declaraba en voz alta en su
- * tarjeta de «lo que aún no se puede hacer aquí». Esto es la mitad barata de
- * arreglarlo — el listado y su búsqueda—; la ficha propia con su bloque de «obras
- * citadas» (RF-506) es la otra.
+ * A reference was created and corrected **only from an artwork that cited it**, so
+ * a reference with no citations left could not be found
+ * from anywhere: it was still in the catalogue, counting towards the unique index of the
+ * BibTeX key, and it was invisible. The artwork record declared it out loud in its
+ * «what still cannot be done here» card. This is the cheap half of
+ * fixing it — the listing and its search—; its own record with its «obras
+ * citadas» block (RF-506) is the other.
  */
 
 import { fuzzyRankBy } from '../../lib/vocabulary'
@@ -39,13 +39,13 @@ import {
 import { referenceTitleText } from '../documentary/bibliography/referenceEdit'
 
 /**
- * Las columnas del índice, que son las que ya pide el selector de la ficha.
+ * The index's columns, which are the ones the record's selector already asks for.
  *
- * Importadas y no reescritas, a propósito: las dos listas muestran las mismas filas
- * con las mismas palabras, así que una columna que una necesite la necesita la otra.
- * Una segunda copia sería el fallo que las esquinas de una fotografía ya costaron
- * una vez — un campo que la consulta olvidó llegando como `undefined` con el tipo
- * prometiendo un valor.
+ * Imported and not rewritten, on purpose: the two lists show the same rows
+ * with the same words, so a column one of them needs the other needs too.
+ * A second copy would be the failure a photograph's corners already cost
+ * once — a field the query forgot arriving as `undefined` with the type
+ * promising a value.
  */
 export { REFERENCE_COLUMNS }
 
@@ -53,37 +53,37 @@ export { REFERENCE_COLUMNS }
 export { referenceSearchText as bibliographySearchText }
 
 /**
- * Con qué se ordena una referencia: **por autor, y las anónimas por su título**.
+ * What a reference is ordered by: **by author, and the anonymous ones by their title**.
  *
- * Y no por año descendente como el índice de exposiciones, que es la comparación
- * que merece la pena hacer porque las dos listas parecen la misma clase de cosa y
- * no lo son. Un listado de exposiciones se lee para encontrar la muestra cuyo
- * catálogo está encima de la mesa, y esa es muy probablemente de esta década. Una
- * bibliografía se lee como se lee la bibliografía impresa de un catálogo razonado:
- * buscando «Rotili» o «Zafra» entre los apellidos, que es donde el ojo va. Ordenarla
- * por año dejaría a los dos artículos del mismo autor a veinte filas de distancia.
+ * And not by descending year like the exhibition index, which is the comparison
+ * worth making because the two lists look like the same kind of thing and
+ * they are not. An exhibition listing is read to find the show whose
+ * catalogue is on the table, and that one is very likely from this decade. A
+ * bibliography is read as the printed bibliography of a catalogue raisonné is read:
+ * looking for «Rotili» or «Zafra» among the surnames, which is where the eye goes. Ordering it
+ * by year would leave an author's two articles twenty rows apart.
  *
- * La clave es el autor y, cuando no hay ninguno —un recorte de prensa sin firma, que
- * es la mitad de un archivo real—, el título. **La referencia sin firma NO va al
- * final**: se coloca por su título entre las demás, porque «anónimo» no es un autor
- * que empiece por z. Es la misma decisión que la fecha vacía de un documento, al
- * revés: allí «sin fecha» no es el año cero y va al final; aquí «sin autor» sí tiene
- * un sitio natural en el alfabeto, el de su título.
+ * The key is the author and, when there is none —an unsigned press clipping, which
+ * is half of a real archive—, the title. **The unsigned reference does NOT go
+ * last**: it is placed by its title among the rest, because «anonymous» is not an author
+ * starting with z. It is the same decision as a document's empty date, the
+ * other way round: there «no date» is not year zero and goes last; here «no author» does have
+ * a natural place in the alphabet, its title's.
  */
 export function bibliographyOrderKey(reference: ReferenceRow): string {
   return (referenceAuthorText(reference) ?? referenceTitleText(reference)).trim()
 }
 
 /**
- * El orden del índice, con el año ASCENDENTE dentro de cada autor.
+ * The index's order, with the year ASCENDING within each author.
  *
- * Ascendente y no descendente: dentro de un autor lo que se lee es su recorrido, y
- * es el mismo criterio que el historial expositivo de una obra (RF-502). Las
- * comparaciones van en es-ES con `sensitivity: 'base'`, así que «Álvarez» se sienta
- * con las a y no después de la z, que es lo que pasaría con el orden del octeto.
+ * Ascending and not descending: within an author what is read is their journey, and
+ * it is the same criterion as an artwork's exhibition history (RF-502). The
+ * comparisons go in es-ES with `sensitivity: 'base'`, so «Álvarez» sits
+ * with the a's and not after the z, which is what would happen with byte order.
  *
- * El identificador rompe los empates finales, para que dos referencias no se cambien
- * el sitio entre dos cargas de la misma pantalla.
+ * The identifier breaks the final ties, so that two references do not swap
+ * places between two loads of the same screen.
  */
 export function sortReferences(rows: readonly ReferenceRow[]): ReferenceRow[] {
   return rows.slice().sort((a, b) => {
@@ -127,13 +127,13 @@ export interface BibliographyIndexEntry {
 }
 
 /**
- * Las filas del índice, la mejor coincidencia primero.
+ * The index's rows, the best match first.
  *
- * **Las referencias retiradas se esconden salvo que se pidan** (RF-609: los índices
- * excluyen lo retirado), y pedirlas es la única forma de que una vuelva — esconderlas
- * siempre esconde la única salida, que es el razonamiento que ya escribió la pantalla
- * de sedes. No se mezclan en silencio: la fila dice `retired` y la pantalla dice la
- * palabra.
+ * **Withdrawn references are hidden unless asked for** (RF-609: the indexes
+ * exclude what is withdrawn), and asking for them is the only way for one to come back —
+ * always hiding them hides the only way out, which is the reasoning the venues
+ * screen already wrote. They are not mixed in silently: the row says `retired` and the screen says the
+ * word.
  */
 export function rankReferences(
   rows: readonly ReferenceRow[],
@@ -141,10 +141,10 @@ export function rankReferences(
   options: { includeRetired?: boolean } = {},
 ): BibliographyIndexEntry[] {
   const visible = options.includeRetired === true ? rows : rows.filter((row) => row.active)
-  // Ordenadas ANTES de puntuar, no después: `fuzzyRankBy` es estable y conserva el
-  // orden de quien llama entre coincidencias igual de buenas, así que el alfabeto
-  // sobrevive dentro de cada nivel del ranking. Con la búsqueda vacía todo empata, y
-  // entonces el índice es puramente alfabético, que es lo que parece ser.
+  // Sorted BEFORE scoring, not after: `fuzzyRankBy` is stable and keeps the
+  // caller's order among equally good matches, so the alphabet
+  // survives inside each level of the ranking. With the search empty everything ties, and
+  // then the index is purely alphabetical, which is what it looks like being.
   const ordered = sortReferences(visible)
   return fuzzyRankBy(ordered, referenceSearchText, query).map(({ item, indices }) => ({
     row: item,

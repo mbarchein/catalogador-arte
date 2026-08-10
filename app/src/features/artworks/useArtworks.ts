@@ -78,10 +78,10 @@ export function useArtworks(
   view: ListView = DEFAULT_VIEW,
   placeScope: ReadonlySet<string> | null = null,
   /**
-   * Los fondos cuyas obras se apartan del listado (ADR-007, segunda entrega).
+   * The funds whose artworks are set aside from the listing (ADR-007, second delivery).
    *
-   * Llega de la página, que es donde se lee la tabla de fondos, y por omisión no
-   * aparta nada: quien llame sin saber de esto ve el catálogo entero.
+   * It arrives from the page, which is where the funds table is read, and by default it sets
+   * nothing aside: whoever calls without knowing about this sees the whole catalogue.
    */
   hiddenFunds: ReadonlySet<ArtistFund> = EMPTY_FUNDS,
 ) {
