@@ -1,56 +1,56 @@
 /**
- * Por qué una recuperación no ha salido, contado en español.
+ * Why a recovery did not work, told in Spanish.
  *
- * Recuperar algo de la papelera puede fallar **por razones legítimas**, y un botón
- * que se queda mudo cuando eso pasa es peor que no tener papelera: la usuaria toca,
- * no ocurre nada, y no sabe si el catálogo la ha ignorado o si ella ha hecho algo
- * mal. Así que cada negativa que la base sabe dar tiene aquí su frase.
+ * Recovering something from the wastebasket can fail **for legitimate reasons**, and a button
+ * that stays mute when that happens is worse than having no wastebasket: the user touches,
+ * nothing happens, and she does not know whether the catalogue ignored her or whether she did something
+ * wrong. So every refusal the base can give has its sentence here.
  *
- * ── LAS NEGATIVAS SE MIDIERON, NO SE IMAGINARON ──────────────────
+ * ── THE REFUSALS WERE MEASURED, NOT IMAGINED ─────────────────────
  *
- * Provocadas contra la base local a través de PostgREST, con el token de quien
- * cataloga y con el de quien solo consulta:
+ * Provoked against the local base through PostgREST, with the token of whoever
+ * catalogues and with that of whoever only consults:
  *
- *  · **`P0001`** — un disparador dice no, y lo dice YA EN ESPAÑOL y a la usuaria,
- *    en dos campos separados. Medido al intentar recuperar un eslabón de una obra
- *    cuya procedencia consta investigada sin resultado:
+ *  · **`P0001`** — a trigger says no, and it says it ALREADY IN SPANISH and to the user,
+ *    in two separate fields. Measured on trying to recover a link of an artwork
+ *    whose provenance is recorded as researched with no result:
  *      message: «La procedencia de la obra RC-0001 consta investigada sin resultado
  *                y este eslabón la contradice»
  *      hint:    «Cambia antes el estado de la procedencia a "En curso" o "Completa".»
- *    **La pista es la mitad útil**: dice qué hacer. Se muestran las dos unidas; la
- *    tentación de quedarse con el mensaje deja a la usuaria sabiendo que no puede y
- *    sin saber qué tocar.
+ *    **The hint is the useful half**: it says what to do. Both are shown joined; the
+ *    temptation to keep only the message leaves the user knowing she cannot and
+ *    not knowing what to touch.
  *
- *  · **`23505`** — el hueco que distinguía la fila lo ha ocupado otra mientras
- *    estaba en la papelera. Medido: `{"code":"23505", "hint":null, "message":
- *    "duplicate key value violates unique constraint \"...\""}`, HTTP 409. Un
- *    mensaje que nombra un índice y no ayuda a nadie. Y **casi nunca puede pasar**:
- *    los índices únicos de las maestras no son parciales sobre `active`, así que el
- *    nombre de algo retirado sigue reservado y nadie ha podido reutilizarlo. Donde sí
- *    ocurre es en los enlaces externos, cuyos índices son `where ... and active`.
+ *  · **`23505`** — the slot that distinguished the row has been taken by another while it
+ *    was in the wastebasket. Measured: `{"code":"23505", "hint":null, "message":
+ *    "duplicate key value violates unique constraint \"...\""}`, HTTP 409. A
+ *    message that names an index and helps nobody. And **it can hardly ever happen**:
+ *    the master tables' unique indexes are not partial on `active`, so the
+ *    name of something withdrawn stays reserved and nobody has been able to reuse it. Where it does
+ *    occur is in the external links, whose indexes are `where ... and active`.
  *
- *  · **`42501`** — la sesión ya no puede escribir. Medido con el token del lector:
+ *  · **`42501`** — the session can no longer write. Measured with the reader's token:
  *    HTTP 403, «new row violates row-level security policy for table "..."».
  *
- *  · **`23503`** — la fila de la que cuelga ya no existe en absoluto. En este
- *    catálogo nada se borra de verdad, así que si aparece es una anomalía y se dice
- *    como tal en vez de tragársela.
+ *  · **`23503`** — the row it hangs from no longer exists at all. In this
+ *    catalogue nothing is really deleted, so if it appears it is an anomaly and it is said
+ *    as such instead of swallowed.
  *
- *  · **ninguna negativa** (`null`) — y esta es la peligrosa. Medido: un PATCH que
- *    las políticas rechazan contesta **HTTP 200 con la lista vacía y sin error**. Un
- *    lector recuperando una fotografía obtiene exactamente eso. Sin pedir las filas
- *    afectadas, la pantalla diría «recuperado» sin haber recuperado nada.
+ *  · **no refusal at all** (`null`) — and this is the dangerous one. Measured: a PATCH the
+ *    policies reject answers **HTTP 200 with an empty list and no error**. A
+ *    reader recovering a photograph gets exactly that. Without asking for the rows
+ *    affected, the screen would say «recovered» without having recovered anything.
  */
 
 import { isNetworkFailure } from '../tables/vocabularies'
 import { kindSpec, type TrashKindId } from './trashKinds'
 
 /**
- * Una negativa tal como llega de PostgREST: el SQLSTATE, el mensaje y la pista, que
- * viajan en tres campos distintos.
+ * A refusal as it arrives from PostgREST: the SQLSTATE, the message and the hint, which
+ * travel in three different fields.
  *
- * Declarada aquí en vez de importar `PostgrestError` para que este módulo no dependa
- * del cliente, y porque solo se leen estos tres campos.
+ * Declared here instead of importing `PostgrestError` so this module does not depend
+ * on the client, and because only these three fields are read.
  */
 export interface DatabaseRefusal {
   code?: string | null
@@ -59,11 +59,11 @@ export interface DatabaseRefusal {
 }
 
 /**
- * La frase que ve la usuaria cuando la recuperación no ha salido.
+ * The sentence the user sees when the recovery did not work.
  *
- * Lo desconocido conserva el mensaje crudo detrás de una entradilla en español:
- * inventar una frase amable para un fallo que no se ha visto nunca esconde la única
- * pista que hay.
+ * The unknown keeps the raw message behind an introduction in Spanish:
+ * inventing a kind sentence for a failure never seen before hides the only
+ * clue there is.
  */
 export function describeRestoreRefusal(
   kind: TrashKindId,
@@ -72,9 +72,9 @@ export function describeRestoreRefusal(
   const spec = kindSpec(kind)
 
   if (refusal === null) {
-    // Cero filas tocadas y ningún error. O la sesión ha dejado de poder catalogar
-    // mientras la pantalla estaba abierta, o la fila ya no está donde estaba. Las
-    // dos acaban en «vuelve a entrar y mira», y ninguna es «recuperado».
+    // Zero rows touched and no error. Either the session has stopped being able to catalogue
+    // while the screen was open, or the row is no longer where it was. Both
+    // end in «log in again and look», and neither is «recovered».
     return (
       'No se ha recuperado nada: o tu sesión no puede, o ya había vuelto. Vuelve a entrar y compruébalo.'
     )
@@ -83,9 +83,9 @@ export function describeRestoreRefusal(
   const message = refusal.message.trim()
 
   if (refusal.code === 'P0001') {
-    // El disparador escribe para quien cataloga, en español. Se muestra lo que dice
-    // y la pista con ello, unidas con un punto y sin doblar el que el mensaje quizá
-    // ya traiga.
+    // The trigger writes for whoever catalogues, in Spanish. What it says is shown
+    // and the hint with it, joined with a full stop and without doubling the one the message may
+    // already carry.
     const hint = refusal.hint?.trim() ?? ''
     const head = message.replace(/[.\s]+$/, '')
     return hint === '' ? `${head}.` : `${head}. ${hint}`
@@ -128,12 +128,12 @@ export function describeRestoreRefusal(
 }
 
 /**
- * La frase de un fallo al LEER una clase de la papelera.
+ * The sentence for a failure in READING a class of the wastebasket.
  *
- * Se cuenta por clase y no para la pantalla entera a propósito: veinte consultas van
- * en paralelo, y que una falle no puede dejar en blanco las diecinueve que sí han
- * contestado. La línea dice qué clase no se ha podido leer, y el resto de la papelera
- * sigue en pie.
+ * It is told per class and not for the whole screen on purpose: twenty queries go
+ * in parallel, and one failing cannot leave blank the nineteen that did
+ * answer. The line says which class could not be read, and the rest of the wastebasket
+ * stays standing.
  */
 export function describeLoadFailure(kind: TrashKindId, refusal: DatabaseRefusal): string {
   const spec = kindSpec(kind)

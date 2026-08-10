@@ -5,12 +5,12 @@ import { toTrashItems, type TrashAuthor, type TrashItem, type TrashKindView } fr
 import { describeLoadFailure, describeRestoreRefusal, type DatabaseRefusal } from './trashRestore'
 
 /**
- * Cuántas filas se piden de cada clase.
+ * How many rows are asked for of each class.
  *
- * La papelera es pequeña por naturaleza: es lo que una persona ha retirado a mano a
- * lo largo de años, y hoy en toda la base son cinco filas. Cincuenta por clase deja
- * sitio de sobra y pone un techo, que es lo que impide que una tabla que alguien vacíe
- * por error convierta esta pantalla en una descarga de miles de líneas desde el móvil.
+ * The wastebasket is small by nature: it is what one person has withdrawn by hand
+ * over years, and today in the whole base it is five rows. Fifty per class leaves
+ * plenty of room and puts a ceiling, which is what prevents a table somebody empties
+ * by mistake from turning this screen into a download of thousands of lines on a phone.
  */
 export const TRASH_PAGE = 50
 
@@ -19,39 +19,39 @@ export interface TrashState {
   readonly loading: boolean
   readonly reload: () => void
   /**
-   * Recupera una cosa. Devuelve la frase del fallo, o `null` si ha vuelto.
+   * Recovers a thing. Returns the failure's sentence, or `null` if it came back.
    *
-   * Es la convención de las pantallas de mantenimiento de este proyecto: la acción
-   * contesta texto en español o nada, y quien la llama no interpreta códigos.
+   * It is the convention of this project's maintenance screens: the action
+   * answers text in Spanish or nothing, and the caller does not interpret codes.
    */
   readonly restore: (item: TrashItem) => Promise<string | null>
 }
 
 /**
- * Todo lo retirado, de las veintiuna tablas que llevan baja lógica.
+ * Everything withdrawn, from the twenty-one tables that carry logical deletion.
  *
- * ── POR QUÉ VEINTIUNA CONSULTAS EN PARALELO ──────────────────────
+ * ── WHY TWENTY-ONE QUERIES IN PARALLEL ───────────────────────────
  *
- * PostgREST no une tablas, así que no hay una consulta que traiga la papelera
- * entera. Las alternativas eran pedir primero veintiún recuentos y luego las filas
- * —pagar dos veces por lo mismo— o cargar cada grupo al abrirlo, que deja a la
- * usuaria abriendo cuatro bloques para descubrir que la papelera está vacía. Se
- * cargan las veintiuna de una vez, en paralelo y con techo por clase: son peticiones
- * diminutas sobre tablas diminutas, se multiplexan sobre la misma conexión, y esta es
- * una pantalla que se abre de tarde en tarde y no la que más se usa.
+ * PostgREST does not join tables, so there is no one query that brings the whole
+ * wastebasket. The alternatives were asking for twenty-one counts first and then the rows
+ * —paying twice for the same thing— or loading each group on opening it, which leaves the
+ * user opening four blocks to discover that the wastebasket is empty. All
+ * twenty-one are loaded at once, in parallel and with a ceiling per class: they are tiny
+ * requests over tiny tables, they are multiplexed over the same connection, and this is
+ * a screen opened once in a while and not the most used one.
  *
- * ── QUE UNA FALLE NO PUEDE APAGAR LAS OTRAS ──────────────────────
+ * ── ONE FAILING CANNOT SWITCH THE OTHERS OFF ─────────────────────
  *
- * Cada clase guarda su propio fallo. Una tabla que no se pueda leer deja su línea
- * explicada y las demás siguen en pie: **nunca una página en blanco**, y menos por
- * una de veintiuna.
+ * Each class stores its own failure. A table that cannot be read leaves its line
+ * explained and the rest stay standing: **never a blank page**, and least of all over
+ * one out of twenty-one.
  *
- * ── QUIÉN LA VE ──────────────────────────────────────────────────
+ * ── WHO SEES IT ──────────────────────────────────────────────────
  *
- * No lo decide este código, lo deciden las políticas: dieciocho de las veintiuna
- * tablas tienen `(active and can_read()) or can_edit()`, así que quien solo consulta
- * recibe listas vacías. Aun así la pantalla entera está cerrada a quien no cataloga
- * —una lista vacía no es una explicación—, y eso se hace en `TrashPage`.
+ * This code does not decide it, the policies do: eighteen of the twenty-one
+ * tables have `(active and can_read()) or can_edit()`, so whoever only consults
+ * receives empty lists. Even so the whole screen is closed to whoever does not catalogue
+ * —an empty list is not an explanation—, and that is done in `TrashPage`.
  */
 export function useTrash(): TrashState {
   const [views, setViews] = useState<readonly TrashKindView[]>([])
@@ -69,19 +69,19 @@ export function useTrash(): TrashState {
             .from(spec.table)
             .select(spec.columns)
             .eq('active', false)
-            // Lo último retirado primero, que es lo que se viene a buscar. Las filas
-            // sin fecha —las que trasladó una migración y no retiró nadie— al final:
-            // Postgres las pondría delante en un orden descendente, y encabezar la
-            // papelera con lo que no tiene traza es enterrar lo que sí la tiene.
+            // The last thing withdrawn first, which is what one comes looking for. The rows
+            // with no date —the ones a migration moved and nobody withdrew— last:
+            // Postgres would put them first in a descending order, and heading the
+            // wastebasket with what has no trace is burying what does have one.
             .order('deactivated_at', { ascending: false, nullsFirst: false })
             .limit(TRASH_PAGE + 1)
           if (error) return { spec, rows: [] as TrashRow[], failure: error as DatabaseRefusal }
           return { spec, rows: (data ?? []) as unknown as TrashRow[], failure: null }
         } catch (thrown) {
-          // Envuelto porque una lectura que lanza en vez de contestar dejaría
-          // `loading` en verdadero para siempre, y una pantalla atascada en
-          // «cargando» sin explicación es la página en blanco que este proyecto no
-          // hace.
+          // Wrapped because a read that throws instead of answering would leave
+          // `loading` true forever, and a screen stuck on
+          // «cargando» with no explanation is the blank page this project does not
+          // do.
           return { spec, rows: [] as TrashRow[], failure: { message: String(thrown) } }
         }
       }),
@@ -127,26 +127,26 @@ export function useTrash(): TrashState {
   }, [load])
 
   /**
-   * Devuelve una cosa a la vida.
+   * Brings a thing back to life.
    *
-   * Tres cosas que no son adorno:
+   * Three things that are not ornaments:
    *
-   *  1. **El bloqueo se comprueba antes de escribir.** Medido: la base acepta
-   *     restaurar algo cuyo padre sigue retirado, y la fila vuelve invisible. El
-   *     motivo ya está calculado en el elemento; aquí solo se respeta.
+   *  1. **The block is checked before writing.** Measured: the base accepts
+   *     restoring something whose parent is still withdrawn, and the row comes back invisible. The
+   *     reason is already computed in the item; here it is only respected.
    *
-   *  2. **`select(...)` no es adorno.** Un `update` que las políticas rechazan
-   *     contesta 200 con la lista vacía y SIN error. Sin pedir las filas afectadas,
-   *     esta función diría que ha ido bien.
+   *  2. **`select(...)` is not an ornament.** An `update` the policies reject
+   *     answers 200 with an empty list and NO error. Without asking for the rows affected,
+   *     this function would say it went well.
    *
-   *  3. **Nunca rechaza.** Quien la llama limpia su bandera de «ocupado» después del
-   *     `await`; una promesa rechazada se saltaría esa línea y dejaría la pantalla con
-   *     todos los botones apagados hasta recargar.
+   *  3. **It never rejects.** The caller clears its «busy» flag after the
+   *     `await`; a rejected promise would skip that line and leave the screen with
+   *     every button off until a reload.
    *
-   * Y al terminar se recarga TODO, no solo la clase tocada: recuperar una obra
-   * desbloquea sus fotografías y sus eslabones, y son otras clases las que tienen que
-   * dejar de decir «todavía no». Es la lectura entera otra vez, que aquí son unas
-   * pocas filas.
+   * And on finishing EVERYTHING is reloaded, not only the class touched: recovering an artwork
+   * unblocks its photographs and its links, and it is other classes that have to
+   * stop saying «not yet». It is the whole read again, which here is a
+   * few rows.
    */
   const restore = useCallback(
     async (item: TrashItem): Promise<string | null> => {

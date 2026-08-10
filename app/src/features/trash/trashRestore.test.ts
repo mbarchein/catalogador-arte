@@ -3,15 +3,15 @@ import { TRASH_KINDS } from './trashKinds'
 import { describeLoadFailure, describeRestoreRefusal } from './trashRestore'
 
 /**
- * Las negativas de aquí se provocaron contra la base local a través de PostgREST, con
- * el token de quien cataloga y con el de quien solo consulta. Los objetos de estos
- * tests son copias literales de lo que contestó, no invenciones.
+ * The refusals here were provoked against the local base through PostgREST, with
+ * the token of whoever catalogues and with that of whoever only consults. The objects in these
+ * tests are literal copies of what it answered, not inventions.
  */
 describe('un disparador que dice no ya escribe en español, y su pista es la mitad útil', () => {
   it('muestra el mensaje Y la pista, unidos', () => {
-    // Medido al recuperar un eslabón de una obra cuya procedencia consta investigada
-    // sin resultado. Quedarse con el mensaje deja a la usuaria sabiendo que no puede y
-    // sin saber qué tocar: la pista es la que dice qué hacer.
+    // Measured on recovering a link of an artwork whose provenance is recorded as researched
+    // with no result. Keeping only the message leaves the user knowing she cannot and
+    // not knowing what to touch: the hint is the one that says what to do.
     const text = describeRestoreRefusal('provenance_events', {
       code: 'P0001',
       message:
@@ -71,10 +71,10 @@ describe('el hueco ocupado mientras algo estaba en la papelera (23505)', () => {
 
 describe('la negativa silenciosa, que es la peligrosa', () => {
   it('cero filas y ningún error NO es «recuperado»', () => {
-    // Medido con el token del lector: un PATCH que las políticas rechazan contesta
-    // HTTP 200 con la lista vacía y sin error. Reportar éxito ahí es el único fallo
-    // que una papelera no puede permitirse: la usuaria cierra la pantalla creyendo que
-    // la obra ha vuelto.
+    // Measured with the reader's token: a PATCH the policies reject answers
+    // HTTP 200 with an empty list and no error. Reporting success there is the one failure
+    // a wastebasket cannot afford: the user closes the screen believing that
+    // the artwork has come back.
     const text = describeRestoreRefusal('images', null)
     expect(text).toContain('No se ha recuperado nada')
     expect(text).toContain('Vuelve a entrar')
