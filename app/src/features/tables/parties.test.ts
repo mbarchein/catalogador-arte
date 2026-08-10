@@ -31,14 +31,14 @@ import {
 } from './parties'
 
 /**
- * RF-508: personas e instituciones son UNA SOLA ficha con clave sustituta
- * (ADR-007), y su nombre se corrige en un sitio y lo ve el catálogo entero.
- * RF-105: el contacto es dato personal de un tercero que el Lector SÍ puede leer,
- * medido contra la base; la pantalla no lo pinta por descuido, y sobre todo no lo
- * borra al guardar otra cosa.
- * RF-1106: se mantiene desde la sección «Tablas», solo el Catalogador.
- * RF-901: nada se borra, se retira — y no se retira lo que está en uso.
- * RF-304: nunca un hueco sin explicación.
+ * RF-508: people and institutions are ONE SINGLE record with a surrogate key
+ * (ADR-007), and their name is corrected in one place and the whole catalogue sees it.
+ * RF-105: the contact is a third party's personal datum that the Reader CAN read,
+ * measured against the base; the screen does not paint it out of carelessness, and above all does not
+ * erase it when saving something else.
+ * RF-1106: it is maintained from the «Tablas» section, the Cataloguer only.
+ * RF-901: nothing is deleted, it is withdrawn — and what is in use is not withdrawn.
+ * RF-304: never a gap with no explanation.
  */
 
 function row(over: Partial<PartyListRow> = {}): PartyListRow {
@@ -572,9 +572,9 @@ describe('en qué se está usando una ficha (RF-901)', () => {
   })
 
   it('LOS TRES USOS A LA VEZ se cuentan los tres, y el trigger solo dice uno', () => {
-    // tg_party_deactivation comprueba en orden y lanza en el PRIMERO que
-    // encuentra: sin esto, «sostiene un eslabón de procedencia» esconde que
-    // además es titular de derechos y está detrás de una sede.
+    // tg_party_deactivation checks in order and raises on the FIRST one it
+    // finds: without this, «sostiene un eslabón de procedencia» hides that
+    // it is also a rights holder and lies behind a venue.
     const text = describePartyUsage({
       provenance: ['RC-0012'],
       rights: ['AR-0003', 'AR-0004'],
@@ -634,9 +634,9 @@ describe('la respuesta completa a un retiro que la base rechaza', () => {
 
 describe('el aviso del contacto (RF-105)', () => {
   it('dice de quién es el dato y quién más lo ve', () => {
-    // Fuera, lo que pasa en esta pantalla; detrás del icono, la regla que cambia
-    // lo que se escribe. Las dos mitades siguen dichas, y por eso se comprueban
-    // las dos: el recorte de los textos no puede llevarse por delante RF-105.
+    // Outside, what happens on this screen; behind the icon, the rule that changes
+    // what gets written. Both halves are still said, and that is why both are
+    // checked: trimming the texts cannot run over RF-105.
     expect(CONTACT_NOTICE).toContain('datos personales de un tercero')
     expect(CONTACT_DETAIL).toContain('No se pintan en la lista')
     expect(CONTACT_DETAIL).toContain('acceso de consulta')

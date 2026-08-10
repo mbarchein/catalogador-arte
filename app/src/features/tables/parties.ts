@@ -694,14 +694,14 @@ export const CONTACT_NOTICE =
   'El teléfono y el correo son datos personales de un tercero: se piden ficha a ficha.'
 
 /**
- * El resto del aviso, detrás del icono de información.
+ * The rest of the warning, behind the information icon.
  *
- * Va aparte porque **son dos cosas distintas**: la de fuera dice qué está pasando en
- * esta pantalla —por qué la lista no los enseña—, que se ve de un vistazo y no hay que
- * volver a leerla; la de dentro es la regla que cambia lo que se escribe, y esa hace
- * falta entera la primera vez que alguien va a teclear un teléfono aquí. Juntas eran
- * tres líneas de gris pequeño encima de la lista, que es la forma más segura de que no
- * se lea ninguna de las dos.
+ * It goes apart because **they are two different things**: the one outside says what is happening on
+ * this screen —why the list does not show them—, which is seen at a glance and does not have to be
+ * read again; the one inside is the rule that changes what gets written, and that one is
+ * needed whole the first time somebody is going to type a phone number here. Together they were
+ * three lines of small grey above the list, which is the surest way for neither of them
+ * to be read.
  */
 export const CONTACT_DETAIL =
   'No se pintan en la lista, y quien tenga acceso de consulta al catálogo también los ve. ' +

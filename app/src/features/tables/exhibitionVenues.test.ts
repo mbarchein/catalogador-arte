@@ -394,8 +394,8 @@ describe('guardar una sede editada', () => {
 
 describe('cuando la base dice no', () => {
   /**
-   * Códigos comprobados contra la base local a través de la misma pasarela REST
-   * que usa la aplicación, no imaginados.
+   * Codes checked against the local base through the same REST gateway
+   * the application uses, not imagined.
    */
   it('23505: el duplicado explica que la localidad es lo que distingue dos sedes', () => {
     const text = venueFailureText(
@@ -429,12 +429,12 @@ describe('cuando la base dice no', () => {
   })
 
   /**
-   * RF-512, RF-901: el disparador `tg_exhibition_venue_deactivation` escribió el
-   * mensaje en español para la catalogadora, y la pista es la consecuencia
-   * práctica. Se pasan los dos juntos: reescribirlos aquí sería una segunda copia
-   * de una frase que vive al lado de la regla, y quedarse solo con el mensaje
-   * —como hacen las otras pantallas de la sección— deja el «no se puede» sin el
-   * «haz esto primero».
+   * RF-512, RF-901: the `tg_exhibition_venue_deactivation` trigger wrote the
+   * message in Spanish for the cataloguer, and the hint is the practical
+   * consequence. Both are passed together: rewriting them here would be a second copy
+   * of a sentence that lives next to the rule, and keeping only the message
+   * —as the section's other screens do— leaves the «cannot be done» without the
+   * «do this first».
    */
   it('P0001: la sede en uso cuenta el motivo y qué hacer antes', () => {
     expect(
@@ -489,9 +489,9 @@ describe('cuando la base dice no', () => {
   })
 
   it('un fallo de red se cuenta en español, no con las palabras del navegador', () => {
-    // Antes decía «No se ha podido retirar la sede: Failed to fetch»: inglés, y
-    // hablando de fetch en vez de la conexión, justo en el fallo más probable de
-    // un almacén sin cobertura. Y lo que hace falta saber es que no se mandó.
+    // It used to say «No se ha podido retirar la sede: Failed to fetch»: English, and
+    // talking about fetch instead of the connection, precisely in the most likely failure of
+    // a storeroom with no coverage. And what needs knowing is that it was not sent.
     const text = venueFailureText({ message: 'Failed to fetch' }, 'retire')
     expect(text).toBe(
       'No se ha podido retirar la sede: la aplicación no ha podido hablar con el catálogo. ' +
@@ -514,11 +514,11 @@ describe('el resultado de una escritura', () => {
   })
 
   /**
-   * Comprobado contra la base: PostgREST contesta 204 y ningún error a un update
-   * que no encaja con ninguna fila —el Lector que hace PATCH, o un identificador
-   * que ya no está—. Fiarse del «no hay error» haría que la pantalla dijera que la
-   * sede se ha renombrado sin haberla tocado, que es el único fallo que una
-   * pantalla de mantenimiento no puede tener.
+   * Checked against the base: PostgREST answers 204 and no error to an update
+   * that matches no row —the Reader doing a PATCH, or an identifier
+   * that is no longer there—. Trusting the «there is no error» would make the screen say that the
+   * venue has been renamed without having touched it, which is the one failure a
+   * maintenance screen cannot have.
    */
   it('sin fallo pero sin filas tocadas, NO ha funcionado', () => {
     const text = venueWriteResult('save', { failure: null, rows: 0 })
@@ -557,10 +557,10 @@ describe('lo que dice la lista cuando no tiene filas', () => {
   })
 
   /**
-   * RF-304, RF-512: nunca una página en blanco. Dice qué es una sede y dónde se crea
-   * la primera. Lo que NO hace es defenderse de la confusión con las ubicaciones del
-   * almacén: contarle a quien cataloga que dos cosas son distintas es un párrafo que
-   * solo hace falta si la pantalla está mal nombrada, y no lo está.
+   * RF-304, RF-512: never a blank page. It says what a venue is and where the first one
+   * is created. What it does NOT do is defend itself against the confusion with the store's
+   * locations: telling whoever catalogues that two things are different is a paragraph that
+   * is only needed if the screen is badly named, and it is not.
    */
   it('vacía de verdad, dice qué es una sede y dónde se crea la primera', () => {
     const text = venueListNotice({ loading: false, error: null, count: 0 })

@@ -116,9 +116,9 @@ export function relationshipTypeDraftProblem(draft: RelationshipTypeDraft): stri
     )
   }
   // Compared without capitals or accents, and the database only forbids the two
-  // labels being IDENTICAL: «Copia de» y «copia de» pasarían su comprobación y
-  // dejarían un tipo simétrico mal declarado, que es el estado que la
-  // canonicalización de las filas no aplica.
+  // labels being IDENTICAL: «Copia de» and «copia de» would pass its check and
+  // would leave a symmetric type badly declared, which is the state the rows'
+  // canonicalisation does not apply to.
   if (placeKey(columns.name) === placeKey(columns.inverse_name)) {
     return (
       'Las dos lecturas dicen lo mismo. Si la relación se lee igual desde las dos obras, elige ' +

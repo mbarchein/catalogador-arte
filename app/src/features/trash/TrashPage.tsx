@@ -15,36 +15,36 @@ import { TRASH_GROUPS, type TrashGroupSpec } from './trashKinds'
 import { useTrash } from './useTrash'
 
 /**
- * La papelera: ver lo retirado y devolverlo (RF-901, RF-902).
+ * The wastebasket: seeing what is withdrawn and giving it back (RF-901, RF-902).
  *
- * Es el pendiente más viejo del proyecto. La baja lógica está en el esquema desde la
- * primera migración —**nunca un borrado real**— y hasta ahora no había ninguna
- * pantalla desde la que mirar dentro: una obra retirada o una fotografía retirada
- * desaparecían para siempre desde el punto de vista de la aplicación, aunque la fila
- * siguiera entera en la base. Una traza de auditoría que nadie puede leer protege los
- * datos y no ayuda a nadie.
+ * It is the project's oldest pending item. The logical deletion has been in the schema since the
+ * first migration —**never a real delete**— and until now there was no
+ * screen from which to look inside: a withdrawn artwork or a withdrawn photograph
+ * disappeared forever from the application's point of view, even though the row
+ * was still whole in the base. An audit trace nobody can read protects the
+ * data and helps nobody.
  *
- * ── SOLO QUIEN CATALOGA ──────────────────────────────────────────
+ * ── THE CATALOGUER ONLY ──────────────────────────────────────────
  *
- * Las políticas ya lo deciden en dieciocho de las veintiuna tablas —quien solo
- * consulta recibe listas vacías, comprobado con su token—, pero una lista vacía no es
- * una explicación, y en tres maestras (`artwork_types`, `series`, `physical_places`)
- * su política es `can_read()` a secas y un lector SÍ vería las filas retiradas. Así
- * que la pantalla no existe para quien no cataloga, y el aviso de que esas tres
- * políticas se salen del patrón queda anotado para el propietario, porque el esquema
- * no se toca desde aquí.
+ * The policies already decide it in eighteen of the twenty-one tables —whoever only
+ * consults receives empty lists, checked with their token—, but an empty list is not
+ * an explanation, and in three master tables (`artwork_types`, `series`, `physical_places`)
+ * their policy is a bare `can_read()` and a reader WOULD see the withdrawn rows. So
+ * the screen does not exist for whoever does not catalogue, and the warning that those three
+ * policies fall outside the pattern is noted for the owner, because the schema
+ * is not touched from here.
  *
- * ── NO HAY BORRADO DEFINITIVO, Y NO SE AÑADE ─────────────────────
+ * ── THERE IS NO PERMANENT DELETE, AND NONE IS ADDED ──────────────
  *
- * Esta pantalla enseña y recupera. No hay ningún «vaciar la papelera» ni ningún
- * «borrar para siempre», y su ausencia es la decisión, no un hueco: en este catálogo
- * nada se borra de verdad, y un botón así sería la única forma de perder una obra.
+ * This screen shows and recovers. There is no «empty the wastebasket» or any
+ * «delete forever», and its absence is the decision, not a gap: in this catalogue
+ * nothing is really deleted, and a button like that would be the only way of losing an artwork.
  *
- * ── LO QUE QUEDA POR COMPROBAR EN NAVEGADOR ──────────────────────
+ * ── WHAT IS LEFT TO CHECK IN A BROWSER ───────────────────────────
  *
- * En esta batería no hay DOM, así que aquí no se prueba nada: todo lo que decide algo
- * —qué se lee en cada línea, cuándo se puede recuperar y qué se dice cuando no— vive
- * en `trashKinds.ts`, `trashItems.ts` y `trashRestore.ts`, que sí están probados.
+ * In this suite there is no DOM, so nothing is tested here: everything that decides something
+ * —what is read on each line, when it can be recovered and what is said when it cannot— lives
+ * in `trashKinds.ts`, `trashItems.ts` and `trashRestore.ts`, which are tested.
  */
 export function TrashPage() {
   const access = useEditingAccess()
@@ -53,9 +53,9 @@ export function TrashPage() {
   const [failure, setFailure] = useState<string | null>(null)
   const failureRef = useRef<HTMLParagraphElement | null>(null)
 
-  // Una sola lectura del reloj para toda la lista: si cada línea leyera la hora por
-  // su cuenta, una que se pintara al cruzar la medianoche diría «ayer» al lado de otra
-  // que dice «hoy» sobre el mismo momento.
+  // A single reading of the clock for the whole list: if each line read the time on
+  // its own, one painted on crossing midnight would say «ayer» next to another
+  // saying «hoy» about the same moment.
   const now = useMemo(() => new Date(), [views])
   const total = useMemo(() => trashTotalText(views), [views])
   const blocked = useMemo(() => blockedCountText(views), [views])
@@ -117,15 +117,15 @@ export function TrashPage() {
 }
 
 /**
- * Un grupo de la papelera.
+ * A group of the wastebasket.
  *
- * **Los grupos sin nada dentro se dicen y no se esconden.** Es la diferencia entre
- * una papelera y una lista de sorpresas: si «Obras y fotografías» no aparece, no se
- * sabe si no hay ninguna retirada o si la pantalla no las mira. Aparece, y dice que
- * está vacío.
+ * **Groups with nothing inside are said and not hidden.** It is the difference between
+ * a wastebasket and a list of surprises: if «Obras y fotografías» does not appear, one does not
+ * know whether none is withdrawn or whether the screen does not look at them. It appears, and says it
+ * is empty.
  *
- * Llega desplegado cuando tiene algo y plegado cuando no: en un móvil, cuatro títulos
- * con su cuenta caben de un vistazo, y lo que hay dentro se lee sin un toque más.
+ * It arrives unfolded when it has something and folded when it does not: on a phone, four titles
+ * with their count fit at a glance, and what is inside is read without one more tap.
  */
 function TrashGroupSection({
   group,

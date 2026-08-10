@@ -24,12 +24,12 @@ const shape = (row: FundRow): ArtistFundEntry => ({
 })
 
 /**
- * Lo que la base contesta cuando se niega, en español.
+ * What the base answers when it refuses, in Spanish.
  *
- * Los dos disparadores de esta tabla —el que protege el código y el prefijo, y el
- * que impide quedarse sin fondos— hablan español y dicen qué hacer, así que su
- * mensaje se enseña tal cual. Reescribirlo aquí sería una segunda copia de una
- * regla que vive al lado del dato.
+ * This table's two triggers —the one protecting the code and the prefix, and the
+ * one preventing being left with no funds— speak Spanish and say what to do, so their
+ * message is shown as is. Rewriting it here would be a second copy of a
+ * rule that lives next to the datum.
  */
 function describeFailure(action: 'load' | 'save', failure: { message?: string }): string {
   const said = (failure.message ?? '').trim()
@@ -42,17 +42,17 @@ function describeFailure(action: 'load' | 'save', failure: { message?: string })
 }
 
 /**
- * Los fondos del catálogo (ADR-007, segunda entrega).
+ * The catalogue's funds (ADR-007, second delivery).
  *
- * **Se leen todos, activos y retirados, y eso no es una excepción de esta pantalla
- * sino de la tabla**: el fondo lo lleva toda obra, así que la fila retirada tiene
- * que seguir llegando o la ficha de una obra de ese fondo se quedaría sin nombre.
- * La política de lectura de la base dice lo mismo, y hay un test que lo fija.
+ * **They are all read, active and withdrawn, and that is not an exception of this screen
+ * but of the table**: every artwork carries its fund, so the withdrawn row has
+ * to keep arriving or the record of an artwork of that fund would be left with no name.
+ * The base's read policy says the same, and there is a test that pins it down.
  *
- * Sin `addFund` y sin borrado: un fondo nuevo es una migración —trae prefijo, y el
- * prefijo entra en la numeración y en la firma de los ficheros del archivo— y
- * ninguno se borra. La base tampoco concede esos privilegios, así que esto no es
- * solo una omisión de la interfaz.
+ * With no `addFund` and no delete: a new fund is a migration —it brings a prefix, and the
+ * prefix enters the numbering and the signing of the archive's files— and
+ * none is deleted. The base does not grant those privileges either, so this is not
+ * only an omission of the interface.
  */
 export function useArtistFunds() {
   const [entries, setEntries] = useState<ArtistFundEntry[]>([])
@@ -77,9 +77,9 @@ export function useArtistFunds() {
   /** Sends a single field and reloads. Answers null when it went in. */
   const write = useCallback(
     async (id: string, patch: Record<string, unknown>): Promise<string | null> => {
-      // `select('id')` por lo que ya aprendieron las otras pantallas de
-      // mantenimiento: una actualización que las políticas deniegan vuelve 204 sin
-      // error, y cero filas afectadas significa que no se escribió.
+      // `select('id')` for what the other maintenance screens already
+      // learnt: an update the policies deny comes back 204 with no
+      // error, and zero rows affected means it was not written.
       const { data, error: failure } = await supabase
         .from('artist_funds')
         .update(patch)
