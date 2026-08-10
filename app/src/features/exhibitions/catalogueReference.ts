@@ -89,7 +89,7 @@ export function offersCatalogueChoice(cataloguePublished: TriState): boolean {
 export function catalogueReferenceLine(input: {
   cataloguePublished: TriState
   reference: ReferenceRow | null
-  /** Verdadero cuando la columna apunta a una referencia que esta sesión no puede leer. */
+  /** True when the column points to a reference this session cannot read. */
   unreadable?: boolean
 }): string {
   const { cataloguePublished, reference, unreadable = false } = input
@@ -106,14 +106,14 @@ export function catalogueReferenceLine(input: {
   return `Publicó catálogo: ${referenceTitleText(reference)}.`
 }
 
-/** La segunda línea del catálogo enlazado: quién, cuándo y dónde salió. */
+/** The second line of the linked catalogue: who, when and where it came out. */
 export function catalogueReferenceHint(reference: ReferenceRow): string {
   return referenceOptionHint(reference)
 }
 
 export type CatalogueReferencePlan =
   | { action: 'blocked'; message: string }
-  /** Nada que mandar: no es un error y no se presenta como uno. */
+  /** Nothing to send: it is not an error and it is not presented as one. */
   | { action: 'unchanged' }
   | { action: 'set'; referenceId: string }
   | { action: 'clear' }
@@ -128,7 +128,7 @@ export type CatalogueReferencePlan =
 export function planCatalogueReference(input: {
   cataloguePublished: TriState
   current: string | null
-  /** Null es «quitar el vínculo». */
+  /** Null is «remove the link». */
   chosen: string | null
 }): CatalogueReferencePlan {
   const { cataloguePublished, current, chosen } = input
@@ -142,7 +142,7 @@ export function planCatalogueReference(input: {
   return { action: 'set', referenceId: chosen }
 }
 
-/** Lo que se dice cuando la elección ha entrado. */
+/** What is said when the choice has gone in. */
 export function catalogueReferenceNotice(plan: CatalogueReferencePlan, title: string): string {
   if (plan.action === 'clear') {
     return 'Ya no consta cuál es su catálogo. La referencia sigue en la bibliografía.'

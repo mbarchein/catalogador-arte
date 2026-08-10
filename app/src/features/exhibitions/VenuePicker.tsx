@@ -122,8 +122,8 @@ export function VenuePicker({
         ) : loading ? (
           <p className="mt-2 p-2 text-sm text-stone-600">Cargando las sedes…</p>
         ) : choices.length === 0 ? (
-          /* Nunca una lista vacía sin explicación, y esta además dice dónde se
-             crea una sede que no está. */
+          /* Never an empty list with no explanation, and this one also says where
+             a venue that is missing gets created. */
           <p className="mt-2 p-2 text-sm text-stone-600">{noVenuesText(venues.length, query)}</p>
         ) : (
           <ul className="mt-2 max-h-[45vh] space-y-1 overflow-y-auto">

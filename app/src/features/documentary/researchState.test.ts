@@ -79,8 +79,8 @@ describe('los cinco bloques documentales (RF-303)', () => {
     }
     expect(statusOf(sectionSpec('provenance'), documentary)).toBe('NONE_FOUND')
     expect(statusOf(sectionSpec('exhibitions'), documentary)).toBe('COMPLETE')
-    // Sin estado propio, y sin fila cargada todavía: null en los dos casos, que
-    // es lo que `blockState` entiende como «este bloque no puede decirlo».
+    // With no state of its own, and with no row loaded yet: null in both cases, which
+    // is what `blockState` understands as «this block cannot say».
     expect(statusOf(sectionSpec('relationships'), documentary)).toBeNull()
     expect(statusOf(sectionSpec('provenance'), null)).toBeNull()
   })

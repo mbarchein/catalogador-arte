@@ -63,7 +63,7 @@ export function ExhibitionPage() {
   // LEE no usa esto y no espera a nada: no depende del rol.
   const editAccess = useEditingAccess()
   const navigate = useNavigate()
-  // La edición vive en la ruta, no en un estado local. Ver la cabecera.
+  // Editing lives in the route, not in local state. See the heading.
   const editing = useMatch('/exhibitions/:id/edit') !== null
 
   const { exhibition, loading, error, saving, save, setActive, setCatalogueReference } =
@@ -73,8 +73,8 @@ export function ExhibitionPage() {
 
   if (loading && exhibition === null) return <LoadingNotice>Cargando la exposición…</LoadingNotice>
 
-  // Nunca una página en blanco: una dirección que no existe lo dice y ofrece la
-  // salida, en vez de dejar una pantalla vacía que parece un fallo de la red.
+  // Never a blank page: an address that does not exist says so and offers the way
+  // out, instead of leaving an empty screen that looks like a network failure.
   if (exhibition === null) {
     return (
       <Layout title="Exposición" back="/exhibitions">
@@ -189,7 +189,7 @@ function ExhibitionRecord({
 
   const [draft, setDraft] = useState<ExhibitionDraft>(() => exhibitionDraft(exhibition))
   const [failure, setFailure] = useState<string | null>(null)
-  // Mismo caso que el formulario de una obra: recargar con algo corregido lo tira.
+  // Same case as an artwork's form: reloading with something corrected throws it away.
   useUnloadGuard(saving || draftDirty(draft, exhibitionDraft(exhibition)))
   const [confirmingRetire, setConfirmingRetire] = useState(false)
 
@@ -408,7 +408,7 @@ function CatalogueSection({
   const { canEdit } = useAuth()
   const [open, setOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
-  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  // It confirms something that already happened, so it leaves on its own: see `useAutoClear`.
   useAutoClear(notice, () => setNotice(null))
   // Se pide solo con el panel abierto, y también para LEER el título de la referencia
   // que consta: sin ella no se puede nombrar. Con `catalogue_reference_id` nulo no hace

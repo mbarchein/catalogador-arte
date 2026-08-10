@@ -49,8 +49,8 @@ describe('la miniatura definitiva de cada obra relacionada', () => {
   })
 
   it('una fotografía principal distinta es otro fichero, y la del espejo se descarta', () => {
-    // Si no, la ficha enseñaría la toma anterior de la obra correcta: falso sin
-    // parecerlo, que es la peor forma de estar equivocado en un catálogo.
+    // Otherwise the record would show the previous shot of the right artwork: false without
+    // looking it, which is the worst way of being wrong in a catalogue.
     const store = { 'AR-0013': cached('vieja/mini.webp', 'https://vieja') }
     expect(relatedThumbnailUrls(paths, store, {})['AR-0013']).toBeUndefined()
   })

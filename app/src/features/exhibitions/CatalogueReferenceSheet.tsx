@@ -41,13 +41,13 @@ export function CatalogueReferenceSheet({
   onClose,
 }: {
   cataloguePublished: TriState
-  /** La referencia que consta hoy, o null. */
+  /** The reference recorded today, or null. */
   current: string | null
   references: readonly ReferenceRow[]
   loading: boolean
-  /** Por qué no se ha podido cargar la bibliografía, ya en español. */
+  /** Why the bibliography could not be loaded, already in Spanish. */
   loadError: string | null
-  /** Escribe la columna. Responde null cuando entró, o la frase que mostrar. */
+  /** Writes the column. Answers null when it went in, or the sentence to show. */
   onSave: (referenceId: string | null) => Promise<string | null>
   onClose: () => void
 }) {

@@ -22,7 +22,7 @@
 
 import type { ExhibitionDocumentLinkRow } from '../documentary/documentaryRows'
 
-/** El recuento de la cabecera, que es lo único que se lee antes de recorrer la lista. */
+/** The heading's count, which is the only thing read before going through the list. */
 export function exhibitionDocumentCountText(count: number): string {
   return count === 1 ? '1 documento' : `${count} documentos`
 }
@@ -51,12 +51,12 @@ export function exhibitionDocumentsNotice(input: {
   return null
 }
 
-/** Lo que se dice con permiso de edición y la lista ya poblada, debajo del botón. */
+/** What is said with edit permission and the list already populated, under the button. */
 export const EXHIBITION_DOCUMENTS_HINT =
   'Se enlaza un documento que ya está en el archivo. Subir uno nuevo, corregir sus datos o ' +
   'añadirle el escaneo se hace desde la documentación de una obra.'
 
-/** Los que ya están enlazados: se listan, se marcan y no se vuelven a ofrecer. */
+/** The ones already linked: they are listed, marked and not offered again. */
 export function linkedDocumentIds(rows: readonly ExhibitionDocumentLinkRow[]): Set<string> {
   return new Set(rows.filter((row) => row.active).map((row) => row.document_id))
 }
@@ -76,12 +76,12 @@ export function retireDocumentLinkText(title: string): string {
   )
 }
 
-/** Lo que se dice cuando el vínculo entra, nombrando el documento. */
+/** What is said when the link goes in, naming the document. */
 export function documentLinkedNotice(title: string): string {
   return `«${title}» ya consta como documento de esta exposición.`
 }
 
-/** Lo que se dice cuando se quita, en los mismos términos. */
+/** What is said when it is removed, in the same terms. */
 export function documentUnlinkedNotice(title: string): string {
   return `«${title}» ya no consta en esta exposición. Sigue en el archivo.`
 }

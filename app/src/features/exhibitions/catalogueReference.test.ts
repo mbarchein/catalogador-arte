@@ -54,7 +54,7 @@ describe('catalogueChoiceBlockedReason, el espejo de la restricción (RF-503)', 
   })
 
   it('«No» manda a corregir el «No», porque enlazar sería contradecir la ficha', () => {
-    // Las dos negativas llevan a hacer cosas distintas, y ahí está el valor de la frase.
+    // The two refusals lead to doing different things, and there lies the sentence's value.
     const text = catalogueChoiceBlockedReason('NO')
     expect(text).not.toBeNull()
     expect(text).toContain('contradecir')
@@ -169,8 +169,8 @@ describe('planCatalogueReference, qué hacer con la elección (RF-1501)', () => 
   })
 
   it('pero QUITARLO se admite igual sobre una ficha incoherente', () => {
-    // Una fila con vínculo y `catalogue_published` en «No» solo puede haber llegado por
-    // SQL, y negar la retirada dejaría a la pantalla sin forma de arreglarla.
+    // A row with a link and `catalogue_published` on «No» can only have arrived through
+    // SQL, and refusing the withdrawal would leave the screen with no way to fix it.
     expect(
       planCatalogueReference({ cataloguePublished: 'NO', current: 'ref-1', chosen: null }),
     ).toEqual({ action: 'clear' })
@@ -212,8 +212,8 @@ describe('noCatalogueOptionsText, nunca una lista vacía (RF-304)', () => {
   })
 
   it('y sin coincidencias dice cómo dar de alta el catálogo que se tiene en la mano', () => {
-    // Sin esto se teclea el título del catálogo, no aparece nada y se concluye que el
-    // buscador está roto.
+    // Without this the catalogue's title gets typed, nothing turns up and the conclusion is
+    // that the finder is broken.
     const text = noCatalogueOptionsText(12, 'zafra')
     expect(text).toContain('Ninguna referencia coincide')
     expect(text).toContain('cítalo antes desde una obra')

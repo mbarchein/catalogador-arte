@@ -65,7 +65,7 @@ describe('lo que se le pide a la base', () => {
     expect(EXHIBITION_COLUMNS).toBe(EXHIBITION_OPTION_COLUMNS)
   })
 
-  /** RF-105: el contacto de un tercero no se pide donde no hace falta. */
+  /** RF-105: a third party's contact is not asked for where it is not needed. */
   it('RF-105: no pide el contacto de la institución que hay detrás de la sede', () => {
     expect(EXHIBITION_COLUMNS).not.toContain('contact')
   })
@@ -98,7 +98,7 @@ describe('RF-502: el orden del listado es el más reciente primero', () => {
     expect(ordered.map((item) => item.id)).toEqual(['b', 'c', 'a'])
   })
 
-  /** El año desnudo se ordena como su 1 de enero, igual que lo indexa la base. */
+  /** A bare year sorts as its 1 January, exactly as the base indexes it. */
   it('un año sin fecha de apertura se ordena como su 1 de enero', () => {
     const ordered = sortExhibitions([
       row({ id: 'enero', year: 1985, start_date: '1985-01-05' }),
@@ -122,7 +122,7 @@ describe('RF-502: el orden del listado es el más reciente primero', () => {
     expect(ordered.map((item) => item.id)).toEqual(['antigua', 'sin-fecha'])
   })
 
-  /** Dos cargas de la misma pantalla no pueden intercambiar dos filas. */
+  /** Two loads of the same screen cannot swap two rows. */
   it('el empate se rompe por título y luego por identificador, así que el orden es estable', () => {
     const same = { year: 1985, start_date: '1985-03-12' }
     const ordered = sortExhibitions([
@@ -133,7 +133,7 @@ describe('RF-502: el orden del listado es el más reciente primero', () => {
     expect(ordered.map((item) => item.id)).toEqual(['a', 'b', 'z'])
   })
 
-  /** Ordenar no puede modificar lo que le dan: la lista viene de un `useState`. */
+  /** Sorting cannot modify what it is given: the list comes from a `useState`. */
   it('no toca el array que recibe', () => {
     const rows = [row({ id: 'a', year: 1978 }), row({ id: 'b', year: 2019 })]
     sortExhibitions(rows)
@@ -179,20 +179,20 @@ describe('cada fila del listado, y ni un hueco (RF-304, RF-502)', () => {
     expect(entry?.kindPending).toBe(false)
   })
 
-  /** «Sin revisar» no es «no»: el carácter pendiente se marca como aviso. */
+  /** «Sin revisar» is not «no»: the pending character is marked as a warning. */
   it('RF-218: el carácter sin revisar se declara y se marca como pendiente', () => {
     const entry = rankExhibitions([row({ exhibition_type: 'UNREVIEWED' })], '')[0]
     expect(entry?.kind).toBe('Sin revisar si fue individual o colectiva')
     expect(entry?.kindPending).toBe(true)
   })
 
-  /** Nunca un hueco donde iba una fecha. */
+  /** Never a gap where a date went. */
   it('sin ninguna fecha la fila dice «Sin fechar» y no deja el sitio vacío', () => {
     const entry = rankExhibitions([row({ year: null, start_date: null, end_date: null })], '')[0]
     expect(entry?.dates).toBe('Sin fechar')
   })
 
-  /** Ni donde iba la sede: un blanco ahí se lee como «esta muestra no tuvo sede». */
+  /** Nor where the venue went: a blank there reads as «this show had no venue». */
   it('sin sede identificada y sin nota, la fila dice «Sede sin identificar»', () => {
     const entry = rankExhibitions([row({ venue: null, venue_id: null, venue_note: '' })], '')[0]
     expect(entry?.venue).toBe('Sede sin identificar')

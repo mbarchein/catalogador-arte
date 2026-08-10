@@ -51,7 +51,7 @@ describe('el recuento y el vacío', () => {
     expect(exhibitionDocumentsNotice({ loading: true, error: null, count: 0 })).toBe(
       'Buscando los documentos de esta exposición…',
     )
-    // El mensaje de la base se enseña tal cual: es el que dice qué política negó qué.
+    // The base's message is shown as is: it is the one saying which policy denied what.
     expect(exhibitionDocumentsNotice({ loading: false, error: 'sin permiso', count: 0 })).toContain(
       'sin permiso',
     )
@@ -62,8 +62,8 @@ describe('el recuento y el vacío', () => {
   })
 
   it('la espera manda sobre el vacío', () => {
-    // Sin esto, el primer pintado leería «no hay ninguno» mientras la consulta está en el
-    // aire, y eso es afirmar algo que todavía no se sabe.
+    // Without this, the first paint would read «there is none» while the query is in the
+    // air, and that is stating something not yet known.
     expect(exhibitionDocumentsNotice({ loading: true, error: null, count: 0 })).not.toContain(
       'No hay ningún documento',
     )
@@ -87,8 +87,8 @@ describe('lo que ya está enlazado', () => {
 
 describe('quitar un vínculo', () => {
   it('dice qué NO se lleva, que es la mitad que importa (RF-901)', () => {
-    // «Quitar» sobre un documento que también cuelga de tres obras parece que las va a
-    // tocar. El documento sigue en el archivo y sus otros vínculos siguen vivos.
+    // «Quitar» on a document that also hangs from three artworks looks like it is going to
+    // touch them. The document stays in the archive and its other links stay alive.
     const said = retireDocumentLinkText('Nota de prensa de El País')
     expect(said).toContain('«Nota de prensa de El País»')
     expect(said).toContain('sigue en el archivo')
@@ -118,8 +118,8 @@ describe('el título con el que se nombra', () => {
 
 describe('la frase de qué se hace aquí y qué no', () => {
   it('dice que aquí se enlaza y en la obra se sube', () => {
-    // Sin ella, este bloque es una pantalla donde falta un botón, que se lee como un
-    // permiso que falta.
+    // Without it, this block is a screen where a button is missing, which reads as a
+    // missing permission.
     expect(EXHIBITION_DOCUMENTS_HINT).toContain('ya está en el archivo')
     expect(EXHIBITION_DOCUMENTS_HINT).toContain('documentación de una obra')
   })

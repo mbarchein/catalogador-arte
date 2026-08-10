@@ -52,7 +52,7 @@ export function ExhibitionDocuments({
   exhibitionId: string
   rows: readonly ExhibitionDocumentLinkRow[]
   loading: boolean
-  /** El mensaje de la base, ya en español. */
+  /** The base's message, already in Spanish. */
   error: string | null
   onReload: () => Promise<void>
 }) {
@@ -60,7 +60,7 @@ export function ExhibitionDocuments({
   const [linking, setLinking] = useState(false)
   const [removing, setRemoving] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  // Confirma algo que ya ha pasado, así que se va sola: ver `useAutoClear`.
+  // It confirms something that already happened, so it leaves on its own: see `useAutoClear`.
   useAutoClear(notice, () => setNotice(null))
   const [failure, setFailure] = useState<string | null>(null)
   const archive = useArchiveIndex(linking)

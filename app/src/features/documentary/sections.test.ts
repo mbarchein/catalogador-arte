@@ -22,8 +22,8 @@ describe('escribir exige el modo Y el permiso (RF-308, RF-109)', () => {
   })
 
   it('ninguna de las dos condiciones basta por sí sola', () => {
-    // Escrito como propiedad y no como tres casos sueltos: si alguien cambia la
-    // regla por una disyunción, esto cae aunque los casos de arriba se reescriban.
+    // Written as a property and not as three loose cases: if somebody swaps the
+    // rule for a disjunction, this falls even if the cases above are rewritten.
     for (const writable of [true, false]) {
       for (const canEdit of [true, false]) {
         expect(canWriteBlock(writable, canEdit)).toBe(writable && canEdit)

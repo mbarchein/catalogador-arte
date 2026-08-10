@@ -106,7 +106,7 @@ describe('lo que impide guardar (RF-502)', () => {
     expect(exhibitionDraftProblem(draft({ title: '   ' }))).toContain('Escribe el título')
   })
 
-  /** `exhibitions_dated`: una muestra sin fechar no se puede colocar en un historial cronológico. */
+  /** `exhibitions_dated`: an undated show cannot be placed in a chronological history. */
   it('RF-502: sin año y sin fecha de apertura, lo dice y explica por qué', () => {
     const message = exhibitionDraftProblem(draft({ year: '' }))
     expect(message).toContain('Pon al menos el año')
@@ -136,7 +136,7 @@ describe('lo que impide guardar (RF-502)', () => {
     ).toBeNull()
   })
 
-  /** `exhibitions_plausible_year`: un año fuera de rango es una errata, no una fecha. */
+  /** `exhibitions_plausible_year`: a year out of range is a typo, not a date. */
   it('el año tiene que ser plausible, y el mensaje dice el rango', () => {
     const low = exhibitionDraftProblem(draft({ year: String(MIN_EXHIBITION_YEAR - 1) }))
     expect(low).toContain(String(MIN_EXHIBITION_YEAR))
@@ -187,7 +187,7 @@ describe('las fechas ISO se comprueban a mano, sin zona horaria', () => {
     expect(isIsoDate('2024-02-29')).toBe(true)
   })
 
-  /** Un 30 de febrero es una errata, y `new Date` lo convertiría en el 1 de marzo. */
+  /** A 30 February is a typo, and `new Date` would turn it into 1 March. */
   it('rechaza un día que no existe en su mes', () => {
     expect(isIsoDate('1985-02-30')).toBe(false)
     expect(isIsoDate('2023-02-29')).toBe(false)
@@ -311,7 +311,7 @@ describe('corregir una exposición (RF-804)', () => {
     expect(plan.payload.title).toBe('Rotili. Obra reciente')
   })
 
-  /** Pasar de fechas exactas a solo el año es una corrección legítima y frecuente. */
+  /** Going from exact dates to just the year is a legitimate and frequent correction. */
   it('cambiar unas fechas exactas por un año suelto se guarda', () => {
     const current = row()
     const plan = planExhibitionSave(current, {

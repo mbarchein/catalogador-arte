@@ -47,7 +47,7 @@ const STUDY = {
   active: true,
 }
 
-/** «Pareja de», simétrica y sin inversa. */
+/** «Pareja de», symmetric and with no inverse. */
 const PAIR = {
   id: 'type-pair',
   name: 'Pareja de',
@@ -83,7 +83,7 @@ function view(over: Partial<RelationshipView> = {}): RelationshipView {
   }
 }
 
-// ── La dirección, que es lo que no se puede equivocar ────────
+// ── The direction, which is what cannot be got wrong ─────────
 
 describe('RF-217: una fila, dos lecturas', () => {
   it('desde el extremo cercano se lee el nombre directo', () => {
@@ -108,7 +108,7 @@ describe('RF-217: una fila, dos lecturas', () => {
     })
     expect(relatedRows([pair], 'AR-0012')[0]?.label).toBe('Pareja de')
     expect(relatedRows([pair], 'AR-0013')[0]?.label).toBe('Pareja de')
-    // Y ninguna de las dos lecturas está «al revés»: no hay revés que leer.
+    // And neither of the two readings is «backwards»: there is no back to read.
     expect(relatedRows([pair], 'AR-0013')[0]?.reversed).toBe(false)
   })
 
@@ -119,7 +119,7 @@ describe('RF-217: una fila, dos lecturas', () => {
   })
 })
 
-// ── Lo que se lee de la obra del otro extremo ────────────────
+// ── What is read of the artwork at the other end ─────────────
 
 describe('la obra relacionada en pantalla (RF-304, RF-305)', () => {
   it('lleva título, autor y fecha, y enlaza a su ficha', () => {
@@ -144,7 +144,7 @@ describe('la obra relacionada en pantalla (RF-304, RF-305)', () => {
     expect(row.byline).toBeNull()
     expect(row.linked).toBe(false)
     expect(row.notice).toBe(UNREADABLE_NOTICE)
-    // El código sigue estando: la relación consta, y consta con quién.
+    // The code is still there: the relationship is recorded, and with whom.
     expect(row.catalogId).toBe('AR-0013')
   })
 
@@ -170,7 +170,7 @@ describe('la obra relacionada en pantalla (RF-304, RF-305)', () => {
   })
 })
 
-// ── El orden y la agrupación ─────────────────────────────────
+// ── The order and the grouping ───────────────────────────────
 
 describe('cómo se apilan las obras relacionadas', () => {
   const rows = [
@@ -224,7 +224,7 @@ describe('cómo se apilan las obras relacionadas', () => {
   })
 })
 
-// ── El verbo dentro de una frase ─────────────────────────────
+// ── The verb inside a sentence ───────────────────────────────
 
 describe('el nombre del tipo puesto en medio de una frase', () => {
   it('baja la inicial para que «AR-0001 es estudio previo de AR-0002» sea español', () => {
@@ -242,7 +242,7 @@ describe('el nombre del tipo puesto en medio de una frase', () => {
   })
 })
 
-// ── El enlace ────────────────────────────────────────────────
+// ── The link ─────────────────────────────────────────────────
 
 describe('RF-305: el enlace a la ficha de la obra relacionada', () => {
   it('apunta a la ruta en inglés de la ficha', () => {
