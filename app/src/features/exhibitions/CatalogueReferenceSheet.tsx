@@ -56,9 +56,9 @@ export function CatalogueReferenceSheet({
   const [failure, setFailure] = useState<string | null>(null)
 
   const blocked = catalogueChoiceBlockedReason(cataloguePublished)
-  // `citedIds` vacío: aquí no hay «ya citada» que marcar — lo que se elige es UNA
-  // referencia y no se acumulan—, así que la marca del selector de la ficha de obra no
-  // aplica. La que ya consta se señala aparte, más abajo.
+  // `citedIds` empty: here there is no «already cited» to mark — what is chosen is ONE
+  // reference and they do not accumulate—, so the artwork record's selector's mark does not
+  // apply. The one already recorded is pointed out separately, further down.
   const empty = useMemo(() => new Set<string>(), [])
   const offered = useMemo(() => referenceOptions(references, empty), [references, empty])
   const matches = useMemo(

@@ -33,16 +33,16 @@ export function NewExhibitionPage() {
   const [saving, setSaving] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
 
-  // Un aviso, no una regla: `exhibitions` NO tiene índice único sobre el título, a
-  // propósito, porque una itinerante repite título en cada sede. Lo único que se
-  // puede hacer es poner delante la que ya existe antes de crear la segunda.
+  // A warning, not a rule: `exhibitions` does NOT have a unique index on the title, on
+  // purpose, because a touring show repeats its title at every venue. The only thing that
+  // can be done is to put the one that already exists in front before the second is created.
   const twins = useMemo(() => similarExhibitions(exhibitions, draft.title), [exhibitions, draft.title])
   const twinNotice = similarTitleNotice(twins)
 
-  // Lo que impide guardar, calculado para el aviso ANTES de pulsar. El botón no se
-  // desactiva por él: desactivar sin decir por qué es lo que hace que se pulse
-  // tres veces. Solo el título en blanco lo desactiva, que es el único caso donde
-  // el formulario está claramente sin empezar.
+  // What prevents saving, computed for the warning BEFORE pressing. The button is not
+  // disabled by it: disabling without saying why is what makes people press it
+  // three times. Only the blank title disables it, which is the one case where
+  // the form is clearly not started.
   const problem = exhibitionDraftProblem(draft)
 
   // The wait matters: the role arrives after the session, so deciding on the
@@ -59,9 +59,9 @@ export function NewExhibitionPage() {
       setFailure(result.message)
       return
     }
-    // A la ficha recién creada y no de vuelta al listado: lo siguiente que se hace
-    // con una exposición es leerla o corregirla, y `replace` deja el botón «atrás»
-    // volviendo al listado en vez de al formulario que ya se ha enviado.
+    // To the freshly created record and not back to the listing: the next thing done
+    // with an exhibition is reading it or correcting it, and `replace` leaves the «back» button
+    // returning to the listing instead of to the form already submitted.
     navigate(`/exhibitions/${result.id}`, { replace: true })
   }
 
@@ -84,10 +84,10 @@ export function NewExhibitionPage() {
               {failure}
             </p>
           ) : problem !== null && draft.title.trim() !== '' ? (
-            /* El problema se dice mientras se escribe, no al pulsar: la
-               catalogadora está de pie, y un viaje al servidor para que le digan
-               «revisa las dos fechas» es peor que decírselo el campo que tiene
-               delante. */
+            /* The problem is said while typing, not on pressing: the
+               cataloguer is on her feet, and a trip to the server just to be told
+               «check the two dates» is worse than the field in front of her
+               saying so. */
             <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">{problem}</p>
           ) : undefined
         }

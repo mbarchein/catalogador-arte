@@ -24,23 +24,23 @@ import {
 } from './exhibitionDocuments'
 
 /**
- * «Otros documentos relacionados» (RF-516, RF-517): las notas de prensa, los carteles,
- * los dípticos y las cartas que hablan de esta exposición.
+ * «Otros documentos relacionados» (RF-516, RF-517): the press releases, the posters,
+ * the leaflets and the letters that speak of this exhibition.
  *
- * Lo que decide y lo que se lee está en `exhibitionDocuments.ts` y en `documentView.ts`,
- * que es el mismo módulo que pinta las filas del bloque de una obra: un documento se lee
- * igual desde los dos lados del puente, y copiarlo habría sido dos sitios donde arreglar
- * la fecha de una carta sin año.
+ * What decides and what is read are in `exhibitionDocuments.ts` and in `documentView.ts`,
+ * which is the same module that paints the rows of an artwork's block: a document reads
+ * the same from both sides of the bridge, and copying it would have been two places to fix
+ * the date of a letter with no year.
  *
- * **Se enlaza aquí y se sube desde una obra.** El motivo está escrito en el módulo: la
- * misma escritura repartida por dos pantallas con dos juegos de controles es cómo una de
- * las dos acaba dejando pasar algo. Y se dice en la pantalla en vez de dejar buscar el
- * botón que no está.
+ * **It is linked here and uploaded from an artwork.** The reason is written in the module: the
+ * same write spread over two screens with two sets of controls is how one of
+ * the two ends up letting something through. And it is said on the screen instead of letting the
+ * missing button be hunted for.
  *
- * El catálogo del archivo se pide **solo al abrir el panel**: esta ficha se abre muchas
- * veces para leer una muestra, y la lista entera de documentos solo la necesita quien va a
- * enlazar. Es la decisión que ya toman el bloque del catálogo y la documentación de una
- * obra.
+ * The archive's catalogue is asked for **only on opening the panel**: this record is opened many
+ * times to read a show, and the whole document list is only needed by whoever is going to
+ * link. It is the decision the catalogue block and an artwork's documentation already
+ * take.
  */
 export function ExhibitionDocuments({
   exhibitionId,
@@ -180,11 +180,11 @@ export function ExhibitionDocuments({
 }
 
 /**
- * Un documento: qué es, de cuándo, y las dos salidas — su ficha y su fichero.
+ * A document: what it is, from when, and the two ways out — its record and its file.
  *
- * El título enlaza con la ficha del documento, que es donde se corrige y se digitaliza.
- * Sin ese enlace este bloque sería un final de camino: se vería que la nota de prensa
- * existe y no habría por dónde tocarla.
+ * The title links to the document's record, which is where it is corrected and digitised.
+ * Without that link this block would be a dead end: the press release would be seen to
+ * exist and there would be no way of touching it.
  */
 function DocumentEntry({
   view,

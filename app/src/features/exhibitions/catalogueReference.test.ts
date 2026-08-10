@@ -10,17 +10,17 @@ import {
 } from './catalogueReference'
 
 /**
- * El catálogo de una exposición como referencia de la bibliografía (RF-503, RF-506).
+ * An exhibition's catalogue as a bibliography reference (RF-503, RF-506).
  *
- * `exhibitions.catalogue_reference_id` existía desde la primera migración de exposiciones
- * y **ninguna pantalla podía fijarlo**, así que la columna estaba siempre a nulo y el plan
- * de pruebas tenía RF-503 como parcial. Estos tests fijan las dos cosas que decide esta
- * operación y que no se ven mirando un formulario:
+ * `exhibitions.catalogue_reference_id` had existed since the first exhibitions migration
+ * and **no screen could set it**, so the column was always null and the test
+ * plan had RF-503 as partial. These tests pin down the two things this
+ * operation decides and that are not visible looking at a form:
  *
- *   · que la negativa de la base —el vínculo exige que conste catálogo— se diga ANTES, y
- *     que «sin revisar» y «No» se digan distinto, porque llevan a hacer cosas distintas;
- *   · que quitar el vínculo se admita SIEMPRE, incluso sobre una ficha incoherente, o la
- *     pantalla se quedaría sin forma de arreglarla.
+ *   · that the base's refusal —the link requires a catalogue to be recorded— be said BEFORE, and
+ *     that «sin revisar» and «No» be said differently, because they lead to doing different things;
+ *   · that removing the link be ALWAYS allowed, even over an inconsistent record, or the
+ *     screen would be left with no way of fixing it.
  */
 
 function reference(over: Partial<ReferenceRow> = {}): ReferenceRow {
@@ -64,17 +64,17 @@ describe('catalogueChoiceBlockedReason, el espejo de la restricción (RF-503)', 
 
 describe('offersCatalogueChoice', () => {
   it('NO se ofrece elegir catálogo sobre una muestra que consta sin él', () => {
-    // Con «No publicó catálogo.» en la línea de arriba, un enlace que dice «Decir cuál es
-    // su catálogo» se contradice con ella: ofrece algo que la base va a rechazar y que,
-    // de aceptarse, dejaría la ficha diciendo dos cosas opuestas. Dicho por la
-    // catalogadora tal cual: «confunde».
+    // With «No publicó catálogo.» on the line above, a link saying «Decir cuál es
+    // su catálogo» contradicts it: it offers something the base is going to reject and that,
+    // if accepted, would leave the record saying two opposite things. Said by the
+    // cataloguer word for word: «confunde».
     expect(offersCatalogueChoice('NO')).toBe(false)
   })
 
   it('sí se ofrece mientras nadie lo haya mirado', () => {
-    // «Sin revisar» no es «no»: la respuesta puede acabar siendo que sí, y el panel
-    // explica qué hay que responder antes. Quitar también el enlace aquí dejaría la
-    // pantalla sin decir qué falta.
+    // «Sin revisar» is not «no»: the answer may end up being yes, and the panel
+    // explains what has to be answered first. Removing the link here too would leave the
+    // screen not saying what is missing.
     expect(offersCatalogueChoice('UNREVIEWED')).toBe(true)
   })
 

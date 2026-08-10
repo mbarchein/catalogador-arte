@@ -55,12 +55,12 @@ import {
 export function ExhibitionPage() {
   const { id = '' } = useParams()
   const { canEdit } = useAuth()
-  // El permiso para la ZONA DE EDICIÓN se pregunta con su tercera respuesta, no con
-  // `canEdit` a secas: el rol llega DESPUÉS de la sesión, así que decidir en el
-  // primer render echa de aquí a la catalogadora a la que esta pantalla pertenece —
-  // y solo al recargar su dirección, que es por lo que este fallo sobrevive a las
-  // revisiones. Es el mismo que la ficha de obra ya pagó dos veces. La ficha que se
-  // LEE no usa esto y no espera a nada: no depende del rol.
+  // The permission for the EDITING AREA is asked about with its third answer, not with
+  // a bare `canEdit`: the role arrives AFTER the session, so deciding on the
+  // first render throws out of here the cataloguer this screen belongs to —
+  // and only on reloading its address, which is why this failure survives the
+  // reviews. It is the same one the artwork record already paid for twice. The record that is
+  // READ does not use this and waits for nothing: it does not depend on the role.
   const editAccess = useEditingAccess()
   const navigate = useNavigate()
   // Editing lives in the route, not in local state. See the heading.
@@ -85,10 +85,10 @@ export function ExhibitionPage() {
     )
   }
 
-  // Llegar a /edit por dirección sin permiso vuelve a la vista, como en la ficha
-  // de obra: no es un error de la usuaria, es una dirección que no le corresponde.
-  // Pero primero hay que SABERLO: mientras el rol no ha llegado no se decide, porque
-  // «todavía no se sabe» no es «no».
+  // Reaching /edit by address without permission returns to the view, as in the artwork
+  // record: it is not a mistake of the user's, it is an address that is not theirs.
+  // But first it has to be KNOWN: while the role has not arrived nothing is decided, because
+  // «not known yet» is not «no».
   if (editing && editAccess === 'loading') return <LoadingNotice />
   if (editing && editAccess === 'denied') {
     return <Navigate to={`/exhibitions/${id}`} replace />
@@ -193,10 +193,10 @@ function ExhibitionRecord({
   useUnloadGuard(saving || draftDirty(draft, exhibitionDraft(exhibition)))
   const [confirmingRetire, setConfirmingRetire] = useState(false)
 
-  // El borrador se rehace cuando cambia la ficha guardada —al entrar en edición,
-  // y después de guardar, cuando la base ha derivado el año de la fecha— y NO en
-  // cada render: sobrescribir un formulario a medio escribir con datos que
-  // llegaron por detrás es el fallo que la ficha de obra ya documentó una vez.
+  // The draft is rebuilt when the stored record changes —on entering editing,
+  // and after saving, when the base has derived the year from the date— and NOT on
+  // every render: overwriting a half-written form with data that
+  // arrived from behind is the failure the artwork record already documented once.
   useEffect(() => {
     setDraft(exhibitionDraft(exhibition))
     setFailure(null)
@@ -386,17 +386,17 @@ function ExhibitionReadOnly({ exhibition }: { exhibition: ExhibitionRow }) {
 }
 
 /**
- * «Catálogo de la exposición», leído y —con permiso— elegido (RF-503, RF-506).
+ * «Catálogo de la exposición», read and —with permission— chosen (RF-503, RF-506).
  *
- * Las cuatro respuestas las compone `catalogueReferenceLine`, y la que importa es la
- * cuarta: «publicó catálogo y todavía no consta cuál» no es un error ni un hueco, es lo
- * que hay que hacer. Cuando consta, la referencia se nombra Y SE ENLAZA a su ficha, que
- * es la mitad que el plan de pruebas echaba de menos: «la ficha de exposición dice si hubo
- * catálogo pero no nombra la referencia que lo es ni enlaza con ella».
+ * The four answers are composed by `catalogueReferenceLine`, and the one that matters is the
+ * fourth: «it published a catalogue and it is not yet recorded which» is neither an error nor a gap, it is what
+ * has to be done. When it is recorded, the reference is named AND LINKED to its record, which
+ * is the half the test plan was missing: «the exhibition record says whether there was a
+ * catalogue but does not name the reference that is it nor link to it».
  *
- * La bibliografía entera se carga solo al abrir el panel: esta pantalla se abre muchas
- * veces para leer una muestra, y el catálogo de referencias solo lo necesita quien va a
- * elegir. Es la misma decisión que el bloque de documentación de una obra.
+ * The whole bibliography is loaded only on opening the panel: this screen is opened many
+ * times to read a show, and the reference catalogue is only needed by whoever is going to
+ * choose. It is the same decision as an artwork's documentation block.
  */
 function CatalogueSection({
   exhibition,
@@ -410,9 +410,9 @@ function CatalogueSection({
   const [notice, setNotice] = useState<string | null>(null)
   // It confirms something that already happened, so it leaves on its own: see `useAutoClear`.
   useAutoClear(notice, () => setNotice(null))
-  // Se pide solo con el panel abierto, y también para LEER el título de la referencia
-  // que consta: sin ella no se puede nombrar. Con `catalogue_reference_id` nulo no hace
-  // falta pedir nada.
+  // It is asked for only with the panel open, and also to READ the title of the reference
+  // that is recorded: without it it cannot be named. With `catalogue_reference_id` null nothing
+  // needs asking for.
   const needed = open || exhibition.catalogue_reference_id !== null
   const { references, loading, error } = useReferences(needed)
 
@@ -420,9 +420,9 @@ function CatalogueSection({
     exhibition.catalogue_reference_id === null
       ? null
       : (references.find((row) => row.id === exhibition.catalogue_reference_id) ?? null)
-  // La columna apunta a una referencia que no ha llegado: retirada más allá de lo que
-  // esta sesión alcanza, o escondida por una política. Se dice, en vez de leerse como
-  // «no consta cuál es».
+  // The column points to a reference that has not arrived: withdrawn beyond what
+  // this session reaches, or hidden by a policy. It is said, instead of reading as
+  // «it is not recorded which it is».
   const unreadable =
     exhibition.catalogue_reference_id !== null && !loading && error === null && reference === null
 
