@@ -9,12 +9,12 @@ import {
 } from './venueChoice'
 
 /**
- * Elegir la sede de una exposición (RF-512, RF-304).
+ * Choosing an exhibition's venue (RF-512, RF-304).
  *
- * La sede se ELIGE y no se teclea, que es la razón de que `exhibition_venues`
- * exista: con el nombre del museo como texto libre, corregirlo obliga a tocar
- * todas las exposiciones que albergó. Aquí se comprueba lo que decide el selector:
- * qué se ofrece, qué dice cada opción y qué se dice en vez de una lista vacía.
+ * The venue is CHOSEN and not typed, which is the reason `exhibition_venues`
+ * exists: with the museum's name as free text, correcting it forces one to touch
+ * every exhibition it hosted. Here what the selector decides is checked:
+ * what is offered, what each option says and what is said instead of an empty list.
  */
 
 function venue(over: Partial<ExhibitionVenue> = {}): ExhibitionVenue {
@@ -32,10 +32,10 @@ function venue(over: Partial<ExhibitionVenue> = {}): ExhibitionVenue {
 
 describe('RF-512: lo que dice una opción', () => {
   /**
-   * La localidad es media identidad: la tabla es única por (nombre, localidad)
-   * precisamente porque hay una «Casa de Cultura» en cada pueblo, así que un
-   * selector que la quitara enseñaría la misma opción dos veces sin forma de
-   * distinguirlas.
+   * The locality is half the identity: the table is unique by (name, locality)
+   * precisely because there is a «Casa de Cultura» in every town, so a
+   * selector that removed it would show the same option twice with no way of
+   * telling them apart.
    */
   it('lleva el nombre y la localidad, que es lo que distingue dos Casas de Cultura', () => {
     expect(venueChoiceText(venue())).toBe('Museo de Bellas Artes · Badajoz, España')
@@ -66,9 +66,9 @@ describe('RF-512: lo que dice una opción', () => {
 
 describe('RF-512: lo que se ofrece, y lo que no', () => {
   /**
-   * ESTA ES LA REGLA DE SEGURIDAD DEL SELECTOR. Es una lista para ELEGIR, y ofrecer
-   * una sede que el catálogo ha retirado la devolvería al uso por la puerta de
-   * atrás. Se cae, y no se marca.
+   * THIS IS THE SELECTOR'S SECURITY RULE. It is a list for CHOOSING, and offering
+   * a venue the catalogue has withdrawn would put it back into use through the back
+   * door. It drops out, and it is not marked.
    */
   it('una sede retirada NO se ofrece, ni marcada', () => {
     const venues = [venue({ id: 'viva' }), venue({ id: 'retirada', name: 'Sala Vieja', active: false })]
@@ -104,10 +104,10 @@ describe('RF-512: lo que se ofrece, y lo que no', () => {
 
 describe('la sede que la ficha ya nombra sí se encuentra, aunque esté retirada', () => {
   /**
-   * EL CASO QUE DEJARÍA UN HUECO DONDE HABÍA UN NOMBRE. Una muestra cuya sede se
-   * retiró después de registrarla sigue teniendo esa sede, y un selector que no
-   * pudiera encontrarla pintaría «Sin identificar» encima de una ficha que nombra un
-   * museo. Lo retirado se muestra y se dice, nunca se quita.
+   * THE CASE THAT WOULD LEAVE A GAP WHERE THERE WAS A NAME. A show whose venue was
+   * withdrawn after registering it still has that venue, and a selector that
+   * could not find it would paint «Sin identificar» over a record that names a
+   * museum. What is withdrawn is shown and said, never removed.
    */
   it('encuentra la sede elegida incluso retirada', () => {
     const venues = [venue({ id: 'retirada', active: false })]
@@ -120,9 +120,9 @@ describe('la sede que la ficha ya nombra sí se encuentra, aunque esté retirada
   })
 
   /**
-   * Para un Lector esto es lo normal: la consulta de sedes es de una pantalla del
-   * Catalogador. Quien llama recurre a lo que la propia fila de la exposición trae
-   * incrustado.
+   * For a Reader this is the norm: the venues query belongs to a Cataloguer's
+   * screen. The caller falls back on what the exhibition's own row brings
+   * embedded.
    */
   it('un identificador que no está en la lista cargada es null y no una invención', () => {
     expect(keptVenue([venue({ id: 'v-1' })], 'v-9')).toBeNull()
@@ -132,8 +132,8 @@ describe('la sede que la ficha ya nombra sí se encuentra, aunque esté retirada
 
 describe('RF-304: el selector nunca se queda en blanco', () => {
   /**
-   * Confundir los dos primeros casos cuesta una tarde: el catálogo no tiene ninguna
-   * sede, o las tiene y ninguna coincide.
+   * Confusing the first two cases costs an afternoon: the catalogue has no
+   * venue, or it has some and none matches.
    */
   it('sin ninguna sede registrada dice dónde se dan de alta', () => {
     const text = noVenuesText(0, '')
@@ -142,10 +142,10 @@ describe('RF-304: el selector nunca se queda en blanco', () => {
   })
 
   /**
-   * Y LO QUE DESBLOQUEA AHORA MISMO, que es la mitad que más veces se olvida: la
-   * sede es OPCIONAL. «Una galería de Madrid» es un dato legítimo —es lo que decía
-   * el recorte— y escribirlo es la respuesta correcta, no un apaño. Inventarse una
-   * sede para poder guardar es como un catálogo acaba con dos Casas de Cultura.
+   * And WHAT IT UNBLOCKS RIGHT NOW, which is the half most often forgotten: the
+   * venue is OPTIONAL. «Una galería de Madrid» is a legitimate datum —it is what
+   * the clipping said— and writing it is the right answer, not a workaround. Inventing a
+   * venue in order to be able to save is how a catalogue ends up with two Casas de Cultura.
    */
   it('las dos frases dicen que la sede no hace falta para guardar', () => {
     expect(noVenuesText(0, '')).toContain('no hace falta')

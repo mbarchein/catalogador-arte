@@ -31,14 +31,14 @@ export interface ExhibitionQuery {
   /** Retires it or brings it back (RF-901). Never a delete: there is no privilege for one. */
   setActive: (active: boolean) => Promise<string | null>
   /**
-   * Dice cuál de las referencias de la bibliografía es el catálogo de esta muestra, o
-   * deja de decirlo con `null` (RF-503).
+   * Says which of the bibliography's references is this show's catalogue, or
+   * stops saying it with `null` (RF-503).
    *
-   * **Su propia operación y no un campo del formulario**, y el motivo está en
-   * `catalogueReference.ts`: la base la ata a `catalogue_published`, se elige en vez de
-   * escribirse, y quitarla tiene sentido propio. Manda esta columna y ninguna otra, así
-   * que el guardado del formulario sigue sin poder borrarla por descuido — que es la
-   * garantía escrita más abajo, en `save`.
+   * **Its own operation and not a field of the form**, and the reason is in
+   * `catalogueReference.ts`: the base ties it to `catalogue_published`, it is chosen instead of
+   * written, and removing it has a meaning of its own. It sends this column and no other, so
+   * the form's save still cannot erase it by carelessness — which is the guarantee written
+   * further down, in `save`.
    */
   setCatalogueReference: (referenceId: string | null) => Promise<string | null>
 }

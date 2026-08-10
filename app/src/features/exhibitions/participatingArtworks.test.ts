@@ -136,9 +136,9 @@ describe('RF-505: lo que dice cada fila', () => {
   })
 
   /**
-   * LA REGLA QUE EVITA INVENTAR UN HUECO. Decir «sin número de catálogo registrado»
-   * debajo de una muestra que consta SIN catálogo contesta una pregunta que nadie
-   * ha hecho: no falta ningún número, porque no hubo catálogo del que copiarlo.
+   * THE RULE THAT AVOIDS INVENTING A GAP. Saying «sin número de catálogo registrado»
+   * under a show recorded as having NO catalogue answers a question nobody
+   * has asked: no number is missing, because there was no catalogue to copy it from.
    */
   it('sin número y sin catálogo publicado, no dice nada: no falta ningún dato', () => {
     const entry = participantEntry(row({ catalogue_number: '' }), { cataloguePublished: false })
@@ -151,10 +151,10 @@ describe('RF-505: lo que dice cada fila', () => {
   })
 
   /**
-   * Dos cosas distintas se pueden haber retirado y significan lo contrario, así que
-   * no comparten frase: la PARTICIPACIÓN retirada quiere decir que esta obra se sacó
-   * de la lista de la muestra; la OBRA retirada quiere decir que la pieza está fuera
-   * del catálogo mientras su participación sigue en pie.
+   * Two different things may have been withdrawn and they mean the opposite, so
+   * they do not share a sentence: the withdrawn PARTICIPATION means this artwork was taken
+   * off the show's list; the withdrawn ARTWORK means the piece is out
+   * of the catalogue while its participation still stands.
    */
   it('una participación retirada lo dice, y dice dónde se recupera', () => {
     const entry = participantEntry(row({ active: false }), { cataloguePublished: true })
@@ -181,9 +181,9 @@ describe('RF-505: lo que dice cada fila', () => {
   })
 
   /**
-   * No debería pasar —la política de `artwork_exhibitions` exige que la obra
-   * exista— pero una fila que llega sin ella se DICE en vez de pintarse como una
-   * línea en blanco.
+   * It should not happen —`artwork_exhibitions`' policy requires the artwork
+   * to exist— but a row arriving without it is SAID instead of being painted as a
+   * blank line.
    */
   it('RF-304: una obra que no se puede leer con esta sesión se declara, no se deja en blanco', () => {
     const entry = participantEntry(row({ artwork: null }), { cataloguePublished: true })
@@ -194,10 +194,10 @@ describe('RF-505: lo que dice cada fila', () => {
 
 describe('el bloque entero', () => {
   /**
-   * Al contrario que el historial de una obra, que solo muestra lo que sostiene hoy.
-   * Desde este lado la pregunta es otra: esta es la lista de todo lo que el catálogo
-   * sabe de quién estuvo en la muestra, y una fila que faltara en silencio es cómo
-   * alguien concluye que una pieza nunca estuvo allí.
+   * Unlike an artwork's history, which only shows what holds up today.
+   * From this side the question is another: this is the list of everything the catalogue
+   * knows about who was in the show, and a row missing in silence is how
+   * somebody concludes that a piece was never there.
    */
   it('las participaciones retiradas NO se caen del bloque, se muestran y se explican', () => {
     const entries = participantEntries(
@@ -229,16 +229,16 @@ describe('RF-304: nunca un hueco donde iban las obras', () => {
   const settled = { loading: false, error: null, count: 0 }
 
   /**
-   * EL CASO QUE IMPORTA, y es «sin revisar no es no» leído desde el otro lado: una
-   * exposición sin obras del catálogo NO quiere decir que no se expusiera ninguna,
-   * quiere decir que nadie las ha enlazado todavía. Imprimir «no participó ninguna
-   * obra» contestaría por la tarde de archivo que nadie ha empezado.
+   * THE CASE THAT MATTERS, and it is «sin revisar is not no» read from the other side: an
+   * exhibition with no catalogue artworks does NOT mean that none was exhibited,
+   * it means nobody has linked them yet. Printing «no participó ninguna
+   * obra» would answer for the afternoon in the archive nobody has started.
    */
   it('sin ninguna obra explica que falta enlazarlas, y no afirma que no hubiera', () => {
     const text = participantsNotice(settled) ?? ''
-    // «Todavía» es lo que separa el dato pendiente del dato investigado, y ya lo
-    // dice: la frase que lo argumentaba —«no quiere decir que no se expusiera
-    // ninguna»— sonaba a que la pantalla se defiende de una acusación.
+    // «Todavía» is what separates the pending datum from the researched datum, and it already
+    // says it: the sentence that argued it —«no quiere decir que no se expusiera
+    // ninguna»— sounded as if the screen were defending itself against an accusation.
     expect(text).toContain('todavía')
     expect(text).toContain('historial expositivo')
   })
@@ -252,9 +252,9 @@ describe('RF-304: nunca un hueco donde iban las obras', () => {
   })
 
   /**
-   * Y tras un fallo se calla: el error tiene su propia línea, y «todavía no hay
-   * ninguna» encima de una consulta que falló es la pantalla afirmando lo que no
-   * sabe.
+   * And after a failure it keeps quiet: the error has its own line, and «todavía no hay
+   * ninguna» over a query that failed is the screen stating what it does not
+   * know.
    */
   it('tras un fallo no afirma que no haya ninguna: eso lo diría sin saberlo', () => {
     expect(participantsNotice({ ...settled, error: 'sin red' })).toBeNull()
@@ -264,8 +264,8 @@ describe('RF-304: nunca un hueco donde iban las obras', () => {
 
 describe('RF-505: las miniaturas que se piden', () => {
   /**
-   * La misma obra puede sostener dos participaciones en una muestra —una viva y una
-   * retirada— y firmar su miniatura dos veces gastaría una petición en nada.
+   * The same artwork can hold two participations in one show —one live and one
+   * withdrawn— and signing its thumbnail twice would spend a request on nothing.
    */
   it('no repite una obra que sostiene dos participaciones de la misma muestra', () => {
     expect(
