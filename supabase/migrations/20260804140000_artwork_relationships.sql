@@ -1,63 +1,63 @@
 -- ============================================================
--- Obras relacionadas entre sí, con el tipo de relación como dato
--- (RF-217, que extiende RF-212; RF-216, RF-517, RF-901, RF-902).
+-- Artworks related to each other, with the type of relationship as a datum
+-- (RF-217, which extends RF-212; RF-216, RF-517, RF-901, RF-902).
 --
--- v11 dejó `obras_relacionadas` como «relación múltiple, autorreferencial»
--- dentro de la ficha de obra, y en v4 se molestó en aclarar que no es un campo
--- de texto. Lo que no tiene es el DATO que hace útil la relación: de qué clase
--- es. «AR-0012 relacionada con AR-0013» no dice si son las dos mitades de un
--- díptico, el estudio previo y la obra final, o el anverso y el reverso de la
--- misma tabla catalogados aparte — y esas tres cosas se leen distinto en la
--- ficha y se citan distinto en el catálogo razonado.
+-- v11 left `obras_relacionadas` as a «multiple, self-referential relation»
+-- inside the artwork record, and in v4 it took the trouble to clarify that it is not a text
+-- field. What it does not have is the DATUM that makes the relationship useful: what class
+-- it is. «AR-0012 relacionada con AR-0013» does not say whether they are the two halves of a
+-- diptych, the preliminary study and the final work, or the front and the back of
+-- the same panel catalogued separately — and those three things read differently in the
+-- record and are cited differently in the catalogue raisonné.
 --
--- Este grupo no lo inventa: las propias «Notas de implementación» de v11
--- anticipan el caso por escrito, cuando dicen que el patrón de tabla puente
+-- This group does not invent it: v11's own «Notas de implementación»
+-- anticipate the case in writing, when they say that the bridge-table pattern
 -- «puede reutilizarse en el futuro si aparecen casos similares (por ejemplo, si
 -- `obras_relacionadas` necesitara en algún momento especificar el *tipo* de
--- relación entre cada par de obras)». Aparecieron: pareja, políptico, estudio
--- previo, versión, reverso catalogado aparte y copia de obra destruida.
+-- relación entre cada par de obras)». They appeared: a pair, a polyptych, a preliminary
+-- study, a version, a reverse catalogued separately and a copy of a destroyed work.
 --
--- POR QUÉ EL TIPO ES UNA MAESTRA Y NO UN ENUMERADO. El criterio que este
--- esquema usa para separar las dos cosas es si el código mira el valor:
--- `artwork_types` es maestra porque nunca lo mira, `party_type` es enumerado
--- porque de él depende cómo se redacta una línea. Aquí la lista es abierta por
--- naturaleza —la investigación descubre relaciones que nadie previó—, pero el
--- motivo fuerte es otro: cada tipo lleva DATOS que no caben en un enumerado.
--- «Estudio previo de» es asimétrico y su inversa es «Obra final de»; «Pareja
--- de» es simétrico y no tiene inversa. Ese par de etiquetas y la bandera de
--- simetría son lo que permite que la ficha de la obra B diga «obra final de
--- AR-0012» sin que nadie haya escrito una segunda fila. Un enumerado no puede
--- llevar su inversa.
+-- WHY THE TYPE IS A MASTER TABLE AND NOT AN ENUMERATED TYPE. The criterion this
+-- schema uses to separate the two things is whether the code looks at the value:
+-- `artwork_types` is a master table because it never looks at it, `party_type` is an enumerated type
+-- because on it depends how a line is worded. Here the list is open by
+-- nature —research discovers relationships nobody foresaw—, but the
+-- strong reason is another: each type carries DATA that does not fit in an enumerated type.
+-- «Estudio previo de» is asymmetric and its inverse is «Obra final de»; «Pareja
+-- de» is symmetric and has no inverse. That pair of labels and the symmetry
+-- flag are what allow artwork B's record to say «obra final de
+-- AR-0012» without anybody having written a second row. An enumerated type cannot
+-- carry its inverse.
 --
--- LO QUE NO SE CREA: `related_artworks_status`. Las cuatro columnas de estado
--- de investigación (RF-218) cubren bloques que se investigan COMO BLOQUE —se va
--- al archivo a buscar exposiciones y se vuelve con lo que haya—, y una relación
--- entre obras no se investiga: aparece mientras se cataloga la pieza de al lado.
--- Declarar «esta obra no tiene relaciones» sería declarar algo que ninguna
--- búsqueda cierra nunca, y una columna que no puede llegar a ser verdad es peor
--- que no tenerla.
+-- WHAT IS NOT CREATED: `related_artworks_status`. The four research-state
+-- columns (RF-218) cover blocks that are researched AS A BLOCK —one goes
+-- to the archive to look for exhibitions and comes back with whatever there is—, and a relationship
+-- between artworks is not researched: it appears while cataloguing the piece next door.
+-- Declaring «this artwork has no relationships» would be declaring something no
+-- search ever closes, and a column that cannot get to be true is worse
+-- than not having it.
 --
--- Las POLÍTICAS RLS de las dos tablas van en la migración siguiente. Lo que SÍ
--- se hace aquí es activar RLS y revocar los privilegios, porque una tabla que
--- existe un solo despliegue sin RLS es una tabla publicada. Con RLS activado y
--- sin ninguna política, la tabla está cerrada para todo el mundo salvo el acceso
--- administrativo directo, que es el estado seguro para esperar.
+-- The RLS POLICIES of the two tables go in the next migration. What IS
+-- done here is enabling RLS and revoking the privileges, because a table that
+-- exists for a single deployment with no RLS is a published table. With RLS enabled and
+-- no policy, the table is closed to everybody except direct
+-- administrative access, which is the safe state to wait in.
 -- ============================================================
 
 
--- ── El vocabulario de tipos de relación (RF-217) ────────────
+-- ── The vocabulary of relationship types (RF-217) ───────────
 --
--- Patrón de `artwork_types` tras ADR-007 y de `publication_types`: clave
--- sustituta, el nombre como atributo único por clave de comparación, papelera y
--- autoría con `tg_row_audit`. Lo propio de esta maestra son las dos columnas
--- que la hacen algo más que una lista de etiquetas.
+-- `artwork_types`'s pattern after ADR-007 and `publication_types`': surrogate
+-- key, the name as an attribute unique by comparison key, wastebasket and
+-- authorship with `tg_row_audit`. What is particular to this master table are the two columns
+-- that make it something more than a list of labels.
 
 create table public.artwork_relationship_types (
   id uuid primary key default gen_random_uuid(),
 
-  -- La etiqueta DIRECTA, la que se lee desde la obra de la que sale la flecha:
-  -- «Estudio previo de». Tal cual se escribe, con sus mayúsculas y sus tildes;
-  -- lo que se normaliza es la clave de comparación, no el dato.
+  -- The DIRECT label, the one read from the artwork the arrow comes out of:
+  -- «Estudio previo de». Just as it is written, with its capitals and its accents;
+  -- what is normalised is the comparison key, not the datum.
   name text not null,
 
   -- La etiqueta que ve la obra del otro extremo: «Obra final de». Es la columna

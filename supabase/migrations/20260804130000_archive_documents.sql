@@ -1,82 +1,82 @@
 -- ============================================================
--- Archivo y documentación relacionada
--- (RF-515, RF-516, RF-408, RF-218, RF-517; ADR-006 aplicado por segunda vez).
+-- Archive and related documentation
+-- (RF-515, RF-516, RF-408, RF-218, RF-517; ADR-006 applied for the second time).
 --
--- Es la tabla 9 del esquema de campos v11 —«Archivo/Documentación»—, la última
--- de las nueve que faltaba, más dos maestras que v11 no tiene y las dos tablas
--- puente que sustituyen a sus dos claves ajenas sueltas.
+-- It is table 9 of the v11 field schema —«Archivo/Documentación»—, the last
+-- of the nine that was missing, plus two master tables that v11 does not have and the two bridge
+-- tables that replace its two loose foreign keys.
 --
--- Lo que este grupo cambia sobre v11, y por qué:
+-- What this group changes over v11, and why:
 --
---   • `tipo_documento` pasa de «Selección abierta» a MAESTRA con clave
---     sustituta. El propio v11 la declara abierta —libro, fotografía, carta,
---     recorte de prensa, cartel, díptico…— así que el documento fuente ya pide
---     una lista que crece. Es el caso de `artwork_types` sin adaptación: la
---     usuaria añade «telegrama» sin desplegar nada y el código no mira nunca el
---     valor.
---   • `fondo_serie` pasa de texto jerárquico a ÁRBOL. v11 lo define como
---     «Agrupación archivística (fondo → serie → subserie, si aplica)», que es
---     literalmente la forma que tenía `ubicacion_fisica` antes de ADR-006: una
---     jerarquía metida dentro de un texto con una convención que hay que
---     recordar. Ese error ya se pagó una vez en este proyecto y aquí cuesta cero
---     evitarlo, porque no hay ni un documento catalogado. Nace NULABLE: si la
---     clasificación archivística no se adopta nunca, la tabla se queda vacía y
---     no estorba a nadie.
---   • `ubicacion_fisica` deja de ser texto y apunta al árbol de lugares que YA
---     existe. Una caja de cartas está en el mismo edificio que los cuadros, y un
---     segundo árbol para lo mismo sería la duplicación que ADR-006 vino a
---     quitar.
---   • `artista` deja de ser obligatorio. v11 lo declara Selección entre los dos
---     artistas, y un recorte sobre una colectiva de los dos —o un documento de
---     contexto que no es de ninguno— no puede elegir.
---   • Las relaciones con obras y con exposiciones son TABLAS PUENTE (RF-516) y
---     no las dos claves ajenas de v11 (`obra_relacionada`,
---     `exposicion_relacionada`). Con aquel modelo, un recorte de prensa que
---     menciona tres obras obliga a triplicar la ficha y con ella el PDF subido,
---     que es el caso normal y no el raro.
---   • NO se crea la columna `digitalizado` (Sí/No): es `file_path is not null`.
---     Una bandera que puede contradecir al fichero que tiene al lado es una
---     bandera que un día miente.
+--   • `tipo_documento` goes from «open Selection» to a MASTER table with a surrogate
+--     key. v11 itself declares it open —book, photograph, letter,
+--     press clipping, poster, diptych…— so the source document already asks for
+--     a list that grows. It is `artwork_types`'s case with no adaptation: the
+--     user adds «telegrama» without deploying anything and the code never looks at the
+--     value.
+--   • `fondo_serie` goes from hierarchical text to a TREE. v11 defines it as
+--     «Agrupación archivística (fondo → serie → subserie, si aplica)», which is
+--     literally the shape `ubicacion_fisica` had before ADR-006: a
+--     hierarchy stuffed inside a text with a convention that has to be
+--     remembered. That mistake was already paid for once in this project and here avoiding it
+--     costs nothing, because there is not a single document catalogued. It is born NULLABLE: if the
+--     archival classification is never adopted, the table stays empty and
+--     gets in nobody's way.
+--   • `ubicacion_fisica` stops being text and points at the tree of places that ALREADY
+--     exists. A box of letters is in the same building as the paintings, and a
+--     second tree for the same thing would be the duplication ADR-006 came to
+--     remove.
+--   • `artista` stops being compulsory. v11 declares it a Selection between the two
+--     artists, and a clipping about a group show of the two —or a context document
+--     that belongs to neither— cannot choose.
+--   • The relationships with artworks and with exhibitions are BRIDGE TABLES (RF-516) and
+--     not v11's two foreign keys (`obra_relacionada`,
+--     `exposicion_relacionada`). With that model, a press clipping that
+--     mentions three artworks forces tripling the record and with it the uploaded PDF,
+--     which is the normal case and not the rare one.
+--   • The `digitalizado` (Yes/No) column is NOT created: it is `file_path is not null`.
+--     A flag that can contradict the file it has alongside is a
+--     flag that one day lies.
 --
--- SOBRE EL FICHERO DIGITALIZADO Y EL BUCKET. No hace falta política nueva: el
--- fichero va al bucket privado `obras` bajo un prefijo propio, y las políticas
--- de `storage.objects` que ya existen (`bucket_id = 'obras'` y `can_read()` /
--- `can_edit()`) lo cubren tal cual, que es el criterio de RF-110 y RNF-111.
--- Comprobado el límite de tamaño del bucket, que este grupo tenía que mirar de
--- verdad: son 62 914 560 bytes (60 MiB) por fichero, y NO se toca aquí. Un
--- expediente escaneado en un solo PDF, que es lo que RF-408 recomienda para los
--- documentos multipágina, cabe holgado en blanco y negro y se puede pasar en
--- color a partir de unas decenas de páginas. Subir el límite, mandar el
--- digitalizado a B2 como los másteres o aceptar partir los expedientes muy
--- largos es una decisión de la propietaria y no de esta migración, y el número
--- no se copia a ninguna restricción de esta tabla: sería una segunda fuente de
--- verdad de un ajuste de la plataforma, que un día diría lo contrario que la
--- plataforma.
+-- ABOUT THE DIGITISED FILE AND THE BUCKET. No new policy is needed: the
+-- file goes to the private `obras` bucket under a prefix of its own, and the policies
+-- of `storage.objects` that already exist (`bucket_id = 'obras'` and `can_read()` /
+-- `can_edit()`) cover it as they are, which is RF-110's and RNF-111's criterion.
+-- The bucket's size limit has been checked, which this group had to look at
+-- for real: it is 62,914,560 bytes (60 MiB) per file, and it is NOT touched here. A
+-- file scanned into a single PDF, which is what RF-408 recommends for
+-- multipage documents, fits comfortably in black and white and can be managed in
+-- colour from a few dozen pages. Raising the limit, sending the
+-- digitised file to B2 like the masters or accepting splitting very long
+-- files is a decision of the owner and not of this migration, and the number
+-- is not copied into any constraint of this table: it would be a second source of
+-- truth for a platform setting, which one day would say the opposite of what the
+-- platform says.
 --
--- Las POLÍTICAS RLS de las cinco tablas van en la migración siguiente. Lo que SÍ
--- se hace aquí es activar RLS y revocar los privilegios, porque una tabla que
--- existe un solo despliegue sin RLS es una tabla publicada. Con RLS activado y
--- sin ninguna política, la tabla está cerrada para todo el mundo salvo el acceso
--- administrativo directo, que es el estado seguro para esperar.
+-- The RLS POLICIES of the five tables go in the next migration. What IS
+-- done here is enabling RLS and revoking the privileges, because a table that
+-- exists for a single deployment with no RLS is a published table. With RLS enabled and
+-- no policy, the table is closed to everybody except direct
+-- administrative access, which is the safe state to wait in.
 -- ============================================================
 
 
--- ── El vocabulario de tipos de documento (RF-515) ───────────
+-- ── The vocabulary of document types (RF-515) ───────────────
 --
--- Patrón de `artwork_types` tras ADR-007 y de `publication_types`: clave
--- sustituta, el nombre como atributo único por `place_key`, papelera y autoría
--- de alta. Sin `updated_at`/`updated_by` y sin `restored_at`, como las demás
--- maestras de vocabulario: es una lista que cuelga de las fichas, no una ficha
--- con pantalla de papelera propia (RF-901 enumera las que sí la tienen).
+-- `artwork_types`'s pattern after ADR-007 and `publication_types`': surrogate
+-- key, the name as an attribute unique by `place_key`, wastebasket and creation
+-- authorship. With no `updated_at`/`updated_by` and no `restored_at`, like the other
+-- vocabulary master tables: it is a list that hangs from the records, not a record
+-- with a wastebasket screen of its own (RF-901 enumerates those that do have one).
 
 create table public.document_types (
   id uuid primary key default gen_random_uuid(),
 
-  -- Tal cual se escribe, con sus mayúsculas y sus tildes. Lo que se normaliza es
-  -- la clave de comparación, no el dato.
+  -- Just as it is written, with its capitals and its accents. What is normalised is
+  -- the comparison key, not the datum.
   name text not null,
 
-  -- RF-901: nada se borra, se retira.
+  -- RF-901: nothing is deleted, it is withdrawn.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
@@ -84,8 +84,8 @@ create table public.document_types (
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
 
-  -- Un tipo en blanco no clasifica nada, y uno con espacios alrededor rompería
-  -- la comparación de duplicados sin que se vea en pantalla.
+  -- A blank type classifies nothing, and one with spaces around it would break
+  -- the duplicate comparison without it being visible on screen.
   constraint document_types_name_not_blank
     check (btrim(name) <> '' and name = btrim(name))
 );
@@ -98,20 +98,20 @@ create unique index document_types_name_unique
 
 create index document_types_active_idx on public.document_types (active);
 
--- Autoría y papelera con la función genérica de RF-804, no con una quinta copia
--- de `tg_artwork_type_authorship`.
+-- Authorship and wastebasket with RF-804's generic function, not with a fifth copy
+-- of `tg_artwork_type_authorship`.
 create trigger document_type_row_audit
   before insert or update on public.document_types
   for each row execute function public.tg_row_audit();
 
--- La siembra, que es lo que hace que la interfaz sirva el primer día: una
--- maestra vacía deja el selector en blanco y obliga a inventar el vocabulario
--- mientras se cataloga. Son exactamente los diez valores que v11 enumera en su
--- tabla 9. Ampliar la lista no requiere migración: ese es el motivo de que sea
--- una maestra.
+-- The seeding, which is what makes the interface usable on the first day: an
+-- empty master table leaves the selector blank and forces inventing the vocabulary
+-- while cataloguing. They are exactly the ten values v11 enumerates in its
+-- table 9. Extending the list requires no migration: that is the reason it is
+-- a master table.
 --
--- `created_by` queda nulo a propósito: dentro de una migración `auth.uid()` no
--- es nadie, y estas filas no las creó ninguna persona.
+-- `created_by` is left null on purpose: inside a migration `auth.uid()` is
+-- nobody, and these rows were created by no person.
 insert into public.document_types (name) values
   ('Libro'),
   ('Publicación'),
@@ -124,11 +124,11 @@ insert into public.document_types (name) values
   ('Folleto'),
   ('Nota de prensa');
 
--- Un tipo que todavía clasifica documentos no se retira, con la misma regla que
--- `tg_publication_type_deactivation` y `tg_artwork_type_deactivation`: retirarlo
--- no lo retira, deja el archivo apuntando a algo que la interfaz ya no ofrece.
--- Un documento en la papelera no cuenta, como en las demás: exigir vaciar la
--- papelera antes de retirar un tipo sería hacer que la papelera estorbe.
+-- A type that still classifies documents is not withdrawn, with the same rule as
+-- `tg_publication_type_deactivation` and `tg_artwork_type_deactivation`: withdrawing it
+-- does not withdraw it, it leaves the archive pointing at something the interface no longer offers.
+-- A document in the wastebasket does not count, as in the others: requiring the
+-- wastebasket to be emptied before withdrawing a type would be making the wastebasket get in the way.
 create function public.tg_document_type_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -150,31 +150,31 @@ create trigger document_type_deactivation
   for each row execute function public.tg_document_type_deactivation();
 
 
--- ── La clasificación archivística, como árbol (RF-515) ──────
+-- ── The archival classification, as a tree (RF-515) ─────────
 --
--- Patrón de `physical_places` (ADR-006), y por el mismo motivo: el nombre se
--- guarda tal cual se escribe y lo que se normaliza es la clave de comparación;
--- `parent_id` es mutable porque reorganizar un fondo es una operación normal; y
--- nada se borra.
+-- `physical_places`'s pattern (ADR-006), and for the same reason: the name is
+-- stored just as it is written and what is normalised is the comparison key;
+-- `parent_id` is mutable because reorganising a fonds is a normal operation; and
+-- nothing is deleted.
 --
--- Es la más discutible de las maestras nuevas y por eso nace NULABLE del lado
--- del documento: si la clasificación archivística no se adopta, esta tabla se
--- queda vacía y ningún documento la echa de menos.
+-- It is the most debatable of the new master tables and that is why it is born NULLABLE on the
+-- document's side: if the archival classification is not adopted, this table
+-- stays empty and no document misses it.
 
 create table public.archive_series (
   id uuid primary key default gen_random_uuid(),
 
-  -- Nulo es un fondo (la raíz). MUTABLE a propósito: descubrir que lo que se
-  -- anotó como serie es en realidad una subserie de otra tiene que ser un
-  -- update, no un rehacer. `restrict` porque un nodo con hijos no se retira: se
-  -- vacía primero.
+  -- Null is a fonds (the root). MUTABLE on purpose: discovering that what was
+  -- noted as a series is really a sub-series of another has to be an
+  -- update, not a redoing. `restrict` because a node with children is not withdrawn: it is
+  -- emptied first.
   parent_id uuid references public.archive_series (id) on delete restrict,
 
   name text not null,
 
-  -- RF-901: nada se borra, se retira. Sin `restored_at`, como el árbol de
-  -- lugares: restaurar deja el nodo como si nunca se hubiera retirado, y
-  -- `tg_row_audit` distingue ese caso por la ausencia de la columna.
+  -- RF-901: nothing is deleted, it is withdrawn. With no `restored_at`, like the tree of
+  -- places: restoring leaves the node as if it had never been withdrawn, and
+  -- `tg_row_audit` distinguishes that case by the column's absence.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
@@ -192,9 +192,9 @@ comment on table public.archive_series is
 comment on column public.archive_series.parent_id is
   'Nulo es un fondo (raíz). Mutable: reorganizar la clasificación es una operación normal y no toca ningún documento.';
 
--- Dos hermanos no pueden llamarse igual, comparado sin tildes ni mayúsculas. Son
--- dos índices porque en SQL un nulo no es igual a otro nulo: sin el parcial, dos
--- fondos homónimos pasarían.
+-- Two siblings cannot be called the same, compared with no accents and no capitals. They are
+-- two indexes because in SQL one null is not equal to another null: without the partial one, two
+-- homonymous fonds would pass.
 create unique index archive_series_root_unique
   on public.archive_series (public.place_key(name))
   where parent_id is null;
@@ -206,11 +206,11 @@ create unique index archive_series_siblings_unique
 create index archive_series_parent_idx on public.archive_series (parent_id);
 create index archive_series_active_idx on public.archive_series (active);
 
--- Sin ciclos. Una serie dentro de su propia subserie deja el árbol
--- irrecuperable: ninguna consulta recursiva termina y el nodo desaparece de la
--- jerarquía sin haberse borrado. Es barato de comprobar y caro de descubrir, y
--- es el mismo cinturón de 100 saltos de `tg_physical_place_no_cycle`: si el
--- árbol ya estuviera corrupto, esto para en vez de colgarse.
+-- No cycles. A series inside its own sub-series leaves the tree
+-- unrecoverable: no recursive query terminates and the node disappears from the
+-- hierarchy without having been deleted. It is cheap to check and expensive to discover, and
+-- it is `tg_physical_place_no_cycle`'s same 100-hop belt: if the
+-- tree were already corrupt, this stops instead of hanging.
 create function public.tg_archive_series_no_cycle()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -251,8 +251,8 @@ create trigger archive_series_row_audit
   before insert or update on public.archive_series
   for each row execute function public.tg_row_audit();
 
--- Una serie con contenido no se retira: primero se vacía. Vale para las
--- subseries y para los documentos, igual que en el árbol de lugares.
+-- A series with content is not withdrawn: it is emptied first. It holds for the
+-- sub-series and for the documents, just as in the tree of places.
 create function public.tg_archive_series_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -281,54 +281,54 @@ create trigger archive_series_deactivation
   for each row execute function public.tg_archive_series_deactivation();
 
 
--- ── El documento de archivo ─────────────────────────────────
+-- ── The archive document ────────────────────────────────────
 
 create table public.archive_documents (
-  -- Clave sustituta (ADR-007). La etiqueta de la carpeta va en la columna
-  -- siguiente y no es la identidad de la fila: ver el porqué allí.
+  -- Surrogate key (ADR-007). The folder's label goes in the next
+  -- column and it is not the row's identity: see the reason there.
   id uuid primary key default gen_random_uuid(),
 
-  -- El `id_documento` de v11 (`AR-ARCH-0001`), y aquí está la diferencia con
-  -- `catalog_id`: aquella es una etiqueta pegada a una obra real y por eso es la
-  -- clave y no se edita (RF-204); esta no está pegada todavía a nada, y una
-  -- clasificación archivística se reorganiza. Separarla de la identidad es lo
-  -- que permite corregirla sin migración.
+  -- v11's `id_documento` (`AR-ARCH-0001`), and here is the difference from
+  -- `catalog_id`: that one is a label stuck to a real artwork and that is why it is the
+  -- key and is not edited (RF-204); this one is not stuck to anything yet, and an
+  -- archival classification gets reorganised. Separating it from the identity is what
+  -- allows correcting it with no migration.
   --
-  --   • NULA PERMITIDA: un recorte que se anota antes de archivarlo no tiene
-  --     signatura, y obligar a inventarla llenaría el archivo de códigos que
-  --     nadie eligió.
-  --   • EDITABLE, que es justo lo que no sería siendo clave primaria.
-  --   • ÚNICA, comparada como el resto de nombres del esquema: dos signaturas
-  --     que solo difieren en mayúsculas son la misma signatura.
+  --   • NULL ALLOWED: a clipping noted before being filed has no
+  --     shelfmark, and forcing one to be invented would fill the archive with codes
+  --     nobody chose.
+  --   • EDITABLE, which is exactly what it would not be while being the primary key.
+  --   • UNIQUE, compared like the rest of the schema's names: two shelfmarks
+  --     that differ only in capitals are the same shelfmark.
   archive_code text,
 
-  -- NULO PERMITIDO, al contrario que en v11, que lo declaraba Selección
-  -- obligatoria entre los dos artistas: un recorte de prensa sobre una colectiva
-  -- de los dos no pertenece a un solo fondo, y un documento de contexto no es de
-  -- ninguno. Obligar a elegir habría metido un dato falso en la mitad de las
-  -- fichas de archivo.
+  -- NULL ALLOWED, unlike in v11, which declared it a compulsory Selection
+  -- between the two artists: a press clipping about a group show
+  -- of the two does not belong to a single fund, and a context document belongs to
+  -- neither. Forcing a choice would have put a false datum in half the
+  -- archive records.
   artist_fund public.artist_fund,
 
-  -- Nulo es «sin clasificar todavía», que es una respuesta legítima mientras el
-  -- documento se anota de una fotocopia. `restrict` por lo mismo que en el resto
-  -- del esquema: nadie tiene DELETE, y si alguna vez se borrara una fila a mano
-  -- esto avisa en vez de dejar documentos apuntando al vacío.
+  -- Null is «not classified yet», which is a legitimate answer while the
+  -- document is noted from a photocopy. `restrict` for the same reason as in the rest
+  -- of the schema: nobody has DELETE, and if a row were ever deleted by hand
+  -- this warns instead of leaving documents pointing at nothing.
   document_type_id uuid references public.document_types (id) on delete restrict,
 
-  -- El `titulo_descripcion` de v11: título o descripción breve. Es lo único
-  -- obligatorio de la ficha, porque un documento sin nada que lo nombre no se
-  -- puede volver a encontrar.
+  -- v11's `titulo_descripcion`: a title or a brief description. It is the only
+  -- compulsory thing in the record, because a document with nothing to name it cannot
+  -- be found again.
   title text not null,
 
-  -- La clasificación archivística, opcional. Ver la nota de la tabla: nace
-  -- nulable a propósito.
+  -- The archival classification, optional. See the table's note: it is born
+  -- nullable on purpose.
   archive_series_id uuid references public.archive_series (id) on delete restrict,
 
-  -- ── La fecha, con la forma estructurada de ADR-004 ────────
-  -- La misma que en los eslabones de procedencia, y por lo mismo: se repiten
-  -- cinco columnas a cambio de heredar el analizador de fechas del frontend, la
-  -- columna generada y los tests ya escritos. La alternativa era el `Texto` de
-  -- v11, por el que no se puede preguntar.
+  -- ── The date, with ADR-004's structured shape ─────────────
+  -- The same one as in the provenance links, and for the same reason: five
+  -- columns are repeated in exchange for inheriting the date parser from the frontend, the
+  -- generated column and the tests already written. The alternative was v11's `Texto`,
+  -- which cannot be asked about.
   start_year smallint,
   end_year smallint,
   approximate_date boolean not null default false,
@@ -345,20 +345,20 @@ create table public.archive_documents (
     end
   ) stored,
 
-  -- Dónde está el papel. REUTILIZA el árbol de lugares que ya existe (ADR-006):
-  -- una caja de cartas está en el mismo edificio que los cuadros, y un segundo
-  -- árbol para lo mismo sería la duplicación que este diseño evita. Nulo es
-  -- «todavía sin sitio», como en las obras.
+  -- Where the paper is. It REUSES the tree of places that already exists (ADR-006):
+  -- a box of letters is in the same building as the paintings, and a second
+  -- tree for the same thing would be the duplication this design avoids. Null is
+  -- «with no site yet», as in the artworks.
   physical_place_id uuid references public.physical_places (id) on delete restrict,
 
-  -- ── El fichero digitalizado (RF-408) ──────────────────────
-  -- Cuatro columnas y NO una bandera `digitalizado`: la respuesta a «¿está
-  -- digitalizado?» es `file_path is not null`, y una bandera al lado del fichero
-  -- acaba contradiciéndolo.
+  -- ── The digitised file (RF-408) ───────────────────────────
+  -- Four columns and NOT a `digitalizado` flag: the answer to «is it
+  -- digitised?» is `file_path is not null`, and a flag alongside the file
+  -- ends up contradicting it.
   --
-  -- Un fichero por fila, sin los tres niveles de las fotografías: RF-413 se
-  -- retiró por sobreingeniería y para los documentos multipágina RF-408 fija un
-  -- único PDF con todas las páginas, no una fila por página.
+  -- One file per row, without the photographs' three levels: RF-413 was
+  -- withdrawn for over-engineering and for the multipage documents RF-408 fixes a
+  -- single PDF with all the pages, not one row per page.
   file_path text,
   file_size_bytes bigint,
   mime_type text,
@@ -366,63 +366,63 @@ create table public.archive_documents (
 
   note text not null default '',
 
-  -- RF-804: trazabilidad completa, sellada por `tg_row_audit`.
+  -- RF-804: complete traceability, stamped by `tg_row_audit`.
   created_at timestamptz not null default now(),
   created_by uuid references public.profiles (id),
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-901 y RF-902: el documento es una de las fichas que el requisito enumera,
-  -- así que lleva papelera completa y la restauración NO borra la traza de la
-  -- baja anterior.
+  -- RF-901 and RF-902: the document is one of the records the requirement enumerates,
+  -- so it carries a complete wastebasket and the restoration does NOT erase the previous
+  -- withdrawal's trace.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
   restored_at timestamptz,
   restored_by uuid references public.profiles (id),
 
-  -- Sin título no hay documento. NO se exige además que esté recortado, como en
-  -- la bibliografía y en las exposiciones: aquí no hay clave de comparación que
-  -- un espacio pueda romper, y una descripción se pega de un PDF.
+  -- With no title there is no document. It is NOT also required to be trimmed, as in
+  -- the bibliography and in the exhibitions: here there is no comparison key
+  -- a space could break, and a description is pasted from a PDF.
   constraint archive_documents_title_not_blank check (btrim(title) <> ''),
 
-  -- Si hay signatura, que sea una signatura: recortada y no vacía. Una cadena de
-  -- espacios pasaría por código y sería un hueco con índice único.
+  -- If there is a shelfmark, let it be a shelfmark: trimmed and not empty. A string of
+  -- spaces would pass for a code and would be a gap with a unique index.
   constraint archive_documents_code_shape check (
     archive_code is null
     or (archive_code = btrim(archive_code) and archive_code <> '')
   ),
 
-  -- Un año fuera de rango plausible es una errata, no una fecha (ADR-004).
+  -- A year outside a plausible range is a typo, not a date (ADR-004).
   constraint archive_documents_plausible_years check (
     (start_year is null or start_year between 1000 and 2100)
     and (end_year is null or end_year between 1000 and 2100)
   ),
 
-  -- Como en los eslabones de procedencia y al contrario que en
-  -- `artworks_coherent_range`: aquí `>=`, porque una carpeta de correspondencia
-  -- de 1985 abierta y cerrada el mismo año es un rango real. Y un final sin
-  -- principio es media fecha: se rechaza, porque una comparación con nulo no es
-  -- falsa y sin esta forma se colaría.
+  -- As in the provenance links and unlike in
+  -- `artworks_coherent_range`: here `>=`, because a correspondence folder
+  -- from 1985 opened and closed in the same year is a real range. And an end with no
+  -- beginning is half a date: it is rejected, because a comparison with null is not
+  -- false and without this form it would slip through.
   constraint archive_documents_coherent_range check (
     end_year is null or (start_year is not null and end_year >= start_year)
   ),
 
-  -- Las banderas hablan de un año: sin año no hay nada que aproximar ni que
-  -- poner en duda («[?]» a secas no dice nada).
+  -- The flags speak about a year: with no year there is nothing to approximate nor to
+  -- cast doubt on («[?]» on its own says nothing).
   constraint archive_documents_flags_require_year check (
     start_year is not null or (not approximate_date and not unconfirmed_date)
   ),
 
-  -- Todo o nada, como la copia corregida de una fotografía: media descripción de
-  -- un fichero no existe. Una ruta sin tamaño no se puede ofrecer con su peso, y
-  -- un tamaño sin ruta es un fichero que nadie puede bajar.
+  -- All or nothing, like a photograph's corrected copy: half a description of
+  -- a file does not exist. A path with no size cannot be offered with its weight, and
+  -- a size with no path is a file nobody can download.
   constraint archive_documents_file_all_or_nothing check (
     num_nonnulls(file_path, file_size_bytes, mime_type, uploaded_at) in (0, 4)
   ),
 
-  -- Un fichero de cero bytes es un fallo de subida disfrazado de documento
-  -- digitalizado.
+  -- A zero-byte file is an upload failure disguised as a digitised
+  -- document.
   constraint archive_documents_file_size_positive check (
     file_size_bytes is null or file_size_bytes > 0
   ),
@@ -454,15 +454,15 @@ comment on column public.archive_documents.file_path is
 comment on column public.archive_documents.file_size_bytes is
   'Tamaño del fichero. El bucket limita hoy a 60 MiB por fichero; el número no se copia aquí para no tener dos fuentes de verdad de un ajuste de la plataforma.';
 
--- Única por clave de comparación, y solo donde hay signatura: `place_key` es
--- `strict`, así que devuelve nulo para los documentos sin código y el índice los
--- ignora — que es lo que permite tener muchos sin signatura y ninguno duplicado.
+-- Unique by comparison key, and only where there is a shelfmark: `place_key` is
+-- `strict`, so it returns null for the documents with no code and the index
+-- ignores them — which is what allows having many with no shelfmark and none duplicated.
 create unique index archive_documents_code_unique
   on public.archive_documents (public.place_key(archive_code));
 
--- SIN unicidad sobre el título, a propósito y como en la bibliografía y las
--- exposiciones: tres recortes distintos se describen igual («Nota de prensa de
--- la inauguración»). Los duplicados se resuelven por revisión (RF-909).
+-- WITHOUT uniqueness over the title, on purpose and as in the bibliography and the
+-- exhibitions: three different clippings are described the same («Nota de prensa de
+-- la inauguración»). The duplicates are resolved by review (RF-909).
 
 create index archive_documents_type_idx
   on public.archive_documents (document_type_id);
@@ -477,18 +477,18 @@ create trigger archive_document_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── Un lugar con documentos dentro tampoco se retira ────────
+-- ── Nor is a place with documents inside withdrawn ──────────
 --
--- Es el guardarraíl a medio aplicar más fácil de olvidar de todo este diseño:
--- `tg_physical_place_deactivation` comprueba hoy los lugares hijos y las obras
--- dentro, y sin este reemplazo se podría retirar el edificio donde está el
--- archivo entero sin que nada avisara.
+-- It is the easiest half-applied guardrail to forget in this whole design:
+-- `tg_physical_place_deactivation` today checks the child places and the artworks
+-- inside, and without this replacement the building where the whole archive is
+-- could be withdrawn with nothing warning.
 --
--- `create or replace` reemplaza la definición ENTERA, así que los dos bloques
--- anteriores se repiten aquí literalmente y el test comprueba los tres: un
--- reemplazo que se coma uno de ellos no rompe nada visible el día que se
--- escribe. `set search_path = public` se repite por lo mismo, porque el
--- reemplazo se lleva también la configuración de la función.
+-- `create or replace` replaces the WHOLE definition, so the two previous
+-- blocks are repeated here literally and the test checks all three: a
+-- replacement that eats one of them breaks nothing visible the day it is
+-- written. `set search_path = public` is repeated for the same reason, because the
+-- replacement also takes the function's configuration.
 create or replace function public.tg_physical_place_deactivation()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -519,28 +519,28 @@ comment on function public.tg_physical_place_deactivation is
   'Impide retirar un lugar que todavía contiene lugares, obras activas o documentos de archivo activos (ADR-006, RF-215, RF-515).';
 
 
--- ── El documento y la obra (RF-516) ─────────────────────────
+-- ── The document and the artwork (RF-516) ───────────────────
 --
--- Tabla puente, y no la clave ajena `obra_relacionada` de v11: con una sola
--- referencia por lado, un recorte de prensa que menciona tres obras obliga a
--- triplicar la ficha y con ella el PDF subido. Y el propio v11 fija el criterio
--- en sus notas de implementación: cuando un dato depende de la combinación de
--- dos entidades, se modela como tabla propia.
+-- A bridge table, and not v11's `obra_relacionada` foreign key: with a single
+-- reference per side, a press clipping that mentions three artworks forces
+-- tripling the record and with it the uploaded PDF. And v11 itself fixes the criterion
+-- in its implementation notes: when a datum depends on the combination of
+-- two entities, it is modelled as a table of its own.
 
 create table public.artwork_documents (
   id uuid primary key default gen_random_uuid(),
 
-  -- Misma forma que `images`, `provenance_events`, `artwork_bibliography` y
-  -- `artwork_exhibitions`: `on update cascade` porque el identificador de
-  -- catalogación es texto, y sin `on delete` porque de `artworks` no se borra
-  -- nada (RF-901).
+  -- Same shape as `images`, `provenance_events`, `artwork_bibliography` and
+  -- `artwork_exhibitions`: `on update cascade` because the cataloguing
+  -- identifier is text, and with no `on delete` because nothing is deleted from `artworks`
+  -- (RF-901).
   catalog_id text not null references public.artworks (catalog_id) on update cascade,
 
   document_id uuid not null references public.archive_documents (id) on delete restrict,
 
-  -- Qué dice ese documento de ESTA obra: «reproducida en la página 3», «la obra
-  -- aparece al fondo de la fotografía». Distinto de la nota del documento, que
-  -- habla del documento como conjunto.
+  -- What that document says about THIS artwork: «reproducida en la página 3», «la obra
+  -- aparece al fondo de la fotografía». Different from the document's note, which
+  -- speaks of the document as a whole.
   note text not null default '',
 
   -- RF-804.
@@ -549,28 +549,28 @@ create table public.artwork_documents (
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-517, que REVISA RF-903, igual que en las otras dos puentes: nada de este
-  -- esquema se borra nunca, sin excepciones que recordar. Sin `restored_at`:
-  -- esta fila se restaura desde la ficha de la que cuelga y no desde una
-  -- pantalla de papelera, así que volver a añadirla la deja como si nunca se
-  -- hubiera retirado.
+  -- RF-517, which REVISES RF-903, just as in the other two bridges: nothing in this
+  -- schema is ever deleted, with no exceptions to remember. With no `restored_at`:
+  -- this row is restored from the record it hangs from and not from a
+  -- wastebasket screen, so adding it again leaves it as if it had never
+  -- been withdrawn.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
 
-  -- Un documento que menciona dos veces la misma obra es un vínculo con una nota
-  -- más larga, no dos filas. La restricción cubre también los vínculos
-  -- retirados, que es lo que permite que volver a añadir restaure en vez de
-  -- duplicar (ver `document_artwork`).
+  -- A document that mentions the same artwork twice is one link with a longer
+  -- note, not two rows. The constraint also covers the withdrawn
+  -- links, which is what allows adding again to restore instead of
+  -- duplicating (see `document_artwork`).
   constraint artwork_documents_unique unique (catalog_id, document_id)
 );
 
 comment on table public.artwork_documents is
   'Vínculo entre un documento de archivo y una obra (RF-516). Tabla puente y no la clave ajena de v11: un recorte que menciona tres obras no puede obligar a triplicar el PDF. Nada se borra (RF-517).';
 
--- El bloque «Documentación relacionada» de la ficha de obra usa el índice único,
--- que ya empieza por `catalog_id`; este sirve al bloque «Relacionado con» de la
--- ficha del documento (RF-310).
+-- The artwork record's «Documentación relacionada» block uses the unique index,
+-- which already starts with `catalog_id`; this one serves the document record's
+-- «Relacionado con» block (RF-310).
 create index artwork_documents_document_idx
   on public.artwork_documents (document_id);
 
@@ -579,12 +579,12 @@ create trigger artwork_document_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── El documento y la exposición (RF-516) ───────────────────
+-- ── The document and the exhibition (RF-516) ────────────────
 --
--- El cartel, el díptico o el folleto de una muestra documentan la exposición en
--- su conjunto y no una obra concreta, que es el caso que v11 añadió en v4 con
--- `exposicion_relacionada`. Aquí es puente por lo mismo que la anterior: una
--- nota de prensa que cubre dos muestras es una fila y dos vínculos.
+-- The poster, the diptych or the leaflet of a show documents the exhibition as
+-- a whole and not one particular artwork, which is the case v11 added in v4 with
+-- `exposicion_relacionada`. Here it is a bridge for the same reason as the previous one: a
+-- press release covering two shows is one row and two links.
 
 create table public.exhibition_documents (
   id uuid primary key default gen_random_uuid(),
@@ -600,7 +600,7 @@ create table public.exhibition_documents (
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles (id),
 
-  -- RF-517, y sin `restored_at` por lo mismo que la puente anterior.
+  -- RF-517, and with no `restored_at` for the same reason as the previous bridge.
   active boolean not null default true,
   deactivated_at timestamptz,
   deactivated_by uuid references public.profiles (id),
@@ -619,20 +619,20 @@ create trigger exhibition_document_row_audit
   for each row execute function public.tg_row_audit();
 
 
--- ── Volver a vincular un documento retirado lo RESTAURA ─────
+-- ── Linking a withdrawn document again RESTORES it ──────────
 --
--- Mismo caso y misma solución que `cite_artwork` y `exhibit_artwork`: con la
--- unicidad cubriendo también los vínculos retirados, un `insert` de una pareja
--- que está en la papelera choca contra el índice, y la interfaz convertiría un
--- «Añadir» en una violación de unicidad incomprensible.
+-- Same case and same solution as `cite_artwork` and `exhibit_artwork`: with the
+-- uniqueness also covering the withdrawn links, an `insert` of a pair
+-- that is in the wastebasket clashes against the index, and the interface would turn an
+-- «Añadir» into an incomprehensible uniqueness violation.
 --
--- Funciones y no un trigger `before insert` que devuelva `null`: un trigger así
--- deja el `insert` sin filas afectadas y quien llame desde la API pidiendo la
--- fila creada no recibirá ninguna. La función devuelve siempre la fila.
+-- Functions and not a `before insert` trigger returning `null`: a trigger like that
+-- leaves the `insert` with no affected rows and whoever calls from the API asking for the
+-- created row will receive none. The function always returns the row.
 --
--- Sin SECURITY DEFINER: las políticas siguen en vigor y un Lector no escribe
--- aquí. La comprobación explícita solo convierte el silencioso «no ha cambiado
--- nada» en un error legible, y en español porque lo lee ella.
+-- With no SECURITY DEFINER: the policies remain in force and a Reader does not write
+-- here. The explicit check only turns the silent «nothing has
+-- changed» into a legible error, and in Spanish because she reads it.
 
 create function public.document_artwork(
   p_catalog_id text,
@@ -654,10 +654,10 @@ begin
   values (p_catalog_id, p_document_id, coalesce(p_note, ''))
   on conflict (catalog_id, document_id) do update
      set active = true,
-         -- Lo que no se manda no se borra: volver a añadir un vínculo que ya
-         -- existía no puede vaciar la nota que alguien escribió, porque el
-         -- formulario de «Añadir» viene en blanco. Vaciarla es editar el
-         -- vínculo, que es otra operación.
+         -- What is not sent is not deleted: adding again a link that already
+         -- existed cannot empty the note somebody wrote, because the
+         -- «Añadir» form comes in blank. Emptying it is editing the
+         -- link, which is another operation.
          note = case when btrim(excluded.note) <> ''
                      then excluded.note
                      else artwork_documents.note end
@@ -701,7 +701,7 @@ comment on function public.document_exhibition is
   'Vincula un documento de archivo con una exposición, o RESTAURA el vínculo que estuviera retirado (RF-516, RF-517).';
 
 
--- ── Lo que la obra gana (RF-218) ────────────────────────────
+-- ── What the artwork gains (RF-218) ─────────────────────────
 
 alter table public.artworks
   add column documentation_status public.research_status not null default 'UNREVIEWED';
@@ -710,33 +710,33 @@ comment on column public.artworks.documentation_status is
   'Estado de investigación de la documentación relacionada de la obra (RF-218). Una obra sin documentos vinculados no es una obra de la que no se conserve nada: es una obra cuyo archivo nadie ha mirado todavía.';
 
 
--- ── «Sin revisar» no es «no», también en documentación ──────
+-- ── «Sin revisar» is not «no», in documentation too ─────────
 --
--- Cuarto y último reemplazo de la misma función: la creó la procedencia, la
--- bibliografía y las exposiciones le añadieron el suyo y este cierra los cuatro
--- bloques documentales de RF-218. Los cuatro se comprueban en el test, porque un
--- `create or replace` puede comerse un bloque anterior sin que nada avise — la
--- migración que lo escribió se aplicó hace rato y su test sigue pasando, porque
--- comprueba la función que hay y no la que había.
+-- Fourth and last replacement of the same function: the provenance created it, the
+-- bibliography and the exhibitions added their own and this one closes the four
+-- documentary blocks of RF-218. All four are checked in the test, because a
+-- `create or replace` can eat a previous block with nothing warning — the
+-- migration that wrote it was applied a while ago and its test goes on passing, because
+-- it checks the function that is there and not the one that was.
 --
--- Se comprueba por las DOS puertas, como en los tres grupos anteriores: ni se
--- declara «investigado sin resultado» en una obra con documentos vinculados, ni
--- se vincula un documento a una obra declarada así.
+-- It is checked through BOTH doors, as in the three previous groups: neither is
+-- «investigado sin resultado» declared on an artwork with linked documents, nor is
+-- a document linked to an artwork declared that way.
 --
--- `set search_path = public` se repite porque `create or replace` reemplaza la
--- definición entera y con ella su configuración.
+-- `set search_path = public` is repeated because `create or replace` replaces the
+-- whole definition and with it its configuration.
 --
--- Los `if` que miran `old` van dentro de su propio `if tg_op = 'UPDATE'` por el
--- detalle de plpgsql que las versiones anteriores documentan: en un trigger de
--- INSERT el registro `old` no está asignado, y una expresión que lo nombre falla
--- aunque el `and` de la izquierda ya sea falso.
+-- The `if`s that look at `old` go inside their own `if tg_op = 'UPDATE'` because of the
+-- plpgsql detail the previous versions document: in an INSERT
+-- trigger the `old` record is not assigned, and an expression naming it fails
+-- even if the `and` on the left is already false.
 create or replace function public.tg_artwork_research_status_coherent()
 returns trigger language plpgsql
 set search_path = public as $$
 declare
-  -- En un alta todo es un cambio. En una edición, solo lo que cambia se
-  -- comprueba: así una fila que ya estuviera en un estado imposible se puede
-  -- arreglar en vez de bloquear cualquier otra edición de la obra.
+  -- On a creation everything is a change. On an edit, only what changes is
+  -- checked: this way a row that was already in an impossible state can be
+  -- fixed instead of blocking any other edit of the artwork.
   v_provenance_changed boolean := true;
   v_bibliography_changed boolean := true;
   v_exhibition_changed boolean := true;
@@ -791,9 +791,9 @@ end $$;
 comment on function public.tg_artwork_research_status_coherent is
   'Impide declarar un bloque documental «investigado sin resultado» cuando ya tiene filas debajo (RF-218). Cubre los cuatro bloques: procedencia, bibliografía, historial expositivo y documentación.';
 
--- La otra puerta. Lo que SÍ se permite, y es intencionado: documentos vinculados
--- a una obra cuyo estado sigue en «Sin revisar». Tener un dato no es haber hecho
--- la investigación, así que la regla es de un solo sentido.
+-- The other door. What IS allowed, and it is intentional: documents linked
+-- to an artwork whose state is still on «Sin revisar». Having a datum is not having done
+-- the research, so the rule is one-way.
 create function public.tg_artwork_document_status_coherent()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -815,17 +815,17 @@ create trigger artwork_document_status_coherent
   for each row execute function public.tg_artwork_document_status_coherent();
 
 
--- ── RLS y privilegios ───────────────────────────────────────
+-- ── RLS and privileges ──────────────────────────────────────
 --
--- Se revoca primero y se concede después, uno a uno: la plataforma concede por
--- omisión todos los privilegios de cada tabla nueva a los roles anónimo y
--- autenticado, incluido `delete` (RF-113).
+-- It is revoked first and granted afterwards, one by one: the platform grants by
+-- default all the privileges of every new table to the anonymous and
+-- authenticated roles, `delete` included (RF-113).
 --
--- Sin DELETE en ninguna de las cinco: ni privilegio ni política, nunca (RF-901,
--- RF-517). Retirar un documento o un vínculo es un update de `active`.
+-- No DELETE in any of the five: neither privilege nor policy, ever (RF-901,
+-- RF-517). Withdrawing a document or a link is an update of `active`.
 --
--- Las políticas van en la migración siguiente. Hasta que existan, estas tablas
--- no las lee ni las escribe nadie con sesión: RLS activado sin política niega.
+-- The policies go in the next migration. Until they exist, nobody with a session
+-- reads or writes these tables: RLS enabled with no policy denies.
 
 alter table public.document_types enable row level security;
 alter table public.archive_series enable row level security;
@@ -845,15 +845,15 @@ grant select, insert, update on public.archive_documents to authenticated;
 grant select, insert, update on public.artwork_documents to authenticated;
 grant select, insert, update on public.exhibition_documents to authenticated;
 
--- Explícito, como en 20260801140000 y en los cuatro grupos anteriores: en esta
--- plataforma una función nueva nace con EXECUTE para PUBLIC pese al `alter
--- default privileges`, y quien lo caza es `function_privileges.test.sql`.
+-- Explicit, as in 20260801140000 and in the four previous groups: on this
+-- platform a new function is born with EXECUTE for PUBLIC despite the `alter
+-- default privileges`, and what catches it is `function_privileges.test.sql`.
 revoke all on function public.tg_document_type_deactivation() from public;
 revoke all on function public.tg_archive_series_no_cycle() from public;
 revoke all on function public.tg_archive_series_deactivation() from public;
 revoke all on function public.tg_artwork_document_status_coherent() from public;
--- `create or replace` conserva los privilegios de la función anterior, pero se
--- repite para que la migración no dependa de ese detalle.
+-- `create or replace` keeps the previous function's privileges, but it is
+-- repeated so that the migration does not depend on that detail.
 revoke all on function public.tg_artwork_research_status_coherent() from public;
 revoke all on function public.tg_physical_place_deactivation() from public;
 

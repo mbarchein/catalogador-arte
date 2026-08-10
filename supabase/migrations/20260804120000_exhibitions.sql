@@ -610,9 +610,9 @@ end $$;
 comment on function public.tg_artwork_research_status_coherent is
   'Impide declarar un bloque documental «investigado sin resultado» cuando ya tiene filas debajo (RF-218). Cubre procedencia, bibliografía e historial expositivo; el grupo de documentación añadirá el suyo.';
 
--- La otra puerta. Lo que SÍ se permite, y es intencionado: participaciones en
--- una obra cuyo estado sigue en «Sin revisar». Tener un dato no es haber hecho
--- la investigación, así que la regla es de un solo sentido.
+-- The other door. What IS allowed, and it is intentional: participations on
+-- an artwork whose state is still on «Sin revisar». Having a datum is not having done
+-- the research, so the rule is one-way.
 create function public.tg_artwork_exhibition_status_coherent()
 returns trigger language plpgsql
 set search_path = public as $$
@@ -634,17 +634,17 @@ create trigger artwork_exhibition_status_coherent
   for each row execute function public.tg_artwork_exhibition_status_coherent();
 
 
--- ── RLS y privilegios ───────────────────────────────────────
+-- ── RLS and privileges ──────────────────────────────────────
 --
--- Se revoca primero y se concede después, uno a uno: la plataforma concede por
--- omisión todos los privilegios de cada tabla nueva a los roles anónimo y
--- autenticado, incluido `delete` (RF-113).
+-- It is revoked first and granted afterwards, one by one: the platform grants by
+-- default all the privileges of every new table to the anonymous and
+-- authenticated roles, `delete` included (RF-113).
 --
--- Sin DELETE en ninguna de las tres: ni privilegio ni política, nunca (RF-901,
--- RF-517). Retirar una participación es un update de `active`.
+-- No DELETE in any of the three: neither privilege nor policy, ever (RF-901,
+-- RF-517). Withdrawing a participation is an update of `active`.
 --
--- Las políticas van en la migración siguiente. Hasta que existan, estas tablas
--- no las lee ni las escribe nadie con sesión: RLS activado sin política niega.
+-- The policies go in the next migration. Until they exist, nobody with a session
+-- reads or writes these tables: RLS enabled with no policy denies.
 
 alter table public.exhibition_venues enable row level security;
 alter table public.exhibitions enable row level security;
@@ -658,14 +658,14 @@ grant select, insert, update on public.exhibition_venues to authenticated;
 grant select, insert, update on public.exhibitions to authenticated;
 grant select, insert, update on public.artwork_exhibitions to authenticated;
 
--- Explícito, como en 20260801140000 y en los tres grupos anteriores: en esta
--- plataforma una función nueva nace con EXECUTE para PUBLIC pese al `alter
--- default privileges`, y quien lo caza es `function_privileges.test.sql`.
+-- Explicit, as in 20260801140000 and in the three previous groups: on this
+-- platform a new function is born with EXECUTE for PUBLIC despite the `alter
+-- default privileges`, and what catches it is `function_privileges.test.sql`.
 revoke all on function public.tg_exhibition_year_from_dates() from public;
 revoke all on function public.tg_exhibition_venue_deactivation() from public;
 revoke all on function public.tg_artwork_exhibition_status_coherent() from public;
--- `create or replace` conserva los privilegios de la función anterior, pero se
--- repite para que la migración no dependa de ese detalle.
+-- `create or replace` keeps the previous function's privileges, but it is
+-- repeated so that the migration does not depend on that detail.
 revoke all on function public.tg_artwork_research_status_coherent() from public;
 revoke all on function public.tg_party_deactivation() from public;
 
