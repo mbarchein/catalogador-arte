@@ -1,28 +1,28 @@
 -- ============================================================
--- Esquema inicial: captura básica de obra
+-- Initial schema: basic artwork capture
 --
--- Alcance deliberadamente parcial. Cubre la tabla Obras con los campos que se
--- rellenan con la obra delante (fase 1) más trazabilidad y papelera. Fuera de
--- esta migración, por ahora: Imágenes, Series, Exposiciones, Bibliografía,
--- Propietarios/Instituciones y Archivo/Documentación.
+-- Deliberately partial scope. It covers the Artworks table with the fields that are
+-- filled in with the artwork in front (phase 1) plus traceability and wastebasket. Outside
+-- this migration, for now: Images, Series, Exhibitions, Bibliography,
+-- Owners/Institutions and Archive/Documentation.
 --
--- Requisitos que implementa: RF-202 a RF-211, RF-109 a RF-112, RF-204,
--- RF-801 a RF-803, RF-901, RF-609.
+-- Requirements it implements: RF-202 to RF-211, RF-109 to RF-112, RF-204,
+-- RF-801 to RF-803, RF-901, RF-609.
 -- ============================================================
 
 -- ── Tipos ───────────────────────────────────────────────────
 
 create type rol_usuario as enum ('SUPERUSUARIO', 'CATALOGADOR', 'LECTOR');
 
--- RF-202: el fondo determina el prefijo del identificador.
+-- RF-202: the fund determines the identifier's prefix.
 create type fondo_artista as enum ('ROTILI', 'RUIZ_CAMPINS');
 
--- RF-205: «Sin revisar» no es «No». Es el valor inicial de todo campo de
--- selección, y significa «todavía no lo hemos mirado».
+-- RF-205: «Sin revisar» is not «No». It is the initial value of every selection
+-- field, and it means «we have not looked at it yet».
 create type tri_estado as enum ('SI', 'NO', 'SIN_REVISAR');
 
--- RF-209 y esquema v11: cuatro valores, para cubrir la obra sin título y sin
--- nombre de conveniencia todavía decidido.
+-- RF-209 and schema v11: four values, to cover the artwork with no title and with no
+-- convenience name decided yet.
 create type valor_titulo_atribuido as enum ('NO_APLICA', 'NO', 'SI', 'SIN_REVISAR');
 
 create type valor_estado_conservacion as enum (
@@ -39,9 +39,9 @@ create table public.perfiles (
   id uuid primary key references auth.users (id) on delete cascade,
   email text not null unique,
   nombre text not null default '',
-  -- El rol por omisión es el de menor privilegio. Una cuenta recién creada no
-  -- puede escribir hasta que el superusuario la promueva explícitamente: si
-  -- alguna vez se abriera el registro por error, el daño sería nulo.
+  -- The default role is the least privileged one. A freshly created account cannot
+  -- write until the superuser promotes it explicitly: if
+  -- registration were ever opened by mistake, the damage would be nil.
   rol rol_usuario not null default 'LECTOR',
   creado_en timestamptz not null default now()
 );
@@ -49,7 +49,7 @@ create table public.perfiles (
 comment on table public.perfiles is
   'Espejo de auth.users con el rol de cada usuario. RF-109.';
 
--- Crea el perfil al darse de alta la cuenta en auth.users.
+-- Creates the profile when the account is registered in auth.users.
 create function public.tg_nuevo_usuario()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
@@ -70,25 +70,25 @@ create trigger nuevo_usuario
 -- ── Obras ───────────────────────────────────────────────────
 
 create table public.obras (
-  -- RF-202. Lo asigna el trigger asignar_id_catalogacion si no se indica.
+  -- RF-202. Assigned by the asignar_id_catalogacion trigger if not given.
   id_catalogacion text primary key,
 
-  -- RF-203: obligatorio y sin «Sin revisar». De él depende el prefijo.
+  -- RF-203: compulsory and with no «Sin revisar». On it depends the prefix.
   artista fondo_artista not null,
 
-  -- Identificación
-  -- RF-209: vacío significa obra sin título. La interfaz muestra «[Sin título]»
-  -- entre corchetes, pero ese texto no se guarda nunca como dato.
+  -- Identification
+  -- RF-209: empty means an artwork with no title. The interface shows «[Sin título]»
+  -- in brackets, but that text is never stored as a datum.
   titulo text not null default '',
   titulo_atribuido valor_titulo_atribuido not null default 'SIN_REVISAR',
   tipo_obra text not null default '',
   -- RF-207: texto libre, admite «1978», «1975-1978», «c. 1980», «c. 1975-1978».
   fecha_ejecucion text not null default '',
-  -- RF-207: auxiliar, no se publica. Solo existe para poder ordenar y filtrar.
+  -- RF-207: auxiliary, not published. It exists only to make sorting and filtering possible.
   fecha_orden integer,
   tecnica text not null default '',
   soporte text not null default '',
-  -- RF-208: números sin unidades, en campos separados.
+  -- RF-208: numbers with no units, in separate fields.
   alto_cm numeric(8, 2),
   ancho_cm numeric(8, 2),
   profundidad_cm numeric(8, 2),
@@ -101,8 +101,8 @@ create table public.obras (
   ubicacion_fisica text not null default '',
   estado_existencia valor_estado_existencia not null default 'SIN_REVISAR',
 
-  -- Estado del proceso
-  -- RF-211: manuales, no derivados del estado de otros campos.
+  -- State of the process
+  -- RF-211: manual, not derived from the state of other fields.
   medidas_verificadas boolean not null default false,
   fase_inventario_completada boolean not null default false,
   fase_documentacion_completada boolean not null default false,
@@ -116,26 +116,26 @@ create table public.obras (
   fecha_actualizacion_basica timestamptz,
   actualizado_por uuid references public.perfiles (id),
 
-  -- Papelera (RF-901): baja lógica, la fila nunca se borra.
+  -- Wastebasket (RF-901): logical deletion, the row is never deleted.
   activo boolean not null default true,
   fecha_baja timestamptz,
   dado_de_baja_por uuid references public.perfiles (id),
   fecha_restauracion timestamptz,
   restaurado_por uuid references public.perfiles (id),
 
-  -- RF-202: formato del identificador.
+  -- RF-202: the identifier's format.
   constraint obras_id_formato
     check (id_catalogacion ~ '^(AR|RC)-[0-9]{4}$'),
 
-  -- El prefijo y el fondo no pueden contradecirse. Sin esto, una AR-0001
-  -- atribuida a Ruiz Campins sería una fila válida y una etiqueta física
-  -- mintiendo sobre la obra que lleva pegada.
+  -- The prefix and the fund cannot contradict each other. Without this, an AR-0001
+  -- attributed to Ruiz Campins would be a valid row and a physical label
+  -- lying about the artwork it is stuck to.
   constraint obras_prefijo_coincide_con_artista check (
     (artista = 'ROTILI' and id_catalogacion like 'AR-%')
     or (artista = 'RUIZ_CAMPINS' and id_catalogacion like 'RC-%')
   ),
 
-  -- RF-208: una medida negativa es un error de teclado, no un dato.
+  -- RF-208: a negative measurement is a typing error, not a datum.
   constraint obras_medidas_positivas check (
     coalesce(alto_cm, 1) > 0
     and coalesce(ancho_cm, 1) > 0
@@ -146,15 +146,15 @@ create table public.obras (
 comment on table public.obras is
   'Tabla principal del catálogo. Una fila por pieza catalogada. Esquema v11, tabla 1.';
 
--- RF-609: los índices y las búsquedas excluyen las fichas de baja, así que ese
--- es el acceso que hay que hacer rápido.
+-- RF-609: the indexes and the searches exclude the withdrawn records, so that
+-- is the access that has to be made fast.
 create index obras_activas_idx on public.obras (activo, artista, fecha_orden);
 create index obras_orden_idx on public.obras (fecha_orden) where activo;
 
--- ── Asignación del identificador (DP-01) ────────────────────
+-- ── Identifier assignment (DP-01) ───────────────────────────
 
--- Función de consulta: permite a la interfaz mostrar «se guardará como AR-0248»
--- antes de guardar. No reserva el número.
+-- Query function: it lets the interface show «se guardará como AR-0248»
+-- before saving. It does not reserve the number.
 create function public.siguiente_id_catalogacion(p_artista fondo_artista)
 returns text language sql stable security definer set search_path = public as $$
   select
@@ -176,21 +176,21 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare
   v_prefijo text := case new.artista when 'ROTILI' then 'AR' else 'RC' end;
 begin
-  -- Respeta un identificador indicado explícitamente: permite recuperar la
-  -- numeración de un inventario anterior o corregir una carga.
+  -- It respects an explicitly given identifier: it allows recovering the
+  -- numbering of an earlier inventory or correcting a load.
   if new.id_catalogacion is not null and new.id_catalogacion <> '' then
     return new;
   end if;
 
-  -- Serializa la asignación por fondo. Sin este cerrojo, dos catalogadores
-  -- dando de alta a la vez obtendrían el mismo número: exactamente el
-  -- duplicado que el esquema anticipa como previsible. El cerrojo se libera al
-  -- cerrar la transacción, que es la misma que ejecuta el insert.
+  -- It serialises the assignment per fund. Without this lock, two cataloguers
+  -- creating records at once would get the same number: exactly the
+  -- duplicate the schema anticipates as foreseeable. The lock is released on
+  -- closing the transaction, which is the same one that runs the insert.
   perform pg_advisory_xact_lock(hashtext('id_catalogacion:' || v_prefijo));
 
-  -- Cuenta también las fichas dadas de baja: un identificador retirado no se
-  -- recicla nunca de forma automática (RF-908). Reutilizarlo es un acto
-  -- deliberado que pasa por restaurar la ficha desde la papelera.
+  -- It also counts the withdrawn records: a withdrawn identifier is never
+  -- recycled automatically (RF-908). Reusing it is a deliberate act
+  -- that goes through restoring the record from the wastebasket.
   new.id_catalogacion := public.siguiente_id_catalogacion(new.artista);
   return new;
 end $$;
