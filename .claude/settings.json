@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__github__actions_list",
+      "mcp__github__actions_get",
+      "mcp__github__get_job_logs",
+      "mcp__github__get_commit",
+      "Read(//tmp/claude-0/**)",
+      "Read(//root/.claude/projects/**)",
+      "Bash(npx vitest run)",
+      "Bash(npx tsc -b --noEmit --force)",
+      "Bash(bash .github/pipeline.test.sh)",
+      "Bash(make verificar)",
+      "Bash(make db-test)",
+      "Bash(make typecheck)",
+      "Bash(make test)"
+    ]
+  }
+}
