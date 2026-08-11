@@ -768,6 +768,179 @@ begin
 end $$;
 
 
+-- ── 7 quater. La pertenencia es una columna (RF-1619, RF-1620) ──
+--
+-- Era la posición, y se vino abajo al usarlo: **una sección no se podía mover entre
+-- obras sueltas** sin apropiárselas, porque «suelta detrás de un rótulo» no era un
+-- estado que el modelo pudiera escribir. Lo que se comprueba aquí es lo que sostiene
+-- el arreglo, y en este orden: que mover una sección no cambia la pertenencia de
+-- nadie, y que los bloques siguen yendo seguidos — que es lo que la portadilla y el
+-- índice ya prometen impreso.
+--
+-- En un dossier propio: el de arriba lleva ya media docena de elementos de otros
+-- bloques, y un orden de cinco se lee.
+insert into public.dossiers (id, title) values
+  ('00000000-0000-0000-0000-00000000e003', 'Dossier de las secciones');
+
+insert into public.artworks (catalog_id, artist, title, attributed_title) values
+  ('AR-9680', 'ROTILI', 'Suelta uno', 'UNCONFIRMED'),
+  ('AR-9681', 'ROTILI', 'Suelta dos', 'UNCONFIRMED'),
+  ('AR-9682', 'ROTILI', 'Dentro uno', 'UNCONFIRMED'),
+  ('AR-9683', 'ROTILI', 'Dentro dos', 'UNCONFIRMED');
+
+do $$
+declare
+  v_d uuid := '00000000-0000-0000-0000-00000000e003';
+  v_s uuid; v_a uuid; v_b uuid; v_x uuid; v_y uuid;
+  v_order text[];
+  v_ids uuid[];
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000d001","role":"authenticated"}';
+  set local role authenticated;
+
+  -- Dos obras sueltas, un rótulo, y dos obras dentro: el dossier de la incidencia.
+  v_a := (public.add_artwork_to_dossier(v_d, 'AR-9680')).id;
+  v_b := (public.add_artwork_to_dossier(v_d, 'AR-9681')).id;
+  v_s := (public.add_section_to_dossier(v_d, 'Óleos')).id;
+  v_x := (public.add_artwork_to_dossier(v_d, 'AR-9682')).id;
+  v_y := (public.add_artwork_to_dossier(v_d, 'AR-9683')).id;
+
+  -- Lo que se añade hereda la sección del final, que es donde cae. Antes del rótulo
+  -- no hay ninguna, y detrás de él es la suya.
+  if (select section_item_id from public.dossier_items where id = v_a) is not null then
+    raise exception 'FAIL: la primera obra tenía que salir suelta';
+  end if;
+  if (select section_item_id from public.dossier_items where id = v_x) is distinct from v_s then
+    raise exception 'FAIL: lo añadido detrás del rótulo tenía que entrar en él';
+  end if;
+  raise notice 'OK: lo que se añade entra en el bloque que hay al final, y no en otro';
+
+  -- La sección sube UN PUESTO, por encima de la segunda obra suelta. La obra
+  -- desplazada sigue suelta: es exactamente lo que el modelo anterior no podía decir.
+  perform public.reorder_dossier_items(v_d, array[v_a, v_s, v_x, v_y, v_b]);
+  if (select section_item_id from public.dossier_items where id = v_b) is not null then
+    raise exception 'FAIL: la obra desplazada ha cambiado de sección';
+  end if;
+
+  -- Y otro puesto más: la sección va primera y las dos sueltas quedan detrás, que es
+  -- el caso que antes se llevaba el dossier entero por delante.
+  perform public.reorder_dossier_items(v_d, array[v_s, v_x, v_y, v_a, v_b]);
+  if (select count(*) from public.dossier_items
+       where dossier_id = v_d and section_item_id = v_s) <> 2 then
+    raise exception 'FAIL: la sección se ha apropiado de las obras sueltas';
+  end if;
+  raise notice 'OK: mover una sección no cambia la pertenencia de ninguna obra';
+
+  -- Los bloques van seguidos: un orden que parte una sección se rechaza entero.
+  begin
+    perform public.reorder_dossier_items(v_d, array[v_s, v_x, v_a, v_y, v_b]);
+    raise exception 'FAIL: se admitió una sección con las obras partidas';
+  exception
+    when raise_exception then
+      if position('tienen que ir seguidos' in sqlerrm) = 0 then raise; end if;
+  end;
+
+  select array_agg(coalesce(catalog_id, heading) order by sort_order)
+    into v_order from public.dossier_items where dossier_id = v_d and active;
+  if v_order <> array['Óleos', 'AR-9682', 'AR-9683', 'AR-9680', 'AR-9681'] then
+    raise exception 'FAIL: un orden rechazado dejó el dossier a medias: %', v_order;
+  end if;
+  raise notice 'OK: un orden que parte un bloque se rechaza entero (%)', v_order;
+
+  -- Meter una obra en una sección es el orden y la pertenencia a la vez, en una sola
+  -- escritura: dos dejarían un instante con la obra dentro y colocada fuera.
+  perform public.reorder_dossier_items(
+    v_d,
+    array[v_s, v_x, v_y, v_a, v_b],
+    array[null, v_s, v_s, v_s, null]::uuid[]);
+  if (select section_item_id from public.dossier_items where id = v_a) is distinct from v_s then
+    raise exception 'FAIL: la obra no ha entrado en la sección';
+  end if;
+
+  -- Y una pertenencia que no cuadra con el orden que la acompaña tampoco pasa.
+  begin
+    perform public.reorder_dossier_items(
+      v_d,
+      array[v_s, v_x, v_y, v_a, v_b],
+      array[null, v_s, null, v_s, null]::uuid[]);
+    raise exception 'FAIL: se admitió una pertenencia partida';
+  exception
+    when raise_exception then
+      if position('tienen que ir seguidos' in sqlerrm) = 0 then raise; end if;
+  end;
+  raise notice 'OK: el orden y la pertenencia se guardan juntos, o no se guardan';
+
+  -- Lo que se recupera vuelve al final y al bloque que allí haya: su hueco muerto
+  -- puede haber quedado en medio de otra sección, y volver ahí dejaría el dossier
+  -- sin poder reordenarse.
+  perform public.reorder_dossier_items(
+    v_d,
+    array[v_s, v_x, v_y, v_a, v_b],
+    array[null, v_s, v_s, null, null]::uuid[]);
+  update public.dossier_items set active = false where id = v_x;
+  update public.dossier_items set active = true where id = v_x;
+  select array_agg(coalesce(catalog_id, heading) order by sort_order)
+    into v_order from public.dossier_items where dossier_id = v_d and active;
+  if v_order[array_length(v_order, 1)] <> 'AR-9682'
+     or (select section_item_id from public.dossier_items where id = v_x) is not null then
+    raise exception 'FAIL: lo recuperado no volvió al final y suelto: %', v_order;
+  end if;
+
+  -- Retirar la sección suelta lo que agrupaba, que es lo que ya se veía cuando la
+  -- pertenencia era la posición: un rótulo retirado no se imprime.
+  update public.dossier_items set active = false where id = v_s;
+  if exists (select 1 from public.dossier_items
+              where dossier_id = v_d and section_item_id = v_s) then
+    raise exception 'FAIL: retirar la sección tenía que soltar sus elementos';
+  end if;
+
+  -- Y después de todo eso el dossier sigue reordenándose, que es la prueba de que el
+  -- invariante no se ha roto por ningún camino.
+  select array_agg(id order by sort_order) into v_ids
+    from public.dossier_items where dossier_id = v_d and active;
+  perform public.reorder_dossier_items(v_d, v_ids);
+  raise notice 'OK: retirar una sección suelta sus obras, y el dossier sigue ordenándose';
+end $$;
+
+reset role;
+
+-- Un elemento no pertenece a lo que no es una sección, ni a una sección de otro
+-- dossier: lo primero lo dice un trigger —una clave ajena apunta a la tabla, no al
+-- tipo— y lo segundo la clave ajena compuesta.
+do $$
+declare v_other uuid;
+begin
+  begin
+    update public.dossier_items
+       set section_item_id = (select id from public.dossier_items
+                               where dossier_id = '00000000-0000-0000-0000-00000000e003'
+                                 and kind = 'ARTWORK' limit 1)
+     where dossier_id = '00000000-0000-0000-0000-00000000e003'
+       and kind = 'ARTWORK';
+    raise exception 'FAIL: un elemento pudo pertenecer a una obra';
+  exception
+    when raise_exception then
+      if position('no es una sección' in sqlerrm) = 0 then raise; end if;
+  end;
+
+  select id into v_other from public.dossier_items
+   where dossier_id = '00000000-0000-0000-0000-00000000e001' and kind = 'SECTION' limit 1;
+
+  begin
+    update public.dossier_items
+       set section_item_id = v_other
+     where dossier_id = '00000000-0000-0000-0000-00000000e003'
+       and kind = 'ARTWORK';
+    raise exception 'FAIL: un elemento pudo pertenecer a la sección de otro dossier';
+  exception
+    when foreign_key_violation then
+      null;
+  end;
+
+  raise notice 'OK: una sección agrupa elementos de su dossier, y solo secciones agrupan';
+end $$;
+
+
 -- ── 8. A recipient is not withdrawn while it is one ─────────
 -- The fourth check of `tg_party_deactivation`, with the reason of the other
 -- three: withdrawing it leaves the catalogue pointing at something the interface
