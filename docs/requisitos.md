@@ -369,6 +369,9 @@ cambios. El modelo, y por qué no es una búsqueda guardada ni un precio en la f
 | RF-1613 | Una obra **retirada del catálogo** no desaparece en silencio de los dossieres que la llevaban: aparece dicha como retirada a quien edita, no se le muestra a quien solo consulta (RF-609) y no sale en el PDF. Estuvo en el documento que se mandó, y eso es un dato. |
 | RF-1614 | El dossier admite **textos libres** en cualquier punto de la lista: un **rótulo** que abre sección, un **párrafo**, o los dos. Además tiene un texto de **portada**, que es una página y no algo que fluya entre obras. Un texto sin rótulo ni párrafo es un hueco y no se guarda. El texto es texto: no hay lenguaje de marcado, negritas ni editor con formato — lo que hace legible la página es la maqueta. |
 | RF-1615 | Se distingue lo que **va al PDF** de lo que es **recado del equipo**: la portada y los textos libres se imprimen; la nota del dossier y la nota de cada obra no. Poder anotar lo que no se le dice a la galería es la mitad del valor de tener las dos. |
+| RF-1616 | El dossier lleva un apartado de **biografía y currículum** del artista, colocado donde se quiera dentro de la lista: delante en un dossier de galería, detrás en uno con forma de catálogo. Cada elemento dice si imprime el currículum. |
+| RF-1617 | La biografía y el currículum **se escriben una vez por fondo** y los lee cada dossier que los lleve: corregir una fecha corrige todos los que se emitan después. Un dossier que necesite una versión propia y más corta la escribe como texto libre. |
+| RF-1618 | El currículum **lo escribe la usuaria y no se deduce del catálogo**. El historial expositivo solo conoce las muestras de las obras ya catalogadas y no distingue individual de colectiva, así que un currículum generado tendría huecos con aspecto de estar completo. Lo que sí puede hacer la aplicación es **sugerir líneas** al escribirlo. |
 
 ---
 

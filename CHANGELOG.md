@@ -1746,6 +1746,12 @@
   «Óleos» de «Obra sobre papel» y párrafos entre unas obras y otras. Van en la misma lista que las obras,
   así que un párrafo se coloca justo donde tiene que leerse. La nota de una obra y la del dossier son otra
   cosa: son recado del equipo y no salen impresas.
+- **Cada dossier puede llevar la biografía y el currículum del artista**, delante de las obras o detrás,
+  donde se quiera. Se escriben una sola vez para Rotili y una para Ruiz Campins, y a partir de ahí los
+  usan todos los dossieres: corregir una fecha en la biografía la corrige en todos los que se emitan
+  después. Si una galería concreta necesita una versión más corta, se escribe como texto de ese dossier.
+- El currículum se escribe a mano y no se saca de las exposiciones del catálogo: el catálogo solo conoce
+  las muestras de las obras ya fichadas, así que saldría con huecos y con aspecto de estar completo.
 - El precio es del dossier y no de la obra: el catálogo no dice lo que vale nada, y la misma obra puede
   ofrecerse distinto en dos galerías.
 - Cada PDF que se genera queda guardado con su fecha, así que dentro de un año se puede ver qué se mandó

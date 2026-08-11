@@ -7,6 +7,8 @@ y el orden manual todo-o-nada que ya tienen las fotografías de una obra
 **No cruza:** el «sin backend que escribir ni servidor que administrar» de
 [ADR-001](ADR-001-stack-y-despliegue.md), ni el acceso autenticado de RF-101
 **Requisitos:** RF-1600. Afecta a RF-1000 (la ficha imprimible, que es de una obra y sigue siéndolo)
+**Revisada:** el mismo 11 de agosto de 2026, para el tercer tipo de elemento —la biografía— y para fijar
+la maqueta que se construye: una obra por página
 
 ---
 
@@ -58,7 +60,7 @@ se emiten PDF fechados. Tres tablas.
 
 ```
 dossiers             El dossier: nombre, para qué es, a quién va, portada, qué bloques enseña
-dossier_items        Lo que el dossier dice, en orden: obras y textos libres
+dossier_items        Lo que el dossier dice, en orden: obras, textos libres y la biografía
 dossier_issues       Cada PDF emitido, con su versión. Solo se añade
 ```
 
@@ -70,18 +72,43 @@ no pueden expresar «este párrafo va entre la cuarta obra y la quinta», que es
 escribe un párrafo en un dossier. Una lista con un `kind` sí, y el orden es uno.
 
 El `kind` es un enumerado explícito y no se deduce de «no tiene obra, será un texto»: es la regla de
-siempre de distinguir el dato de su ausencia, y es lo que permite un tercer tipo —un salto de página, una
-fotografía a toda plana— sin adivinar qué quería decir una fila con todo a nulo. Cada tipo tiene su forma
-comprobada en el esquema: una obra no lleva párrafo dentro y un texto no lleva precio ni obra, así que un
-elemento que el PDF no sabría dibujar no se puede guardar.
+siempre de distinguir el dato de su ausencia, y es lo que permite un tercer tipo sin adivinar qué quería
+decir una fila con todo a nulo. Cada tipo tiene su forma comprobada en el esquema: una obra no lleva
+párrafo dentro y un texto no lleva precio ni obra, así que un elemento que el PDF no sabría dibujar no se
+puede guardar.
 
-**Cuatro sitios donde escribir, y cada uno es de alguien.** Es la distinción que hay que tener clara
+**El tercer tipo llegó el mismo día: la biografía.** Un dossier que va a una galería empieza por quién es
+el artista, y el currículum va detrás o al final. Es un elemento y no un interruptor del dossier, y ahí
+está la ventaja de tener una sola lista: **la posición es la decisión**. La biografía va delante en un
+dossier de galería y detrás en uno con forma de catálogo, y ninguna de las dos colocaciones necesita una
+columna que lo diga.
+
+Lo que el elemento guarda es **de qué fondo** es la biografía, y nada más: el texto vive en la ficha del
+fondo (`artist_funds.biography` y `.cv`) y se lee al emitir. Se escribe una vez y corregir una fecha
+corrige todos los dossieres que se emitan después. Copiar la prosa en cada dossier es como empiezan a
+divergir dos versiones de una biografía, y la que sale es siempre la que nadie corrigió. Cuando una
+galería concreta pide una versión más corta, la salida ya estaba puesta: se escribe como texto libre y no
+se añade la biografía.
+
+**Dos textos y no uno**, por el mismo motivo que las páginas y la nota de una cita bibliográfica son dos
+columnas: la biografía es prosa y el currículum es una lista de líneas con un año delante, se maquetan
+distinto y se usan por separado. Cada elemento dice si lleva el currículum detrás.
+
+**El currículum no se deriva del catálogo**, y es una tentación que conviene dejar descartada por escrito.
+El catálogo ya conoce exposiciones, pero solo las de las obras catalogadas —así que mientras se hace el
+catálogo el currículum derivado tiene huecos, y uno con huecos es peor que uno escrito a mano porque
+parece completo— y no registra si una muestra fue individual o colectiva, que es lo primero que se lee en
+un currículum. Para lo que sí sirve el historial expositivo es para **sugerir líneas** mientras se
+escribe, que es trabajo de una pantalla y no de una columna.
+
+**Cinco sitios donde escribir, y cada uno es de alguien.** Es la distinción que hay que tener clara
 antes de teclear:
 
 | Dónde | Va al PDF | Para qué |
 |---|---|---|
 | `dossiers.cover_text` | Sí, en la portada | La presentación: dos líneas o media página |
 | `dossier_items.heading` / `.body` (tipo texto) | Sí, donde esté en el orden | Rótulos de sección y párrafos entre obras |
+| `artist_funds.biography` / `.cv` | Sí, donde esté su elemento | Quién es el artista. Se escribe una vez por fondo |
 | `dossier_items.note` (línea de obra) | **No** | Recado del equipo: «la que pidieron ver de cerca» |
 | `dossiers.note` | **No** | Recado sobre el dossier entero |
 
@@ -139,18 +166,18 @@ principal. Elegir una toma concreta —el detalle de la firma, el reverso— es 
 **Qué bloques se enseñan** se decide por dossier con cuatro interruptores: procedencia, exposiciones,
 bibliografía y precios. Una galería quiere el historial expositivo; un seguro, las medidas y el estado.
 
-### Cómo se maqueta: cuatro plantillas simples
+### Cómo se maqueta: una obra por página, y tres plantillas más
 
 Todas caben en lo que `pdf-lib` ya hace en la ficha imprimible —rectángulos, una imagen y texto en dos
 tipografías—, así que ninguna es una plataforma nueva. Van de la más generosa a la más seca, que es
 también el orden de menos a más obras por página:
 
-1. **Una obra por página** (A4 vertical). La fotografía ocupa la mitad superior, y debajo el título, la
-   fecha, la técnica, las medidas y el precio si el dossier lo enseña. Es la que impresiona y la que más
-   páginas gasta: doce obras, doce páginas. Para una selección corta que se quiere defender.
-2. **Dos por página.** Cada obra en su mitad, fotografía a la izquierda y datos a la derecha. Es la
-   maqueta clásica de dossier de galería y el punto medio razonable: quince obras en ocho páginas y la
-   fotografía todavía se ve.
+1. **Una obra por página** (A4 vertical). La fotografía ocupa más de media hoja y debajo van el código,
+   el título, la fecha, la técnica, las medidas y el precio si el dossier lo enseña. **Es la que se
+   construye**, y la razón es la que decide el propietario: una selección se quiere mirar obra a obra, y
+   el coste —doce obras, doce páginas— es el que se acepta a cambio de que la fotografía se vea.
+2. **Dos por página.** Cada obra en su mitad, fotografía a la izquierda y datos a la derecha. El punto
+   medio para cuando la selección crece: quince obras en ocho páginas.
 3. **Rejilla de seis** (dos columnas por tres filas). Fotografía pequeña con el pie debajo: código, título
    y fecha. Es la hoja de contactos, para «esto es lo que hay, dime qué te interesa».
 4. **Lista sin fotografía.** Una línea por obra con código, título, fecha, técnica y medidas. Es lo que
@@ -158,15 +185,16 @@ también el orden de menos a más obras por página:
    quepa en una hoja.
 
 Los textos se maquetan igual en las cuatro: la portada es la primera página con el título del dossier, la
-fecha y `cover_text`; un **rótulo** abre sección —a ancho completo, y opcionalmente empezando página—; y un
-**párrafo** ocupa el ancho de la caja y empuja lo que viene detrás. Esa es la ventaja práctica de que
-todo sea una lista: el generador recorre los elementos en orden y decide por tipo, sin saber nada de
-secciones.
+fecha y su presentación; un **rótulo** abre sección —a ancho completo, y en la maqueta 1 puede empezar en
+la propia página de la primera obra de la sección—; un **párrafo** ocupa el ancho de la caja y empuja lo
+que viene detrás; y la **biografía** es un bloque de prosa con su rótulo, con el currículum en líneas
+debajo si lo lleva. Esa es la ventaja práctica de que todo sea una lista: el generador recorre los
+elementos en orden y decide por tipo, sin saber nada de secciones.
 
-**Se empieza por la 2 y las otras tres son plantillas de la misma máquina**, porque lo que cambia entre
-ellas es cuántas cajas caben en una página y qué campos entran en cada caja. La columna que dice qué
-plantilla usa cada dossier **nace con el generador y no antes**: guardar hoy una elección que nadie sabe
-dibujar es exactamente el interruptor que un día miente.
+**Las cuatro son plantillas de la misma máquina**, porque lo que cambia entre ellas es cuántas cajas caben
+en una página y qué campos entran en cada caja. La columna que dice qué plantilla usa cada dossier **nace
+con el generador y no antes**: guardar hoy una elección que nadie sabe dibujar es exactamente el
+interruptor que un día miente.
 
 ## Alternativas descartadas
 
@@ -214,6 +242,15 @@ contesta la pregunta.
 escribe primero y lo que se queda corto en el segundo dossier, en cuanto hay dos bloques de obra que hay
 que separar con un rótulo. La portada sí es una columna, porque una portada es una página y no algo que
 fluya entre dos obras.
+
+**La biografía como columna del dossier, o como un interruptor.** Es lo mismo que descartar los textos
+como columnas y por el mismo motivo, más uno propio: una biografía guardada en el dossier es una copia de
+la del fondo, y la copia envejece. Como interruptor —«este dossier lleva biografía»— habría además que
+decidir por código dónde se imprime, y la respuesta cambia con el uso.
+
+**Derivar el currículum de las exposiciones del catálogo.** Razonado arriba: incompleto mientras se
+cataloga y sin distinguir individual de colectiva. Vuelve el día que el historial expositivo esté cerrado,
+y entonces como sugerencia al escribir, nunca como el texto impreso.
 
 **Texto con formato: Markdown, negritas, un editor rico.** Sería un lenguaje de marcado dentro de un campo
 del catálogo, con su renderizador, su saneado y sus casos raros de por vida, y un dossier no lo necesita:
