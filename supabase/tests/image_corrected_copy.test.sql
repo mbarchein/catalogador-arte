@@ -417,6 +417,94 @@ begin
   raise notice 'OK: la base no exige máster para la copia ni correcciones para la deuda';
 end $$;
 
+-- ── 7 bis. The copy's size in pixels (RF-411) ────────────────
+--
+-- Three rules and the same shape as the original's size, which is the sister pair of
+-- columns. The reason the copy MEASURES itself instead of being deduced from the
+-- geometry is in the migration: the arithmetic starts from `original_width`, and no
+-- photograph uploaded before the colour migration has it.
+do $$
+begin
+  -- The pair, like `images_original_size_pair`: half a size is not a size, and whoever
+  -- read it would have to guess the other half.
+  begin
+    update public.images
+       set corrected_path = 'q/AR-9602_kk11_corr.jpg', corrected_bytes = 1048576,
+           corrected_pending = false, corrected_width = 1512
+     where image_id = 'AR-9602_v1';
+    raise exception 'FAIL: ha entrado media medida de la copia corregida';
+  exception
+    when check_violation then
+      if sqlerrm not like '%images_corrected_size_pair%' then
+        raise exception 'FAIL: ha rechazado media medida, pero no por su regla: %', sqlerrm;
+      end if;
+      raise notice 'OK: los dos lados o ninguno (images_corrected_size_pair)';
+  end;
+
+  -- A zero would be a copy with no pixels; a negative one, bad arithmetic. Both would
+  -- reach the download button as a promise about a file that cannot be what it says.
+  begin
+    update public.images
+       set corrected_path = 'q/AR-9602_kk11_corr.jpg', corrected_bytes = 1048576,
+           corrected_pending = false, corrected_width = 0, corrected_height = 2016
+     where image_id = 'AR-9602_v1';
+    raise exception 'FAIL: ha entrado una copia corregida de cero píxeles de ancho';
+  exception
+    when check_violation then
+      if sqlerrm not like '%images_corrected_size_positive%' then
+        raise exception 'FAIL: ha rechazado el cero, pero no por su regla: %', sqlerrm;
+      end if;
+      raise notice 'OK: ni cero ni negativo (images_corrected_size_positive)';
+  end;
+
+  -- A size with no copy measures nothing: these columns describe the file
+  -- `corrected_path` names.
+  begin
+    update public.images
+       set corrected_path = null, corrected_bytes = null, corrected_pending = false,
+           corrected_width = 1512, corrected_height = 2016
+     where image_id = 'AR-9602_v1';
+    raise exception 'FAIL: ha entrado la medida de una copia que no existe';
+  exception
+    when check_violation then
+      if sqlerrm not like '%images_corrected_size_needs_copy%' then
+        raise exception 'FAIL: ha rechazado la medida huérfana, pero no por su regla: %', sqlerrm;
+      end if;
+      raise notice 'OK: sin copia no hay nada que medir (images_corrected_size_needs_copy)';
+  end;
+
+  -- And the other direction IS allowed, on purpose: a copy with no size is every copy
+  -- written before this migration, and refusing those would refuse exactly the rows the
+  -- application's fallback arithmetic exists for.
+  update public.images
+     set corrected_path = 'q/AR-9602_kk11_corr.jpg', corrected_bytes = 1048576,
+         corrected_pending = false, corrected_width = null, corrected_height = null
+   where image_id = 'AR-9602_v1';
+  raise notice 'OK: una copia sin medida sigue siendo válida, que es lo que ya hay guardado';
+
+  -- The whole measured row, which is what the browser writes from now on.
+  update public.images
+     set corrected_width = 1512, corrected_height = 2016
+   where image_id = 'AR-9602_v1';
+  raise notice 'OK: la copia dice cuánto mide';
+end $$;
+
+-- Nothing has filled itself in backwards here either: the columns are born null and
+-- neither the migration nor a default invents a measurement of a file nobody has read.
+do $$
+declare
+  inventadas integer;
+begin
+  select count(*) into inventadas
+    from public.images
+   where image_id <> 'AR-9602_v1'
+     and (corrected_width is not null or corrected_height is not null);
+  if inventadas > 0 then
+    raise exception 'FAIL: % filas traen una medida de la copia que nadie ha medido', inventadas;
+  end if;
+  raise notice 'OK: ninguna copia anterior se ha inventado su tamaño';
+end $$;
+
 -- ── 8. Who writes the copy and who only downloads it ─────────
 -- RF-106, RF-411, RF-420.
 --

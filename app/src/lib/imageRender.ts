@@ -87,6 +87,15 @@ export interface RenderedLevels {
   width: number
   height: number
   /**
+   * The size the SOURCE decoded to, orientation already applied.
+   *
+   * It is here because when the source is the archive master this is
+   * `original_width`/`original_height` — and no photograph uploaded before the colour
+   * migration has them, so every save from the master is a chance to write down what
+   * was measured anyway instead of downloading 19 MB again one day to find out.
+   */
+  source: Size
+  /**
    * What the two Blobs really are, so whoever publishes them names them and
    * declares them accordingly. It travels with the bytes and is not assumed by
    * the caller: `canvas.toBlob` falls back to PNG in silence (see
@@ -500,6 +509,7 @@ export async function renderEditedLevels(source: Blob, edit: PhotoEdit): Promise
       derivative: derivative.blob,
       width: edited.width,
       height: edited.height,
+      source: { width: bitmap.width, height: bitmap.height },
       format,
       clipping: derivative.clipping,
     }
@@ -893,18 +903,59 @@ export async function correctedCopyFrom(
   return { status: 'READY', blob, width, height }
 }
 
-/** The three columns of the row that describe the corrected copy. */
+/**
+ * The original's size as columns, and only when it was really measured on the original.
+ *
+ * `original_width`/`original_height` arrived with the colour migration and nothing was
+ * filled in backwards (ADR-010), so every photograph uploaded before it carries them
+ * null and the record cannot say how big the file it offers is. A save that re-renders
+ * from the master has just decoded it, so the measurement is free: writing it costs two
+ * integers on an update that was going out anyway, and the caption starts working on the
+ * photographs that already exist instead of only on the next ones.
+ *
+ * **Only from the master, and `undefined` is read as «no»** — the same reading
+ * `sourceIsMaster` gets for the corrected copy, and for the same reason: writing the
+ * 2000 px consultation copy's size into the column that names the original would be a
+ * number that looks like a measurement and is a quarter of one, and this column has no
+ * way of saying «esto es aproximado». An empty object rather than nulls, because a save
+ * from the consultation copy must not ERASE a size somebody else measured properly.
+ */
+export function originalSizeColumns(
+  source: Size,
+  sourceIsMaster?: boolean,
+): { original_width: number; original_height: number } | Record<string, never> {
+  if (sourceIsMaster !== true) return {}
+  const width = Math.trunc(source.width)
+  const height = Math.trunc(source.height)
+  // What the row will not take (`images_original_size_positive`) is not written: a
+  // caption is never worth refusing a save that carries the afternoon's framing.
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return {}
+  return { original_width: width, original_height: height }
+}
+
+/** The columns of the row that describe the corrected copy. */
 export interface CorrectedColumns {
   corrected_path: string | null
   corrected_bytes: number | null
   corrected_pending: boolean
+  /**
+   * The size the file came out with, measured here and not deduced later.
+   *
+   * The geometry could be used to recompute it, and the record does exactly that for
+   * the copies written before these columns existed — but that arithmetic starts from
+   * `original_width`, which no photograph uploaded before the colour migration has.
+   * Measured, the download button can say the size of every copy from the first one
+   * onwards, and it says the size the file HAS rather than the one it should have.
+   */
+  corrected_width: number | null
+  corrected_height: number | null
 }
 
 /** What the row has to be told, once the copy has been built and uploaded or not. */
 export type CorrectedOutcome =
   | { status: 'NOT_NEEDED' }
   | { status: 'PENDING'; reason: string }
-  | { status: 'UPLOADED'; path: string; bytes: number }
+  | { status: 'UPLOADED'; path: string; bytes: number; width: number; height: number }
 
 /**
  * The outcome as the three columns.
@@ -925,12 +976,22 @@ export function correctedColumns(outcome: CorrectedOutcome): CorrectedColumns {
       corrected_path: outcome.path,
       corrected_bytes: Math.max(1, Math.trunc(outcome.bytes)),
       corrected_pending: false,
+      // Clamped like the size in bytes and for the same reason: what reaches the row has
+      // to satisfy `images_corrected_size_positive`, and a zero here would refuse the
+      // whole save — the framing along with it — over a caption.
+      corrected_width: Math.max(1, Math.trunc(outcome.width)),
+      corrected_height: Math.max(1, Math.trunc(outcome.height)),
     }
   }
   return {
     corrected_path: null,
     corrected_bytes: null,
     corrected_pending: outcome.status === 'PENDING',
+    // With no copy there is nothing to measure, and `images_corrected_size_needs_copy`
+    // says so: a size left behind from a previous copy would describe a file that the
+    // path no longer names.
+    corrected_width: null,
+    corrected_height: null,
   }
 }
 
@@ -1325,6 +1386,9 @@ export async function savePhotoEdit(params: {
       // measured» and not as «nothing was lost».
       ...clippingToColumns(levels.clipping),
       ...correctedColumns(corrected),
+      // The original's size when this save measured it on the original: see
+      // `originalSizeColumns` for why it is only written from the master.
+      ...originalSizeColumns(levels.source, params.sourceIsMaster),
       // Where the framing came from. It is written on every save and never left
       // alone: a photograph reframed by hand after having accepted a suggestion is
       // no longer «suggested», and the whole point of the column is that a future
@@ -1371,7 +1435,13 @@ async function buildAndUploadCorrected(params: {
     // Named and checked before anything is signed.
     const path = correctedPath(params.catalogId, params.masterPath)
     await uploadCorrectedCopy(path, copy.blob, params.onProgress)
-    return { status: 'UPLOADED', path, bytes: copy.blob.size }
+    return {
+      status: 'UPLOADED',
+      path,
+      bytes: copy.blob.size,
+      width: copy.width,
+      height: copy.height,
+    }
   } catch (e) {
     return {
       status: 'PENDING',

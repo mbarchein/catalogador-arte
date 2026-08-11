@@ -8,6 +8,7 @@ import {
   type EditColumns,
   type NormalizedPhotoEdit,
   type PhotoEdit,
+  type Size,
 } from '../../lib/imageEdits'
 import { isNoColor, type ColorColumns, type ColorEdit, type ColorInput } from '../../lib/imageColor'
 import {
@@ -66,6 +67,18 @@ export interface PhotoDetailRow extends ColorColumns {
   corrected_path: string | null
   corrected_bytes: number | null
   corrected_pending: boolean
+  /**
+   * The copy's size in pixels, as measured when the file was written.
+   *
+   * Stored and not derived from the geometry, even though `editedSize` would compute it:
+   * this is the size of a file that EXISTS, and the arithmetic needs
+   * `original_width`/`original_height`, which no photograph uploaded before the colour
+   * migration has. Measured, the button says the size of every copy there is; derived,
+   * it would say nothing about the ones that matter most — the ones already in the
+   * catalogue.
+   */
+  corrected_width: number | null
+  corrected_height: number | null
 }
 
 /**
@@ -80,10 +93,63 @@ export interface PhotoDetailRow extends ColorColumns {
 export const PHOTO_DETAIL_COLUMNS =
   'image_id, file_photo_date, file_photo_date_exact, original_width, original_height, ' +
   'master_bytes, provenance, photo_credit, provenance_source, ' +
-  'corrected_path, corrected_bytes, corrected_pending, ' +
+  'corrected_path, corrected_bytes, corrected_pending, corrected_width, corrected_height, ' +
   'color_temperature, color_tint, color_exposure, color_black, color_white, color_gamma, ' +
   'color_shoulder, color_gray, color_neutral_x, color_neutral_y, ' +
   'color_source, color_reference, color_light, color_inherited'
+
+/**
+ * The size of the original in pixels, when the row knows it.
+ *
+ * Both sides or nothing, which is what `images_original_size_pair` guarantees in the
+ * database: a width with no height is not a size. Null while the row has not been read
+ * and on any photograph whose size was never measured — and a guessed number is worse
+ * than none on a caption that a print shop reads over the cataloger's shoulder.
+ *
+ * A structural parameter and not `PhotoDetailRow`, so the three screens that show this
+ * —the gallery, the viewer and the download buttons— all read those two columns through
+ * one function. Two readings would be two places for one of them to start disagreeing
+ * about a null.
+ */
+export function originalSize(
+  row: { original_width?: number | null; original_height?: number | null } | null | undefined,
+): Size | null {
+  return sizeOf(row?.original_width, row?.original_height)
+}
+
+/** The measured size of the full-resolution corrected copy, when there is one. */
+export function correctedSize(
+  row: { corrected_width?: number | null; corrected_height?: number | null } | null | undefined,
+): Size | null {
+  return sizeOf(row?.corrected_width, row?.corrected_height)
+}
+
+/** Both sides, both whole and both positive, or nothing at all. */
+function sizeOf(width: unknown, height: unknown): Size | null {
+  if (typeof width !== 'number' || typeof height !== 'number') return null
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return null
+  if (width <= 0 || height <= 0) return null
+  return { width: Math.trunc(width), height: Math.trunc(height) }
+}
+
+/**
+ * A size the way the cataloger reads it: `4032×3024 px`.
+ *
+ * It answers what the weight cannot — whether the file is big enough for what is being
+ * asked of it. A print shop asks for pixels, and «1,5 MB» does not say whether the
+ * reproduction can go full page.
+ *
+ * The multiplication sign and not an `x`: it is what the photo management screen already
+ * shows next to the image identifier, and the caption is read next to that one.
+ */
+export function pixelText(size: Size | null | undefined): string | null {
+  if (!size) return null
+  const width = Math.trunc(size.width)
+  const height = Math.trunc(size.height)
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return null
+  if (width <= 0 || height <= 0) return null
+  return `${width}×${height} px`
+}
 
 /**
  * The provenance of a row, refusing anything the enum does not name.

@@ -5,6 +5,7 @@ import { NoIcon } from '../../components/ui'
 import { useCloseOnBack } from '../../components/useCloseOnBack'
 import type { ImageRow } from './artworkImages'
 import { PhotoCarousel } from './PhotoCarousel'
+import { originalSize, pixelText, type PhotoDetailRow } from './photoDetails'
 
 /**
  * Full-viewport photo viewer: the app covering itself with the image, not a
@@ -24,6 +25,7 @@ export function PhotoViewer({
   onView,
   catalogId,
   onClose,
+  details,
 }: {
   images: ImageRow[]
   thumbUrls: Record<string, string>
@@ -31,6 +33,14 @@ export function PhotoViewer({
   onView: (imageId: string) => void
   catalogId: string
   onClose: () => void
+  /**
+   * The detail rows the gallery has already read, only for the size in the caption.
+   *
+   * Optional: the viewer is a view and works without them. What it loses is the size,
+   * never the photograph — a viewer that waited for a second query to show what it
+   * already has decoded would be the wrong trade.
+   */
+  details?: Readonly<Record<string, PhotoDetailRow | undefined>>
 }) {
   // The back button closes the viewer, with the history entry it pushes on
   // opening. It lives in `useCloseOnBack` and not here because it is the same exit
@@ -90,6 +100,9 @@ export function PhotoViewer({
     0,
     images.findIndex((r) => r.image_id === viewId),
   )
+  // Through the same two functions the record's caption and the download buttons use,
+  // so the number is the same one in the three places it is shown.
+  const viewingPixels = pixelText(originalSize(viewing ? details?.[viewing.image_id] : null))
 
   return createPortal(
     <div
@@ -132,8 +145,14 @@ export function PhotoViewer({
         />
       </div>
 
+      {/* The same three facts as the record's caption and in the same order — which shot,
+          which artwork, how big — so that going full screen does not change what is said
+          about the photograph, only how much of it is on screen. What is shown is still
+          the derivative (RF-411); the size is the original's, which is the file this
+          answers a question about. */}
       <p className="p-3 text-center text-sm text-stone-300">
         {viewing ? `${SHOT_TYPE_LABEL[viewing.shot_type]} · ${catalogId}` : catalogId}
+        {viewingPixels ? ` · ${viewingPixels}` : ''}
       </p>
     </div>,
     document.body,

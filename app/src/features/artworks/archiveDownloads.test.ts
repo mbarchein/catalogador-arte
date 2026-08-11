@@ -11,6 +11,7 @@ import {
   type ArchiveOffer,
   type CorrectedCopyColumns,
 } from './archiveDownloads'
+import { originalSize, pixelText } from './photoDetails'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
 
 /**
@@ -289,6 +290,103 @@ describe('qué descargas se ofrecen según la fila (RF-411, RF-420)', () => {
     expect(sizeText(Number.NaN)).toBeNull()
     expect(sizeText(204_800)).toBe('200 KB')
     expect(sizeText(19_922_944)).toBe('19,0 MB')
+  })
+
+  it('el original dice sus píxeles y su peso, en ese orden', () => {
+    // The pixels answer what the weight cannot: whether the file is big enough for what
+    // a print shop is being asked to do with it.
+    const { offers } = archiveDownloads({
+      catalogId: 'AR-0001',
+      row: row(),
+      detail: detail({ master_bytes: 1_572_864, original_width: 4032, original_height: 3024 }),
+    })
+    expect(offers[0]?.label).toBe('Descargar el original (4032×3024 px · 1,5 MB)')
+  })
+
+  it('la copia corregida dice EL TAMAÑO DE LA COPIA, no el del original', () => {
+    // The assertion that matters, and the one a stored column would have got wrong: the
+    // copy carries the geometry, so a photograph turned a quarter and cropped to half of
+    // each side is 1512×2016 and the original is still 4032×3024. Both numbers are on
+    // screen at once, and telling the print shop the original's size for the file it is
+    // about to receive is exactly the mistake that gets discovered at the print shop.
+    const { offers } = archiveDownloads({
+      catalogId: 'AR-0001',
+      row: row({
+        rotation: 90,
+        crop_x: 0,
+        crop_y: 0,
+        crop_width: 0.5,
+        crop_height: 0.5,
+      }),
+      detail: detail({
+        corrected_path: 'AR-0001/AR-0001_ab12cd34_corrected.jpg',
+        corrected_bytes: 903_168,
+        master_bytes: 1_572_864,
+        original_width: 4032,
+        original_height: 3024,
+      }),
+    })
+    expect(offers.map((o) => o.label)).toEqual([
+      'Descargar la copia corregida (1512×2016 px · 882 KB)',
+      'Descargar el original (4032×3024 px · 1,5 MB)',
+    ])
+  })
+
+  it('sin correcciones la copia mide lo que el original, que es lo que es', () => {
+    // A path with no geometry is the case of a photograph corrected only in colour: the
+    // copy is the same frame, so saying a different size would be inventing one.
+    const { offers } = archiveDownloads({
+      catalogId: 'AR-0001',
+      row: row(),
+      detail: detail({
+        corrected_path: 'AR-0001/AR-0001_ab12cd34_corrected.jpg',
+        corrected_bytes: 903_168,
+        original_width: 4032,
+        original_height: 3024,
+      }),
+    })
+    expect(offers[0]?.label).toBe('Descargar la copia corregida (4032×3024 px · 882 KB)')
+  })
+
+  it('el tamaño en píxeles solo se promete cuando se sabe, como el peso', () => {
+    // The rows uploaded before the colour migration have both columns null and nothing
+    // was filled in backwards (ADR-010). The button keeps the weight it does know and
+    // says nothing about pixels: a guessed number on the one door out of the application
+    // is worse than no number.
+    const { offers } = archiveDownloads({
+      catalogId: 'AR-0001',
+      row: row({ rotation: 90 }),
+      detail: detail({
+        corrected_path: 'AR-0001/AR-0001_ab12cd34_corrected.jpg',
+        corrected_bytes: 903_168,
+        master_bytes: 1_572_864,
+      }),
+    })
+    expect(offers.map((o) => o.label)).toEqual([
+      'Descargar la copia corregida (882 KB)',
+      'Descargar el original (1,5 MB)',
+    ])
+  })
+
+  it('media medida no es una medida: los dos lados o ninguno', () => {
+    expect(originalSize(detail({ original_width: 4032, original_height: 3024 }))).toEqual({
+      width: 4032,
+      height: 3024,
+    })
+    expect(originalSize(detail({ original_width: 4032 }))).toBeNull()
+    expect(originalSize(detail({ original_height: 3024 }))).toBeNull()
+    expect(originalSize(detail())).toBeNull()
+    expect(originalSize(null)).toBeNull()
+    // A zero would be a photograph with no pixels, which only comes from bad arithmetic.
+    expect(originalSize(detail({ original_width: 0, original_height: 3024 }))).toBeNull()
+    expect(originalSize(detail({ original_width: -1, original_height: 3024 }))).toBeNull()
+  })
+
+  it('el tamaño se escribe con el signo de multiplicar, como en la pantalla de fotografías', () => {
+    expect(pixelText({ width: 4032, height: 3024 })).toBe('4032×3024 px')
+    expect(pixelText(null)).toBeNull()
+    expect(pixelText({ width: 0, height: 10 })).toBeNull()
+    expect(pixelText({ width: Number.NaN, height: 10 })).toBeNull()
   })
 
   it('ninguna condición mira el rol: el Lector descarga las dos (RF-411)', () => {

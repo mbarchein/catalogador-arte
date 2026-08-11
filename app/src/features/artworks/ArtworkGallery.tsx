@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { SHOT_TYPE_LABEL } from '../../lib/types'
 import { ExpandIcon, YesIcon } from '../../components/ui'
 import { shotOrdinal } from './archiveDownloads'
+import { originalSize, pixelText } from './photoDetails'
 import { useArtworkImages } from './artworkImages'
 import { PhotoCarousel } from './PhotoCarousel'
 import { PhotoDownloads } from './PhotoDownloads'
@@ -39,6 +40,13 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
     images.findIndex((r) => r.image_id === viewId),
   )
   const viewing = images[viewIndex]
+
+  // The size of the photograph being viewed, from the same reading of those two columns
+  // the download buttons use: two readings would be two places for one of them to start
+  // disagreeing about a null. It is the original's size with the orientation already
+  // applied — what any viewer shows — and it is null on the rows uploaded before the
+  // colour migration added the columns, because nothing was filled in backwards.
+  const viewingPixels = pixelText(originalSize(viewing ? details[viewing.image_id] : null))
 
   // «f» opens the gallery full screen. It lives here and not in the page because
   // the viewer belongs to the gallery: lifting the state just to shortcut a key would be
@@ -164,13 +172,18 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
           onView={setViewId}
           catalogId={catalogId}
           onClose={() => setViewerOpen(false)}
+          details={details}
         />
       )}
 
+      {/* The size joins this line and not one of its own because it is a fact about the
+          photograph, like the shot type: the counter already answers «which one of them
+          is this», and the size answers «how big it is» in the same breath. */}
       <p className="mt-1 text-xs text-stone-500">
         {viewing ? `${viewIndex + 1} de ` : ''}
         {images.length} {images.length === 1 ? 'fotografía' : 'fotografías'}
         {viewing ? ` · ${SHOT_TYPE_LABEL[viewing.shot_type]}` : ''}
+        {viewingPixels ? ` · ${viewingPixels}` : ''}
       </p>
 
       {/* RF-411 and RF-420: neither file is ever SHOWN in a view — both get

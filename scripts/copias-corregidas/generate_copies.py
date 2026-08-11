@@ -342,21 +342,43 @@ class Api:
         """The PUT has to repeat exactly the signed Content-Type or the signature does not validate."""
         self._request(url, method="PUT", body=content, headers={"Content-Type": CORRECTED_CONTENT_TYPE})
 
-    def mark_generated(self, image_id: str, path: str, size: int) -> None:
+    def mark_generated(
+        self,
+        image_id: str,
+        path: str,
+        size: int,
+        pixels: tuple[int, int],
+        original: tuple[int, int] | None = None,
+    ) -> None:
         """It writes the copy in the row and switches off the pending flag, and checks that it really was written.
 
         `return=representation` is not an ornament: if the account cannot edit, the
         RLS policy gives no error, it returns **zero rows**. Without looking at the response,
         the tool would say it has emptied a queue that is still full.
+
+        `pixels` is what the file MEASURED and not what the geometry says it should be:
+        the record's download button reads it, and the two only differ when something has
+        gone wrong — which is exactly when a caption must not be reassuring.
+
+        `original` is written when it is known, which here is always: this tool decoded
+        the master to build the copy. It is the same opportunistic filling in the browser
+        does on every save, and it matters because nothing was filled in backwards
+        (ADR-010) — every row this queue empties is a row whose original stops being of
+        unknown size.
         """
+        payload = {
+            "corrected_path": path,
+            "corrected_bytes": size,
+            "corrected_pending": False,
+            "corrected_width": pixels[0],
+            "corrected_height": pixels[1],
+        }
+        if original is not None:
+            payload["original_width"], payload["original_height"] = original
         rows = self._json(
             f"{self.config.base_url}/rest/v1/images?image_id=eq.{image_id}",
             method="PATCH",
-            payload={
-                "corrected_path": path,
-                "corrected_bytes": size,
-                "corrected_pending": False,
-            },
+            payload=payload,
             headers={"Prefer": "return=representation"},
         )
         if not isinstance(rows, list) or len(rows) != 1:
@@ -640,7 +662,7 @@ def straighten(image: Image.Image, corners: dict[str, tuple[float, float]]) -> I
     return Image.fromarray(destination, mode="RGB")
 
 
-def apply_geometry(image: Image.Image, geometry: Geometry) -> Image.Image:
+def apply_geometry(image: Image.Image, geometry: Geometry) -> tuple[Image.Image, tuple[int, int]]:
     """Orientación EXIF, giro, y después perspectiva o recorte. En ese orden.
 
     `exif_transpose` first and before anything else: it is what
@@ -648,15 +670,21 @@ def apply_geometry(image: Image.Image, geometry: Geometry) -> Image.Image:
     turn the cataloger applied started from the picture the phone had already
     turned. Straightening or cropping a photograph lying on its side would frame
     another part of the artwork.
+
+    It also returns the UPRIGHT size, which is the one `original_width` names and the one
+    any viewer shows. It comes out of here and is not measured again outside because the
+    only place that knows it is this one: the caller has the raw decode, and transposing a
+    second time just to measure it would copy a 4000×3000 image for two integers.
     """
     upright = ImageOps.exif_transpose(image) or image
+    original = (upright.width, upright.height)
     rotated = rotate_clockwise(upright, geometry.rotation)
     if geometry.corners:
-        return straighten(rotated, geometry.corners)
+        return straighten(rotated, geometry.corners), original
     if geometry.crop:
         x, y, width, height = crop_rect_in_pixels(geometry.crop, rotated.size)
-        return rotated.crop((x, y, x + width, y + height))
-    return rotated
+        return rotated.crop((x, y, x + width, y + height)), original
+    return rotated, original
 
 
 # ── Colour: the tables, and the luminance step after them ───
@@ -821,7 +849,7 @@ def process(
         # even though it would cost nothing there: that would put the colour before
         # the resampling on one path and after it on the other, and the corrected
         # copy would stop matching the thumbnail.
-        edited = apply_geometry(opened, geometry)
+        edited, original = apply_geometry(opened, geometry)
     corrected = apply_color(edited, look)
 
     if looks_blank(corrected):
@@ -861,7 +889,15 @@ def process(
     path = corrected_path(catalog_id, row.get("master_path"))
     check_not_master(path, row.get("master_path"))
     api.put_object(api.signed_upload(path), content)
-    api.mark_generated(image_id, path, len(content))
+    api.mark_generated(
+        image_id,
+        path,
+        len(content),
+        (corrected.width, corrected.height),
+        # The master with its orientation applied, which is what `original_width` names:
+        # `apply_geometry` measured it before turning or cropping anything.
+        original,
+    )
     return Outcome(image_id, "done", f"{path} ({size})")
 
 

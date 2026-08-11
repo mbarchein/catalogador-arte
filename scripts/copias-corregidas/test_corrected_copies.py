@@ -364,7 +364,12 @@ class ThePixelPath(unittest.TestCase):
     def test_the_rotation_of_a_row_swaps_the_sides(self) -> None:
         image = Image.new("RGB", (400, 300), (1, 2, 3))
         geometry = tool.geometry_from_row({"rotation": 90})
-        self.assertEqual(tool.apply_geometry(image, geometry).size, (300, 400))
+        edited, original = tool.apply_geometry(image, geometry)
+        self.assertEqual(edited.size, (300, 400))
+        # And the size it reports is the UPRIGHT one, before the quarter turn: it is what
+        # `original_width` names, and the row would otherwise get the turned photograph's
+        # size written into the column that describes the file as it came from the camera.
+        self.assertEqual(original, (400, 300))
 
     def test_a_row_with_no_corrections_does_not_become_a_duplicate_of_the_master(self) -> None:
         # RF-420: if there is no correction, there is no copy. Null, and not a duplicate
@@ -390,7 +395,7 @@ class ThePixelPath(unittest.TestCase):
             def __init__(self) -> None:
                 self.signed: list[str] = []
                 self.uploaded: list[tuple[str, int]] = []
-                self.written: list[tuple[str, str, int]] = []
+                self.written: list[dict] = []
 
             def signed_upload(self, path: str) -> str:
                 self.signed.append(path)
@@ -399,8 +404,23 @@ class ThePixelPath(unittest.TestCase):
             def put_object(self, url: str, content: bytes) -> None:
                 self.uploaded.append((url, len(content)))
 
-            def mark_generated(self, image_id: str, path: str, size: int) -> None:
-                self.written.append((image_id, path, size))
+            def mark_generated(
+                self,
+                image_id: str,
+                path: str,
+                size: int,
+                pixels: tuple[int, int],
+                original: tuple[int, int] | None = None,
+            ) -> None:
+                self.written.append(
+                    {
+                        "image_id": image_id,
+                        "path": path,
+                        "size": size,
+                        "pixels": pixels,
+                        "original": original,
+                    }
+                )
 
         master_path = "AR-0001/AR-0001_ab12cd34_master.jpg"
         with tempfile.TemporaryDirectory() as directory:
@@ -429,9 +449,19 @@ class ThePixelPath(unittest.TestCase):
             self.assertNotEqual(api.signed[0], master_path)
             self.assertEqual(len(api.uploaded), 1)
             self.assertEqual(len(api.written), 1)
-            self.assertEqual(api.written[0][0], "AR-0001_v1")
-            self.assertEqual(api.written[0][1], api.signed[0])
-            self.assertEqual(api.written[0][2], api.uploaded[0][1])
+            written = api.written[0]
+            self.assertEqual(written["image_id"], "AR-0001_v1")
+            self.assertEqual(written["path"], api.signed[0])
+            self.assertEqual(written["size"], api.uploaded[0][1])
+            # The copy's size is what the FILE measured, so the record's download button
+            # promises what it is really going to hand over. The master is 60×40 and the
+            # row turns it a quarter, so the copy is 40×60.
+            self.assertEqual(written["pixels"], (40, 60))
+            # And the original's size goes along on the same write, which is what makes the
+            # caption start working on the photographs that already exist: nothing was
+            # filled in backwards (ADR-010), so every row this queue empties is a row whose
+            # original stops being of unknown size. Upright, before the quarter turn.
+            self.assertEqual(written["original"], (60, 40))
             # §0.1: the master has been read and has been left exactly the same.
             self.assertEqual(local.read_bytes(), before)
 

@@ -7,6 +7,7 @@ import {
   correctedColumns,
   correctedCopyFrom,
   correctedPath,
+  originalSizeColumns,
   levelTables,
   planWarpBands,
   probePoints,
@@ -565,11 +566,44 @@ describe('RF-420: la copia corregida se comprueba antes de subirla', () => {
 
 /* --------------------------------------------- the corrected copy: the row */
 
-describe('RF-420: las tres columnas de la copia corregida', () => {
+describe('el tamaño del original, escrito cuando se mide de verdad', () => {
+  it('desde el máster se escribe: es lo que hace que el dato aparezca en las fotos que ya existen', () => {
+    expect(originalSizeColumns({ width: 4032, height: 3024 }, true)).toEqual({
+      original_width: 4032,
+      original_height: 3024,
+    })
+  })
+
+  it('desde la copia de consulta NO se escribe, y tampoco se borra lo que hubiera', () => {
+    // A quarter of the real measurement in the column that names the original would look
+    // like a measurement, and the column has no way of saying «aproximado». An empty
+    // object and not nulls: a save from the consultation copy must not erase a size
+    // somebody else measured properly.
+    expect(originalSizeColumns({ width: 2000, height: 1500 }, false)).toEqual({})
+    // Undefined is read as «no», like `sourceIsMaster` everywhere else: a caller that
+    // does not say has not earned the benefit of the doubt on the archive document.
+    expect(originalSizeColumns({ width: 2000, height: 1500 })).toEqual({})
+  })
+
+  it('lo que la base no aceptaría no se manda: un guardado no se cae por un rótulo', () => {
+    expect(originalSizeColumns({ width: 0, height: 3024 }, true)).toEqual({})
+    expect(originalSizeColumns({ width: -1, height: 3024 }, true)).toEqual({})
+    expect(originalSizeColumns({ width: Number.NaN, height: 3024 }, true)).toEqual({})
+    // Whole, because half a pixel is not a size a file can have.
+    expect(originalSizeColumns({ width: 4032.9, height: 3024.2 }, true)).toEqual({
+      original_width: 4032,
+      original_height: 3024,
+    })
+  })
+})
+
+describe('RF-420: las columnas de la copia corregida', () => {
   it('no hace falta: todo nulo y nada pendiente', () => {
     expect(correctedColumns({ status: 'NOT_NEEDED' })).toEqual({
       corrected_path: null,
       corrected_bytes: null,
+      corrected_width: null,
+      corrected_height: null,
       corrected_pending: false,
     })
   })
@@ -579,6 +613,10 @@ describe('RF-420: las tres columnas de la copia corregida', () => {
     expect(columns.corrected_pending).toBe(true)
     expect(columns.corrected_path).toBeNull()
     expect(columns.corrected_bytes).toBeNull()
+    // And with no size either: `images_corrected_size_needs_copy` refuses a measurement
+    // of a file the row no longer names.
+    expect(columns.corrected_width).toBeNull()
+    expect(columns.corrected_height).toBeNull()
   })
 
   it('subida: ruta y tamaño juntos, que es lo que exige images_corrected_copy_pair', () => {
@@ -586,20 +624,38 @@ describe('RF-420: las tres columnas de la copia corregida', () => {
       status: 'UPLOADED',
       path: 'AR-0001/AR-0001_ab12cd34_corrected.jpg',
       bytes: 5_242_880,
+      width: 1512,
+      height: 2016,
     })
     expect(columns).toEqual({
       corrected_path: 'AR-0001/AR-0001_ab12cd34_corrected.jpg',
       corrected_bytes: 5_242_880,
       corrected_pending: false,
+      // Measured, not deduced: it is the size the file came out with, which is what the
+      // download button promises.
+      corrected_width: 1512,
+      corrected_height: 2016,
     })
   })
 
   it('el tamaño nunca es cero ni negativo: images_corrected_bytes_positive', () => {
-    expect(correctedColumns({ status: 'UPLOADED', path: 'x_corrected.jpg', bytes: 0 }).corrected_bytes)
-      .toBeGreaterThan(0)
-    expect(
-      correctedColumns({ status: 'UPLOADED', path: 'x_corrected.jpg', bytes: -3 }).corrected_bytes,
-    ).toBeGreaterThan(0)
+    const cero = { status: 'UPLOADED' as const, path: 'x_corrected.jpg', width: 10, height: 10 }
+    expect(correctedColumns({ ...cero, bytes: 0 }).corrected_bytes).toBeGreaterThan(0)
+    expect(correctedColumns({ ...cero, bytes: -3 }).corrected_bytes).toBeGreaterThan(0)
+  })
+
+  it('el tamaño en píxeles tampoco: images_corrected_size_positive', () => {
+    // A zero would refuse the whole save — the framing along with it — over a caption,
+    // so it is clamped here rather than left to the constraint.
+    const subida = { status: 'UPLOADED' as const, path: 'x_corrected.jpg', bytes: 1024 }
+    const columns = correctedColumns({ ...subida, width: 0, height: -3 })
+    expect(columns.corrected_width).toBeGreaterThan(0)
+    expect(columns.corrected_height).toBeGreaterThan(0)
+    // And whole: half a pixel is not a size any file can have.
+    expect(correctedColumns({ ...subida, width: 1512.7, height: 2016.2 })).toMatchObject({
+      corrected_width: 1512,
+      corrected_height: 2016,
+    })
   })
 })
 

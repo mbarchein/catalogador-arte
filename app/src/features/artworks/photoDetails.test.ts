@@ -39,6 +39,8 @@ function detail(over: Partial<PhotoDetailRow> = {}): PhotoDetailRow {
     corrected_path: null,
     corrected_bytes: null,
     corrected_pending: false,
+    corrected_width: null,
+    corrected_height: null,
     color_temperature: null,
     color_tint: null,
     color_exposure: null,

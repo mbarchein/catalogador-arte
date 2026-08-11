@@ -5,10 +5,10 @@ import {
   messageOf,
 } from '../../lib/download'
 import { type ColorColumns } from '../../lib/imageColor'
-import { isNoEdit, type EditColumns } from '../../lib/imageEdits'
+import { editedSize, isNoEdit, type EditColumns, type Size } from '../../lib/imageEdits'
 import { CORRECTED_EXTENSION, correctedDownloadUrl, masterDownloadUrl } from '../../lib/images'
 import { SHOT_TYPE_LABEL, type ShotTypeValue } from '../../lib/types'
-import { photoEdit } from './photoDetails'
+import { correctedSize, originalSize, photoEdit, pixelText } from './photoDetails'
 
 /**
  * What a photograph can be handed out as, and what is said when it cannot (RF-411,
@@ -80,6 +80,20 @@ export interface CorrectedCopyColumns extends Partial<ColorColumns> {
   corrected_pending: boolean
   /** The size of the original, when it is known: it goes on the button, not in a note. */
   master_bytes?: number | null
+  /**
+   * The original's size in pixels, which is what both buttons measure themselves
+   * against: the original's own is this one, and the corrected copy's is what the
+   * geometry makes of it.
+   *
+   * Optional for the same reason as `master_bytes`: a caller with only the three copy
+   * columns is a legitimate caller, and what it gets is a button with no pixel size
+   * rather than a guessed one.
+   */
+  original_width?: number | null
+  original_height?: number | null
+  /** The copy's measured size, which is the one the button prefers to any arithmetic. */
+  corrected_width?: number | null
+  corrected_height?: number | null
 }
 
 /** One download on offer, with everything the button needs already decided. */
@@ -256,6 +270,11 @@ export function archiveDownloads(input: {
   const offers: ArchiveOffer[] = []
   const notes: string[] = []
 
+  // The original's size, and what the geometry makes of it. The original's is the one
+  // the decoder gave with the orientation already applied, which is what any viewer
+  // shows and therefore what the cataloger will measure.
+  const original = originalSize(detail)
+
   // ── The corrected copy goes FIRST when it exists ──────────────
   // It is the one that gets sent, so it is the one under the thumb. The original stays
   // right below it, because the archive document is never hidden.
@@ -267,6 +286,15 @@ export function archiveDownloads(input: {
         shotType: row.shot_type,
         path: detail.corrected_path,
         bytes: detail.corrected_bytes,
+        // What the file MEASURED when it was written, and the geometry only as a
+        // fallback. The measurement is preferred because it is the file itself talking;
+        // the arithmetic is what answers for the copies written before those columns
+        // existed, and it is exact — `editedSize` is the same function that decided the
+        // canvas in `renderCorrectedCopy`. It cannot describe an older file either: a
+        // path only ever coexists with the edit that produced it, because
+        // `correctedColumns` clears the path on both PENDING and NOT_NEEDED.
+        pixels:
+          correctedSize(detail) ?? (original ? editedSize(original, photoEdit(row, detail)) : null),
         ordinal,
       }),
     )
@@ -303,6 +331,7 @@ export function archiveDownloads(input: {
         shotType: row.shot_type,
         path: row.master_path,
         bytes: detail?.master_bytes,
+        pixels: original,
         ordinal,
       }),
     )
@@ -324,9 +353,14 @@ function offerOf(input: {
   shotType: ShotTypeValue
   path: string
   bytes: number | null | undefined
+  pixels: Size | null
   ordinal?: number
 }): ArchiveOffer {
-  const size = sizeText(input.bytes)
+  // Pixels first and weight second: the pixels say whether the file is any use for what
+  // it is being asked for, and the weight says what it costs to fetch it (RF-114). Each
+  // one appears only when it is known, so a row that knows neither keeps the plain verb
+  // instead of an empty pair of brackets.
+  const facts = [pixelText(input.pixels), sizeText(input.bytes)].filter(Boolean).join(' · ')
   return {
     kind: input.kind,
     path: input.path,
@@ -337,7 +371,7 @@ function offerOf(input: {
       storedPath: input.path,
       ordinal: input.ordinal,
     }),
-    label: size ? `${ARCHIVE_ACTION[input.kind]} (${size})` : ARCHIVE_ACTION[input.kind],
+    label: facts ? `${ARCHIVE_ACTION[input.kind]} (${facts})` : ARCHIVE_ACTION[input.kind],
     hint: ARCHIVE_HINT[input.kind],
     noun: ARCHIVE_NOUN[input.kind],
   }

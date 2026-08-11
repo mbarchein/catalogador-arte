@@ -1,3 +1,25 @@
+## 11 de agosto de 2026
+
+### Interfaz
+
+**Cada fotografía dice cuánto mide, y cada descarga también**
+
+- El tamaño en píxeles aparece ahora en tres sitios: junto al contador de la ficha («2 de 4
+  fotografías · General · 4032×3024 px»), en el pie de la vista a pantalla completa, y **dentro de
+  los dos botones de descargar**, delante del peso: «Descargar el original (4032×3024 px · 1,5 MB)».
+- El botón de la copia corregida dice **el tamaño de la copia**, que no es el del original: si la
+  obra se recortó o se giró, la copia es más pequeña. Es el número que pide una imprenta, y el que
+  decide si una reproducción puede ir a página completa — algo que «1,5 MB» no contesta.
+- **En las fotografías que ya están en el catálogo el tamaño aparecerá la primera vez que se
+  vuelvan a corregir**, no antes: hasta ahora nadie lo había medido, y no se inventa. Cuando se
+  aplica una corrección desde la fotografía original, queda anotado; y la herramienta que genera
+  desde un ordenador las copias pendientes lo anota también en todas las que vacía.
+
+### La base de datos del catálogo
+
+- La copia corregida guarda **cuánto mide**, medido al escribir el fichero y no calculado después.
+  Así el botón promete el tamaño que el fichero tiene, y no el que debería tener.
+
 ## 9 de agosto de 2026
 
 ### Interfaz
