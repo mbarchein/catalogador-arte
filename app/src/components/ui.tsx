@@ -119,6 +119,32 @@ export function FunnelIcon({ className = 'h-6 w-6' }: { className?: string }) {
   )
 }
 
+/**
+ * Up and down, for walking an ordered list with two buttons.
+ *
+ * They exist as their own icons instead of a rotated chevron, and that is not
+ * tidiness: the dossier's list shipped with the arrows **swapped**, because a
+ * `<` rotated a quarter turn points down and a `>` points up, and reading the
+ * rotation backwards is a one-character mistake that nothing catches — the button
+ * did the right thing and drew the opposite. An icon that means what it draws
+ * cannot have that bug.
+ */
+export function ChevronUpIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M6 15l6-6 6 6" />
+    </svg>
+  )
+}
+
+export function ChevronDownIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}
+
 export function ChevronLeftIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>
