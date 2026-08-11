@@ -691,6 +691,83 @@ end $$;
 reset role;
 
 
+-- ── 7 ter. La sección es el cuarto tipo (RF-1619, RF-1621) ──
+-- La pertenencia es implícita: una sección son su rótulo y todo lo que viene detrás
+-- hasta el siguiente. Así que lo único que puede comprobarse aquí es su forma —lo
+-- que la base no deja guardar— y que se coloca como cualquier otro elemento.
+do $$
+declare v_kind text; v_divider boolean;
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000d001","role":"authenticated"}';
+  set local role authenticated;
+
+  perform public.add_section_to_dossier(
+    '00000000-0000-0000-0000-00000000e001', 'Óleos, 1962-1968', 'Los cuatro primeros.', true);
+
+  select kind::text, divider_page into v_kind, v_divider
+    from public.dossier_items
+   where dossier_id = '00000000-0000-0000-0000-00000000e001' and kind = 'SECTION';
+  if v_kind <> 'SECTION' or v_divider is not true then
+    raise exception 'FAIL: la sección no entró con su portadilla: % / %', v_kind, v_divider;
+  end if;
+
+  -- Una sección sin rótulo es un salto en blanco, y se dice con una frase.
+  begin
+    perform public.add_section_to_dossier('00000000-0000-0000-0000-00000000e001', '   ');
+    raise exception 'FAIL: se admitió una sección sin rótulo';
+  exception
+    when raise_exception then
+      if position('necesita un rótulo' in sqlerrm) = 0 then raise; end if;
+  end;
+
+  raise notice 'OK: la sección se añade con su rótulo y su portadilla';
+end $$;
+
+reset role;
+
+-- Su forma, por las dos puertas.
+do $$
+begin
+  insert into public.dossier_items (dossier_id, kind, heading, divider_page, catalog_id)
+  values ('00000000-0000-0000-0000-00000000e001', 'SECTION', 'Óleos', false,
+          (select catalog_id from public.artworks where catalog_id = 'AR-9671'));
+  raise exception 'FAIL: una sección pudo llevar obra dentro';
+exception
+  when check_violation then
+    raise notice 'OK: una sección no lleva obra, ni precio, ni fondo';
+end $$;
+
+do $$
+begin
+  insert into public.dossier_items (dossier_id, kind, heading)
+  values ('00000000-0000-0000-0000-00000000e001', 'SECTION', 'Óleos');
+  raise exception 'FAIL: se admitió una sección sin decir si lleva portadilla';
+exception
+  when check_violation then
+    raise notice 'OK: una sección dice siempre si se lleva una página para su rótulo';
+end $$;
+
+do $$
+begin
+  insert into public.dossier_items (dossier_id, kind, catalog_id, divider_page)
+  values ('00000000-0000-0000-0000-00000000e001', 'ARTWORK', 'AR-9671', true);
+  raise exception 'FAIL: una obra pudo llevar portadilla';
+exception
+  when check_violation then
+    raise notice 'OK: la portadilla no significa nada en una obra';
+end $$;
+
+-- Y el índice es del dossier, no de cada sección.
+do $$
+begin
+  if (select show_index from public.dossiers
+       where id = '00000000-0000-0000-0000-00000000e001') is not false then
+    raise exception 'FAIL: el índice debería nacer apagado';
+  end if;
+  raise notice 'OK: el índice es del dossier y nace apagado';
+end $$;
+
+
 -- ── 8. A recipient is not withdrawn while it is one ─────────
 -- The fourth check of `tg_party_deactivation`, with the reason of the other
 -- three: withdrawing it leaves the catalogue pointing at something the interface
