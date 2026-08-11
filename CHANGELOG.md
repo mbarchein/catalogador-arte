@@ -1742,12 +1742,17 @@
 
 - Está decidido cómo va a funcionar armar un dossier: se eligen las obras, se ponen en el orden que se
   quiera, cada una puede llevar su nota y su precio, y se genera un PDF para mandar.
+- **Se pueden escribir textos donde haga falta**: una presentación en la portada, un rótulo que separe
+  «Óleos» de «Obra sobre papel» y párrafos entre unas obras y otras. Van en la misma lista que las obras,
+  así que un párrafo se coloca justo donde tiene que leerse. La nota de una obra y la del dossier son otra
+  cosa: son recado del equipo y no salen impresas.
 - El precio es del dossier y no de la obra: el catálogo no dice lo que vale nada, y la misma obra puede
   ofrecerse distinto en dos galerías.
 - Cada PDF que se genera queda guardado con su fecha, así que dentro de un año se puede ver qué se mandó
   exactamente. Y volver a generarlo coge los datos del día, de modo que corregir una medida en la ficha
-  corrige el dossier.
-- Todavía no hay nada de esto en la aplicación.
+  corrige el dossier. Una versión ya mandada no se puede cambiar ni borrar: para corregir se manda otra.
+- El catálogo ya sabe guardar todo eso. Lo que falta es la pantalla desde la que armarlo, así que
+  todavía no se puede hacer nada de esto desde la aplicación.
 
 **La copia a tamaño completo, sin comprobar de extremo a extremo**
 

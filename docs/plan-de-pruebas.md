@@ -535,23 +535,26 @@ Fila propia para lo que **no** cubre ningún test y hay que saber que no cubre:
 
 ### Dossier (RF-1600)
 
-Bloque decidido el 11 de agosto de 2026 ([ADR-011](decisiones/ADR-011-el-dossier.md)) y **sin construir**:
-no hay esquema, no hay pantalla y no hay ningún test. Tiene sección propia desde el primer día para que
-no aparezca en la lista de requisitos invisibles del final, y estas filas son la especificación de los
-tests que van con la migración, no una promesa vaga.
+Bloque decidido el 11 de agosto de 2026 ([ADR-011](decisiones/ADR-011-el-dossier.md)). **El esquema está y la
+pantalla no**, así que las filas de base están cerradas y las de interfaz siguen siendo la
+especificación de lo que hay que escribir. Las diecinueve comprobaciones de la base viven en
+`dossiers.test.sql`, y las dos barredoras de siempre —`rls_default_deny` y `function_privileges`—
+cubren las tres tablas nuevas sin tocarlas, que es para lo que están.
 
 | Requisito | Qué debe verificar el test | Estado |
 |---|---|---|
-| RF-1601, RF-1610 | **RLS de las tres tablas, y es lo primero.** Un dossier se lee con `can_read()` y se escribe con `can_edit()`: el Lector lo ve y no lo cambia, el anónimo no ve nada, y el cierre por omisión avisa si alguna de las tres nace sin política. Con los privilegios revocados y concedidos uno a uno, `delete` incluido | Pendiente |
-| RF-1602, RF-1603 | El orden es **todo o nada**: `reorder_dossier_artworks` recibe la lista entera y la reescribe, y rechaza una lista incompleta, con repetidos o con una obra de otro dossier. Dos líneas no pueden compartir posición ni quedar con hueco | Pendiente |
-| RF-1604 | El precio vive en la línea y no en la obra: nulo es «sin precio» y no cero, el importe no es negativo, y no hay ninguna columna de precio en `artworks` — este último como aserto de esquema, que es lo que impide que reaparezca | Pendiente |
-| RF-1605 | Sin toma fijada, el dossier enseña la representativa de la obra y la sigue si cambia; con toma fijada, la fijada. Y la toma fijada tiene que ser **de esa obra** | Pendiente |
-| RF-1607 | Una versión emitida **no se reescribe ni se borra**: `update` y `delete` negados a todos los roles, y la versión es consecutiva por dossier y la asigna la base, no el cliente | Pendiente |
+| RF-1601, RF-1610 | **RLS de las tres tablas, y es lo primero.** Un dossier se lee con `can_read()` y se escribe con `can_edit()`: el Lector lo ve y no lo cambia, el anónimo no alcanza ni la tabla, y el cierre por omisión avisa si alguna de las tres hubiera nacido sin política. Con los privilegios revocados y concedidos uno a uno, `delete` incluido | **Hecho** |
+| RF-1602, RF-1603 | El orden es **todo o nada**: `reorder_dossier_items` recibe la lista entera y la reescribe, y rechaza —sin dejar el orden a medias— una lista incompleta, con repetidos o con un elemento de otro dossier. Un elemento añadido después va al final y no en medio | **Hecho** |
+| RF-1604 | El precio vive en la línea y no en la obra: nulo es «sin precio», cero no es un precio, la moneda es un código de tres letras. Y **no hay ninguna columna de precio en `artworks`**, comprobado contra el catálogo del sistema: es el aserto que impide que la decisión de ADR-011 se deshaga añadiendo una columna de buena fe | **Hecho** |
+| RF-1605 | La toma fijada tiene que ser **de esa obra**: otra metería un cuadro distinto en el PDF, que es el error que descubre quien lo recibe. Nulo es «la representativa», y lo que compone con ella es la pantalla | **Hecho** en la base |
+| RF-1607 | Una versión emitida **no se reescribe ni se borra**, y se comprueba como propietario de la tabla, que es la vía que la RLS no cierra: los dos candados y, en serie, la ausencia del privilegio (RF-113). La versión, la fecha y el autor los pone la base y **se ignora lo que manda el cliente**, con una emisión que llega con la versión 99 y la fecha de 2001 | **Hecho** |
+| RF-1613 | Una obra retirada del catálogo sigue en la línea, no se le muestra al Lector (RF-609) y quien edita la sigue viendo; lo mismo con un dossier retirado, sus líneas y sus emisiones. Que la pantalla **lo diga** es de la pantalla | **Hecho** en la base |
+| RF-1612 | Volver a añadir una obra quitada **recupera** su línea con su nota y su precio en vez de crear otra, vuelve al final y no conserva el sello de retirada. Y una parte que es destinataria de un dossier activo no se retira | **Hecho** |
+| RF-1614, RF-1615 | Los textos entran en **la misma lista** que las obras y se reordenan con ellas; un texto sin rótulo ni párrafo se rechaza con una frase y no con el nombre de una restricción; y las dos formas imposibles no se pueden guardar —una obra con párrafo dentro, un texto con precio—. Además, un texto **se ve**: cuelga del dossier y de ninguna obra, así que la visibilidad heredada no se lo puede tragar, que es como falla esa cláusula si se copia sin pensar | **Hecho** |
+| RF-1606 | Los cuatro interruptores deciden qué bloques compone el PDF, y los tres que no son las exposiciones nacen apagados | Pendiente |
 | RF-1608 | Corregir una medida en la ficha cambia lo que dice la emisión siguiente y **no** lo que dice el PDF ya emitido | Pendiente |
 | RF-1609 | El PDF compone con la derivada de consulta. Como el dibujo necesita `canvas`, lo que se prueba con asertos es **qué fichero elige** y qué hace cuando esa obra no tiene ninguna fotografía; el papel se mira a mano | Pendiente · **en navegador** el resultado |
-| RF-1612 | Retirar y recuperar el dossier con su traza, y volver a añadir una obra quitada **recupera** su línea con la nota y el precio en vez de crear otra. Es el patrón de citar una obra en una publicación, y su test es el de aquella | Pendiente |
-| RF-1613 | Una obra retirada del catálogo sigue en la línea, no se le muestra al Lector (RF-609), sale dicha como retirada a quien edita y no entra en el PDF | Pendiente |
-| RF-1611 | Ninguna vista del dossier es accesible sin sesión y el PDF vive en el bucket privado: es RF-101 sobre las rutas nuevas, y lo cubre el mismo test que ya recorre las rutas de la aplicación | Pendiente |
+| RF-1611 | Ninguna vista del dossier es accesible sin sesión: es RF-101 sobre las rutas nuevas, y lo cubre el mismo test que ya recorre las rutas de la aplicación. Del PDF en el almacén privado ya responden las políticas de `storage.objects`, que están sobre el bucket entero | Pendiente |
 
 ### Infraestructura
 

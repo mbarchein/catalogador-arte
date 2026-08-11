@@ -53,21 +53,47 @@ búsqueda guardada— y la factura —el precio en la línea, y el documento emi
 
 ## Decisión
 
-Un **dossier** es una ficha con nombre propio que enumera obras en un orden elegido, y del que se emiten
-PDF fechados. Tres tablas.
+Un **dossier** es una ficha con nombre propio que enumera obras y textos en un orden elegido, y del que
+se emiten PDF fechados. Tres tablas.
 
 ```
-dossiers              El dossier: nombre, para qué es, a quién va, qué bloques enseña
-dossier_artworks       Las obras elegidas, en su orden, con su nota y su precio
-dossier_issues         Cada PDF emitido, con su versión. Solo se añade
+dossiers             El dossier: nombre, para qué es, a quién va, portada, qué bloques enseña
+dossier_items        Lo que el dossier dice, en orden: obras y textos libres
+dossier_issues       Cada PDF emitido, con su versión. Solo se añade
 ```
 
-**Las obras se enumeran, no se consultan.** La tabla puente `dossier_artworks` sigue el patrón que ya
-tienen las fotografías de una obra: `sort_order` de 1 a n y una función `reorder_dossier_artworks` que
-recibe la lista entera y la reescribe de un golpe, o no la escribe. Nada de arrastrar y guardar fila a
-fila: dos posiciones repetidas son un dossier con dos obras en el mismo sitio, y eso no se puede guardar.
-El punto de partida al armarlo sí es el listado con filtros —se llega a las doce obras buscando—, pero lo
-que se guarda son las doce, no la búsqueda.
+**Una sola lista, y esta es la estructura.** La tabla de en medio no es «las obras del dossier»: es **el
+contenido** del dossier, y una obra es una de las dos cosas que el contenido puede ser. La otra es un
+texto libre —un párrafo de apertura, el rótulo que separa los óleos de la obra sobre papel, una nota
+final sobre disponibilidad—. Dos tablas separadas, una de obras y otra de textos, cada una con su orden,
+no pueden expresar «este párrafo va entre la cuarta obra y la quinta», que es exactamente para lo que se
+escribe un párrafo en un dossier. Una lista con un `kind` sí, y el orden es uno.
+
+El `kind` es un enumerado explícito y no se deduce de «no tiene obra, será un texto»: es la regla de
+siempre de distinguir el dato de su ausencia, y es lo que permite un tercer tipo —un salto de página, una
+fotografía a toda plana— sin adivinar qué quería decir una fila con todo a nulo. Cada tipo tiene su forma
+comprobada en el esquema: una obra no lleva párrafo dentro y un texto no lleva precio ni obra, así que un
+elemento que el PDF no sabría dibujar no se puede guardar.
+
+**Cuatro sitios donde escribir, y cada uno es de alguien.** Es la distinción que hay que tener clara
+antes de teclear:
+
+| Dónde | Va al PDF | Para qué |
+|---|---|---|
+| `dossiers.cover_text` | Sí, en la portada | La presentación: dos líneas o media página |
+| `dossier_items.heading` / `.body` (tipo texto) | Sí, donde esté en el orden | Rótulos de sección y párrafos entre obras |
+| `dossier_items.note` (línea de obra) | **No** | Recado del equipo: «la que pidieron ver de cerca» |
+| `dossiers.note` | **No** | Recado sobre el dossier entero |
+
+Que la nota del equipo no salga impresa es deliberado y es la mitad del valor de tener las dos: se puede
+anotar lo que no se le dice a la galería.
+
+**Las obras se enumeran, no se consultan.** El orden sigue el patrón que ya tienen las fotografías de una
+obra: `sort_order` de 1 a n y una función `reorder_dossier_items` que recibe la lista entera y la
+reescribe de un golpe, o no la escribe. Nada de arrastrar y guardar fila a fila: dos posiciones repetidas
+son un dossier con dos elementos en el mismo sitio, y eso no se puede guardar. El punto de partida al
+armarlo sí es el listado con filtros —se llega a las doce obras buscando—, pero lo que se guarda son las
+doce, no la búsqueda.
 
 **El precio es del dossier y es opcional.** Vive en la línea (`price`, `currency`), no en la obra, y cada
 dossier decide si se enseña. Es la regla de la factura y la de las plataformas de galería, y aquí importa
@@ -75,7 +101,7 @@ más que en ninguna de las dos: **el catálogo no afirma ningún precio**. Un pr
 sería un dato del inventario, y no lo es —es una postura ante un interlocutor y una fecha—; puesto en la
 línea, cada dossier dice lo que dijo y el catálogo se queda callado.
 
-**Se guarda la referencia viva, y además el PDF emitido.** La tabla puente apunta a `catalog_id`, así que
+**Se guarda la referencia viva, y además el PDF emitido.** La línea de una obra apunta a `catalog_id`, así que
 el dossier lee la ficha de hoy: corregir una medida en la obra corrige el dossier sin tocarlo, que es lo
 que hace que valga la pena tenerlo dentro de la aplicación. Y cada emisión deja una fila en
 `dossier_issues` con su `version` —1, 2, 3…—, su fecha, quién la emitió y el PDF en el almacén. Las dos
@@ -95,7 +121,7 @@ fichero, y quien lo manda decide a quién.
 catalogando el mismo fondo, y un dossier que solo ve quien lo hizo se rehace cuando esa persona no está.
 
 **Es una ficha, con papelera.** Retirar un dossier es baja lógica con su traza (RF-901, RF-902), y quitar
-una obra de un dossier también: la línea se desactiva y volver a añadir la misma obra **restaura** la
+un elemento de un dossier también: la línea se desactiva y volver a añadir la misma obra **restaura** la
 línea con su nota y su precio, en vez de crear una segunda. Es exactamente lo que ya hace citar una obra
 en una publicación.
 
@@ -112,6 +138,35 @@ principal. Elegir una toma concreta —el detalle de la firma, el reverso— es 
 
 **Qué bloques se enseñan** se decide por dossier con cuatro interruptores: procedencia, exposiciones,
 bibliografía y precios. Una galería quiere el historial expositivo; un seguro, las medidas y el estado.
+
+### Cómo se maqueta: cuatro plantillas simples
+
+Todas caben en lo que `pdf-lib` ya hace en la ficha imprimible —rectángulos, una imagen y texto en dos
+tipografías—, así que ninguna es una plataforma nueva. Van de la más generosa a la más seca, que es
+también el orden de menos a más obras por página:
+
+1. **Una obra por página** (A4 vertical). La fotografía ocupa la mitad superior, y debajo el título, la
+   fecha, la técnica, las medidas y el precio si el dossier lo enseña. Es la que impresiona y la que más
+   páginas gasta: doce obras, doce páginas. Para una selección corta que se quiere defender.
+2. **Dos por página.** Cada obra en su mitad, fotografía a la izquierda y datos a la derecha. Es la
+   maqueta clásica de dossier de galería y el punto medio razonable: quince obras en ocho páginas y la
+   fotografía todavía se ve.
+3. **Rejilla de seis** (dos columnas por tres filas). Fotografía pequeña con el pie debajo: código, título
+   y fecha. Es la hoja de contactos, para «esto es lo que hay, dime qué te interesa».
+4. **Lista sin fotografía.** Una línea por obra con código, título, fecha, técnica y medidas. Es lo que
+   pide un seguro, un transportista o un depósito, donde la fotografía estorba y lo que importa es que
+   quepa en una hoja.
+
+Los textos se maquetan igual en las cuatro: la portada es la primera página con el título del dossier, la
+fecha y `cover_text`; un **rótulo** abre sección —a ancho completo, y opcionalmente empezando página—; y un
+**párrafo** ocupa el ancho de la caja y empuja lo que viene detrás. Esa es la ventaja práctica de que
+todo sea una lista: el generador recorre los elementos en orden y decide por tipo, sin saber nada de
+secciones.
+
+**Se empieza por la 2 y las otras tres son plantillas de la misma máquina**, porque lo que cambia entre
+ellas es cuántas cajas caben en una página y qué campos entran en cada caja. La columna que dice qué
+plantilla usa cada dossier **nace con el generador y no antes**: guardar hoy una elección que nadie sabe
+dibujar es exactamente el interruptor que un día miente.
 
 ## Alternativas descartadas
 
@@ -150,6 +205,22 @@ congelada, y es la que se mandó.
 **Reutilizar el lote de captura.** Vive en el navegador, es uno solo, no tiene nombre ni orden y se pierde
 al cambiar de dispositivo. Es un ayudante de teclado y sigue siéndolo.
 
+**Dos tablas, una de obras y otra de textos.** Cada una con su orden, y entonces «este párrafo va entre la
+cuarta obra y la quinta» no se puede decir: harían falta dos números por elemento y una regla para
+mezclarlos, que es un orden hecho a mano con más piezas y peor. La lista única con un tipo es más pequeña y
+contesta la pregunta.
+
+**Los textos como columnas del dossier**: una presentación, una nota final y nada más. Es lo que se
+escribe primero y lo que se queda corto en el segundo dossier, en cuanto hay dos bloques de obra que hay
+que separar con un rótulo. La portada sí es una columna, porque una portada es una página y no algo que
+fluya entre dos obras.
+
+**Texto con formato: Markdown, negritas, un editor rico.** Sería un lenguaje de marcado dentro de un campo
+del catálogo, con su renderizador, su saneado y sus casos raros de por vida, y un dossier no lo necesita:
+lo que hace legible una página es la maqueta —rótulo, párrafo, caja de obra—, no las negritas dentro del
+párrafo. Un rótulo y un cuerpo, cada uno con su tipografía puesta por la plantilla, dan el resultado sin
+abrir esa puerta.
+
 ## Consecuencias
 
 - **Con precios y del equipo, quien consulta ve lo que se pide por una obra.** El Lector es una cuenta de
@@ -167,7 +238,7 @@ al cambiar de dispositivo. Es un ayudante de teclado y sigue siéndolo.
 - **Las emisiones ocupan almacén y no se borran.** Son PDF de pocos megabytes en el bucket privado, y
   crecen con cada emisión. A este ritmo no es una cifra que preocupe; queda dicho para que dentro de un
   año se sepa de dónde sale.
-- **El orden es una decisión y se puede perder.** `reorder_dossier_artworks` reescribe la lista entera, así
+- **El orden es una decisión y se puede perder.** `reorder_dossier_items` reescribe la lista entera, así
   que dos personas reordenando el mismo dossier a la vez hacen que gane la última. Es el comportamiento
   que ya tienen las fotografías de una obra y con dos personas no ha dolido.
 - **Queda abierto todo lo que no es PDF**: mandar el dossier desde la aplicación, una portada con textos

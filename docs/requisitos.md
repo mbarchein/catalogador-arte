@@ -355,8 +355,8 @@ cambios. El modelo, y por qué no es una búsqueda guardada ni un precio en la f
 | Id | Requisito |
 |---|---|
 | RF-1601 | Un **dossier** es una ficha con nombre propio que reúne obras del catálogo en un orden elegido, para mandarla a una galería o para cualquier otro uso. Tiene título, para qué es y una nota, y opcionalmente a quién va, tomado de la tabla de personas y entidades que ya existe. Hay tantos como haga falta y a la vez. |
-| RF-1602 | Las obras del dossier se **enumeran, no se consultan**: lo que se guarda son las obras elegidas, no el criterio con el que se encontraron. Buscar y filtrar es la manera de llegar a ellas; dar de alta una obra nueva después no la mete en ningún dossier. |
-| RF-1603 | El **orden lo decide la usuaria** y es parte del dossier. Se reordena moviendo obras y se guarda **la lista entera de una vez o ninguna**, como el orden de las fotografías de una obra: dos obras no pueden ocupar la misma posición. |
+| RF-1602 | El dossier es **una lista ordenada de elementos**, y un elemento es **una obra o un texto libre**. Las obras se **enumeran, no se consultan**: lo que se guarda son las obras elegidas, no el criterio con el que se encontraron. Buscar y filtrar es la manera de llegar a ellas; dar de alta una obra nueva después no la mete en ningún dossier. |
+| RF-1603 | El **orden lo decide la usuaria** y es parte del dossier. Es **un solo orden** para las obras y los textos, porque un párrafo va entre dos obras concretas. Se reordena moviendo elementos y se guarda **la lista entera de una vez o ninguna**, como el orden de las fotografías de una obra: dos elementos no pueden ocupar la misma posición. |
 | RF-1604 | Cada obra del dossier lleva su **nota** y, opcionalmente, su **precio con moneda**. El precio es **del dossier y no de la obra**: el catálogo no afirma ningún precio, y la misma obra puede ofrecerse distinto en dos sitios. Cada dossier decide si los precios se enseñan. |
 | RF-1605 | Cada obra del dossier usa **la fotografía representativa de la obra** salvo que se fije una toma concreta. Sin fijar, cambiar la fotografía principal de la obra cambia también lo que enseña el dossier, que es lo que se quiere. |
 | RF-1606 | El dossier decide **qué bloques enseña**: procedencia, historial expositivo, bibliografía y precios. Una galería quiere el historial; un seguro, las medidas y el estado. |
@@ -367,6 +367,8 @@ cambios. El modelo, y por qué no es una búsqueda guardada ni un precio en la f
 | RF-1611 | **No hay enlace público.** Lo que sale de la aplicación es un fichero, y quien lo manda decide a quién (RF-101). |
 | RF-1612 | Un dossier se **retira y se recupera** como cualquier ficha, con su traza (RF-901, RF-902), y quitar una obra de un dossier también: volver a añadir la misma obra **recupera** su nota y su precio en vez de crear una línea nueva. |
 | RF-1613 | Una obra **retirada del catálogo** no desaparece en silencio de los dossieres que la llevaban: aparece dicha como retirada a quien edita, no se le muestra a quien solo consulta (RF-609) y no sale en el PDF. Estuvo en el documento que se mandó, y eso es un dato. |
+| RF-1614 | El dossier admite **textos libres** en cualquier punto de la lista: un **rótulo** que abre sección, un **párrafo**, o los dos. Además tiene un texto de **portada**, que es una página y no algo que fluya entre obras. Un texto sin rótulo ni párrafo es un hueco y no se guarda. El texto es texto: no hay lenguaje de marcado, negritas ni editor con formato — lo que hace legible la página es la maqueta. |
+| RF-1615 | Se distingue lo que **va al PDF** de lo que es **recado del equipo**: la portada y los textos libres se imprimen; la nota del dossier y la nota de cada obra no. Poder anotar lo que no se le dice a la galería es la mitad del valor de tener las dos. |
 
 ---
 
@@ -424,7 +426,7 @@ construían. Lo que sigue es el estado, no un plan.
 | Frontend: pantalla del historial de cambios (RF-1508) | **Construida** como bloque de la ficha de obra: el historial de una obra se lee desde su propia ficha. Lo que no hay es una pantalla del registro entero |
 | Fotografías: tres niveles generados en el navegador, orden, imagen índice, giro, recorte, perspectiva y color como dato, y la copia corregida a resolución completa | Construido |
 | Ficha imprimible en PDF con QR | Construido |
-| Dossier: selección de obras con orden y PDF por versión (RF-1600) | **No construido.** Decidido el 11 de agosto de 2026 ([ADR-011](decisiones/ADR-011-el-dossier.md)); no hay ni esquema ni pantalla |
+| Esquema: dossier, sus obras ordenadas y sus emisiones (RF-1600) | **Construido** el 11 de agosto de 2026 ([ADR-011](decisiones/ADR-011-el-dossier.md)), con sus políticas y sus diecinueve comprobaciones. Lo que falta es la pantalla: hoy un dossier solo se puede armar desde la base |
 | Vistas en vivo por WebSocket | Construido para obras e imágenes. Las tablas documentales, los enlaces y el registro no se publican |
 | Sección «Tablas»: ubicaciones, tipos de obra, series y los vocabularios documentales | Construido. A las tres primeras se sumaron las seis pantallas de los vocabularios nuevos —personas e instituciones, sedes de exposición, tipos de publicación, tipos de documento, tipos de relación y clasificación archivística—, y al final la puerta de la papelera |
 | Papelera | **No construida.** La baja lógica está en el esquema, en los *triggers* y en las políticas, y desde el 4 de agosto de 2026 también la visibilidad heredada del expediente (RF-910 a RF-913); lo que falta es la pantalla desde la que ver y restaurar |
