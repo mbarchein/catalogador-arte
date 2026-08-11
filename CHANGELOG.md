@@ -10,10 +10,13 @@
 - El botón de la copia corregida dice **el tamaño de la copia**, que no es el del original: si la
   obra se recortó o se giró, la copia es más pequeña. Es el número que pide una imprenta, y el que
   decide si una reproducción puede ir a página completa — algo que «1,5 MB» no contesta.
-- **En las fotografías que ya están en el catálogo el tamaño aparecerá la primera vez que se
-  vuelvan a corregir**, no antes: hasta ahora nadie lo había medido, y no se inventa. Cuando se
-  aplica una corrección desde la fotografía original, queda anotado; y la herramienta que genera
-  desde un ordenador las copias pendientes lo anota también en todas las que vacía.
+- **En las fotografías que ya están en el catálogo nadie había medido nada**, y no se inventa. A
+  partir de ahora se anota solo: cuando se aplica una corrección sobre la fotografía original, y en
+  cada copia pendiente que se genera desde un ordenador. Para no esperar a que le toque a cada una,
+  hay una herramienta que las mide todas de una pasada — lee solo la cabecera de cada fichero, no la
+  fotografía entera, así que tarda un momento y no se trae los gigas del archivo:
+  `python3 scripts/copias-corregidas/measure_originals.py --dry-run` para ver qué mediría, y sin
+  `--dry-run` para guardarlo. No toca ni un píxel de ningún original.
 
 ### La base de datos del catálogo
 
