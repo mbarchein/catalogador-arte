@@ -112,58 +112,85 @@ export function orphanNotice(groups: readonly DossierGroup[]): string | null {
 }
 
 /**
+ * Los bloques que se mueven: las secciones y, si lleva algo activo, el grupo del
+ * principio.
+ *
+ * Un grupo que solo tiene retirados no es un bloque: intercambiarlo no cambiaría
+ * ni una línea del orden, y un botón que escribe sin mover nada es peor que un
+ * botón apagado.
+ */
+function movableBlocks(rows: readonly DossierItemRow[]): DossierGroup[] {
+  return dossierGroups(rows).filter(
+    (group) => group.sectionId !== null || group.items.some((row) => row.active),
+  )
+}
+
+/**
  * El orden después de mover una sección ENTERA un puesto arriba o abajo, o null
  * cuando no hay nada que mover.
  *
- * «Un puesto» aquí es **otra sección**, no un elemento: subir «Obra sobre papel»
- * es ponerla, con sus cuatro obras, delante de «Óleos» y sus seis. Mover el rótulo
- * solo —lo que hacen los botones de una fila— es la otra operación y también existe;
- * ésta es la que ahorra los diez toques.
+ * «Un puesto» es **el bloque de al lado**: subir «Obra sobre papel» es ponerla, con
+ * sus cuatro obras, delante de «Óleos» y sus seis. Es el movimiento que ahorra los
+ * diez toques.
  *
- * El grupo de las huérfanas no se mueve: no es una sección, es el principio del
- * dossier, y «subir lo que va antes de todo» no significa nada.
+ * **El grupo del principio también es un bloque**, y esto salió al revés: se escribió
+ * que las huérfanas no se movían —«subir lo que va antes de todo» no significa nada—
+ * y con eso una sección sin otra sección con la que cambiarse se quedaba clavada para
+ * siempre, que es el caso más normal de todos: se añade un rótulo, se le meten dos
+ * obras y ya no hay forma de subirlo por encima de las que había.
+ *
+ * Subir por encima del grupo del principio se lleva sus obras dentro de la sección,
+ * y no es un efecto secundario que se pueda evitar: la pertenencia es la posición, y
+ * detrás de un rótulo no hay ningún sitio donde algo siga suelto. Es la misma cosa
+ * que ya hace bajar una obra por debajo de un rótulo con las flechas de su fila. Lo
+ * que sí hay que hacer es decirlo antes, y para eso está `absorbedArtworks`.
  */
 export function movedSectionOrder(
   rows: readonly DossierItemRow[],
   sectionId: string,
   direction: 'up' | 'down',
 ): string[] | null {
-  const groups = dossierGroups(rows).filter(
-    (group) => group.sectionId !== null || group.items.length > 0,
-  )
-  const index = groups.findIndex((group) => group.sectionId === sectionId)
+  const blocks = movableBlocks(rows)
+  const index = blocks.findIndex((group) => group.sectionId === sectionId)
   if (index === -1) return null
 
-  // Solo se intercambia con otra SECCIÓN: el grupo de las huérfanas se queda donde
-  // está, así que subir la primera sección real no tiene con quién cambiarse.
-  const target =
-    direction === 'up'
-      ? lastIndexBefore(groups, index)
-      : firstIndexAfter(groups, index)
-  if (target === null) return null
-
-  const next = groups.slice()
-  const moved = next[index]
-  const displaced = next[target]
+  const target = direction === 'up' ? index - 1 : index + 1
+  const moved = blocks[index]
+  const displaced = blocks[target]
+  // En los extremos no hay con quién cambiarse: `target` se sale de la lista y el
+  // acceso da `undefined`, que es lo que apaga el botón.
   if (moved === undefined || displaced === undefined) return null
+
+  const next = blocks.slice()
   next[index] = displaced
   next[target] = moved
 
   return flattenOrder(next)
 }
 
-function lastIndexBefore(groups: readonly DossierGroup[], index: number): number | null {
-  for (let i = index - 1; i >= 0; i -= 1) {
-    if (groups[i]?.sectionId !== null) return i
-  }
-  return null
-}
-
-function firstIndexAfter(groups: readonly DossierGroup[], index: number): number | null {
-  for (let i = index + 1; i < groups.length; i += 1) {
-    if (groups[i]?.sectionId !== null) return i
-  }
-  return null
+/**
+ * Cuántas OBRAS cambiarían de sección con ese movimiento, que es la frase que hay
+ * que leer antes de darle.
+ *
+ * Cero en casi todos los casos: intercambiar dos secciones no cambia la pertenencia
+ * de nada. Solo pasa subiendo por encima del grupo del principio, porque lo que iba
+ * suelto queda detrás del rótulo y por lo tanto dentro.
+ *
+ * Cuenta obras y no elementos porque es lo que dice la frase, y porque deshacerlo es
+ * lo que cuesta: un texto suelto que acabe dentro de una sección se saca con una
+ * flecha, y doce obras no.
+ */
+export function absorbedArtworks(
+  rows: readonly DossierItemRow[],
+  sectionId: string,
+  direction: 'up' | 'down',
+): number {
+  const blocks = movableBlocks(rows)
+  const index = blocks.findIndex((group) => group.sectionId === sectionId)
+  if (index === -1) return 0
+  const displaced = blocks[direction === 'up' ? index - 1 : index + 1]
+  if (displaced === undefined || displaced.sectionId !== null) return 0
+  return displaced.artworkCount
 }
 
 /**

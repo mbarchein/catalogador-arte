@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   dossierFailureText,
   dossierWriteResult,
+  moveSectionConfirmText,
   removeItemConfirmText,
   retireDossierConfirmText,
 } from './dossierMessages'
@@ -145,6 +146,20 @@ describe('las confirmaciones dicen qué pasa de verdad (RF-1612)', () => {
 
   it('la biografía sigue en la ficha del fondo', () => {
     expect(removeItemConfirmText('BIOGRAPHY', '')).toContain('ficha del fondo')
+  })
+
+  it('subir una sección avisa de las obras que quedarán dentro (RF-1620)', () => {
+    const text = moveSectionConfirmText('Óleos', 3)
+    expect(text).toContain('3 obras')
+    expect(text).toContain('«Óleos»')
+    expect(text).toContain('dentro de la sección')
+    expect(moveSectionConfirmText('Óleos', 1)).toContain('1 obra va antes')
+  })
+
+  it('y no pregunta nada cuando el movimiento no cambia de sección a ninguna obra', () => {
+    // Intercambiar dos secciones es el caso normal: una confirmación en cada toque
+    // deja de leerse, y entonces la que sí importaba tampoco.
+    expect(moveSectionConfirmText('Óleos', 0)).toBeNull()
   })
 
   it('retirar el dossier cuenta lo que lleva y tranquiliza sobre lo ya emitido', () => {

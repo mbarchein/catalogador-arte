@@ -3,6 +3,7 @@ import type { DossierItem } from '../../lib/types'
 import type { DossierItemRow } from './dossierItems'
 import {
   NO_SERIES_SECTION,
+  absorbedArtworks,
   currentOrder,
   dossierGroups,
   groupCountText,
@@ -73,6 +74,17 @@ const section = (id: string, heading: string, order: number, divider = false): D
     heading,
     divider_page: divider,
     sort_order: order,
+  })
+
+/**
+ * Las filas después de que la base aplique un orden: `reorder_dossier_items`
+ * reescribe `sort_order` 1..n sobre los activos. Sirve para comprobar en qué se
+ * convierte la lista, y no solo qué orden se manda.
+ */
+const movedRows = (rows: readonly DossierItemRow[], order: readonly string[]): DossierItemRow[] =>
+  rows.map((row) => {
+    const place = order.indexOf(row.id)
+    return place === -1 ? row : { ...row, sort_order: place + 1 }
   })
 
 describe('los grupos salen de la posición y de nada más (RF-1619)', () => {
@@ -175,20 +187,37 @@ describe('mover una sección entera (RF-1620)', () => {
     expect(movedSectionOrder(rows, 's2', 'down')).toBeNull()
   })
 
-  it('el grupo de las huérfanas no se mueve, porque no es una sección', () => {
-    // «Subir lo que va antes de todo» no significa nada, y la primera sección real
-    // no tiene con quién cambiarse.
-    const conHuerfanas = [artwork('h', '', 0), ...rows]
-    expect(movedSectionOrder(conHuerfanas, 's1', 'up')).toBeNull()
-    // Bajar sí, y las huérfanas se quedan delante.
-    expect(movedSectionOrder(conHuerfanas, 's1', 'down')).toEqual([
-      'h',
-      's2',
-      'c',
-      's1',
-      'a',
-      'b',
-    ])
+  it('intercambiar dos secciones no cambia la pertenencia de ninguna obra', () => {
+    expect(absorbedArtworks(rows, 's2', 'up')).toBe(0)
+    expect(absorbedArtworks(rows, 's1', 'down')).toBe(0)
+  })
+
+  it('sube también por encima de lo que va suelto al principio', () => {
+    // La incidencia: contando solo secciones, la única sección de un dossier se
+    // quedaba clavada. Se añade un rótulo, se le meten dos obras, y las flechas
+    // apagadas para siempre.
+    const rows = [artwork('h', '', 1), artwork('i', '', 2), section('s1', 'Óleos', 3), artwork('a', 'Óleos', 4)]
+    expect(movedSectionOrder(rows, 's1', 'up')).toEqual(['s1', 'a', 'h', 'i'])
+    expect(movedSectionOrder(rows, 's1', 'down')).toBeNull()
+  })
+
+  it('y esas obras quedan dentro de la sección, que es lo que se pregunta antes', () => {
+    // No es evitable: la pertenencia es la posición, y detrás de un rótulo no hay
+    // ningún sitio donde algo siga suelto. Lo que se puede es decirlo.
+    const rows = [artwork('h', '', 1), artwork('i', '', 2), section('s1', 'Óleos', 3)]
+    expect(absorbedArtworks(rows, 's1', 'up')).toBe(2)
+    expect(dossierGroups(movedRows(rows, ['s1', 'h', 'i']))[0]?.artworkCount).toBe(2)
+  })
+
+  it('un grupo del principio con todo retirado no es un bloque con el que cambiarse', () => {
+    // Intercambiarlo escribiría el mismo orden: el botón se apaga con razón.
+    const rows = [
+      { ...artwork('h', '', 1), active: false },
+      section('s1', 'Óleos', 2),
+      artwork('a', 'Óleos', 3),
+    ]
+    expect(movedSectionOrder(rows, 's1', 'up')).toBeNull()
+    expect(absorbedArtworks(rows, 's1', 'up')).toBe(0)
   })
 
   it('los retirados no entran en el orden que se manda a la base', () => {

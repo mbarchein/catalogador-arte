@@ -3,8 +3,14 @@ import { Link } from 'react-router'
 import { ChevronDownIcon, ChevronUpIcon, ImageIcon, TrashIcon } from '../../components/ui'
 import { planPrice, priceInputValue } from './dossierDraft'
 import { itemEntries, itemsNotice, type DossierItemEntry, type DossierItemRow } from './dossierItems'
-import { removeItemConfirmText } from './dossierMessages'
-import { dossierGroups, groupCountText, orphanNotice } from './dossierSections'
+import { moveSectionConfirmText, removeItemConfirmText } from './dossierMessages'
+import {
+  absorbedArtworks,
+  dossierGroups,
+  groupCountText,
+  movedSectionOrder,
+  orphanNotice,
+} from './dossierSections'
 import type { ItemPatch } from './useDossier'
 
 /**
@@ -21,6 +27,10 @@ import type { ItemPatch } from './useDossier'
  * toques; los de una fila mueven ese elemento, y por eso son también la forma de
  * pasar una obra de una sección a la siguiente. Poner las dos parejas en la banda
  * habría sido pedirle a quien cataloga que distinga cuatro flechas.
+ *
+ * Una sección se cambia con **el bloque de al lado**, y lo que va suelto al principio
+ * cuenta como bloque: contando solo secciones, la única de un dossier se quedaba con
+ * las dos flechas apagadas y sin ninguna forma de moverse.
  *
  * Cada movimiento es una escritura, y es `reorder_dossier_items`: la lista entera o
  * nada. Así una pantalla vieja se rechaza con una frase en vez de dejar medio orden.
@@ -60,7 +70,6 @@ export function DossierItems({
   const groups = dossierGroups(items)
   const notice = itemsNotice({ loading, error, count: entries.length })
   const orphans = orphanNotice(groups)
-  const sectionIds = groups.flatMap((group) => (group.sectionId === null ? [] : [group.sectionId]))
   const lastPosition = entries.filter((entry) => entry.position !== null).length
 
   async function act(action: () => Promise<string | null>) {
@@ -89,11 +98,21 @@ export function DossierItems({
           group.sectionId === null
             ? undefined
             : items.find((row) => row.id === group.sectionId)
-        const sectionIndex = group.sectionId === null ? -1 : sectionIds.indexOf(group.sectionId)
+        // Los botones se apagan preguntándole al MISMO cálculo que hace el movimiento,
+        // y no contando secciones aquí: contarlas aquí es lo que dejó una sección sola
+        // con las dos flechas apagadas para siempre.
+        const sectionId = group.sectionId
+        const canMove =
+          sectionId === null
+            ? { up: false, down: false }
+            : {
+                up: movedSectionOrder(items, sectionId, 'up') !== null,
+                down: movedSectionOrder(items, sectionId, 'down') !== null,
+              }
 
         return (
           <div key={group.sectionId ?? `orphans-${groupIndex}`} className="space-y-2">
-            {group.sectionId !== null && sectionRow !== undefined && (
+            {sectionId !== null && sectionRow !== undefined && (
               <div className="rounded-lg border border-stone-300 bg-stone-100 px-3 py-2">
                 <div className="flex items-start gap-2">
                   <button
@@ -103,9 +122,9 @@ export function DossierItems({
                     aria-expanded={!isCollapsed}
                     onClick={() =>
                       setCollapsed((current) =>
-                        current.includes(group.sectionId as string)
-                          ? current.filter((id) => id !== group.sectionId)
-                          : [...current, group.sectionId as string],
+                        current.includes(sectionId)
+                          ? current.filter((id) => id !== sectionId)
+                          : [...current, sectionId],
                       )
                     }
                   >
@@ -130,13 +149,24 @@ export function DossierItems({
                   {canEdit && (
                     <div className="flex shrink-0 flex-col gap-1">
                       {/* Mueven la SECCIÓN ENTERA: es el trabajo que si no son diez
-                          toques. Las flechas de una fila mueven ese elemento. */}
+                          toques. Las flechas de una fila mueven ese elemento.
+
+                          Subir por encima de lo que va suelto al principio se lleva
+                          esas obras dentro de la sección —la pertenencia es la
+                          posición—, así que ahí se pregunta antes. */}
                       <button
                         type="button"
                         aria-label="Subir la sección entera"
                         className="rounded border border-stone-300 bg-white p-1 disabled:opacity-30"
-                        disabled={busy || sectionIndex === 0}
-                        onClick={() => void act(() => onMoveSection(group.sectionId as string, 'up'))}
+                        disabled={busy || !canMove.up}
+                        onClick={() => {
+                          const ask = moveSectionConfirmText(
+                            group.heading ?? '',
+                            absorbedArtworks(items, sectionId, 'up'),
+                          )
+                          if (ask !== null && !window.confirm(ask)) return
+                          void act(() => onMoveSection(sectionId, 'up'))
+                        }}
                       >
                         <ChevronUpIcon className="h-5 w-5" />
                       </button>
@@ -144,10 +174,8 @@ export function DossierItems({
                         type="button"
                         aria-label="Bajar la sección entera"
                         className="rounded border border-stone-300 bg-white p-1 disabled:opacity-30"
-                        disabled={busy || sectionIndex === sectionIds.length - 1}
-                        onClick={() =>
-                          void act(() => onMoveSection(group.sectionId as string, 'down'))
-                        }
+                        disabled={busy || !canMove.down}
+                        onClick={() => void act(() => onMoveSection(sectionId, 'down'))}
                       >
                         <ChevronDownIcon className="h-5 w-5" />
                       </button>
@@ -160,9 +188,9 @@ export function DossierItems({
                     <button
                       type="button"
                       className="text-sm text-stone-700 underline"
-                      onClick={() => setOpen(open === group.sectionId ? null : group.sectionId)}
+                      onClick={() => setOpen(open === sectionId ? null : sectionId)}
                     >
-                      {open === group.sectionId ? 'Cerrar' : 'Corregir la sección'}
+                      {open === sectionId ? 'Cerrar' : 'Corregir la sección'}
                     </button>
                     <button
                       type="button"
@@ -171,7 +199,7 @@ export function DossierItems({
                       onClick={() => {
                         if (!window.confirm(removeItemConfirmText('SECTION', group.heading ?? '')))
                           return
-                        void act(() => onRemove(group.sectionId as string))
+                        void act(() => onRemove(sectionId))
                       }}
                     >
                       <TrashIcon className="h-4 w-4" />
@@ -180,12 +208,12 @@ export function DossierItems({
                   </div>
                 )}
 
-                {canEdit && open === group.sectionId && (
+                {canEdit && open === sectionId && (
                   <ItemEditor
                     row={sectionRow}
                     showPrices={showPrices}
                     onSave={async (patch) => {
-                      const message = await onEdit(group.sectionId as string, patch)
+                      const message = await onEdit(sectionId, patch)
                       if (message === null) setOpen(null)
                       return message
                     }}

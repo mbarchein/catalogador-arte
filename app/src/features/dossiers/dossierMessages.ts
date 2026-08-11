@@ -236,6 +236,23 @@ export function removeItemConfirmText(kind: DossierItemKind, name: string): stri
 }
 
 /**
+ * La confirmación de subir una sección por encima de lo que iba suelto al
+ * principio, o null cuando el movimiento no cambia la pertenencia de ninguna obra
+ * (RF-1620).
+ *
+ * Se pregunta porque el movimiento cuesta un toque y deshacerlo cuesta uno por obra:
+ * lo que queda detrás del rótulo queda dentro de la sección, y con doce obras eso no
+ * se arregla con la flecha de vuelta. Intercambiar dos secciones no pregunta nada.
+ */
+export function moveSectionConfirmText(heading: string, absorbed: number): string | null {
+  if (absorbed <= 0) return null
+  const named = heading.trim() === '' ? 'esta sección' : `«${heading.trim()}»`
+  return absorbed === 1
+    ? `1 obra va antes de ${named} y quedará dentro de la sección. ¿Subirla?`
+    : `${absorbed} obras van antes de ${named} y quedarán dentro de la sección. ¿Subirla?`
+}
+
+/**
  * The confirmation of retiring the whole dossier (RF-901).
  *
  * It names what it holds, because that is what changes the decision, and it ends
