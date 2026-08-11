@@ -158,6 +158,14 @@ export function TablesPage() {
             name="Archivo"
             hint="Cartas, recortes, carteles y expedientes, y cuántos quedan sin digitalizar."
           />
+          {/* RF-1600. Está en este grupo por lo mismo que la bibliografía y el
+              archivo: es contenido y no una lista de las que eligen las fichas, y una
+              sexta pestaña en el pie estrecharía las cinco de todos los días. */}
+          <TableRow
+            to="/dossiers"
+            name="Dossieres"
+            hint="Selecciones de obras en el orden que elijas, para mandar a una galería."
+          />
         </ul>
       </section>
 

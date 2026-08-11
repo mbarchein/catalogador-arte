@@ -8,6 +8,7 @@ import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
 import { ArchivePage, DocumentPage } from './features/archive'
 import { BibliographyPage, ReferencePage } from './features/bibliography'
+import { DossierPage, DossiersPage } from './features/dossiers'
 import { ExhibitionsPage, NewExhibitionPage, ExhibitionPage } from './features/exhibitions'
 import { GrayTargetPage } from './features/help/GrayTargetPage'
 import { PlacesPage } from './features/places/PlacesPage'
@@ -104,6 +105,19 @@ export function App() {
           retirar desde la papelera. */}
       <Route path="/archive" element={<ArchivePage />} />
       <Route path="/archive/:id" element={<DocumentPage />} />
+      {/* RF-1600: el dossier. Sus rutas cuelgan de la raíz como las de una obra o una
+          exposición, porque es CONTENIDO del catálogo y no una tabla maestra: lo lee
+          cualquiera que pueda leer y lo arma quien puede editar, comprobado dentro de
+          cada pantalla.
+
+          Su puerta, en cambio, está en «Tablas» y no en el pie, y es una consecuencia
+          medida y no una preferencia: el menú de abajo tiene cinco pestañas y la
+          quinta ya costó un punto de tamaño en las etiquetas, así que una sexta
+          estrecharía las cinco de todos los días. Es el mismo razonamiento que escribió
+          la papelera. El precio de esa decisión es real: un Lector llega aquí solo por
+          enlace, porque «Tablas» es del Catalogador. */}
+      <Route path="/dossiers" element={<DossiersPage />} />
+      <Route path="/dossiers/:id" element={<DossierPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       {/* Qué versión corre, qué trajo y qué falta. Se llega desde el perfil, y desde el
           pie de la ficha de una obra. */}

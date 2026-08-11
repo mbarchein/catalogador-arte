@@ -615,6 +615,85 @@ export interface Profile {
   role: UserRole
 }
 
+/**
+ * What a dossier's item is (RF-1602, RF-1614, RF-1616, ADR-011).
+ *
+ * The three share one ordered list because a paragraph goes BETWEEN two
+ * artworks, and the database's `dossier_items_*_shape` constraints mean each
+ * kind arrives with exactly its own fields filled in.
+ */
+export type DossierItemKind = 'ARTWORK' | 'TEXT' | 'BIOGRAPHY'
+
+/**
+ * A dossier: the artworks chosen for a gallery, in the order they are to be
+ * read, and the PDF issued from them (RF-1601, ADR-011).
+ */
+export interface Dossier {
+  id: string
+  title: string
+  /** What it is for, in the user's words. Free text on purpose: the uses have not all appeared yet. */
+  purpose: string
+  /** The team's note. Deliberately NOT printed — that is what tells it from `cover_text` (RF-1615). */
+  note: string
+  /** The cover's text, which IS printed. The only free text that is not an item, because a cover is a page. */
+  cover_text: string
+  /** Who it goes to, from `parties` (RF-508). Null: a dossier is armed before knowing. */
+  recipient_party_id: string | null
+  show_provenance: boolean
+  show_exhibitions: boolean
+  show_bibliography: boolean
+  /** Off by default: a price is the figure asked of somebody (RF-1604). */
+  show_prices: boolean
+  active: boolean
+}
+
+/**
+ * One item of a dossier. The columns that do not belong to its `kind` arrive
+ * null or empty, and the database is what guarantees it.
+ */
+export interface DossierItem {
+  id: string
+  dossier_id: string
+  kind: DossierItemKind
+  /** Position among the ACTIVE items, 1..n. Rewritten whole by `reorder_dossier_items`. */
+  sort_order: number
+  /** The artwork, on an ARTWORK item. */
+  catalog_id: string | null
+  /** The fixed shot. Null is «the artwork's representative one» (RF-1605). */
+  image_id: string | null
+  /** Of this dossier and not of the artwork (RF-1604). Null is «no price», which is not zero. */
+  price: number | null
+  currency: string
+  /** The team's note about this item. Not printed. */
+  note: string
+  /** Section title of a TEXT item, or the heading over a BIOGRAPHY. */
+  heading: string
+  /** The paragraph of a TEXT item. Printed. */
+  body: string
+  /** Whose biography, on a BIOGRAPHY item. The prose itself lives in `artist_funds`. */
+  artist_fund: ArtistFund | null
+  /** Whether a BIOGRAPHY item also prints the CV. Null on the other kinds. */
+  with_cv: boolean | null
+  active: boolean
+}
+
+/**
+ * A PDF issued from a dossier (RF-1607). Append-only: a version that left in an
+ * email is never rewritten, so there is no `active` and no way to correct one.
+ */
+export interface DossierIssue {
+  id: string
+  dossier_id: string
+  /** 1, 2, 3… per dossier. Assigned by the database, never by this client. */
+  version: number
+  issued_at: string
+  issued_by: string | null
+  /** Under the `dossiers/` prefix of the private bucket. */
+  file_path: string
+  file_bytes: number | null
+  note: string
+}
+
 export interface Artwork {
   catalog_id: string
   artist: ArtistFund

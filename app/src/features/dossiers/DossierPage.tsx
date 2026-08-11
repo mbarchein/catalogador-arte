@@ -1,0 +1,193 @@
+import { useState } from 'react'
+import { useParams } from 'react-router'
+import { useAuth } from '../../auth/AuthContext'
+import { Layout } from '../../components/Layout'
+import { AddToDossier } from './AddToDossier'
+import { DossierItems } from './DossierItems'
+import { DossierSettings } from './DossierSettings'
+import { itemCountText } from './dossierItems'
+import { retireDossierConfirmText } from './dossierMessages'
+import { useDossier } from './useDossier'
+
+/**
+ * Arming a dossier: what it holds, in what order, and what it is going to say
+ * (RF-1600).
+ *
+ * **The list comes first and the settings are a panel that opens.** The order of
+ * this screen is the order of the work: an afternoon here is twenty taps moving
+ * artworks and two writing the cover, so the twenty are at the top and within a
+ * thumb's reach, and the two are behind «Ajustes». Putting the form first would
+ * mean scrolling past it every single time.
+ *
+ * **A Lector reads it and does not arm it.** Every write is behind `canEdit`, and
+ * the database refuses them anyway with its own sentence — a button that is not
+ * painted is not a protection, so the check is in both places.
+ *
+ * What is NOT here yet is the PDF: this screen decides what goes in it and in what
+ * order, and the generator is its own piece of work. Until it exists the screen
+ * says so instead of showing a button that does nothing, because a button that
+ * does nothing is how somebody concludes the dossier is broken.
+ */
+export function DossierPage() {
+  const { id } = useParams<{ id: string }>()
+  const { canEdit } = useAuth()
+  const {
+    dossier,
+    items,
+    loading,
+    error,
+    save,
+    addArtwork,
+    addText,
+    addBiography,
+    editItem,
+    removeItem,
+    moveItem,
+  } = useDossier(id)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showAdd, setShowAdd] = useState(false)
+  const [problem, setProblem] = useState<string | null>(null)
+
+  if (dossier === null) {
+    return (
+      <Layout title="Dossier" back="/dossiers">
+        {error !== null ? (
+          <p role="alert" className="card text-sm text-red-700">
+            {error}
+          </p>
+        ) : (
+          <p className="card text-sm text-stone-600">
+            {loading ? 'Cargando el dossier…' : 'Ese dossier no está en el catálogo.'}
+          </p>
+        )}
+      </Layout>
+    )
+  }
+
+  const contents = itemCountText(items)
+  // `flatMap` y no `filter` + `map`: así el tipo sale de la comprobación en vez de
+  // de una aserción, que es lo que este proyecto evita en datos que vienen de la red.
+  const inDossier = items.flatMap((row) =>
+    row.active && row.catalog_id !== null ? [row.catalog_id] : [],
+  )
+
+  return (
+    <Layout
+      title={dossier.title}
+      back="/dossiers"
+      action={
+        canEdit ? (
+          <button
+            type="button"
+            onClick={() => {
+              setShowAdd((open) => !open)
+              setShowSettings(false)
+            }}
+            className="flex min-h-[2.5rem] items-center rounded-lg bg-stone-800 px-2.5 text-sm font-medium text-white"
+          >
+            {showAdd ? 'Cerrar' : '+ Añadir'}
+          </button>
+        ) : undefined
+      }
+    >
+      {error && (
+        <p role="alert" className="card mb-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+      {problem && (
+        <p role="alert" className="card mb-3 text-sm text-red-700">
+          {problem}
+        </p>
+      )}
+
+      {!dossier.active && (
+        <div className="card mb-3 text-sm">
+          <p className="text-amber-900">
+            Este dossier está retirado. No aparece en el listado, y lo que ya se emitió sigue como
+            estaba.
+          </p>
+          {canEdit && (
+            <button
+              type="button"
+              className="mt-2 min-h-[2.5rem] rounded-lg border border-stone-300 px-3 text-sm"
+              onClick={() => void save({ active: true })}
+            >
+              Recuperar
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Lo que hay dentro, contado por tipos: es la respuesta a «cuántas páginas
+          va a tener esto», que es lo que se pregunta mientras se arma. */}
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-stone-600">
+        <span>{contents}</span>
+        {dossier.show_prices && <span>· con precios</span>}
+        {canEdit && (
+          <button
+            type="button"
+            className="ml-auto underline"
+            onClick={() => {
+              setShowSettings((open) => !open)
+              setShowAdd(false)
+            }}
+          >
+            {showSettings ? 'Cerrar ajustes' : 'Ajustes'}
+          </button>
+        )}
+      </div>
+
+      {showAdd && canEdit && (
+        <div className="mb-3">
+          <AddToDossier
+            inDossier={inDossier}
+            onAddArtwork={addArtwork}
+            onAddText={addText}
+            onAddBiography={addBiography}
+          />
+        </div>
+      )}
+
+      {(showSettings || !canEdit) && (
+        <div className="mb-3">
+          <DossierSettings dossier={dossier} canEdit={canEdit} onSave={save} />
+        </div>
+      )}
+
+      <DossierItems
+        items={items}
+        loading={loading}
+        error={error}
+        canEdit={canEdit}
+        showPrices={dossier.show_prices}
+        onMove={moveItem}
+        onEdit={editItem}
+        onRemove={removeItem}
+      />
+
+      {/* El PDF todavía no se genera, y se dice aquí en vez de pintar un botón que
+          no hace nada: un botón muerto es como alguien concluye que el dossier está
+          roto. Cuando exista, va en este sitio. */}
+      <p className="card mt-3 text-sm text-stone-600">
+        El PDF todavía no se genera desde la aplicación. Lo que se decide aquí —las obras, su orden,
+        los textos y los precios— es exactamente lo que va a imprimir cuando esté.
+      </p>
+
+      {canEdit && dossier.active && (
+        <div className="mt-3">
+          <button
+            type="button"
+            className="min-h-[2.75rem] w-full rounded-lg border border-red-300 px-3 text-sm text-red-800"
+            onClick={() => {
+              if (!window.confirm(retireDossierConfirmText(dossier.title, contents))) return
+              void save({ active: false }).then((message) => setProblem(message))
+            }}
+          >
+            Retirar este dossier
+          </button>
+        </div>
+      )}
+    </Layout>
+  )
+}
