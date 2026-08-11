@@ -577,6 +577,120 @@ end $$;
 reset role;
 
 
+-- ── 7 bis. The biography is the third kind (RF-1616) ────────
+-- The text lives in the fund and is read live: what the item carries is WHICH
+-- fund's it is. Copying the prose in here would be a second biography, wrong from
+-- the first time the two stopped matching.
+do $$
+declare v_kind text; v_bio text;
+begin
+  update public.artist_funds
+     set biography = 'Nació en Badajoz y se formó en Madrid.',
+         cv = '1985 · Sala del Perímetro, Badajoz (individual)'
+   where code = 'ROTILI';
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000d001","role":"authenticated"}';
+  set local role authenticated;
+
+  perform public.add_biography_to_dossier(
+    '00000000-0000-0000-0000-00000000e001', 'ROTILI', 'Alberto Rotili, 1928-2009');
+
+  select kind::text into v_kind from public.dossier_items
+   where dossier_id = '00000000-0000-0000-0000-00000000e001'
+     and artist_fund = 'ROTILI';
+  if v_kind <> 'BIOGRAPHY' then
+    raise exception 'FAIL: la biografía no entró como tal: %', v_kind;
+  end if;
+
+  -- Read live from the fund, joining by the same key the whole schema uses.
+  select f.biography into v_bio
+    from public.dossier_items i
+    join public.artist_funds f on f.code = i.artist_fund
+   where i.dossier_id = '00000000-0000-0000-0000-00000000e001'
+     and i.kind = 'BIOGRAPHY';
+  if v_bio <> 'Nació en Badajoz y se formó en Madrid.' then
+    raise exception 'FAIL: la biografía no se lee del fondo: %', v_bio;
+  end if;
+
+  -- Two of the same fund would print the same text twice.
+  begin
+    perform public.add_biography_to_dossier(
+      '00000000-0000-0000-0000-00000000e001', 'ROTILI');
+    raise exception 'FAIL: se admitió dos veces la biografía del mismo fondo';
+  exception
+    when raise_exception then
+      if position('ya lleva la biografía' in sqlerrm) = 0 then raise; end if;
+  end;
+
+  raise notice 'OK: la biografía es un elemento del dossier y su texto vive en el fondo';
+end $$;
+
+reset role;
+
+-- Its shape, through both doors: a biography carries no prose, no artwork and no
+-- price, and the two new columns mean nothing on the other two kinds.
+do $$
+begin
+  insert into public.dossier_items (dossier_id, kind, artist_fund, with_cv, body)
+  values ('00000000-0000-0000-0000-00000000e001', 'BIOGRAPHY', 'RUIZ_CAMPINS', true,
+          'Una prosa que debería vivir en el fondo');
+  raise exception 'FAIL: se admitió una biografía con la prosa dentro';
+exception
+  when check_violation then
+    raise notice 'OK: la prosa de una biografía no se copia en el dossier';
+end $$;
+
+do $$
+begin
+  insert into public.dossier_items (dossier_id, kind, catalog_id, artist_fund)
+  values ('00000000-0000-0000-0000-00000000e001', 'ARTWORK', 'AR-9671', 'ROTILI');
+  raise exception 'FAIL: una obra pudo llevar fondo de biografía';
+exception
+  when check_violation then
+    raise notice 'OK: las columnas de la biografía no significan nada en una obra';
+end $$;
+
+do $$
+begin
+  insert into public.dossier_items (dossier_id, kind, artist_fund)
+  values ('00000000-0000-0000-0000-00000000e001', 'BIOGRAPHY', 'ROTILI');
+  raise exception 'FAIL: se admitió una biografía sin decir si lleva currículum';
+exception
+  when check_violation then
+    raise notice 'OK: una biografía dice siempre si lleva currículum o no';
+end $$;
+
+-- And it is rearranged along with everything else, which is what the single list
+-- is for: a gallery's biography goes in front and a catalogue's goes at the back.
+do $$
+declare v_lines uuid[]; v_kinds text[];
+begin
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000d001","role":"authenticated"}';
+  set local role authenticated;
+
+  select array_agg(id order by sort_order) into v_lines
+    from public.dossier_items
+   where dossier_id = '00000000-0000-0000-0000-00000000e001' and active;
+
+  -- The last one becomes the first: it is the real move, «biography to the front».
+  perform public.reorder_dossier_items(
+    '00000000-0000-0000-0000-00000000e001',
+    array[v_lines[array_length(v_lines, 1)]] ||
+      v_lines[1 : array_length(v_lines, 1) - 1]);
+
+  select array_agg(kind::text order by sort_order) into v_kinds
+    from public.dossier_items
+   where dossier_id = '00000000-0000-0000-0000-00000000e001' and active;
+  if v_kinds[1] <> 'BIOGRAPHY' then
+    raise exception 'FAIL: la biografía no se pudo mover al principio: %', v_kinds;
+  end if;
+
+  raise notice 'OK: la biografía se coloca donde haga falta, como cualquier elemento (%)', v_kinds;
+end $$;
+
+reset role;
+
+
 -- ── 8. A recipient is not withdrawn while it is one ─────────
 -- The fourth check of `tg_party_deactivation`, with the reason of the other
 -- three: withdrawing it leaves the catalogue pointing at something the interface
