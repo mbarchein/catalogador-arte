@@ -1738,7 +1738,7 @@
 
 ## En marcha
 
-**El dossier, decidido y sin construir**
+**El dossier, con su pantalla y sin su PDF**
 
 - Está decidido cómo va a funcionar armar un dossier: se eligen las obras, se ponen en el orden que se
   quiera, cada una puede llevar su nota y su precio, y se genera un PDF para mandar.
@@ -1757,8 +1757,16 @@
 - Cada PDF que se genera queda guardado con su fecha, así que dentro de un año se puede ver qué se mandó
   exactamente. Y volver a generarlo coge los datos del día, de modo que corregir una medida en la ficha
   corrige el dossier. Una versión ya mandada no se puede cambiar ni borrar: para corregir se manda otra.
-- El catálogo ya sabe guardar todo eso. Lo que falta es la pantalla desde la que armarlo, así que
-  todavía no se puede hacer nada de esto desde la aplicación.
+- **Ya se puede armar uno**, en «Tablas · Dossieres»: se crea con un título, se buscan las obras y
+  se van añadiendo, se sube y se baja cada una hasta dejarlas en el orden que se quiera, y se
+  escriben los textos, los precios y las notas. La biografía y el currículum de cada artista se
+  escriben una vez en «Tablas · Fondos» y desde ahí los usa cualquier dossier.
+- Cada obra dice su código, su título, su artista, su fecha, su técnica y sus medidas mientras se
+  ordena, que es lo que hace falta para distinguir dos versiones de lo mismo.
+- Quitar una obra no borra nada: vuelve con su nota y su precio si se añade otra vez. Un texto sí
+  habría que escribirlo de nuevo, y la pantalla lo advierte antes de quitarlo.
+- **Lo que falta es el PDF.** Se decide todo lo que va a imprimir y todavía no se genera; la
+  pantalla lo dice en vez de tener un botón que no hace nada.
 
 **La copia a tamaño completo, sin comprobar de extremo a extremo**
 

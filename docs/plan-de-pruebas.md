@@ -535,9 +535,9 @@ Fila propia para lo que **no** cubre ningún test y hay que saber que no cubre:
 
 ### Dossier (RF-1600)
 
-Bloque decidido el 11 de agosto de 2026 ([ADR-011](decisiones/ADR-011-el-dossier.md)). **El esquema está y la
-pantalla no**, así que las filas de base están cerradas y las de interfaz siguen siendo la
-especificación de lo que hay que escribir. Las diecinueve comprobaciones de la base viven en
+Bloque decidido y construido el 11 de agosto de 2026 ([ADR-011](decisiones/ADR-011-el-dossier.md)).
+**El esquema y la pantalla están; el generador del PDF no**, así que las filas que quedan pendientes
+son las que solo el PDF puede cerrar. Las diecinueve comprobaciones de la base viven en
 `dossiers.test.sql`, y las dos barredoras de siempre —`rls_default_deny` y `function_privileges`—
 cubren las tres tablas nuevas sin tocarlas, que es para lo que están.
 
@@ -553,7 +553,10 @@ cubren las tres tablas nuevas sin tocarlas, que es para lo que están.
 | RF-1614, RF-1615 | Los textos entran en **la misma lista** que las obras y se reordenan con ellas; un texto sin rótulo ni párrafo se rechaza con una frase y no con el nombre de una restricción; y las dos formas imposibles no se pueden guardar —una obra con párrafo dentro, un texto con precio—. Además, un texto **se ve**: cuelga del dossier y de ninguna obra, así que la visibilidad heredada no se lo puede tragar, que es como falla esa cláusula si se copia sin pensar | **Hecho** |
 | RF-1616, RF-1617 | La biografía es **el tercer tipo de elemento** y se coloca donde haga falta: se mueve al principio con la misma función que reordena las obras. Su texto **se lee del fondo** y no se copia en el dossier —una biografía con prosa dentro no se puede guardar—, solo hay una por fondo y dossier, y las dos columnas nuevas no significan nada en una obra ni en un texto. También queda comprobado que el enumerado tiene exactamente los tres tipos, dentro de la propia migración | **Hecho** |
 | RF-1618 | Nada que verificar con un aserto: es un requisito **negativo**, y lo que lo sostiene es que no existe ninguna función que componga un currículum. Su fila está aquí para que la ausencia no se lea como un hueco | **Por ausencia** |
-| RF-1606 | Los cuatro interruptores deciden qué bloques compone el PDF, y los tres que no son las exposiciones nacen apagados | Pendiente |
+| RF-1601, RF-1602, RF-1603 · la pantalla | El listado ordena por título en español —con la colación de la base «Álvarez» se iría detrás de la z—, busca por título, uso y **destinatario**, y esconde los retirados salvo que se pidan. En la pantalla de armar: la posición cuenta solo los elementos activos, mover en los extremos **no gasta una escritura** y devuelve null, y el orden que se manda a la base son los activos en su orden. Cubierto en `dossierIndex.test.ts`, `dossierItems.test.ts` y `dossierPicker.test.ts` | **Hecho** |
+| RF-1604 · la pantalla | El precio se teclea a la española y **el punto es el millar**: leerlo al revés convierte 4.500 € en 4,5 € y el número resultante es válido, así que nada aguas abajo puede detectarlo. Vacío es «sin precio» y cero se rechaza con una frase. El viaje de vuelta al campo también está cubierto, en `dossierDraft.test.ts` | **Hecho** |
+| RF-1600 · lo que dice la base cuando dice no | Las seis restricciones, la obra repetida, las cuatro claves ajenas, el trigger que habla español, el Lector que intenta escribir y la conexión caída, cada una en las palabras de su consecuencia y **sin el nombre de la restricción en pantalla**. Los códigos se provocaron uno a uno contra el esquema y se copiaron; `dossierMessages.test.ts` los fija, así que renombrar una restricción rompe el test | **Hecho** |
+| RF-1606 | Los cuatro interruptores deciden qué bloques compone el PDF, y los tres que no son las exposiciones nacen apagados. La pantalla ya los guarda; lo que no hay todavía es el generador que los lea | Pendiente · **falta el PDF** |
 | RF-1608 | Corregir una medida en la ficha cambia lo que dice la emisión siguiente y **no** lo que dice el PDF ya emitido | Pendiente |
 | RF-1609 | El PDF compone con la derivada de consulta. Como el dibujo necesita `canvas`, lo que se prueba con asertos es **qué fichero elige** y qué hace cuando esa obra no tiene ninguna fotografía; el papel se mira a mano | Pendiente · **en navegador** el resultado |
 | RF-1611 | Ninguna vista del dossier es accesible sin sesión: es RF-101 sobre las rutas nuevas, y lo cubre el mismo test que ya recorre las rutas de la aplicación. Del PDF en el almacén privado ya responden las políticas de `storage.objects`, que están sobre el bucket entero | Pendiente |
