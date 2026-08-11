@@ -67,12 +67,17 @@ export interface PickerResult {
 /**
  * The rows to offer, best match first, capped.
  *
- * **The cap is not a detail.** The catalogue mirror holds every artwork, and
- * painting hundreds of rows under a search box on a phone is a list nobody
- * scrolls; twenty is what fits a thumb's reach with the keyboard open. It is a
- * chooser, so the answer to «no está en los veinte» is to type another letter, and
- * the empty query deliberately shows the head of the catalogue rather than
- * nothing — the first dossier is armed by browsing.
+ * **An empty query offers nothing, on purpose.** It used to show the head of the
+ * catalogue, and that was wrong for the job: opening «Añadir» dumped the whole
+ * catalogue under the search box, so the panel read as a listing of everything
+ * instead of a chooser, and the artwork wanted was never among the first twenty
+ * anyway. A chooser with nothing in it and a legible sentence above is shorter to
+ * read and says what to do.
+ *
+ * **The cap is not a detail either.** The mirror holds every artwork, and painting
+ * hundreds of rows under a search box on a phone is a list nobody scrolls; twenty
+ * is what fits a thumb's reach with the keyboard open. The answer to «no está en
+ * los veinte» is to type another letter.
  *
  * Retired artworks are not offered: a dossier is a document that goes outside, and
  * an artwork in the wastebasket has no place in one. The ones already in the
@@ -87,6 +92,9 @@ export function pickableArtworks(
   const taken = new Set(inDossier)
   const live = catalog.filter((artwork) => artwork.active)
   const free = live.filter((artwork) => !taken.has(artwork.catalog_id))
+  // Sin nada escrito no se ofrece nada, pero el recuento de las que ya están SÍ se
+  // calcula: es un dato del dossier y no del resultado de una búsqueda.
+  if (query.trim() === '') return { entries: [], alreadyIn: live.length - free.length }
   const ordered = free
     .slice()
     // By code and descending: the newest catalogued is the likeliest to be the one
@@ -107,10 +115,14 @@ export function pickableArtworks(
 /**
  * What the chooser says instead of rows, or null when there are rows.
  *
- * The two empty cases are different answers: the catalogue mirror still filling —
- * which happens on a device that has never opened the list— and a search that
- * matches nothing. And there is a third that reads like a bug if it is not
+ * Four different answers and none of them is an empty panel: the mirror still
+ * filling —which happens on a device that has never opened the list—, nothing typed
+ * yet, a search that matches nothing, and the one that reads like a bug unless it is
  * explained: every artwork of the catalogue is already in this dossier.
+ *
+ * The order of the branches is the order of the questions. «Ya lleva todas» goes
+ * BEFORE «busca la obra», because telling somebody to search a catalogue they have
+ * already exhausted is sending them after nothing.
  */
 export function pickerNotice(state: {
   loading: boolean
@@ -125,6 +137,8 @@ export function pickerNotice(state: {
   if (state.alreadyIn >= state.catalogSize) {
     return 'Este dossier ya lleva todas las obras del catálogo.'
   }
-  if (state.query.trim() !== '') return 'Ninguna obra coincide con lo que buscas.'
-  return 'No hay obras que añadir.'
+  // Antes de escribir nada, lo que hace falta es saber qué se puede escribir. Sin
+  // esta frase el panel se abre con un hueco y parece que está cargando.
+  if (state.query.trim() === '') return 'Busca la obra por su código, su título, su artista o su año.'
+  return 'Ninguna obra coincide con lo que buscas.'
 }

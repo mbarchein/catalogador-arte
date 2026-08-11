@@ -105,6 +105,7 @@ export function AddToDossier({
             aria-label="Buscar una obra del catálogo"
             autoComplete="off"
             autoCapitalize="none"
+            autoFocus
           />
           {picked.alreadyIn > 0 && (
             // Dicho y no callado: un catálogo al que le faltan obras es como

@@ -32,7 +32,7 @@ describe('lo que ya está no se vuelve a ofrecer', () => {
       artwork({ catalog_id: 'AR-0002' }),
       artwork({ catalog_id: 'AR-0003' }),
     ]
-    const result = pickableArtworks(catalog, ['AR-0002'], '')
+    const result = pickableArtworks(catalog, ['AR-0002'], 'AR')
     expect(result.entries.map((entry) => entry.catalogId)).toEqual(['AR-0003', 'AR-0001'])
     // Contado y dicho: un catálogo al que le faltan obras es como alguien concluye
     // que una no está catalogada.
@@ -41,7 +41,7 @@ describe('lo que ya está no se vuelve a ofrecer', () => {
 
   it('una obra retirada del catálogo no se ofrece y no cuenta como «ya está»', () => {
     const catalog = [artwork({ catalog_id: 'AR-0001', active: false }), artwork({ catalog_id: 'AR-0002' })]
-    const result = pickableArtworks(catalog, [], '')
+    const result = pickableArtworks(catalog, [], 'AR')
     expect(result.entries.map((entry) => entry.catalogId)).toEqual(['AR-0002'])
     expect(result.alreadyIn).toBe(0)
   })
@@ -54,27 +54,39 @@ describe('el orden y el tope', () => {
       artwork({ catalog_id: 'AR-0042' }),
       artwork({ catalog_id: 'AR-0007' }),
     ]
-    expect(pickableArtworks(catalog, [], '').entries.map((entry) => entry.catalogId)).toEqual([
+    // Con «AR», que casa con las tres: el orden se comprueba sobre un resultado, que
+    // es lo único que hay desde que la consulta vacía no ofrece nada.
+    expect(pickableArtworks(catalog, [], 'AR').entries.map((entry) => entry.catalogId)).toEqual([
       'AR-0042',
       'AR-0007',
       'AR-0001',
     ])
   })
 
-  it('con la consulta vacía se ofrece la cabeza del catálogo, no nada', () => {
-    // El primer dossier se arma navegando, no buscando.
+  it('con la consulta vacía NO se ofrece nada', () => {
+    // Antes se ofrecía la cabeza del catálogo, y estaba mal para el trabajo: abrir
+    // «Añadir» volcaba el catálogo entero debajo del buscador, así que el panel se
+    // leía como un listado de todo en vez de como un selector — y la obra que se
+    // busca no estaba entre las veinte primeras de todas formas.
     const catalog = Array.from({ length: 5 }, (_, index) =>
       artwork({ catalog_id: `AR-000${index + 1}` }),
     )
-    expect(pickableArtworks(catalog, [], '').entries).toHaveLength(5)
+    expect(pickableArtworks(catalog, [], '').entries).toEqual([])
+    expect(pickableArtworks(catalog, [], '   ').entries).toEqual([])
+  })
+
+  it('pero el recuento de las que ya están sí se calcula sin escribir nada', () => {
+    // Es un dato del dossier, no del resultado de una búsqueda.
+    const catalog = [artwork({ catalog_id: 'AR-0001' }), artwork({ catalog_id: 'AR-0002' })]
+    expect(pickableArtworks(catalog, ['AR-0001'], '').alreadyIn).toBe(1)
   })
 
   it('el tope corta la lista, porque nadie recorre trescientas filas en un móvil', () => {
     const catalog = Array.from({ length: 60 }, (_, index) =>
       artwork({ catalog_id: `AR-${String(index + 1).padStart(4, '0')}` }),
     )
-    expect(pickableArtworks(catalog, [], '').entries).toHaveLength(20)
-    expect(pickableArtworks(catalog, [], '', { limit: 3 }).entries).toHaveLength(3)
+    expect(pickableArtworks(catalog, [], 'AR').entries).toHaveLength(20)
+    expect(pickableArtworks(catalog, [], 'AR', { limit: 3 }).entries).toHaveLength(3)
   })
 
   it('la búsqueda encuentra por código, por título y por año', () => {
@@ -105,6 +117,19 @@ describe('nunca un selector en blanco (RF-304)', () => {
     expect(
       pickerNotice({ loading: false, shown: 0, alreadyIn: 0, catalogSize: 9, query: 'zzz' }),
     ).toContain('coincide')
+  })
+
+  it('sin escribir nada dice por dónde se busca, que es lo que hace falta saber', () => {
+    const said = pickerNotice({ loading: false, shown: 0, alreadyIn: 0, catalogSize: 9, query: '' })
+    expect(said).toContain('Busca la obra')
+    expect(said).toContain('código')
+  })
+
+  it('y si el dossier ya lleva todo, eso se dice antes que «busca»', () => {
+    // Mandar a buscar en un catálogo agotado es mandar a por nada.
+    expect(
+      pickerNotice({ loading: false, shown: 0, alreadyIn: 9, catalogSize: 9, query: '' }),
+    ).toContain('todas las obras')
   })
 
   it('con filas no dice nada', () => {
