@@ -538,9 +538,16 @@ update public.profiles set role = 'READER'
 
 -- A clean and explicit starting state: the previous block left the row with no
 -- master and with debt on purpose, and what is measured now is something else.
+--
+-- EVERY column of the copy is named, the size included, and that is not tidiness: it
+-- describes a file, so `images_corrected_size_needs_copy` refuses a measurement with no
+-- path. Leaving the size behind while clearing the path made this statement —the one that
+-- claims to leave a clean state— the one that broke. Whoever adds another column of the
+-- copy has to name it here too.
 update public.images
    set master_path = 'q/AR-9602_ab12_master.jpg',
-       corrected_path = null, corrected_bytes = null, corrected_pending = false
+       corrected_path = null, corrected_bytes = null, corrected_pending = false,
+       corrected_width = null, corrected_height = null
  where image_id = 'AR-9602_v1';
 
 do $$
