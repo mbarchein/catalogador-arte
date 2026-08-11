@@ -394,7 +394,13 @@ begin
                            -- grants no insert at all — a fund is the axis of its
                            -- artworks' identifiers, so it is created by
                            -- migration and never from the application.
-                           'artist_funds');
+                           'artist_funds',
+                           -- Covered by `dossiers.test.sql`. The three cannot
+                           -- join these loops either: two of them hang from an
+                           -- anchor —so they do not fit the `id`-only walk— and
+                           -- `dossier_issues` grants no update at all, because an
+                           -- issued version is never rewritten (RF-1607).
+                           'dossiers', 'dossier_items', 'dossier_issues');
   if array_length(v_missing, 1) > 0 then
     raise exception 'FAIL: this matrix does not cover these public tables: %',
       array_to_string(v_missing, ', ');

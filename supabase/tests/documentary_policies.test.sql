@@ -245,6 +245,12 @@ begin
        -- granted one by one—. It was born with its policies in its own migration
        -- (20260808120000) and its whole perimeter is in `artist_funds.test.sql`.
        'artist_funds',
+       -- The dossier's three are not from this group either, and one of them has
+       -- a perimeter this file cannot express: `dossier_issues` has TWO policies
+       -- and two privileges, because an issued version is never updated
+       -- (RF-1607). They were born with their policies in their own migration
+       -- (20260811100000) and their whole perimeter is in `dossiers.test.sql`.
+       'dossiers', 'dossier_items', 'dossier_issues',
        -- Migration control of the local stack: it does not exist in production.
        '_migraciones'
      );
