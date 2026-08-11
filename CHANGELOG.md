@@ -1775,6 +1775,17 @@
   hay fotografía en vez de dejar el documento sin generar.
 - En la lista, cada obra se ve con su miniatura y cada texto con su icono, así que el orden se
   recorre de un vistazo sin leer una palabra.
+- **El dossier se organiza en secciones**: «Óleos», «Obra sobre papel». Una sección agrupa lo que
+  venga detrás de ella, se mueve entera con sus obras dentro —de un toque, no de diez— y se puede
+  plegar para llegar al final de un dossier largo. Si algo queda antes de la primera sección, la
+  pantalla lo avisa: saldrá sin rótulo.
+- Cada sección decide si su rótulo se lleva una página para él, y el dossier puede llevar un índice
+  detrás de la portada con las obras de cada sección y la página en la que empieza. En el PDF, el
+  nombre de la sección va al pie de todas sus páginas: una hoja suelta sigue diciendo de dónde es.
+- **«Agrupar por serie»** crea las secciones solas y coloca cada obra en la suya, de una vez. Lo que
+  quede sin serie va a una sección aparte al final. A partir de ahí se renombra y se mueve a mano:
+  no es una regla que siga viva, así que dar de alta una obra nueva no la mete en un dossier ya
+  mandado.
 - **Lo que falta es usarlo con una obra delante**: generar un dossier de verdad, abrir el PDF y
   mirar cómo queda impreso.
 

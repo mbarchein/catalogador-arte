@@ -7,8 +7,9 @@ y el orden manual todo-o-nada que ya tienen las fotografías de una obra
 **No cruza:** el «sin backend que escribir ni servidor que administrar» de
 [ADR-001](ADR-001-stack-y-despliegue.md), ni el acceso autenticado de RF-101
 **Requisitos:** RF-1600. Afecta a RF-1000 (la ficha imprimible, que es de una obra y sigue siéndolo)
-**Revisada:** el mismo 11 de agosto de 2026, para el tercer tipo de elemento —la biografía— y para fijar
-la maqueta que se construye: una obra por página
+**Revisada:** el mismo 11 de agosto de 2026, tres veces: el tercer tipo de elemento —la biografía—, la
+maqueta que se construye —una obra por página— y el cuarto tipo, la sección, con su índice y su
+agrupación automática por serie
 
 ---
 
@@ -60,7 +61,7 @@ se emiten PDF fechados. Tres tablas.
 
 ```
 dossiers             El dossier: nombre, para qué es, a quién va, portada, qué bloques enseña
-dossier_items        Lo que el dossier dice, en orden: obras, textos libres y la biografía
+dossier_items        Lo que el dossier dice, en orden: obras, secciones, textos y la biografía
 dossier_issues       Cada PDF emitido, con su versión. Solo se añade
 ```
 
@@ -100,6 +101,33 @@ catálogo el currículum derivado tiene huecos, y uno con huecos es peor que uno
 parece completo— y no registra si una muestra fue individual o colectiva, que es lo primero que se lee en
 un currículum. Para lo que sí sirve el historial expositivo es para **sugerir líneas** mientras se
 escribe, que es trabajo de una pantalla y no de una columna.
+
+**Las secciones organizan el dossier, y su pertenencia es la posición.** «Óleos, 1962-1968» es una
+sección; sus obras son las que vienen detrás hasta la sección siguiente. No hay ninguna columna que diga
+«esta obra es de esta sección», y no por ahorrar: la alternativa mete un árbol dentro de una lista
+ordenada, con dos órdenes que mantener coherentes y una función de reordenar todo-o-nada que se vuelve
+mucho más difícil de creer. Un PDF es lineal, así que la posición ya lo dice todo — y mover un rótulo por
+encima de una obra cambia de sección exactamente esa obra.
+
+Es un **tipo de elemento propio** y no «un texto con rótulo», por dos motivos y cualquiera bastaba: un
+párrafo con título no debe abrir un bloque sin que nadie lo haya decidido, y una sección lleva decisiones
+propias —si se lleva una portadilla— que colgadas de un texto serían columnas sin significado en la
+mayoría de sus filas.
+
+Lo que gana el dossier con eso: la sección **se mueve entera** con sus obras dentro, se pliega, dice
+cuántas obras lleva, y lo que queda antes de la primera se avisa como huérfano —sale en el PDF, pero sin
+rótulo—. En el papel, su rótulo va al **pie de todas sus páginas**, que es lo que hace que una hoja
+impresa y separada del resto siga significando algo, y el dossier puede llevar un **índice** detrás de la
+portada. El índice cuenta su propia página al numerar: si no, todas sus referencias apuntarían una
+página antes, que es la única forma de que un índice sea exactamente inútil.
+
+**Y se pueden crear solas, agrupando por serie, una vez.** Un botón que crea los rótulos que falten,
+coloca cada obra bajo el suyo y deja todo editable. **No es un criterio vivo**, y ésa es la misma
+decisión que la de no ser una búsqueda guardada, un nivel más abajo: si la sección fuera «todas las obras
+de la serie tal», dar de alta una obra la metería en un documento ya mandado y el orden dentro del bloque
+no se podría elegir. Respeta lo que ya había —las secciones existentes se reutilizan, el orden dentro de
+cada serie es el que tenía el dossier, los rótulos escritos a mano se conservan— y lo que no tiene serie
+va a una sección nombrada y al final, en vez de quedarse huérfano al principio.
 
 **Cinco sitios donde escribir, y cada uno es de alguien.** Es la distinción que hay que tener clara
 antes de teclear:
