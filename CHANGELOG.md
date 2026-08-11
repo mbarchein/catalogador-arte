@@ -17,8 +17,11 @@
 
 ### La base de datos del catálogo
 
-- La copia corregida guarda **cuánto mide**, medido al escribir el fichero y no calculado después.
-  Así el botón promete el tamaño que el fichero tiene, y no el que debería tener.
+**Cada copia corregida guarda cuánto mide**
+
+- Se anota al escribir el fichero, no se calcula después: así el botón promete el tamaño que el
+  fichero **tiene**, y no el que debería tener. Los dos solo se diferencian cuando algo ha salido
+  mal, que es justo cuando un rótulo no debe ser tranquilizador.
 
 ## 9 de agosto de 2026
 
