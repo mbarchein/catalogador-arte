@@ -8,6 +8,10 @@ import {
   joinFields,
   type ChangeLogRow,
 } from './changeEntry'
+import { editToColumns } from '../../lib/imageEdits'
+import { clippingToColumns } from '../../lib/imageHistogram'
+import { correctedColumns, originalSizeColumns } from '../../lib/imageRender'
+import { photoDataColumns } from '../artworks/photoData'
 
 /**
  * RF-1502, RF-1503: a record's history is read.
@@ -49,6 +53,22 @@ describe('el nombre de un campo en español (RF-1503)', () => {
     }
   })
 
+  it('«provenance» no significa lo mismo en una obra que en una fotografía', () => {
+    // Same column name on two tables and two facts with nothing to do with each other: on the
+    // artwork it is the written account of who owned it (RF-510), on the photograph where the
+    // shot came from (RF-417). A table keyed by name alone had to be wrong about one of them.
+    expect(fieldLabel('provenance', 'ARTWORK')).toBe('la procedencia redactada')
+    expect(fieldLabel('provenance', 'IMAGE')).toBe('la procedencia de la fotografía')
+    // With no entity the artwork's is answered, which is what the table has always said:
+    // whoever calls without saying gets the general reading and never jargon.
+    expect(fieldLabel('provenance')).toBe('la procedencia redactada')
+    // And the grouping does say it, because every row of the log carries its entity.
+    const [obra] = groupChanges([fila({ entity: 'ARTWORK', column_name: 'provenance' })])
+    const [foto] = groupChanges([fila({ entity: 'IMAGE', column_name: 'provenance' })])
+    expect(obra!.fields).toEqual(['la procedencia redactada'])
+    expect(foto!.fields).toEqual(['la procedencia de la fotografía'])
+  })
+
   it('un campo desconocido se nombra, no se calla', () => {
     // It is jargon on purpose: a change that is not listed is a change the
     // history denies, and that is worse than an ugly word on screen.
@@ -59,6 +79,49 @@ describe('el nombre de un campo en español (RF-1503)', () => {
     for (const c of [null, undefined, '', '   ']) {
       expect(fieldLabel(c).length).toBeGreaterThan(0)
     }
+  })
+
+  /**
+   * Every column the application writes on a photograph has a name in Spanish.
+   *
+   * This is the guard that was missing, and it is missing no longer because it already cost
+   * one: `corrected_width` and `corrected_height` arrived with the size on the download
+   * button, the writer of the log notes them like any other field, and the history showed
+   * «un dato (corrected_width)» — jargon on screen, which the fallback puts there
+   * deliberately as the visible sign that this table has fallen behind. Nothing failed:
+   * the fallback did its job and nobody was reading it.
+   *
+   * The source of truth is not a second list, it is **the functions that write those
+   * columns**. `savePhotoEdit` composes the row out of exactly these five, so a column
+   * that reaches the row and not this table cannot exist without breaking this test. The
+   * ones the database stamps by itself —the trace marks and the generated columns— do not
+   * come in here, and they must not: the writer of the log discards them, and
+   * `change_log_writer.test.sql` is what keeps that list honest against the catalogue.
+   */
+  it('toda columna que la aplicación escribe en una fotografía tiene nombre', () => {
+    const escritas = {
+      ...editToColumns({ rotation: 90, crop: null }),
+      ...clippingToColumns({ count: 10, low: 1, high: 2, lowPercent: 1, highPercent: 2 }),
+      ...correctedColumns({
+        status: 'UPLOADED',
+        path: 'AR-0001/x_corrected.jpg',
+        bytes: 1024,
+        width: 10,
+        height: 20,
+      }),
+      ...originalSizeColumns({ width: 4032, height: 3024 }, true),
+      ...photoDataColumns({
+        shotType: 'GENERAL',
+        provenance: 'OWN',
+        credit: 'Marta',
+        origin: '',
+      }),
+    }
+    const sinNombre = Object.keys(escritas).filter((c) => fieldLabel(c).startsWith('un dato ('))
+    expect(sinNombre).toEqual([])
+    // And the sweep really swept: an empty list of columns would pass the assertion above
+    // while checking nothing at all.
+    expect(Object.keys(escritas).length).toBeGreaterThan(30)
   })
 })
 

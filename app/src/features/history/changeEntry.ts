@@ -102,6 +102,11 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
   shot_type: 'el tipo de toma',
   photo_date: 'la fecha de la fotografía',
   photo_author: 'el autor de la fotografía',
+  // RF-417's two, and they are two facts and not one: on an own photograph what is noted
+  // is who took it, and on one that is not, where it came from. They were missing since
+  // the provenance migration — the sweep in the test is what found them.
+  photo_credit: 'quién hizo la fotografía',
+  provenance_source: 'de dónde salió la fotografía',
   index_image: 'si es la fotografía principal',
   sort_order: 'el orden de las fotografías',
   rotation: 'el giro',
@@ -141,12 +146,39 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
   thumbnail_path: 'la miniatura',
   derivative_path: 'la copia de consulta',
   corrected_path: 'la copia corregida',
+  // The weight and the pixels of the same file share a wording on purpose, exactly as
+  // `master_bytes` does with `original_width`/`original_height`: for whoever reads the
+  // history they are one thing —how big that copy is— and `groupChanges` collapses the
+  // repeat, so a save that writes all three leaves one line instead of three.
   corrected_bytes: 'el tamaño de la copia corregida',
+  corrected_width: 'el tamaño de la copia corregida',
+  corrected_height: 'el tamaño de la copia corregida',
   corrected_pending: 'si falta preparar la copia corregida',
   original_width: 'el tamaño del original',
   original_height: 'el tamaño del original',
   file_photo_date: 'la fecha que trae el fichero',
   file_photo_date_exact: 'si la fecha del fichero es exacta',
+}
+
+/**
+ * The names that mean **different things** on an artwork and on a photograph.
+ *
+ * `provenance` is the one that exists today and the reason this table exists: on an
+ * artwork it is the written account of who owned it (RF-510), and on a photograph it is
+ * where the shot came from (RF-417). Two facts with nothing to do with each other and one
+ * column name, so a table keyed by name alone cannot help but be wrong about one of them.
+ *
+ * Measured rather than guessed: `artworks` and `images` share seven column names, and the
+ * other six are the trace stamps —`created_at`, `deactivated_by`…— which the log discards,
+ * plus `catalog_id`, which is immutable, and `active`, whose change is read as the verb of
+ * the line. `provenance` is the only one that reaches a field's name, and this is where the
+ * next one goes when it arrives.
+ */
+const FIELD_LABEL_BY_ENTITY: Record<AuditedEntity, Record<string, string>> = {
+  ARTWORK: {},
+  IMAGE: {
+    provenance: 'la procedencia de la fotografía',
+  },
 }
 
 /**
@@ -158,9 +190,10 @@ const FIELD_LABEL: Readonly<Record<string, string>> = {
  * listed is a change the history denies—. A technical name appearing on
  * screen is besides the visible sign that this table has fallen behind.
  */
-export function fieldLabel(column: string | null | undefined): string {
+export function fieldLabel(column: string | null | undefined, entity?: AuditedEntity): string {
   if (!column || column.trim() === '') return 'un dato'
-  return FIELD_LABEL[column] ?? `un dato (${column})`
+  const byEntity = entity ? FIELD_LABEL_BY_ENTITY[entity][column] : undefined
+  return byEntity ?? FIELD_LABEL[column] ?? `un dato (${column})`
 }
 
 /** Who made the change, as it is signed on screen. */
@@ -203,7 +236,7 @@ export function groupChanges(rows: readonly ChangeLogRow[]): readonly ChangeEntr
   for (const row of rows) {
     const existing = byChange.get(row.change_id)
     if (!existing) {
-      const fields = row.column_name ? [fieldLabel(row.column_name)] : []
+      const fields = row.column_name ? [fieldLabel(row.column_name, row.entity)] : []
       byChange.set(row.change_id, {
         fields,
         entry: {
@@ -220,7 +253,7 @@ export function groupChanges(rows: readonly ChangeLogRow[]): readonly ChangeEntr
       order.push(row.change_id)
       continue
     }
-    const label = row.column_name ? fieldLabel(row.column_name) : null
+    const label = row.column_name ? fieldLabel(row.column_name, row.entity) : null
     if (label && !existing.fields.includes(label)) existing.fields.push(label)
     if (row.id > existing.entry.lastId) {
       byChange.set(row.change_id, {
