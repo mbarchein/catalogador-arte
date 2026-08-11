@@ -1,5 +1,27 @@
 # Maquetas de interfaz
 
+## `dossier-maquetas-v1.html`
+
+Las hojas del **PDF del dossier** (RF-1600, [ADR-011](../decisiones/ADR-011-el-dossier.md)), dibujadas a
+escala: A4 vertical con sus márgenes reales, en Times y Helvetica, que son las dos tipografías que la
+librería del PDF trae sin empaquetar nada. Se abre en cualquier navegador y no necesita servidor.
+
+**Lo que fija la maqueta:**
+
+- **Una obra por página** es la plantilla que se construye: la fotografía ocupa más de media hoja y
+  debajo van el código de catalogación, el título, la fecha, la técnica, las medidas y el precio.
+- Las otras tres plantillas descritas y dibujadas para cuando hagan falta: dos por página, rejilla de
+  seis y lista sin fotografía.
+- La **portada** —título, destinatario, fecha y presentación— y el bloque de **biografía y currículum**,
+  iguales en las cuatro plantillas.
+- Dónde caen un **rótulo** de sección y un **párrafo** dentro del recorrido de elementos.
+- Las siete decisiones de maquetación con su respuesta razonada: orientación, qué campos entran en el
+  pie, qué se hace con el dato dudoso y con el que falta, dónde va el precio, si la portada lleva
+  fotografía, tipografía y por qué el dossier **no** lleva QR.
+
+Los dos interruptores de arriba encienden los precios y los textos de sección, que es la forma de ver la
+misma hoja con y sin ellos.
+
 ## `ficha-obra-modo-consulta-v1.jpeg`
 
 Primera maqueta de la **ficha de obra en modo consulta**, la página central de la aplicación.

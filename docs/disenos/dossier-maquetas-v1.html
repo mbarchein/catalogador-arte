@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquetas para el dossier</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  /* ── Paleta ────────────────────────────────────────────────
+     El cromo de la página es sensible al tema; el interior de
+     las hojas NO lo es, y es deliberado: una hoja impresa es
+     blanca en un cuarto oscuro igual que en uno con luz. Los
+     tokens `--sheet-*` no se redefinen en ningún bloque. */
+  :root {
+    --ground: #e6e9ec;
+    --panel: #f4f6f7;
+    --panel-edge: #cfd5da;
+    --ink: #14181d;
+    --muted: #5f6874;
+    --accent: #2f5d8c;
+    --flag: #8d6412;
+    --shadow: rgba(20, 24, 29, .14);
+
+    --sheet-paper: #fffefb;
+    --sheet-ink: #1a1c1f;
+    --sheet-muted: #6d7278;
+    --sheet-rule: #c9c6bd;
+    --sheet-photo-a: #dedbd4;
+    --sheet-photo-b: #cbc8c0;
+    --sheet-tint: #eeece6;
+
+    --serif: "Times New Roman", Times, serif;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #14171a;
+      --panel: #1d2126;
+      --panel-edge: #2f353c;
+      --ink: #e7eaec;
+      --muted: #9aa3ad;
+      --accent: #7aa9d8;
+      --flag: #cfa03c;
+      --shadow: rgba(0, 0, 0, .5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #14171a;
+    --panel: #1d2126;
+    --panel-edge: #2f353c;
+    --ink: #e7eaec;
+    --muted: #9aa3ad;
+    --accent: #7aa9d8;
+    --flag: #cfa03c;
+    --shadow: rgba(0, 0, 0, .5);
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 400 16px/1.55 var(--sans);
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 40px 20px 72px; }
+
+  /* ── Cabecera ─────────────────────────────────────────── */
+  .eyebrow {
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 10px;
+  }
+  h1 {
+    font: 400 clamp(28px, 5.4vw, 44px)/1.1 var(--serif);
+    margin: 0 0 14px; text-wrap: balance; letter-spacing: -.01em;
+  }
+  .lede { max-width: 62ch; margin: 0 0 4px; color: var(--muted); }
+  .lede strong { color: var(--ink); font-weight: 400; }
+
+  /* ── Mandos ───────────────────────────────────────────── */
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center;
+    margin: 26px 0 34px; padding: 14px 16px;
+    background: var(--panel); border: 1px solid var(--panel-edge);
+  }
+  .controls > span {
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  label.sw { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; }
+  label.sw input { accent-color: var(--accent); width: 17px; height: 17px; }
+  label.sw:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* ── Rejilla de hojas ─────────────────────────────────── */
+  .sheets { display: grid; gap: 34px 30px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .sheets { grid-template-columns: 1fr 1fr; } }
+
+  figure { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+  figcaption { font-size: 14px; color: var(--muted); }
+  figcaption b { display: block; color: var(--ink); font-weight: 700; font-size: 15px; }
+  figcaption .num {
+    font: 700 11px/1 var(--sans); letter-spacing: .12em;
+    color: var(--accent); display: block; margin-bottom: 5px;
+  }
+  figcaption .no { color: var(--flag); }
+  figcaption .hi { color: var(--ink); }
+
+  /* La hoja: A4 a escala real y su propio contenedor de consulta,
+     así todo el interior se mide en cqw y escala con el ancho. */
+  .sheet {
+    container-type: inline-size;
+    aspect-ratio: 1 / 1.414;
+    background: var(--sheet-paper);
+    color: var(--sheet-ink);
+    box-shadow: 0 1px 2px var(--shadow), 0 10px 24px -14px var(--shadow);
+    padding: 7cqw 6.4cqw;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    font-family: var(--sans);
+  }
+  .sheet * { min-width: 0; }
+
+  /* Piezas comunes de las hojas */
+  .band {
+    font-family: var(--serif); font-size: 4.2cqw; line-height: 1.15;
+    border-bottom: .35cqw solid var(--sheet-ink);
+    padding-bottom: 1.2cqw; margin-bottom: 2.6cqw;
+  }
+  .para {
+    font-size: 2.9cqw; line-height: 1.5; color: var(--sheet-ink);
+    margin-bottom: 3.4cqw; max-width: 62ch;
+  }
+  .photo {
+    background: linear-gradient(158deg, var(--sheet-photo-a), var(--sheet-photo-b));
+    border: .2cqw solid var(--sheet-rule);
+    flex: none;
+  }
+  .cap { font-size: 2.6cqw; line-height: 1.45; }
+  .cap .t { font-family: var(--serif); font-size: 3.4cqw; display: block; }
+  .cap .d { color: var(--sheet-muted); display: block; }
+  .cap .code {
+    font-size: 2.2cqw; letter-spacing: .09em; color: var(--sheet-muted);
+    display: block; margin-bottom: .6cqw;
+  }
+  .price { font-size: 2.8cqw; display: block; margin-top: .8cqw; }
+  .foot {
+    margin-top: auto; padding-top: 2.4cqw;
+    border-top: .18cqw solid var(--sheet-rule);
+    display: flex; justify-content: space-between;
+    font-size: 2.1cqw; color: var(--sheet-muted); letter-spacing: .04em;
+  }
+
+  /* 0 · Portada */
+  .cover { justify-content: center; text-align: left; }
+  .cover .kicker {
+    font-size: 2.4cqw; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--sheet-muted); margin-bottom: 4cqw;
+  }
+  .cover h2 {
+    font: 400 8.4cqw/1.06 var(--serif); margin: 0 0 3cqw; letter-spacing: -.01em;
+  }
+  .cover .rule { height: .4cqw; background: var(--sheet-ink); width: 26%; margin-bottom: 4cqw; }
+  .cover .who { font-size: 3cqw; margin-bottom: 5.5cqw; }
+  .cover .blurb { font-size: 2.9cqw; line-height: 1.6; max-width: 44ch; color: var(--sheet-ink); }
+
+  /* Biografía y currículum */
+  .bio .lead {
+    font-size: 3.1cqw; line-height: 1.55; margin-bottom: 3.2cqw;
+  }
+  .bio p { font-size: 2.8cqw; line-height: 1.6; margin: 0 0 2.4cqw; }
+  .bio .cvhead {
+    font-size: 2.2cqw; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--sheet-muted); margin: 4.4cqw 0 1.8cqw;
+    border-bottom: .18cqw solid var(--sheet-rule); padding-bottom: 1.2cqw;
+  }
+  .bio .cv { font-size: 2.4cqw; line-height: 1.7; }
+  .bio .cv div { display: grid; grid-template-columns: 7cqw 1fr; gap: 2.4cqw; }
+  .bio .cv b { font-weight: 400; color: var(--sheet-muted); font-variant-numeric: tabular-nums; }
+
+  /* 1 · Una obra por página */
+  .one .photo { height: 54cqw; margin-bottom: 4cqw; }
+  .one .cap { font-size: 3cqw; }
+  .one .cap .t { font-size: 5cqw; margin-bottom: .8cqw; }
+  .one .cap .code { font-size: 2.4cqw; }
+  .one .price { font-size: 3.2cqw; margin-top: 2cqw; }
+
+  /* 2 · Dos por página */
+  .two .row { display: grid; grid-template-columns: 42% 1fr; gap: 3.6cqw; }
+  .two .row + .row { margin-top: 4.6cqw; padding-top: 4.6cqw; border-top: .18cqw solid var(--sheet-rule); }
+  .two .photo { height: 30cqw; }
+
+  /* 3 · Rejilla de seis */
+  .grid6 .g { display: grid; grid-template-columns: 1fr 1fr; gap: 4cqw 3.6cqw; }
+  .grid6 .photo { height: 22cqw; margin-bottom: 1.4cqw; }
+  .grid6 .cap { font-size: 2.1cqw; }
+  .grid6 .cap .t { font-size: 2.5cqw; }
+  .grid6 .cap .code { font-size: 1.9cqw; }
+  .grid6 .price { font-size: 2.1cqw; }
+
+  /* 4 · Lista sin fotografía */
+  .list table { width: 100%; border-collapse: collapse; font-size: 2.3cqw; }
+  .list th {
+    text-align: left; font-size: 1.9cqw; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--sheet-muted); font-weight: 400;
+    border-bottom: .3cqw solid var(--sheet-ink); padding: 0 1.4cqw 1.2cqw 0;
+  }
+  .list td {
+    padding: 1.5cqw 1.4cqw 1.5cqw 0; vertical-align: top;
+    border-bottom: .12cqw solid var(--sheet-rule);
+  }
+  .list .ti { font-family: var(--serif); font-size: 2.6cqw; }
+  .list .r { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums; }
+  .list th.r { text-align: right; }
+
+  /* Los dos mandos, sin una línea de JavaScript por elemento */
+  .only-price, .only-text { display: none; }
+  body.px .only-price { display: block; }
+  body.px td.only-price, body.px th.only-price { display: table-cell; }
+  body.tx .only-text { display: block; }
+
+  /* ── Decisiones ───────────────────────────────────────── */
+  h2.sec {
+    font: 400 clamp(22px, 3.6vw, 30px)/1.2 var(--serif);
+    margin: 64px 0 6px; letter-spacing: -.01em;
+  }
+  .sec-note { color: var(--muted); margin: 0 0 26px; max-width: 62ch; }
+  dl.dec { margin: 0; display: grid; gap: 1px; background: var(--panel-edge); border: 1px solid var(--panel-edge); }
+  dl.dec > div { background: var(--panel); padding: 18px 18px 20px; }
+  @media (min-width: 720px) {
+    dl.dec > div { display: grid; grid-template-columns: 15.5rem 1fr; gap: 24px; }
+  }
+  dt { font-weight: 700; font-size: 15px; }
+  dd { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+  @media (min-width: 720px) { dd { margin: 0; } }
+  dd .rec {
+    display: block; margin-top: 7px; color: var(--ink);
+    border-left: 3px solid var(--accent); padding-left: 11px;
+  }
+  dd .rec b { font-weight: 700; }
+
+  .status {
+    margin-top: 44px; padding: 18px 20px;
+    border: 1px solid var(--panel-edge); background: var(--panel);
+    font-size: 15px; color: var(--muted);
+  }
+  .status b { color: var(--ink); }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .9em; background: color-mix(in srgb, var(--accent) 12%, transparent);
+    padding: .1em .35em;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .sheet { transition: box-shadow .2s ease; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <p class="eyebrow">Dossier · maquetas del PDF</p>
+  <h1>Una obra por página, y tres maquetas más</h1>
+  <p class="lede">
+    Las cinco hojas están a escala: son <strong>A4 vertical</strong> con sus márgenes reales, así que
+    el tamaño de letra que se ve aquí es el que saldría impreso. La portada y la biografía son iguales
+    en las cuatro; lo que cambia de una a otra es cuántas obras caben en una página, y la que se
+    construye es <strong>una obra por página</strong>. Los dos mandos encienden lo que todavía está
+    por decidir.
+  </p>
+
+  <div class="controls">
+    <span>Ver con</span>
+    <label class="sw"><input type="checkbox" id="px"> Precios</label>
+    <label class="sw"><input type="checkbox" id="tx"> Rótulo y párrafo</label>
+  </div>
+
+  <div class="sheets">
+
+    <!-- Portada -->
+    <figure>
+      <div class="sheet cover">
+        <div class="kicker">Rotili · Ruiz Campins</div>
+        <h2>Selección para la Galería Serrano</h2>
+        <div class="rule"></div>
+        <div class="who">Doce obras · agosto de 2026</div>
+        <p class="blurb">
+          Las obras que van sin enmarcar se indican en su ficha. Las medidas son sin marco y en
+          centímetros, alto por ancho.
+        </p>
+        <div class="foot"><span>Versión 2</span><span>1</span></div>
+      </div>
+      <figcaption>
+        <span class="num">PORTADA</span>
+        <b>Igual en las cuatro</b>
+        El título del dossier, a quién va, la fecha y el texto de presentación. Es el único texto
+        libre que no va en la lista, porque una portada es una página y no algo que fluya entre obras.
+      </figcaption>
+    </figure>
+
+    <!-- Biografía y currículum -->
+    <figure>
+      <div class="sheet bio">
+        <div class="band">Alberto Rotili, 1928-2009</div>
+        <p class="lead">
+          Pintor extremeño formado en Madrid, con una obra que va del retrato de encargo de los años
+          cincuenta a la figura despojada de su última década.
+        </p>
+        <p>
+          Trabajó casi siempre del natural y en formatos medianos, y las series que dejó sin exponer
+          son las que hoy sostienen el catálogo.
+        </p>
+        <div class="cvhead">Exposiciones</div>
+        <div class="cv">
+          <div><b>1985</b><span>Sala del Perímetro, Badajoz (individual)</span></div>
+          <div><b>1979</b><span>Diputación de Badajoz (individual)</span></div>
+          <div><b>1974</b><span>Ateneo de Madrid (colectiva)</span></div>
+          <div><b>1968</b><span>Galería Serrano, Madrid (colectiva)</span></div>
+        </div>
+        <div class="foot"><span>Selección para la Galería Serrano</span><span>2</span></div>
+      </div>
+      <figcaption>
+        <span class="num">BIOGRAFÍA Y CURRÍCULUM</span>
+        <b>Un elemento más de la lista</b>
+        Va donde se ponga: delante de las obras en un dossier de galería, detrás en uno con forma de
+        catálogo. El texto se escribe una vez por artista y lo lee cada dossier que lo lleve, así que
+        corregir una fecha la corrige en todos. Cada dossier decide si imprime también el currículum.
+      </figcaption>
+    </figure>
+
+    <!-- 1 · Una obra por página -->
+    <figure>
+      <div class="sheet one">
+        <div class="band only-text">Óleos, 1962-1968</div>
+        <div class="photo"></div>
+        <div class="cap">
+          <span class="code">AR-0042</span>
+          <span class="t">Figura sentada</span>
+          <span class="d">1965 · óleo sobre lienzo · 92 × 73 cm</span>
+          <span class="price only-price">4.500 €</span>
+        </div>
+        <div class="foot"><span>Selección para la Galería Serrano</span><span>4</span></div>
+      </div>
+      <figcaption>
+        <span class="num">MAQUETA 1 · UNA OBRA POR PÁGINA</span>
+        <b>Doce obras, doce páginas</b>
+        La fotografía manda —más de media hoja— y el pie es una nota al pie. Es la que se construye:
+        una obra por página se mira una a una, que es como se quiere que se mire una selección corta.
+        <span class="hi">Con el rótulo encendido, una sección puede empezar en su propia obra.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 2 · Dos por página -->
+    <figure>
+      <div class="sheet two">
+        <div class="band only-text">Óleos, 1962-1968</div>
+        <div class="row">
+          <div class="photo"></div>
+          <div class="cap">
+            <span class="code">AR-0042</span>
+            <span class="t">Figura sentada</span>
+            <span class="d">1965</span>
+            <span class="d">óleo sobre lienzo</span>
+            <span class="d">92 × 73 cm</span>
+            <span class="price only-price">4.500 €</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="photo"></div>
+          <div class="cap">
+            <span class="code">AR-0043</span>
+            <span class="t">Sin título</span>
+            <span class="d">[1966?]</span>
+            <span class="d">óleo sobre tabla</span>
+            <span class="d">54 × 45 cm</span>
+            <span class="price only-price">2.800 €</span>
+          </div>
+        </div>
+        <div class="foot"><span>Selección para la Galería Serrano</span><span>3</span></div>
+      </div>
+      <figcaption>
+        <span class="num">MAQUETA 2 · DOS POR PÁGINA</span>
+        <b>Quince obras en ocho páginas</b>
+        Fotografía a la izquierda, datos a la derecha. Es el punto medio para cuando la selección
+        crece: quince obras en ocho páginas y la foto todavía se ve.
+      </figcaption>
+    </figure>
+
+    <!-- 3 · Rejilla de seis -->
+    <figure>
+      <div class="sheet grid6">
+        <div class="band only-text">Obra sobre papel</div>
+        <div class="g">
+          <div>
+            <div class="photo"></div>
+            <div class="cap">
+              <span class="code">AR-0051</span><span class="t">Estudio de manos</span>
+              <span class="d">1963 · lápiz · 32 × 24 cm</span>
+              <span class="price only-price">900 €</span>
+            </div>
+          </div>
+          <div>
+            <div class="photo"></div>
+            <div class="cap">
+              <span class="code">AR-0052</span><span class="t">Sin título</span>
+              <span class="d">s. f. · tinta · 28 × 21 cm</span>
+              <span class="price only-price">750 €</span>
+            </div>
+          </div>
+          <div>
+            <div class="photo"></div>
+            <div class="cap">
+              <span class="code">AR-0053</span><span class="t">Cabeza</span>
+              <span class="d">1964 · carbón · 42 × 30 cm</span>
+              <span class="price only-price">1.100 €</span>
+            </div>
+          </div>
+          <div>
+            <div class="photo"></div>
+            <div class="cap">
+              <span class="code">AR-0054</span><span class="t">Puerto</span>
+              <span class="d">[1965?] · acuarela · 24 × 33 cm</span>
+              <span class="price only-price">1.400 €</span>
+            </div>
+          </div>
+          <div>
+            <div class="photo"></div>
+            <div class="cap">
+              <span class="code">AR-0055</span><span class="t">Figura tendida</span>
+              <span class="d">1967 · lápiz · 30 × 40 cm</span>
+              <span class="price only-price">1.000 €</span>
+            </div>
+          </div>
+          <div>
+            <div class="photo"></div>
+            <div class="cap">
+              <span class="code">AR-0056</span><span class="t">Sin título</span>
+              <span class="d">1968 · tinta · 21 × 15 cm</span>
+              <span class="price only-price">600 €</span>
+            </div>
+          </div>
+        </div>
+        <div class="foot"><span>Selección para la Galería Serrano</span><span>2</span></div>
+      </div>
+      <figcaption>
+        <span class="num">MAQUETA 3 · REJILLA DE SEIS</span>
+        <b>Treinta obras en cinco páginas</b>
+        La hoja de contactos: «esto es lo que hay, dime qué te interesa». El pie se queda en código,
+        título, fecha, técnica y medidas.
+        <span class="no">A este tamaño un dibujo a lápiz sobre papel crema casi no se distingue.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 4 · Lista -->
+    <figure>
+      <div class="sheet list">
+        <div class="band only-text">Depósito de agosto de 2026</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th><th>Obra</th><th>Fecha</th><th>Técnica</th>
+              <th class="r">Medidas</th><th class="r only-price">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>AR-0042</td><td class="ti">Figura sentada</td><td>1965</td><td>óleo sobre lienzo</td><td class="r">92 × 73</td><td class="r only-price">4.500 €</td></tr>
+            <tr><td>AR-0043</td><td class="ti">Sin título</td><td>[1966?]</td><td>óleo sobre tabla</td><td class="r">54 × 45</td><td class="r only-price">2.800 €</td></tr>
+            <tr><td>AR-0044</td><td class="ti">Paisaje de Badajoz</td><td>1962</td><td>óleo sobre lienzo</td><td class="r">60 × 81</td><td class="r only-price">3.200 €</td></tr>
+            <tr><td>AR-0051</td><td class="ti">Estudio de manos</td><td>1963</td><td>lápiz sobre papel</td><td class="r">32 × 24</td><td class="r only-price">900 €</td></tr>
+            <tr><td>AR-0052</td><td class="ti">Sin título</td><td>s. f.</td><td>tinta sobre papel</td><td class="r">28 × 21</td><td class="r only-price">750 €</td></tr>
+            <tr><td>AR-0053</td><td class="ti">Cabeza</td><td>1964</td><td>carbón sobre papel</td><td class="r">42 × 30</td><td class="r only-price">1.100 €</td></tr>
+            <tr><td>AR-0054</td><td class="ti">Puerto</td><td>[1965?]</td><td>acuarela</td><td class="r">24 × 33</td><td class="r only-price">1.400 €</td></tr>
+            <tr><td>AR-0055</td><td class="ti">Figura tendida</td><td>1967</td><td>lápiz sobre papel</td><td class="r">30 × 40</td><td class="r only-price">1.000 €</td></tr>
+            <tr><td>AR-0056</td><td class="ti">Sin título</td><td>1968</td><td>tinta sobre papel</td><td class="r">21 × 15</td><td class="r only-price">600 €</td></tr>
+            <tr><td>AR-0061</td><td class="ti">Bodegón con jarra</td><td>1969</td><td>óleo sobre lienzo</td><td class="r">46 × 55</td><td class="r only-price">2.100 €</td></tr>
+          </tbody>
+        </table>
+        <div class="foot"><span>Medidas en cm, alto × ancho, sin marco</span><span>1</span></div>
+      </div>
+      <figcaption>
+        <span class="num">MAQUETA 4 · LISTA SIN FOTOGRAFÍA</span>
+        <b>Cuarenta obras en una hoja</b>
+        Lo que pide un seguro, un transportista o un depósito: la fotografía estorba y lo que importa
+        es que quepa todo y se pueda ir tachando.
+        <span class="no">A una galería no se le manda esto.</span>
+      </figcaption>
+    </figure>
+
+  </div>
+
+  <h2 class="sec">Lo que hay que decidir</h2>
+  <p class="sec-note">
+    Ninguna de estas siete es «cuál de las cuatro»: son las que cambian el generador por dentro y
+    valen para las cuatro por igual.
+  </p>
+
+  <dl class="dec">
+    <div>
+      <dt>Vertical u horizontal</dt>
+      <dd>
+        Un cuadro apaisado en A4 vertical desperdicia media hoja, y al revés lo mismo.
+        <span class="rec"><b>Vertical siempre.</b> Mezclar orientaciones dentro de un PDF se ve mal
+        al pasar páginas en pantalla, que es donde lo va a leer la galería.</span>
+      </dd>
+    </div>
+    <div>
+      <dt>Qué dice el pie</dt>
+      <dd>
+        El mínimo es título, fecha, técnica y medidas. Caben además el código, el estado de
+        conservación y si va enmarcada.
+        <span class="rec"><b>Código, título, fecha, técnica, medidas.</b> El código porque es como
+        te van a pedir una obra por teléfono. El estado de conservación, no: en un dossier de venta
+        una nota de conservación se lee como una tara.</span>
+      </dd>
+    </div>
+    <div>
+      <dt>El dato dudoso y el que falta</dt>
+      <dd>
+        El catálogo distingue el dato sin revisar, el investigado sin resultado (<code>N/D</code>) y
+        el dudoso (<code>[?]</code>).
+        <span class="rec"><b>El dudoso se imprime, el que falta se calla.</b> «[1966?]» es honrado y
+        una galería lo entiende; «Sin revisar» y «N/D» impresos son ruido de trabajo interno, así que
+        ese trozo del pie simplemente no sale.</span>
+      </dd>
+    </div>
+    <div>
+      <dt>Dónde va el precio</dt>
+      <dd>
+        Debajo de los datos, o en columna aparte alineada a la derecha.
+        <span class="rec"><b>Debajo, y en su propia línea.</b> En columna obliga a una rejilla que
+        las maquetas 1 y 3 no tienen; en la lista sí es columna, y ahí va a la derecha con las cifras
+        alineadas.</span>
+      </dd>
+    </div>
+    <div>
+      <dt>Portada con fotografía</dt>
+      <dd>
+        La portada puede llevar la fotografía de la primera obra a media página.
+        <span class="rec"><b>Sin fotografía.</b> Una obra en portada dice «esta es la importante», y
+        eso lo decide quien lo recibe. Título, destinatario, fecha y el texto de presentación.</span>
+      </dd>
+    </div>
+    <div>
+      <dt>Tipografía</dt>
+      <dd>
+        La librería que genera el PDF trae Helvetica y Times sin pagar peso. Una tipografía propia
+        hay que empaquetarla en la aplicación: entre 200 y 400 KB que se descargan siempre.
+        <span class="rec"><b>Times para los títulos, Helvetica para los datos.</b> Es lo que ya usa
+        la ficha imprimible y es exactamente lo que se ve en estas cinco hojas.</span>
+      </dd>
+    </div>
+    <div>
+      <dt>El QR</dt>
+      <dd>
+        La ficha imprimible de una obra lleva un QR que abre su ficha.
+        <span class="rec"><b>En el dossier no.</b> Ese enlace pide sesión, así que a la galería le
+        daría una pantalla de acceso: un código que no lleva a ninguna parte es peor que no
+        ponerlo.</span>
+      </dd>
+    </div>
+  </dl>
+
+  <p class="status">
+    <b>Dónde está esto hoy:</b> el esquema está construido y en producción — un dossier ya guarda sus
+    obras en orden, sus textos, la biografía del artista, sus precios y cada PDF emitido con su
+    versión. Lo que falta es la
+    pantalla para armarlo y el generador que dibuje una de estas maquetas. La columna que dice qué
+    maqueta usa cada dossier nace con el generador: guardar hoy una elección que nadie sabe dibujar
+    es un interruptor que miente.
+  </p>
+</div>
+
+<script>
+  for (const id of ["px", "tx"]) {
+    const box = document.getElementById(id);
+    box.addEventListener("change", () => document.body.classList.toggle(id, box.checked));
+  }
+</script>
+</body>
+</html>
