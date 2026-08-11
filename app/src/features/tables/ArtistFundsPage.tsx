@@ -13,6 +13,8 @@ import {
   fundOfferedHint,
   fundPrefixText,
   fundRenamedNotice,
+  fundTextsButtonLabel,
+  fundTextsNotice,
   retireFundBlockedReason,
   LISTED_LABEL,
   OFFERED_LABEL,
@@ -37,8 +39,15 @@ import {
  */
 export function ArtistFundsPage() {
   const access = useEditingAccess()
-  const { entries, loading, error, renameFund, setFundActive, setFundHidesArtworks } =
-    useArtistFunds()
+  const {
+    entries,
+    loading,
+    error,
+    renameFund,
+    setFundActive,
+    setFundHidesArtworks,
+    saveFundTexts,
+  } = useArtistFunds()
   const { busy, failure, failureRef, run } = useTableAction()
   const [notice, setNotice] = useState<string | null>(null)
   useAutoClear(notice, () => setNotice(null))
@@ -90,6 +99,9 @@ export function ArtistFundsPage() {
             onSetHidden={(hide) =>
               void act(fundHiddenNotice(entry.name, hide), () => setFundHidesArtworks(entry.id, hide))
             }
+            onSaveTexts={(texts) =>
+              void act(fundTextsNotice(entry.name), () => saveFundTexts(entry.id, texts))
+            }
           />
         ))}
       </ul>
@@ -109,6 +121,7 @@ function FundRow({
   onRename,
   onSetActive,
   onSetHidden,
+  onSaveTexts,
 }: {
   entry: ArtistFundEntry
   all: readonly ArtistFundEntry[]
@@ -116,8 +129,10 @@ function FundRow({
   onRename: (name: string) => void
   onSetActive: (active: boolean) => void
   onSetHidden: (hide: boolean) => void
+  onSaveTexts: (texts: { biography: string; cv: string }) => void
 }) {
   const [draft, setDraft] = useState<string | null>(null)
+  const [texts, setTexts] = useState<{ biography: string; cv: string } | null>(null)
   const blocked = retireFundBlockedReason(entry, all)
 
   return (
@@ -185,6 +200,69 @@ function FundRow({
               disabled={busy}
               onChange={(listed) => onSetHidden(!listed)}
             />
+          </div>
+
+          {/* RF-1616, RF-1617. Viven aquí y no en cada dossier: se escriben una vez
+              y los lee cada dossier que los lleve, así que corregir una fecha los
+              corrige todos. Plegados porque son dos textos largos en una pantalla de
+              mantenimiento que se abre para cambiar un nombre. */}
+          <div className="mt-3 border-t border-stone-200 pt-3">
+            {texts === null ? (
+              <button
+                type="button"
+                className="min-h-touch text-sm text-stone-600 underline"
+                onClick={() => setTexts({ biography: entry.biography, cv: entry.cv })}
+              >
+                {fundTextsButtonLabel(entry)}
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium" htmlFor={`bio-${entry.id}`}>
+                    Biografía
+                  </label>
+                  <textarea
+                    id={`bio-${entry.id}`}
+                    className="field mt-1 min-h-[7rem]"
+                    value={texts.biography}
+                    onChange={(e) => setTexts({ ...texts, biography: e.target.value })}
+                    placeholder="Nació en Badajoz y se formó en Madrid."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium" htmlFor={`cv-${entry.id}`}>
+                    Currículum
+                  </label>
+                  <textarea
+                    id={`cv-${entry.id}`}
+                    className="field mt-1 min-h-[7rem]"
+                    value={texts.cv}
+                    onChange={(e) => setTexts({ ...texts, cv: e.target.value })}
+                    placeholder={'1985 · Sala del Perímetro, Badajoz (individual)'}
+                  />
+                  <p className="mt-1 text-xs text-stone-500">
+                    Una línea por entrada. No se saca de las exposiciones del catálogo: solo conoce
+                    las de las obras ya fichadas.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" className="btn-secondary" onClick={() => setTexts(null)}>
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={busy}
+                    onClick={() => {
+                      onSaveTexts(texts)
+                      setTexts(null)
+                    }}
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

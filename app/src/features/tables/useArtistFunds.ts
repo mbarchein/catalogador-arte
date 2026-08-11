@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import type { ArtistFund } from '../../lib/types'
 import { sortFunds, type ArtistFundEntry } from './artistFunds'
 
-const COLUMNS = 'id, code, prefix, name, active, hide_artworks'
+const COLUMNS = 'id, code, prefix, name, active, hide_artworks, biography, cv'
 
 interface FundRow {
   id: string
@@ -12,6 +12,8 @@ interface FundRow {
   name: string
   active: boolean
   hide_artworks: boolean
+  biography: string
+  cv: string
 }
 
 const shape = (row: FundRow): ArtistFundEntry => ({
@@ -21,6 +23,8 @@ const shape = (row: FundRow): ArtistFundEntry => ({
   name: row.name,
   active: row.active,
   hideArtworks: row.hide_artworks,
+  biography: row.biography,
+  cv: row.cv,
 })
 
 /**
@@ -103,5 +107,12 @@ export function useArtistFunds() {
     renameFund: (id: string, name: string) => write(id, { name: name.trim() }),
     setFundActive: (id: string, active: boolean) => write(id, { active }),
     setFundHidesArtworks: (id: string, hide: boolean) => write(id, { hide_artworks: hide }),
+    /**
+     * The biography and the CV of the fund, which every dossier that carries them
+     * reads live (RF-1616, RF-1617). Written once here: correcting a date corrects
+     * every dossier issued afterwards.
+     */
+    saveFundTexts: (id: string, texts: { biography: string; cv: string }) =>
+      write(id, { biography: texts.biography, cv: texts.cv }),
   }
 }

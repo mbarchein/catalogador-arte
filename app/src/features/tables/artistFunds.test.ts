@@ -5,6 +5,8 @@ import {
   fundListedHint,
   fundOfferedHint,
   fundPrefixText,
+  fundTextsButtonLabel,
+  fundTextsNotice,
   HIDDEN_FUND_BADGE,
   fundRenamedNotice,
   fundFilterOptions,
@@ -30,6 +32,8 @@ const fund = (over: Partial<ArtistFundEntry> = {}): ArtistFundEntry => ({
   name: 'Alberto Rotili',
   active: true,
   hideArtworks: false,
+  biography: '',
+  cv: '',
   ...over,
 })
 
@@ -167,5 +171,24 @@ describe('lo que se dice tras cada cambio', () => {
   it('apartar aclara que se siguen abriendo', () => {
     expect(fundHiddenNotice('Pruebas', true)).toContain('Se siguen abriendo por su enlace')
     expect(fundHiddenNotice('Pruebas', false)).toContain('vuelven al listado')
+  })
+})
+
+describe('la biografía y el currículum del fondo (RF-1616, RF-1617)', () => {
+  it('el rótulo del botón dice si el fondo ya tiene el texto que van a leer los dossieres', () => {
+    // Es el único sitio donde esta pantalla puede decirlo, y un fondo con la
+    // biografía vacía es un dossier que abre con una página en blanco.
+    expect(fundTextsButtonLabel({ biography: 'x', cv: 'y' })).toBe('Biografía y currículum')
+    expect(fundTextsButtonLabel({ biography: 'x', cv: '  ' })).toBe('Biografía, sin currículum')
+    expect(fundTextsButtonLabel({ biography: '', cv: 'y' })).toBe('Currículum, sin biografía')
+    expect(fundTextsButtonLabel({ biography: '', cv: '' })).toBe(
+      'Escribir la biografía y el currículum',
+    )
+  })
+
+  it('lo que se dice al guardar nombra al fondo y su consecuencia', () => {
+    const said = fundTextsNotice('Alberto Rotili')
+    expect(said).toContain('Alberto Rotili')
+    expect(said).toContain('dossieres')
   })
 })

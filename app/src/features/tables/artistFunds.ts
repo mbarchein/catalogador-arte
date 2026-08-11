@@ -41,6 +41,16 @@ export interface ArtistFundEntry {
   name: string
   active: boolean
   hideArtworks: boolean
+  /**
+   * The artist's biography, in prose, and the CV as a line per entry (RF-1616,
+   * RF-1617). They live in the fund and NOT in each dossier: written once, and
+   * every dossier that carries them reads them when it is issued, so correcting a
+   * date corrects all of them. Copying the prose into a dossier is how two versions
+   * of a biography start diverging, and the one that goes out is the one nobody
+   * corrected.
+   */
+  biography: string
+  cv: string
 }
 
 /** The order they are read in: by prefix, which is how the artworks are numbered. */
@@ -102,6 +112,32 @@ export function retireFundBlockedReason(
   return (
     'Es el último fondo activo: si se retira no queda ninguno, así que activa antes otro.'
   )
+}
+
+/**
+ * What the button that opens the biography says, which is not the same before and
+ * after there is one (RF-1616).
+ *
+ * «Escribir la biografía» when there is nothing and «Biografía y currículum» when
+ * there is: the label is the only place this screen can say whether the fund
+ * already has the text every dossier is going to read, and a fund with an empty
+ * biography is a dossier that opens with a blank page.
+ */
+export function fundTextsButtonLabel(fund: {
+  biography: string
+  cv: string
+}): string {
+  const hasBiography = fund.biography.trim() !== ''
+  const hasCv = fund.cv.trim() !== ''
+  if (hasBiography && hasCv) return 'Biografía y currículum'
+  if (hasBiography) return 'Biografía, sin currículum'
+  if (hasCv) return 'Currículum, sin biografía'
+  return 'Escribir la biografía y el currículum'
+}
+
+/** What is said after saving them. */
+export function fundTextsNotice(name: string): string {
+  return `Guardada la biografía de ${name}. La usarán los dossieres que la lleven.`
 }
 
 /** What is said after each change, naming the fund. */
