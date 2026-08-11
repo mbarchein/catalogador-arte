@@ -8,6 +8,7 @@ import { DossierItems } from './DossierItems'
 import { DossierSettings } from './DossierSettings'
 import { itemCountText } from './dossierItems'
 import { retireDossierConfirmText } from './dossierMessages'
+import { useRelatedThumbnails } from '../documentary/relationships/useRelatedThumbnails'
 import { useDossier } from './useDossier'
 
 /**
@@ -45,6 +46,16 @@ export function DossierPage() {
     removeItem,
     moveItem,
   } = useDossier(id)
+  // Las miniaturas se piden por código, con el mismo gancho que las obras
+  // relacionadas de una ficha: pinta del espejo local y se corrige con la consulta,
+  // así que la lista se recorre sin esperar y con mala cobertura.
+  //
+  // Se piden ANTES del retorno temprano de abajo, porque un gancho no se puede
+  // llamar después de un `return`. Y se piden también las de los elementos
+  // retirados: una fila en gris con su fotografía sigue diciendo qué obra era.
+  const thumbnails = useRelatedThumbnails(
+    items.flatMap((row) => (row.catalog_id === null ? [] : [row.catalog_id])),
+  )
   const [showSettings, setShowSettings] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
@@ -158,6 +169,7 @@ export function DossierPage() {
 
       <DossierItems
         items={items}
+        thumbnails={thumbnails}
         loading={loading}
         error={error}
         canEdit={canEdit}

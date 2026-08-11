@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ChevronLeftIcon, ChevronRightIcon, TrashIcon } from '../../components/ui'
+import { ChevronDownIcon, ChevronUpIcon, ImageIcon, TrashIcon } from '../../components/ui'
 import { planPrice, priceInputValue } from './dossierDraft'
 import { itemEntries, itemsNotice, type DossierItemRow } from './dossierItems'
 import { removeItemConfirmText } from './dossierMessages'
@@ -21,6 +21,7 @@ import type { ItemPatch } from './useDossier'
  */
 export function DossierItems({
   items,
+  thumbnails,
   loading,
   error,
   canEdit,
@@ -30,6 +31,8 @@ export function DossierItems({
   onRemove,
 }: {
   items: readonly DossierItemRow[]
+  /** Miniatura firmada por código de obra. Vacío mientras la consulta viaja. */
+  thumbnails: Record<string, string>
   loading: boolean
   error: string | null
   canEdit: boolean
@@ -77,6 +80,32 @@ export function DossierItems({
                 <span className="mt-0.5 w-6 shrink-0 text-right text-sm tabular-nums text-stone-500">
                   {entry.position ?? '—'}
                 </span>
+                {/* La miniatura para una obra, y un icono para lo que no es una obra.
+                    Los dos ocupan EL MISMO cuadrado, y eso es lo que hace la lista
+                    recorrible: si los textos no tuvieran su hueco, cada uno de ellos
+                    desplazaría el resto de la columna y el orden dejaría de leerse
+                    de un vistazo. */}
+                <span className="mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded border border-stone-200 bg-stone-100">
+                  {entry.kind === 'ARTWORK' && entry.catalogId !== null &&
+                  thumbnails[entry.catalogId] !== undefined ? (
+                    <img
+                      src={thumbnails[entry.catalogId]}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-stone-400">
+                      {entry.kind === 'ARTWORK' ? (
+                        <ImageIcon className="h-5 w-5" />
+                      ) : entry.kind === 'TEXT' ? (
+                        <TextItemIcon className="h-5 w-5" />
+                      ) : (
+                        <BiographyItemIcon className="h-5 w-5" />
+                      )}
+                    </span>
+                  )}
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="break-words font-medium">{entry.title}</p>
                   <p className="mt-0.5 break-words text-xs text-stone-600">{entry.subtitle}</p>
@@ -115,9 +144,10 @@ export function DossierItems({
 
                 {canEdit && entry.position !== null && (
                   <div className="flex shrink-0 flex-col gap-1">
-                    {/* Los chevrones giran: el de subir apunta arriba. Son los
-                        iconos que ya tiene el proyecto, y no hace falta uno nuevo
-                        para dos flechas. */}
+                    {/* Iconos propios de arriba y abajo, sin rotar nada: esta lista
+                        salió con las flechas intercambiadas porque un chevrón `<`
+                        girado un cuarto de vuelta apunta hacia abajo. El botón hacía
+                        lo correcto y dibujaba lo contrario. */}
                     <button
                       type="button"
                       aria-label="Subir un puesto"
@@ -125,9 +155,7 @@ export function DossierItems({
                       disabled={busy || entry.position === 1}
                       onClick={() => void act(() => onMove(entry.id, 'up'))}
                     >
-                      <span className="block -rotate-90">
-                        <ChevronLeftIcon className="h-5 w-5" />
-                      </span>
+                      <ChevronUpIcon className="h-5 w-5" />
                     </button>
                     <button
                       type="button"
@@ -136,9 +164,7 @@ export function DossierItems({
                       disabled={busy || entry.position === lastPosition}
                       onClick={() => void act(() => onMove(entry.id, 'down'))}
                     >
-                      <span className="block -rotate-90">
-                        <ChevronRightIcon className="h-5 w-5" />
-                      </span>
+                      <ChevronDownIcon className="h-5 w-5" />
                     </button>
                   </div>
                 )}
@@ -352,5 +378,53 @@ function ItemEditor({
         {saving ? 'Guardando…' : 'Guardar'}
       </button>
     </div>
+  )
+}
+
+/**
+ * Un texto libre, dibujado como lo que es: tres renglones y un rótulo encima.
+ *
+ * Vive aquí y no en `ui.tsx` porque solo esta lista distingue tipos de elemento, y
+ * porque su trabajo es exactamente uno: que la columna de la izquierda se lea de
+ * arriba abajo sabiendo qué es cada fila sin leer una palabra.
+ */
+function TextItemIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="M5 5h11" />
+      <path d="M5 10h14" />
+      <path d="M5 15h14" />
+      <path d="M5 20h8" />
+    </svg>
+  )
+}
+
+/** La biografía: una persona y un renglón, para no confundirla con un texto suelto. */
+function BiographyItemIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <circle cx="9" cy="7" r="3" />
+      <path d="M4 20c1-3 3-4.5 5-4.5s4 1.5 5 4.5" />
+      <path d="M16 8h4" />
+      <path d="M16 12h4" />
+    </svg>
   )
 }

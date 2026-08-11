@@ -1773,6 +1773,8 @@
   cambia el anterior: hace la versión siguiente, y el botón dice qué número va a llevar.
 - Si una fotografía no se puede leer —sin cobertura, por ejemplo—, esa página sale diciendo que no
   hay fotografía en vez de dejar el documento sin generar.
+- En la lista, cada obra se ve con su miniatura y cada texto con su icono, así que el orden se
+  recorre de un vistazo sin leer una palabra.
 - **Lo que falta es usarlo con una obra delante**: generar un dossier de verdad, abrir el PDF y
   mirar cómo queda impreso.
 
