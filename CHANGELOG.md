@@ -1775,13 +1775,15 @@
   hay fotografía en vez de dejar el documento sin generar.
 - En la lista, cada obra se ve con su miniatura y cada texto con su icono, así que el orden se
   recorre de un vistazo sin leer una palabra.
-- **El dossier se organiza en secciones**: «Óleos», «Obra sobre papel». Una sección agrupa lo que
-  venga detrás de ella, se mueve entera con sus obras dentro —de un toque, no de diez— y se puede
-  plegar para llegar al final de un dossier largo. Si algo queda antes de la primera sección, la
-  pantalla lo avisa: saldrá sin rótulo.
-- Una sección se cambia de sitio con la de al lado, y también con lo que haya quedado suelto al
-  principio del dossier: subirla por encima de esas obras las deja **dentro** de la sección, y la
-  pantalla lo pregunta antes de hacerlo.
+- **El dossier se organiza en secciones**: «Óleos», «Obra sobre papel». Una sección se mueve entera
+  con sus obras dentro —de un toque, no de diez— y se puede plegar para llegar al final de un
+  dossier largo.
+- **Cada obra dice en qué sección está, y puede no estar en ninguna.** En su fila hay un selector
+  con las secciones del dossier y «Suelta»: así se mete una obra en un bloque o se saca. Una obra
+  suelta sale en el PDF sin rótulo, esté donde esté, y la pantalla avisa de cuántas van así.
+- Mover una sección **no se lleva ninguna obra**: pasa por delante de las sueltas de una en una y
+  las deja como estaban. Las obras de dentro se mueven entre las de su sección; una suelta salta la
+  sección entera de un toque.
 - Cada sección decide si su rótulo se lleva una página para él, y el dossier puede llevar un índice
   detrás de la portada con las obras de cada sección y la página en la que empieza. En el PDF, el
   nombre de la sección va al pie de todas sus páginas: una hoja suelta sigue diciendo de dónde es.

@@ -102,12 +102,30 @@ parece completo— y no registra si una muestra fue individual o colectiva, que 
 un currículum. Para lo que sí sirve el historial expositivo es para **sugerir líneas** mientras se
 escribe, que es trabajo de una pantalla y no de una columna.
 
-**Las secciones organizan el dossier, y su pertenencia es la posición.** «Óleos, 1962-1968» es una
-sección; sus obras son las que vienen detrás hasta la sección siguiente. No hay ninguna columna que diga
-«esta obra es de esta sección», y no por ahorrar: la alternativa mete un árbol dentro de una lista
-ordenada, con dos órdenes que mantener coherentes y una función de reordenar todo-o-nada que se vuelve
-mucho más difícil de creer. Un PDF es lineal, así que la posición ya lo dice todo — y mover un rótulo por
-encima de una obra cambia de sección exactamente esa obra.
+**Las secciones organizan el dossier, y su pertenencia es una columna** — `section_item_id`, que apunta
+al rótulo. «Óleos, 1962-1968» es una sección, y sus obras son las que la señalan.
+
+Se decidió al revés, y duró un día: la pertenencia era **la posición** —sus obras son las que vienen
+detrás hasta la sección siguiente— con el argumento de que un PDF es lineal, así que la posición ya lo
+dice todo, y de que una columna mete un árbol dentro de una lista ordenada. Lo que se llevó por delante
+esa decisión fue una tarde de uso: **una sección no se podía mover entre obras sueltas.** Subirla un
+puesto ponía su bloque delante de esas obras, que al quedar detrás del rótulo pasaban a ser suyas, así
+que el único movimiento posible era apropiarse del dossier entero. Y no había forma de arreglarlo sin la
+columna, porque «obra suelta detrás de una sección» no era un estado que el modelo pudiera escribir, ni
+siquiera para decir que no. Con la posición, mover y cambiar de sección eran la misma operación, y hacen
+falta separadas.
+
+Lo que sí se conserva de aquel argumento es la parte verdadera, y por eso no hay dos órdenes: **los
+elementos de una sección van seguidos, justo detrás de su rótulo**, y lo comprueba la propia función de
+reordenar, que sigue siendo todo-o-nada — el orden y la pertenencia se guardan juntos o no se guarda
+ninguno. La portadilla anuncia un bloque y el índice dice en qué página empieza cada uno: si un bloque
+pudiera estar repartido por el dossier, las dos cosas mentirían impresas. Con eso, un grupo sigue siendo
+un tramo contiguo, la pantalla lo pinta como una banda y una obra suelta se lee de un vistazo.
+
+Y mover deja de tocar la pertenencia de nadie: una sección **se cambia con el bloque de al lado**, donde
+una obra suelta es un bloque de una, así que se desliza entre ellas de una en una. Meter una obra en una
+sección o sacarla es la otra operación, se pide en su fila y coloca la obra en su bloque a la vez que la
+asigna.
 
 Es un **tipo de elemento propio** y no «un texto con rótulo», por dos motivos y cualquiera bastaba: un
 párrafo con título no debe abrir un bloque sin que nadie lo haya decidido, y una sección lleva decisiones
@@ -115,8 +133,7 @@ propias —si se lleva una portadilla— que colgadas de un texto serían column
 mayoría de sus filas.
 
 Lo que gana el dossier con eso: la sección **se mueve entera** con sus obras dentro, se pliega, dice
-cuántas obras lleva, y lo que queda antes de la primera se avisa como huérfano —sale en el PDF, pero sin
-rótulo—. En el papel, su rótulo va al **pie de todas sus páginas**, que es lo que hace que una hoja
+cuántas obras lleva, y lo que queda suelto se avisa —sale en el PDF, pero sin rótulo—. En el papel, su rótulo va al **pie de todas sus páginas**, que es lo que hace que una hoja
 impresa y separada del resto siga significando algo, y el dossier puede llevar un **índice** detrás de la
 portada. El índice cuenta su propia página al numerar: si no, todas sus referencias apuntarían una
 página antes, que es la única forma de que un índice sea exactamente inútil.
@@ -127,7 +144,7 @@ decisión que la de no ser una búsqueda guardada, un nivel más abajo: si la se
 de la serie tal», dar de alta una obra la metería en un documento ya mandado y el orden dentro del bloque
 no se podría elegir. Respeta lo que ya había —las secciones existentes se reutilizan, el orden dentro de
 cada serie es el que tenía el dossier, los rótulos escritos a mano se conservan— y lo que no tiene serie
-va a una sección nombrada y al final, en vez de quedarse huérfano al principio.
+va a una sección nombrada y al final, en vez de quedarse suelto al principio.
 
 **Cinco sitios donde escribir, y cada uno es de alguien.** Es la distinción que hay que tener clara
 antes de teclear:
