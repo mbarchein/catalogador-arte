@@ -1738,6 +1738,17 @@
 
 ## En marcha
 
+**El dossier, decidido y sin construir**
+
+- Está decidido cómo va a funcionar armar un dossier: se eligen las obras, se ponen en el orden que se
+  quiera, cada una puede llevar su nota y su precio, y se genera un PDF para mandar.
+- El precio es del dossier y no de la obra: el catálogo no dice lo que vale nada, y la misma obra puede
+  ofrecerse distinto en dos galerías.
+- Cada PDF que se genera queda guardado con su fecha, así que dentro de un año se puede ver qué se mandó
+  exactamente. Y volver a generarlo coge los datos del día, de modo que corregir una medida en la ficha
+  corrige el dossier.
+- Todavía no hay nada de esto en la aplicación.
+
 **La copia a tamaño completo, sin comprobar de extremo a extremo**
 
 - El permiso que impedía guardarla ya está habilitado, y la descarga ya funciona.

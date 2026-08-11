@@ -342,6 +342,32 @@ RF-1512 son los cuatro criterios que estaban implícitos en el código y no ten�
 | RF-1511 | El registro **empieza donde empieza el registro**: las fichas anteriores no reciben líneas retroactivas. Lo único que se podría escribir con verdad sería un autor desconocido y la fecha de hoy, o sea una línea que afirma algo falso. Inventar historia para que un historial no empiece vacío es la clase de falsificación que este registro existe para impedir, y da igual que la escriba una migración de buena fe. |
 | RF-1512 | El registro captura **todos los caminos de escritura**, no solo el de la aplicación: da igual que el cambio venga de la PWA, de un cliente que se salte la interfaz, de un acceso administrativo, de una función que se salte las políticas o **de otro mecanismo automático de la base**. Un cambio que la base se hace a sí misma sobre una ficha —recalcular si una obra tiene fotografías, por ejemplo— es un cambio de la ficha para quien lea la historia, y se anota con el autor de la sesión que lo provocó. Por eso el registro no lo escribe el cliente: si lo escribiera, la historia sería «lo que el cliente quiso contar» y no habría forma de distinguirla de la verdad. |
 
+### RF-1600 · Dossier
+
+Mandar obras a una galería es un trabajo que ya se hace fuera de la aplicación: se descargan fotos a una
+carpeta, se pegan en un documento y se escriben las medidas a mano. Rehacerlo quitando dos obras es
+volver a empezar, y del documento que se mandó en marzo no queda constancia de qué llevaba.
+
+El bloque arranca en 1600 y no en 1513 porque es una función nueva y no un añadido al registro de
+cambios. El modelo, y por qué no es una búsqueda guardada ni un precio en la ficha de la obra, está en
+[ADR-011](decisiones/ADR-011-el-dossier.md).
+
+| Id | Requisito |
+|---|---|
+| RF-1601 | Un **dossier** es una ficha con nombre propio que reúne obras del catálogo en un orden elegido, para mandarla a una galería o para cualquier otro uso. Tiene título, para qué es y una nota, y opcionalmente a quién va, tomado de la tabla de personas y entidades que ya existe. Hay tantos como haga falta y a la vez. |
+| RF-1602 | Las obras del dossier se **enumeran, no se consultan**: lo que se guarda son las obras elegidas, no el criterio con el que se encontraron. Buscar y filtrar es la manera de llegar a ellas; dar de alta una obra nueva después no la mete en ningún dossier. |
+| RF-1603 | El **orden lo decide la usuaria** y es parte del dossier. Se reordena moviendo obras y se guarda **la lista entera de una vez o ninguna**, como el orden de las fotografías de una obra: dos obras no pueden ocupar la misma posición. |
+| RF-1604 | Cada obra del dossier lleva su **nota** y, opcionalmente, su **precio con moneda**. El precio es **del dossier y no de la obra**: el catálogo no afirma ningún precio, y la misma obra puede ofrecerse distinto en dos sitios. Cada dossier decide si los precios se enseñan. |
+| RF-1605 | Cada obra del dossier usa **la fotografía representativa de la obra** salvo que se fije una toma concreta. Sin fijar, cambiar la fotografía principal de la obra cambia también lo que enseña el dossier, que es lo que se quiere. |
+| RF-1606 | El dossier decide **qué bloques enseña**: procedencia, historial expositivo, bibliografía y precios. Una galería quiere el historial; un seguro, las medidas y el estado. |
+| RF-1607 | Del dossier se **emite un PDF**, que se genera en el dispositivo y se guarda en el catálogo con su **versión** —la primera, la segunda…—, su fecha y quién la emitió. Una versión emitida **no se reescribe ni se borra nunca**: el fichero ya está en el correo de otra persona. Corregir es emitir la siguiente. |
+| RF-1608 | El dossier guarda **referencias vivas a las obras**, de modo que emitir otra vez lo hace con los datos de hoy: corregir una medida en la ficha corrige el dossier sin tocarlo. Las dos preguntas que se hacen —«mándalo otra vez al día» y «qué le mandé en marzo»— las contestan las referencias vivas y los PDF emitidos, cada una la suya. |
+| RF-1609 | El PDF lleva la **imagen de consulta ya corregida**, no la copia a resolución completa: es la imagen buena a un tamaño que imprime bien en una página y que cabe en un correo. Doce copias a resolución completa son cientos de megabytes y no se pueden mandar. |
+| RF-1610 | El dossier es **del equipo**: lo ve quien puede consultar el catálogo y lo cambia quien puede editarlo. No hay dossieres privados de una persona, porque un dossier que solo ve quien lo hizo se rehace cuando esa persona no está. |
+| RF-1611 | **No hay enlace público.** Lo que sale de la aplicación es un fichero, y quien lo manda decide a quién (RF-101). |
+| RF-1612 | Un dossier se **retira y se recupera** como cualquier ficha, con su traza (RF-901, RF-902), y quitar una obra de un dossier también: volver a añadir la misma obra **recupera** su nota y su precio en vez de crear una línea nueva. |
+| RF-1613 | Una obra **retirada del catálogo** no desaparece en silencio de los dossieres que la llevaban: aparece dicha como retirada a quien edita, no se le muestra a quien solo consulta (RF-609) y no sale en el PDF. Estuvo en el documento que se mandó, y eso es un dato. |
+
 ---
 
 ## 6. Requisitos no funcionales
@@ -398,6 +424,7 @@ construían. Lo que sigue es el estado, no un plan.
 | Frontend: pantalla del historial de cambios (RF-1508) | **Construida** como bloque de la ficha de obra: el historial de una obra se lee desde su propia ficha. Lo que no hay es una pantalla del registro entero |
 | Fotografías: tres niveles generados en el navegador, orden, imagen índice, giro, recorte, perspectiva y color como dato, y la copia corregida a resolución completa | Construido |
 | Ficha imprimible en PDF con QR | Construido |
+| Dossier: selección de obras con orden y PDF por versión (RF-1600) | **No construido.** Decidido el 11 de agosto de 2026 ([ADR-011](decisiones/ADR-011-el-dossier.md)); no hay ni esquema ni pantalla |
 | Vistas en vivo por WebSocket | Construido para obras e imágenes. Las tablas documentales, los enlaces y el registro no se publican |
 | Sección «Tablas»: ubicaciones, tipos de obra, series y los vocabularios documentales | Construido. A las tres primeras se sumaron las seis pantallas de los vocabularios nuevos —personas e instituciones, sedes de exposición, tipos de publicación, tipos de documento, tipos de relación y clasificación archivística—, y al final la puerta de la papelera |
 | Papelera | **No construida.** La baja lógica está en el esquema, en los *triggers* y en las políticas, y desde el 4 de agosto de 2026 también la visibilidad heredada del expediente (RF-910 a RF-913); lo que falta es la pantalla desde la que ver y restaurar |
@@ -432,6 +459,7 @@ donde se leen.
 | [ADR-008](decisiones/ADR-008-perspectiva-como-cuatro-esquinas.md) · La perspectiva se guarda como cuatro esquinas | Revisa el «fuera de alcance» que el detector declaraba y la forma del encuadre de ADR-002. El máster sigue intacto y el rectificado se recalcula |
 | [ADR-009](decisiones/ADR-009-ajuste-de-color-como-tabla-de-consulta.md) · El ajuste de color se guarda como una tabla de consulta | Extiende a la luz la frontera que el giro y el recorte abrieron: la tabla de 256 entradas por canal es la definición del color, y la previsualización, la exportación y la lupa la traducen. Sostiene RF-414, RF-415, RF-417 y RF-418 |
 | [ADR-010](decisiones/ADR-010-copia-corregida-a-resolucion-completa.md) · La copia corregida a resolución completa | Añade un cuarto nivel a los tres de ADR-002, para que lo que se manda a imprenta no sea la fotografía sin corregir. La genera el navegador cuando puede y una herramienta local por lotes cuando no, sin servidor. Sostiene RF-420 y RF-421, y revisa el dimensionado de RNF-108 |
+| [ADR-011](decisiones/ADR-011-el-dossier.md) · El dossier | Una selección de obras enumerada y ordenada, con el precio en la línea y no en la obra, y un PDF emitido por versión que no se reescribe. Ni búsqueda guardada ni enlace público. Sostiene RF-1600 |
 
 ### 8.2 Decisiones de interfaz que revisan un requisito
 

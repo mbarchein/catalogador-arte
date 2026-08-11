@@ -533,6 +533,26 @@ Fila propia para lo que **no** cubre ningún test y hay que saber que no cubre:
 | El expediente documental y los enlaces externos | El registro solo audita obras y fotografías, y desde el 4 de agosto de 2026 hay **quince tablas documentales más los enlaces** sin una línea de historia: quién movió un eslabón de procedencia, quién cambió las páginas de una cita o quién corrigió una dirección web no consta en ninguna parte. Y arrastra una decisión que hay que tomar aparte: el historial del **contacto de un tercero** (RF-105) es dato personal, así que se decide con esa columna delante y en su propia migración, no se hereda por descuido al extender el registro | Pendiente |
 | La última frase de RF-905 | «Serie y Propietario dados de baja dejan el campo vacío en las obras que los tenían asignados.» **Hoy no puede ocurrir por ninguna de las dos vías, y no porque falte código, sino porque el esquema decidió otra cosa mejor:** no se retira una serie que tiene obras activas dentro, ni un tipo de obra que usan obras activas, ni una persona o institución que sostiene una cadena de procedencia activa, que es titular de derechos o que está detrás de una sede activa. Las tres negativas están cubiertas —`master_table_keys.test.sql`, `provenance.test.sql`, `exhibitions.test.sql`—. **Lo que queda de verdad sin cubrir es el resto, medido el 4 de agosto de 2026 en una transacción que se deshace**: con una obra activa dentro, retirar la serie falla con «No se puede retirar una serie que todavía tiene obras dentro»; con esa misma obra en la papelera, la serie **sí** se retira y la obra **sigue apuntando a ella**. Ese caso residual no tiene test, y el requisito tampoco describe ya lo construido | Pendiente · **decisión antes que test** |
 
+### Dossier (RF-1600)
+
+Bloque decidido el 11 de agosto de 2026 ([ADR-011](decisiones/ADR-011-el-dossier.md)) y **sin construir**:
+no hay esquema, no hay pantalla y no hay ningún test. Tiene sección propia desde el primer día para que
+no aparezca en la lista de requisitos invisibles del final, y estas filas son la especificación de los
+tests que van con la migración, no una promesa vaga.
+
+| Requisito | Qué debe verificar el test | Estado |
+|---|---|---|
+| RF-1601, RF-1610 | **RLS de las tres tablas, y es lo primero.** Un dossier se lee con `can_read()` y se escribe con `can_edit()`: el Lector lo ve y no lo cambia, el anónimo no ve nada, y el cierre por omisión avisa si alguna de las tres nace sin política. Con los privilegios revocados y concedidos uno a uno, `delete` incluido | Pendiente |
+| RF-1602, RF-1603 | El orden es **todo o nada**: `reorder_dossier_artworks` recibe la lista entera y la reescribe, y rechaza una lista incompleta, con repetidos o con una obra de otro dossier. Dos líneas no pueden compartir posición ni quedar con hueco | Pendiente |
+| RF-1604 | El precio vive en la línea y no en la obra: nulo es «sin precio» y no cero, el importe no es negativo, y no hay ninguna columna de precio en `artworks` — este último como aserto de esquema, que es lo que impide que reaparezca | Pendiente |
+| RF-1605 | Sin toma fijada, el dossier enseña la representativa de la obra y la sigue si cambia; con toma fijada, la fijada. Y la toma fijada tiene que ser **de esa obra** | Pendiente |
+| RF-1607 | Una versión emitida **no se reescribe ni se borra**: `update` y `delete` negados a todos los roles, y la versión es consecutiva por dossier y la asigna la base, no el cliente | Pendiente |
+| RF-1608 | Corregir una medida en la ficha cambia lo que dice la emisión siguiente y **no** lo que dice el PDF ya emitido | Pendiente |
+| RF-1609 | El PDF compone con la derivada de consulta. Como el dibujo necesita `canvas`, lo que se prueba con asertos es **qué fichero elige** y qué hace cuando esa obra no tiene ninguna fotografía; el papel se mira a mano | Pendiente · **en navegador** el resultado |
+| RF-1612 | Retirar y recuperar el dossier con su traza, y volver a añadir una obra quitada **recupera** su línea con la nota y el precio en vez de crear otra. Es el patrón de citar una obra en una publicación, y su test es el de aquella | Pendiente |
+| RF-1613 | Una obra retirada del catálogo sigue en la línea, no se le muestra al Lector (RF-609), sale dicha como retirada a quien edita y no entra en el PDF | Pendiente |
+| RF-1611 | Ninguna vista del dossier es accesible sin sesión y el PDF vive en el bucket privado: es RF-101 sobre las rutas nuevas, y lo cubre el mismo test que ya recorre las rutas de la aplicación | Pendiente |
+
 ### Infraestructura
 
 | Requisito | Qué debe verificar el test | Estado |
