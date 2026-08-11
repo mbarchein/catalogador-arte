@@ -7,6 +7,7 @@ import { DossierIssues } from './DossierIssues'
 import { DossierItems } from './DossierItems'
 import { DossierSettings } from './DossierSettings'
 import { itemCountText } from './dossierItems'
+import { groupedNotice } from './dossierSections'
 import { retireDossierConfirmText } from './dossierMessages'
 import { useRelatedThumbnails } from '../documentary/relationships/useRelatedThumbnails'
 import { useDossier } from './useDossier'
@@ -42,9 +43,12 @@ export function DossierPage() {
     addArtwork,
     addText,
     addBiography,
+    addSection,
     editItem,
     removeItem,
     moveItem,
+    moveSection,
+    groupBySeries,
   } = useDossier(id)
   // Las miniaturas se piden por código, con el mismo gancho que las obras
   // relacionadas de una ficha: pinta del espejo local y se corrige con la consulta,
@@ -59,6 +63,8 @@ export function DossierPage() {
   const [showSettings, setShowSettings] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
+  const [said, setSaid] = useState<string | null>(null)
+  const [grouping, setGrouping] = useState(false)
 
   if (dossier === null) {
     return (
@@ -112,6 +118,7 @@ export function DossierPage() {
           {problem}
         </p>
       )}
+      {said && <p className="card mb-3 text-sm text-emerald-800">{said}</p>}
 
       {!dossier.active && (
         <div className="card mb-3 text-sm">
@@ -150,6 +157,36 @@ export function DossierPage() {
         )}
       </div>
 
+      {/* Agrupar por serie: un ayudante, no un criterio vivo (RF-1623). Crea los
+          rótulos, coloca las obras debajo, y a partir de ahí todo se corrige a mano —
+          si fuera un criterio, dar de alta una obra la metería en un documento ya
+          mandado. Está aquí arriba y no en el panel de añadir porque actúa sobre la
+          lista entera y no añade una fila. */}
+      {canEdit && items.some((row) => row.kind === 'ARTWORK' && row.active) && (
+        <div className="mb-3">
+          <button
+            type="button"
+            className="min-h-[2.5rem] w-full rounded-lg border border-stone-300 px-3 text-sm disabled:opacity-50"
+            disabled={grouping}
+            onClick={() => {
+              setGrouping(true)
+              setProblem(null)
+              setSaid(null)
+              void groupBySeries().then((result) => {
+                setGrouping(false)
+                if ('message' in result) {
+                  setProblem(result.message)
+                  return
+                }
+                setSaid(groupedNotice(result.sections))
+              })
+            }}
+          >
+            {grouping ? 'Agrupando…' : 'Agrupar por serie'}
+          </button>
+        </div>
+      )}
+
       {showAdd && canEdit && (
         <div className="mb-3">
           <AddToDossier
@@ -157,6 +194,7 @@ export function DossierPage() {
             onAddArtwork={addArtwork}
             onAddText={addText}
             onAddBiography={addBiography}
+            onAddSection={addSection}
           />
         </div>
       )}
@@ -175,6 +213,7 @@ export function DossierPage() {
         canEdit={canEdit}
         showPrices={dossier.show_prices}
         onMove={moveItem}
+        onMoveSection={moveSection}
         onEdit={editItem}
         onRemove={removeItem}
       />

@@ -616,13 +616,16 @@ export interface Profile {
 }
 
 /**
- * What a dossier's item is (RF-1602, RF-1614, RF-1616, ADR-011).
+ * What a dossier's item is (RF-1602, RF-1614, RF-1616, RF-1619, ADR-011).
  *
- * The three share one ordered list because a paragraph goes BETWEEN two
- * artworks, and the database's `dossier_items_*_shape` constraints mean each
- * kind arrives with exactly its own fields filled in.
+ * The four share one ordered list because a paragraph goes BETWEEN two artworks,
+ * and the database's `dossier_items_*_shape` constraints mean each kind arrives
+ * with exactly its own fields filled in.
+ *
+ * A SECTION owns the items that follow it up to the next one, and it owns them by
+ * POSITION and not by a column: a PDF is linear, so the order already says it.
  */
-export type DossierItemKind = 'ARTWORK' | 'TEXT' | 'BIOGRAPHY'
+export type DossierItemKind = 'ARTWORK' | 'TEXT' | 'BIOGRAPHY' | 'SECTION'
 
 /**
  * A dossier: the artworks chosen for a gallery, in the order they are to be
@@ -644,6 +647,8 @@ export interface Dossier {
   show_bibliography: boolean
   /** Off by default: a price is the figure asked of somebody (RF-1604). */
   show_prices: boolean
+  /** An index of sections behind the cover (RF-1622). All of them or no index. */
+  show_index: boolean
   active: boolean
 }
 
@@ -674,6 +679,8 @@ export interface DossierItem {
   artist_fund: ArtistFund | null
   /** Whether a BIOGRAPHY item also prints the CV. Null on the other kinds. */
   with_cv: boolean | null
+  /** Whether a SECTION's heading gets a page of its own. Null on the other kinds. */
+  divider_page: boolean | null
   active: boolean
 }
 

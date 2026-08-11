@@ -5,10 +5,11 @@ import { useCatalogArtworks } from '../documentary/relationships/useCatalogArtwo
 import { planText } from './dossierDraft'
 import { pickableArtworks, pickerNotice } from './dossierPicker'
 
-type Kind = 'ARTWORK' | 'TEXT' | 'BIOGRAPHY'
+type Kind = 'ARTWORK' | 'SECTION' | 'TEXT' | 'BIOGRAPHY'
 
 const KIND_LABEL: Record<Kind, string> = {
   ARTWORK: 'Obra',
+  SECTION: 'Sección',
   TEXT: 'Texto',
   BIOGRAPHY: 'Biografía',
 }
@@ -33,12 +34,14 @@ export function AddToDossier({
   onAddArtwork,
   onAddText,
   onAddBiography,
+  onAddSection,
 }: {
   /** The codes already in the dossier: they are not offered again. */
   inDossier: readonly string[]
   onAddArtwork: (catalogId: string) => Promise<string | null>
   onAddText: (heading: string, body: string) => Promise<string | null>
   onAddBiography: (fund: ArtistFund, withCv: boolean) => Promise<string | null>
+  onAddSection: (heading: string, body: string, dividerPage: boolean) => Promise<string | null>
 }) {
   const [kind, setKind] = useState<Kind>('ARTWORK')
   const [query, setQuery] = useState('')
@@ -46,6 +49,7 @@ export function AddToDossier({
   const [body, setBody] = useState('')
   const [fund, setFund] = useState<ArtistFund>('ROTILI')
   const [withCv, setWithCv] = useState(true)
+  const [divider, setDivider] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -81,8 +85,8 @@ export function AddToDossier({
         label="Añadir"
         value={kind}
         onChange={setKind}
-        columns={3}
-        options={(['ARTWORK', 'TEXT', 'BIOGRAPHY'] as const).map((value) => ({
+        columns={2}
+        options={(['ARTWORK', 'SECTION', 'TEXT', 'BIOGRAPHY'] as const).map((value) => ({
           value,
           text: KIND_LABEL[value],
         }))}
@@ -136,6 +140,77 @@ export function AddToDossier({
               </li>
             ))}
           </ul>
+        </>
+      )}
+
+      {kind === 'SECTION' && (
+        <>
+          <div>
+            <label className="block text-sm font-medium" htmlFor="section-heading">
+              Rótulo de la sección
+            </label>
+            <input
+              id="section-heading"
+              className="field mt-1"
+              value={heading}
+              onChange={(event) => setHeading(event.target.value)}
+              placeholder="Óleos, 1962-1968"
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium" htmlFor="section-body">
+              Entradilla
+            </label>
+            <textarea
+              id="section-body"
+              className="field mt-1 min-h-[4rem]"
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              placeholder="Los cuatro primeros están sin enmarcar."
+            />
+          </div>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={divider}
+              onChange={(event) => setDivider(event.target.checked)}
+            />
+            <span>
+              Con página propia para el rótulo
+              <span className="block text-xs text-stone-500">
+                Gasta una hoja anunciando la sección. Sin esto, el rótulo encabeza su primera obra.
+              </span>
+            </span>
+          </label>
+          {/* Qué es una sección, dicho donde se crea: agrupa lo que venga detrás hasta
+              la sección siguiente, y eso es todo. No hay que asignarle nada. */}
+          <p className="text-xs text-stone-500">
+            La sección agrupa lo que venga detrás hasta la siguiente. Se coloca al final y desde ahí
+            se mueve, con sus obras dentro.
+          </p>
+          <button
+            type="button"
+            className="min-h-[2.75rem] w-full rounded-lg bg-stone-800 px-3 text-sm font-medium text-white disabled:opacity-50"
+            disabled={busy}
+            onClick={() => {
+              if (heading.trim() === '') {
+                setProblem('Una sección necesita un rótulo: es el título del bloque.')
+                return
+              }
+              void run(
+                () => onAddSection(heading.trim(), body.trim(), divider),
+                () => {
+                  setHeading('')
+                  setBody('')
+                  setDivider(false)
+                },
+              )
+            }}
+          >
+            Añadir la sección
+          </button>
         </>
       )}
 

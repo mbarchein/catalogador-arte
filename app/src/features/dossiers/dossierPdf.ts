@@ -46,7 +46,7 @@ import {
 import { computeTarget, signedUrl } from '../../lib/images'
 import { supabase } from '../../lib/supabase'
 import { printableText } from '../../lib/recordPdf'
-import type { DossierPage, TextBlock } from './dossierPdfPlan'
+import type { PlannedPage, TextBlock } from './dossierPdfPlan'
 import { footerText } from './dossierPdfPlan'
 
 /**
@@ -235,7 +235,7 @@ function drawTexts(
  *   without either.
  */
 export async function generateDossierPdf(
-  pages: readonly DossierPage[],
+  pages: readonly PlannedPage[],
   options: { title: string; loadPhoto?: PhotoLoader },
 ): Promise<Blob> {
   const doc = await PDFDocument.create()
@@ -248,7 +248,8 @@ export async function generateDossierPdf(
   const loadPhoto = options.loadPhoto ?? loadDossierPhoto
   const total = pages.length
 
-  for (const [index, plan] of pages.entries()) {
+  for (const [index, entry] of pages.entries()) {
+    const plan = entry.page
     const page = doc.addPage(PageSizes.A4) // 595.28 × 841.89 pt
     const { width, height } = page.getSize()
     const inner = width - MARGIN * 2
@@ -285,6 +286,63 @@ export async function generateDossierPdf(
 
     if (plan.kind === 'TEXTS') {
       drawTexts(cursor, plan.texts, { serif, sans }, inner)
+    }
+
+    if (plan.kind === 'DIVIDER') {
+      // La portadilla: el rótulo a media hoja, como la portada y por lo mismo — un
+      // título arriba se lee como un capítulo y a media altura se lee como un
+      // anuncio de lo que viene.
+      cursor.y = height * 0.6
+      drawParagraph(cursor, plan.heading, serif, 22, inner, { leading: 26 })
+      cursor.y -= 12
+      page.drawLine({
+        start: { x: MARGIN, y: cursor.y },
+        end: { x: MARGIN + inner * 0.22, y: cursor.y },
+        thickness: 1.4,
+        color: INK,
+      })
+      if (plan.body !== '') {
+        cursor.y -= 12
+        drawParagraph(cursor, plan.body, sans, 10.5, inner * 0.8)
+      }
+    }
+
+    if (plan.kind === 'INDEX') {
+      cursor.page.drawText(printableText('ÍNDICE'), {
+        x: MARGIN,
+        y: cursor.y - 10,
+        size: 8,
+        font: sans,
+        color: GRAY,
+      })
+      cursor.y -= 30
+      for (const line of plan.entries) {
+        // Rótulo a la izquierda, página a la derecha, y el recuento de obras entre
+        // los dos: es lo que convierte un índice en una respuesta —«los óleos son
+        // seis y empiezan en la 4»— y no en una lista de títulos.
+        const label = printableText(line.heading)
+        const count =
+          line.artworkCount === 1 ? '1 obra' : `${line.artworkCount} obras`
+        const right = printableText(String(line.page))
+        page.drawText(label, { x: MARGIN, y: cursor.y, size: 11, font: sans, color: INK })
+        const countWidth = sans.widthOfTextAtSize(count, 9)
+        const rightWidth = sans.widthOfTextAtSize(right, 11)
+        page.drawText(count, {
+          x: width - MARGIN - rightWidth - 12 - countWidth,
+          y: cursor.y,
+          size: 9,
+          font: sans,
+          color: GRAY,
+        })
+        page.drawText(right, {
+          x: width - MARGIN - rightWidth,
+          y: cursor.y,
+          size: 11,
+          font: sans,
+          color: INK,
+        })
+        cursor.y -= 20
+      }
     }
 
     if (plan.kind === 'BIOGRAPHY') {
@@ -403,7 +461,7 @@ export async function generateDossierPdf(
     }
 
     // ── Running foot, on every page ──────────────────────────
-    const foot = footerText(options.title, index + 1, total)
+    const foot = footerText(options.title, index + 1, total, entry.section)
     page.drawLine({
       start: { x: MARGIN, y: MARGIN - 14 },
       end: { x: width - MARGIN, y: MARGIN - 14 },

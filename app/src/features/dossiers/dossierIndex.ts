@@ -27,7 +27,7 @@ import type { Dossier } from '../../lib/types'
  */
 export const DOSSIER_COLUMNS =
   'id, title, purpose, note, cover_text, recipient_party_id, ' +
-  'show_provenance, show_exhibitions, show_bibliography, show_prices, active'
+  'show_provenance, show_exhibitions, show_bibliography, show_prices, show_index, active'
 
 /** The same, plus the recipient's name, which is what the index paints. */
 export const DOSSIER_INDEX_COLUMNS = `${DOSSIER_COLUMNS}, recipient:parties(id, name)`

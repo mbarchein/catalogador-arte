@@ -56,11 +56,41 @@ export interface ArtworkCaption {
   price: string | null
 }
 
+/** Una entrada del índice: la sección, cuántas obras lleva y en qué página empieza. */
+export interface IndexEntry {
+  heading: string
+  artworkCount: number
+  /** Página del PDF donde empieza. Se conoce tras la primera pasada (ver `dossierPages`). */
+  page: number
+}
+
 export type DossierPage =
   | { kind: 'COVER'; title: string; recipient: string; date: string; blurb: string }
+  | { kind: 'INDEX'; entries: IndexEntry[] }
+  | { kind: 'DIVIDER'; heading: string; body: string }
   | { kind: 'BIOGRAPHY'; heading: string; paragraphs: string[]; cv: string[] }
   | { kind: 'TEXTS'; texts: TextBlock[] }
-  | { kind: 'ARTWORK'; texts: TextBlock[]; caption: ArtworkCaption; imageId: string | null; catalogId: string }
+  | {
+      kind: 'ARTWORK'
+      texts: TextBlock[]
+      caption: ArtworkCaption
+      imageId: string | null
+      catalogId: string
+    }
+
+/**
+ * Una página del PDF con la sección a la que pertenece.
+ *
+ * La sección viaja **en cada página** y no dentro del bloque que la abre, porque lo
+ * que la necesita es el pie: «Óleos, 1962-1968 · 7 de 14» en todas las hojas del
+ * bloque es lo que hace que una hoja suelta, impresa y separada del resto, siga
+ * diciendo de dónde viene.
+ */
+export interface PlannedPage {
+  page: DossierPage
+  /** El rótulo de la sección en curso, o null antes de la primera. */
+  section: string | null
+}
 
 /**
  * The caption of one artwork.
@@ -110,7 +140,18 @@ export function cvLines(text: string): string[] {
 }
 
 /**
- * The pages of the PDF, in order.
+ * Cuántas entradas del índice caben en una página, para saber cuántas páginas
+ * ocupa antes de saber los números que va a imprimir.
+ *
+ * Es la pescadilla de todo índice: las páginas de las secciones dependen de cuánto
+ * mida el índice, y el índice depende de cuántas secciones haya. Se rompe contando
+ * primero: con las entradas ya sabidas, el número de páginas del índice es
+ * aritmética, y solo entonces se numeran las secciones.
+ */
+const INDEX_ENTRIES_PER_PAGE = 24
+
+/**
+ * The pages of the PDF, in order, each one with the section it belongs to.
  *
  * **An artwork withdrawn from the catalogue does not print** (RF-1613): its item
  * stays in the dossier and the screen says so, but a withdrawn record has no place
@@ -119,33 +160,78 @@ export function cvLines(text: string): string[] {
  * it. Both cases keep whatever texts were attached to them, which then move on to
  * the next artwork — a section heading must not disappear with the artwork that
  * happened to follow it.
+ *
+ * ── LAS SECCIONES, Y POR QUÉ SON DOS COSAS DISTINTAS ────────
+ *
+ * Una sección **sin portadilla** se comporta exactamente como un texto con rótulo:
+ * su título encabeza la página de su primera obra. Una sección **con portadilla**
+ * se lleva una hoja para anunciarse. Es el mismo dato con dos maquetas, y por eso
+ * el interruptor está en la fila y no en el generador.
+ *
+ * En las dos, el rótulo pasa a ser la sección en curso, y eso viaja al pie de todas
+ * las páginas que vengan detrás hasta la sección siguiente (RF-1620).
  */
 export function dossierPages(input: {
   dossier: {
     title: string
     cover_text: string
     show_prices: boolean
+    show_index?: boolean
   }
   recipientName: string
   /** When the PDF is issued, already written for a person: «11 de agosto de 2026». */
   date: string
   items: readonly DossierItemRow[]
   funds: readonly FundTexts[]
-}): DossierPage[] {
-  const pages: DossierPage[] = [
+}): PlannedPage[] {
+  const planned: PlannedPage[] = [
     {
-      kind: 'COVER',
-      title: input.dossier.title.trim(),
-      recipient: input.recipientName.trim(),
-      date: input.date,
-      blurb: input.dossier.cover_text.trim(),
+      page: {
+        kind: 'COVER',
+        title: input.dossier.title.trim(),
+        recipient: input.recipientName.trim(),
+        date: input.date,
+        blurb: input.dossier.cover_text.trim(),
+      },
+      section: null,
     },
   ]
 
   let pending: TextBlock[] = []
+  let section: string | null = null
+  // Las entradas del índice se recogen en la misma pasada, con la página en la que
+  // cae la primera hoja de cada sección ANTES de insertar el índice. El corrimiento
+  // se aplica al final, cuando ya se sabe cuánto mide.
+  const index: IndexEntry[] = []
+
+  const push = (page: DossierPage) => planned.push({ page, section })
+  const flushTexts = () => {
+    if (pending.length === 0) return
+    push({ kind: 'TEXTS', texts: pending })
+    pending = []
+  }
 
   for (const row of sortItems(input.items)) {
     if (!row.active) continue
+
+    if (row.kind === 'SECTION') {
+      const heading = row.heading.trim()
+      if (row.divider_page === true) {
+        // Los textos que esperaban van ANTES de la portadilla: se pusieron delante
+        // del rótulo, y quien los movió ahí quería leerlos primero.
+        flushTexts()
+        section = heading
+        index.push({ heading, artworkCount: 0, page: planned.length + 1 })
+        push({ kind: 'DIVIDER', heading, body: row.body.trim() })
+      } else {
+        section = heading
+        // Sin portadilla, el rótulo encabeza la página de la primera obra: la
+        // entrada del índice apunta a esa página, que es la siguiente que se cree.
+        index.push({ heading, artworkCount: 0, page: planned.length + 1 })
+        pending.push({ heading, body: row.body.trim() })
+      }
+      continue
+    }
 
     if (row.kind === 'TEXT') {
       pending.push({ heading: row.heading.trim(), body: row.body.trim() })
@@ -160,24 +246,19 @@ export function dossierPages(input: {
       // Nothing written yet: a page with a heading and no prose is a blank page
       // with a title on it, and the screen already says the fund has no biography.
       if (paragraphs.length === 0 && cv.length === 0) continue
-      // The texts waiting go on top of the biography's page, which is where they
-      // were put: whoever moved a paragraph above it meant it to be read first.
-      pages.push({
+      flushTexts()
+      push({
         kind: 'BIOGRAPHY',
         heading: row.heading.trim() !== '' ? row.heading.trim() : fund.name,
         paragraphs,
         cv,
       })
-      if (pending.length > 0) {
-        pages.splice(pages.length - 1, 0, { kind: 'TEXTS', texts: pending })
-        pending = []
-      }
       continue
     }
 
     // ARTWORK. What cannot be printed is skipped, and its texts survive.
     if (row.artwork === null || !row.artwork.active) continue
-    pages.push({
+    push({
       kind: 'ARTWORK',
       texts: pending,
       caption: artworkCaption(row, { showPrices: input.dossier.show_prices }),
@@ -185,24 +266,59 @@ export function dossierPages(input: {
       catalogId: row.catalog_id ?? '',
     })
     pending = []
+    const entry = index[index.length - 1]
+    if (entry !== undefined && section !== null) entry.artworkCount += 1
   }
 
   // Texts with no artwork behind them: a closing paragraph gets its own page.
-  if (pending.length > 0) pages.push({ kind: 'TEXTS', texts: pending })
+  flushTexts()
 
-  return pages
+  // ── El índice, si el dossier lo lleva y hay secciones ──────
+  //
+  // Detrás de la portada, que es donde se busca. Sin secciones no se pinta aunque
+  // esté encendido: un índice de una sola entrada sin nombre es una hoja gastada.
+  if (input.dossier.show_index === true && index.length > 0) {
+    const indexPages = Math.ceil(index.length / INDEX_ENTRIES_PER_PAGE)
+    const shifted = index.map((entry) => ({ ...entry, page: entry.page + indexPages }))
+    const pages: PlannedPage[] = []
+    for (let i = 0; i < indexPages; i += 1) {
+      pages.push({
+        page: {
+          kind: 'INDEX',
+          entries: shifted.slice(
+            i * INDEX_ENTRIES_PER_PAGE,
+            (i + 1) * INDEX_ENTRIES_PER_PAGE,
+          ),
+        },
+        section: null,
+      })
+    }
+    planned.splice(1, 0, ...pages)
+  }
+
+  return planned
 }
 
 /**
- * The running foot of every page: the dossier and where you are in it.
+ * The running foot of every page: the dossier, la sección, and where you are in it.
  *
- * The title is on it because a printed sheet that gets separated from the rest has
- * to say what it belongs to, and the count —«3 de 14»— because a PDF that arrives
- * truncated by an email gateway is otherwise indistinguishable from a short one.
+ * El título está porque una hoja impresa que se separa del resto tiene que decir a
+ * qué pertenece, y el recuento —«3 de 14»— porque un PDF que llega truncado por una
+ * pasarela de correo es indistinguible de uno corto.
+ *
+ * Y la sección va delante del título cuando hay una (RF-1620): en un dossier largo
+ * es lo que contesta «¿esto de qué bloque era?» sin volver atrás, y es lo que hace
+ * que una hoja suelta encima de una mesa siga significando algo.
  */
-export function footerText(title: string, page: number, total: number): { left: string; right: string } {
+export function footerText(
+  title: string,
+  page: number,
+  total: number,
+  section?: string | null,
+): { left: string; right: string } {
+  const named = (section ?? '').trim()
   return {
-    left: title.trim(),
+    left: named === '' ? title.trim() : `${named} · ${title.trim()}`,
     right: `${page} de ${total}`,
   }
 }
@@ -254,8 +370,13 @@ export function issueFileName(title: string, version: number): string {
  * on screen and nothing printable, so the sentence has to name that instead of
  * saying «vacío», which the cataloguer can see is false.
  */
-export function issueBlockedReason(pages: readonly DossierPage[]): string | null {
-  const printable = pages.filter((page) => page.kind !== 'COVER')
+export function issueBlockedReason(pages: readonly PlannedPage[]): string | null {
+  // Lo que CUENTA como algo que decir: una obra, una biografía o un texto. Una
+  // portada y una portadilla de sección vacía son dos hojas con títulos y nada
+  // dentro, y un documento así se manda sin querer.
+  const printable = pages.filter(
+    ({ page }) => page.kind === 'ARTWORK' || page.kind === 'BIOGRAPHY' || page.kind === 'TEXTS',
+  )
   if (printable.length > 0) return null
   return (
     'Este dossier no tiene nada que imprimir todavía. Añade alguna obra: las que están retiradas ' +

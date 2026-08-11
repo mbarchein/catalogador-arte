@@ -38,6 +38,7 @@ function item(over: Partial<DossierItemRow> = {}): DossierItemRow {
     body: '',
     artist_fund: null,
     with_cv: null,
+    divider_page: null,
     active: true,
   }
   return {
@@ -47,6 +48,7 @@ function item(over: Partial<DossierItemRow> = {}): DossierItemRow {
       title: 'Figura sentada',
       artist: 'ROTILI',
       execution_date: '1965',
+      series: 'Figuras',
       technique: 'óleo sobre lienzo',
       height_cm: 92,
       width_cm: 73,
@@ -56,12 +58,18 @@ function item(over: Partial<DossierItemRow> = {}): DossierItemRow {
   }
 }
 
-const DOSSIER = { title: 'Selección para galería', cover_text: 'Las medidas son sin marco.', show_prices: false }
+const DOSSIER = {
+  title: 'Selección para galería',
+  cover_text: 'Las medidas son sin marco.',
+  show_prices: false,
+  show_index: false,
+}
 const FUNDS = [
   { code: 'ROTILI' as const, name: 'Alberto Rotili', biography: 'Nació en Badajoz.\n\nPintó del natural.', cv: '1985 · Badajoz\n\n1979 · Cáceres' },
 ]
 
-function pages(items: readonly DossierItemRow[], over: Partial<typeof DOSSIER> = {}) {
+/** Las páginas planificadas: la página y la sección a la que pertenece. */
+function planned(items: readonly DossierItemRow[], over: Partial<typeof DOSSIER> = {}) {
   return dossierPages({
     dossier: { ...DOSSIER, ...over },
     recipientName: 'Galería Serrano',
@@ -69,6 +77,11 @@ function pages(items: readonly DossierItemRow[], over: Partial<typeof DOSSIER> =
     items,
     funds: FUNDS,
   })
+}
+
+/** Solo las páginas, que es lo que mira casi todo este fichero. */
+function pages(items: readonly DossierItemRow[], over: Partial<typeof DOSSIER> = {}) {
+  return planned(items, over).map((entry) => entry.page)
 }
 
 describe('la portada y el recuento de páginas', () => {
@@ -148,6 +161,126 @@ describe('dónde caen los textos (RF-1614)', () => {
       expect(page.texts).toEqual([{ heading: 'Óleos', body: '' }])
       expect(page.catalogId).toBe('AR-0001')
     }
+  })
+})
+
+describe('las secciones en el PDF (RF-1619, RF-1620, RF-1621)', () => {
+  const section = (id: string, heading: string, order: number, divider: boolean) =>
+    item({
+      id,
+      kind: 'SECTION',
+      catalog_id: null,
+      artwork: null,
+      heading,
+      divider_page: divider,
+      sort_order: order,
+    })
+
+  it('sin portadilla, el rótulo encabeza la página de su primera obra', () => {
+    const result = pages([section('s', 'Óleos', 1, false), item({ id: 'a', sort_order: 2 })])
+    // Dos páginas: la sección no gasta una hoja.
+    expect(result.map((page) => page.kind)).toEqual(['COVER', 'ARTWORK'])
+    const page = result[1]
+    if (page?.kind === 'ARTWORK') expect(page.texts[0]?.heading).toBe('Óleos')
+  })
+
+  it('con portadilla, el rótulo se lleva una hoja para él', () => {
+    const result = pages([section('s', 'Óleos', 1, true), item({ id: 'a', sort_order: 2 })])
+    expect(result.map((page) => page.kind)).toEqual(['COVER', 'DIVIDER', 'ARTWORK'])
+    const divider = result[1]
+    if (divider?.kind === 'DIVIDER') expect(divider.heading).toBe('Óleos')
+    // Y la obra ya no lleva el rótulo encima: se ha impreso en su portadilla.
+    const page = result[2]
+    if (page?.kind === 'ARTWORK') expect(page.texts).toEqual([])
+  })
+
+  it('la sección viaja en todas sus páginas, que es lo que necesita el pie (RF-1620)', () => {
+    const result = planned([
+      section('s1', 'Óleos', 1, false),
+      item({ id: 'a', sort_order: 2 }),
+      item({ id: 'b', sort_order: 3 }),
+      section('s2', 'Papel', 4, true),
+      item({ id: 'c', sort_order: 5 }),
+    ])
+    expect(result.map((entry) => entry.section)).toEqual([
+      null, // la portada no es de ninguna sección
+      'Óleos',
+      'Óleos',
+      'Papel', // la portadilla
+      'Papel',
+    ])
+  })
+
+  it('los textos que esperaban salen ANTES de la portadilla', () => {
+    // Se pusieron delante del rótulo, y quien los movió ahí quería leerlos primero.
+    const result = pages([
+      item({ id: 't', kind: 'TEXT', catalog_id: null, artwork: null, body: 'Presentación.', sort_order: 1 }),
+      section('s', 'Óleos', 2, true),
+      item({ id: 'a', sort_order: 3 }),
+    ])
+    expect(result.map((page) => page.kind)).toEqual(['COVER', 'TEXTS', 'DIVIDER', 'ARTWORK'])
+  })
+
+  it('un dossier que solo lleva secciones no se puede emitir', () => {
+    // Una portada y una portadilla son dos hojas con títulos y nada dentro.
+    expect(issueBlockedReason(planned([section('s', 'Óleos', 1, true)]))).not.toBeNull()
+  })
+})
+
+describe('el índice (RF-1622)', () => {
+  const section = (id: string, heading: string, order: number, divider = false) =>
+    item({
+      id,
+      kind: 'SECTION',
+      catalog_id: null,
+      artwork: null,
+      heading,
+      divider_page: divider,
+      sort_order: order,
+    })
+
+  const rows = [
+    section('s1', 'Óleos', 1),
+    item({ id: 'a', sort_order: 2 }),
+    item({ id: 'b', sort_order: 3 }),
+    section('s2', 'Papel', 4),
+    item({ id: 'c', sort_order: 5 }),
+  ]
+
+  it('apagado no se pinta', () => {
+    expect(pages(rows).some((page) => page.kind === 'INDEX')).toBe(false)
+  })
+
+  it('encendido va detrás de la portada, que es donde se busca', () => {
+    const result = pages(rows, { show_index: true })
+    expect(result.map((page) => page.kind)).toEqual([
+      'COVER',
+      'INDEX',
+      'ARTWORK',
+      'ARTWORK',
+      'ARTWORK',
+    ])
+  })
+
+  it('cada entrada dice cuántas obras lleva y en qué página empieza, ya corrida', () => {
+    // El número tiene que contar el propio índice: si no, todas las referencias
+    // apuntarían una página antes y el índice sería exactamente inútil.
+    const result = pages(rows, { show_index: true })
+    const index = result[1]
+    expect(index?.kind).toBe('INDEX')
+    if (index?.kind === 'INDEX') {
+      expect(index.entries).toEqual([
+        { heading: 'Óleos', artworkCount: 2, page: 3 },
+        { heading: 'Papel', artworkCount: 1, page: 5 },
+      ])
+    }
+  })
+
+  it('sin secciones no se pinta aunque esté encendido', () => {
+    // Un índice de una sola entrada sin nombre es una hoja gastada.
+    expect(
+      pages([item({ id: 'a' })], { show_index: true }).some((page) => page.kind === 'INDEX'),
+    ).toBe(false)
   })
 })
 
@@ -281,16 +414,16 @@ describe('el pie de página y el nombre del fichero', () => {
 
 describe('cuándo no se puede emitir', () => {
   it('un dossier vacío no se emite: una portada sola es un documento que se manda sin querer', () => {
-    expect(issueBlockedReason(pages([]))).toContain('nada que imprimir')
+    expect(issueBlockedReason(planned([]))).toContain('nada que imprimir')
   })
 
   it('con solo obras retiradas lo dice nombrando ese motivo, no «vacío»', () => {
     const retirada = { ...item().artwork!, active: false }
-    const reason = issueBlockedReason(pages([item({ artwork: retirada })]))
+    const reason = issueBlockedReason(planned([item({ artwork: retirada })]))
     expect(reason).toContain('retiradas')
   })
 
   it('con una obra imprimible no bloquea', () => {
-    expect(issueBlockedReason(pages([item()]))).toBeNull()
+    expect(issueBlockedReason(planned([item()]))).toBeNull()
   })
 })

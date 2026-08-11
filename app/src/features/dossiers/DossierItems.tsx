@@ -2,22 +2,28 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChevronDownIcon, ChevronUpIcon, ImageIcon, TrashIcon } from '../../components/ui'
 import { planPrice, priceInputValue } from './dossierDraft'
-import { itemEntries, itemsNotice, type DossierItemRow } from './dossierItems'
+import { itemEntries, itemsNotice, type DossierItemEntry, type DossierItemRow } from './dossierItems'
 import { removeItemConfirmText } from './dossierMessages'
+import { dossierGroups, groupCountText, orphanNotice } from './dossierSections'
 import type { ItemPatch } from './useDossier'
 
 /**
- * What the dossier holds, in order, with the two things that are done to it:
- * moving an item and correcting it (RF-1603, RF-1604, RF-1613).
+ * Lo que lleva el dossier, agrupado por secciones y en orden, con lo que se hace
+ * con él: mover, corregir y quitar (RF-1603, RF-1604, RF-1613, RF-1619, RF-1620).
  *
- * **The order is walked with two buttons and not dragged.** Dragging on a phone
- * with the artwork in your hands is a gesture that fights the scroll, and the
- * project already learnt that on the thumbnails of a record. One tap, one place,
- * and the buttons at the ends are disabled instead of doing nothing.
+ * **El orden se recorre con dos botones y no arrastrando.** Arrastrar en un móvil
+ * con la obra en las manos es un gesto que pelea con el desplazamiento, y eso ya lo
+ * aprendió el proyecto en las miniaturas de una ficha. Un toque, un puesto, y en
+ * los extremos los botones se apagan en vez de no hacer nada.
  *
- * Every move is a write, and it is `reorder_dossier_items`: the whole list or
- * nothing. So a stale screen —somebody else added an artwork meanwhile— is refused
- * with a sentence instead of leaving half an order.
+ * **Dos movimientos y no cuatro botones.** Los de la banda de una sección mueven
+ * **la sección entera con sus obras dentro**, que es el trabajo que si no son diez
+ * toques; los de una fila mueven ese elemento, y por eso son también la forma de
+ * pasar una obra de una sección a la siguiente. Poner las dos parejas en la banda
+ * habría sido pedirle a quien cataloga que distinga cuatro flechas.
+ *
+ * Cada movimiento es una escritura, y es `reorder_dossier_items`: la lista entera o
+ * nada. Así una pantalla vieja se rechaza con una frase en vez de dejar medio orden.
  */
 export function DossierItems({
   items,
@@ -27,6 +33,7 @@ export function DossierItems({
   canEdit,
   showPrices,
   onMove,
+  onMoveSection,
   onEdit,
   onRemove,
 }: {
@@ -39,17 +46,22 @@ export function DossierItems({
   /** Whether this dossier prints prices. Decides whether the price is offered at all. */
   showPrices: boolean
   onMove: (id: string, direction: 'up' | 'down') => Promise<string | null>
+  onMoveSection: (sectionId: string, direction: 'up' | 'down') => Promise<string | null>
   onEdit: (id: string, patch: ItemPatch) => Promise<string | null>
   onRemove: (id: string) => Promise<string | null>
 }) {
   const [open, setOpen] = useState<string | null>(null)
+  const [collapsed, setCollapsed] = useState<readonly string[]>([])
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   const entries = itemEntries(items)
+  const byId = new Map(entries.map((entry) => [entry.id, entry]))
+  const groups = dossierGroups(items)
   const notice = itemsNotice({ loading, error, count: entries.length })
-  const live = entries.filter((entry) => entry.position !== null)
-  const lastPosition = live.length
+  const orphans = orphanNotice(groups)
+  const sectionIds = groups.flatMap((group) => (group.sectionId === null ? [] : [group.sectionId]))
+  const lastPosition = entries.filter((entry) => entry.position !== null).length
 
   async function act(action: () => Promise<string | null>) {
     setBusy(true)
@@ -67,173 +79,332 @@ export function DossierItems({
         </p>
       )}
       {notice && <p className="card text-sm text-stone-600">{notice}</p>}
+      {/* Las huérfanas no son un error —se puede querer una obra de apertura— pero
+          salen sin rótulo, y verlo evita mandarlas sin querer en el limbo. */}
+      {orphans && <p className="card text-sm text-amber-900">{orphans}</p>}
 
-      <ul className="space-y-2">
-        {entries.map((entry) => {
-          const row = items.find((candidate) => candidate.id === entry.id)
-          return (
-            <li key={entry.id} className={`card ${entry.retired ? 'opacity-60' : ''}`}>
-              <div className="flex items-start gap-2">
-                {/* El número es la posición en el PDF, que es la única cifra que
-                    importa aquí. Un elemento retirado no tiene sitio, y en vez de
-                    un número lleva un guion. */}
-                <span className="mt-0.5 w-6 shrink-0 text-right text-sm tabular-nums text-stone-500">
-                  {entry.position ?? '—'}
-                </span>
-                {/* La miniatura para una obra, y un icono para lo que no es una obra.
-                    Los dos ocupan EL MISMO cuadrado, y eso es lo que hace la lista
-                    recorrible: si los textos no tuvieran su hueco, cada uno de ellos
-                    desplazaría el resto de la columna y el orden dejaría de leerse
-                    de un vistazo. */}
-                <span className="mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded border border-stone-200 bg-stone-100">
-                  {entry.kind === 'ARTWORK' && entry.catalogId !== null &&
-                  thumbnails[entry.catalogId] !== undefined ? (
-                    <img
-                      src={thumbnails[entry.catalogId]}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-stone-400">
-                      {entry.kind === 'ARTWORK' ? (
-                        <ImageIcon className="h-5 w-5" />
-                      ) : entry.kind === 'TEXT' ? (
-                        <TextItemIcon className="h-5 w-5" />
-                      ) : (
-                        <BiographyItemIcon className="h-5 w-5" />
-                      )}
-                    </span>
-                  )}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="break-words font-medium">{entry.title}</p>
-                  <p className="mt-0.5 break-words text-xs text-stone-600">{entry.subtitle}</p>
-                  {entry.body !== '' && (
-                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-stone-800">
-                      {entry.body}
+      {groups.map((group, groupIndex) => {
+        const isCollapsed = group.sectionId !== null && collapsed.includes(group.sectionId)
+        const sectionRow =
+          group.sectionId === null
+            ? undefined
+            : items.find((row) => row.id === group.sectionId)
+        const sectionIndex = group.sectionId === null ? -1 : sectionIds.indexOf(group.sectionId)
+
+        return (
+          <div key={group.sectionId ?? `orphans-${groupIndex}`} className="space-y-2">
+            {group.sectionId !== null && sectionRow !== undefined && (
+              <div className="rounded-lg border border-stone-300 bg-stone-100 px-3 py-2">
+                <div className="flex items-start gap-2">
+                  <button
+                    type="button"
+                    className="mt-0.5 shrink-0 text-stone-600"
+                    aria-label={isCollapsed ? 'Desplegar la sección' : 'Plegar la sección'}
+                    aria-expanded={!isCollapsed}
+                    onClick={() =>
+                      setCollapsed((current) =>
+                        current.includes(group.sectionId as string)
+                          ? current.filter((id) => id !== group.sectionId)
+                          : [...current, group.sectionId as string],
+                      )
+                    }
+                  >
+                    {isCollapsed ? (
+                      <ChevronDownIcon className="h-5 w-5" />
+                    ) : (
+                      <ChevronUpIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words font-medium">{group.heading}</p>
+                    <p className="text-xs text-stone-600">
+                      {groupCountText(group)}
+                      {group.dividerPage ? ' · con página propia' : ''}
                     </p>
-                  )}
-                  {entry.price !== null && showPrices && (
-                    <p className="mt-1 text-sm">{entry.price}</p>
-                  )}
-                  {entry.price !== null && !showPrices && (
-                    // Guardado y no impreso: decirlo evita que alguien escriba doce
-                    // precios y los mande sin querer, o al contrario.
-                    <p className="mt-1 text-xs text-stone-500">
-                      {entry.price} · guardado, pero este dossier no imprime precios
-                    </p>
-                  )}
-                  {entry.note !== '' && (
-                    <p className="mt-1 break-words text-xs italic text-stone-500">
-                      {entry.note} · nota del equipo, no sale en el PDF
-                    </p>
-                  )}
-                  {entry.retirementNotice !== null && (
-                    <p className="mt-1 text-xs text-amber-900">{entry.retirementNotice}</p>
-                  )}
-                  {entry.catalogId !== null && (
-                    <Link
-                      to={`/artwork/${entry.catalogId}`}
-                      className="mt-1 inline-block text-xs text-stone-600 underline"
-                    >
-                      {entry.catalogId}
-                    </Link>
+                    {group.body !== '' && (
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-stone-800">
+                        {group.body}
+                      </p>
+                    )}
+                  </div>
+                  {canEdit && (
+                    <div className="flex shrink-0 flex-col gap-1">
+                      {/* Mueven la SECCIÓN ENTERA: es el trabajo que si no son diez
+                          toques. Las flechas de una fila mueven ese elemento. */}
+                      <button
+                        type="button"
+                        aria-label="Subir la sección entera"
+                        className="rounded border border-stone-300 bg-white p-1 disabled:opacity-30"
+                        disabled={busy || sectionIndex === 0}
+                        onClick={() => void act(() => onMoveSection(group.sectionId as string, 'up'))}
+                      >
+                        <ChevronUpIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Bajar la sección entera"
+                        className="rounded border border-stone-300 bg-white p-1 disabled:opacity-30"
+                        disabled={busy || sectionIndex === sectionIds.length - 1}
+                        onClick={() =>
+                          void act(() => onMoveSection(group.sectionId as string, 'down'))
+                        }
+                      >
+                        <ChevronDownIcon className="h-5 w-5" />
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                {canEdit && entry.position !== null && (
-                  <div className="flex shrink-0 flex-col gap-1">
-                    {/* Iconos propios de arriba y abajo, sin rotar nada: esta lista
-                        salió con las flechas intercambiadas porque un chevrón `<`
-                        girado un cuarto de vuelta apunta hacia abajo. El botón hacía
-                        lo correcto y dibujaba lo contrario. */}
-                    <button
-                      type="button"
-                      aria-label="Subir un puesto"
-                      className="rounded border border-stone-300 p-1 disabled:opacity-30"
-                      disabled={busy || entry.position === 1}
-                      onClick={() => void act(() => onMove(entry.id, 'up'))}
-                    >
-                      <ChevronUpIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Bajar un puesto"
-                      className="rounded border border-stone-300 p-1 disabled:opacity-30"
-                      disabled={busy || entry.position === lastPosition}
-                      onClick={() => void act(() => onMove(entry.id, 'down'))}
-                    >
-                      <ChevronDownIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {canEdit && row !== undefined && (
-                <div className="mt-2 flex flex-wrap gap-2 border-t border-stone-200 pt-2">
-                  <button
-                    type="button"
-                    className="text-sm text-stone-700 underline"
-                    onClick={() => setOpen(open === entry.id ? null : entry.id)}
-                  >
-                    {open === entry.id ? 'Cerrar' : 'Corregir'}
-                  </button>
-                  {entry.retired ? (
+                {canEdit && (
+                  <div className="mt-2 flex flex-wrap gap-2 border-t border-stone-200 pt-2">
                     <button
                       type="button"
                       className="text-sm text-stone-700 underline"
-                      disabled={busy}
-                      onClick={() => void act(() => onEdit(entry.id, { active: true }))}
+                      onClick={() => setOpen(open === group.sectionId ? null : group.sectionId)}
                     >
-                      Volver a poner
+                      {open === group.sectionId ? 'Cerrar' : 'Corregir la sección'}
                     </button>
-                  ) : (
                     <button
                       type="button"
                       className="ml-auto flex items-center gap-1 text-sm text-red-800"
                       disabled={busy}
                       onClick={() => {
-                        // La confirmación dice qué pasa con ESTE tipo: una obra
-                        // vuelve con su nota y su precio, un texto habría que
-                        // escribirlo otra vez.
-                        if (!window.confirm(removeItemConfirmText(entry.kind, entry.title))) return
-                        void act(() => onRemove(entry.id))
+                        if (!window.confirm(removeItemConfirmText('SECTION', group.heading ?? '')))
+                          return
+                        void act(() => onRemove(group.sectionId as string))
                       }}
                     >
                       <TrashIcon className="h-4 w-4" />
                       Quitar
                     </button>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
 
-              {canEdit && open === entry.id && row !== undefined && (
-                <ItemEditor
-                  row={row}
-                  showPrices={showPrices}
-                  onSave={async (patch) => {
-                    const message = await onEdit(entry.id, patch)
-                    if (message === null) setOpen(null)
-                    return message
-                  }}
-                />
-              )}
-            </li>
-          )
-        })}
-      </ul>
+                {canEdit && open === group.sectionId && (
+                  <ItemEditor
+                    row={sectionRow}
+                    showPrices={showPrices}
+                    onSave={async (patch) => {
+                      const message = await onEdit(group.sectionId as string, patch)
+                      if (message === null) setOpen(null)
+                      return message
+                    }}
+                  />
+                )}
+              </div>
+            )}
+
+            {!isCollapsed && (
+              <ul className={`space-y-2 ${group.sectionId === null ? '' : 'pl-3'}`}>
+                {group.items.map((row) => {
+                  const entry = byId.get(row.id)
+                  if (entry === undefined) return null
+                  return (
+                    <li key={row.id} className={`card ${entry.retired ? 'opacity-60' : ''}`}>
+                      <ItemRow
+                        entry={entry}
+                        row={row}
+                        thumbnails={thumbnails}
+                        canEdit={canEdit}
+                        showPrices={showPrices}
+                        busy={busy}
+                        lastPosition={lastPosition}
+                        open={open === row.id}
+                        onToggleOpen={() => setOpen(open === row.id ? null : row.id)}
+                        onMove={(direction) => void act(() => onMove(row.id, direction))}
+                        onRestore={() => void act(() => onEdit(row.id, { active: true }))}
+                        onRemove={() => {
+                          if (!window.confirm(removeItemConfirmText(entry.kind, entry.title))) return
+                          void act(() => onRemove(row.id))
+                        }}
+                        onSave={async (patch) => {
+                          const message = await onEdit(row.id, patch)
+                          if (message === null) setOpen(null)
+                          return message
+                        }}
+                      />
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            {isCollapsed && (
+              // Plegada dice qué esconde: un bloque plegado que no cuenta lo que hay
+              // dentro es un bloque que se olvida.
+              <p className="pl-3 text-xs text-stone-500">
+                {groupCountText(group)} plegadas.
+              </p>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
+/** Una fila de la lista: lo que es, y los cuatro botones que actúan sobre ella. */
+function ItemRow({
+  entry,
+  row,
+  thumbnails,
+  canEdit,
+  showPrices,
+  busy,
+  lastPosition,
+  open,
+  onToggleOpen,
+  onMove,
+  onRestore,
+  onRemove,
+  onSave,
+}: {
+  entry: DossierItemEntry
+  row: DossierItemRow
+  thumbnails: Record<string, string>
+  canEdit: boolean
+  showPrices: boolean
+  busy: boolean
+  lastPosition: number
+  open: boolean
+  onToggleOpen: () => void
+  onMove: (direction: 'up' | 'down') => void
+  onRestore: () => void
+  onRemove: () => void
+  onSave: (patch: ItemPatch) => Promise<string | null>
+}) {
+  const thumbnail = entry.catalogId === null ? undefined : thumbnails[entry.catalogId]
+  return (
+    <>
+      <div className="flex items-start gap-2">
+        {/* El número es la posición en el PDF, que es la única cifra que importa
+            aquí. Un elemento retirado no tiene sitio, y en vez de un número lleva un
+            guion. */}
+        <span className="mt-0.5 w-6 shrink-0 text-right text-sm tabular-nums text-stone-500">
+          {entry.position ?? '—'}
+        </span>
+        {/* La miniatura para una obra, y un icono para lo que no es una obra. Los dos
+            ocupan EL MISMO cuadrado, y eso es lo que hace la lista recorrible: si los
+            textos no tuvieran su hueco, cada uno desplazaría el resto de la columna y
+            el orden dejaría de leerse de un vistazo. */}
+        <span className="mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded border border-stone-200 bg-stone-100">
+          {entry.kind === 'ARTWORK' && thumbnail !== undefined ? (
+            <img src={thumbnail} alt="" className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-stone-400">
+              {entry.kind === 'ARTWORK' ? (
+                <ImageIcon className="h-5 w-5" />
+              ) : entry.kind === 'BIOGRAPHY' ? (
+                <BiographyItemIcon className="h-5 w-5" />
+              ) : (
+                <TextItemIcon className="h-5 w-5" />
+              )}
+            </span>
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="break-words font-medium">{entry.title}</p>
+          <p className="mt-0.5 break-words text-xs text-stone-600">{entry.subtitle}</p>
+          {entry.body !== '' && (
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-stone-800">
+              {entry.body}
+            </p>
+          )}
+          {entry.price !== null && showPrices && <p className="mt-1 text-sm">{entry.price}</p>}
+          {entry.price !== null && !showPrices && (
+            // Guardado y no impreso: decirlo evita que alguien escriba doce precios y
+            // los mande sin querer, o al contrario.
+            <p className="mt-1 text-xs text-stone-500">
+              {entry.price} · guardado, pero este dossier no imprime precios
+            </p>
+          )}
+          {entry.note !== '' && (
+            <p className="mt-1 break-words text-xs italic text-stone-500">
+              {entry.note} · nota del equipo, no sale en el PDF
+            </p>
+          )}
+          {entry.retirementNotice !== null && (
+            <p className="mt-1 text-xs text-amber-900">{entry.retirementNotice}</p>
+          )}
+          {entry.catalogId !== null && (
+            <Link
+              to={`/artwork/${entry.catalogId}`}
+              className="mt-1 inline-block text-xs text-stone-600 underline"
+            >
+              {entry.catalogId}
+            </Link>
+          )}
+        </div>
+
+        {canEdit && entry.position !== null && (
+          <div className="flex shrink-0 flex-col gap-1">
+            {/* Iconos propios de arriba y abajo, sin rotar nada: esta lista salió con
+                las flechas intercambiadas porque un chevrón `<` girado un cuarto de
+                vuelta apunta hacia abajo. El botón hacía lo correcto y dibujaba lo
+                contrario. */}
+            <button
+              type="button"
+              aria-label="Subir un puesto"
+              className="rounded border border-stone-300 p-1 disabled:opacity-30"
+              disabled={busy || entry.position === 1}
+              onClick={() => onMove('up')}
+            >
+              <ChevronUpIcon className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Bajar un puesto"
+              className="rounded border border-stone-300 p-1 disabled:opacity-30"
+              disabled={busy || entry.position === lastPosition}
+              onClick={() => onMove('down')}
+            >
+              <ChevronDownIcon className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {canEdit && (
+        <div className="mt-2 flex flex-wrap gap-2 border-t border-stone-200 pt-2">
+          <button type="button" className="text-sm text-stone-700 underline" onClick={onToggleOpen}>
+            {open ? 'Cerrar' : 'Corregir'}
+          </button>
+          {entry.retired ? (
+            <button
+              type="button"
+              className="text-sm text-stone-700 underline"
+              disabled={busy}
+              onClick={onRestore}
+            >
+              Volver a poner
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="ml-auto flex items-center gap-1 text-sm text-red-800"
+              disabled={busy}
+              onClick={onRemove}
+            >
+              <TrashIcon className="h-4 w-4" />
+              Quitar
+            </button>
+          )}
+        </div>
+      )}
+
+      {canEdit && open && <ItemEditor row={row} showPrices={showPrices} onSave={onSave} />}
+    </>
+  )
+}
+
 /**
- * Correcting one item: its price, its note, and — on a text — its words.
+ * Corregir un elemento: su precio, su nota, y —en un texto o una sección— sus
+ * palabras.
  *
- * The price is only offered when the dossier prints prices, and that is not
- * hiding a field: a price typed into a dossier that does not print them is work
- * that goes nowhere, and the switch that turns them on is two taps away in the same
- * screen. What is already saved keeps showing above, said as such.
+ * El precio solo se ofrece cuando el dossier imprime precios, y eso no es esconder
+ * un campo: un precio escrito en un dossier que no los imprime es trabajo que no va
+ * a ninguna parte, y el interruptor que los enciende está a dos toques en la misma
+ * pantalla. Lo que ya esté guardado se sigue viendo arriba, dicho como tal.
  */
 function ItemEditor({
   row,
@@ -249,6 +420,7 @@ function ItemEditor({
   const [heading, setHeading] = useState(row.heading)
   const [body, setBody] = useState(row.body)
   const [withCv, setWithCv] = useState(row.with_cv ?? true)
+  const [divider, setDivider] = useState(row.divider_page ?? false)
   const [problem, setProblem] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -268,6 +440,15 @@ function ItemEditor({
       patch.body = body.trim()
       if (patch.heading === '' && patch.body === '') {
         setProblem('Escribe al menos un rótulo o un párrafo.')
+        return
+      }
+    }
+    if (row.kind === 'SECTION') {
+      patch.heading = heading.trim()
+      patch.body = body.trim()
+      patch.divider_page = divider
+      if (patch.heading === '') {
+        setProblem('Una sección necesita un rótulo: es el título del bloque.')
         return
       }
     }
@@ -303,7 +484,7 @@ function ItemEditor({
         </div>
       )}
 
-      {(row.kind === 'TEXT' || row.kind === 'BIOGRAPHY') && (
+      {row.kind !== 'ARTWORK' && (
         <div>
           <label className="block text-sm font-medium" htmlFor={`heading-${row.id}`}>
             Rótulo
@@ -316,17 +497,15 @@ function ItemEditor({
             autoComplete="off"
           />
           {row.kind === 'BIOGRAPHY' && (
-            <p className="mt-1 text-xs text-stone-500">
-              Vacío: sale el nombre del artista.
-            </p>
+            <p className="mt-1 text-xs text-stone-500">Vacío: sale el nombre del artista.</p>
           )}
         </div>
       )}
 
-      {row.kind === 'TEXT' && (
+      {(row.kind === 'TEXT' || row.kind === 'SECTION') && (
         <div>
           <label className="block text-sm font-medium" htmlFor={`body-${row.id}`}>
-            Párrafo
+            {row.kind === 'SECTION' ? 'Entradilla' : 'Párrafo'}
           </label>
           <textarea
             id={`body-${row.id}`}
@@ -335,6 +514,23 @@ function ItemEditor({
             onChange={(event) => setBody(event.target.value)}
           />
         </div>
+      )}
+
+      {row.kind === 'SECTION' && (
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={divider}
+            onChange={(event) => setDivider(event.target.checked)}
+          />
+          <span>
+            Con página propia para el rótulo
+            <span className="block text-xs text-stone-500">
+              Gasta una hoja anunciando la sección. Sin esto, el rótulo encabeza su primera obra.
+            </span>
+          </span>
+        </label>
       )}
 
       {row.kind === 'BIOGRAPHY' && (

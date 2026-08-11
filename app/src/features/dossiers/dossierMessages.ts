@@ -30,6 +30,7 @@
  * so a sentence written inside JSX is a sentence nothing verifies.
  */
 
+import type { DossierItemKind } from '../../lib/types'
 import { isNetworkFailure } from '../tables/vocabularies'
 import type { DatabaseFailure } from '../exhibitions/exhibitionMessages'
 
@@ -45,6 +46,7 @@ export type DossierOperation =
   | 'addArtwork'
   | 'addText'
   | 'addBiography'
+  | 'addSection'
   | 'reorder'
   | 'editItem'
   | 'removeItem'
@@ -60,6 +62,7 @@ const OPERATION_TEXT: Record<DossierOperation, string> = {
   addArtwork: 'No se ha podido añadir la obra',
   addText: 'No se ha podido añadir el texto',
   addBiography: 'No se ha podido añadir la biografía',
+  addSection: 'No se ha podido añadir la sección',
   reorder: 'No se ha podido cambiar el orden',
   editItem: 'No se ha podido guardar el cambio',
   removeItem: 'No se ha podido quitar del dossier',
@@ -206,7 +209,7 @@ export function dossierWriteResult(
  * are not the same row — and that difference has to be on screen BEFORE the tap,
  * not discovered after it.
  */
-export function removeItemConfirmText(kind: 'ARTWORK' | 'TEXT' | 'BIOGRAPHY', name: string): string {
+export function removeItemConfirmText(kind: DossierItemKind, name: string): string {
   const named = name.trim() === '' ? '' : ` «${name.trim()}»`
   switch (kind) {
     case 'ARTWORK':
@@ -223,6 +226,11 @@ export function removeItemConfirmText(kind: 'ARTWORK' | 'TEXT' | 'BIOGRAPHY', na
       return (
         'Se quitará la biografía de este dossier. El texto sigue en la ficha del fondo, así que se ' +
         'puede volver a añadir cuando quieras.'
+      )
+    case 'SECTION':
+      return (
+        `Se quitará la sección${named}. Sus obras no se van: pasan a la sección de antes, o al ` +
+        'principio del dossier si no había ninguna.'
       )
   }
 }

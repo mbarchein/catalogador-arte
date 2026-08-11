@@ -39,6 +39,7 @@ function item(over: Partial<DossierItemRow> = {}): DossierItemRow {
     body: '',
     artist_fund: null,
     with_cv: null,
+    divider_page: null,
     active: true,
   }
   return {
@@ -48,6 +49,7 @@ function item(over: Partial<DossierItemRow> = {}): DossierItemRow {
       title: 'Figura sentada',
       artist: 'ROTILI',
       execution_date: '1965',
+      series: 'Figuras',
       technique: 'óleo sobre lienzo',
       height_cm: 92,
       width_cm: 73,
@@ -74,6 +76,7 @@ describe('las columnas que se piden (RF-1602)', () => {
       'body',
       'artist_fund',
       'with_cv',
+      'divider_page',
       'active',
     ]) {
       expect(DOSSIER_ITEM_COLUMNS).toContain(column)
@@ -188,13 +191,15 @@ describe('lo que dice cada elemento', () => {
     expect(entry.subtitle).toContain('no se puede leer')
   })
 
-  it('un texto con rótulo es un rótulo de sección; sin rótulo, un párrafo', () => {
+  it('un texto con rótulo NO es una sección: eso es otro tipo desde que existe', () => {
     const conRotulo = itemEntry(
       item({ kind: 'TEXT', catalog_id: null, artwork: null, heading: 'Óleos', body: 'Tres.' }),
       { position: 1 },
     )
     expect(conRotulo.title).toBe('Óleos')
-    expect(conRotulo.subtitle).toBe('Rótulo de sección')
+    // Llamarlo «rótulo de sección» prometería que agrupa lo que viene detrás, y no
+    // agrupa: eso lo hace una sección de verdad.
+    expect(conRotulo.subtitle).toBe('Texto con rótulo')
     expect(conRotulo.body).toBe('Tres.')
 
     const suelto = itemEntry(
@@ -247,6 +252,14 @@ describe('lo que dice cada elemento', () => {
         artwork: null,
         artist_fund: 'RUIZ_CAMPINS',
         with_cv: true,
+      }),
+      item({
+        id: 'd',
+        kind: 'SECTION',
+        catalog_id: null,
+        artwork: null,
+        heading: 'Óleos',
+        divider_page: false,
       }),
     ]
     for (const entry of itemEntries(rows)) {

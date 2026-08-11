@@ -24,6 +24,12 @@ import { supabase } from '../../lib/supabase'
 import type { ArtistFund } from '../../lib/types'
 import { DOSSIER_COLUMNS, type DossierRow } from './dossierIndex'
 import { DOSSIER_ITEM_COLUMNS, activeOrder, movedOrder, type DossierItemRow } from './dossierItems'
+import {
+  currentOrder,
+  groupedOrder,
+  movedSectionOrder,
+  seriesGroupPlan,
+} from './dossierSections'
 import { dossierFailureText, dossierWriteResult } from './dossierMessages'
 
 /** What can be corrected on the header of a dossier. All optional: the panel sends what changed. */
@@ -37,6 +43,7 @@ export interface DossierPatch {
   show_exhibitions?: boolean
   show_bibliography?: boolean
   show_prices?: boolean
+  show_index?: boolean
   active?: boolean
 }
 
@@ -48,6 +55,7 @@ export interface ItemPatch {
   heading?: string
   body?: string
   with_cv?: boolean
+  divider_page?: boolean
   active?: boolean
 }
 
@@ -61,10 +69,18 @@ export interface DossierQuery {
   addArtwork: (catalogId: string) => Promise<string | null>
   addText: (heading: string, body: string) => Promise<string | null>
   addBiography: (fund: ArtistFund, withCv: boolean) => Promise<string | null>
+  addSection: (heading: string, body: string, dividerPage: boolean) => Promise<string | null>
   editItem: (id: string, patch: ItemPatch) => Promise<string | null>
   removeItem: (id: string) => Promise<string | null>
   /** One place up or down. Resolves to null when there was nothing to move — no write is spent. */
   moveItem: (id: string, direction: 'up' | 'down') => Promise<string | null>
+  /** Una sección ENTERA, con sus obras dentro, un puesto arriba o abajo (RF-1620). */
+  moveSection: (sectionId: string, direction: 'up' | 'down') => Promise<string | null>
+  /**
+   * Agrupa las obras por su serie, de una vez (RF-1623). Resuelve a los rótulos que
+   * han salido, o al mensaje de por qué no se ha podido.
+   */
+  groupBySeries: () => Promise<{ sections: string[] } | { message: string }>
 }
 
 export function useDossier(id: string | undefined): DossierQuery {
@@ -187,6 +203,22 @@ export function useDossier(id: string | undefined): DossierQuery {
     [id, reload],
   )
 
+  const addSection = useCallback(
+    async (heading: string, body: string, dividerPage: boolean): Promise<string | null> => {
+      if (id === undefined) return null
+      const { error: failure } = await supabase.rpc('add_section_to_dossier', {
+        p_dossier_id: id,
+        p_heading: heading,
+        p_body: body,
+        p_divider_page: dividerPage,
+      })
+      const message = dossierWriteResult('addSection', { failure })
+      await reload()
+      return message
+    },
+    [id, reload],
+  )
+
   const editItem = useCallback(
     async (itemId: string, patch: ItemPatch): Promise<string | null> => {
       const { data, error: failure } = await supabase
@@ -236,6 +268,99 @@ export function useDossier(id: string | undefined): DossierQuery {
     [id, reload],
   )
 
+  const moveSection = useCallback(
+    async (sectionId: string, direction: 'up' | 'down'): Promise<string | null> => {
+      if (id === undefined) return null
+      const order = movedSectionOrder(loaded.current, sectionId, direction)
+      // Nada que mover: la primera sección hacia arriba, o la última hacia abajo. Sin
+      // escritura y sin mensaje — los botones ya están apagados en los extremos.
+      if (order === null) return null
+      const { error: failure } = await supabase.rpc('reorder_dossier_items', {
+        p_dossier_id: id,
+        p_line_ids: order,
+      })
+      const message = dossierWriteResult('reorder', { failure })
+      await reload()
+      return message
+    },
+    [id, reload],
+  )
+
+  /**
+   * Agrupar por serie: crear los rótulos que falten y colocar todo debajo (RF-1623).
+   *
+   * **Dos escrituras y en este orden**, y el orden es la garantía: primero se crean
+   * las secciones —que caen al final del dossier— y solo después se reordena, que es
+   * todo-o-nada. Si algo falla creando un rótulo, lo que queda es un dossier con
+   * rótulos al final, **visible y arreglable a mano**; nunca uno reordenado a medias.
+   * Se dice, además, en vez de dejarlo callado.
+   */
+  const groupBySeries = useCallback(async (): Promise<
+    { sections: string[] } | { message: string }
+  > => {
+    if (id === undefined) return { sections: [] }
+    const plan = seriesGroupPlan(loaded.current)
+    if (plan.blocked !== null) return { message: plan.blocked }
+
+    const created: Record<string, string> = {}
+    for (const heading of plan.create) {
+      const { data, error: failure } = await supabase
+        .rpc('add_section_to_dossier', {
+          p_dossier_id: id,
+          p_heading: heading,
+          p_body: '',
+          p_divider_page: false,
+        })
+        .select('id, heading')
+      const rows = (data ?? []) as { id: string; heading: string }[]
+      const row = rows[0]
+      if (failure || row === undefined) {
+        await reload()
+        return {
+          message: `${dossierFailureText(failure ?? { message: 'sin respuesta' }, 'addSection')} Los rótulos que se hayan creado están al final del dossier.`,
+        }
+      }
+      created[heading] = row.id
+    }
+
+    // Las que ya existían, por su rótulo: agrupar dos veces no duplica nada.
+    for (const row of loaded.current) {
+      if (row.kind === 'SECTION' && row.active) created[row.heading.trim()] ??= row.id
+    }
+
+    // Se releen las filas antes de calcular el orden: las secciones recién creadas no
+    // están en `loaded.current`, y `reorder_dossier_items` exige la lista COMPLETA de
+    // los activos — mandar una a la que le faltan cuatro rótulos se rechaza entera.
+    const { data: fresh } = await supabase
+      .from('dossier_items')
+      .select(DOSSIER_ITEM_COLUMNS)
+      .eq('dossier_id', id)
+    const rows = (fresh ?? []) as unknown as DossierItemRow[]
+    const order = groupedOrder(rows, created)
+    // Cinturón: si el orden calculado no cubre exactamente los activos, no se manda.
+    // La base lo rechazaría de todas formas, y así el mensaje es una frase.
+    if (order.length !== currentOrder(rows).length) {
+      await reload()
+      return {
+        message:
+          'Los rótulos se han creado pero no se han podido colocar. Están al final del dossier: ' +
+          'muévelos a mano o vuelve a agrupar.',
+      }
+    }
+
+    const { error: failure } = await supabase.rpc('reorder_dossier_items', {
+      p_dossier_id: id,
+      p_line_ids: order,
+    })
+    await reload()
+    if (failure) {
+      return {
+        message: `${dossierFailureText(failure, 'reorder')} Los rótulos están al final del dossier.`,
+      }
+    }
+    return { sections: plan.create }
+  }, [id, reload])
+
   return {
     dossier,
     items,
@@ -246,8 +371,11 @@ export function useDossier(id: string | undefined): DossierQuery {
     addArtwork,
     addText,
     addBiography,
+    addSection,
     editItem,
     removeItem,
     moveItem,
+    moveSection,
+    groupBySeries,
   }
 }

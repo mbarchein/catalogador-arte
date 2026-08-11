@@ -200,6 +200,12 @@ export function DossierSettings({
           onChange={(value) => void toggle({ show_bibliography: value })}
           label="La bibliografía"
         />
+        <Toggle
+          active={dossier.show_index}
+          onChange={(value) => void toggle({ show_index: value })}
+          label="Un índice de secciones"
+          help="Detrás de la portada, con la página en la que empieza cada una."
+        />
       </div>
     </div>
   )

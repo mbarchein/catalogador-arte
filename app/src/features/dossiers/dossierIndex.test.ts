@@ -25,6 +25,7 @@ function dossier(over: Partial<DossierRow> = {}): DossierRow {
     show_exhibitions: true,
     show_bibliography: false,
     show_prices: false,
+    show_index: false,
     active: true,
     recipient: null,
     ...over,
@@ -43,6 +44,7 @@ describe('las columnas que se piden', () => {
       'show_exhibitions',
       'show_bibliography',
       'show_prices',
+      'show_index',
       'active',
     ]) {
       expect(DOSSIER_COLUMNS).toContain(column)

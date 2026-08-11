@@ -2,7 +2,7 @@ import { inflateSync } from 'node:zlib'
 import { PDFDocument, PDFRawStream } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 import { generateDossierPdf, type DossierPhoto } from './dossierPdf'
-import type { DossierPage } from './dossierPdfPlan'
+import type { DossierPage, PlannedPage } from './dossierPdfPlan'
 
 /**
  * RF-1607, RF-1609: que el PDF sale, y que dice lo que el plan decidió.
@@ -58,6 +58,9 @@ async function says(blob: Blob, text: string): Promise<boolean> {
   return content.toLowerCase().includes(asHex(text).toLowerCase())
 }
 
+/** La página sin sección, que es lo que miran los tests que solo comprueban tinta. */
+const at = (page: DossierPage, section: string | null = null): PlannedPage => ({ page, section })
+
 async function pageCount(blob: Blob): Promise<number> {
   const doc = await PDFDocument.load(new Uint8Array(await blob.arrayBuffer()))
   return doc.getPageCount()
@@ -97,7 +100,7 @@ const PHOTO: DossierPhoto = { jpeg: SMALL_JPEG, width: 12, height: 8 }
 
 describe('el documento sale', () => {
   it('una página por cada página del plan', async () => {
-    const blob = await generateDossierPdf([COVER, ARTWORK, ARTWORK], {
+    const blob = await generateDossierPdf([at(COVER), at(ARTWORK), at(ARTWORK)], {
       title: 'Seleccion',
       loadPhoto: async () => PHOTO,
     })
@@ -107,7 +110,7 @@ describe('el documento sale', () => {
   })
 
   it('la portada imprime el título, el destinatario y la fecha', async () => {
-    const blob = await generateDossierPdf([COVER], { title: 'Seleccion', loadPhoto: async () => null })
+    const blob = await generateDossierPdf([at(COVER)], { title: 'Seleccion', loadPhoto: async () => null })
     expect(await says(blob, 'Seleccion para galeria')).toBe(true)
     expect(await says(blob, 'Galeria Serrano')).toBe(true)
     expect(await says(blob, '11 de agosto de 2026')).toBe(true)
@@ -115,7 +118,7 @@ describe('el documento sale', () => {
   })
 
   it('el pie de una obra imprime el código, el título, los datos y el precio', async () => {
-    const blob = await generateDossierPdf([COVER, ARTWORK], {
+    const blob = await generateDossierPdf([at(COVER), at(ARTWORK)], {
       title: 'Seleccion',
       loadPhoto: async () => PHOTO,
     })
@@ -130,7 +133,7 @@ describe('el documento sale', () => {
       ...ARTWORK,
       caption: { ...ARTWORK.caption, price: null },
     }
-    const blob = await generateDossierPdf([COVER, sinPrecio], {
+    const blob = await generateDossierPdf([at(COVER), at(sinPrecio)], {
       title: 'Seleccion',
       loadPhoto: async () => PHOTO,
     })
@@ -138,7 +141,7 @@ describe('el documento sale', () => {
   })
 
   it('cada hoja lleva su pie con el recuento', async () => {
-    const blob = await generateDossierPdf([COVER, ARTWORK, ARTWORK], {
+    const blob = await generateDossierPdf([at(COVER), at(ARTWORK), at(ARTWORK)], {
       title: 'Seleccion',
       loadPhoto: async () => PHOTO,
     })
@@ -154,7 +157,7 @@ describe('los textos del dossier llegan al papel (RF-1614)', () => {
       ...ARTWORK,
       texts: [{ heading: 'Oleos, 1962-1968', body: 'Las tres primeras estan sin enmarcar.' }],
     }
-    const blob = await generateDossierPdf([COVER, conTextos], {
+    const blob = await generateDossierPdf([at(COVER), at(conTextos)], {
       title: 'Seleccion',
       loadPhoto: async () => PHOTO,
     })
@@ -170,7 +173,7 @@ describe('los textos del dossier llegan al papel (RF-1614)', () => {
       paragraphs: ['Nacio en Badajoz.'],
       cv: ['1985 - Badajoz'],
     }
-    const blob = await generateDossierPdf([COVER, bio], {
+    const blob = await generateDossierPdf([at(COVER), at(bio)], {
       title: 'Seleccion',
       loadPhoto: async () => null,
     })
@@ -180,12 +183,61 @@ describe('los textos del dossier llegan al papel (RF-1614)', () => {
   })
 })
 
+describe('las secciones y el índice llegan al papel (RF-1619 a RF-1622)', () => {
+  it('la portadilla imprime el rótulo y su entradilla', async () => {
+    const divider: DossierPage = { kind: 'DIVIDER', heading: 'Oleos, 1962-1968', body: 'Los cuatro primeros.' }
+    const blob = await generateDossierPdf([at(COVER), at(divider), at(ARTWORK, 'Oleos, 1962-1968')], {
+      title: 'Seleccion',
+      loadPhoto: async () => PHOTO,
+    })
+    expect(await pageCount(blob)).toBe(3)
+    expect(await says(blob, 'Oleos, 1962-1968')).toBe(true)
+    expect(await says(blob, 'Los cuatro primeros.')).toBe(true)
+  })
+
+  it('el pie lleva la sección delante del título del dossier', async () => {
+    // Es lo que hace que una hoja suelta encima de una mesa siga significando algo.
+    const blob = await generateDossierPdf([at(COVER), at(ARTWORK, 'Oleos')], {
+      title: 'Seleccion',
+      loadPhoto: async () => PHOTO,
+    })
+    expect(await says(blob, 'Oleos · Seleccion')).toBe(true)
+  })
+
+  it('la portada no lleva sección en el pie', async () => {
+    const blob = await generateDossierPdf([at(COVER)], {
+      title: 'Seleccion',
+      loadPhoto: async () => null,
+    })
+    expect(await says(blob, '· Seleccion')).toBe(false)
+    expect(await says(blob, 'Seleccion')).toBe(true)
+  })
+
+  it('el índice imprime cada sección con sus obras y su página', async () => {
+    const index: DossierPage = {
+      kind: 'INDEX',
+      entries: [
+        { heading: 'Oleos', artworkCount: 2, page: 3 },
+        { heading: 'Papel', artworkCount: 1, page: 5 },
+      ],
+    }
+    const blob = await generateDossierPdf([at(COVER), at(index), at(ARTWORK)], {
+      title: 'Seleccion',
+      loadPhoto: async () => PHOTO,
+    })
+    expect(await says(blob, 'ÍNDICE')).toBe(true)
+    expect(await says(blob, 'Oleos')).toBe(true)
+    expect(await says(blob, '2 obras')).toBe(true)
+    expect(await says(blob, '1 obra')).toBe(true)
+  })
+})
+
 describe('una fotografía que falla no para el documento', () => {
   it('sin fotografía, el hueco se DICE y la página sale', async () => {
     // Es la disciplina de la ficha imprimible: ni la cobertura de un almacén ni un
     // navegador sin canvas son motivo para dejar a nadie sin documento. Y quien lo
     // recibe tiene que poder distinguir «no hay foto» de «se ha roto esto».
-    const blob = await generateDossierPdf([COVER, ARTWORK], {
+    const blob = await generateDossierPdf([at(COVER), at(ARTWORK)], {
       title: 'Seleccion',
       loadPhoto: async () => null,
     })
@@ -196,7 +248,7 @@ describe('una fotografía que falla no para el documento', () => {
   })
 
   it('un cargador que revienta tampoco para el documento', async () => {
-    const blob = await generateDossierPdf([COVER, ARTWORK], {
+    const blob = await generateDossierPdf([at(COVER), at(ARTWORK)], {
       title: 'Seleccion',
       loadPhoto: async () => {
         throw new Error('sin cobertura')
@@ -207,7 +259,7 @@ describe('una fotografía que falla no para el documento', () => {
   })
 
   it('unos bytes que no son un JPEG se dicen de otra manera', async () => {
-    const blob = await generateDossierPdf([COVER, ARTWORK], {
+    const blob = await generateDossierPdf([at(COVER), at(ARTWORK)], {
       title: 'Seleccion',
       loadPhoto: async () => ({ jpeg: Uint8Array.from([1, 2, 3]), width: 10, height: 10 }),
     })
@@ -224,7 +276,7 @@ describe('lo que el papel no admite', () => {
       ...ARTWORK,
       caption: { ...ARTWORK.caption, title: 'Figura 中文 sentada' },
     }
-    const blob = await generateDossierPdf([COVER, raro], {
+    const blob = await generateDossierPdf([at(COVER), at(raro)], {
       title: 'Seleccion',
       loadPhoto: async () => PHOTO,
     })
