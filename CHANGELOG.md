@@ -1738,7 +1738,7 @@
 
 ## En marcha
 
-**El dossier, con su pantalla y sin su PDF**
+**El dossier, entero salvo probarlo con una obra de verdad**
 
 - Está decidido cómo va a funcionar armar un dossier: se eligen las obras, se ponen en el orden que se
   quiera, cada una puede llevar su nota y su precio, y se genera un PDF para mandar.
@@ -1765,8 +1765,16 @@
   ordena, que es lo que hace falta para distinguir dos versiones de lo mismo.
 - Quitar una obra no borra nada: vuelve con su nota y su precio si se añade otra vez. Un texto sí
   habría que escribirlo de nuevo, y la pantalla lo advierte antes de quitarlo.
-- **Lo que falta es el PDF.** Se decide todo lo que va a imprimir y todavía no se genera; la
-  pantalla lo dice en vez de tener un botón que no hace nada.
+- **Ya se emite el PDF**, desde la propia pantalla: una obra por página, con la fotografía grande y
+  debajo el código, el título, la fecha, la técnica, las medidas y el precio si el dossier los
+  enseña. La portada lleva el título, a quién va y la fecha; un rótulo abre la sección encabezando
+  la primera obra de esa sección; y la biografía tiene su página.
+- Cada PDF emitido queda guardado con su fecha y se puede volver a descargar. Emitir otra vez no
+  cambia el anterior: hace la versión siguiente, y el botón dice qué número va a llevar.
+- Si una fotografía no se puede leer —sin cobertura, por ejemplo—, esa página sale diciendo que no
+  hay fotografía en vez de dejar el documento sin generar.
+- **Lo que falta es usarlo con una obra delante**: generar un dossier de verdad, abrir el PDF y
+  mirar cómo queda impreso.
 
 **La copia a tamaño completo, sin comprobar de extremo a extremo**
 

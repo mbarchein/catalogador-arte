@@ -3,6 +3,7 @@ import { useParams } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { AddToDossier } from './AddToDossier'
+import { DossierIssues } from './DossierIssues'
 import { DossierItems } from './DossierItems'
 import { DossierSettings } from './DossierSettings'
 import { itemCountText } from './dossierItems'
@@ -23,10 +24,10 @@ import { useDossier } from './useDossier'
  * the database refuses them anyway with its own sentence — a button that is not
  * painted is not a protection, so the check is in both places.
  *
- * What is NOT here yet is the PDF: this screen decides what goes in it and in what
- * order, and the generator is its own piece of work. Until it exists the screen
- * says so instead of showing a button that does nothing, because a button that
- * does nothing is how somebody concludes the dossier is broken.
+ * **Emitir va debajo de la lista**, y no es maquetación: un botón de emitir por
+ * encima de las obras se pulsa antes de haberlas ordenado. Lo que se emite es un
+ * documento nuevo cada vez —las versiones anteriores no se tocan (RF-1607)—, y el
+ * rótulo del botón lo dice diciendo qué número va a llevar.
  */
 export function DossierPage() {
   const { id } = useParams<{ id: string }>()
@@ -166,13 +167,9 @@ export function DossierPage() {
         onRemove={removeItem}
       />
 
-      {/* El PDF todavía no se genera, y se dice aquí en vez de pintar un botón que
-          no hace nada: un botón muerto es como alguien concluye que el dossier está
-          roto. Cuando exista, va en este sitio. */}
-      <p className="card mt-3 text-sm text-stone-600">
-        El PDF todavía no se genera desde la aplicación. Lo que se decide aquí —las obras, su orden,
-        los textos y los precios— es exactamente lo que va a imprimir cuando esté.
-      </p>
+      {/* Debajo de la lista y no arriba: emitir es lo último que se hace, y un botón
+          de emitir por encima de las obras se pulsa antes de haberlas ordenado. */}
+      <DossierIssues dossier={dossier} items={items} canEdit={canEdit} />
 
       {canEdit && dossier.active && (
         <div className="mt-3">
