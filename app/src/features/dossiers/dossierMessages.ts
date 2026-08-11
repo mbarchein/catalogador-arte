@@ -48,6 +48,7 @@ export type DossierOperation =
   | 'addBiography'
   | 'addSection'
   | 'reorder'
+  | 'setSection'
   | 'editItem'
   | 'removeItem'
   | 'retire'
@@ -64,6 +65,7 @@ const OPERATION_TEXT: Record<DossierOperation, string> = {
   addBiography: 'No se ha podido añadir la biografía',
   addSection: 'No se ha podido añadir la sección',
   reorder: 'No se ha podido cambiar el orden',
+  setSection: 'No se ha podido cambiar de sección',
   editItem: 'No se ha podido guardar el cambio',
   removeItem: 'No se ha podido quitar del dossier',
   retire: 'No se ha podido retirar el dossier',
@@ -105,6 +107,14 @@ const CHECK_TEXT: readonly (readonly [string, string])[] = [
     'La biografía se escribe en la ficha del fondo, no en el dossier: aquí solo se elige de qué ' +
       'artista es y si lleva el currículum.',
   ],
+  [
+    'dossier_items_section_not_nested',
+    'Una sección no va dentro de otra: no hay subsecciones.',
+  ],
+  [
+    'dossier_items_section_not_self',
+    'Una sección no puede estar dentro de sí misma. Vuelve a cargar la pantalla.',
+  ],
 ]
 
 /**
@@ -145,6 +155,9 @@ export function dossierFailureText(
     }
     if (failure.message.includes('artist_fund')) {
       return 'Ese fondo ya no está en el catálogo. Vuelve a cargar la pantalla.'
+    }
+    if (failure.message.includes('dossier_items_section_fk')) {
+      return 'Esa sección ya no está en el dossier. Vuelve a cargar la pantalla.'
     }
     return `${OPERATION_TEXT[operation]}: algo con lo que estaba enlazado ya no está en el catálogo. Vuelve a cargar la pantalla.`
   }
@@ -233,23 +246,6 @@ export function removeItemConfirmText(kind: DossierItemKind, name: string): stri
         'principio del dossier si no había ninguna.'
       )
   }
-}
-
-/**
- * La confirmación de subir una sección por encima de lo que iba suelto al
- * principio, o null cuando el movimiento no cambia la pertenencia de ninguna obra
- * (RF-1620).
- *
- * Se pregunta porque el movimiento cuesta un toque y deshacerlo cuesta uno por obra:
- * lo que queda detrás del rótulo queda dentro de la sección, y con doce obras eso no
- * se arregla con la flecha de vuelta. Intercambiar dos secciones no pregunta nada.
- */
-export function moveSectionConfirmText(heading: string, absorbed: number): string | null {
-  if (absorbed <= 0) return null
-  const named = heading.trim() === '' ? 'esta sección' : `«${heading.trim()}»`
-  return absorbed === 1
-    ? `1 obra va antes de ${named} y quedará dentro de la sección. ¿Subirla?`
-    : `${absorbed} obras van antes de ${named} y quedarán dentro de la sección. ¿Subirla?`
 }
 
 /**

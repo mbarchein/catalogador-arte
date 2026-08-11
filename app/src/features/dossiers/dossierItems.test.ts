@@ -2,13 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { DossierItem } from '../../lib/types'
 import {
   DOSSIER_ITEM_COLUMNS,
-  activeOrder,
   itemCountText,
   itemEntries,
   itemEntry,
   itemsNotice,
   measurementsText,
-  movedOrder,
   priceText,
   sortItems,
   type DossierItemRow,
@@ -40,6 +38,7 @@ function item(over: Partial<DossierItemRow> = {}): DossierItemRow {
     artist_fund: null,
     with_cv: null,
     divider_page: null,
+    section_item_id: null,
     active: true,
   }
   return {
@@ -119,41 +118,11 @@ describe('el orden es el del PDF (RF-1603)', () => {
     expect(entries.map((entry) => entry.position)).toEqual([1, null, 2])
   })
 
-  it('el orden que se manda a la base son los activos, en su orden', () => {
-    const rows = [
-      item({ id: 'a', sort_order: 1 }),
-      item({ id: 'b', sort_order: 2, active: false }),
-      item({ id: 'c', sort_order: 3 }),
-    ]
-    expect(activeOrder(rows)).toEqual(['a', 'c'])
-  })
 })
 
-describe('mover un elemento un puesto (RF-1603)', () => {
-  const order = ['a', 'b', 'c']
-
-  it('sube y baja intercambiando con el vecino', () => {
-    expect(movedOrder(order, 'b', 'up')).toEqual(['b', 'a', 'c'])
-    expect(movedOrder(order, 'b', 'down')).toEqual(['a', 'c', 'b'])
-  })
-
-  it('en los extremos no hay nada que mover, y se dice con null', () => {
-    // Null y no la lista igual: quien llama no gasta una escritura en un no-op, y
-    // el botón lee esto para desactivarse.
-    expect(movedOrder(order, 'a', 'up')).toBeNull()
-    expect(movedOrder(order, 'c', 'down')).toBeNull()
-  })
-
-  it('un elemento que no está en la lista no mueve nada', () => {
-    expect(movedOrder(order, 'z', 'up')).toBeNull()
-  })
-
-  it('no toca la lista que recibe', () => {
-    const original = ['a', 'b', 'c']
-    movedOrder(original, 'b', 'up')
-    expect(original).toEqual(['a', 'b', 'c'])
-  })
-})
+// El orden que se manda a la base y el movimiento de un elemento se comprueban en
+// `dossierSections.test.ts`: los dos dependen de la sección de cada fila, y una
+// permuta ciega de identificadores no dice nada sobre ninguno de los dos.
 
 describe('el precio es del dossier (RF-1604)', () => {
   it('se lee en euros y a la española: coma decimal y el símbolo detrás', () => {

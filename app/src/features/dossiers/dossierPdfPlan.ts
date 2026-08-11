@@ -29,6 +29,7 @@ import { displayDate } from '../../lib/dates'
 import { displayTitle } from '../../lib/title'
 import type { ArtistFund } from '../../lib/types'
 import { measurementsText, priceText, sortItems, type DossierItemRow } from './dossierItems'
+import { activeSections, sectionOf } from './dossierSections'
 
 /** The biography and CV of a fund, as the PDF reads them (RF-1617). */
 export interface FundTexts {
@@ -169,7 +170,12 @@ const INDEX_ENTRIES_PER_PAGE = 24
  * el interruptor está en la fila y no en el generador.
  *
  * En las dos, el rótulo pasa a ser la sección en curso, y eso viaja al pie de todas
- * las páginas que vengan detrás hasta la sección siguiente (RF-1620).
+ * las páginas de la sección (RF-1620).
+ *
+ * **La sección de una página sale de la fila y no de recorrer las anteriores**: cada
+ * elemento dice a qué sección pertenece (`section_item_id`), así que una obra suelta
+ * detrás de una sección imprime sin rótulo, que es exactamente lo que la pantalla
+ * enseña. Cuando la pertenencia se deducía de la posición eso no se podía escribir.
  */
 export function dossierPages(input: {
   dossier: {
@@ -203,6 +209,7 @@ export function dossierPages(input: {
   // cae la primera hoja de cada sección ANTES de insertar el índice. El corrimiento
   // se aplica al final, cuando ya se sabe cuánto mide.
   const index: IndexEntry[] = []
+  const indexBySection = new Map<string, IndexEntry>()
 
   const push = (page: DossierPage) => planned.push({ page, section })
   const flushTexts = () => {
@@ -211,27 +218,41 @@ export function dossierPages(input: {
     pending = []
   }
 
-  for (const row of sortItems(input.items)) {
+  const ordered = sortItems(input.items)
+  const sections = activeSections(ordered)
+
+  for (const row of ordered) {
     if (!row.active) continue
 
     if (row.kind === 'SECTION') {
       const heading = row.heading.trim()
+      const entry: IndexEntry = { heading, artworkCount: 0, page: 0 }
       if (row.divider_page === true) {
         // Los textos que esperaban van ANTES de la portadilla: se pusieron delante
-        // del rótulo, y quien los movió ahí quería leerlos primero.
+        // del rótulo, y quien los movió ahí quería leerlos primero. Y antes de que
+        // `section` cambie, que es lo que decide su pie.
         flushTexts()
         section = heading
-        index.push({ heading, artworkCount: 0, page: planned.length + 1 })
+        entry.page = planned.length + 1
+        index.push(entry)
+        indexBySection.set(row.id, entry)
         push({ kind: 'DIVIDER', heading, body: row.body.trim() })
       } else {
         section = heading
         // Sin portadilla, el rótulo encabeza la página de la primera obra: la
         // entrada del índice apunta a esa página, que es la siguiente que se cree.
-        index.push({ heading, artworkCount: 0, page: planned.length + 1 })
+        entry.page = planned.length + 1
+        index.push(entry)
+        indexBySection.set(row.id, entry)
         pending.push({ heading, body: row.body.trim() })
       }
       continue
     }
+
+    // La sección de esta página es la de ESTA fila: una obra suelta detrás de una
+    // sección imprime sin rótulo.
+    const belongs = sectionOf(row, sections)
+    section = belongs === null ? null : sections.get(belongs)?.heading.trim() ?? null
 
     if (row.kind === 'TEXT') {
       pending.push({ heading: row.heading.trim(), body: row.body.trim() })
@@ -266,8 +287,12 @@ export function dossierPages(input: {
       catalogId: row.catalog_id ?? '',
     })
     pending = []
-    const entry = index[index.length - 1]
-    if (entry !== undefined && section !== null) entry.artworkCount += 1
+    // Se cuenta en la entrada de SU sección y no en la última creada: con obras
+    // sueltas por medio, «la última» sumaría páginas que no son de ese bloque.
+    if (belongs !== null) {
+      const entry = indexBySection.get(belongs)
+      if (entry !== undefined) entry.artworkCount += 1
+    }
   }
 
   // Texts with no artwork behind them: a closing paragraph gets its own page.

@@ -23,10 +23,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { ArtistFund } from '../../lib/types'
 import { DOSSIER_COLUMNS, type DossierRow } from './dossierIndex'
-import { DOSSIER_ITEM_COLUMNS, activeOrder, movedOrder, type DossierItemRow } from './dossierItems'
+import { DOSSIER_ITEM_COLUMNS, type DossierItemRow } from './dossierItems'
 import {
   currentOrder,
   groupedOrder,
+  itemSectionPlan,
+  movedItemOrder,
   movedSectionOrder,
   seriesGroupPlan,
 } from './dossierSections'
@@ -76,6 +78,8 @@ export interface DossierQuery {
   moveItem: (id: string, direction: 'up' | 'down') => Promise<string | null>
   /** Una sección ENTERA, con sus obras dentro, un puesto arriba o abajo (RF-1620). */
   moveSection: (sectionId: string, direction: 'up' | 'down') => Promise<string | null>
+  /** Mete un elemento en una sección, o lo saca si la sección es null (RF-1619). */
+  setItemSection: (id: string, sectionId: string | null) => Promise<string | null>
   /**
    * Agrupa las obras por su serie, de una vez (RF-1623). Resuelve a los rótulos que
    * han salido, o al mensaje de por qué no se ha podido.
@@ -252,7 +256,7 @@ export function useDossier(id: string | undefined): DossierQuery {
   const moveItem = useCallback(
     async (itemId: string, direction: 'up' | 'down'): Promise<string | null> => {
       if (id === undefined) return null
-      const order = movedOrder(activeOrder(loaded.current), itemId, direction)
+      const order = movedItemOrder(loaded.current, itemId, direction)
       // Nothing to move: the first item going up, or an item that is not in the
       // live list. No write, and no message — the buttons are already disabled at
       // the ends, so this is the race, not a mistake to report.
@@ -280,6 +284,32 @@ export function useDossier(id: string | undefined): DossierQuery {
         p_line_ids: order,
       })
       const message = dossierWriteResult('reorder', { failure })
+      await reload()
+      return message
+    },
+    [id, reload],
+  )
+
+  /**
+   * Meter un elemento en una sección, o sacarlo (RF-1619).
+   *
+   * Va por `reorder_dossier_items` y no por un `update` de la columna, y es la misma
+   * razón por la que el plan lo calcula todo junto: la base exige que los elementos
+   * de una sección vayan seguidos detrás de su rótulo, así que cambiar la columna sin
+   * colocar la fila sería una escritura que la base tiene que rechazar.
+   */
+  const setItemSection = useCallback(
+    async (itemId: string, sectionId: string | null): Promise<string | null> => {
+      if (id === undefined) return null
+      const plan = itemSectionPlan(loaded.current, itemId, sectionId)
+      // Ya estaba donde se pide: sin escritura y sin mensaje.
+      if (plan === null) return null
+      const { error: failure } = await supabase.rpc('reorder_dossier_items', {
+        p_dossier_id: id,
+        p_line_ids: plan.order,
+        p_section_ids: plan.sections,
+      })
+      const message = dossierWriteResult('setSection', { failure })
       await reload()
       return message
     },
@@ -336,7 +366,7 @@ export function useDossier(id: string | undefined): DossierQuery {
       .select(DOSSIER_ITEM_COLUMNS)
       .eq('dossier_id', id)
     const rows = (fresh ?? []) as unknown as DossierItemRow[]
-    const order = groupedOrder(rows, created)
+    const { order, sections } = groupedOrder(rows, created)
     // Cinturón: si el orden calculado no cubre exactamente los activos, no se manda.
     // La base lo rechazaría de todas formas, y así el mensaje es una frase.
     if (order.length !== currentOrder(rows).length) {
@@ -351,6 +381,7 @@ export function useDossier(id: string | undefined): DossierQuery {
     const { error: failure } = await supabase.rpc('reorder_dossier_items', {
       p_dossier_id: id,
       p_line_ids: order,
+      p_section_ids: sections,
     })
     await reload()
     if (failure) {
@@ -376,6 +407,7 @@ export function useDossier(id: string | undefined): DossierQuery {
     removeItem,
     moveItem,
     moveSection,
+    setItemSection,
     groupBySeries,
   }
 }

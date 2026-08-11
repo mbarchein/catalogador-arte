@@ -39,6 +39,7 @@ function item(over: Partial<DossierItemRow> = {}): DossierItemRow {
     artist_fund: null,
     with_cv: null,
     divider_page: null,
+    section_item_id: null,
     active: true,
   }
   return {
@@ -177,7 +178,10 @@ describe('las secciones en el PDF (RF-1619, RF-1620, RF-1621)', () => {
     })
 
   it('sin portadilla, el rótulo encabeza la página de su primera obra', () => {
-    const result = pages([section('s', 'Óleos', 1, false), item({ id: 'a', sort_order: 2 })])
+    const result = pages([
+      section('s', 'Óleos', 1, false),
+      item({ id: 'a', sort_order: 2, section_item_id: 's' }),
+    ])
     // Dos páginas: la sección no gasta una hoja.
     expect(result.map((page) => page.kind)).toEqual(['COVER', 'ARTWORK'])
     const page = result[1]
@@ -185,7 +189,10 @@ describe('las secciones en el PDF (RF-1619, RF-1620, RF-1621)', () => {
   })
 
   it('con portadilla, el rótulo se lleva una hoja para él', () => {
-    const result = pages([section('s', 'Óleos', 1, true), item({ id: 'a', sort_order: 2 })])
+    const result = pages([
+      section('s', 'Óleos', 1, true),
+      item({ id: 'a', sort_order: 2, section_item_id: 's' }),
+    ])
     expect(result.map((page) => page.kind)).toEqual(['COVER', 'DIVIDER', 'ARTWORK'])
     const divider = result[1]
     if (divider?.kind === 'DIVIDER') expect(divider.heading).toBe('Óleos')
@@ -197,10 +204,10 @@ describe('las secciones en el PDF (RF-1619, RF-1620, RF-1621)', () => {
   it('la sección viaja en todas sus páginas, que es lo que necesita el pie (RF-1620)', () => {
     const result = planned([
       section('s1', 'Óleos', 1, false),
-      item({ id: 'a', sort_order: 2 }),
-      item({ id: 'b', sort_order: 3 }),
+      item({ id: 'a', sort_order: 2, section_item_id: 's1' }),
+      item({ id: 'b', sort_order: 3, section_item_id: 's1' }),
       section('s2', 'Papel', 4, true),
-      item({ id: 'c', sort_order: 5 }),
+      item({ id: 'c', sort_order: 5, section_item_id: 's2' }),
     ])
     expect(result.map((entry) => entry.section)).toEqual([
       null, // la portada no es de ninguna sección
@@ -209,6 +216,17 @@ describe('las secciones en el PDF (RF-1619, RF-1620, RF-1621)', () => {
       'Papel', // la portadilla
       'Papel',
     ])
+  })
+
+  it('y una obra SUELTA detrás de una sección imprime sin rótulo en el pie', () => {
+    // La sección de una página sale de la fila y no de recorrer las anteriores, que es
+    // lo que hace que «suelta detrás de una sección» exista.
+    const result = planned([
+      section('s1', 'Óleos', 1, false),
+      item({ id: 'a', sort_order: 2, section_item_id: 's1' }),
+      item({ id: 'b', sort_order: 3 }),
+    ])
+    expect(result.map((entry) => entry.section)).toEqual([null, 'Óleos', null])
   })
 
   it('los textos que esperaban salen ANTES de la portadilla', () => {
@@ -241,10 +259,10 @@ describe('el índice (RF-1622)', () => {
 
   const rows = [
     section('s1', 'Óleos', 1),
-    item({ id: 'a', sort_order: 2 }),
-    item({ id: 'b', sort_order: 3 }),
+    item({ id: 'a', sort_order: 2, section_item_id: 's1' }),
+    item({ id: 'b', sort_order: 3, section_item_id: 's1' }),
     section('s2', 'Papel', 4),
-    item({ id: 'c', sort_order: 5 }),
+    item({ id: 'c', sort_order: 5, section_item_id: 's2' }),
   ]
 
   it('apagado no se pinta', () => {
@@ -273,6 +291,21 @@ describe('el índice (RF-1622)', () => {
         { heading: 'Óleos', artworkCount: 2, page: 3 },
         { heading: 'Papel', artworkCount: 1, page: 5 },
       ])
+    }
+  })
+
+  it('cuenta las obras de CADA sección, y no las que hay hasta la siguiente', () => {
+    // Con obras sueltas por medio, contar en «la última entrada creada» sumaría al
+    // bloque páginas que no son suyas.
+    const conSueltas = [
+      section('s1', 'Óleos', 1),
+      item({ id: 'a', sort_order: 2, section_item_id: 's1' }),
+      item({ id: 'x', sort_order: 3 }),
+      item({ id: 'b', sort_order: 4, section_item_id: 's1' }),
+    ]
+    const index = pages(conSueltas, { show_index: true })[1]
+    if (index?.kind === 'INDEX') {
+      expect(index.entries).toEqual([{ heading: 'Óleos', artworkCount: 2, page: 3 }])
     }
   })
 

@@ -48,6 +48,7 @@ export function DossierPage() {
     removeItem,
     moveItem,
     moveSection,
+    setItemSection,
     groupBySeries,
   } = useDossier(id)
   // Las miniaturas se piden por código, con el mismo gancho que las obras
@@ -214,6 +215,7 @@ export function DossierPage() {
         showPrices={dossier.show_prices}
         onMove={moveItem}
         onMoveSection={moveSection}
+        onSetSection={setItemSection}
         onEdit={editItem}
         onRemove={removeItem}
       />

@@ -681,6 +681,12 @@ export interface DossierItem {
   with_cv: boolean | null
   /** Whether a SECTION's heading gets a page of its own. Null on the other kinds. */
   divider_page: boolean | null
+  /**
+   * The SECTION item this one belongs to (RF-1619). Null is «suelta», which is a
+   * datum: it prints with no heading. It used to be deduced from the position, and
+   * that way a section could not be moved without adopting whatever was in front.
+   */
+  section_item_id: string | null
   active: boolean
 }
 

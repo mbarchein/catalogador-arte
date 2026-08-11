@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   dossierFailureText,
   dossierWriteResult,
-  moveSectionConfirmText,
   removeItemConfirmText,
   retireDossierConfirmText,
 } from './dossierMessages'
@@ -25,6 +24,8 @@ describe('las seis restricciones, cada una en las palabras de su consecuencia', 
     ['dossier_items_artwork_shape', 'texto libre'],
     ['dossier_items_text_shape', 'rótulo'],
     ['dossier_items_biography_shape', 'ficha del fondo'],
+    ['dossier_items_section_not_nested', 'no va dentro de otra'],
+    ['dossier_items_section_not_self', 'dentro de sí misma'],
   ]
 
   for (const [constraint, expected] of cases) {
@@ -64,6 +65,22 @@ describe('lo que dicen los demás códigos', () => {
     expect(fk('dossier_items_catalog_id_fkey')).toContain('obra')
     expect(fk('dossier_items_image_id_fkey')).toContain('fotografía')
     expect(fk('dossiers_recipient_party_id_fkey')).toContain('destinatario')
+    expect(fk('dossier_items_section_fk')).toContain('sección')
+  })
+
+  it('el rechazo del trigger de los bloques se pasa tal cual, con su pista', () => {
+    // Lo escribe `reorder_dossier_items` en español y con la salida: reescribirlo aquí
+    // sería una segunda copia de una frase que vive al lado de la regla.
+    const text = dossierFailureText(
+      {
+        code: 'P0001',
+        message: 'Los elementos de una sección tienen que ir seguidos, detrás de su rótulo',
+        hint: 'Mueve la sección entera, o saca el elemento de la sección.',
+      },
+      'setSection',
+    )
+    expect(text).toContain('tienen que ir seguidos')
+    expect(text).toContain('Mueve la sección entera')
   })
 
   it('lo que escribe un trigger se pasa tal cual, con su pista pegada', () => {
@@ -146,20 +163,6 @@ describe('las confirmaciones dicen qué pasa de verdad (RF-1612)', () => {
 
   it('la biografía sigue en la ficha del fondo', () => {
     expect(removeItemConfirmText('BIOGRAPHY', '')).toContain('ficha del fondo')
-  })
-
-  it('subir una sección avisa de las obras que quedarán dentro (RF-1620)', () => {
-    const text = moveSectionConfirmText('Óleos', 3)
-    expect(text).toContain('3 obras')
-    expect(text).toContain('«Óleos»')
-    expect(text).toContain('dentro de la sección')
-    expect(moveSectionConfirmText('Óleos', 1)).toContain('1 obra va antes')
-  })
-
-  it('y no pregunta nada cuando el movimiento no cambia de sección a ninguna obra', () => {
-    // Intercambiar dos secciones es el caso normal: una confirmación en cada toque
-    // deja de leerse, y entonces la que sí importaba tampoco.
-    expect(moveSectionConfirmText('Óleos', 0)).toBeNull()
   })
 
   it('retirar el dossier cuenta lo que lleva y tranquiliza sobre lo ya emitido', () => {

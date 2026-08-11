@@ -3,13 +3,15 @@ import { Link } from 'react-router'
 import { ChevronDownIcon, ChevronUpIcon, ImageIcon, TrashIcon } from '../../components/ui'
 import { planPrice, priceInputValue } from './dossierDraft'
 import { itemEntries, itemsNotice, type DossierItemEntry, type DossierItemRow } from './dossierItems'
-import { moveSectionConfirmText, removeItemConfirmText } from './dossierMessages'
+import { removeItemConfirmText } from './dossierMessages'
 import {
-  absorbedArtworks,
+  activeSections,
   dossierGroups,
   groupCountText,
+  movedItemOrder,
   movedSectionOrder,
   orphanNotice,
+  sectionOf,
 } from './dossierSections'
 import type { ItemPatch } from './useDossier'
 
@@ -44,6 +46,7 @@ export function DossierItems({
   showPrices,
   onMove,
   onMoveSection,
+  onSetSection,
   onEdit,
   onRemove,
 }: {
@@ -57,6 +60,7 @@ export function DossierItems({
   showPrices: boolean
   onMove: (id: string, direction: 'up' | 'down') => Promise<string | null>
   onMoveSection: (sectionId: string, direction: 'up' | 'down') => Promise<string | null>
+  onSetSection: (id: string, sectionId: string | null) => Promise<string | null>
   onEdit: (id: string, patch: ItemPatch) => Promise<string | null>
   onRemove: (id: string) => Promise<string | null>
 }) {
@@ -70,7 +74,11 @@ export function DossierItems({
   const groups = dossierGroups(items)
   const notice = itemsNotice({ loading, error, count: entries.length })
   const orphans = orphanNotice(groups)
-  const lastPosition = entries.filter((entry) => entry.position !== null).length
+  // Las secciones a las que se puede mandar un elemento: las activas, en su orden.
+  const sections = activeSections(items)
+  const sectionChoices = groups.flatMap((group) =>
+    group.sectionId === null ? [] : [{ id: group.sectionId, heading: group.heading ?? '' }],
+  )
 
   async function act(action: () => Promise<string | null>) {
     setBusy(true)
@@ -148,25 +156,15 @@ export function DossierItems({
                   </div>
                   {canEdit && (
                     <div className="flex shrink-0 flex-col gap-1">
-                      {/* Mueven la SECCIÓN ENTERA: es el trabajo que si no son diez
-                          toques. Las flechas de una fila mueven ese elemento.
-
-                          Subir por encima de lo que va suelto al principio se lleva
-                          esas obras dentro de la sección —la pertenencia es la
-                          posición—, así que ahí se pregunta antes. */}
+                      {/* Mueven la SECCIÓN ENTERA, cambiándola con el bloque de al
+                          lado: otra sección, o una obra suelta, que es un bloque de
+                          una. No cambian la pertenencia de nada. */}
                       <button
                         type="button"
                         aria-label="Subir la sección entera"
                         className="rounded border border-stone-300 bg-white p-1 disabled:opacity-30"
                         disabled={busy || !canMove.up}
-                        onClick={() => {
-                          const ask = moveSectionConfirmText(
-                            group.heading ?? '',
-                            absorbedArtworks(items, sectionId, 'up'),
-                          )
-                          if (ask !== null && !window.confirm(ask)) return
-                          void act(() => onMoveSection(sectionId, 'up'))
-                        }}
+                        onClick={() => void act(() => onMoveSection(sectionId, 'up'))}
                       >
                         <ChevronUpIcon className="h-5 w-5" />
                       </button>
@@ -236,7 +234,11 @@ export function DossierItems({
                         canEdit={canEdit}
                         showPrices={showPrices}
                         busy={busy}
-                        lastPosition={lastPosition}
+                        canMoveUp={movedItemOrder(items, row.id, 'up') !== null}
+                        canMoveDown={movedItemOrder(items, row.id, 'down') !== null}
+                        sectionChoices={sectionChoices}
+                        section={sectionOf(row, sections)}
+                        onSetSection={(sectionId) => void act(() => onSetSection(row.id, sectionId))}
                         open={open === row.id}
                         onToggleOpen={() => setOpen(open === row.id ? null : row.id)}
                         onMove={(direction) => void act(() => onMove(row.id, direction))}
@@ -279,7 +281,11 @@ function ItemRow({
   canEdit,
   showPrices,
   busy,
-  lastPosition,
+  canMoveUp,
+  canMoveDown,
+  sectionChoices,
+  section,
+  onSetSection,
   open,
   onToggleOpen,
   onMove,
@@ -293,7 +299,13 @@ function ItemRow({
   canEdit: boolean
   showPrices: boolean
   busy: boolean
-  lastPosition: number
+  canMoveUp: boolean
+  canMoveDown: boolean
+  /** Las secciones del dossier, en su orden, para mandar el elemento a una. */
+  sectionChoices: readonly { id: string; heading: string }[]
+  /** La sección en la que está, o null si va suelto. */
+  section: string | null
+  onSetSection: (sectionId: string | null) => void
   open: boolean
   onToggleOpen: () => void
   onMove: (direction: 'up' | 'down') => void
@@ -374,7 +386,7 @@ function ItemRow({
               type="button"
               aria-label="Subir un puesto"
               className="rounded border border-stone-300 p-1 disabled:opacity-30"
-              disabled={busy || entry.position === 1}
+              disabled={busy || !canMoveUp}
               onClick={() => onMove('up')}
             >
               <ChevronUpIcon className="h-5 w-5" />
@@ -383,7 +395,7 @@ function ItemRow({
               type="button"
               aria-label="Bajar un puesto"
               className="rounded border border-stone-300 p-1 disabled:opacity-30"
-              disabled={busy || entry.position === lastPosition}
+              disabled={busy || !canMoveDown}
               onClick={() => onMove('down')}
             >
               <ChevronDownIcon className="h-5 w-5" />
@@ -393,10 +405,32 @@ function ItemRow({
       </div>
 
       {canEdit && (
-        <div className="mt-2 flex flex-wrap gap-2 border-t border-stone-200 pt-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-stone-200 pt-2">
           <button type="button" className="text-sm text-stone-700 underline" onClick={onToggleOpen}>
             {open ? 'Cerrar' : 'Corregir'}
           </button>
+          {/* A qué sección pertenece, y es un selector y no una flecha: la pertenencia
+              dejó de ser la posición justo para que moverse y cambiar de sección fueran
+              dos cosas distintas. Solo aparece si hay alguna sección — sin ninguna, la
+              única respuesta posible es «suelta». */}
+          {sectionChoices.length > 0 && !entry.retired && (
+            <label className="flex items-center gap-1 text-sm text-stone-600">
+              <span className="sr-only">Sección de este elemento</span>
+              <select
+                className="min-h-[2rem] max-w-[10rem] rounded border border-stone-300 bg-white px-1 text-sm"
+                value={section ?? ''}
+                disabled={busy}
+                onChange={(event) => onSetSection(event.target.value === '' ? null : event.target.value)}
+              >
+                <option value="">Suelta</option>
+                {sectionChoices.map((choice) => (
+                  <option key={choice.id} value={choice.id}>
+                    {choice.heading}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {entry.retired ? (
             <button
               type="button"

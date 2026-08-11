@@ -54,7 +54,7 @@ export interface DossierItemRow extends DossierItem {
  */
 export const DOSSIER_ITEM_COLUMNS =
   'id, dossier_id, kind, sort_order, catalog_id, image_id, price, currency, note, ' +
-  'heading, body, artist_fund, with_cv, divider_page, active, ' +
+  'heading, body, artist_fund, with_cv, divider_page, section_item_id, active, ' +
   'artwork:artworks(catalog_id, title, artist, execution_date, series, technique, height_cm, width_cm, active)'
 
 /**
@@ -271,46 +271,11 @@ export function itemCountText(rows: readonly DossierItemRow[]): string {
   return parts.join(' · ')
 }
 
-/**
- * The identifiers of the active items in their current order, which is what
- * `reorder_dossier_items` takes.
- *
- * The database demands EXACTLY the active items of the dossier, so this list is
- * built from the rows the screen loaded and never from the rows it painted.
- */
-export function activeOrder(rows: readonly DossierItemRow[]): string[] {
-  return sortItems(rows)
-    .filter((row) => row.active)
-    .map((row) => row.id)
-}
-
-/**
- * The order after moving one item one place up or down, or **null when there is
- * nothing to move**.
- *
- * Null and not the unchanged list, deliberately: the caller must not spend a
- * write on a no-op, and «the first item cannot go up» is a state the button reads
- * to disable itself. The move is a swap because the list is walked with two
- * buttons and not dragged — one tap, one place, which is what works with a thumb
- * and with gloves.
- */
-export function movedOrder(
-  order: readonly string[],
-  id: string,
-  direction: 'up' | 'down',
-): string[] | null {
-  const from = order.indexOf(id)
-  if (from === -1) return null
-  const to = direction === 'up' ? from - 1 : from + 1
-  if (to < 0 || to >= order.length) return null
-  const next = order.slice()
-  const moved = next[from]
-  const displaced = next[to]
-  if (moved === undefined || displaced === undefined) return null
-  next[from] = displaced
-  next[to] = moved
-  return next
-}
+// El orden que se manda a la base y el movimiento de un elemento viven en
+// `dossierSections`: los dos dependen de a qué sección pertenece cada fila —una obra
+// suelta salta un bloque entero y una de dentro se mueve entre las suyas—, y tenerlos
+// aquí como una permuta ciega de identificadores fue lo que dejó las dos mitades del
+// cálculo sin ponerse de acuerdo. `currentOrder` y `movedItemOrder`.
 
 /**
  * What goes where the items would go, or null when there are items to paint
