@@ -1798,6 +1798,18 @@
   quede sin serie va a una sección aparte al final. A partir de ahí se renombra y se mueve a mano:
   no es una regla que siga viva, así que dar de alta una obra nueva no la mete en un dossier ya
   mandado.
+- **La biografía y el currículum se pueden pegar de una página web y conservan su forma**: los
+  títulos, las listas de exposiciones y las negritas llegan tal cual. Lo que no se trae —tipografías,
+  colores, imágenes— se queda fuera, y una tabla se convierte en líneas. En el ordenador basta con
+  copiar y pegar; en el móvil el portapapeles casi siempre trae solo el texto, y entonces el formato
+  se pone con los cuatro botones que hay encima de la caja: **T** para un título, **•—** para una
+  lista, **N** para negrita y **C** para cursiva. «Ver cómo queda» enseña el resultado antes de
+  guardar.
+- Lo mismo en los párrafos del dossier, en la entradilla de una sección y en el texto de la portada.
+  Lo escrito hasta ahora se sigue leyendo igual: nada de lo que ya está cambia de aspecto.
+- **Un texto largo ya no se pierde**: la biografía o el currículum que no caben en una hoja siguen en
+  la siguiente, con su pie y su sección. Antes, lo que no cabía se dibujaba fuera de la hoja y no
+  aparecía en el PDF. El recuento de páginas y el índice cuentan ahora las hojas de verdad.
 - **Lo que falta es usarlo con una obra delante**: generar un dossier de verdad, abrir el PDF y
   mirar cómo queda impreso.
 

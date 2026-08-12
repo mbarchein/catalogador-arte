@@ -297,11 +297,27 @@ decidir por código dónde se imprime, y la respuesta cambia con el uso.
 cataloga y sin distinguir individual de colectiva. Vuelve el día que el historial expositivo esté cerrado,
 y entonces como sugerencia al escribir, nunca como el texto impreso.
 
-**Texto con formato: Markdown, negritas, un editor rico.** Sería un lenguaje de marcado dentro de un campo
-del catálogo, con su renderizador, su saneado y sus casos raros de por vida, y un dossier no lo necesita:
-lo que hace legible una página es la maqueta —rótulo, párrafo, caja de obra—, no las negritas dentro del
-párrafo. Un rótulo y un cuerpo, cada uno con su tipografía puesta por la plantilla, dan el resultado sin
-abrir esa puerta.
+**Un editor de texto enriquecido, guardando HTML.** Descartado, y esta es la mitad que sigue en pie de la
+decisión de abajo: sin servidor, las políticas RLS son todo el perímetro y un `<img onerror>` guardado en
+una biografía se ejecutaría en la sesión de quien la abriera, así que habría que sanear al guardar y al
+leer, para siempre. Y no ahorraría el intérprete: el PDF se dibuja a mano con pdf-lib, así que un `<h2>`
+guardado habría que traducirlo a un tamaño y un salto igualmente. En el móvil, además, `contenteditable`
+es donde más se pelea con el teclado. Lo mismo, con más razón, para guardar bloques en JSONB: sería el
+currículum como datos —que algún día interesará, para cruzarlo con el catálogo— pero hoy es un editor de
+bloques a cambio de nada que se necesite.
+
+**Y esto se decidió al revés:** «el texto es texto, no hay lenguaje de marcado ni negritas, lo que hace
+legible una página es la maqueta». Lo que se llevó por delante ese argumento fue una necesidad concreta y
+razonable: **la biografía del artista ya está escrita en su web**, con sus títulos, sus listas de
+exposiciones por año y sus negritas, y volver a teclearla en texto plano es trabajo tirado y una fuente
+más que se desincroniza. Así que el dossier admite **marcado ligero** —títulos, listas, negrita, cursiva y
+nada más—, y con dos condiciones que vienen de lo de arriba: **lo que se guarda es texto** con marcas, y
+la traducción de HTML a marcas ocurre **una sola vez, al pegar**, en el único módulo que lee HTML y lo
+lee para tirarlo. La pantalla pinta componentes y el PDF dibuja letras; ninguno de los dos convierte un
+texto guardado en una etiqueta.
+
+Lo que sigue fuera, y por lo mismo de siempre: enlaces —una dirección larga no la teclea nadie desde un
+papel—, imágenes, tablas y colores. Una tabla pegada se lee como líneas con sus celdas separadas.
 
 ## Consecuencias
 
