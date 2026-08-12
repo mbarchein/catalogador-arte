@@ -222,6 +222,25 @@ export function dossierWriteResult(
  * are not the same row — and that difference has to be on screen BEFORE the tap,
  * not discovered after it.
  */
+/**
+ * La pregunta, en tres o cuatro palabras: es el título de la hoja que la hace.
+ *
+ * Nombra lo que se quita y no la operación —«¿Quitar la obra?» y no «Confirmar»—,
+ * porque el título es lo primero que se lee y a veces lo único.
+ */
+export function removeItemConfirmTitle(kind: DossierItemKind): string {
+  switch (kind) {
+    case 'ARTWORK':
+      return '¿Quitar la obra?'
+    case 'TEXT':
+      return '¿Quitar el texto?'
+    case 'BIOGRAPHY':
+      return '¿Quitar la biografía?'
+    case 'SECTION':
+      return '¿Quitar la sección?'
+  }
+}
+
 export function removeItemConfirmText(kind: DossierItemKind, name: string): string {
   const named = name.trim() === '' ? '' : ` «${name.trim()}»`
   switch (kind) {

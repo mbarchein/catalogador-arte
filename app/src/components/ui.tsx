@@ -1390,6 +1390,66 @@ export function BottomSheet({
 
 
 /**
+ * La pregunta de algo que no se deshace, en una hoja inferior.
+ *
+ * Es la hoja del resto de la aplicación y no el `confirm` del navegador, y la
+ * diferencia no es estética: el nativo sale en el centro, con la tipografía del
+ * sistema y un «Aceptar» que no dice qué acepta, y sobre todo **cae lejos del
+ * pulgar** — en un almacén, con una mano, eso es apuntar. Aquí la pregunta y sus dos
+ * salidas salen por abajo, donde está la mano, y se cierra por las mismas cuatro
+ * puertas que cualquier panel: el botón, el fondo, Escape y el «atrás» del teléfono,
+ * que en un `confirm` nativo no se puede interceptar.
+ *
+ * **Lo que destruye va primero**, al contrario que la pregunta de descartar un
+ * borrador: esa sale sin que nadie la pida —al intentar salir— y entonces lo que
+ * conviene bajo el pulgar es la salida segura; ésta sale porque se ha pulsado la
+ * papelera, así que el pulgar viene ya a confirmar. Es el orden que ya usa retirar una
+ * exposición.
+ *
+ * El rótulo del botón dice **qué se va a hacer** —«Sí, quitar»— y no «Aceptar»: un
+ * rótulo genérico obliga a volver a leer la frase para saber qué se está aceptando.
+ */
+export function ConfirmSheet({
+  open,
+  title,
+  text,
+  confirmLabel,
+  busy = false,
+  onConfirm,
+  onClose,
+}: {
+  open: boolean
+  /** La pregunta, corta: «¿Quitar del dossier?». Es el título accesible de la hoja. */
+  title: string
+  /** Lo que pasa si se confirma, y lo que no pasa. Una o dos frases. */
+  text: string
+  /** Qué se va a hacer: «Sí, quitar». Nunca «Aceptar». */
+  confirmLabel: string
+  busy?: boolean
+  onConfirm: () => void
+  onClose: () => void
+}) {
+  return (
+    <BottomSheet open={open} onClose={onClose} title={title}>
+      <p className="text-sm text-stone-800">{text}</p>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          className="btn min-h-touch bg-red-700 text-white disabled:opacity-60"
+          disabled={busy}
+          onClick={onConfirm}
+        >
+          {confirmLabel}
+        </button>
+        <button type="button" className="btn-secondary" disabled={busy} onClick={onClose}>
+          Cancelar
+        </button>
+      </div>
+    </BottomSheet>
+  )
+}
+
+/**
  * Vertical radio list for a bottom sheet: full-width rows, the active one
  * checked. One tap chooses and the caller closes the sheet — choosing and
  * confirming would be two gestures for one decision.

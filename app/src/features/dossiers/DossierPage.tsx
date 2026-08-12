@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
+import { ConfirmSheet } from '../../components/ui'
 import { Layout } from '../../components/Layout'
 import { AddToDossier } from './AddToDossier'
 import { DossierIssues } from './DossierIssues'
@@ -66,6 +67,7 @@ export function DossierPage() {
   const [problem, setProblem] = useState<string | null>(null)
   const [said, setSaid] = useState<string | null>(null)
   const [grouping, setGrouping] = useState(false)
+  const [retiring, setRetiring] = useState(false)
 
   if (dossier === null) {
     return (
@@ -229,14 +231,25 @@ export function DossierPage() {
           <button
             type="button"
             className="min-h-[2.75rem] w-full rounded-lg border border-red-300 px-3 text-sm text-red-800"
-            onClick={() => {
-              if (!window.confirm(retireDossierConfirmText(dossier.title, contents))) return
-              void save({ active: false }).then((message) => setProblem(message))
-            }}
+            onClick={() => setRetiring(true)}
           >
             Retirar este dossier
           </button>
         </div>
+      )}
+
+      {retiring && (
+        <ConfirmSheet
+          open
+          title="¿Retirar el dossier?"
+          text={retireDossierConfirmText(dossier.title, contents)}
+          confirmLabel="Sí, retirar"
+          onClose={() => setRetiring(false)}
+          onConfirm={() => {
+            setRetiring(false)
+            void save({ active: false }).then((message) => setProblem(message))
+          }}
+        />
       )}
     </Layout>
   )

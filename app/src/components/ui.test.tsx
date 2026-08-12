@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { BottomSheet } from './ui'
+import { BottomSheet, ConfirmSheet } from './ui'
 import { useSheetGuard } from './useSheetGuard'
 
 /**
@@ -328,6 +328,61 @@ describe('BottomSheet, no perder lo escrito por un roce', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Salir sin guardar' }))
     await userEvent.click(screen.getByRole('button', { name: 'Abrir' }))
     expect(screen.queryByRole('alertdialog')).toBeNull()
+  })
+})
+
+describe('ConfirmSheet, la pregunta de lo que no se deshace', () => {
+  const sheet = (props: Partial<Parameters<typeof ConfirmSheet>[0]> = {}) => {
+    const onConfirm = vi.fn()
+    const onClose = vi.fn()
+    render(
+      <ConfirmSheet
+        open
+        title="¿Quitar la obra?"
+        text="Se quitará del dossier. No se borra nada del catálogo."
+        confirmLabel="Sí, quitar"
+        onConfirm={onConfirm}
+        onClose={onClose}
+        {...props}
+      />,
+    )
+    return { onConfirm, onClose }
+  }
+
+  it('es la hoja de siempre: un diálogo con la pregunta por título', () => {
+    // La hoja y no el `confirm` del navegador: sale por abajo, donde está el pulgar, y
+    // se cierra por las cuatro puertas de cualquier panel.
+    sheet()
+    expect(screen.getByRole('dialog', { name: '¿Quitar la obra?' })).not.toBeNull()
+    expect(screen.getByText(/No se borra nada del catálogo/)).not.toBeNull()
+  })
+
+  it('el botón dice qué hace, y confirmar no cierra por su cuenta', () => {
+    // Cerrar es de quien la abre: la escritura puede fallar y entonces lo que hay que
+    // pintar es el fallo, no una hoja cerrada como si hubiera ido bien.
+    const { onConfirm, onClose } = sheet()
+    screen.getByRole('button', { name: 'Sí, quitar' }).click()
+    expect(onConfirm).toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('cancelar y Escape salen por la misma puerta', async () => {
+    const { onClose, onConfirm } = sheet()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    await userEvent.keyboard('{Escape}')
+    expect(onClose).toHaveBeenCalledTimes(2)
+    expect(onConfirm).not.toHaveBeenCalled()
+  })
+
+  it('mientras se escribe, los dos botones se apagan', () => {
+    // Un segundo toque en «Sí, quitar» mandaría la misma escritura dos veces.
+    sheet({ busy: true })
+    expect((screen.getByRole('button', { name: 'Sí, quitar' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    )
+    expect((screen.getByRole('button', { name: 'Cancelar' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    )
   })
 })
 

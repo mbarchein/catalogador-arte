@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DossierItem } from '../../lib/types'
@@ -120,7 +120,7 @@ describe('las flechas de una sección (RF-1620)', () => {
   it('subir mueve la sección y no pregunta nada, porque no se lleva ninguna obra', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const spies = paint()
-    arrow('Subir la sección entera').click()
+    fireEvent.click(arrow('Subir la sección entera'))
     expect(spies.onMoveSection).toHaveBeenCalledWith('s1', 'up')
     expect(confirm).not.toHaveBeenCalled()
   })
@@ -142,16 +142,14 @@ describe('la sección de un elemento se elige, no se deduce (RF-1619)', () => {
   it('elegir una sección la escribe, que es la forma de meter una obra en un bloque', () => {
     const spies = paint()
     const select = screen.getAllByLabelText('Sección de este elemento')[0] as HTMLSelectElement
-    select.value = 's1'
-    select.dispatchEvent(new Event('change', { bubbles: true }))
+    fireEvent.change(select, { target: { value: 's1' } })
     expect(spies.onSetSection).toHaveBeenCalledWith('h', 's1')
   })
 
   it('y «Suelta» la saca', () => {
     const spies = paint()
     const select = screen.getAllByLabelText('Sección de este elemento')[2] as HTMLSelectElement
-    select.value = ''
-    select.dispatchEvent(new Event('change', { bubbles: true }))
+    fireEvent.change(select, { target: { value: '' } })
     expect(spies.onSetSection).toHaveBeenCalledWith('a', null)
   })
 
@@ -169,26 +167,34 @@ describe('la sección de un elemento se elige, no se deduce (RF-1619)', () => {
     expect(pen?.nextElementSibling?.getAttribute('aria-label')).toBe('Quitar del dossier')
   })
 
-  it('quitar pregunta antes, y si se dice que no no se escribe nada', () => {
-    // Un icono sin rótulo pegado a otro solo es aceptable si el destructivo pregunta.
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('quitar pregunta en la hoja de siempre, no en el diálogo del navegador', () => {
+    // Un icono sin rótulo pegado a otro solo es aceptable si el destructivo pregunta. Y
+    // la pregunta sale por abajo, donde está el pulgar, como cualquier panel.
+    const confirm = vi.spyOn(window, 'confirm')
     const spies = paint()
-    const buttons = screen.getAllByLabelText('Quitar del dossier') as HTMLButtonElement[]
-    buttons[0]?.click()
-    expect(confirm).toHaveBeenCalled()
+    fireEvent.click(screen.getAllByLabelText('Quitar del dossier')[0]!)
+    expect(confirm).not.toHaveBeenCalled()
+    const sheet = screen.getByRole('dialog', { name: '¿Quitar la obra?' })
+    expect(sheet.textContent).toContain('vuelve con su nota y su precio')
     expect(spies.onRemove).not.toHaveBeenCalled()
 
-    confirm.mockReturnValue(true)
-    buttons[0]?.click()
+    fireEvent.click(screen.getByText('Sí, quitar'))
     expect(spies.onRemove).toHaveBeenCalledWith('h')
   })
 
-  it('y quitar una sección también, diciendo que sus obras se quedan sueltas', () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('y cancelar cierra la hoja sin escribir nada', () => {
     const spies = paint()
-    ;(screen.getByLabelText('Quitar la sección') as HTMLButtonElement).click()
-    expect(confirm.mock.calls[0]?.[0]).toContain('sueltas')
+    fireEvent.click(screen.getAllByLabelText('Quitar del dossier')[0]!)
+    fireEvent.click(screen.getByText('Cancelar'))
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(spies.onRemove).not.toHaveBeenCalled()
+  })
+
+  it('quitar una sección dice que sus obras se quedan sueltas', () => {
+    paint()
+    fireEvent.click(screen.getByLabelText('Quitar la sección'))
+    const sheet = screen.getByRole('dialog', { name: '¿Quitar la sección?' })
+    expect(sheet.textContent).toContain('sueltas')
   })
 
   it('una obra dentro de una sección no se sale con las flechas', () => {

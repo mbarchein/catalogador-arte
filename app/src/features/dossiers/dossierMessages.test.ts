@@ -3,6 +3,7 @@ import {
   dossierFailureText,
   dossierWriteResult,
   removeItemConfirmText,
+  removeItemConfirmTitle,
   retireDossierConfirmText,
 } from './dossierMessages'
 
@@ -163,6 +164,22 @@ describe('las confirmaciones dicen qué pasa de verdad (RF-1612)', () => {
 
   it('la biografía sigue en la ficha del fondo', () => {
     expect(removeItemConfirmText('BIOGRAPHY', '')).toContain('ficha del fondo')
+  })
+
+  it('quitar una sección no promete que sus obras se muevan, porque ya no se mueven', () => {
+    // Con la pertenencia en una columna se quedan donde están y sueltas. Decir lo otro
+    // sería prometer un movimiento que no ocurre.
+    const text = removeItemConfirmText('SECTION', 'Óleos')
+    expect(text).toContain('sueltas')
+    expect(text).not.toContain('sección de antes')
+  })
+
+  it('el título de la pregunta nombra lo que se quita, y no la operación', () => {
+    // Es lo primero que se lee de la hoja, y a veces lo único.
+    expect(removeItemConfirmTitle('ARTWORK')).toBe('¿Quitar la obra?')
+    expect(removeItemConfirmTitle('TEXT')).toBe('¿Quitar el texto?')
+    expect(removeItemConfirmTitle('BIOGRAPHY')).toBe('¿Quitar la biografía?')
+    expect(removeItemConfirmTitle('SECTION')).toBe('¿Quitar la sección?')
   })
 
   it('retirar el dossier cuenta lo que lleva y tranquiliza sobre lo ya emitido', () => {

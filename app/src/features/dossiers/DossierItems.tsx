@@ -3,13 +3,15 @@ import { Link } from 'react-router'
 import {
   ChevronDownIcon,
   ChevronUpIcon,
+  ConfirmSheet,
   ImageIcon,
   PenIcon,
   TrashIcon,
 } from '../../components/ui'
+import type { DossierItemKind } from '../../lib/types'
 import { planPrice, priceInputValue } from './dossierDraft'
 import { itemEntries, itemsNotice, type DossierItemEntry, type DossierItemRow } from './dossierItems'
-import { removeItemConfirmText } from './dossierMessages'
+import { removeItemConfirmText, removeItemConfirmTitle } from './dossierMessages'
 import {
   activeSections,
   dossierGroups,
@@ -74,6 +76,13 @@ export function DossierItems({
   const [collapsed, setCollapsed] = useState<readonly string[]>([])
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Qué se ha pedido quitar, o null. Una sola hoja para toda la lista: una por fila
+  // serían doce diálogos montados a la vez para que se abra uno.
+  const [removing, setRemoving] = useState<{
+    id: string
+    kind: DossierItemKind
+    name: string
+  } | null>(null)
 
   const entries = itemEntries(items)
   const byId = new Map(entries.map((entry) => [entry.id, entry]))
@@ -210,11 +219,13 @@ export function DossierItems({
                       aria-label="Quitar la sección"
                       className="flex min-h-[2.5rem] min-w-[2.5rem] items-center justify-center rounded border border-red-200 bg-white text-red-800 disabled:opacity-50"
                       disabled={busy}
-                      onClick={() => {
-                        if (!window.confirm(removeItemConfirmText('SECTION', group.heading ?? '')))
-                          return
-                        void act(() => onRemove(sectionId))
-                      }}
+                      onClick={() =>
+                        setRemoving({
+                          id: sectionId,
+                          kind: 'SECTION',
+                          name: group.heading ?? '',
+                        })
+                      }
                     >
                       <TrashIcon className="h-5 w-5" />
                     </button>
@@ -258,10 +269,9 @@ export function DossierItems({
                         onToggleOpen={() => setOpen(open === row.id ? null : row.id)}
                         onMove={(direction) => void act(() => onMove(row.id, direction))}
                         onRestore={() => void act(() => onEdit(row.id, { active: true }))}
-                        onRemove={() => {
-                          if (!window.confirm(removeItemConfirmText(entry.kind, entry.title))) return
-                          void act(() => onRemove(row.id))
-                        }}
+                        onRemove={() =>
+                          setRemoving({ id: row.id, kind: entry.kind, name: entry.title })
+                        }
                         onSave={async (patch) => {
                           const message = await onEdit(row.id, patch)
                           if (message === null) setOpen(null)
@@ -284,6 +294,26 @@ export function DossierItems({
           </div>
         )
       })}
+
+      {/* La pregunta de quitar, en la hoja de siempre y no en el `confirm` del
+          navegador: sale por abajo, donde está el pulgar, y se cierra por las cuatro
+          puertas de cualquier panel — el «atrás» del teléfono incluido, que en un
+          `confirm` nativo no se puede interceptar. */}
+      {removing !== null && (
+        <ConfirmSheet
+          open
+          title={removeItemConfirmTitle(removing.kind)}
+          text={removeItemConfirmText(removing.kind, removing.name)}
+          confirmLabel="Sí, quitar"
+          busy={busy}
+          onClose={() => setRemoving(null)}
+          onConfirm={() => {
+            const { id } = removing
+            setRemoving(null)
+            void act(() => onRemove(id))
+          }}
+        />
+      )}
     </div>
   )
 }
