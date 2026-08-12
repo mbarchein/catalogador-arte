@@ -241,9 +241,12 @@ export function removeItemConfirmText(kind: DossierItemKind, name: string): stri
         'puede volver a añadir cuando quieras.'
       )
     case 'SECTION':
+      // Desde que la pertenencia es una columna, las obras no pasan a la sección de
+      // antes: se quedan donde están y sueltas. Es lo que hace la base al retirar el
+      // rótulo, y decir lo otro sería prometer un movimiento que no ocurre.
       return (
-        `Se quitará la sección${named}. Sus obras no se van: pasan a la sección de antes, o al ` +
-        'principio del dossier si no había ninguna.'
+        `Se quitará la sección${named}. Sus obras no se van: se quedan donde están, sueltas y ` +
+        'sin rótulo en el PDF.'
       )
   }
 }

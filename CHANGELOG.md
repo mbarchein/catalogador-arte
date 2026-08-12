@@ -1781,6 +1781,10 @@
 - **Cada obra dice en qué sección está, y puede no estar en ninguna.** En su fila hay un selector
   con las secciones del dossier y «Suelta»: así se mete una obra en un bloque o se saca. Una obra
   suelta sale en el PDF sin rótulo, esté donde esté, y la pantalla avisa de cuántas van así.
+- Corregir y quitar son ahora **dos iconos** en la misma línea del selector, en vez de dos rótulos:
+  en una lista de doce obras los mismos dos textos repetidos doce veces solo estorban. Quitar sigue
+  preguntando antes, y al quitar una sección dice lo que pasa de verdad con sus obras — se quedan
+  donde están, sueltas.
 - Mover una sección **no se lleva ninguna obra**: pasa por delante de las sueltas de una en una y
   las deja como estaban. Las obras de dentro se mueven entre las de su sección; una suelta salta la
   sección entera de un toque.

@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ChevronDownIcon, ChevronUpIcon, ImageIcon, TrashIcon } from '../../components/ui'
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ImageIcon,
+  PenIcon,
+  TrashIcon,
+} from '../../components/ui'
 import { planPrice, priceInputValue } from './dossierDraft'
 import { itemEntries, itemsNotice, type DossierItemEntry, type DossierItemRow } from './dossierItems'
 import { removeItemConfirmText } from './dossierMessages'
@@ -181,18 +187,28 @@ export function DossierItems({
                   )}
                 </div>
 
+                {/* Los mismos dos botones que una fila, y en el mismo sitio: si en la
+                    banda fueran rótulos y en las filas iconos, cada bloque habría que
+                    volver a leerlo. */}
                 {canEdit && (
-                  <div className="mt-2 flex flex-wrap gap-2 border-t border-stone-200 pt-2">
+                  <div className="mt-2 flex items-center gap-1 border-t border-stone-200 pt-2">
                     <button
                       type="button"
-                      className="text-sm text-stone-700 underline"
+                      aria-label={
+                        open === sectionId ? 'Cerrar la corrección de la sección' : 'Corregir la sección'
+                      }
+                      aria-expanded={open === sectionId}
+                      className={`ml-auto flex min-h-[2.5rem] min-w-[2.5rem] items-center justify-center rounded border border-stone-300 ${
+                        open === sectionId ? 'bg-stone-800 text-white' : 'bg-white text-stone-700'
+                      }`}
                       onClick={() => setOpen(open === sectionId ? null : sectionId)}
                     >
-                      {open === sectionId ? 'Cerrar' : 'Corregir la sección'}
+                      <PenIcon className="h-5 w-5" />
                     </button>
                     <button
                       type="button"
-                      className="ml-auto flex items-center gap-1 text-sm text-red-800"
+                      aria-label="Quitar la sección"
+                      className="flex min-h-[2.5rem] min-w-[2.5rem] items-center justify-center rounded border border-red-200 bg-white text-red-800 disabled:opacity-50"
                       disabled={busy}
                       onClick={() => {
                         if (!window.confirm(removeItemConfirmText('SECTION', group.heading ?? '')))
@@ -200,8 +216,7 @@ export function DossierItems({
                         void act(() => onRemove(sectionId))
                       }}
                     >
-                      <TrashIcon className="h-4 w-4" />
-                      Quitar
+                      <TrashIcon className="h-5 w-5" />
                     </button>
                   </div>
                 )}
@@ -404,23 +419,27 @@ function ItemRow({
         )}
       </div>
 
+      {/* Una sola línea: la sección, y al lado los dos botones. Corregir y quitar son
+          iconos porque en una lista de doce filas los mismos dos rótulos repetidos doce
+          veces son ruido, y porque así la línea entra en una pantalla estrecha con el
+          selector al lado. Quitar pregunta antes, que es lo que hace que un icono sin
+          rótulo pegado a otro no sea un peligro. */}
       {canEdit && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-stone-200 pt-2">
-          <button type="button" className="text-sm text-stone-700 underline" onClick={onToggleOpen}>
-            {open ? 'Cerrar' : 'Corregir'}
-          </button>
+        <div className="mt-2 flex items-center gap-2 border-t border-stone-200 pt-2">
           {/* A qué sección pertenece, y es un selector y no una flecha: la pertenencia
               dejó de ser la posición justo para que moverse y cambiar de sección fueran
               dos cosas distintas. Solo aparece si hay alguna sección — sin ninguna, la
               única respuesta posible es «suelta». */}
           {sectionChoices.length > 0 && !entry.retired && (
-            <label className="flex items-center gap-1 text-sm text-stone-600">
+            <label className="min-w-0 flex-1">
               <span className="sr-only">Sección de este elemento</span>
               <select
-                className="min-h-[2rem] max-w-[10rem] rounded border border-stone-300 bg-white px-1 text-sm"
+                className="min-h-[2.5rem] w-full rounded border border-stone-300 bg-white px-2 text-sm"
                 value={section ?? ''}
                 disabled={busy}
-                onChange={(event) => onSetSection(event.target.value === '' ? null : event.target.value)}
+                onChange={(event) =>
+                  onSetSection(event.target.value === '' ? null : event.target.value)
+                }
               >
                 <option value="">Suelta</option>
                 {sectionChoices.map((choice) => (
@@ -431,7 +450,7 @@ function ItemRow({
               </select>
             </label>
           )}
-          {entry.retired ? (
+          {entry.retired && (
             <button
               type="button"
               className="text-sm text-stone-700 underline"
@@ -440,17 +459,31 @@ function ItemRow({
             >
               Volver a poner
             </button>
-          ) : (
+          )}
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <button
               type="button"
-              className="ml-auto flex items-center gap-1 text-sm text-red-800"
-              disabled={busy}
-              onClick={onRemove}
+              aria-label={open ? 'Cerrar la corrección' : 'Corregir'}
+              aria-expanded={open}
+              className={`flex min-h-[2.5rem] min-w-[2.5rem] items-center justify-center rounded border border-stone-300 ${
+                open ? 'bg-stone-800 text-white' : 'text-stone-700'
+              }`}
+              onClick={onToggleOpen}
             >
-              <TrashIcon className="h-4 w-4" />
-              Quitar
+              <PenIcon className="h-5 w-5" />
             </button>
-          )}
+            {!entry.retired && (
+              <button
+                type="button"
+                aria-label="Quitar del dossier"
+                className="flex min-h-[2.5rem] min-w-[2.5rem] items-center justify-center rounded border border-red-200 text-red-800 disabled:opacity-50"
+                disabled={busy}
+                onClick={onRemove}
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
       )}
 
