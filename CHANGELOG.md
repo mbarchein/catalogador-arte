@@ -1,3 +1,74 @@
+## 12 de agosto de 2026
+
+### Interfaz
+
+**El dossier: obras elegidas, en el orden que se quiera, y un PDF para mandar**
+
+- **Se arma en «Tablas · Dossieres»**: se crea con un título, para qué es y a quién va, se buscan las
+  obras y se van añadiendo, y se suben y bajan hasta dejarlas en el orden que se quiera. Cada obra se
+  ve con su miniatura, su código, su título, su fecha, su técnica y sus medidas mientras se ordena,
+  que es lo que hace falta para distinguir dos versiones de lo mismo.
+- Quitar una obra no borra nada: vuelve con su nota y su precio si se añade otra vez. Un texto sí
+  habría que escribirlo de nuevo, y la pantalla lo advierte antes de quitarlo.
+- **Se pueden escribir textos donde haga falta**: una presentación en la portada, un rótulo que
+  separe «Óleos» de «Obra sobre papel», y párrafos entre unas obras y otras. Van en la misma lista
+  que las obras, así que un párrafo se coloca justo donde tiene que leerse. La nota del dossier y la
+  de cada obra son otra cosa: son recado del equipo y no salen impresas.
+- **El precio es del dossier y no de la obra**: el catálogo no dice lo que vale nada, y la misma obra
+  puede ofrecerse distinto en dos galerías. Cada dossier decide si los imprime.
+- **Cada dossier puede llevar la biografía y el currículum del artista**, delante de las obras o
+  detrás. Se escriben una sola vez para Rotili y otra para Ruiz Campins, en «Tablas · Fondos», y a
+  partir de ahí los usan todos: corregir una fecha la corrige en los que se emitan después. Si una
+  galería necesita una versión más corta, se escribe como texto de ese dossier.
+- El currículum se escribe a mano y no se saca de las exposiciones del catálogo: el catálogo solo
+  conoce las muestras de las obras ya fichadas, así que saldría con huecos y con aspecto de estar
+  completo.
+- **La biografía y el currículum se pueden pegar de una página web y conservan su forma**: los
+  títulos, las listas de exposiciones y las negritas llegan tal cual. Lo que no se trae
+  —tipografías, colores, imágenes— se queda fuera, y una tabla se convierte en líneas. Vale también
+  para los párrafos del dossier, la entradilla de una sección y el texto de la portada; lo escrito
+  antes se sigue leyendo igual.
+- En el ordenador basta con copiar y pegar. **En el móvil el teléfono solo entrega el texto**, así
+  que para el formato está el botón **«Pegar con formato»**, que lee el portapapeles del sistema — la
+  primera vez el navegador puede pedir permiso. Y siempre se puede poner a mano con los cuatro
+  botones de encima de la caja: **T** título, **•—** lista, **N** negrita, **C** cursiva. «Ver cómo
+  queda» lo enseña antes de guardar.
+- **El dossier se organiza en secciones**: «Óleos», «Obra sobre papel». Una sección se mueve entera
+  con sus obras dentro —de un toque, no de diez— sin llevarse ninguna que no sea suya, y se puede
+  plegar para llegar al final de un dossier largo.
+- **Cada obra dice en qué sección está, y puede no estar en ninguna.** En su fila hay un selector con
+  las secciones y «Suelta»: así se mete una obra en un bloque o se saca. Una obra suelta sale en el
+  PDF sin rótulo, esté donde esté, y la pantalla avisa de cuántas van así.
+- **«Agrupar por serie»** crea las secciones solas y coloca cada obra en la suya, de una vez. Lo que
+  no tiene serie va a una sección aparte al final. A partir de ahí se renombra y se mueve a mano: no
+  es una regla que siga viva, así que dar de alta una obra nueva no la mete en un dossier ya mandado.
+- Cada sección decide si su rótulo se lleva una página para él, y el dossier puede llevar un índice
+  detrás de la portada con las obras de cada sección y la página en la que empieza.
+- **El PDF se emite desde la propia pantalla**: una obra por página, con la fotografía grande y
+  debajo el código, el título, la fecha, la técnica, las medidas y el precio si el dossier los
+  enseña. La portada lleva el título, a quién va y la fecha; la biografía tiene su página; y el
+  nombre de la sección va al pie de todas sus páginas, así que una hoja suelta sigue diciendo de
+  dónde es. Una biografía o un currículum largos siguen en las hojas que necesiten.
+- Si una fotografía no se puede leer —sin cobertura, por ejemplo—, esa página sale diciendo que no
+  hay fotografía, en vez de dejar el documento sin generar.
+- **Cada PDF emitido queda guardado con su fecha** y se puede volver a descargar, así que dentro de
+  un año se ve qué se mandó exactamente. Emitir otra vez no cambia el anterior: hace la versión
+  siguiente, y el botón dice qué número va a llevar. Volver a generarlo coge los datos del día, de
+  modo que corregir una medida en la ficha corrige el dossier siguiente.
+- Corregir y quitar son **dos iconos** en la misma línea del selector de sección, y la pregunta de
+  quitar sale por abajo como los demás paneles: los dos botones caen donde está el pulgar, el que
+  confirma dice qué hace («Sí, quitar», no «Aceptar») y el «atrás» del teléfono la cierra.
+
+### La base de datos del catálogo
+
+**Cada dossier, cada precio y cada PDF emitido quedan guardados**
+
+- El precio vive en la línea del dossier y no en la ficha: el catálogo no afirma lo que vale una
+  obra, y la misma puede ofrecerse distinto en dos galerías.
+- La biografía y el currículum se guardan una vez por artista, y los lee cada dossier que los lleve.
+- Cada emisión queda con su fecha y su número, y no se puede reescribir: lo que salió por correo
+  siguió saliendo así.
+
 ## 11 de agosto de 2026
 
 ### Interfaz
@@ -1738,84 +1809,11 @@
 
 ## En marcha
 
-**El dossier, entero salvo probarlo con una obra de verdad**
+**El dossier, a falta de verlo impreso**
 
-- Está decidido cómo va a funcionar armar un dossier: se eligen las obras, se ponen en el orden que se
-  quiera, cada una puede llevar su nota y su precio, y se genera un PDF para mandar.
-- **Se pueden escribir textos donde haga falta**: una presentación en la portada, un rótulo que separe
-  «Óleos» de «Obra sobre papel» y párrafos entre unas obras y otras. Van en la misma lista que las obras,
-  así que un párrafo se coloca justo donde tiene que leerse. La nota de una obra y la del dossier son otra
-  cosa: son recado del equipo y no salen impresas.
-- **Cada dossier puede llevar la biografía y el currículum del artista**, delante de las obras o detrás,
-  donde se quiera. Se escriben una sola vez para Rotili y una para Ruiz Campins, y a partir de ahí los
-  usan todos los dossieres: corregir una fecha en la biografía la corrige en todos los que se emitan
-  después. Si una galería concreta necesita una versión más corta, se escribe como texto de ese dossier.
-- El currículum se escribe a mano y no se saca de las exposiciones del catálogo: el catálogo solo conoce
-  las muestras de las obras ya fichadas, así que saldría con huecos y con aspecto de estar completo.
-- El precio es del dossier y no de la obra: el catálogo no dice lo que vale nada, y la misma obra puede
-  ofrecerse distinto en dos galerías.
-- Cada PDF que se genera queda guardado con su fecha, así que dentro de un año se puede ver qué se mandó
-  exactamente. Y volver a generarlo coge los datos del día, de modo que corregir una medida en la ficha
-  corrige el dossier. Una versión ya mandada no se puede cambiar ni borrar: para corregir se manda otra.
-- **Ya se puede armar uno**, en «Tablas · Dossieres»: se crea con un título, se buscan las obras y
-  se van añadiendo, se sube y se baja cada una hasta dejarlas en el orden que se quiera, y se
-  escriben los textos, los precios y las notas. La biografía y el currículum de cada artista se
-  escriben una vez en «Tablas · Fondos» y desde ahí los usa cualquier dossier.
-- Cada obra dice su código, su título, su artista, su fecha, su técnica y sus medidas mientras se
-  ordena, que es lo que hace falta para distinguir dos versiones de lo mismo.
-- Quitar una obra no borra nada: vuelve con su nota y su precio si se añade otra vez. Un texto sí
-  habría que escribirlo de nuevo, y la pantalla lo advierte antes de quitarlo.
-- **Ya se emite el PDF**, desde la propia pantalla: una obra por página, con la fotografía grande y
-  debajo el código, el título, la fecha, la técnica, las medidas y el precio si el dossier los
-  enseña. La portada lleva el título, a quién va y la fecha; un rótulo abre la sección encabezando
-  la primera obra de esa sección; y la biografía tiene su página.
-- Cada PDF emitido queda guardado con su fecha y se puede volver a descargar. Emitir otra vez no
-  cambia el anterior: hace la versión siguiente, y el botón dice qué número va a llevar.
-- Si una fotografía no se puede leer —sin cobertura, por ejemplo—, esa página sale diciendo que no
-  hay fotografía en vez de dejar el documento sin generar.
-- En la lista, cada obra se ve con su miniatura y cada texto con su icono, así que el orden se
-  recorre de un vistazo sin leer una palabra.
-- **El dossier se organiza en secciones**: «Óleos», «Obra sobre papel». Una sección se mueve entera
-  con sus obras dentro —de un toque, no de diez— y se puede plegar para llegar al final de un
-  dossier largo.
-- **Cada obra dice en qué sección está, y puede no estar en ninguna.** En su fila hay un selector
-  con las secciones del dossier y «Suelta»: así se mete una obra en un bloque o se saca. Una obra
-  suelta sale en el PDF sin rótulo, esté donde esté, y la pantalla avisa de cuántas van así.
-- Corregir y quitar son ahora **dos iconos** en la misma línea del selector, en vez de dos rótulos:
-  en una lista de doce obras los mismos dos textos repetidos doce veces solo estorban.
-- **La pregunta de quitar sale por abajo, como los demás paneles de la aplicación**, en vez de en el
-  cuadro gris del navegador: la pregunta y sus dos botones caen donde está el pulgar, el botón dice
-  qué hace («Sí, quitar», no «Aceptar») y el «atrás» del teléfono la cierra. Lo mismo al retirar un
-  dossier entero. Y al quitar una sección se dice lo que pasa de verdad con sus obras: se quedan
-  donde están, sueltas.
-- Mover una sección **no se lleva ninguna obra**: pasa por delante de las sueltas de una en una y
-  las deja como estaban. Las obras de dentro se mueven entre las de su sección; una suelta salta la
-  sección entera de un toque.
-- Cada sección decide si su rótulo se lleva una página para él, y el dossier puede llevar un índice
-  detrás de la portada con las obras de cada sección y la página en la que empieza. En el PDF, el
-  nombre de la sección va al pie de todas sus páginas: una hoja suelta sigue diciendo de dónde es.
-- **«Agrupar por serie»** crea las secciones solas y coloca cada obra en la suya, de una vez. Lo que
-  quede sin serie va a una sección aparte al final. A partir de ahí se renombra y se mueve a mano:
-  no es una regla que siga viva, así que dar de alta una obra nueva no la mete en un dossier ya
-  mandado.
-- **La biografía y el currículum se pueden pegar de una página web y conservan su forma**: los
-  títulos, las listas de exposiciones y las negritas llegan tal cual. Lo que no se trae —tipografías,
-  colores, imágenes— se queda fuera, y una tabla se convierte en líneas. En el ordenador basta con
-  copiar y pegar; en el móvil el portapapeles casi siempre trae solo el texto, y entonces el formato
-  se pone con los cuatro botones que hay encima de la caja: **T** para un título, **•—** para una
-  lista, **N** para negrita y **C** para cursiva. «Ver cómo queda» enseña el resultado antes de
-  guardar.
-- **En el móvil, pegar con el teclado llega sin formato**: el teléfono solo le da a la aplicación el
-  texto. Para eso está el botón **«Pegar con formato»**, que lee el portapapeles del sistema y sí
-  alcanza los títulos y las listas — la primera vez el navegador puede pedir permiso. Si tampoco por
-  ahí hay formato, se dice en una línea en vez de dejarlo a la imaginación.
-- Lo mismo en los párrafos del dossier, en la entradilla de una sección y en el texto de la portada.
-  Lo escrito hasta ahora se sigue leyendo igual: nada de lo que ya está cambia de aspecto.
-- **Un texto largo ya no se pierde**: la biografía o el currículum que no caben en una hoja siguen en
-  la siguiente, con su pie y su sección. Antes, lo que no cabía se dibujaba fuera de la hoja y no
-  aparecía en el PDF. El recuento de páginas y el índice cuentan ahora las hojas de verdad.
-- **Lo que falta es usarlo con una obra delante**: generar un dossier de verdad, abrir el PDF y
-  mirar cómo queda impreso.
+- Está terminado y se puede usar; lo que falta es el recorrido con una obra delante: armar un
+  dossier de verdad, emitirlo, abrir el PDF y mirar cómo queda en papel — los tamaños de los
+  títulos, la sangría de las listas y si las portadillas ayudan o estorban.
 
 **La copia a tamaño completo, sin comprobar de extremo a extremo**
 
