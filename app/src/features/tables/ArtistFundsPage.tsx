@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate } from 'react-router'
 import { useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
+import { MarkupField } from '../../components/MarkupField'
 import { useAutoClear } from '../../components/useAutoClear'
 import { LoadingNotice, Toast, Toggle } from '../../components/ui'
 import { useTableAction } from './MasterTableRow'
@@ -217,34 +218,20 @@ function FundRow({
               </button>
             ) : (
               <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium" htmlFor={`bio-${entry.id}`}>
-                    Biografía
-                  </label>
-                  <textarea
-                    id={`bio-${entry.id}`}
-                    className="field mt-1 min-h-[7rem]"
-                    value={texts.biography}
-                    onChange={(e) => setTexts({ ...texts, biography: e.target.value })}
-                    placeholder="Nació en Badajoz y se formó en Madrid."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium" htmlFor={`cv-${entry.id}`}>
-                    Currículum
-                  </label>
-                  <textarea
-                    id={`cv-${entry.id}`}
-                    className="field mt-1 min-h-[7rem]"
-                    value={texts.cv}
-                    onChange={(e) => setTexts({ ...texts, cv: e.target.value })}
-                    placeholder={'1985 · Sala del Perímetro, Badajoz (individual)'}
-                  />
-                  <p className="mt-1 text-xs text-stone-500">
-                    Una línea por entrada. No se saca de las exposiciones del catálogo: solo conoce
-                    las de las obras ya fichadas.
-                  </p>
-                </div>
+                <MarkupField
+                  label="Biografía"
+                  value={texts.biography}
+                  placeholder="Nació en Badajoz y se formó en Madrid."
+                  onChange={(biography) => setTexts({ ...texts, biography })}
+                />
+                <MarkupField
+                  label="Currículum"
+                  hint="No se saca de las exposiciones del catálogo: solo conoce las de las obras ya fichadas."
+                  value={texts.cv}
+                  placeholder={'1985 · Sala del Perímetro, Badajoz (individual)'}
+                  rows="min-h-[9rem]"
+                  onChange={(cv) => setTexts({ ...texts, cv })}
+                />
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" className="btn-secondary" onClick={() => setTexts(null)}>
                     Cancelar

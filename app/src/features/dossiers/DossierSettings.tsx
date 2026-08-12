@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { MarkupField } from '../../components/MarkupField'
+import { MarkupText } from '../../components/MarkupText'
 import { Toggle } from '../../components/ui'
 import type { DossierRow } from './dossierIndex'
 import type { DossierPatch } from './useDossier'
@@ -74,9 +76,7 @@ export function DossierSettings({
         <p className="text-stone-600">
           {dossier.purpose.trim() === '' ? 'Sin uso anotado' : dossier.purpose.trim()}
         </p>
-        {dossier.cover_text.trim() !== '' && (
-          <p className="whitespace-pre-wrap text-stone-800">{dossier.cover_text.trim()}</p>
-        )}
+        {dossier.cover_text.trim() !== '' && <MarkupText text={dossier.cover_text} />}
       </div>
     )
   }
@@ -132,19 +132,14 @@ export function DossierSettings({
         </p>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium" htmlFor="dossier-cover">
-          Texto de la portada
-        </label>
-        <textarea
-          id="dossier-cover"
-          className="field mt-1 min-h-[5rem]"
-          value={coverText}
-          onChange={(event) => setCoverText(event.target.value)}
-          placeholder="Las medidas son sin marco, alto por ancho."
-        />
-        <p className="mt-1 text-xs text-stone-500">Sale impreso en la primera página.</p>
-      </div>
+      <MarkupField
+        label="Texto de la portada"
+        hint="Sale impreso en la primera página."
+        value={coverText}
+        placeholder="Las medidas son sin marco, alto por ancho."
+        rows="min-h-[5rem]"
+        onChange={setCoverText}
+      />
 
       <div>
         <label className="block text-sm font-medium" htmlFor="dossier-note">

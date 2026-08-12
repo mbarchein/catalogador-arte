@@ -8,6 +8,8 @@ import {
   PenIcon,
   TrashIcon,
 } from '../../components/ui'
+import { MarkupField } from '../../components/MarkupField'
+import { MarkupText } from '../../components/MarkupText'
 import type { DossierItemKind } from '../../lib/types'
 import { planPrice, priceInputValue } from './dossierDraft'
 import { itemEntries, itemsNotice, type DossierItemEntry, type DossierItemRow } from './dossierItems'
@@ -163,11 +165,7 @@ export function DossierItems({
                       {groupCountText(group)}
                       {group.dividerPage ? ' · con página propia' : ''}
                     </p>
-                    {group.body !== '' && (
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-stone-800">
-                        {group.body}
-                      </p>
-                    )}
+                    {group.body !== '' && <MarkupText text={group.body} className="mt-1" />}
                   </div>
                   {canEdit && (
                     <div className="flex shrink-0 flex-col gap-1">
@@ -390,11 +388,7 @@ function ItemRow({
         <div className="min-w-0 flex-1">
           <p className="break-words font-medium">{entry.title}</p>
           <p className="mt-0.5 break-words text-xs text-stone-600">{entry.subtitle}</p>
-          {entry.body !== '' && (
-            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-stone-800">
-              {entry.body}
-            </p>
-          )}
+          {entry.body !== '' && <MarkupText text={entry.body} className="mt-1" />}
           {entry.price !== null && showPrices && <p className="mt-1 text-sm">{entry.price}</p>}
           {entry.price !== null && !showPrices && (
             // Guardado y no impreso: decirlo evita que alguien escriba doce precios y
@@ -628,17 +622,12 @@ function ItemEditor({
       )}
 
       {(row.kind === 'TEXT' || row.kind === 'SECTION') && (
-        <div>
-          <label className="block text-sm font-medium" htmlFor={`body-${row.id}`}>
-            {row.kind === 'SECTION' ? 'Entradilla' : 'Párrafo'}
-          </label>
-          <textarea
-            id={`body-${row.id}`}
-            className="field mt-1 min-h-[5rem]"
-            value={body}
-            onChange={(event) => setBody(event.target.value)}
-          />
-        </div>
+        <MarkupField
+          label={row.kind === 'SECTION' ? 'Entradilla' : 'Párrafo'}
+          value={body}
+          rows="min-h-[5rem]"
+          onChange={setBody}
+        />
       )}
 
       {row.kind === 'SECTION' && (
