@@ -1805,6 +1805,10 @@
   se pone con los cuatro botones que hay encima de la caja: **T** para un título, **•—** para una
   lista, **N** para negrita y **C** para cursiva. «Ver cómo queda» enseña el resultado antes de
   guardar.
+- **En el móvil, pegar con el teclado llega sin formato**: el teléfono solo le da a la aplicación el
+  texto. Para eso está el botón **«Pegar con formato»**, que lee el portapapeles del sistema y sí
+  alcanza los títulos y las listas — la primera vez el navegador puede pedir permiso. Si tampoco por
+  ahí hay formato, se dice en una línea en vez de dejarlo a la imaginación.
 - Lo mismo en los párrafos del dossier, en la entradilla de una sección y en el texto de la portada.
   Lo escrito hasta ahora se sigue leyendo igual: nada de lo que ya está cambia de aspecto.
 - **Un texto largo ya no se pierde**: la biografía o el currículum que no caben en una hoja siguen en

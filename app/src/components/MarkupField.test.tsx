@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { useState } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 import { MarkupField } from './MarkupField'
 import { MarkupText } from './MarkupText'
 
@@ -33,6 +33,10 @@ const clipboard = (data: { html?: string; text?: string }) => ({
 
 const written = () => screen.getByTestId('valor').textContent
 
+afterEach(() => {
+  Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+})
+
 describe('el campo de un texto con marcas', () => {
   it('al pegar HTML guarda marcas, no HTML', () => {
     render(<Caso />)
@@ -57,6 +61,46 @@ describe('el campo de un texto con marcas', () => {
     area.setSelectionRange(7, 7)
     fireEvent.paste(area, clipboard({ text: 'EN MEDIO ' }))
     expect(written()).toBe('Antes. EN MEDIO Después.')
+  })
+
+  it('«Pegar con formato» lee el portapapeles del sistema, que en el móvil es la única vía al HTML', async () => {
+    // Medido en un teléfono: el evento de pegar da solo texto plano. La API asíncrona sí
+    // trae el HTML, pero exige un toque, así que va en un botón.
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        read: async () => [
+          {
+            types: ['text/html'],
+            getType: async () => new Blob(['<h2>Biografía</h2><ul><li>1985</li></ul>'], { type: 'text/html' }),
+          },
+        ],
+      },
+    })
+    render(<Caso />)
+    fireEvent.click(screen.getByText('Pegar con formato'))
+    await waitFor(() => expect(written()).toContain('## Biografía'))
+    expect(written()).toContain('- 1985')
+  })
+
+  it('y si el portapapeles no trae formato, lo dice con la salida', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { readText: async () => 'Nació en Badajoz.\nSe formó en Madrid.' },
+    })
+    render(<Caso />)
+    fireEvent.click(screen.getByText('Pegar con formato'))
+    await waitFor(() => expect(written()).toContain('Nació en Badajoz.'))
+    expect(screen.getByRole('status').textContent).toContain('sin formato')
+  })
+
+  it('un pegado normal sin formato avisa también, que es el caso del móvil', () => {
+    render(<Caso />)
+    fireEvent.paste(
+      screen.getByLabelText('Biografía'),
+      clipboard({ text: 'Nació en Badajoz.\nSe formó en Madrid.' }),
+    )
+    expect(screen.getByRole('status').textContent).toContain('Pegar con formato')
   })
 
   it('los botones ponen la marca alrededor de lo seleccionado', () => {

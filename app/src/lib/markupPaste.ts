@@ -25,6 +25,16 @@
  *
  * Necesita DOM —`DOMParser` hace el trabajo sucio de decodificar entidades y cerrar
  * etiquetas—, así que se verifica en jsdom y vive aparte de `markup.ts`, que es puro.
+ *
+ * ── DOS PORTAPAPELES, Y EL DEL MÓVIL ES OTRO ────────────────
+ *
+ * El evento de pegar trae lo que el navegador quiera darle, y **en el móvil casi
+ * siempre da solo texto plano**: medido, pegando una biografía desde el teléfono.
+ * Lo que sí puede leer el HTML es la API asíncrona del portapapeles
+ * —`navigator.clipboard.read()`—, que existe justamente para esto y que **exige un toque
+ * explícito** y a veces un permiso, así que no puede ir colgada del evento de pegar: va
+ * en un botón, «Pegar con formato». Cuando ni por ahí hay HTML, el portapapeles del
+ * sistema no lo tiene y no hay nada que la aplicación pueda recuperar: entonces se dice.
  */
 
 /** Las etiquetas que dicen algo, y qué marca les corresponde. */
@@ -179,14 +189,29 @@ export function markupFromHtml(html: string): string {
  * no (que es lo normal en un teléfono).
  *
  * Devuelve null cuando no hay nada que pegar, para que quien llama deje pasar el
- * pegado del navegador en vez de comérselo.
+ * pegado del navegador en vez de comérselo. Y dice **si venía con formato**, porque
+ * pegar una biografía entera y que llegue en plano no es un fallo que deba adivinarse:
+ * se dice en una línea, con lo que se puede hacer.
  */
 export function pastedMarkup(data: {
   html: string
   text: string
-}): string | null {
+}): { text: string; formatted: boolean } | null {
   const fromHtml = markupFromHtml(data.html)
-  if (fromHtml !== '') return fromHtml
+  if (fromHtml !== '') return { text: fromHtml, formatted: true }
   const plain = data.text.trim()
-  return plain === '' ? null : data.text
+  return plain === '' ? null : { text: data.text, formatted: false }
+}
+
+/**
+ * El aviso de un pegado sin formato, o null cuando no hay nada que decir.
+ *
+ * Solo cuando lo pegado **parece un documento** —varias líneas o un párrafo largo—:
+ * pegar una fecha o un nombre en plano es lo normal y avisar de eso sería ruido en cada
+ * toque. Y solo dice lo que se puede hacer, que es lo único que justifica una frase.
+ */
+export function plainPasteNotice(text: string): string | null {
+  const looksLikeDocument = text.includes('\n') || text.trim().length > 160
+  if (!looksLikeDocument) return null
+  return 'Pegado sin formato: el portapapeles no traía títulos ni listas. Prueba «Pegar con formato».'
 }

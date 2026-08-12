@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { markupFromHtml, pastedMarkup } from './markupPaste'
+import { markupFromHtml, pastedMarkup, plainPasteNotice } from './markupPaste'
 import { parseMarkup, runsText } from './markup'
 
 /**
@@ -118,21 +118,44 @@ describe('lo que se cae, que es el motivo de no guardar HTML', () => {
 })
 
 describe('de dónde se pega', () => {
-  it('con HTML manda el HTML', () => {
-    expect(pastedMarkup({ html: '<h2>Biografía</h2>', text: 'Biografía' })).toBe('## Biografía')
+  it('con HTML manda el HTML, y se dice que venía con formato', () => {
+    expect(pastedMarkup({ html: '<h2>Biografía</h2>', text: 'Biografía' })).toEqual({
+      text: '## Biografía',
+      formatted: true,
+    })
   })
 
   it('sin HTML se pega el texto plano tal cual, que es lo que llega de un teléfono', () => {
-    expect(pastedMarkup({ html: '', text: 'Nació en Badajoz.' })).toBe('Nació en Badajoz.')
+    expect(pastedMarkup({ html: '', text: 'Nació en Badajoz.' })).toEqual({
+      text: 'Nació en Badajoz.',
+      formatted: false,
+    })
   })
 
   it('con un HTML que no dice nada, tampoco se pierde el texto plano', () => {
-    expect(pastedMarkup({ html: '<div><span> </span></div>', text: 'Nació en Badajoz.' })).toBe(
-      'Nació en Badajoz.',
-    )
+    expect(pastedMarkup({ html: '<div><span> </span></div>', text: 'Nació en Badajoz.' })).toEqual({
+      text: 'Nació en Badajoz.',
+      formatted: false,
+    })
   })
 
   it('sin nada que pegar devuelve null, y quien llama deja pasar el pegado del navegador', () => {
     expect(pastedMarkup({ html: '', text: '' })).toBeNull()
+  })
+})
+
+describe('el aviso de un pegado sin formato', () => {
+  it('avisa cuando lo pegado parece un documento', () => {
+    // Es el caso del móvil: se pega una biografía entera y llega en plano. Quedarse
+    // callado deja a alguien preguntándose por qué.
+    expect(plainPasteNotice('Nació en Badajoz.\nSe formó en Madrid.')).toContain(
+      'Pegar con formato',
+    )
+    expect(plainPasteNotice('x'.repeat(200))).not.toBeNull()
+  })
+
+  it('y no cuando es una fecha o un nombre, que es lo normal', () => {
+    expect(plainPasteNotice('1985')).toBeNull()
+    expect(plainPasteNotice('Sala del Perímetro, Badajoz')).toBeNull()
   })
 })

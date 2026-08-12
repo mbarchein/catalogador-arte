@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import { hasMarkup, withMarkup } from '../lib/markup'
-import { pastedMarkup } from '../lib/markupPaste'
+import { plainPasteNotice, pastedMarkup } from '../lib/markupPaste'
+import { readClipboard } from '../lib/clipboard'
 import { MarkupText } from './MarkupText'
 
 /**
@@ -44,6 +45,43 @@ export function MarkupField({
   const id = useId()
   const area = useRef<HTMLTextAreaElement>(null)
   const [preview, setPreview] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  /** Mete lo pegado donde está el cursor y lo deja detrás, como cualquier pegado. */
+  function insert(text: string) {
+    const element = area.current
+    const start = element?.selectionStart ?? value.length
+    const end = element?.selectionEnd ?? value.length
+    onChange(`${value.slice(0, start)}${text}${value.slice(end)}`)
+    const caret = start + text.length
+    requestAnimationFrame(() => {
+      element?.focus()
+      element?.setSelectionRange(caret, caret)
+    })
+  }
+
+  /**
+   * Pegar leyendo el portapapeles del sistema, que es la única vía al HTML en un móvil.
+   *
+   * Detrás de un botón porque la API lo exige —un toque explícito, y a veces un
+   * permiso—, y con los tres finales dichos: llega con formato, llega en plano, o el
+   * navegador no deja leerlo.
+   */
+  async function pasteFromClipboard() {
+    setNotice(null)
+    const contents = await readClipboard()
+    if (contents === null) {
+      setNotice('Este navegador no deja leer el portapapeles. Pega con el teclado y usa los botones.')
+      return
+    }
+    const pasted = pastedMarkup(contents)
+    if (pasted === null) {
+      setNotice('El portapapeles está vacío.')
+      return
+    }
+    insert(pasted.text)
+    setNotice(pasted.formatted ? null : plainPasteNotice(pasted.text))
+  }
 
   /** Pone la marca y devuelve el cursor a su sitio: sin esto hay que buscarlo con el dedo. */
   function mark(kind: 'bold' | 'italic' | 'heading' | 'bullet') {
@@ -102,6 +140,16 @@ export function MarkupField({
             <ToolButton label="Cursiva" hint="Cursiva" disabled={disabled} onClick={() => mark('italic')}>
               <span className="text-sm italic">C</span>
             </ToolButton>
+            {/* Con rótulo y no con un icono: es el botón que hace falta en el móvil, donde
+                el pegado normal llega sin formato, y un dibujo no diría eso. */}
+            <button
+              type="button"
+              className="ml-auto flex min-h-[2.25rem] items-center rounded border border-stone-300 bg-white px-2 text-sm text-stone-700 disabled:opacity-50"
+              disabled={disabled}
+              onClick={() => void pasteFromClipboard()}
+            >
+              Pegar con formato
+            </button>
           </div>
 
           <textarea
@@ -113,26 +161,27 @@ export function MarkupField({
             disabled={disabled}
             onChange={(event) => onChange(event.target.value)}
             onPaste={(event) => {
-              const converted = pastedMarkup({
+              const pasted = pastedMarkup({
                 html: event.clipboardData.getData('text/html'),
                 text: event.clipboardData.getData('text/plain'),
               })
-              if (converted === null) return
+              if (pasted === null) return
               event.preventDefault()
-              const element = event.currentTarget
-              const start = element.selectionStart
-              const end = element.selectionEnd
-              onChange(`${value.slice(0, start)}${converted}${value.slice(end)}`)
-              const caret = start + converted.length
-              requestAnimationFrame(() => {
-                element.focus()
-                element.setSelectionRange(caret, caret)
-              })
+              insert(pasted.text)
+              // Sin formato y con pinta de documento: se dice, con la salida. En el móvil
+              // este es el camino normal, y quedarse callado es dejar a alguien
+              // preguntándose por qué su biografía ha llegado en plano.
+              setNotice(pasted.formatted ? null : plainPasteNotice(pasted.text))
             }}
           />
         </>
       )}
 
+      {notice !== null && (
+        <p role="status" className="mt-1 text-xs text-amber-900">
+          {notice}
+        </p>
+      )}
       {hint !== undefined && <p className="mt-1 text-xs text-stone-500">{hint}</p>}
       {/* La ayuda de las marcas solo mientras no hay ninguna: cuando el texto ya las
           lleva, quien escribe ya sabe cómo se ponen y la frase pasa a ser ruido. */}
