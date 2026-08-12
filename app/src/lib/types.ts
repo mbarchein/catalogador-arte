@@ -405,6 +405,15 @@ export interface Exhibition {
   /** The catalogue of the show, as a bibliographic record (RF-503). Only settable when `catalogue_published` is 'YES'. */
   catalogue_reference_id: string | null
   note: string
+  /**
+   * El cartel de la exposición (RF-518): la miniatura que pinta el listado y la copia
+   * de consulta que se abre al tocarla. Las tres van juntas o son las tres nulas — no
+   * se guarda el original, porque un cartel es una referencia y no el documento de
+   * conservación de una obra.
+   */
+  poster_thumbnail_path: string | null
+  poster_derivative_path: string | null
+  poster_uploaded_at: string | null
   active: boolean
 }
 

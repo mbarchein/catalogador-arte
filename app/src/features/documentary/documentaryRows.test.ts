@@ -123,6 +123,9 @@ function participation(over: Partial<ParticipationRow> = {}): ParticipationRow {
       catalogue_published: 'YES',
       catalogue_reference_id: 'bib-1',
       note: '',
+      poster_thumbnail_path: null,
+      poster_derivative_path: null,
+      poster_uploaded_at: null,
       active: true,
       venue: {
         id: 'v-1',

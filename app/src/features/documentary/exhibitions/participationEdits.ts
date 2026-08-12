@@ -28,7 +28,10 @@ import { exhibitionVenueLine } from './exhibitionHistory'
  */
 export const EXHIBITION_OPTION_COLUMNS =
   'id, title, exhibition_type, venue_id, venue_note, year, start_date, end_date, date_note, ' +
-  'catalogue_published, catalogue_reference_id, note, active, ' +
+  'catalogue_published, catalogue_reference_id, note, ' +
+  // El cartel (RF-518): la miniatura la pinta el listado, así que viaja con la fila y
+  // no en una segunda consulta por exposición.
+  'poster_thumbnail_path, poster_derivative_path, poster_uploaded_at, active, ' +
   'venue:exhibition_venues(id, name, locality, country, party_id, note, active, ' +
   'party:parties(id, party_type, name, locality, country, active))'
 

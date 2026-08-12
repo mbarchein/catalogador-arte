@@ -2,6 +2,21 @@
 
 ### Interfaz
 
+**El cartel de una exposición, y su miniatura en el listado**
+
+- Cada exposición puede llevar **su cartel**. Se sube desde la ficha —una foto del
+  teléfono o un fichero del ordenador—, se ve grande al tocarlo y se puede cambiar o
+  quitar.
+- En el listado, cada exposición sale con **la miniatura de su cartel**: una lista de
+  títulos y años se recorre leyendo, y el cartel es lo que la hace reconocible de un
+  vistazo. Las que no lo tienen enseñan un recuadro que lo dice, así que las filas siguen
+  leyéndose en columna.
+- Se guardan dos tamaños y no tres, al contrario que en una fotografía de obra: la
+  miniatura y una copia para verlo. El original no se sube — un cartel es una referencia
+  para reconocer la muestra, no el fichero que se manda a una imprenta, y subir la foto
+  de un móvil tres veces desde un almacén es media espera de más.
+- Quitar el cartel no borra el fichero: se puede volver a subir el mismo.
+
 **El dossier: obras elegidas, en el orden que se quiera, y un PDF para mandar**
 
 - **Se arma en «Tablas · Dossieres»**: se crea con un título, para qué es y a quién va, se buscan las

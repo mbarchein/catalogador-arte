@@ -19,6 +19,7 @@ import { canWriteBlock } from '../documentary/sections'
 import { ExhibitionForm } from './ExhibitionForm'
 import { ParticipatingArtworks } from './ParticipatingArtworks'
 import { ExhibitionDocuments } from './ExhibitionDocuments'
+import { ExhibitionPoster } from './ExhibitionPoster'
 import { useExhibitionDocuments } from '../documentary/useDocumentary'
 import { exhibitionDraft, type ExhibitionDraft } from './exhibitionDraft'
 import { retireConfirmText } from './exhibitionMessages'
@@ -66,7 +67,7 @@ export function ExhibitionPage() {
   // Editing lives in the route, not in local state. See the heading.
   const editing = useMatch('/exhibitions/:id/edit') !== null
 
-  const { exhibition, loading, error, saving, save, setActive, setCatalogueReference } =
+  const { exhibition, loading, error, saving, reload, save, setActive, setCatalogueReference } =
     useExhibition(id)
   const artworks = useExhibitionArtworks(id)
   const documents = useExhibitionDocuments(id)
@@ -125,6 +126,10 @@ export function ExhibitionPage() {
         onSetActive={setActive}
         onLeaveEditing={() => navigate(`/exhibitions/${id}`)}
       />
+
+      {/* RF-518: el cartel, y va aquí arriba porque es lo que dice de un vistazo qué
+          exposición se está mirando. Se LEE siempre; se cuelga y se quita con permiso. */}
+      <ExhibitionPoster exhibition={exhibition} canEdit={canEdit} onSaved={() => void reload()} />
 
       {/* RF-503: cuál de las referencias de la bibliografía es su catálogo. Va como
           sección propia y no como campo del formulario, por lo que razona

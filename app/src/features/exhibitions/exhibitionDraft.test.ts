@@ -44,6 +44,9 @@ function row(over: Partial<Exhibition> = {}): Exhibition {
     catalogue_published: 'YES',
     catalogue_reference_id: null,
     note: '',
+    poster_thumbnail_path: null,
+    poster_derivative_path: null,
+    poster_uploaded_at: null,
     active: true,
     ...over,
   }

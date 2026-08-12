@@ -168,7 +168,8 @@ export interface ParticipationRow extends ArtworkExhibition {
 export const PARTICIPATION_COLUMNS =
   'id, catalog_id, exhibition_id, catalogue_number, note, active, ' +
   'exhibition:exhibitions(id, title, exhibition_type, venue_id, venue_note, year, ' +
-  'start_date, end_date, date_note, catalogue_published, catalogue_reference_id, note, active, ' +
+  'start_date, end_date, date_note, catalogue_published, catalogue_reference_id, note, ' +
+  'poster_thumbnail_path, poster_derivative_path, poster_uploaded_at, active, ' +
   `venue:exhibition_venues(id, name, locality, country, party_id, note, active, party:parties(${PARTY_FIELDS})))`
 
 /**

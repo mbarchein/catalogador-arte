@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
-import { Toggle } from '../../components/ui'
+import { ImageIcon, Toggle } from '../../components/ui'
 import { rankExhibitions, retiredCount } from './exhibitionIndex'
 import { exhibitionCountText, exhibitionListNotice } from './exhibitionMessages'
+import { useExhibitionPosters } from './useExhibitionPosters'
 import { useExhibitions } from './useExhibitions'
 
 /**
@@ -39,6 +40,9 @@ export function ExhibitionsPage() {
     [exhibitions, query, includingRetired],
   )
   const retired = retiredCount(exhibitions)
+  // Se firman las de las filas que se pintan, no las de la tabla entera: con el
+  // buscador escrito son tres y no doscientas.
+  const posters = useExhibitionPosters(useMemo(() => entries.map((entry) => entry.row), [entries]))
 
   const notice = exhibitionListNotice({
     loading,
@@ -117,8 +121,28 @@ export function ExhibitionsPage() {
                 caracteres como única zona pulsable es un objetivo que se falla. */}
             <Link
               to={`/exhibitions/${entry.row.id}`}
-              className={`card block active:bg-stone-50 ${entry.retired ? 'opacity-60' : ''}`}
+              className={`card flex gap-3 active:bg-stone-50 ${entry.retired ? 'opacity-60' : ''}`}
             >
+              {/* La miniatura del cartel (RF-518), y siempre el mismo cuadrado: es lo
+                  que hace el listado recorrible: si las filas sin cartel no tuvieran su
+                  hueco, cada una desplazaría el texto de las demás y las fechas
+                  dejarían de leerse en columna. Sin cartel, un icono — nunca un hueco
+                  vacío (RF-304). */}
+              <span className="mt-0.5 h-14 w-14 shrink-0 overflow-hidden rounded border border-stone-200 bg-stone-100">
+                {posters[entry.row.id] !== undefined ? (
+                  <img
+                    src={posters[entry.row.id]}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-stone-400">
+                    <ImageIcon className="h-5 w-5" />
+                  </span>
+                )}
+              </span>
+              <span className="block min-w-0 flex-1">
               {/* El orden de RF-502: cuándo, qué y dónde. La cronología encabeza
                   porque este listado se recorre por años. */}
               <span className="block text-xs text-stone-500">{entry.dates}</span>
@@ -144,6 +168,7 @@ export function ExhibitionsPage() {
                     Retirada
                   </span>
                 )}
+              </span>
               </span>
             </Link>
           </li>
