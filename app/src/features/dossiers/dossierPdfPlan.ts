@@ -28,6 +28,7 @@
 import { displayDate } from '../../lib/dates'
 import { displayTitle } from '../../lib/title'
 import type { ArtistFund } from '../../lib/types'
+import { parseMarkup, type MarkupBlock } from '../../lib/markup'
 import { measurementsText, priceText, sortItems, type DossierItemRow } from './dossierItems'
 import { activeSections, sectionOf } from './dossierSections'
 
@@ -39,10 +40,16 @@ export interface FundTexts {
   cv: string
 }
 
-/** A free text as it is printed: a heading, a paragraph, or both. */
+/**
+ * A free text as it is printed: a heading, a body, or both.
+ *
+ * The body arrives PARSED: the marks —headings, lists, bold— are interpreted here,
+ * where there are no fonts and everything is verifiable in node, and whoever draws
+ * only draws. It is the same division as everywhere else in the dossier.
+ */
 export interface TextBlock {
   heading: string
-  body: string
+  body: MarkupBlock[]
 }
 
 /** The caption under a photograph, in printing order. Never a gap (RF-304). */
@@ -57,19 +64,26 @@ export interface ArtworkCaption {
   price: string | null
 }
 
-/** Una entrada del índice: la sección, cuántas obras lleva y en qué página empieza. */
+/**
+ * Una entrada del índice: la sección y cuántas obras lleva.
+ *
+ * **Sin número de página, y eso es una decisión.** El número solo se sabe midiendo —una
+ * biografía larga ocupa dos hojas y corre todo lo que viene detrás—, y medir necesita
+ * las tipografías, que están en el generador. Así que el plan dice qué secciones hay y
+ * en qué orden, y el número lo resuelve quien dibuja, contando las hojas que de verdad
+ * ha escrito. Un índice con números estimados es la única forma de que un índice
+ * mienta.
+ */
 export interface IndexEntry {
   heading: string
   artworkCount: number
-  /** Página del PDF donde empieza. Se conoce tras la primera pasada (ver `dossierPages`). */
-  page: number
 }
 
 export type DossierPage =
-  | { kind: 'COVER'; title: string; recipient: string; date: string; blurb: string }
+  | { kind: 'COVER'; title: string; recipient: string; date: string; blurb: MarkupBlock[] }
   | { kind: 'INDEX'; entries: IndexEntry[] }
-  | { kind: 'DIVIDER'; heading: string; body: string }
-  | { kind: 'BIOGRAPHY'; heading: string; paragraphs: string[]; cv: string[] }
+  | { kind: 'DIVIDER'; heading: string; body: MarkupBlock[] }
+  | { kind: 'BIOGRAPHY'; heading: string; blocks: MarkupBlock[]; cv: MarkupBlock[] }
   | { kind: 'TEXTS'; texts: TextBlock[] }
   | {
       kind: 'ARTWORK'
@@ -91,6 +105,15 @@ export interface PlannedPage {
   page: DossierPage
   /** El rótulo de la sección en curso, o null antes de la primera. */
   section: string | null
+  /**
+   * Si esta es la PRIMERA página impresa de su sección, que es lo que el índice
+   * necesita saber para poner un número.
+   *
+   * Lo dice el plan y no lo adivina quien dibuja: con portadilla es la portadilla, y
+   * sin ella es la página de la primera obra del bloque — dos casos que solo se
+   * distinguen aquí.
+   */
+  sectionStart?: boolean
 }
 
 /**
@@ -124,20 +147,17 @@ export function artworkCaption(
   }
 }
 
-/** The paragraphs of a prose text, keeping the blank lines the author typed. */
-export function paragraphsOf(text: string): string[] {
-  return text
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.replace(/\s*\n\s*/g, ' ').trim())
-    .filter((paragraph) => paragraph !== '')
-}
-
-/** The lines of a CV, one entry per line and the blank ones dropped. */
-export function cvLines(text: string): string[] {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '')
+/**
+ * Los bloques de un texto largo: párrafos, títulos y listas (RF-1614, RF-1616).
+ *
+ * Es `parseMarkup` y nada más, y está aquí con nombre propio para decir dónde se
+ * interpretan las marcas de un dossier: **una sola vez, en el plan**. Antes eran dos
+ * funciones —una que partía la prosa en párrafos y otra que partía el currículum en
+ * líneas—, y la del currículum era justo lo que hacía que una lista pegada de una web
+ * saliera como una lista: ahora eso lo dice la marca y no el sitio donde está el texto.
+ */
+export function textBlocks(text: string): MarkupBlock[] {
+  return parseMarkup(text)
 }
 
 /**
@@ -149,7 +169,7 @@ export function cvLines(text: string): string[] {
  * primero: con las entradas ya sabidas, el número de páginas del índice es
  * aritmética, y solo entonces se numeran las secciones.
  */
-const INDEX_ENTRIES_PER_PAGE = 24
+export const INDEX_ENTRIES_PER_PAGE = 24
 
 /**
  * The pages of the PDF, in order, each one with the section it belongs to.
@@ -197,7 +217,7 @@ export function dossierPages(input: {
         title: input.dossier.title.trim(),
         recipient: input.recipientName.trim(),
         date: input.date,
-        blurb: input.dossier.cover_text.trim(),
+        blurb: textBlocks(input.dossier.cover_text),
       },
       section: null,
     },
@@ -205,13 +225,18 @@ export function dossierPages(input: {
 
   let pending: TextBlock[] = []
   let section: string | null = null
-  // Las entradas del índice se recogen en la misma pasada, con la página en la que
-  // cae la primera hoja de cada sección ANTES de insertar el índice. El corrimiento
-  // se aplica al final, cuando ya se sabe cuánto mide.
+  // Las entradas del índice se recogen en la misma pasada. El número de página no: lo
+  // pone quien dibuja, que es quien sabe cuántas hojas ha ocupado cada cosa.
   const index: IndexEntry[] = []
   const indexBySection = new Map<string, IndexEntry>()
+  // La página que abre la sección en curso todavía no existe: se marca la siguiente que
+  // se cree, que es de lo que el índice cuelga su número.
+  let startsSection = false
 
-  const push = (page: DossierPage) => planned.push({ page, section })
+  const push = (page: DossierPage) => {
+    planned.push(startsSection ? { page, section, sectionStart: true } : { page, section })
+    startsSection = false
+  }
   const flushTexts = () => {
     if (pending.length === 0) return
     push({ kind: 'TEXTS', texts: pending })
@@ -226,25 +251,25 @@ export function dossierPages(input: {
 
     if (row.kind === 'SECTION') {
       const heading = row.heading.trim()
-      const entry: IndexEntry = { heading, artworkCount: 0, page: 0 }
+      const entry: IndexEntry = { heading, artworkCount: 0 }
       if (row.divider_page === true) {
         // Los textos que esperaban van ANTES de la portadilla: se pusieron delante
         // del rótulo, y quien los movió ahí quería leerlos primero. Y antes de que
         // `section` cambie, que es lo que decide su pie.
         flushTexts()
         section = heading
-        entry.page = planned.length + 1
         index.push(entry)
         indexBySection.set(row.id, entry)
-        push({ kind: 'DIVIDER', heading, body: row.body.trim() })
+        startsSection = true
+        push({ kind: 'DIVIDER', heading, body: textBlocks(row.body) })
       } else {
         section = heading
-        // Sin portadilla, el rótulo encabeza la página de la primera obra: la
-        // entrada del índice apunta a esa página, que es la siguiente que se cree.
-        entry.page = planned.length + 1
+        // Sin portadilla, el rótulo encabeza la página de la primera obra: la que abre
+        // la sección es la siguiente que se cree.
         index.push(entry)
         indexBySection.set(row.id, entry)
-        pending.push({ heading, body: row.body.trim() })
+        startsSection = true
+        pending.push({ heading, body: textBlocks(row.body) })
       }
       continue
     }
@@ -255,23 +280,23 @@ export function dossierPages(input: {
     section = belongs === null ? null : sections.get(belongs)?.heading.trim() ?? null
 
     if (row.kind === 'TEXT') {
-      pending.push({ heading: row.heading.trim(), body: row.body.trim() })
+      pending.push({ heading: row.heading.trim(), body: textBlocks(row.body) })
       continue
     }
 
     if (row.kind === 'BIOGRAPHY') {
       const fund = input.funds.find((candidate) => candidate.code === row.artist_fund)
       if (fund === undefined) continue
-      const paragraphs = paragraphsOf(fund.biography)
-      const cv = row.with_cv === true ? cvLines(fund.cv) : []
+      const blocks = textBlocks(fund.biography)
+      const cv = row.with_cv === true ? textBlocks(fund.cv) : []
       // Nothing written yet: a page with a heading and no prose is a blank page
       // with a title on it, and the screen already says the fund has no biography.
-      if (paragraphs.length === 0 && cv.length === 0) continue
+      if (blocks.length === 0 && cv.length === 0) continue
       flushTexts()
       push({
         kind: 'BIOGRAPHY',
         heading: row.heading.trim() !== '' ? row.heading.trim() : fund.name,
-        paragraphs,
+        blocks,
         cv,
       })
       continue
@@ -304,16 +329,12 @@ export function dossierPages(input: {
   // esté encendido: un índice de una sola entrada sin nombre es una hoja gastada.
   if (input.dossier.show_index === true && index.length > 0) {
     const indexPages = Math.ceil(index.length / INDEX_ENTRIES_PER_PAGE)
-    const shifted = index.map((entry) => ({ ...entry, page: entry.page + indexPages }))
     const pages: PlannedPage[] = []
     for (let i = 0; i < indexPages; i += 1) {
       pages.push({
         page: {
           kind: 'INDEX',
-          entries: shifted.slice(
-            i * INDEX_ENTRIES_PER_PAGE,
-            (i + 1) * INDEX_ENTRIES_PER_PAGE,
-          ),
+          entries: index.slice(i * INDEX_ENTRIES_PER_PAGE, (i + 1) * INDEX_ENTRIES_PER_PAGE),
         },
         section: null,
       })

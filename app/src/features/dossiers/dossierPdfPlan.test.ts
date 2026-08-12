@@ -3,14 +3,14 @@ import type { DossierItem } from '../../lib/types'
 import type { DossierItemRow } from './dossierItems'
 import {
   artworkCaption,
-  cvLines,
   dossierPages,
   footerText,
   issueBlockedReason,
   issueFileName,
   issuePath,
-  paragraphsOf,
+  textBlocks,
 } from './dossierPdfPlan'
+import { runsText } from '../../lib/markup'
 
 /**
  * RF-1607, RF-1609, RF-1613, RF-1614: qué páginas salen y qué lleva cada una.
@@ -88,13 +88,16 @@ function pages(items: readonly DossierItemRow[], over: Partial<typeof DOSSIER> =
 describe('la portada y el recuento de páginas', () => {
   it('la primera página es siempre la portada, con lo que se le escribió', () => {
     const [cover] = pages([])
-    expect(cover).toEqual({
-      kind: 'COVER',
-      title: 'Selección para galería',
-      recipient: 'Galería Serrano',
-      date: '11 de agosto de 2026',
-      blurb: 'Las medidas son sin marco.',
-    })
+    expect(cover?.kind).toBe('COVER')
+    if (cover?.kind === 'COVER') {
+      expect(cover.title).toBe('Selección para galería')
+      expect(cover.recipient).toBe('Galería Serrano')
+      expect(cover.date).toBe('11 de agosto de 2026')
+      // La presentación llega ya interpretada, como cualquier texto largo del dossier.
+      expect(cover.blurb.map((block) => (block.kind === 'LIST' ? '' : runsText(block.runs)))).toEqual([
+        'Las medidas son sin marco.',
+      ])
+    }
   })
 
   it('una obra por página, que es la maqueta elegida', () => {
@@ -125,7 +128,7 @@ describe('dónde caen los textos (RF-1614)', () => {
     expect(result).toHaveLength(2)
     const page = result[1]
     expect(page?.kind).toBe('ARTWORK')
-    if (page?.kind === 'ARTWORK') expect(page.texts).toEqual([{ heading: 'Óleos', body: '' }])
+    if (page?.kind === 'ARTWORK') expect(page.texts).toEqual([{ heading: 'Óleos', body: [] }])
   })
 
   it('dos textos seguidos se pegan los dos a la misma obra', () => {
@@ -159,7 +162,7 @@ describe('dónde caen los textos (RF-1614)', () => {
     expect(result).toHaveLength(2)
     const page = result[1]
     if (page?.kind === 'ARTWORK') {
-      expect(page.texts).toEqual([{ heading: 'Óleos', body: '' }])
+      expect(page.texts).toEqual([{ heading: 'Óleos', body: [] }])
       expect(page.catalogId).toBe('AR-0001')
     }
   })
@@ -280,18 +283,26 @@ describe('el índice (RF-1622)', () => {
     ])
   })
 
-  it('cada entrada dice cuántas obras lleva y en qué página empieza, ya corrida', () => {
-    // El número tiene que contar el propio índice: si no, todas las referencias
-    // apuntarían una página antes y el índice sería exactamente inútil.
+  it('cada entrada dice cuántas obras lleva, y el número de página lo pone quien mide', () => {
+    // El plan no numera: una biografía larga ocupa dos hojas y corre todo lo que viene
+    // detrás, así que el número solo lo sabe quien dibuja. Lo que sí decide el plan es
+    // qué secciones hay, en qué orden y cuántas obras lleva cada una.
     const result = pages(rows, { show_index: true })
     const index = result[1]
     expect(index?.kind).toBe('INDEX')
     if (index?.kind === 'INDEX') {
       expect(index.entries).toEqual([
-        { heading: 'Óleos', artworkCount: 2, page: 3 },
-        { heading: 'Papel', artworkCount: 1, page: 5 },
+        { heading: 'Óleos', artworkCount: 2 },
+        { heading: 'Papel', artworkCount: 1 },
       ])
     }
+  })
+
+  it('y marca qué página abre cada sección, que es de donde el número va a colgar', () => {
+    const result = pages(rows, { show_index: true })
+    // Con el índice delante: portada, índice, y la primera obra de «Óleos» abre.
+    expect(result.map((page) => page.kind)).toEqual(['COVER', 'INDEX', 'ARTWORK', 'ARTWORK', 'ARTWORK'])
+    expect(planned(rows, { show_index: true }).filter((entry) => entry.sectionStart === true)).toHaveLength(2)
   })
 
   it('cuenta las obras de CADA sección, y no las que hay hasta la siguiente', () => {
@@ -305,7 +316,7 @@ describe('el índice (RF-1622)', () => {
     ]
     const index = pages(conSueltas, { show_index: true })[1]
     if (index?.kind === 'INDEX') {
-      expect(index.entries).toEqual([{ heading: 'Óleos', artworkCount: 2, page: 3 }])
+      expect(index.entries).toEqual([{ heading: 'Óleos', artworkCount: 2 }])
     }
   })
 
@@ -344,15 +355,19 @@ describe('la biografía (RF-1616, RF-1617)', () => {
       ...over,
     })
 
-  it('tiene su propia página, con la prosa en párrafos y el currículum en líneas', () => {
+  it('tiene su propia página, con la prosa y el currículum ya interpretados', () => {
     const result = pages([bio()])
     expect(result).toHaveLength(2)
     const page = result[1]
     expect(page?.kind).toBe('BIOGRAPHY')
     if (page?.kind === 'BIOGRAPHY') {
       expect(page.heading).toBe('Alberto Rotili')
-      expect(page.paragraphs).toEqual(['Nació en Badajoz.', 'Pintó del natural.'])
-      expect(page.cv).toEqual(['1985 · Badajoz', '1979 · Cáceres'])
+      expect(page.blocks.map((block) => block.kind)).toEqual(['PARAGRAPH', 'PARAGRAPH'])
+      expect(page.blocks.flatMap((block) => (block.kind === 'LIST' ? [] : [runsText(block.runs)]))).toEqual([
+        'Nació en Badajoz.',
+        'Pintó del natural.',
+      ])
+      expect(page.cv).toHaveLength(2)
     }
   })
 
@@ -412,13 +427,19 @@ describe('el pie de cada obra', () => {
   })
 })
 
-describe('los párrafos y las líneas', () => {
+describe('los textos largos se interpretan aquí, y solo aquí', () => {
   it('un salto de línea suelto no parte un párrafo; dos sí', () => {
-    expect(paragraphsOf('uno\ndos\n\ntres')).toEqual(['uno dos', 'tres'])
+    expect(textBlocks('uno\ndos\n\ntres').map((block) => block.kind)).toEqual([
+      'PARAGRAPH',
+      'PARAGRAPH',
+    ])
   })
 
-  it('el currículum es una línea por entrada, y las vacías se caen', () => {
-    expect(cvLines('1985 · X\n\n  \n1979 · Y')).toEqual(['1985 · X', '1979 · Y'])
+  it('y las marcas llegan al plan como bloques: un título, una lista, una negrita', () => {
+    // Es lo que permite pegar una biografía de una web y que el PDF la imprima con su
+    // forma. El intérprete está en `lib/markup` y tiene su propia batería.
+    const blocks = textBlocks('## Exposiciones\n- 1985 · Badajoz\n- 1979 · Cáceres')
+    expect(blocks.map((block) => block.kind)).toEqual(['HEADING', 'LIST'])
   })
 })
 

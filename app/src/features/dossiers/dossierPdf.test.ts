@@ -3,6 +3,7 @@ import { PDFDocument, PDFRawStream } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 import { generateDossierPdf, type DossierPhoto } from './dossierPdf'
 import type { DossierPage, PlannedPage } from './dossierPdfPlan'
+import { textBlocks } from './dossierPdfPlan'
 
 /**
  * RF-1607, RF-1609: que el PDF sale, y que dice lo que el plan decidió.
@@ -71,7 +72,7 @@ const COVER: DossierPage = {
   title: 'Seleccion para galeria',
   recipient: 'Galeria Serrano',
   date: '11 de agosto de 2026',
-  blurb: 'Las medidas son sin marco.',
+  blurb: textBlocks('Las medidas son sin marco.'),
 }
 
 const ARTWORK: DossierPage = {
@@ -155,7 +156,9 @@ describe('los textos del dossier llegan al papel (RF-1614)', () => {
   it('el rótulo y el párrafo se imprimen encima de la obra a la que se pegaron', async () => {
     const conTextos: DossierPage = {
       ...ARTWORK,
-      texts: [{ heading: 'Oleos, 1962-1968', body: 'Las tres primeras estan sin enmarcar.' }],
+      texts: [
+        { heading: 'Oleos, 1962-1968', body: textBlocks('Las tres primeras estan sin enmarcar.') },
+      ],
     }
     const blob = await generateDossierPdf([at(COVER), at(conTextos)], {
       title: 'Seleccion',
@@ -170,8 +173,8 @@ describe('los textos del dossier llegan al papel (RF-1614)', () => {
     const bio: DossierPage = {
       kind: 'BIOGRAPHY',
       heading: 'Alberto Rotili',
-      paragraphs: ['Nacio en Badajoz.'],
-      cv: ['1985 - Badajoz'],
+      blocks: textBlocks('Nacio en Badajoz.'),
+      cv: textBlocks('1985 - Badajoz'),
     }
     const blob = await generateDossierPdf([at(COVER), at(bio)], {
       title: 'Seleccion',
@@ -185,7 +188,11 @@ describe('los textos del dossier llegan al papel (RF-1614)', () => {
 
 describe('las secciones y el índice llegan al papel (RF-1619 a RF-1622)', () => {
   it('la portadilla imprime el rótulo y su entradilla', async () => {
-    const divider: DossierPage = { kind: 'DIVIDER', heading: 'Oleos, 1962-1968', body: 'Los cuatro primeros.' }
+    const divider: DossierPage = {
+      kind: 'DIVIDER',
+      heading: 'Oleos, 1962-1968',
+      body: textBlocks('Los cuatro primeros.'),
+    }
     const blob = await generateDossierPdf([at(COVER), at(divider), at(ARTWORK, 'Oleos, 1962-1968')], {
       title: 'Seleccion',
       loadPhoto: async () => PHOTO,
@@ -217,8 +224,8 @@ describe('las secciones y el índice llegan al papel (RF-1619 a RF-1622)', () =>
     const index: DossierPage = {
       kind: 'INDEX',
       entries: [
-        { heading: 'Oleos', artworkCount: 2, page: 3 },
-        { heading: 'Papel', artworkCount: 1, page: 5 },
+        { heading: 'Oleos', artworkCount: 2 },
+        { heading: 'Papel', artworkCount: 1 },
       ],
     }
     const blob = await generateDossierPdf([at(COVER), at(index), at(ARTWORK)], {
@@ -229,6 +236,84 @@ describe('las secciones y el índice llegan al papel (RF-1619 a RF-1622)', () =>
     expect(await says(blob, 'Oleos')).toBe(true)
     expect(await says(blob, '2 obras')).toBe(true)
     expect(await says(blob, '1 obra')).toBe(true)
+  })
+
+  it('el número del índice cuenta las hojas de verdad, incluidas las del propio índice', async () => {
+    // La página de una sección no se puede saber antes de dibujar: una biografía larga
+    // ocupa dos hojas y corre todo lo que viene detrás. Aquí la sección abre en la
+    // tercera hoja —portada, índice, obra— y eso es lo que tiene que imprimir.
+    const index: DossierPage = { kind: 'INDEX', entries: [{ heading: 'Oleos', artworkCount: 1 }] }
+    const blob = await generateDossierPdf(
+      [at(COVER), at(index), { page: ARTWORK, section: 'Oleos', sectionStart: true }],
+      { title: 'Seleccion', loadPhoto: async () => PHOTO },
+    )
+    const text = await printedText(blob)
+    // El «3» del índice, dibujado a la derecha de «1 obra».
+    expect(text.includes('(3)') || text.toLowerCase().includes(asHex('3').toLowerCase())).toBe(true)
+  })
+})
+
+describe('un texto largo ocupa las hojas que ocupa (RF-1616)', () => {
+  /** Una biografía de las que se pegan de una web: quince párrafos y una lista larga. */
+  const longBiography = (): DossierPage => ({
+    kind: 'BIOGRAPHY',
+    heading: 'Alberto Rotili',
+    blocks: textBlocks(
+      Array.from({ length: 15 }, (_, i) => `Parrafo numero ${i + 1}. ${'Pinto del natural. '.repeat(8)}`).join(
+        '\n\n',
+      ),
+    ),
+    cv: textBlocks(
+      ['## Exposiciones', ...Array.from({ length: 30 }, (_, i) => `- ${1970 + i} - Sala numero ${i + 1}`)].join(
+        '\n',
+      ),
+    ),
+  })
+
+  it('la biografía sigue en la hoja siguiente en vez de escribirse por debajo del margen', async () => {
+    // Sin esto, lo que no cabía se dibujaba fuera de la hoja y desaparecía: no un
+    // párrafo mal colocado, un párrafo QUE NO ESTÁ. Con una biografía pegada de una web
+    // deja de ser hipotético.
+    const blob = await generateDossierPdf([at(COVER), at(longBiography(), 'Rotili')], {
+      title: 'Seleccion',
+      loadPhoto: async () => null,
+    })
+    expect(await pageCount(blob)).toBeGreaterThan(2)
+    // Y lo de arriba y lo del final están los dos.
+    expect(await says(blob, 'Parrafo numero 1.')).toBe(true)
+    expect(await says(blob, 'Sala numero 30')).toBe(true)
+  })
+
+  it('las hojas que añade llevan el pie con su sección y el recuento bien', async () => {
+    // El total no se puede escribir antes de haber escrito todas las hojas: «3 de 14»
+    // con un 14 estimado es peor que no llevar recuento.
+    const blob = await generateDossierPdf([at(COVER), at(longBiography(), 'Rotili')], {
+      title: 'Seleccion',
+      loadPhoto: async () => null,
+    })
+    const total = await pageCount(blob)
+    expect(await says(blob, `Rotili · Seleccion`)).toBe(true)
+    expect(await says(blob, `${total} de ${total}`)).toBe(true)
+  })
+
+  it('el índice sigue apuntando a la hoja correcta cuando un texto se ha llevado dos', async () => {
+    const index: DossierPage = { kind: 'INDEX', entries: [{ heading: 'Oleos', artworkCount: 1 }] }
+    const blob = await generateDossierPdf(
+      [
+        at(COVER),
+        at(index),
+        at(longBiography()),
+        { page: ARTWORK, section: 'Oleos', sectionStart: true },
+      ],
+      { title: 'Seleccion', loadPhoto: async () => PHOTO },
+    )
+    const total = await pageCount(blob)
+    // La obra es la última hoja, y es la que el índice tiene que nombrar.
+    const text = await printedText(blob)
+    const expected = String(total)
+    expect(text.includes(`(${expected})`) || text.toLowerCase().includes(asHex(expected).toLowerCase())).toBe(
+      true,
+    )
   })
 })
 
