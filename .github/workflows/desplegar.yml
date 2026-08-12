@@ -42,14 +42,24 @@ on:
     # A new path nobody adds to this list fires the workflow, which is the
     # safe side of the error: it costs minutes of CI, it does not skip checks.
     #
-    # `*.md` and not `**.md`: in GitHub's filters, `*` does not cross the slash, so
-    # this ignores the root's .md files (README, CHANGELOG, CLAUDE) but NOT those
-    # of app/, which the classifier counts as part of the frontend. With `**.md` a
-    # push that only changed a Markdown of app/ did not even get to start this
-    # workflow, and the change was left unpublished with no warning at all. The .md files of
-    # docs/ and infra/ already come in through their folders; those of docker/, through their pattern.
+    # LOS .md DE LA RAÍZ SE ENUMERAN, y no se ignoran con `*.md`. La razón es un
+    # incidente: `CHANGELOG.md` **se empotra en el build** —«Acerca de · Novedades» lo
+    # lee con `?raw`—, así que un cambio solo en el registro no llegaba nunca a
+    # producción. Y aquí no había forma de notarlo: este filtro es el más ancho de los
+    # dos, y lo que ignora no dispara el workflow, así que no hubo ni un job saltado
+    # que mirar. Se vio como «en Novedades no sale lo último».
+    #
+    # `paths-ignore` no tiene «excepto», así que la lista de los que SÍ se ignoran se
+    # escribe entera. Un .md nuevo en la raíz dispara el workflow —el lado bueno del
+    # error— hasta que alguien decida si la aplicación lo lee.
+    #
+    # Y `*` no cruza la barra en los filtros de GitHub, así que esto no toca los .md de
+    # app/, que el clasificador cuenta como frontend: con `**.md`, un push que solo
+    # cambiara un Markdown de app/ no llegaba ni a arrancar. Los de docs/ e infra/
+    # entran por sus carpetas; los de docker/, por su patrón.
     paths-ignore:
-      - '*.md'
+      - 'README.md'
+      - 'CLAUDE.md'
       - 'docs/**'
       - 'infra/**'
       - 'docker/**.md'

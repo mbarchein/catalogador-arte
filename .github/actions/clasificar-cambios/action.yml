@@ -127,6 +127,22 @@ runs:
               # much, which is the side of the error this design accepts.
               app/*) app=true ;;
 
+              # Lo que la aplicación IMPORTA desde fuera de app/. Hoy es uno:
+              # `CHANGELOG.md`, que se empotra en el build con `?raw` y es lo que se
+              # lee en «Acerca de · Novedades».
+              #
+              # Estaba clasificado como documentación por el `*.md` de abajo, así que un
+              # cambio solo en el registro **no se publicaba y nadie se enteraba**: es
+              # exactamente el fallo silencioso que el comentario de arriba predijo el día
+              # que la aplicación importara un Markdown. Pasó, y se vio como «en Novedades
+              # no aparece lo último».
+              #
+              # Va ANTES del `*.md` porque `case` se queda con la PRIMERA rama que
+              # coincide. Y hay un test que saca esta lista del propio código —los
+              # ficheros de fuera de app/ que la aplicación importa— y comprueba que
+              # cada uno cae aquí, para que el siguiente no vuelva a colarse.
+              CHANGELOG.md) app=true ;;
+
               # Nothing CI runs reads these files. The READMEs of
               # infra/ and docker/ come in through `*.md` even though they live next to
               # code: they are documentation. `scripts/generar-iconos.py` generates

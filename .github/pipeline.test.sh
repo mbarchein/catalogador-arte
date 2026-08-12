@@ -144,6 +144,133 @@ sys.exit(1 if fallos else 0)
 PY
 
 echo
+echo "→ Lo que la aplicación importa de fuera de app/ se publica"
+
+# Otro incidente real, y del mismo tipo: `CHANGELOG.md` se empotra en el build
+# —«Acerca de · Novedades» lo lee con `?raw`— pero el clasificador lo mandaba a
+# documentación por el patrón `*.md`, así que un cambio solo en el registro no
+# llegaba nunca a producción. Se vio como «en Novedades no sale lo último».
+#
+# Este test no repite la lista de rutas del clasificador: la SACA DEL CÓDIGO
+# —los ficheros de fuera de app/ que la aplicación importa— y evalúa el `case`
+# de verdad, extraído del action. Así, el día que alguien importe otro fichero de
+# la raíz, esto se pone rojo hasta que lo clasifique.
+python3 - <<'PY' || exit 1
+import re, subprocess, sys, os
+
+# 1. Qué importa la aplicación de fuera de app/, leído de las fuentes.
+importados = set()
+for raiz, _, ficheros in os.walk('app/src'):
+    for nombre in ficheros:
+        if not nombre.endswith(('.ts', '.tsx')):
+            continue
+        ruta = os.path.join(raiz, nombre)
+        with open(ruta, encoding='utf-8') as f:
+            codigo = f.read()
+        for especificador in re.findall(r"""["'](\.\./[^"']+)["']""", codigo):
+            limpio = especificador.split('?')[0]
+            resuelto = os.path.normpath(os.path.join(raiz, limpio))
+            if not resuelto.startswith('app/') and os.path.exists(resuelto):
+                importados.add(resuelto)
+
+if not importados:
+    print("  ✗ no se ha encontrado ningún fichero de fuera de app/ importado por la aplicación:"
+          " ¿ha cambiado la forma de importarlos?", file=sys.stderr)
+    sys.exit(1)
+
+# 2. El `case` del clasificador, tal cual está escrito, sin copiarlo aquí.
+with open('.github/actions/clasificar-cambios/action.yml', encoding='utf-8') as f:
+    action = f.read()
+inicio = action.index('case "$f" in')
+fin = action.index('esac', inicio) + len('esac')
+caso = action[inicio:fin]
+# El YAML es un bloque indentado: se le quita la sangría común.
+caso = '\n'.join(linea[14:] if linea.startswith(' ' * 14) else linea.lstrip()
+                 for linea in caso.split('\n'))
+
+fallos = 0
+for ruta in sorted(importados):
+    guion = f'''
+      infra=false; datos=false; app=false
+      todo() {{ infra=true; datos=true; app=true; }}
+      f={ruta!r}
+{caso}
+      echo "$app"
+    '''
+    salida = subprocess.run(['bash', '-c', guion], capture_output=True, text=True)
+    if salida.stdout.strip() == 'true':
+        print(f"  ✓ «{ruta}» se verifica y se publica con la aplicación")
+    else:
+        print(f"  ✗ «{ruta}» lo importa la aplicación y el clasificador NO lo publica"
+              f" (app={salida.stdout.strip() or salida.stderr.strip()})", file=sys.stderr)
+        fallos += 1
+
+# 3. Y el filtro del disparador, que es la puerta ANCHA: lo que ignora ahí no llega
+#    a evaluar ningún `if`, así que no deja ni un job saltado que mirar. Es donde el
+#    fallo del CHANGELOG era invisible.
+import yaml
+
+with open('.github/workflows/desplegar.yml', encoding='utf-8') as f:
+    disparador = yaml.safe_load(f)[True]['push']
+ignorados = disparador.get('paths-ignore', [])
+
+def expresion_de(patron: str) -> str:
+    """El patrón de GitHub como expresión regular.
+
+    A mano y no con `fnmatch`, y esto ya se ha equivocado una vez: en la sintaxis de
+    `fnmatch` la clase negada se escribe `[!…]`, así que un `[^/]` traducido para él se
+    lee como «uno de los caracteres ^ o /» y el patrón deja de coincidir con nada. El
+    test pasaba por el motivo equivocado.
+    """
+    salida = ''
+    i = 0
+    while i < len(patron):
+        if patron.startswith('**', i):
+            salida += '.*'
+            i += 2
+        elif patron[i] == '*':
+            # `*` no cruza la barra en los filtros de GitHub; `**` sí.
+            salida += '[^/]*'
+            i += 1
+        elif patron[i] == '?':
+            salida += '[^/]'
+            i += 1
+        else:
+            salida += re.escape(patron[i])
+            i += 1
+    return f'^{salida}$'
+
+def ignorado(ruta: str) -> str | None:
+    for patron in ignorados:
+        if re.match(expresion_de(patron), ruta):
+            return patron
+    return None
+
+# El traductor se comprueba a sí mismo: sin esto, un fallo suyo se lee como un verde.
+for patron, ruta, esperado in (
+    ('*.md', 'CHANGELOG.md', True),
+    ('*.md', 'app/public/nota.md', False),
+    ('docs/**', 'docs/decisiones/ADR-011.md', True),
+    ('docker/**.md', 'docker/README.md', True),
+    ('README.md', 'CHANGELOG.md', False),
+):
+    if bool(re.match(expresion_de(patron), ruta)) is not esperado:
+        print(f"  ✗ el traductor de patrones se equivoca con «{patron}» y «{ruta}»", file=sys.stderr)
+        fallos += 1
+
+for ruta in sorted(importados):
+    patron = ignorado(ruta)
+    if patron is None:
+        print(f"  ✓ «{ruta}» dispara el despliegue")
+    else:
+        print(f"  ✗ «{ruta}» lo importa la aplicación y «{patron}» impide que el push"
+              " dispare el despliegue", file=sys.stderr)
+        fallos += 1
+
+sys.exit(1 if fallos else 0)
+PY
+
+echo
 echo "→ La CLI de Supabase está clavada en una versión concreta"
 
 # It was on `latest`, and on 7 August 2026 a verified deployment fell over

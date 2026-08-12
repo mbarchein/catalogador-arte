@@ -59,6 +59,12 @@
   quitar sale por abajo como los demás paneles: los dos botones caen donde está el pulgar, el que
   confirma dice qué hace («Sí, quitar», no «Aceptar») y el «atrás» del teléfono la cierra.
 
+### Correcciones
+
+- **«Novedades» no traía lo último.** Este mismo registro va dentro de la aplicación, y un cambio
+  que solo lo tocara no llegaba a publicarse: para el despliegue automático, un fichero de texto
+  contaba como documentación. Ya no.
+
 ### La base de datos del catálogo
 
 **Cada dossier, cada precio y cada PDF emitido quedan guardados**
