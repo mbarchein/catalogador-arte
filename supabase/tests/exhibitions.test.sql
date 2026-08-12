@@ -891,6 +891,81 @@ begin
   raise notice 'OK: la autoría y la fecha de actualización las sella la base (RF-801, RF-803, RF-804)';
 end $$;
 
+-- ── 23 bis. El cartel de una exposición (RF-518) ─────────────
+--
+-- Lo primero es el perímetro, como siempre: el cartel es una imagen del bucket
+-- privado, y quien decide si se puede colgar una en una exposición es la política de
+-- `exhibitions` y nada más. Un Lector que pudiera escribir aquí podría cambiar el
+-- cartel de una exposición ajena sin dejar rastro en ninguna otra tabla.
+do $$
+declare v_expo uuid;
+begin
+  select id into v_expo from public.exhibitions where title = 'Muestra de un día';
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}';
+  set local role authenticated;
+
+  update public.exhibitions
+     set poster_thumbnail_path = 'carteles/robado_min.webp',
+         poster_derivative_path = 'carteles/robado_der.webp',
+         poster_uploaded_at = now()
+   where id = v_expo;
+
+  if exists (select 1 from public.exhibitions
+              where id = v_expo and poster_thumbnail_path is not null) then
+    raise exception 'FAIL: un lector ha colgado un cartel en una exposición';
+  end if;
+  raise notice 'OK: un lector no cuelga carteles';
+end $$;
+
+reset role;
+
+do $$
+declare v_expo uuid; v_thumb text;
+begin
+  select id into v_expo from public.exhibitions where title = 'Muestra de un día';
+
+  set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+  set local role authenticated;
+
+  -- Quien cataloga sí, y las tres columnas van juntas o no van: media escritura
+  -- dejaría una miniatura que se ve en el listado y no se puede abrir.
+  update public.exhibitions
+     set poster_thumbnail_path = 'carteles/cartel_min.webp',
+         poster_derivative_path = 'carteles/cartel_der.webp',
+         poster_uploaded_at = now()
+   where id = v_expo;
+
+  select poster_thumbnail_path into v_thumb from public.exhibitions where id = v_expo;
+  if v_thumb <> 'carteles/cartel_min.webp' then
+    raise exception 'FAIL: el cartel no se ha guardado: %', v_thumb;
+  end if;
+
+  begin
+    update public.exhibitions set poster_derivative_path = null where id = v_expo;
+    raise exception 'FAIL: se admitió un cartel a medias';
+  exception
+    when check_violation then null;
+  end;
+
+  -- Y quitarlo es poner las tres a nulo. El fichero se queda en el bucket, como
+  -- todo lo que este catálogo sube: aquí nunca se borra nada de verdad (RF-901).
+  update public.exhibitions
+     set poster_thumbnail_path = null,
+         poster_derivative_path = null,
+         poster_uploaded_at = null
+   where id = v_expo;
+  if exists (select 1 from public.exhibitions
+              where id = v_expo and poster_uploaded_at is not null) then
+    raise exception 'FAIL: no se ha podido quitar el cartel';
+  end if;
+
+  raise notice 'OK: quien cataloga cuelga y quita el cartel, y nunca a medias';
+end $$;
+
+reset role;
+
+
 -- ── 24. Nobody really deletes, and all three are born closed ─
 -- RF-901, RF-111, RF-113. The policies are written by the next migration; with
 -- RLS enabled and no policy, the table is closed, which is the safe state
