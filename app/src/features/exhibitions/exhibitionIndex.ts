@@ -82,6 +82,63 @@ export function sortExhibitions(rows: readonly ExhibitionRow[]): ExhibitionRow[]
   })
 }
 
+/**
+ * The years a show was open, from the first to the last.
+ *
+ * A travelling or long-running exhibition —«2010–2025»— is on for every year in
+ * between, and the row of the index says so: it prints `12 de marzo de 2010 – 4 de
+ * mayo de 2025`. What did not know it was the search, because the only year in the
+ * matched text is `year`, which the database pins to the opening (
+ * `exhibitions_year_matches_start_date`). Typing 2016 answered «no se han
+ * encontrado exposiciones» about a show that was open that year.
+ *
+ * The closing year comes from `end_date` and never from the note: `date_note` is
+ * prose —«y una segunda etapa en otoño»— and reading a year out of it would be
+ * inventing a date the cataloger did not enter.
+ *
+ * Null for a show with no date at all, which the database forbids
+ * (`exhibitions_dated`) and which therefore spans nothing rather than everything.
+ */
+export function exhibitionYearSpan(
+  row: Pick<ExhibitionRow, 'year' | 'start_date' | 'end_date'>,
+): { from: number; to: number } | null {
+  const from = row.year ?? yearOfIso(row.start_date)
+  if (from === null) return null
+  const to = yearOfIso(row.end_date)
+  // A closing before the opening is a typo the database refuses; if one arrives
+  // anyway the span is the opening year alone, and not a range read backwards.
+  return { from, to: to !== null && to > from ? to : from }
+}
+
+function yearOfIso(date: string | null): number | null {
+  if (date === null || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+  return Number(date.slice(0, 4))
+}
+
+/**
+ * The years the query mentions, and what is left of it once they are taken out.
+ *
+ * Years are matched against the span and the rest against the text, so «2016
+ * Badajoz» asks for what was open in 2016 in Badajoz. Written as a split and not
+ * as a special case for a query that is only a year, because a search box gets
+ * two words typed into it.
+ *
+ * A four-digit number outside the plausible range of a year is not a year: «1000
+ * días» is a title, and `exhibitions_plausible_year` uses the same bounds. Runs of
+ * digits are taken whole, so a longer number is not read as the year hiding in its
+ * first four figures.
+ */
+export function splitYearQuery(query: string): { years: number[]; rest: string } {
+  const years: number[] = []
+  const rest = query.replace(/\d+/g, (digits) => {
+    const value = Number(digits)
+    if (digits.length !== 4 || value < 1000 || value > 2100) return digits
+    years.push(value)
+    return ' '
+  })
+  return { years, rest: years.length === 0 ? query : rest }
+}
+
 /** One row of the index, ready to paint. */
 export interface ExhibitionIndexEntry {
   row: ExhibitionRow
@@ -111,6 +168,11 @@ export interface ExhibitionIndexEntry {
  * comes back — hiding them always would hide the only way out, which is the same
  * reasoning the venues screen wrote down. They are not silently mixed in: the
  * entry says `retired`, and the screen says the word.
+ *
+ * **A year is matched against the years the show was open** (RF-519), and not as
+ * letters inside the text: a show from 2010 to 2025 was open in 2016 and the row
+ * prints both ends, so a search for 2016 that answered «no se han encontrado
+ * exposiciones» was hiding a show whose dates say otherwise.
  */
 export function rankExhibitions(
   rows: readonly ExhibitionRow[],
@@ -123,9 +185,19 @@ export function rankExhibitions(
   // each tier of the ranking. An empty query is all ties, and then the index is
   // purely chronological, which is what it looks like it is.
   const ordered = sortExhibitions(visible)
+  const { years, rest } = splitYearQuery(query)
+  // Each year asked for has to be a year the show was open — or a number written
+  // in its text, which is what keeps «1000 días» findable by its own title.
+  const dated = ordered.filter((row) =>
+    years.every((year) => {
+      const span = exhibitionYearSpan(row)
+      if (span !== null && year >= span.from && year <= span.to) return true
+      return exhibitionOptionText(row).includes(String(year))
+    }),
+  )
   // `fuzzyRankBy` is the same ranking the chooser and the vocabularies use, so
   // the emphasis on the matched letters behaves identically everywhere.
-  return fuzzyRankBy(ordered, exhibitionOptionText, query).map(({ item, indices }) => ({
+  return fuzzyRankBy(dated, exhibitionOptionText, rest).map(({ item, indices }) => ({
     row: item,
     dates: displayExhibitionDates(item),
     title: item.title.trim(),

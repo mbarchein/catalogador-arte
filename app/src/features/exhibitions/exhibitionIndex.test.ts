@@ -4,11 +4,13 @@ import { EXHIBITION_OPTION_COLUMNS } from '../documentary/exhibitions/participat
 import {
   EXHIBITION_COLUMNS,
   exhibitionSearchText,
+  exhibitionYearSpan,
   rankExhibitions,
   retiredCount,
   similarExhibitions,
   similarTitleNotice,
   sortExhibitions,
+  splitYearQuery,
 } from './exhibitionIndex'
 
 /**
@@ -252,6 +254,163 @@ describe('RF-606: la búsqueda del listado', () => {
     const entry = rankExhibitions(rows, 'Antológica')[0]
     expect(entry?.indices.length).toBeGreaterThan(0)
     expect(entry?.text).toBe(exhibitionSearchText(rows[0]!))
+  })
+})
+
+describe('RF-519: el año buscado es un año en el que la muestra estuvo abierta', () => {
+  /**
+   * La incidencia, con sus datos: una muestra de 2010 a 2025 no salía al teclear 2016.
+   *
+   * El texto que se busca lleva un solo año, `year`, y la base lo tiene clavado a la
+   * apertura (`exhibitions_year_matches_start_date`), así que los catorce años de en medio
+   * no estaban en ninguna parte. La fila **sí** los enseña —imprime los dos extremos—, de
+   * modo que la lista contestaba «no se han encontrado exposiciones» sobre una muestra
+   * cuyas fechas dicen lo contrario.
+   */
+  const larga = row({
+    id: 'larga',
+    title: 'Colección permanente',
+    year: 2010,
+    start_date: '2010-03-12',
+    end_date: '2025-05-04',
+  })
+  const corta = row({
+    id: 'corta',
+    title: 'Antológica',
+    year: 1985,
+    start_date: '1985-03-12',
+    end_date: '1985-05-04',
+  })
+  const rows = [larga, corta]
+
+  it('un año de en medio la encuentra', () => {
+    expect(rankExhibitions(rows, '2016').map((entry) => entry.row.id)).toEqual(['larga'])
+  })
+
+  it('y la fila explica por qué ha salido: enseña los dos extremos', () => {
+    // Es lo que separa esto de una coincidencia arbitraria: 2016 no está escrito en la
+    // fila, pero sí está el tramo que lo contiene.
+    const entry = rankExhibitions(rows, '2016')[0]
+    expect(entry?.dates).toContain('2010')
+    expect(entry?.dates).toContain('2025')
+  })
+
+  it('los dos extremos también, que son los años que antes se buscaban', () => {
+    expect(rankExhibitions(rows, '2010').map((entry) => entry.row.id)).toEqual(['larga'])
+    expect(rankExhibitions(rows, '2025').map((entry) => entry.row.id)).toEqual(['larga'])
+  })
+
+  it('y un año de fuera no la encuentra, que es la otra mitad', () => {
+    // Sin esto, «buscar por año» se convertiría en «salen todas», que es la forma de que
+    // el filtro deje de servir sin dejar de parecer que funciona.
+    expect(rankExhibitions(rows, '2009')).toEqual([])
+    expect(rankExhibitions(rows, '2026')).toEqual([])
+  })
+
+  it('una muestra de un solo año no aparece por el año siguiente', () => {
+    expect(rankExhibitions([corta], '1986')).toEqual([])
+  })
+
+  it('una muestra fechada solo por el año se sigue encontrando por él', () => {
+    // La mitad de los recortes de prensa no dan más que el año, y la base lo permite.
+    const suelta = row({ id: 'suelta', year: 1978, start_date: null, end_date: null })
+    expect(rankExhibitions([suelta], '1978').map((entry) => entry.row.id)).toEqual(['suelta'])
+    expect(rankExhibitions([suelta], '1979')).toEqual([])
+  })
+
+  it('el año va contra el tramo y el resto contra el texto: «2016 Cáceres»', () => {
+    // Un buscador recibe dos palabras, así que el año no puede ser un caso especial que
+    // solo funcione cuando es lo único escrito.
+    const caceres = row({
+      id: 'caceres',
+      title: 'Colección permanente',
+      year: 2010,
+      start_date: '2010-03-12',
+      end_date: '2025-05-04',
+      venue: venue({ id: 'v-2', name: 'Casa de Cultura', locality: 'Cáceres' }),
+    })
+    expect(rankExhibitions([larga, caceres], '2016 Cáceres').map((e) => e.row.id)).toEqual([
+      'caceres',
+    ])
+  })
+
+  it('un número de cuatro cifras que no es un año se busca en el texto', () => {
+    // «1000 días» es un título, y el tramo de esa muestra no llega al año 1000.
+    const titulada = row({ id: 'titulada', title: '1000 días', year: 1985 })
+    expect(rankExhibitions([titulada], '1000').map((entry) => entry.row.id)).toEqual(['titulada'])
+  })
+
+  it('y un número más largo no es el año escondido en sus cuatro primeras cifras', () => {
+    expect(rankExhibitions(rows, '20161')).toEqual([])
+  })
+})
+
+describe('el tramo de años de una muestra', () => {
+  it('de la apertura al cierre', () => {
+    expect(exhibitionYearSpan({ year: 2010, start_date: '2010-03-12', end_date: '2025-05-04' })).toEqual(
+      { from: 2010, to: 2025 },
+    )
+  })
+
+  it('sin cierre, un solo año', () => {
+    expect(exhibitionYearSpan({ year: 1985, start_date: '1985-03-12', end_date: null })).toEqual({
+      from: 1985,
+      to: 1985,
+    })
+  })
+
+  it('con solo el año, ese año', () => {
+    expect(exhibitionYearSpan({ year: 1978, start_date: null, end_date: null })).toEqual({
+      from: 1978,
+      to: 1978,
+    })
+  })
+
+  it('un cierre anterior a la apertura no se lee del revés', () => {
+    // La base lo rechaza (`exhibitions_coherent_dates`); si llegara, el tramo es la
+    // apertura y no un rango invertido que abarcaría años imposibles.
+    expect(exhibitionYearSpan({ year: 2010, start_date: '2010-03-12', end_date: '2001-05-04' })).toEqual(
+      { from: 2010, to: 2010 },
+    )
+  })
+
+  it('sin fecha ninguna, nada: no abarca todo', () => {
+    expect(exhibitionYearSpan({ year: null, start_date: null, end_date: null })).toBeNull()
+  })
+
+  it('y el año no se saca de la nota, que es prosa', () => {
+    // «y una segunda etapa en otoño de 2011» es un texto, no una fecha que la
+    // catalogadora haya introducido.
+    expect(exhibitionYearSpan({ year: 2010, start_date: '2010-03-12', end_date: null })).toEqual({
+      from: 2010,
+      to: 2010,
+    })
+  })
+})
+
+describe('los años que menciona lo teclado', () => {
+  it('el año sale y el resto se queda', () => {
+    const { years, rest } = splitYearQuery('2016 Cáceres')
+    expect(years).toEqual([2016])
+    expect(rest.trim()).toBe('Cáceres')
+  })
+
+  it('dos años, los dos', () => {
+    expect(splitYearQuery('2010 2016').years).toEqual([2010, 2016])
+  })
+
+  it('sin años, lo teclado entero y sin tocar', () => {
+    expect(splitYearQuery('Antológica')).toEqual({ years: [], rest: 'Antológica' })
+  })
+
+  it('un número fuera del rango de un año no es un año', () => {
+    expect(splitYearQuery('2200').years).toEqual([])
+    expect(splitYearQuery('0999').years).toEqual([])
+  })
+
+  it('ni una cifra de más ni una de menos', () => {
+    expect(splitYearQuery('201').years).toEqual([])
+    expect(splitYearQuery('20161').years).toEqual([])
   })
 })
 
