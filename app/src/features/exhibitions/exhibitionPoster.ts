@@ -136,8 +136,7 @@ export const POSTER_STEP_TEXT: Record<PosterStep, string> = {
 }
 
 /**
- * Qué miniaturas hay que firmar para pintar un listado, y de qué exposición es cada
- * una.
+ * Qué miniaturas hay que pintar en un listado, y de qué exposición es cada una.
  *
  * Las exposiciones sin cartel **no entran**: firmar una ruta nula es una petición que
  * el almacén rechaza, y en un listado de doscientas exposiciones con tres carteles serían

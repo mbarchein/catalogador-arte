@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { signedUrl } from '../../lib/images'
+import { cachedSignedPaths, signPaths } from '../../lib/signedPaths'
 import { ConfirmSheet, ImageIcon, TrashIcon } from '../../components/ui'
 import type { ExhibitionRow } from '../documentary/documentaryRows'
 import {
@@ -24,7 +24,12 @@ import { preparePoster, savePoster, uploadPoster } from './exhibitionPosterActio
  * La imagen que se pinta es **la copia de consulta de 2000 px** y no el original,
  * porque no hay original: un cartel es una referencia para reconocer la exposición y no
  * el documento de conservación de una obra. Se abre en una pestaña al tocarla, con la
- * misma firma temporal con la que se pinta — el bucket es privado (RF-110).
+ * misma firma con la que se pinta — el bucket es privado (RF-110).
+ *
+ * Y la firma sale del **espejo de `signedPaths`**, como las fotografías de una obra: dura
+ * una semana, se guarda, y se lee de forma síncrona antes del primer pintado. Sin eso, al
+ * abrir una exposición ya visitada se veía el hueco un instante — los bytes estaban en el
+ * teléfono, pero sin firma no hay `src` que buscar en el caché.
  */
 export function ExhibitionPoster({
   exhibition,
@@ -36,7 +41,10 @@ export function ExhibitionPoster({
   /** Para que la ficha vuelva a leer la fila: la que tiene en la mano ya no vale. */
   onSaved: () => void
 }) {
-  const [url, setUrl] = useState<string | null>(null)
+  // Se arranca con la firma que ya esté guardada: `signPaths` es una promesa, y sin esto
+  // la ficha pinta un fotograma con el hueco antes de resolverla — que al abrir una
+  // exposición ya visitada se ve como un parpadeo.
+  const [url, setUrl] = useState<string | null>(() => cached(exhibition.poster_derivative_path))
   const [step, setStep] = useState<PosterStep | null>(null)
   const [problem, setProblem] = useState<string | null>(null)
   const [removing, setRemoving] = useState(false)
@@ -49,9 +57,14 @@ export function ExhibitionPoster({
       setUrl(null)
       return
     }
+    setUrl(cached(path))
     let alive = true
-    void signedUrl(path, 3600).then((signed) => {
-      if (alive) setUrl(signed)
+    // El mismo espejo de firmas que las fotografías de una obra: una semana de validez y
+    // guardada, así que la segunda visita no pide nada y el navegador reutiliza los bytes
+    // que ya tiene. Firmar otra vez daría una URL distinta, y una URL distinta es otra
+    // imagen para cualquier caché.
+    void signPaths([path]).then((signed) => {
+      if (alive && signed[path] !== undefined) setUrl(signed[path])
     })
     return () => {
       alive = false
@@ -205,4 +218,10 @@ export function ExhibitionPoster({
       )}
     </section>
   )
+}
+
+/** La firma guardada de una ruta, o null. Síncrona: es lo que quita el parpadeo. */
+function cached(path: string | null): string | null {
+  if (path === null) return null
+  return cachedSignedPaths([path])[path] ?? null
 }

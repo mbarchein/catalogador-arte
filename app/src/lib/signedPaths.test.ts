@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  cachedSignedPaths,
   clearSignedPaths,
   forgetSignedPaths,
   mergeSigned,
@@ -207,5 +208,39 @@ describe('signPaths', () => {
     )
     await signPaths(['a'], sign, AHORA)
     expect(await signPaths(['a', 'b'], async () => ({}), AHORA)).toEqual({ a: 'https://x/a' })
+  })
+})
+
+describe('las firmas que ya están, sin esperar (el parpadeo)', () => {
+  it('devuelve lo guardado en el momento, sin firmar nada', async () => {
+    // Es lo que quita el parpadeo: `signPaths` es una promesa, así que la pantalla pinta
+    // un fotograma antes de resolverla y en ése la imagen no tiene `src`. Al cambiar de
+    // pestaña eso se ve como un hueco que aparece y desaparece.
+    const sign = vi.fn(async (paths: string[]) =>
+      Object.fromEntries(paths.map((p) => [p, `https://x/${p}`])),
+    )
+    await signPaths(['a', 'b'], sign, AHORA)
+    expect(cachedSignedPaths(['a', 'b'], AHORA + 60_000)).toEqual({
+      a: 'https://x/a',
+      b: 'https://x/b',
+    })
+    expect(sign).toHaveBeenCalledTimes(1)
+  })
+
+  it('lo que no está guardado no sale, en vez de salir con una URL inservible', () => {
+    forgetSignedPaths()
+    expect(cachedSignedPaths(['a'], AHORA)).toEqual({})
+  })
+
+  it('y una firma caducada tampoco: pintarla sería una imagen rota', async () => {
+    const sign = async (paths: string[]) =>
+      Object.fromEntries(paths.map((p) => [p, `https://x/${p}`]))
+    await signPaths(['a'], sign, AHORA)
+    const despues = AHORA + SIGNED_TTL_SECONDS * 1000 + 1
+    expect(cachedSignedPaths(['a'], despues)).toEqual({})
+  })
+
+  it('sin rutas, nada', () => {
+    expect(cachedSignedPaths([], AHORA)).toEqual({})
   })
 })

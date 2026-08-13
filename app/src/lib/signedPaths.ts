@@ -198,6 +198,34 @@ export function forgetSignedPaths(): void {
 }
 
 /**
+ * Las firmas que ya están guardadas, **sin esperar a nada**.
+ *
+ * Existe por un parpadeo, y el parpadeo no lo causaba la red: `signPaths` es una promesa,
+ * así que aunque la firma esté en el espejo la pantalla pinta una vez antes de que se
+ * resuelva, y en ese fotograma la imagen no tiene `src`. Al cambiar de pestaña o al abrir
+ * una ficha, eso se ve como un hueco que aparece y desaparece.
+ *
+ * Con esto, quien pinta arranca su estado con lo que ya hay —cero peticiones, cero
+ * esperas— y `signPaths` después solo corrige lo que falte. Es lo que hace el espejo del
+ * listado de obras con sus miniaturas, dicho para cualquier ruta.
+ */
+export function cachedSignedPaths(
+  paths: readonly string[],
+  now: number = Date.now(),
+): Record<string, string> {
+  if (paths.length === 0) return {}
+  const map = loaded(now)
+  const out: Record<string, string> = {}
+  for (const path of paths) {
+    const hit = map[path]
+    // El margen es el de `pathsToSign`: una firma que caduca dentro de la propia visita
+    // se pinta igual —la imagen se ve— y `signPaths` la renueva por detrás.
+    if (hit && hit.expiresAt > now) out[path] = hit.url
+  }
+  return out
+}
+
+/**
  * Returns a signed URL for each path asked for, signing only what is needed.
  *
  * Paths that cannot be signed are left OUT of the result instead of carrying a useless

@@ -77,6 +77,13 @@
 
 ### Correcciones
 
+**Los carteles parpadeaban al cambiar de pestaña**
+
+- La miniatura del listado y el cartel de una exposición se volvían a pedir cada vez que
+  se entraba, aunque la imagen ya estuviera en el teléfono: desaparecían un instante y
+  volvían. Ahora se guardan como las fotografías de las obras, así que a la segunda visita
+  aparecen ya pintados y sin pedir nada — también sin cobertura.
+
 **«Novedades» no traía lo último**
 
 - Este mismo registro se lee dentro de la aplicación, y un cambio que solo lo tocara no llegaba a
