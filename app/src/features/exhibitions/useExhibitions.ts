@@ -16,6 +16,12 @@
  * from. Filtering them out here would hide the only way back; the filtering is a
  * decision of the index (`rankExhibitions`), where it is pure and tested.
  *
+ * **Se pinta del espejo local y se refresca por detrás**, como el listado de obras: al
+ * cambiar a esta pestaña salía «Cargando las exposiciones…» cada vez, y una pestaña que se
+ * abre veinte veces al día no puede esperar veinte veces por lo mismo. Con espejo, el
+ * cambio de pestaña es instantáneo y la consulta corrige por detrás; sin él —primera
+ * visita, sesión nueva— se espera como antes. Ver `exhibitionsCache.ts`.
+ *
  * Every decision lives in the pure modules next door. What is left here is the
  * wire: the request, the reload, and handing the answer to
  * `exhibitionWriteResult`. The convention of the project: an action resolves to
@@ -28,6 +34,7 @@ import type { ExhibitionRow } from '../documentary/documentaryRows'
 import { planExhibitionCreate, type ExhibitionDraft } from './exhibitionDraft'
 import { EXHIBITION_COLUMNS } from './exhibitionIndex'
 import { exhibitionFailureText, exhibitionWriteResult } from './exhibitionMessages'
+import { readExhibitionsSnapshot, saveExhibitionsSnapshot } from './exhibitionsCache'
 
 export interface ExhibitionsQuery {
   exhibitions: ExhibitionRow[]
@@ -50,12 +57,26 @@ export interface ExhibitionsQuery {
  *   what the index and the creation screen need.
  */
 export function useExhibitions(enabled = true): ExhibitionsQuery {
-  const [exhibitions, setExhibitions] = useState<ExhibitionRow[]>([])
+  // El espejo se lee UNA vez por montaje: no cambia mientras la pestaña está abierta, y
+  // leer `localStorage` en cada repintado para pintar veinte filas es pagarlo sesenta
+  // veces por gesto. Solo cuando el listado está pedido: quien llama con `enabled` en
+  // falso no quiere el catálogo de exposiciones, ni del espejo.
+  const mirrored = useRef(enabled ? readExhibitionsSnapshot() : null).current
+  const [exhibitions, setExhibitions] = useState<ExhibitionRow[]>(mirrored ?? [])
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Esperando solo si no hay nada que pintar. Con espejo, la lista está en pantalla desde
+  // el primer fotograma y la consulta va por detrás; el aviso de «Cargando…» solo tiene
+  // sentido cuando no hay ni una fila.
+  const [loading, setLoading] = useState(mirrored === null)
 
   // The screen can be left while a reload is in the air, and setting state on a
   // gone component is a warning nobody can act on.
+  // Las filas en una referencia, para que `reload` pueda preguntar si hay algo pintado sin
+  // volver a crearse cada vez que la lista cambia — y sin eso, cada respuesta dispararía
+  // otra consulta.
+  const exhibitionsRef = useRef<ExhibitionRow[]>(exhibitions)
+  exhibitionsRef.current = exhibitions
+
   const alive = useRef(true)
   useEffect(() => {
     alive.current = true
@@ -72,8 +93,9 @@ export function useExhibitions(enabled = true): ExhibitionsQuery {
     // Asked again on the way from disabled to enabled, and the wait has to be visible:
     // otherwise the chooser would read «there are no exhibitions yet» for as long as the
     // first query is in the air. Costless for the index, which only shows the wait when
-    // no row is painted.
-    setLoading(true)
+    // no row is painted — y con espejo no hay ninguna espera que enseñar, porque ya hay
+    // filas en pantalla.
+    setLoading((waiting) => waiting || exhibitionsRef.current.length === 0)
     const { data, error: failure } = await supabase.from('exhibitions').select(EXHIBITION_COLUMNS)
     if (!alive.current) return
     setLoading(false)
@@ -89,7 +111,11 @@ export function useExhibitions(enabled = true): ExhibitionsQuery {
     // `coalesce(start_date, year-01-01)` descending with the title as tiebreaker,
     // and the database's own collation can sort «Álvarez» past the z. It is
     // decided in `sortExhibitions`, where it is pure and tested.
-    setExhibitions((data ?? []) as unknown as ExhibitionRow[])
+    const rows = (data ?? []) as unknown as ExhibitionRow[]
+    setExhibitions(rows)
+    // El espejo se escribe con lo que ha contestado la base, incluidas las retiradas: es
+    // lo mismo que se acaba de pintar, y quien filtra es la pantalla.
+    saveExhibitionsSnapshot(rows)
   }, [enabled])
 
   useEffect(() => {

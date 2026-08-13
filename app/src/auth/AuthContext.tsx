@@ -10,6 +10,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
 import { clearArtworksCache } from '../features/artworks/artworksCache'
+import { clearExhibitionsCache } from '../features/exhibitions/exhibitionsCache'
 
 interface AuthContextValue {
   session: Session | null
@@ -172,6 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // preferences: they must not stay readable on a shared device after
           // the session ends.
           clearArtworksCache()
+          // El espejo del listado de exposiciones, por lo mismo: son datos del catálogo.
+          clearExhibitionsCache()
           await supabase.auth.signOut()
         },
       }}
