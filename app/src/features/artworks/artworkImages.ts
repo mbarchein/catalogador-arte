@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { signPaths } from '../../lib/signedPaths'
+import { cachedSignedPaths, signPaths } from '../../lib/signedPaths'
 import { useLiveChanges } from '../../lib/live'
 import type { ShotTypeValue } from '../../lib/types'
+import { readArtworkImagesSnapshot, saveArtworkImagesSnapshot } from './artworkImagesCache'
 
 export interface ImageRow {
   image_id: string
@@ -45,13 +46,34 @@ export interface ImageRow {
  * Which image is the main one comes from the `representative_image` view,
  * which applies the RF-403 rule. The client does not recompute it: if it did,
  * the list, the record and the printed catalog could disagree.
+ *
+ * It paints from the mirror and refreshes behind, like the artworks list: a record
+ * visited before opens with its photographs already there, and the query only corrects.
+ * See `artworkImagesCache.ts`.
  */
 export function useArtworkImages(catalogId: string) {
-  const [images, setImages] = useState<ImageRow[]>([])
-  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({})
-  const [mainId, setMainId] = useState<string | null>(null)
-  const [manuallyChosen, setManuallyChosen] = useState(false)
-  const [loading, setLoading] = useState(true)
+  // Read ONCE per record: the gallery remounts per record (the swipe area is keyed by
+  // catalog_id), and reading `localStorage` on every repaint to paint four thumbnails
+  // would be paying for it on each gesture.
+  const mirrored = useRef(readArtworkImagesSnapshot(catalogId)).current
+  const [images, setImages] = useState<ImageRow[]>(mirrored?.rows ?? [])
+  // The signatures WITHOUT waiting: `signPaths` is a promise, so even with everything
+  // cached the screen paints once before it resolves, and in that frame the thumbnails
+  // have no `src` — which is the blink. What is missing is corrected below.
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>(() => {
+    if (!mirrored) return {}
+    const urls = cachedSignedPaths(mirrored.rows.map((r) => r.thumbnail_path))
+    return Object.fromEntries(
+      mirrored.rows
+        .map((r) => [r.image_id, urls[r.thumbnail_path]] as const)
+        .filter((pair): pair is [string, string] => pair[1] !== undefined),
+    )
+  })
+  const [mainId, setMainId] = useState<string | null>(mirrored?.mainId ?? null)
+  const [manuallyChosen, setManuallyChosen] = useState(mirrored?.manuallyChosen ?? false)
+  // Waiting only when there is nothing to paint: with a mirror the gallery is on screen
+  // from the first frame, and the grey placeholder would be a blink of its own.
+  const [loading, setLoading] = useState(mirrored === null)
 
   const reload = useCallback(async () => {
     // ── BOTH AT ONCE, NOT ONE AFTER THE OTHER ───────────────────
@@ -89,6 +111,12 @@ export function useArtworkImages(catalogId: string) {
     ])
 
     const rows = (imagesAnswer.data ?? []) as unknown as ImageRow[]
+    // A NEW array on every answer, deliberately, even when it carries the same rows:
+    // «the rows were read again» is what `usePhotoDetails` depends on to read the columns
+    // this query does not ask for. Handing back the previous array when nothing changed
+    // would save a small request per visit and break the one action that changes only
+    // those columns — annotating that a colour was reviewed and left alone, which is what
+    // tells «revisado» from «sin revisar».
     setImages(rows)
 
     const representative = repAnswer.data as {
@@ -97,6 +125,11 @@ export function useArtworkImages(catalogId: string) {
     } | null
     setMainId(representative?.image_id ?? null)
     setManuallyChosen(representative?.manually_chosen ?? false)
+    saveArtworkImagesSnapshot(catalogId, {
+      rows,
+      mainId: representative?.image_id ?? null,
+      manuallyChosen: representative?.manually_chosen ?? false,
+    })
 
     // One request for all of them, and none at all if they were already signed:
     // `signPaths` keeps the signatures by path and for a week. It used to be one request

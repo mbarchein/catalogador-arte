@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { signPaths } from '../../lib/signedPaths'
+import { cachedSignedPaths, signPaths } from '../../lib/signedPaths'
 import { SHOT_TYPE_LABEL } from '../../lib/types'
 import type { ImageRow } from './artworkImages'
 
@@ -34,7 +34,13 @@ export function PhotoCarousel({
   /** Tap on a slide (a swipe never fires it: the browser eats the click). */
   onImageTap?: () => void
 }) {
-  const [slideUrls, setSlideUrls] = useState<Record<string, string>>({})
+  // What is already signed, on the FIRST frame: `signPaths` is a promise, so with an
+  // empty initial state the slide painted its blurred thumbnail and swapped to the sharp
+  // photograph a moment later — the blink of reopening a record, with nothing traveling.
+  // All of them and not only the three, because it costs no request: it is a lookup.
+  const [slideUrls, setSlideUrls] = useState<Record<string, string>>(() =>
+    cachedSignedPaths(images.map((r) => r.derivative_path)),
+  )
   const trackRef = useRef<HTMLDivElement>(null)
   const positioned = useRef(false)
   // Index a programmatic scroll is traveling to, or null when the user owns
@@ -60,9 +66,17 @@ export function PhotoCarousel({
       .map((i) => images[i])
       .filter((r): r is ImageRow => r !== undefined && !(r.derivative_path in slideUrls))
     if (wanted.length === 0) return
+    const paths = wanted.map((r) => r.derivative_path)
+    // What is already signed goes in without waiting; only what is missing is asked for.
+    // This is the path of a record opened for the first time, where the rows arrive after
+    // the mount and the state initializer above has already run.
+    const ready = cachedSignedPaths(paths)
+    if (Object.keys(ready).length > 0) setSlideUrls((u) => ({ ...u, ...ready }))
+    const missing = paths.filter((path) => !(path in ready))
+    if (missing.length === 0) return
     let current = true
     // The three at once, and off the signature cache if they were there: see `signPaths`.
-    void signPaths(wanted.map((r) => r.derivative_path)).then((urls) => {
+    void signPaths(missing).then((urls) => {
       if (!current) return
       setSlideUrls((u) => ({ ...u, ...urls }))
     })

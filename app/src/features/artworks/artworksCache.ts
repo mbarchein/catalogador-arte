@@ -1,5 +1,6 @@
 import { clearSignedPaths, forgetSignedPaths } from '../../lib/signedPaths'
 import type { Artwork } from '../../lib/types'
+import { clearArtworkImagesCache } from './artworkImagesCache'
 
 /**
  * Persisted snapshot of the artworks mirror (see useArtworks): the list paints
@@ -120,6 +121,8 @@ export function clearArtworksCache(storage: Storage | undefined = getStorage()):
   } catch {
     /* nothing to clear */
   }
+  // Which photographs each record has, for the same reason: it is the catalogue.
+  clearArtworkImagesCache(storage)
   // The signatures of the records' photographs, for the same reason: they are catalogue
   // paths and a signature keeps opening the file until it expires.
   clearSignedPaths(storage)

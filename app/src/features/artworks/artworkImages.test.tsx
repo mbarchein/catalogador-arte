@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useArtworkImages } from './artworkImages'
+import { useArtworkImages, type ImageRow } from './artworkImages'
+import { readArtworkImagesSnapshot, saveArtworkImagesSnapshot } from './artworkImagesCache'
 
 /**
  * The two questions of a record, asked at once (RNF-106).
@@ -42,7 +43,16 @@ vi.mock('../../lib/supabase', () => ({
       linea.push(`pregunta ${tabla}`)
       const datos =
         tabla === 'images'
-          ? [{ image_id: 'TS-0001_v1', thumbnail_path: 't/1', derivative_path: 'd/1' }]
+          ? [
+              {
+                image_id: 'TS-0001_v1',
+                thumbnail_path: 't/1',
+                derivative_path: 'd/1',
+                // El tipo de toma viaja en la consulta y el espejo lo exige: es el rótulo
+                // de la tira, y sin él la fila se pintaría como «undefined».
+                shot_type: 'GENERAL',
+              },
+            ]
           : { image_id: 'TS-0001_v1', manually_chosen: false }
       const pendiente = respuestaDiferida(tabla, datos)
       // The PostgREST query builder: everything returns the same object and the promise
@@ -65,6 +75,10 @@ vi.mock('../../lib/supabase', () => ({
 vi.mock('../../lib/signedPaths', () => ({
   signPaths: async (paths: readonly string[]) =>
     Object.fromEntries(paths.map((p) => [p, `https://firmado/${p}`])),
+  // Todo lo pedido cuenta como ya firmado: el espejo de firmas tiene sus propios tests
+  // (`signedPaths.test.ts`), y lo que se mira aquí es que la ficha pinte sin esperar.
+  cachedSignedPaths: (paths: readonly string[]) =>
+    Object.fromEntries(paths.map((p) => [p, `https://firmado/${p}`])),
 }))
 
 function Ficha() {
@@ -80,6 +94,7 @@ describe('las dos consultas de una ficha', () => {
   beforeEach(() => {
     linea.length = 0
     for (const k of Object.keys(sueltan)) delete sueltan[k]
+    window.localStorage.clear()
   })
 
   it('la segunda empieza antes de que la primera conteste', async () => {
@@ -91,6 +106,45 @@ describe('las dos consultas de una ficha', () => {
     sueltan.images?.()
     sueltan.representative_image?.()
     await waitFor(() => getByText('listo·TS-0001_v1·1'))
+  })
+
+  it('con espejo la ficha ya está pintada antes de que contesten', async () => {
+    // El parpadeo al reabrir una ficha: las fotografías no se piden a la red, pero QUÉ
+    // fotografías tiene sí. La consulta se deja colgada a propósito —si contestara al
+    // instante, los dos estados serían indistinguibles y el test pasaría con y sin
+    // espejo—.
+    saveArtworkImagesSnapshot('TS-0001', {
+      rows: [
+        {
+          image_id: 'TS-0001_v1',
+          thumbnail_path: 't/1',
+          derivative_path: 'd/1',
+          shot_type: 'GENERAL',
+        } as ImageRow,
+      ],
+      mainId: 'TS-0001_v1',
+      manuallyChosen: false,
+    })
+
+    const { getByText } = render(<Ficha />)
+
+    // Ni el aviso de espera ni el hueco de la miniatura, en el primer fotograma.
+    getByText('listo·TS-0001_v1·1')
+    expect(linea).toEqual(['pregunta images', 'pregunta representative_image'])
+
+    // Y lo que contesta la base se queda, que es el refresco por detrás.
+    sueltan.images?.()
+    sueltan.representative_image?.()
+    await waitFor(() => getByText('listo·TS-0001_v1·1'))
+  })
+
+  it('y lo que contestan queda en el espejo para la vez siguiente', async () => {
+    const { getByText } = render(<Ficha />)
+    sueltan.images?.()
+    sueltan.representative_image?.()
+    await waitFor(() => getByText('listo·TS-0001_v1·1'))
+
+    expect(readArtworkImagesSnapshot('TS-0001')?.mainId).toBe('TS-0001_v1')
   })
 
   it('y contestar en el orden contrario no descoloca nada', async () => {
