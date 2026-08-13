@@ -88,6 +88,13 @@
 - Lo guardado se borra al cerrar sesión: en un dispositivo compartido no queda nada del
   catálogo.
 
+**Buscar exposiciones por año encuentra las que abarcan varios**
+
+- Una muestra de 2010 a 2025 no aparecía al teclear 2016: la búsqueda solo miraba el año de
+  apertura, aunque la fila enseñe los dos extremos.
+- Ahora un año encuentra **todas las que estuvieron abiertas ese año**, y los años de fuera
+  siguen sin traerla. Se puede teclear el año junto a la sede: «2016 Cáceres».
+
 **Las fotografías de una ficha ya no parpadean al abrirla**
 
 - Volver a una obra enseñaba un recuadro gris, luego la tira de miniaturas y luego la
