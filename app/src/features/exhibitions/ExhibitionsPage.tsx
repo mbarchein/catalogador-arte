@@ -123,12 +123,21 @@ export function ExhibitionsPage() {
               to={`/exhibitions/${entry.row.id}`}
               className={`card flex gap-3 active:bg-stone-50 ${entry.retired ? 'opacity-60' : ''}`}
             >
-              {/* La miniatura del cartel (RF-518), y siempre el mismo cuadrado: es lo
-                  que hace el listado recorrible: si las filas sin cartel no tuvieran su
-                  hueco, cada una desplazaría el texto de las demás y las fechas
-                  dejarían de leerse en columna. Sin cartel, un icono — nunca un hueco
-                  vacío (RF-304). */}
-              <span className="mt-0.5 h-14 w-14 shrink-0 overflow-hidden rounded border border-stone-200 bg-stone-100">
+              {/* La miniatura del cartel (RF-518), **con la forma de un cartel** y no
+                  cuadrada: 1:√2, que es la de la serie A —un A2 o un A1— y casi la de
+                  un 50×70, así que un cartel vertical entra entero y el recorte es de
+                  unos milímetros. Cuadrada le cortaba la cabecera y el pie, que es
+                  justo donde están el título y las fechas.
+
+                  Y siempre el mismo hueco, con cartel o sin él: es lo que hace el
+                  listado recorrible: si las filas sin cartel no lo tuvieran, cada una
+                  desplazaría el texto de las demás y las fechas dejarían de leerse en
+                  columna. Sin cartel, un icono — nunca un hueco vacío (RF-304). */}
+              {/* `self-start` no es adorno: en un contenedor flexible, un hijo se
+                  estira a lo alto de la fila por omisión, y una altura estirada gana a
+                  la proporción — el cuadro saldría tan alto como el texto de al lado y
+                  el cartel, deformado. */}
+              <span className="mt-0.5 aspect-[707/1000] w-14 shrink-0 self-start overflow-hidden rounded border border-stone-200 bg-stone-100">
                 {posters[entry.row.id] !== undefined ? (
                   <img
                     src={posters[entry.row.id]}
