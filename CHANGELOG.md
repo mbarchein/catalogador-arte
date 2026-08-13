@@ -77,12 +77,16 @@
 
 ### Correcciones
 
-**Los carteles parpadeaban al cambiar de pestaña**
+**La pestaña de Exposiciones se abre al instante**
 
-- La miniatura del listado y el cartel de una exposición se volvían a pedir cada vez que
-  se entraba, aunque la imagen ya estuviera en el teléfono: desaparecían un instante y
-  volvían. Ahora se guardan como las fotografías de las obras, así que a la segunda visita
-  aparecen ya pintados y sin pedir nada — también sin cobertura.
+- Salía «Cargando las exposiciones…» cada vez que se entraba, y los carteles desaparecían
+  un instante y volvían: la lista y las imágenes se volvían a pedir enteras en cada visita,
+  aunque no hubiera cambiado nada.
+- Ahora funciona como el listado de obras: **se pinta con lo que ya está en el teléfono y se
+  refresca por detrás**. Cambiar de pestaña no espera a nada, y sin cobertura la lista
+  sigue estando ahí. La primera vez, y al iniciar sesión de nuevo, se espera como antes.
+- Lo guardado se borra al cerrar sesión: en un dispositivo compartido no queda nada del
+  catálogo.
 
 **«Novedades» no traía lo último**
 
