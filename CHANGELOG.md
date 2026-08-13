@@ -88,6 +88,16 @@
 - Lo guardado se borra al cerrar sesión: en un dispositivo compartido no queda nada del
   catálogo.
 
+**Las fotografías de una ficha ya no parpadean al abrirla**
+
+- Volver a una obra enseñaba un recuadro gris, luego la tira de miniaturas y luego la
+  fotografía: cada visita preguntaba de nuevo qué fotografías tiene la ficha, aunque las
+  imágenes estuvieran en el teléfono.
+- Ahora la ficha **se abre con sus fotografías ya puestas** y se refresca por detrás, así
+  que pasar obra a obra por la secuencia va seguido. La primera visita a una obra sigue
+  esperando, que es cuando de verdad hay algo que traer.
+- Se recuerdan las últimas sesenta obras visitadas, y se borra todo al cerrar sesión.
+
 **«Novedades» no traía lo último**
 
 - Este mismo registro se lee dentro de la aplicación, y un cambio que solo lo tocara no llegaba a
