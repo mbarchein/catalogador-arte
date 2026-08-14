@@ -622,6 +622,13 @@ export interface Profile {
   email: string
   name: string
   role: UserRole
+  /**
+   * Si esta cuenta entra al catálogo (RF-1107).
+   *
+   * Falso es «sin acceso», no «borrada»: la base no le devuelve ni una fila salvo su
+   * propio perfil, que es lo que permite decírselo en vez de enseñarle pantallas vacías.
+   */
+  active: boolean
 }
 
 /**

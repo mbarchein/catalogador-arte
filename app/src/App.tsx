@@ -6,6 +6,7 @@ import { CapturePage } from './features/artworks/CapturePage'
 import { ArtworkPage } from './features/artworks/ArtworkPage'
 import { ArtworkPhotosPage } from './features/artworks/ArtworkPhotosPage'
 import { ArtworksPage } from './features/artworks/ArtworksPage'
+import { UsersPage } from './features/users/UsersPage'
 import { ArchivePage, DocumentPage } from './features/archive'
 import { BibliographyPage, ReferencePage } from './features/bibliography'
 import { DossierPage, DossiersPage } from './features/dossiers'
@@ -21,13 +22,14 @@ import { PublicationTypesPage } from './features/tables/PublicationTypesPage'
 import { ArtistFundsPage } from './features/tables/ArtistFundsPage'
 import { RelationshipTypesPage } from './features/tables/RelationshipTypesPage'
 import { SeriesPage } from './features/tables/SeriesPage'
+import { SignOut } from './components/Layout'
 import { TablesPage } from './features/tables/TablesPage'
 import { TrashPage } from './features/trash/TrashPage'
 import { AboutPage } from './features/about/AboutPage'
 import { ProfilePage } from './features/profile/ProfilePage'
 
 export function App() {
-  const { session, loading, passwordRecovery } = useAuth()
+  const { session, loading, passwordRecovery, hasAccess } = useAuth()
 
   if (loading) {
     return <div className="p-8 text-center text-sm text-stone-600">Cargando…</div>
@@ -49,6 +51,15 @@ export function App() {
         <Route path="*" element={<Navigate to="/reset-password" replace />} />
       </Routes>
     )
+  }
+
+  // RF-1107: a esta cuenta se le ha retirado el acceso. La base ya no le devuelve ni una
+  // fila, así que sin esta pantalla vería el catálogo vacío por todas partes y sin
+  // ninguna explicación: pantallas en blanco donde debería haber un motivo. Su propio
+  // perfil lo lee siempre —la política está escrita para eso—, que es lo que permite
+  // distinguir «te lo han quitado» de «no tienes perfil».
+  if (!hasAccess) {
+    return <NoAccessNotice />
   }
 
   return (
@@ -131,6 +142,9 @@ export function App() {
           Solo Catalogador, comprobado dentro de cada una: la pestaña oculta del
           pie no es una protección. */}
       <Route path="/tables" element={<TablesPage />} />
+      {/* RF-1107: solo Superusuario, comprobado dentro de la pantalla. Cuelga de la raíz
+          como la papelera —no es una tabla maestra— y su puerta está en «Tablas». */}
+      <Route path="/users" element={<UsersPage />} />
       <Route path="/places" element={<PlacesPage />} />
       <Route path="/artwork-types" element={<ArtworkTypesPage />} />
       <Route path="/series" element={<SeriesPage />} />
@@ -167,6 +181,27 @@ export function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  )
+}
+
+/**
+ * Lo que ve quien se ha quedado sin acceso.
+ *
+ * Dice lo que pasa y qué hacer, y nada más: ni por qué se lo han quitado —la aplicación no
+ * lo sabe— ni cómo está hecho. Con la salida de cerrar sesión, porque en un teléfono
+ * compartido lo siguiente que hará esa persona es dejar entrar a otra.
+ */
+function NoAccessNotice() {
+  return (
+    <div className="mx-auto max-w-md p-6 text-center">
+      <h1 className="text-lg font-medium">Tu cuenta no entra al catálogo</h1>
+      <p className="mt-2 text-sm text-stone-600">
+        Habla con quien administra el catálogo si crees que es un error.
+      </p>
+      <div className="mt-6">
+        <SignOut />
+      </div>
+    </div>
   )
 }
 

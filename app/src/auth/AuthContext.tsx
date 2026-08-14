@@ -18,7 +18,7 @@ import {
   clearRememberedRole,
   readRememberedRole,
   rememberRole,
-  remembersEditing,
+  rememberedRoleFor,
 } from './rememberedRole'
 
 interface AuthContextValue {
@@ -39,6 +39,10 @@ interface AuthContextValue {
   roleKnown: boolean
   /** RF-103: only Cataloger and Superuser write. */
   canEdit: boolean
+  /** RF-104, RF-108: only the Superuser administers the team. */
+  canManageUsers: boolean
+  /** RF-1107: false when this account's access to the catalogue has been withdrawn. */
+  hasAccess: boolean
   /**
    * Reads the current session's profile again.
    *
@@ -131,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userId === null) return null
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, name, role')
+      .select('id, email, name, role, active')
       .eq('id', userId)
       .single()
     return data as Profile | null
@@ -169,9 +173,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // for it, so the footer menu does not rebuild itself a moment after opening
   // (RNF-106). The moment the query settles the real answer wins, whatever it says: a
   // role taken away disappears from the interface without a reload.
-  const canEdit = roleKnown
-    ? profile?.role === 'CATALOGER' || profile?.role === 'SUPERUSER'
-    : remembersEditing(remembered, userId)
+  const role = roleKnown ? (profile?.role ?? null) : rememberedRoleFor(remembered, userId)
+  const canEdit = role === 'CATALOGER' || role === 'SUPERUSER'
+
+  // RF-104 y RF-108: administrar el equipo es solo del Superusuario. Sale del mismo papel
+  // que `canEdit` —y por tanto también de lo recordado mientras llega la respuesta— para
+  // que la fila de «Usuarios» no aparezca tarde en el índice de Tablas.
+  const canManageUsers = role === 'SUPERUSER'
+
+  /**
+   * Si esta cuenta entra al catálogo (RF-1107).
+   *
+   * Verdadero mientras no se sepa: enseñar «no tienes acceso» durante el instante en que
+   * la respuesta viaja sería acusar a quien sí entra. Solo el perfil leído puede decir que
+   * no, y su propia fila la lee siempre, precisamente para poder decirlo.
+   */
+  const hasAccess = profile === null || profile.active
 
   return (
     <Context.Provider
@@ -181,6 +198,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         roleKnown,
         canEdit,
+        canManageUsers,
+        hasAccess,
         refreshProfile: async () => {
           const data = await readProfile()
           // What is there is only overwritten when the read brought something: a network

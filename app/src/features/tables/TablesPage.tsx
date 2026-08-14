@@ -1,5 +1,5 @@
 import { Link, Navigate } from 'react-router'
-import { useEditingAccess } from '../../auth/AuthContext'
+import { useAuth, useEditingAccess } from '../../auth/AuthContext'
 import { Layout } from '../../components/Layout'
 import { ChevronRightIcon, LoadingNotice } from '../../components/ui'
 
@@ -42,6 +42,9 @@ import { ChevronRightIcon, LoadingNotice } from '../../components/ui'
  */
 export function TablesPage() {
   const access = useEditingAccess()
+  // RF-104: administrar el equipo no es del Catalogador, así que la fila solo existe para
+  // quien puede — y la pantalla lo vuelve a comprobar.
+  const { canManageUsers } = useAuth()
   // The wait matters: the role arrives after the session, so deciding on the
   // first render would throw out whoever can. See useEditingAccess.
   if (access === 'loading') return <LoadingNotice />
@@ -168,6 +171,26 @@ export function TablesPage() {
           />
         </ul>
       </section>
+
+      {/* ── EL EQUIPO, Y POR QUÉ ESTÁ AQUÍ ───────────────────────────
+          Tampoco es una lista de las que eligen las fichas: son las personas. Está en
+          esta pantalla por lo mismo que la papelera —es el único índice de mantenimiento
+          que existe, y una sexta pestaña estrecharía las cinco de todos los días— y solo
+          la ve el Superusuario (RF-104, RF-108). */}
+      {canManageUsers && (
+        <section className="mt-6">
+          <h2 className="px-1 text-sm font-medium uppercase tracking-wide text-stone-500">
+            El equipo
+          </h2>
+          <ul className="space-y-2">
+            <TableRow
+              to="/users"
+              name="Usuarios"
+              hint="Quién entra al catálogo y qué puede hacer."
+            />
+          </ul>
+        </section>
+      )}
 
       <section className="mt-6">
         <h2 className="px-1 text-sm font-medium uppercase tracking-wide text-stone-500">

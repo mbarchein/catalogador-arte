@@ -88,17 +88,26 @@ export function clearRememberedRole(storage: Storage | undefined = getStorage())
 }
 
 /**
- * Whether what is remembered may be used for the session that is open.
+ * The remembered role, but only for the session that is open.
  *
  * The owner has to match: on a shared device, the Reader signing in after the
  * Cataloger must not be offered the Cataloger's tabs — they would take her to screens
  * the database then refuses, which reads as a broken application and not as a
  * permission she does not have.
  */
+export function rememberedRoleFor(
+  remembered: RememberedRole | null,
+  userId: string | null,
+): UserRole | null {
+  if (remembered === null || userId === null || remembered.userId !== userId) return null
+  return remembered.role
+}
+
+/** Whether what is remembered says this session was editing. */
 export function remembersEditing(
   remembered: RememberedRole | null,
   userId: string | null,
 ): boolean {
-  if (remembered === null || userId === null || remembered.userId !== userId) return false
-  return remembered.role === 'CATALOGER' || remembered.role === 'SUPERUSER'
+  const role = rememberedRoleFor(remembered, userId)
+  return role === 'CATALOGER' || role === 'SUPERUSER'
 }
