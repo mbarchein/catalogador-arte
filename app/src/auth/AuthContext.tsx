@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
 import { clearArtworksCache } from '../features/artworks/artworksCache'
 import { clearExhibitionsCache } from '../features/exhibitions/exhibitionsCache'
+import { clearHiddenFunds } from '../features/tables/artistFundsCache'
 import {
   clearRememberedRole,
   readRememberedRole,
@@ -200,6 +201,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Y el papel que este dispositivo recuerda: en un teléfono compartido, quien
           // entre después no abre el menú de quien salió.
           clearRememberedRole()
+          // Qué fondos están apartados del listado, por lo mismo: es una decisión del
+          // catálogo, no una preferencia del teléfono.
+          clearHiddenFunds()
           await supabase.auth.signOut()
         },
       }}

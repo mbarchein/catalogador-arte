@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { ArtistFund } from '../../lib/types'
 import { sortFunds, type ArtistFundEntry } from './artistFunds'
+import { readHiddenFunds, saveHiddenFunds } from './artistFundsCache'
 
 const COLUMNS = 'id, code, prefix, name, active, hide_artworks, biography, cv'
 
@@ -62,6 +63,13 @@ export function useArtistFunds() {
   const [entries, setEntries] = useState<ArtistFundEntry[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  // Which funds are set aside, remembered from the last answer and read ONCE, so the
+  // listing filters right in its first frame instead of showing the whole catalogue and
+  // taking rows away (see artistFundsCache). Null until this device has ever been told.
+  const remembered = useRef(readHiddenFunds()).current
+  const [hiddenFunds, setHiddenFunds] = useState<ReadonlySet<ArtistFund>>(
+    () => remembered ?? new Set<ArtistFund>(),
+  )
 
   const reload = useCallback(async () => {
     const { data, error: failure } = await supabase.from('artist_funds').select(COLUMNS)
@@ -71,7 +79,15 @@ export function useArtistFunds() {
       return
     }
     setError(null)
-    setEntries(sortFunds(((data ?? []) as FundRow[]).map(shape)))
+    const rows = sortFunds(((data ?? []) as FundRow[]).map(shape))
+    setEntries(rows)
+    const hidden = rows.filter((row) => row.hideArtworks).map((row) => row.code)
+    setHiddenFunds(new Set(hidden))
+    // Remembered for the next start. Written on every answer, including the one that
+    // brings nothing set aside: «ya no hay ninguno» is as much of an answer as the
+    // other, and not writing it would keep a fund set aside on this device after the
+    // switch had been turned off.
+    saveHiddenFunds(hidden)
   }, [])
 
   useEffect(() => {
@@ -101,6 +117,15 @@ export function useArtistFunds() {
 
   return {
     entries,
+    /**
+     * The codes whose artworks are set aside from the listing.
+     *
+     * Apart from `entries` and not derived from them by whoever paints, because this is
+     * the one thing that has to be right BEFORE the answer arrives: `entries` is empty
+     * until then, and an empty list of funds says «nothing is set aside», which is what
+     * made the listing show the whole catalogue and then take rows away.
+     */
+    hiddenFunds,
     loading,
     error,
     reload,

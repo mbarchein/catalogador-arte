@@ -130,14 +130,11 @@ export function ArtworksPage() {
   // The funds and, of them, the ones that set their artworks aside (ADR-007, second delivery).
   // They are read here and not inside the artworks hook because the fund list belongs to
   // the screen: it is also used to say out loud what is being set aside.
-  const { entries: funds } = useArtistFunds()
-  const hidden = useMemo(() => funds.filter((f) => f.hideArtworks), [funds])
-  const hiddenFunds = useMemo(
-    () => new Set(hidden.map((f) => f.code)),
-    // By the code and not by the object: the list is new on every load.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hidden.map((f) => f.code).join(' ')],
-  )
+  // `hiddenFunds` comes from the hook and is NOT derived from `funds` here: it has to be
+  // right in the first frame, and `funds` is empty until the query answers — which is
+  // what showed the whole catalogue and then took the test fund's rows away. The hook
+  // remembers it from the last answer (see artistFundsCache).
+  const { entries: funds, hiddenFunds } = useArtistFunds()
 
   const { artworks, thumbnails, loading, error, reload, refreshThumbnails } = useArtworks(
     view,
