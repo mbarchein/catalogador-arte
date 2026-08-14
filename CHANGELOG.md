@@ -88,6 +88,15 @@
 - Lo guardado se borra al cerrar sesión: en un dispositivo compartido no queda nada del
   catálogo.
 
+**El listado de obras ya no se recompone al abrirlo**
+
+- Al cambiar a «Obras» salía el catálogo entero y un instante después desaparecían las
+  obras del fondo apartado: las filas y la cuenta cambiaban justo cuando ya se estaba
+  leyendo.
+- Ahora el teléfono recuerda qué fondos están apartados, así que el listado sale filtrado
+  desde el principio. Quitar el interruptor de un fondo devuelve sus obras al listado en
+  cuanto la aplicación lo sabe, como antes.
+
 **Las pestañas de abajo ya están todas al abrir**
 
 - El menú abría con tres y se convertía en cinco un instante después: «Añadir» y «Tablas»
