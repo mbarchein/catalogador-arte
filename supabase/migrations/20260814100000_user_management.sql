@@ -302,6 +302,14 @@ revoke all on function public.tg_role_changes_insert_guard() from public;
 --
 -- Lo mismo que hizo la migración del cartel: se mide contra el esquema recién aplicado, de
 -- modo que un error de esta migración se ve en el despliegue y no en la primera pantalla.
+--
+-- **Aquí solo cabe lo que no depende de los datos que ya haya.** Esto corre contra
+-- producción, donde hay cuentas de verdad, y no contra una base vacía. El primer intento
+-- de esta migración se cayó en el despliegue por olvidarlo: medía el candado del último
+-- superusuario degradando al superusuario de mentira que acababa de crear, y en producción
+-- eso está PERMITIDO y debe estarlo, porque queda el superusuario real. Falló la medida, no
+-- la regla. Ese candado se prueba en `user_management.test.sql`, donde las únicas cuentas
+-- que existen son las que el test crea.
 do $$
 declare
   v_id_super uuid := '00000000-0000-0000-0000-00000000ff01';
@@ -360,14 +368,6 @@ begin
     if v_n <> 1 then
       raise exception 'MEDIDA: el cambio de rol no ha dejado traza (%)', v_n;
     end if;
-
-    -- Y no puede quedarse el catálogo sin superusuario.
-    begin
-      update public.profiles set role = 'CATALOGER' where id = v_id_super;
-      raise exception 'MEDIDA: se ha podido degradar al último superusuario';
-    exception when others then
-      if position('sin ningún superusuario' in sqlerrm) = 0 then raise; end if;
-    end;
 
     -- Todo medido: se deshace lo hecho lanzando la señal de salida.
     raise exception 'MEDIDA_HECHA';

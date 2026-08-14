@@ -246,6 +246,19 @@ reset role;
 -- superusuario, la asignación de roles solo se recupera entrando al panel de Supabase.
 do $$
 begin
+  -- Los superusuarios que hubiera en la base ANTES de este fichero se apartan aquí dentro
+  -- —todo se deshace con el rollback del final—, porque si no el candado del último no se
+  -- podría provocar: contaría también a los de verdad y la degradación estaría permitida.
+  --
+  -- Esto no es prudencia: **es el olvido que tumbó un despliegue**. La misma comprobación
+  -- estaba escrita dentro de la migración, donde corre contra producción, y allí pasó lo
+  -- que tenía que pasar — había un superusuario real, degradar al de mentira estaba
+  -- permitido y la medida se cayó. Aquí se hace explícito en vez de suponerlo.
+  update public.profiles set active = false
+   where role = 'SUPERUSER' and active
+     and id not in ('00000000-0000-0000-0000-0000000000a1',
+                    '00000000-0000-0000-0000-0000000000a2');
+
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
 
