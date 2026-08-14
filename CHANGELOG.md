@@ -1,3 +1,21 @@
+## 14 de agosto de 2026
+
+### Interfaz
+
+**Ya se gestionan los usuarios desde la aplicación**
+
+- Una pantalla nueva en «Tablas», solo para quien administra: **quién entra al catálogo y qué
+  puede hacer cada uno**. Antes esto se hacía en el panel de Supabase.
+- Se **invita por correo**: escribes la dirección y la persona recibe un enlace para elegir su
+  contraseña. Entra como Lector, y los permisos se los das tú después.
+- El rol se cambia tocando la fila: cada opción dice en una línea qué permite.
+- **Quitar el acceso no borra a nadie.** Deja de ver el catálogo al momento, su nombre se sigue
+  leyendo en las fichas que tocó, y se lo puedes devolver cuando quieras. Quien se queda sin
+  acceso ve una pantalla que se lo dice, no un catálogo vacío.
+- No te puedes quedar sin superusuario: si eres el último, la aplicación no te deja quitarte a
+  ti mismo el mando — para recuperarlo habría que entrar al panel.
+- Cada cambio de permiso queda anotado: quién, a quién, de qué a qué y cuándo.
+
 ## 12 de agosto de 2026
 
 ### Interfaz
