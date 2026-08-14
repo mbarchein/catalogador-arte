@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -11,6 +12,12 @@ import { supabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
 import { clearArtworksCache } from '../features/artworks/artworksCache'
 import { clearExhibitionsCache } from '../features/exhibitions/exhibitionsCache'
+import {
+  clearRememberedRole,
+  readRememberedRole,
+  rememberRole,
+  remembersEditing,
+} from './rememberedRole'
 
 interface AuthContextValue {
   session: Session | null
@@ -92,6 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [roleKnown, setRoleKnown] = useState(false)
   const [passwordRecovery, setPasswordRecovery] = useState(readRecoveryFlag)
+  // Read ONCE, and synchronously: the whole point is to have it in the first frame that
+  // paints the menu. Nothing is painted before the session resolves (see App), so that
+  // frame already knows whose session it is and can check the owner matches.
+  const remembered = useRef(readRememberedRole()).current
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -134,6 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void readProfile().then((data) => {
       if (!current) return
       setProfile(data)
+      // Remembered for the next start, so the menu opens with the tabs it ended with
+      // instead of building them a moment later. Only when the read brought something: a
+      // failed query is not «this user is a Reader».
+      if (data !== null) rememberRole(userId, data.role)
       // Settled, and that includes having failed: a session with no readable
       // profile is a Reader as far as the interface goes, and leaving this
       // false would hang the views that wait for it.
@@ -147,7 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // The role is read from the profile, but the database is what truly decides.
   // This only avoids showing controls that would fail (RF-106): the real
   // protection is the RLS policies, not this boolean.
-  const canEdit = profile?.role === 'CATALOGER' || profile?.role === 'SUPERUSER'
+  //
+  // While the answer is in the air, what this device remembers of THIS user stands in
+  // for it, so the footer menu does not rebuild itself a moment after opening
+  // (RNF-106). The moment the query settles the real answer wins, whatever it says: a
+  // role taken away disappears from the interface without a reload.
+  const canEdit = roleKnown
+    ? profile?.role === 'CATALOGER' || profile?.role === 'SUPERUSER'
+    : remembersEditing(remembered, userId)
 
   return (
     <Context.Provider
@@ -175,6 +197,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           clearArtworksCache()
           // El espejo del listado de exposiciones, por lo mismo: son datos del catálogo.
           clearExhibitionsCache()
+          // Y el papel que este dispositivo recuerda: en un teléfono compartido, quien
+          // entre después no abre el menú de quien salió.
+          clearRememberedRole()
           await supabase.auth.signOut()
         },
       }}
@@ -203,9 +228,17 @@ export function useAuth(): AuthContextValue {
  * `denied` means the role is known and it is not enough. `loading` means the question
  * cannot be answered yet, and the caller has to wait rather than guess. What actually
  * protects the data is the RLS policies; this only decides what to paint.
+ *
+ * **What the device remembers can only OFFER, never refuse.** `canEdit` answers from the
+ * remembered role while the query is in the air, so «Tablas» opens without its wait; but
+ * a remembered Reader still returns `loading` instead of `denied`, because turning
+ * somebody away on a memory would bounce out of the screen whoever has just been made a
+ * Cataloger — and a bounce is worse than a wait. A refusal is only ever the answer of the
+ * database.
  */
 export function useEditingAccess(): 'loading' | 'allowed' | 'denied' {
   const { canEdit, roleKnown } = useAuth()
+  if (canEdit) return 'allowed'
   if (!roleKnown) return 'loading'
-  return canEdit ? 'allowed' : 'denied'
+  return 'denied'
 }
