@@ -35,11 +35,14 @@ import { useTeam } from './useTeam'
  */
 export function UsersPage() {
   const { canManageUsers, roleKnown, profile } = useAuth()
-  const { members, loading, error, setRole, setAccess } = useTeam()
+  const { members, loading, error, invite, invitedNotice, setRole, setAccess } = useTeam()
   const { busy, failure, failureRef, run } = useTableAction()
   const [notice, setNotice] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [removing, setRemoving] = useState<TeamEntry | null>(null)
+  const [inviting, setInviting] = useState(false)
+  const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
   useAutoClear(notice, () => setNotice(null))
 
   // El mismo orden que el resto de las pantallas de quien edita: la espera antes de la
@@ -60,6 +63,74 @@ export function UsersPage() {
       <p className="mb-3 text-sm text-stone-600">
         Quién entra al catálogo y qué puede hacer.
       </p>
+
+      {/* Invitar va arriba y como un botón, no como un formulario siempre abierto: se usa
+          una vez al año y el resto de los días lo que se viene a hacer aquí es mirar o
+          cambiar un permiso. */}
+      <button
+        type="button"
+        onClick={() => setInviting(true)}
+        className="btn min-h-touch mb-3 w-full border border-stone-300"
+      >
+        Invitar a alguien
+      </button>
+
+      <BottomSheet open={inviting} onClose={() => setInviting(false)} title="Invitar a alguien">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            const said = invitedNotice(email)
+            setInviting(false)
+            void act(said, async () => {
+              const failed = await invite(email, name)
+              if (failed === null) {
+                setEmail('')
+                setName('')
+              }
+              return failed
+            })
+          }}
+        >
+          <div>
+            <label className="label" htmlFor="invite-email">
+              Correo
+            </label>
+            <input
+              id="invite-email"
+              className="field"
+              type="email"
+              inputMode="email"
+              autoComplete="off"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="mt-3">
+            <label className="label" htmlFor="invite-name">
+              Nombre <span className="font-normal text-stone-500">(opcional)</span>
+            </label>
+            <input
+              id="invite-name"
+              className="field"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          {/* Qué va a pasar, antes de pulsar: entra sin permisos y se los das tú. */}
+          <p className="mt-3 text-sm text-stone-600">
+            Recibe un correo para elegir su contraseña. Entra como Lector: los permisos se los
+            das aquí después.
+          </p>
+          <button
+            type="submit"
+            disabled={busy || email.trim() === ''}
+            className="btn min-h-touch mt-4 w-full bg-stone-800 text-white disabled:opacity-60"
+          >
+            Mandar la invitación
+          </button>
+        </form>
+      </BottomSheet>
 
       {failure && (
         <p ref={failureRef} role="alert" className="card mb-3 text-sm text-red-700">

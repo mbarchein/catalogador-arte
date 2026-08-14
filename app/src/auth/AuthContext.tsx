@@ -10,6 +10,7 @@ import {
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
+import { invitedByLink } from './passwordRecovery'
 import { clearArtworksCache } from '../features/artworks/artworksCache'
 import { clearExhibitionsCache } from '../features/exhibitions/exhibitionsCache'
 import { clearHiddenFunds } from '../features/tables/artistFundsCache'
@@ -80,6 +81,14 @@ const RECOVERY_KEY = 'password-recovery'
 
 function readRecoveryFlag(): boolean {
   try {
+    // La invitación entra por aquí y no por el evento de la sesión: la plataforma no
+    // avisa de un enlace de invitación como avisa de uno de recuperación, y quien acaba de
+    // ser invitado no puede aterrizar dentro del catálogo sin haber elegido contraseña.
+    // Se apunta como el otro, para que sobreviva a la recarga que borra la dirección.
+    if (invitedByLink(window.location.search)) {
+      sessionStorage.setItem(RECOVERY_KEY, '1')
+      return true
+    }
     return sessionStorage.getItem(RECOVERY_KEY) === '1'
   } catch {
     // Storage denied (private browsing in some browsers). With no mark there is no

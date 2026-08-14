@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  invitedByLink,
   normalizeEmail,
   recoveryOutcome,
   recoveryText,
@@ -89,5 +90,21 @@ describe('la espera entre envíos', () => {
     // times.
     expect(resendText(42)).toBe('Volver a enviarlo en 42 s')
     expect(resendText(0)).toBe('Enviarme el enlace')
+  })
+})
+
+describe('el enlace de una invitación (RF-112, RF-1107)', () => {
+  it('se reconoce por la marca que la propia aplicación puso al invitar', () => {
+    expect(invitedByLink('?invitacion=1')).toBe(true)
+    expect(invitedByLink('?otra=cosa&invitacion=1')).toBe(true)
+  })
+
+  it('y una entrada normal no lo es', () => {
+    // Si esto contestara que sí de más, confinaría en «Nueva contraseña» a quien solo
+    // estaba entrando.
+    expect(invitedByLink('')).toBe(false)
+    expect(invitedByLink('?invitacion=0')).toBe(false)
+    expect(invitedByLink('?invitacion')).toBe(false)
+    expect(invitedByLink('?otra=1')).toBe(false)
   })
 })

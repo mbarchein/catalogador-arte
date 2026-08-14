@@ -93,3 +93,27 @@ export function secondsLeft(sentAt: number | null, now: number): number {
 export function resendText(left: number): string {
   return left > 0 ? `Volver a enviarlo en ${left} s` : 'Enviarme el enlace'
 }
+
+/**
+ * Si la sesión que se acaba de abrir viene del enlace de una **invitación** (RF-112,
+ * RF-1107).
+ *
+ * Se mira en la dirección y no en el evento de la sesión, y ésa es toda la razón de que
+ * exista esta función: la plataforma avisa de un enlace de recuperación con su propio
+ * evento —`PASSWORD_RECOVERY`—, pero el de una invitación abre la sesión como una entrada
+ * normal. Sin esto, quien acaba de ser invitado aterrizaría dentro del catálogo **sin
+ * haber elegido contraseña nunca**, y el enlace del correo se quedaría en su buzón siendo
+ * una llave.
+ *
+ * La marca la pone la propia aplicación al invitar (`redirectTo`), así que es un dato
+ * nuestro y no de la plataforma. Se lee de la parte de consulta y no del fragmento: el
+ * fragmento lo consume el cliente de Supabase al arrancar y para cuando alguien mire ya
+ * no está.
+ */
+export function invitedByLink(search: string): boolean {
+  try {
+    return new URLSearchParams(search).get('invitacion') === '1'
+  } catch {
+    return false
+  }
+}
