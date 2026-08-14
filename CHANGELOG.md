@@ -88,6 +88,19 @@
 - Lo guardado se borra al cerrar sesión: en un dispositivo compartido no queda nada del
   catálogo.
 
+**El siguiente número del lote ya no baila**
+
+- En la captura en lote, «siguiente AR-0043» aparecía un momento después de abrir la
+  pantalla y, al guardar cada obra, seguía enseñando el número recién usado hasta que
+  llegaba el nuevo. Es el número que se escribe en la etiqueta, así que un instante de
+  dato equivocado es peor que un hueco.
+- Ahora está desde el primer momento y avanza en cuanto se guarda una obra. Se recuerda
+  por fondo, y lo que dice la base sigue mandando: si otra persona ha creado una obra
+  desde otro teléfono, el número se corrige solo.
+- El botón «Cambiar» de la cabecera pasa a ser un lápiz, que es el mismo gesto de
+  corregir del resto de la aplicación: la palabra se llevaba el ancho que necesitaba la
+  línea del fondo, el tipo y la serie.
+
 **El listado de obras ya no se recompone al abrirlo**
 
 - Al cambiar a «Obras» salía el catálogo entero y un instante después desaparecían las
