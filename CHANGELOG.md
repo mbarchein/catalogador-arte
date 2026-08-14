@@ -88,6 +88,17 @@
 - Lo guardado se borra al cerrar sesión: en un dispositivo compartido no queda nada del
   catálogo.
 
+**Las pestañas de abajo ya están todas al abrir**
+
+- El menú abría con tres y se convertía en cinco un instante después: «Añadir» y «Tablas»
+  esperaban a saber quién eres, y las etiquetas se movían justo cuando el pulgar ya iba a
+  una de ellas.
+- Ahora el teléfono recuerda tu papel y el menú abre completo, sin esperar a nada. «Tablas»
+  también abre sin su «Cargando…».
+- Lo recordado no da permisos: si dejas de catalogar, las pestañas desaparecen en cuanto la
+  aplicación lo sabe, y al cerrar sesión no queda nada — en un teléfono compartido, quien
+  entre después ve lo suyo.
+
 **Buscar exposiciones por año encuentra las que abarcan varios**
 
 - Una muestra de 2010 a 2025 no aparecía al teclear 2016: la búsqueda solo miraba el año de
