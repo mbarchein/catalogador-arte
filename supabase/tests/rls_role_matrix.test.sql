@@ -400,7 +400,15 @@ begin
                            -- anchor —so they do not fit the `id`-only walk— and
                            -- `dossier_issues` grants no update at all, because an
                            -- issued version is never rewritten (RF-1607).
-                           'dossiers', 'dossier_items', 'dossier_issues');
+                           'dossiers', 'dossier_items', 'dossier_issues',
+                           -- El registro de roles, cubierto entero en
+                           -- `user_management.test.sql`. No cabe en estos
+                           -- bucles por lo mismo que el registro de cambios:
+                           -- nadie lo escribe a mano —lo escribe un trigger— y
+                           -- solo lo lee el superusuario, así que un bucle que
+                           -- inserta y espera que el catalogador acierte
+                           -- afirmaría lo contrario de lo que esta tabla es.
+                           'role_changes');
   if array_length(v_missing, 1) > 0 then
     raise exception 'FAIL: this matrix does not cover these public tables: %',
       array_to_string(v_missing, ', ');

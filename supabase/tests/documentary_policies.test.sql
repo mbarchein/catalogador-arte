@@ -251,6 +251,12 @@ begin
        -- (RF-1607). They were born with their policies in their own migration
        -- (20260811100000) and their whole perimeter is in `dossiers.test.sql`.
        'dossiers', 'dossier_items', 'dossier_issues',
+       -- El registro de roles tampoco es de este grupo: no habla del catálogo sino de
+       -- personas, solo tiene política de lectura y solo para el superusuario, y las
+       -- otras tres operaciones están cerradas por ausencia. Nació con sus políticas en
+       -- su migración (20260814100000) y su perímetro entero está en
+       -- `user_management.test.sql`.
+       'role_changes',
        -- Migration control of the local stack: it does not exist in production.
        '_migraciones'
      );
