@@ -32,6 +32,12 @@ import { preparingCopyText, uploadStatusText } from './uploadProgress'
 import { DateCertainty } from './DateCertainty'
 import { PhotoPicker, type QueuedShot } from './PhotoPicker'
 import { saveQueue, readQueue, rehydrate, clearQueue } from './photoQueue'
+import {
+  nextCatalogIdAfter,
+  readNextIds,
+  rememberedNextId,
+  saveNextIds,
+} from './nextCatalogId'
 import { previewId } from './useArtworks'
 import { useArtworkTypes } from './useArtworkTypes'
 import { useSeries } from './useSeries'
@@ -107,7 +113,16 @@ export function CapturePage() {
   const [signed, setSigned] = useState<TriState>('UNREVIEWED')
 
   const [range, setRange] = useState(false)
-  const [previewedId, setPreviewedId] = useState<string | null>(null)
+  /**
+   * The preview of the next identifier, by fund, read from what the device remembers.
+   *
+   * Read ONCE and synchronously, because the header says «· siguiente AR-0043» and that is
+   * the number that gets written on the physical tag: appearing a moment late made the line
+   * grow under the thumb. By fund and not one alone, so closing a batch and opening another
+   * never shows the previous fund's number. See `nextCatalogId.ts`.
+   */
+  const [previewedIds, setPreviewedIds] = useState<Record<string, string>>(readNextIds)
+  const previewedId = rememberedNextId(previewedIds, batch.fixed.artist)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState<string[]>([])
@@ -180,11 +195,22 @@ export function CapturePage() {
     void saveQueue(shots)
   }, [shots, queueRestored])
 
+  // The query still runs, and it is the one that counts: another cataloger creating an
+  // artwork at this moment is exactly what neither the memory nor the local advance can
+  // know. What changed is that it no longer decides whether there is a number ON SCREEN,
+  // only which one.
   useEffect(() => {
     if (!open) return
+    const fund = batch.fixed.artist
     let current = true
-    void previewId(batch.fixed.artist).then((id) => {
-      if (current) setPreviewedId(id)
+    void previewId(fund).then((id) => {
+      if (!current || id === null) return
+      setPreviewedIds((previous) => {
+        if (previous[fund] === id) return previous
+        const next = { ...previous, [fund]: id }
+        saveNextIds(next)
+        return next
+      })
     })
     return () => {
       current = false
@@ -499,6 +525,19 @@ export function CapturePage() {
     }
 
     const id = (data as { catalog_id: string }).catalog_id
+
+    // The header advances the moment the number is assigned, instead of going on saying
+    // «siguiente AR-0043» about the artwork that has just taken it — a wrong datum where
+    // the right one goes is worse than a gap, and this is the number that gets written on
+    // the physical tag. The query behind confirms it or corrects it.
+    const following = nextCatalogIdAfter(id)
+    if (following !== null) {
+      setPreviewedIds((previous) => {
+        const next = { ...previous, [batch.fixed.artist]: following }
+        saveNextIds(next)
+        return next
+      })
+    }
 
     // The artwork now exists; the photos next. If any fails, the record is NOT
     // lost: it is noted as pending and the button switches to retrying the

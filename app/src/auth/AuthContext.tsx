@@ -13,6 +13,7 @@ import type { Profile } from '../lib/types'
 import { clearArtworksCache } from '../features/artworks/artworksCache'
 import { clearExhibitionsCache } from '../features/exhibitions/exhibitionsCache'
 import { clearHiddenFunds } from '../features/tables/artistFundsCache'
+import { clearNextIds } from '../features/artworks/nextCatalogId'
 import {
   clearRememberedRole,
   readRememberedRole,
@@ -204,6 +205,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Qué fondos están apartados del listado, por lo mismo: es una decisión del
           // catálogo, no una preferencia del teléfono.
           clearHiddenFunds()
+          // Y el siguiente número de catalogación de cada fondo, que dice cuántas obras
+          // tiene el catálogo.
+          clearNextIds()
           await supabase.auth.signOut()
         },
       }}

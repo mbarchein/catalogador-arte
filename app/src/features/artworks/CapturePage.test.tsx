@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthProvider } from '../../auth/AuthContext'
@@ -7,17 +7,23 @@ import { rememberRole } from '../../auth/rememberedRole'
 import { CapturePage } from './CapturePage'
 import { EMPTY_DATE } from '../../lib/structuredDate'
 import { saveBatch } from './batch'
+import { saveNextIds } from './nextCatalogId'
 
 /**
- * El botón de cambiar lo fijo del lote.
+ * La cabecera del lote: el siguiente número, y el botón de cambiar lo fijo.
  *
- * La cabecera es lo que se lee de un vistazo con la obra delante —el fondo, el tipo, la
- * serie y el siguiente número—, y una palabra a su derecha se lleva el ancho que necesita
- * la línea del medio, que es la que se trunca.
+ * **El número se lee y se copia**: es el que se escribe en la etiqueta que se pega a la
+ * obra. Venía de un viaje de ida y vuelta, así que aparecía un momento después de la
+ * pantalla —la línea creciendo bajo el pulgar— y tras guardar cada obra seguía enseñando
+ * el número recién usado hasta que llegaba la respuesta siguiente, que es la peor versión
+ * de un parpadeo: no un hueco, un dato equivocado en el sitio del bueno.
+ *
+ * La consulta se deja **colgada a propósito**: es el fotograma que estaba mal.
  */
 
-/** La consulta del siguiente identificador, que esta pantalla lanza al abrirse. */
-const siguiente = Promise.resolve({ data: 'AR-0043', error: null })
+/** La consulta del siguiente identificador, colgada hasta que el test la suelta. */
+let responder: (id: string) => void
+let siguiente: Promise<{ data: unknown; error: null }>
 
 vi.mock('../../lib/supabase', () => {
   /** El constructor de consultas de PostgREST: todo devuelve lo mismo y contesta vacío. */
@@ -75,10 +81,49 @@ beforeEach(() => {
     fixed: { artist: 'ROTILI', artworkType: 'Óleo', series: '' },
     carried: { date: EMPTY_DATE, technique: '', placeId: null },
   })
+  siguiente = new Promise((resolve) => {
+    responder = (id) => resolve({ data: id, error: null })
+  })
 })
 
 afterEach(() => {
   window.localStorage.clear()
+})
+
+describe('el siguiente número de la cabecera', () => {
+  it('con memoria está desde el primer fotograma, sin esperar a la consulta', async () => {
+    saveNextIds({ ROTILI: 'AR-0043' })
+
+    pintar()
+
+    await waitFor(() => expect(screen.getByText(/siguiente AR-0043/)).not.toBeNull())
+    // Y sigue ahí cuando la base confirma: lo que contesta es lo mismo.
+    responder('AR-0043')
+    await waitFor(() => expect(screen.getByText(/siguiente AR-0043/)).not.toBeNull())
+  })
+
+  it('y lo que contesta la base manda: corrige el recordado', async () => {
+    // Otra persona ha creado una obra desde otro teléfono, que es justo lo que la memoria
+    // no puede saber.
+    saveNextIds({ ROTILI: 'AR-0043' })
+
+    pintar()
+    await waitFor(() => expect(screen.getByText(/siguiente AR-0043/)).not.toBeNull())
+
+    responder('AR-0050')
+    await waitFor(() => expect(screen.getByText(/siguiente AR-0050/)).not.toBeNull())
+  })
+
+  it('el número de otro fondo no se enseña sobre este lote', async () => {
+    // Se recuerda por fondo: un número compartido pondría el de Rotili sobre un lote de
+    // pruebas, y ése es el número que se copia en una etiqueta física.
+    saveNextIds({ TEST: 'TS-0007' })
+
+    pintar()
+
+    await waitFor(() => expect(screen.getByText(/Fijo en este lote/)).not.toBeNull())
+    expect(screen.queryByText(/siguiente TS-0007/)).toBeNull()
+  })
 })
 
 describe('cambiar lo fijo del lote', () => {
