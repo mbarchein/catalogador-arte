@@ -20,6 +20,7 @@ import {
   FieldGroup,
   LoadingNotice,
   LockIcon,
+  PenIcon,
   ToggleChip,
   TriStateIcons,
   YearStepper,
@@ -546,12 +547,19 @@ export function CapturePage() {
               {previewedId && ` · siguiente ${previewedId}`}
             </p>
           </div>
+          {/* Un icono y no la palabra: la cabecera es lo que se lee de un vistazo con la
+              obra delante —el fondo, el tipo, la serie y el siguiente número—, y una
+              palabra a su derecha se lleva el ancho que necesita la línea del medio, que
+              es la que se trunca. El lápiz es el mismo gesto de corregir del resto de la
+              aplicación, y el rótulo va en `aria-label` para quien no ve el dibujo. */}
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="min-h-touch shrink-0 rounded-lg border border-stone-500 px-3 text-sm"
+            aria-label="Cambiar lo fijo del lote"
+            title="Cambiar lo fijo del lote"
+            className="flex min-h-touch w-11 shrink-0 items-center justify-center rounded-lg border border-stone-500"
           >
-            Cambiar
+            <PenIcon className="h-5 w-5" />
           </button>
         </div>
       </div>
