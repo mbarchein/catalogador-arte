@@ -19,6 +19,10 @@ la aplicación, escrita en hexadecimal porque aquí no hay Tailwind.
 Un cambio en `site/public/**` publica la página y **no** dispara el despliegue a producción; eso lo
 fija un test (`make pipeline-test`), no la buena voluntad.
 
+**Pages se enciende una vez a mano**, en Ajustes → Pages del repositorio, eligiendo «GitHub Actions»
+como origen. El token del workflow no puede crear el sitio, así que hasta que alguien dé ese
+interruptor el workflow termina en rojo diciendo que no encuentra el sitio.
+
 ## Las capturas
 
 Son de la aplicación de verdad, con **un fondo inventado**: ni las obras, ni los artistas, ni los

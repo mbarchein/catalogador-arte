@@ -46,12 +46,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # `enablement` enciende Pages la primera vez desde aquí, para no depender de
-      # que alguien acierte con el panel. Si la cuenta no lo permite, se activa a
-      # mano en Ajustes → Pages eligiendo «GitHub Actions» como origen.
+      # PAGES SE ENCIENDE UNA VEZ A MANO, en Ajustes → Pages, eligiendo «GitHub
+      # Actions» como origen. Este paso llevaba `enablement: true` para no
+      # depender de eso y no funciona: el token del workflow no puede crear el
+      # sitio y la primera ejecución murió con «Create Pages site failed:
+      # Resource not accessible by integration». Se deja fuera a propósito —una
+      # llamada que siempre va a fallar en el primer paso esconde el motivo real
+      # detrás de un error de permisos.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v4
         with:
