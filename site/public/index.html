@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catalogador de arte · inventario y catálogo razonado</title>
+    <meta
+      name="description"
+      content="Aplicación para inventariar y catalogar el fondo de un artista, una galería o un museo: captura con la obra delante, procedencia, exposiciones, bibliografía y archivo. La desplegamos en tu propia cuenta."
+    />
+    <link rel="icon" href="icono.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="alternate" hreflang="en" href="en/" />
+    <link rel="alternate" hreflang="es" href="./" />
+    <meta property="og:title" content="Catalogador de arte" />
+    <meta
+      property="og:description"
+      content="Inventario y catálogo razonado para fondos de artista, galerías y museos."
+    />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="mark" href="./">
+          <img src="icono.svg" alt="" />
+          Catalogador de arte
+        </a>
+        <nav>
+          <a href="#que-hace">Qué hace</a>
+          <a href="#servicio">Cómo se implanta</a>
+          <a href="#contacto">Contacto</a>
+          <a href="en/" hreflang="en">EN</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="hero wrap">
+        <div>
+          <p class="kicker">Inventario y catálogo razonado</p>
+          <h1>Catalogar con la obra delante, no con la obra en la memoria.</h1>
+          <p class="lead">
+            Una aplicación para el fondo de un artista, de una galería o de un museo pequeño: se
+            inventaría de pie en el almacén, con el móvil, y lo que se anota ya es la ficha del
+            catálogo razonado.
+          </p>
+          <div class="actions">
+            <a class="button" href="#contacto">Hablemos de tu fondo</a>
+            <a class="button ghost" href="#que-hace">Ver qué hace</a>
+          </div>
+        </div>
+        <figure>
+          <img
+            src="img/artworks-mobile.webp"
+            width="390"
+            height="844"
+            alt="El catálogo en un teléfono: doce obras con su miniatura, su código y sus medidas."
+          />
+        </figure>
+      </div>
+
+      <section id="para-quien">
+        <div class="wrap">
+          <h2>Para quién</h2>
+          <p>
+            Para quien tiene delante varios cientos o varios miles de obras y una hoja de cálculo
+            que ya no llega.
+          </p>
+          <div class="grid">
+            <div class="card">
+              <h3>Fondos de artista</h3>
+              <p>
+                Herederos y fundaciones que preparan el catálogo razonado y necesitan que el
+                inventario y la investigación sean lo mismo.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Galerías</h3>
+              <p>
+                Fondo propio y en depósito, con la procedencia, el historial expositivo y la
+                documentación de cada pieza en su sitio.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Museos y colecciones</h3>
+              <p>
+                Colecciones que necesitan una ficha seria y una ubicación física fiable sin montar
+                un departamento de documentación.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="que-hace">
+        <div class="wrap">
+          <h2>Qué hace</h2>
+          <p>
+            Está pensada del móvil hacia fuera. La pantalla pequeña no es una adaptación: es donde
+            se cataloga, en un almacén, con una mano.
+          </p>
+
+          <div class="screens">
+            <figure>
+              <img
+                src="img/artworks-mobile.webp"
+                width="390"
+                height="844"
+                loading="lazy"
+                alt="Listado de obras en el móvil, con miniatura, código, título, autor y medidas."
+              />
+              <figcaption>
+                El listado entero cabe en el teléfono y se filtra sin esperar a la red.
+              </figcaption>
+            </figure>
+            <figure>
+              <img
+                src="img/record-mobile.webp"
+                width="390"
+                height="844"
+                loading="lazy"
+                alt="Ficha de una obra con sus tres fotografías, título, autoría, fecha y datos técnicos."
+              />
+              <figcaption>
+                La ficha: anverso, reverso y detalle de firma, con los datos que identifican la
+                pieza.
+              </figcaption>
+            </figure>
+            <figure>
+              <img
+                src="img/provenance-mobile.webp"
+                width="390"
+                height="844"
+                loading="lazy"
+                alt="Cadena de procedencia con tres eslabones fechados y la línea redactada debajo."
+              />
+              <figcaption>
+                La procedencia es una cadena de eslabones fechados, y de ella sale la línea
+                publicable.
+              </figcaption>
+            </figure>
+            <figure>
+              <img
+                src="img/photos-mobile.webp"
+                width="390"
+                height="844"
+                loading="lazy"
+                alt="Pantalla de fotografías con las tomas ordenadas y las herramientas de edición."
+              />
+              <figcaption>
+                Tres niveles por toma. Se editan las copias; el máster de archivo no se toca nunca.
+              </figcaption>
+            </figure>
+            <figure class="wide">
+              <img
+                src="img/exhibitions-desktop.webp"
+                width="1280"
+                height="800"
+                loading="lazy"
+                alt="Listado de exposiciones en un portátil, con cartel, fechas, sede y tipo."
+              />
+              <figcaption>
+                La misma aplicación en el ordenador, para el trabajo de mesa: exposiciones,
+                bibliografía y archivo.
+              </figcaption>
+            </figure>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Toma de datos en lote</h3>
+              <p>
+                Foto, número correlativo y a la siguiente. Lo que se repite —autor, tipo,
+                ubicación— se fija una vez para toda la tanda.
+              </p>
+            </div>
+            <div class="card">
+              <h3>«Sin revisar» no es «no»</h3>
+              <p>
+                Cada dato distingue lo pendiente de investigar de lo investigado sin resultado. Es
+                la diferencia que se pierde entre catalogadores.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Fechas que se pueden consultar</h3>
+              <p>
+                Año, intervalo, «c.» y «[?]» por separado, no como texto. Buscar «1971» encuentra
+                también lo fechado entre 1968 y 1974.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Procedencia con gramática</h3>
+              <p>
+                Eslabones ordenados con su calidad de tenencia y su forma de adquisición, y la
+                línea redactada a partir de ellos.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Exposiciones y bibliografía</h3>
+              <p>
+                Sedes como entidad propia, número de catálogo por muestra y referencias con clave
+                BibTeX y páginas citadas.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Archivo documental</h3>
+              <p>
+                Cartas, facturas y fotografías de época clasificadas en árbol, digitalizadas y
+                enlazadas a la obra que documentan.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Fotografía con criterio de archivo</h3>
+              <p>
+                Miniatura, copia de consulta y máster. Corrección de color con carta de grises, y
+                queda anotado con qué se decidió.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Dónde está cada obra</h3>
+              <p>
+                Un árbol de sitios reales —nave, sala, peine, balda—. Mover una estantería entera
+                se hace una vez y lo ven todas sus obras.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Nada se borra</h3>
+              <p>
+                Toda baja es lógica, con papelera y con traza de quién y cuándo. El historial de
+                cambios se guarda campo a campo.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Etiquetas y dossieres</h3>
+              <p>
+                Ficha en A5 con código QR para pegar en la obra, y dossieres en PDF para una
+                aseguradora, un préstamo o una venta.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Tres papeles</h3>
+              <p>
+                Quien cataloga, quien solo consulta y quien administra. Los permisos se aplican en
+                la base de datos, no en la pantalla.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Se instala como una aplicación</h3>
+              <p>
+                Se añade a la pantalla de inicio del teléfono y se abre como cualquier otra. No
+                hay que pasar por ninguna tienda.
+              </p>
+            </div>
+          </div>
+
+          <p class="note">
+            Las capturas son de la aplicación real con un fondo inventado: ni las obras, ni los
+            artistas, ni los coleccionistas que aparecen existen.
+          </p>
+        </div>
+      </section>
+
+      <section id="servicio">
+        <div class="wrap">
+          <h2>Cómo se implanta</h2>
+          <p>
+            No hay que darse de alta en nada. Se despliega una instancia para tu fondo, en tu
+            propia cuenta, y los datos son tuyos desde el primer día.
+          </p>
+          <ol class="steps">
+            <li>
+              <strong>Hablamos del fondo</strong>
+              <span>
+                Cuántas obras, qué hay ya escrito y dónde, y qué quieres poder responder dentro de
+                cinco años.
+              </span>
+            </li>
+            <li>
+              <strong>Se despliega</strong>
+              <span>
+                Base de datos, almacenamiento de imágenes y aplicación, en tu cuenta y con
+                servidores en Europa si lo prefieres.
+              </span>
+            </li>
+            <li>
+              <strong>Se traen los datos</strong>
+              <span>
+                Hojas de cálculo, fichas antiguas, carpetas de fotografías. Lo que ya existe entra;
+                no se empieza de cero.
+              </span>
+            </li>
+            <li>
+              <strong>Se ajusta el vocabulario</strong>
+              <span>
+                Tipos de obra, técnicas, series, sedes y el prefijo de numeración, con las palabras
+                que ya usáis.
+              </span>
+            </li>
+            <li>
+              <strong>Formación y puesta en marcha</strong>
+              <span>
+                Una sesión con quien va a catalogar, con el móvil y con obra delante, que es donde
+                se aprende.
+              </span>
+            </li>
+            <li>
+              <strong>Mantenimiento, si lo quieres</strong>
+              <span>
+                Actualizaciones, copias de seguridad comprobadas y cambios sobre el modelo cuando
+                la investigación los pida.
+              </span>
+            </li>
+          </ol>
+          <p class="note">
+            El código es libre, con licencia MIT: si un día quieres llevártelo a otro sitio o que lo
+            mantenga otra persona, puedes hacerlo sin pedir permiso.
+          </p>
+        </div>
+      </section>
+
+      <section id="como-esta-hecho">
+        <div class="wrap">
+          <h2>Cómo está hecho</h2>
+          <div class="grid">
+            <div class="card">
+              <h3>Sin servidor propio</h3>
+              <p>
+                Aplicación web sobre PostgreSQL gestionado. Menos piezas que mantener y menos
+                sitios donde se puede caer.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Los permisos, en la base</h3>
+              <p>
+                Las reglas de acceso viven en el motor de datos y se verifican con pruebas
+                automáticas autenticándose como cada papel.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Las imágenes, en tres niveles</h3>
+              <p>
+                El máster de archivo se guarda aparte y no se modifica; lo que viaja al teléfono es
+                la copia ligera.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Exportable</h3>
+              <p>
+                Es una base de datos estándar. Los datos salen enteros cuando haga falta, para una
+                web pública o para un catálogo impreso.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="contacto" class="contact">
+        <div class="wrap">
+          <h2>Contacto</h2>
+          <p>
+            Cuéntanos cuántas obras hay y en qué estado está el inventario. Respondemos con una
+            propuesta concreta, no con un formulario.
+          </p>
+          <div class="actions">
+            <a class="button" href="mailto:mariobarchein@gmail.com?subject=Catalogador%20de%20arte">
+              mariobarchein@gmail.com
+            </a>
+            <a class="button ghost" href="https://github.com/mbarchein/catalogador-arte">
+              El código, en GitHub
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p>
+          Catalogador de arte · software libre con licencia MIT ·
+          <a href="https://github.com/mbarchein/catalogador-arte">código fuente</a> ·
+          <a href="en/" hreflang="en">English</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
