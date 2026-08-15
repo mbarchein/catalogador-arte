@@ -10,16 +10,20 @@ Base de datos unificada para ambos fondos que sirve simultáneamente como:
 
 ## Estado
 
-En desarrollo. La infraestructura está definida como código y verificada; el siguiente paso es el
-esquema de la base de datos en SQL, y detrás las políticas RLS con sus tests. Ver el orden de
-construcción en [`docs/requisitos.md`](docs/requisitos.md), apartado 7.
+En producción y en uso. El esquema, las políticas RLS y la aplicación están desplegados, y se sigue
+catalogando contra ellos. Lo que queda a medias se lleva en [`CHANGELOG.md`](CHANGELOG.md),
+apartado «En marcha».
+
+Hay además una **página pública** del proyecto en
+[mbarchein.github.io/catalogador-arte](https://mbarchein.github.io/catalogador-arte/), con capturas
+de un fondo inventado; se construye en [`site/`](site/README.md).
 
 ## Stack
 
 PWA estática sobre **Supabase** (PostgreSQL gestionado, PostgREST, Auth y Storage), sin servidor de
-aplicación propio. Frontend en Vite, Svelte y TypeScript, alojado en Cloudflare Pages. Imágenes en
-Cloudflare R2 en tres niveles: miniatura, derivada de consulta y máster de archivo. Toda la plataforma
-se gestiona con Terraform en [`infra/`](infra/).
+aplicación propio. Frontend en Vite, React y TypeScript, alojado en Vercel. Imágenes en tres niveles
+—miniatura, derivada de consulta y máster de archivo—: las dos primeras en el Storage de Supabase y
+el máster en Backblaze B2. Toda la plataforma se gestiona con Terraform en [`infra/`](infra/).
 
 La aplicación es instalable en el móvil, que es el dispositivo del caso de uso principal: catalogar de
 pie, con la obra delante. No funciona sin conexión, por decisión explícita.
