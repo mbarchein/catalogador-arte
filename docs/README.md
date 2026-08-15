@@ -13,6 +13,7 @@
 | Saber qué está mal o sin decidir en los documentos anteriores | [`revision/incidencias-detectadas.md`](revision/incidencias-detectadas.md) |
 | Saber qué acierta y qué falla la sugerencia de recorte, con números | [`revision/deteccion-de-bordes-medicion.md`](revision/deteccion-de-bordes-medicion.md) |
 | Saber qué está verificado con tests y qué no | [`plan-de-pruebas.md`](plan-de-pruebas.md) |
+| Saber qué hacen otros catálogos razonados y qué nos falta, con prioridades | [`estado-del-arte-catalogos-razonados.md`](estado-del-arte-catalogos-razonados.md) |
 | Entender qué hace cada contenedor del stack local, y dónde acaban las fotografías | [`../docker/README.md`](../docker/README.md) |
 | Saber cómo se gestiona la plataforma y qué frontera no cruza Terraform | [`../infra/README.md`](../infra/README.md) |
 
