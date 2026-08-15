@@ -324,6 +324,56 @@ sys.exit(1 if fallos else 0)
 PY
 
 echo
+echo "→ La página comercial se publica sola y no toca producción"
+
+# Son dos workflows con dos destinos y ningún riesgo comparable: uno migra la base
+# de producción y el otro sube HTML estático. Lo que se fija aquí es que sigan
+# separados, porque la forma de romperlo es callada — basta con quitar una línea
+# del `paths-ignore` para que retocar una frase del escaparate migre la base, y no
+# hay nada en pantalla que lo delate hasta que pasa.
+python3 - <<'PY' || exit 1
+import sys, yaml
+
+fallos = 0
+
+with open('.github/workflows/desplegar.yml', encoding='utf-8') as f:
+    despliegue = yaml.safe_load(f)[True]['push']
+with open('.github/workflows/publicar-sitio.yml', encoding='utf-8') as f:
+    sitio = yaml.safe_load(f)
+
+if 'site/**' in despliegue.get('paths-ignore', []):
+    print('  ✓ un cambio del sitio no dispara el despliegue a producción')
+else:
+    print('  ✗ «site/**» no está en el paths-ignore de desplegar.yml: retocar la página'
+          ' migraría la base', file=sys.stderr)
+    fallos += 1
+
+publicados = sitio[True]['push'].get('paths', [])
+if any(patron.startswith('site/') for patron in publicados):
+    print('  ✓ un cambio del sitio sí dispara su publicación')
+else:
+    print('  ✗ publicar-sitio.yml no se dispara con los cambios de site/', file=sys.stderr)
+    fallos += 1
+
+# Dos grupos de concurrencia distintos: compartirlo pondría a la página a esperar
+# a una migración, o —peor— cancelaría un despliegue a medias, que es justo lo que
+# el grupo de producción evita con `cancel-in-progress: false`.
+grupos = {
+    'desplegar': yaml.safe_load(open('.github/workflows/desplegar.yml', encoding='utf-8'))[
+        'concurrency'
+    ]['group'],
+    'publicar-sitio': sitio['concurrency']['group'],
+}
+if len(set(grupos.values())) == 2:
+    print('  ✓ cada workflow tiene su propio grupo de concurrencia')
+else:
+    print(f'  ✗ los dos workflows comparten grupo de concurrencia: {grupos}', file=sys.stderr)
+    fallos += 1
+
+sys.exit(1 if fallos else 0)
+PY
+
+echo
 if [ "$fallos" -gt 0 ]; then
   echo "Tests del pipeline: $fallos fallo(s)" >&2
   exit 1

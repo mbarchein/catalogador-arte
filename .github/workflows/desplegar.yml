@@ -64,6 +64,10 @@ on:
       - 'infra/**'
       - 'docker/**.md'
       - 'scripts/**'
+      # La página comercial, que tiene su propio workflow y su propio destino
+      # (GitHub Pages). No comparte una sola línea con lo que se despliega: retocar
+      # una frase del escaparate no puede migrar la base ni republicar la aplicación.
+      - 'site/**'
       - 'LICENSE'
       - '.gitignore'
       - '.env.example'

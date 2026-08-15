@@ -1,0 +1,61 @@
+name: publicar-sitio
+
+# La página comercial, en GitHub Pages.
+#
+# Es un workflow aparte de `desplegar.yml` a propósito, y no un job más suyo. La
+# razón es la que ya costó un incidente en agosto: el despliegue es una cadena
+# —verificar, migrar, publicar— con una `concurrency` que serializa los
+# despliegues a producción y no cancela el que esté en marcha. Colgar de ahí un
+# escaparate estático mezclaría dos cosas con riesgos incomparables: un retoque de
+# una frase esperaría a las migraciones, y una publicación fallida de la página
+# dejaría el despliegue en rojo sin que nada de la aplicación estuviera mal.
+#
+# Aquí no hay compilación. La página es HTML y CSS escritos a mano y se publica tal
+# cual: lo que se sube es exactamente lo que hay en `site/public/`. Las capturas se
+# regeneran a mano con `site/screenshots/run.sh` —necesita Chromium y la
+# compilación de la aplicación— y se commitean ya optimizadas.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/public/**'
+      - '.github/workflows/publicar-sitio.yml'
+  workflow_dispatch:
+
+# `pages` e `id-token` son lo que pide el despliegue oficial de Pages; `contents`
+# de solo lectura porque este workflow no escribe en el repositorio.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Su propio grupo, separado del de producción. Y aquí sí se cancela lo que esté a
+# medias: publicar un sitio estático es idempotente y lo último que se empujó es
+# siempre lo que se quiere ver.
+concurrency:
+  group: paginas
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.desplegar.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # `enablement` enciende Pages la primera vez desde aquí, para no depender de
+      # que alguien acierte con el panel. Si la cuenta no lo permite, se activa a
+      # mano en Ajustes → Pages eligiendo «GitHub Actions» como origen.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site/public
+
+      - id: desplegar
+        uses: actions/deploy-pages@v4

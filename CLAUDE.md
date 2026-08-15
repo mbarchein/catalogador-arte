@@ -120,6 +120,7 @@ supabase/           Esquema, triggers y políticas RLS en SQL versionado
   migrations/       Migraciones (las aplicadas NO se reescriben: cambio nuevo, migración nueva)
   functions/        Funciones Edge (Deno)
   tests/            Tests de SQL: RLS y reglas del esquema (make db-test)
+site/               La página pública en GitHub Pages (ver site/README.md)
 docker/             Stack local completo sin la CLI de Supabase
 infra/              Plataforma como código con Terraform (ver infra/README.md)
   bootstrap/        Crea el bucket del estado. Se ejecuta una sola vez
