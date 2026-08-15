@@ -374,6 +374,61 @@ sys.exit(1 if fallos else 0)
 PY
 
 echo
+echo "→ La vista previa del enlace apunta a un cartel que existe"
+
+# Las etiquetas `og:` las lee un robot que no tiene la página abierta, así que una
+# ruta relativa no le sirve y un fichero renombrado le deja la vista previa en
+# blanco. Ninguna de las dos cosas se ve mirando el sitio: se ven cuando alguien
+# manda el enlace a una galería y llega pelado.
+python3 - <<'PY' || exit 1
+import re, struct, sys
+from pathlib import Path
+
+fallos = 0
+BASE = 'https://mbarchein.github.io/catalogador-arte/'
+
+
+def etiquetas(pagina):
+    fuente = Path(pagina).read_text(encoding='utf-8')
+    return dict(
+        re.findall(
+            r'<meta\s+property="(og:[\w:]+)"\s+content="([^"]*)"', fuente.replace('\n', ' ')
+        )
+    )
+
+
+def medidas_png(fichero):
+    cabecera = Path(fichero).read_bytes()[:24]
+    return struct.unpack('>II', cabecera[16:24])
+
+
+for pagina in ('site/public/index.html', 'site/public/en/index.html'):
+    meta = etiquetas(pagina)
+    for clave in ('og:url', 'og:image'):
+        if not meta.get(clave, '').startswith(BASE):
+            print(f'  ✗ {pagina}: «{clave}» no es absoluta: {meta.get(clave)!r}', file=sys.stderr)
+            fallos += 1
+
+    cartel = Path('site/public') / meta.get('og:image', '').removeprefix(BASE)
+    if not cartel.is_file():
+        print(f'  ✗ {pagina}: el cartel «{cartel}» no está publicado', file=sys.stderr)
+        fallos += 1
+        continue
+
+    declaradas = (int(meta.get('og:image:width', 0)), int(meta.get('og:image:height', 0)))
+    if medidas_png(cartel) != declaradas:
+        print(
+            f'  ✗ {pagina}: el cartel mide {medidas_png(cartel)} y declara {declaradas}',
+            file=sys.stderr,
+        )
+        fallos += 1
+    else:
+        print(f'  ✓ {pagina} declara un cartel de 1200×630 que existe')
+
+sys.exit(1 if fallos else 0)
+PY
+
+echo
 if [ "$fallos" -gt 0 ]; then
   echo "Tests del pipeline: $fallos fallo(s)" >&2
   exit 1
