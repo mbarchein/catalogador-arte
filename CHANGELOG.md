@@ -2,6 +2,13 @@
 
 ### Interfaz
 
+**«Mi perfil»: el nombre se corrige desde su fila, y la contraseña tiene su botón**
+
+- El nombre lleva **un lápiz al lado**, en la misma línea del dato, en vez de un enlace
+  subrayado debajo de la lista: así se ve qué se corrige sin leer nada.
+- Cambiar la contraseña es un botón de los de pulsar, no un enlace de texto perdido entre
+  los datos de la cuenta.
+
 **Ya se gestionan los usuarios desde la aplicación**
 
 - Una pantalla nueva en «Tablas», solo para quien administra: **quién entra al catálogo y qué

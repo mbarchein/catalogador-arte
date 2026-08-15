@@ -16,6 +16,7 @@ import {
   textScaleNotice,
   textScaleOptionText,
 } from '../../lib/textScale'
+import { LockIcon } from '../../components/ui'
 import { ROLE_LABEL } from '../../lib/types'
 import { setTextScale, useTextScale } from '../../lib/useTextScale'
 
@@ -136,20 +137,24 @@ export function ProfilePage() {
     <Layout title="Mi perfil" back="/">
       <section className="card mb-3">
         <h2 className="mb-2 font-medium">Cuenta</h2>
+        {/* El nombre pinta su propia fila porque es la única que se corrige, y así el
+            lápiz cae AL LADO del dato: un icono sin rótulo dice qué hace cuando está
+            pegado a lo que toca, y no dice nada suelto debajo de tres filas. */}
         <dl className="divide-y divide-stone-100">
-          <DataRow label="Nombre" value={profile?.name ?? ''} />
+          <AccountName />
           <DataRow label="Correo" value={profile?.email ?? session?.user.email ?? ''} />
           <DataRow label="Rol" value={profile ? ROLE_LABEL[profile.role] : 'Sin perfil'} />
         </dl>
-        {/* Las dos cosas que se pueden cambiar de la cuenta, juntas y con el mismo
-            peso. El nombre se corrige aquí mismo, que es un campo; la contraseña
-            tiene su pantalla porque se pide dos veces y la escribe el servicio de
-            identidad, no esta tabla. */}
-        <AccountName />
+
+        {/* La contraseña tiene su pantalla —se pide dos veces y la escribe el servicio de
+            identidad, no esta tabla—, así que es un botón que lleva allí y no un lápiz
+            que abre un campo. Con rótulo: nada en la fila dice de qué contraseña se
+            habla, y un candado a secas se lee como un aviso de bloqueo. */}
         <Link
           to="/reset-password"
-          className="mt-2 block min-h-touch text-sm text-stone-600 underline hover:text-stone-800"
+          className="btn mt-3 flex min-h-touch w-full items-center justify-center gap-2 border border-stone-300"
         >
+          <LockIcon className="h-4 w-4" />
           Cambiar la contraseña
         </Link>
       </section>

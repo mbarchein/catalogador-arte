@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PenIcon } from '../../components/ui'
 import { useAutoClear } from '../../components/useAutoClear'
 import { useAuth } from '../../auth/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -23,6 +24,10 @@ import {
  * to the foot of this same screen and to whatever gets written from now on in the
  * records, so leaving it out of date until the next reload would make one doubt
  * whether the change went in.
+ *
+ * **Pinta su propia fila de la lista**, y no solo el botón de corregir. Es lo que permite
+ * que ese botón sea un lápiz sin rótulo: al lado del dato que corrige, el icono ya dice
+ * qué corrige; suelto debajo de tres filas, un lápiz no dice cuál de las tres.
  */
 export function AccountName() {
   const { profile, refreshProfile } = useAuth()
@@ -82,19 +87,28 @@ export function AccountName() {
   if (draft === null) {
     return (
       <>
-        <button
-          type="button"
-          className="mt-2 block min-h-touch text-sm text-stone-600 underline hover:text-stone-800"
-          onClick={() => {
-            setNotice(null)
-            setError(null)
-            setDraft(current)
-          }}
-        >
-          Cambiar el nombre
-        </button>
+        <div className="flex items-center justify-between gap-3 py-2">
+          <dt className="shrink-0 text-sm text-stone-500">Nombre</dt>
+          <dd className="flex min-w-0 items-center gap-2">
+            {/* Nunca un hueco: un dato vacío se dice, no se omite. */}
+            <span className="min-w-0 truncate text-right text-sm">{current || 'Sin indicar'}</span>
+            <button
+              type="button"
+              aria-label="Cambiar el nombre"
+              title="Cambiar el nombre"
+              className="flex min-h-touch w-11 shrink-0 items-center justify-center rounded-lg border border-stone-300 text-stone-700"
+              onClick={() => {
+                setNotice(null)
+                setError(null)
+                setDraft(current)
+              }}
+            >
+              <PenIcon className="h-5 w-5" />
+            </button>
+          </dd>
+        </div>
         {notice && (
-          <p role="status" className="mt-1 text-xs text-stone-600">
+          <p role="status" className="pb-2 text-xs text-stone-600">
             {notice}
           </p>
         )}
@@ -104,7 +118,7 @@ export function AccountName() {
 
   return (
     <form
-      className="mt-3 space-y-2"
+      className="space-y-2 py-2"
       onSubmit={(e) => {
         e.preventDefault()
         void save(draft)
