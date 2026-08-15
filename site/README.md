@@ -6,7 +6,7 @@ El escaparate del proyecto, en GitHub Pages: <https://mbarchein.github.io/catalo
 public/       Lo que se publica. HTML y CSS a mano, sin compilación
   index.html    Español
   en/           Inglés
-  img/          Las capturas, ya optimizadas
+  img/          Las capturas ya optimizadas, y el cartel de la vista previa
 screenshots/  El arnés que genera esas capturas. NO se publica
 ```
 
@@ -36,7 +36,7 @@ Para regenerarlas:
 site/screenshots/run.sh
 ```
 
-Cuatro pasos, todos deterministas —volver a ejecutarlo sin cambios reescribe imágenes idénticas—:
+Cinco pasos, todos deterministas —volver a ejecutarlo sin cambios reescribe imágenes idénticas—:
 
 1. `artwork_images.py` pinta la obra inventada: composiciones abstractas con semilla fija, un
    reverso con sus etiquetas, un detalle de firma y cuatro carteles de exposición.
@@ -46,6 +46,11 @@ Cuatro pasos, todos deterministas —volver a ejecutarlo sin cambios reescribe i
 3. `capture.mjs` levanta `server.mjs` —un Supabase de mentira que responde desde `demo-data.mjs`— y
    fotografía la aplicación con Chromium por su protocolo de depuración, a 390 px y a 1280 px.
 4. `optimize.py` deja las imágenes en WebP y a la mitad de densidad, en `public/img/`.
+5. `og_image.py` compone `og-es.png` y `og-en.png`, el cartel de 1200×630 que pintan WhatsApp,
+   Slack o un cliente de correo cuando se comparte el enlace. En PNG y no en WebP, al contrario que
+   el resto de `img/`: esa imagen no la pide la página, la piden media docena de robots, y no todos
+   leen WebP. Si se cambia el dominio hay que corregir a mano las etiquetas `og:` de las dos
+   páginas, que son absolutas por obligación.
 
 Hace falta Chromium (`CHROME=` apunta a otro binario) y `node_modules` de `app/` ya instalado.
 
