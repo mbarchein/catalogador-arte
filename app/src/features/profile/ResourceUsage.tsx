@@ -1,3 +1,4 @@
+import { RefreshIcon } from '../../components/ui'
 import { useResourceUsageOnMount } from './useResourceUsage'
 import {
   bytesText,
@@ -25,6 +26,13 @@ import {
  *
  * It is measured on opening the screen and with «Actualizar», which is what was asked for. Counting
  * the archive walks the bucket's listing, so it does not repeat itself.
+ *
+ * **Volver a medir es un icono en la línea del título.** Era un botón a todo el ancho al
+ * pie de las tres barras, que es donde se pone lo que se hace a menudo, y esto no lo es:
+ * la medida se pide sola al abrir y volver a pedirla solo tiene sentido después de subir
+ * fotografías. Arriba, junto al título, no se lleva una línea entera de una tarjeta que ya
+ * es larga y sigue estando donde se mira al entrar. Como el dibujo no dice si está
+ * midiendo, mientras mide **gira** y su rótulo lo cuenta.
  */
 export function ResourceUsage() {
   const { usage, masters, usageError, mastersError, loading, measuredAt, refresh } =
@@ -32,7 +40,20 @@ export function ResourceUsage() {
 
   return (
     <section className="card mb-3">
-      <h2 className="mb-2 font-medium">Espacio ocupado</h2>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h2 className="font-medium">Espacio ocupado</h2>
+        <button
+          type="button"
+          aria-label={loading ? 'Midiendo…' : 'Volver a medir'}
+          title={loading ? 'Midiendo…' : 'Volver a medir'}
+          aria-busy={loading}
+          className="-my-2 flex min-h-touch w-11 shrink-0 items-center justify-center rounded-lg border border-stone-300 text-stone-700 disabled:opacity-60"
+          disabled={loading}
+          onClick={() => void refresh()}
+        >
+          <RefreshIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
       <p className="mb-3 text-sm text-stone-600">
         Cuánto queda en cada uno de los tres sitios donde vive el catálogo.
       </p>
@@ -85,15 +106,6 @@ export function ResourceUsage() {
       {masters === null && mastersError === null && usage !== null && (
         <p className="mb-3 text-sm text-stone-600">Contando el archivo…</p>
       )}
-
-      <button
-        type="button"
-        className="btn-secondary mt-1 w-full"
-        disabled={loading}
-        onClick={() => void refresh()}
-      >
-        {loading ? 'Midiendo…' : 'Actualizar'}
-      </button>
 
       <p className="mt-2 text-xs text-stone-500">
         {measuredText(measuredAt)}. {PLAN_NOTICE}

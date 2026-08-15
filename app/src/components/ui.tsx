@@ -238,6 +238,22 @@ export function WandIcon({ className = 'h-6 w-6' }: { className?: string }) {
 }
 
 /** Back to the beginning: an arrow returning to where everything started. */
+/**
+ * Volver a medir. Dos flechas en círculo, y no la de girar una fotografía: son la misma
+ * idea de «otra vez», pero esa ya significa una cosa concreta en el editor y un dibujo que
+ * significa dos cosas en la misma aplicación no significa ninguna.
+ */
+export function RefreshIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg {...svg} className={className}>
+      <path d="M20 5v5h-5" />
+      <path d="M19.4 10a8 8 0 0 0-14.3-1.6" />
+      <path d="M4 19v-5h5" />
+      <path d="M4.6 14a8 8 0 0 0 14.3 1.6" />
+    </svg>
+  )
+}
+
 export function RevertIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg {...svg} className={className}>

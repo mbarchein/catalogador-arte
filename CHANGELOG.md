@@ -8,6 +8,9 @@
   subrayado debajo de la lista: así se ve qué se corrige sin leer nada.
 - Cambiar la contraseña es un botón de los de pulsar, no un enlace de texto perdido entre
   los datos de la cuenta.
+- Y en «Espacio ocupado», volver a medir pasa a **un icono arriba a la derecha**, en la
+  línea del título: ocupaba una franja entera al pie de una tarjeta ya larga para algo que
+  solo se pulsa después de subir fotografías. Mientras mide, el icono gira.
 
 **Ya se gestionan los usuarios desde la aplicación**
 
