@@ -228,7 +228,7 @@ async function imagePlacements(bytes: Uint8Array) {
     })
 }
 
-const withPhoto = async () => ({ jpeg: SMALL_JPEG, shotType: 'GENERAL' }) as RecordPhoto
+const withPhoto = async () => ({ jpeg: SMALL_JPEG, shotType: 'GENERAL', credit: null }) as RecordPhoto
 
 /**
  * Which of the two images is which: only the QR is a 108 pt square, and the
@@ -334,6 +334,7 @@ describe('generateRecordPdf', () => {
     const { raw, prints } = await pdfOf(async () => ({
       jpeg: SMALL_JPEG,
       shotType: 'GENERAL',
+      credit: null,
     }))
     expect(raw).toContain('DCTDecode')
     expect(prints('Imagen no disponible')).toBe(false)
@@ -342,13 +343,46 @@ describe('generateRecordPdf', () => {
   // A signature detail or a back side does not portray the artwork: saying so
   // on paper avoids taking the photo for the general view of the work.
   it('captions the shot type when it is not a general view', async () => {
-    const { prints } = await pdfOf(async () => ({ jpeg: SMALL_JPEG, shotType: 'BACK' }))
+    const { prints } = await pdfOf(async () => ({ jpeg: SMALL_JPEG, shotType: 'BACK', credit: null }))
     expect(prints('Reverso')).toBe(true)
   })
 
   it('does not caption the general view, which needs no explanation', async () => {
-    const { prints } = await pdfOf(async () => ({ jpeg: SMALL_JPEG, shotType: 'GENERAL' }))
+    const { prints } = await pdfOf(async () => ({ jpeg: SMALL_JPEG, shotType: 'GENERAL', credit: null }))
     expect(prints('General')).toBe(false)
+  })
+
+  // RF-417. Handing a print shop or a curator a photograph somebody else took, with
+  // nothing on the sheet saying so, is what this closes. The rule about WHAT is credited
+  // is `photoCreditLine`'s and is verified there; here what is pinned down is that the
+  // sheet prints it.
+  it('prints the credit of the photograph', async () => {
+    const { prints } = await pdfOf(async () => ({
+      jpeg: SMALL_JPEG,
+      shotType: 'GENERAL',
+      credit: 'Fotografía: Ana Ruiz',
+    }))
+    expect(prints('Fotografía: Ana Ruiz')).toBe(true)
+  })
+
+  it('and the one of somebody else’s reproduction, which is the one that matters', async () => {
+    const { prints } = await pdfOf(async () => ({
+      jpeg: SMALL_JPEG,
+      shotType: 'GENERAL',
+      credit: 'Tomada de otro catálogo: Web del MACVA',
+    }))
+    expect(prints('Tomada de otro catálogo')).toBe(true)
+  })
+
+  it('and says nothing when there is nothing to credit', async () => {
+    // An own photograph with no authorship is the normal case —in 35 of the 39 shots it
+    // was taken by whoever catalogues— and «sin indicar» on every sheet is noise.
+    const { prints } = await pdfOf(async () => ({
+      jpeg: SMALL_JPEG,
+      shotType: 'GENERAL',
+      credit: null,
+    }))
+    expect(prints('Fotografía:')).toBe(false)
   })
 
   // RF-1002: without an image, the marker. Never a page half done.
@@ -373,6 +407,7 @@ describe('generateRecordPdf', () => {
     const { prints } = await pdfOf(async () => ({
       jpeg: new Uint8Array([1, 2, 3, 4]),
       shotType: 'GENERAL',
+      credit: null,
     }))
     expect(prints('Imagen no disponible')).toBe(true)
   })
@@ -409,6 +444,56 @@ describe('the arrangement of the sheet', () => {
   it('never lets the photograph rise above the QR', async () => {
     const { qr, photo } = splitImages(await imagePlacements((await pdfOf(withPhoto)).bytes))
     expect(qr!.y).toBeGreaterThan(photo!.y + photo!.height)
+  })
+
+  /**
+   * The photograph's credit (RF-417), in the left-hand column of the footer band.
+   *
+   * There are only two places it could go and both are taken: under the image there are
+   * 12 pt and the printed URL is living in them, and above it there is `COLUMN_GAP` with
+   * the shot type's caption. This pins down that it went to the one that IS free, because
+   * the way of getting it wrong does not show up in a test that only reads the text —
+   * it shows up in a sheet already printed, with two lines on top of each other.
+   */
+  it('pone el crédito a la izquierda de la fotografía, entre la fecha y la dirección', async () => {
+    const { bytes } = await pdfOf(async () => ({
+      jpeg: SMALL_JPEG,
+      shotType: 'GENERAL',
+      credit: 'Fotografía: Ana Ruiz',
+    }))
+    const { photo } = splitImages(await imagePlacements(bytes))
+    const credit = await textPlacement(bytes, 'Fotografía: Ana Ruiz')
+    expect(credit).not.toBeNull()
+    // In the left column, clear of the image.
+    expect(credit!.x).toBeCloseTo(MARGIN, 5)
+    expect(credit!.x).toBeLessThan(photo!.x)
+    // Below the generation date and above the URL of the foot, which sits on the margin.
+    const date = await textPlacement(bytes, 'Ficha generada el')
+    expect(credit!.y).toBeGreaterThan(MARGIN)
+    expect(credit!.y).toBeLessThan(date!.y)
+  })
+
+  /**
+   * `provenance_source` is free text and admits a paragraph. Bounded at three lines the
+   * band holds; unbounded, a long provenance walks down the sheet and out through the foot.
+   */
+  it('y no deja que una procedencia larga se coma el pie de la hoja', async () => {
+    const { bytes } = await pdfOf(async () => ({
+      jpeg: SMALL_JPEG,
+      shotType: 'GENERAL',
+      credit: `Tomada de otro catálogo: ${'palabra '.repeat(200).trim()}`,
+    }))
+    const date = await textPlacement(bytes, 'Ficha generada el')
+    const content = await printedText(bytes)
+    // Every printed line leaves its own positioning matrix. The credit's are the ones at
+    // the left margin below the date: the record's data live above the footer band.
+    const below = [...content.matchAll(/1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm/g)]
+      .map((m) => ({ x: Number(m[1]), y: Number(m[2]) }))
+      .filter(({ x, y }) => Math.abs(x - MARGIN) < 0.5 && y < date!.y)
+
+    // The URL of the foot rests on the margin, and it is the only other thing down there.
+    expect(below.length).toBe(4)
+    expect(Math.min(...below.map(({ y }) => y))).toBe(MARGIN)
   })
 
   // Both hang from the right edge: a single column, the data at their left.

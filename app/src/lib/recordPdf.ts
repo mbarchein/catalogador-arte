@@ -29,8 +29,13 @@ import {
   SHOT_TYPE_LABEL,
   TRI_STATE_LABEL,
   type Artwork,
+  type PhotoProvenance,
   type ShotTypeValue,
 } from './types'
+import {
+  photoCreditLine,
+  type PhotoSourceColumns,
+} from '../features/artworks/photoSource'
 
 export interface RecordLine {
   label: string
@@ -124,6 +129,13 @@ export interface RecordPhoto {
   /** JPEG bytes: pdf-lib only embeds JPEG and PNG, and derivatives are WebP. */
   jpeg: Uint8Array
   shotType: ShotTypeValue
+  /**
+   * Whose the photograph is (RF-417), already resolved into the line that gets printed, or
+   * null when there is nothing to say. The rule is `photoCreditLine`'s and it is not
+   * repeated here: the sheet and the screen have to credit the same photograph in the
+   * same words.
+   */
+  credit: string | null
 }
 
 /**
@@ -174,18 +186,51 @@ async function toEmbeddableJpeg(source: Blob): Promise<Uint8Array> {
 export async function loadRecordPhoto(catalogId: string): Promise<RecordPhoto | null> {
   const { data, error } = await supabase
     .from('representative_image')
-    .select('derivative_path, shot_type')
+    .select('image_id, derivative_path, shot_type')
     .eq('catalog_id', catalogId)
     .maybeSingle()
   if (error || !data) return null
 
-  const row = data as unknown as { derivative_path: string; shot_type: ShotTypeValue }
+  const row = data as unknown as {
+    image_id: string
+    derivative_path: string
+    shot_type: ShotTypeValue
+  }
   const url = await signedUrl(row.derivative_path, 120)
   if (!url) return null
 
   const response = await fetch(url)
   if (!response.ok) return null
-  return { jpeg: await toEmbeddableJpeg(await response.blob()), shotType: row.shot_type }
+  return {
+    jpeg: await toEmbeddableJpeg(await response.blob()),
+    shotType: row.shot_type,
+    credit: await photoCredit(row.image_id),
+  }
+}
+
+/**
+ * The credit of that shot, in a second query and not in the view's.
+ *
+ * `representative_image` does not carry these three columns and this does not add them to it:
+ * replacing the view means writing `security_invoker = true` again, and a view of `images`
+ * without it stops obeying the RLS policies — it would show the paths of retired
+ * photographs to anybody with a session. That is the only perimeter there is (RF-111), and
+ * a line at the foot of a sheet is not worth touching it. Two short queries over
+ * one row cost nothing next to downloading and recoding the image.
+ *
+ * A failure answers null and the sheet comes out with no credit: never a record left
+ * unprinted over the datum that qualifies it.
+ */
+async function photoCredit(imageId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('images')
+    .select('provenance, photo_credit, provenance_source')
+    .eq('image_id', imageId)
+    .maybeSingle()
+  if (error || !data) return null
+
+  const row = data as unknown as PhotoSourceColumns & { provenance: PhotoProvenance }
+  return photoCreditLine(row, row.provenance)
 }
 
 /**
@@ -277,6 +322,11 @@ const QR_BLOCK = QR_SIDE + QR_CAPTION_PAD + QR_CAPTION_LINES * QR_CAPTION_LEAD
 /** Height of a printed data line, and the air between two rows. */
 const LINE = 13
 const ROW_GAP = 4
+
+/** The photograph's credit: smaller than the date it hangs from, and at most three lines. */
+const CREDIT_SIZE = 7
+const CREDIT_LEAD = 9
+const CREDIT_MAX_LINES = 3
 
 /** Top of the footer band — the photograph and its note. Nothing goes below it. */
 const footerTopAt = (margin: number, photoSide: number) =>
@@ -483,10 +533,38 @@ export async function generateRecordPdf(
   // The generation date, anchored to the height of the reserved box and not to the image:
   // a landscape photograph is shorter than its box and the text would go with it.
   // What the code does is said by its own caption, above, next to the code.
+  const dateY = margin + 12 + photoBox - 8
   page.drawText(
     `Ficha generada el ${new Date().toLocaleDateString('es-ES')}`,
-    { x: margin, y: margin + 12 + photoBox - 8, size: 8, font: normal, color: GRAY },
+    { x: margin, y: dateY, size: 8, font: normal, color: GRAY },
   )
+
+  // Whose the photograph is (RF-417), in the left-hand column of the footer band, which is
+  // the only empty room there is next to the image.
+  //
+  // It does NOT go under the photo, and the reason is measurable: between the foot of the
+  // image and the margin there are 12 pt, and the printed URL is already living in them.
+  // Nor as a second caption above it, where the shot type goes: the band there is
+  // `COLUMN_GAP` and a second line would tread on the data block.
+  //
+  // Anchored to the box like the date and not to the image, for the same reason as the date.
+  if (photo?.credit) {
+    const creditWidth = photoX - margin - COLUMN_GAP
+    // Bounded at three lines: `provenance_source` is free text and admits «me la pasó la
+    // familia en 2019» just as well as a paragraph, and what this sheet is about is the
+    // artwork. What does not fit is on the record, which is what the QR opens.
+    const lines = wrapLines(printableText(photo.credit), normal, CREDIT_SIZE, creditWidth)
+      .slice(0, CREDIT_MAX_LINES)
+    lines.forEach((line, index) => {
+      page.drawText(line, {
+        x: margin,
+        y: dateY - CREDIT_LEAD * (index + 1),
+        size: CREDIT_SIZE,
+        font: normal,
+        color: GRAY,
+      })
+    })
+  }
 
   const bytes = await doc.save()
   return new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' })

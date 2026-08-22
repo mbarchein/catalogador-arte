@@ -1,4 +1,4 @@
-import type { PhotoProvenance } from '../../lib/types'
+import { PHOTO_PROVENANCE_LABEL, type PhotoProvenance } from '../../lib/types'
 
 /**
  * Whose the photograph is, and where it came from if it is not our own (RF-417).
@@ -74,6 +74,35 @@ export function photoSourceOf(
     photoSourceField(provenance) === 'credit' ? row.photo_credit : row.provenance_source
   ).trim()
   return written === '' ? null : written
+}
+
+/**
+ * The line read under the photograph, or null when there is nothing to say.
+ *
+ * The two data were being noted down and were shown NOWHERE: neither on the record, nor in the
+ * viewer, nor on the printed sheet. A credit that is only read by whoever typed it in is
+ * not a credit — and handing a print shop or a curator a photograph
+ * somebody else took, with nothing saying so, is the failure this closes.
+ *
+ * The three cases are not symmetrical, and that is the whole rule:
+ *
+ *   · **Ours, with a credit** → it is said. «Fotografía: Marta Sedano».
+ *   · **Ours, with no credit** → nothing. The blank is the normal case —in 35 of the 39
+ *     shots it was taken by whoever catalogues— and the column's own comment says
+ *     that empty attributes it to nobody. Printing «sin indicar» under every photograph
+ *     would be a line of noise on every record.
+ *   · **Not ours** → it is ALWAYS said, with the source if there is one and with the bare
+ *     label if not. Here the blank is not the normal case: it is a reproduction of
+ *     somebody else's, and saying so matters more than knowing whose.
+ */
+export function photoCreditLine(
+  row: PhotoSourceColumns,
+  provenance: PhotoProvenance,
+): string | null {
+  const written = photoSourceOf(row, provenance)
+  if (provenance === 'OWN') return written === null ? null : `Fotografía: ${written}`
+  const label = PHOTO_PROVENANCE_LABEL[provenance]
+  return written === null ? label : `${label}: ${written}`
 }
 
 /** What gets stored: trimmed, like the rest of the catalogue. */

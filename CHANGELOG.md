@@ -1,3 +1,19 @@
+## 15 de agosto de 2026
+
+### Interfaz
+
+**De quién es cada fotografía, dicho donde se ve**
+
+- Debajo de la fotografía, en la ficha, ahora se lee **quién la hizo** cuando está anotado.
+  Se venía anotando y no salía en ninguna pantalla.
+- Si la fotografía **no es nuestra** —tomada de otro catálogo o recibida de un tercero— se
+  dice siempre, con el origen si consta. Aquí callar era lo peligroso: la ficha impresa
+  presentaba como propia la reproducción de otro.
+- Y lo mismo en la **ficha en PDF**, junto a la fecha de generación, para que la hoja que se
+  manda a una imprenta o a un comisario lleve el crédito puesto.
+- La fotografía propia sin autoría anotada no dice nada: en esas la hizo quien cataloga, y un
+  «sin indicar» debajo de cada imagen sería una línea de ruido en todas las fichas.
+
 ## 14 de agosto de 2026
 
 ### Interfaz

@@ -3,6 +3,7 @@ import { SHOT_TYPE_LABEL } from '../../lib/types'
 import { ExpandIcon, YesIcon } from '../../components/ui'
 import { shotOrdinal } from './archiveDownloads'
 import { originalSize, pixelText } from './photoDetails'
+import { photoCreditLine } from './photoSource'
 import { useArtworkImages } from './artworkImages'
 import { PhotoCarousel } from './PhotoCarousel'
 import { PhotoDownloads } from './PhotoDownloads'
@@ -46,7 +47,16 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
   // disagreeing about a null. It is the original's size with the orientation already
   // applied — what any viewer shows — and it is null on the rows uploaded before the
   // colour migration added the columns, because nothing was filled in backwards.
-  const viewingPixels = pixelText(originalSize(viewing ? details[viewing.image_id] : null))
+  const viewingDetail = viewing ? details[viewing.image_id] : undefined
+  const viewingPixels = pixelText(originalSize(viewingDetail))
+
+  // Who took the photograph, or where it came from (RF-417). It travels in the same extra
+  // query as the size, so it costs nothing more; while the query has not answered there is
+  // no line, which is right — an empty credit and one that has not arrived look the same on
+  // screen, and the one that has not arrived must not attribute the photo to anybody.
+  const creditLine = viewingDetail
+    ? photoCreditLine(viewingDetail, viewingDetail.provenance)
+    : null
 
   // «f» opens the gallery full screen. It lives here and not in the page because
   // the viewer belongs to the gallery: lifting the state just to shortcut a key would be
@@ -185,6 +195,13 @@ export function ArtworkGallery({ catalogId }: { catalogId: string }) {
         {viewing ? ` · ${SHOT_TYPE_LABEL[viewing.shot_type]}` : ''}
         {viewingPixels ? ` · ${viewingPixels}` : ''}
       </p>
+
+      {/* Whose the photograph is (RF-417), on its own line and not joined to the one above:
+          the one above says which shot this is and how big it is, which are facts about the
+          FILE, and this one says who is owed the image. Mixing them would turn a credit
+          into one more technical datum. It only appears when there is something to say —
+          see `photoCreditLine` for the three cases. */}
+      {creditLine && <p className="text-xs text-stone-500">{creditLine}</p>}
 
       {/* RF-411 and RF-420: neither file is ever SHOWN in a view — both get
           downloaded deliberately, each with its own signed URL, and the panel

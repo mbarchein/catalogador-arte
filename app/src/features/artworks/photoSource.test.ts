@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   cleanPhotoSource,
+  photoCreditLine,
   photoSourceColumn,
   photoSourceField,
   photoSourceHint,
@@ -67,6 +68,38 @@ describe('el valor dormido no se cuela', () => {
   it('lo que está en blanco es null, no una cadena vacía', () => {
     expect(photoSourceOf(row(), 'OWN')).toBeNull()
     expect(photoSourceOf(row({ photo_credit: '   ' }), 'OWN')).toBeNull()
+  })
+})
+
+describe('la línea que se lee bajo la fotografía', () => {
+  it('en una propia con autoría, la dice', () => {
+    expect(photoCreditLine(row({ photo_credit: 'Ana Ruiz' }), 'OWN')).toBe('Fotografía: Ana Ruiz')
+  })
+
+  it('en una propia sin autoría, no dice nada', () => {
+    // El blanco es el caso normal —la hizo quien cataloga— y un «sin indicar» debajo de
+    // cada fotografía sería una línea de ruido en todas las fichas.
+    expect(photoCreditLine(row(), 'OWN')).toBeNull()
+  })
+
+  it('en una ajena lo dice SIEMPRE, aunque no conste de dónde salió', () => {
+    // Aquí el blanco no es el caso normal: es la reproducción de otro, y decirlo importa
+    // más que saber de quién. Sin esta línea, la hoja impresa presenta como propia una
+    // fotografía que no lo es.
+    expect(photoCreditLine(row(), 'OTHER_CATALOG')).toBe('Tomada de otro catálogo')
+    expect(photoCreditLine(row(), 'THIRD_PARTY')).toBe('Recibida de un tercero')
+  })
+
+  it('y con origen, lo añade', () => {
+    expect(photoCreditLine(row({ provenance_source: 'Web del MACVA' }), 'OTHER_CATALOG')).toBe(
+      'Tomada de otro catálogo: Web del MACVA',
+    )
+  })
+
+  it('el valor dormido tampoco se cuela aquí', () => {
+    const both = row({ photo_credit: 'Mario Barchéin', provenance_source: 'Web del MACVA' })
+    expect(photoCreditLine(both, 'OTHER_CATALOG')).toBe('Tomada de otro catálogo: Web del MACVA')
+    expect(photoCreditLine(both, 'OWN')).toBe('Fotografía: Mario Barchéin')
   })
 })
 
