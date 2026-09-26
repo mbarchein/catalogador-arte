@@ -26,6 +26,12 @@ terraform {
       source  = "Backblaze/b2"
       version = "~> 0.10"
     }
+    # Only for the drift check of the keep-alive job (keepalive.tf), which re-reads the
+    # live cron.job row on every plan. Same constraint as in ensayadero.
+    external = {
+      source  = "hashicorp/external"
+      version = "~> 2.3"
+    }
   }
 
   # Remote state in Cloudflare R2, compatible with the s3 backend.

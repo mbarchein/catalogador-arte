@@ -46,6 +46,7 @@ deliberada:
 | Bucket de B2 y su clave acotada | Publicación de Realtime |
 | Repositorio (público), protección de ramas | Datos de referencia |
 | Secretos y variables de Actions | |
+| La tarea diaria que evita la pausa (`pg_cron`, ver abajo) | |
 
 El esquema necesita migraciones ordenadas sobre datos ya cargados, que es exactamente lo que Terraform
 no sabe hacer: su modelo es converger a un estado, no recorrer una secuencia de transformaciones.
@@ -59,7 +60,7 @@ antes de cada despliegue.
 
 ```
 infra/
-├── versions.tf              Proveedores (supabase, vercel, cloudflare, github, random, b2) y backend
+├── versions.tf              Proveedores (supabase, vercel, cloudflare, github, random, b2, external) y backend
 ├── providers.tf             Autenticación de cada proveedor
 ├── variables.tf             Todas las entradas (ver tabla más abajo)
 ├── supabase.tf              Proyecto, ajustes de auth/API, contraseña generada, claves de API
@@ -67,6 +68,8 @@ infra/
 ├── dominio.tf               catalogo.ruizcampins.com: CNAME solo-DNS hacia Vercel
 ├── b2.tf                    Bucket de másters + clave sin borrado + CORS para el PUT del navegador
 ├── github.tf                Repo, protección de rama, secretos y variables de Actions
+├── keepalive.tf             Tarea diaria de pg_cron que evita la pausa del plan gratuito
+├── scripts/                 Comprobación de deriva de esa tarea (la usa keepalive.tf)
 ├── terraform.tfvars.example Plantilla de valores; copiar a terraform.tfvars (ignorado por git)
 ├── backend.hcl.example      Plantilla del backend; copiar a backend.hcl (ignorado por git)
 └── bootstrap/               Crea el bucket R2 del estado. Se ejecuta UNA vez, con estado local
@@ -276,6 +279,33 @@ proyecto conserva URL y claves): actualiza `supabase_organization_id` en `terraf
 añade `organization_id` al `ignore_changes` de `supabase_project.principal` antes del siguiente
 `plan` — si no, Terraform propondrá recrear el proyecto para «moverlo».
 
+**El plan gratuito de Supabase pausa el proyecto tras una semana sin actividad**, y uno pausado no se
+despierta solo: hay que restaurarlo desde el panel. Lo evita `keepalive.tf`, con el mismo patrón que
+ensayadero, que no se ha pausado nunca: una tarea de `pg_cron` **dentro de la base** llama una vez al
+día, por `pg_net`, a la función Edge `keep-alive`, que hace una lectura por la API. Tres cosas:
+
+- **Es Terraform y no una migración** porque la tarea lleva dentro la dirección del proyecto. En una
+  migración, el stack local y CI harían ping a producción, y un segundo despliegue del catálogo
+  mantendría despierto al primero. La función sí es código y vive en `supabase/functions/`.
+- **Necesita docker** para el `apply`: el proveedor de Supabase no ejecuta SQL y la tarea se crea con un
+  `psql` en contenedor por el *pooler*. En cada `plan` se relee la tarea viva; si alguien la borró
+  desde el panel, el plan propone recrearla. Una tarea borrada no falla: el proyecto se pausa una
+  semana después.
+- **El primer `terraform init` tras este cambio añade el proveedor `hashicorp/external`** a
+  `.terraform.lock.hcl`. Hay que commitear ese fichero.
+
+Para comprobar que corre, en el editor SQL del panel:
+
+```sql
+select start_time, status, return_message
+from cron.job_run_details
+where jobid = (select jobid from cron.job where jobname = 'keep-alive')
+order by start_time desc limit 5;
+
+-- Y lo que contestó la función (se guarda unas horas): 200 bien, 502 la base no respondió.
+select created, status_code, content from net._http_response order by created desc limit 5;
+```
+
 **El repositorio ya existe en local.** Si lo creas a mano en GitHub antes del `apply`, pon
 `gestionar_repositorio = false` o impórtalo:
 
@@ -285,4 +315,5 @@ terraform import 'github_repository.app[0]' catalogador-arte
 
 **La clave anónima de Supabase es pública por diseño.** Identifica el proyecto, no autoriza nada: lo
 que protege los datos son las políticas RLS. Lo que jamás sale del estado de Terraform ni de los
-secretos es la `service_role`, que las ignora todas — ni siquiera la función Edge la usa.
+secretos es la `service_role`, que las ignora todas. Las funciones Edge que la necesitan
+(`invite-user`, `keep-alive`) no la reciben de aquí: la plataforma la pone en su entorno.
