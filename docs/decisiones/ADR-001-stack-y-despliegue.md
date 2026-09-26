@@ -119,6 +119,10 @@ la decisión original de que todo fichero viviera dentro de la aplicación.
 reactivarlo a mano desde el panel. Es una molestia asumible en un proyecto que se trabaja a ráfagas,
 pero conviene saberlo antes de volver de vacaciones.
 
+> **Actualización (septiembre de 2026).** Pasó: tras un mes sin uso el proyecto apareció pausado. Ahora lo evita una
+> tarea diaria de `pg_cron` que llama a la función Edge `keep-alive` (RNF-116), con el patrón de ensayadero.
+> Lo crea Terraform, en `infra/keepalive.tf`.
+
 **Sin copias de seguridad automáticas en el tramo gratuito.** Un volcado periódico de la base de datos
 es responsabilidad del equipo.
 

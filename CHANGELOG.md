@@ -1938,6 +1938,13 @@
 
 ## En marcha
 
+**Que el catálogo no se pare solo tras una semana sin uso**
+
+- El servicio donde vive el catálogo lo detiene tras siete días sin actividad, y hasta que alguien lo
+  reactiva la aplicación no abre. Pasó en septiembre, tras un mes sin entrar.
+- Ya está preparado un aviso diario que lo mantiene despierto. Falta encenderlo, que se hace una vez
+  desde el ordenador de quien administra la plataforma.
+
 **El dossier, a falta de verlo impreso**
 
 - Está terminado y se puede usar; lo que falta es el recorrido con una obra delante: armar un

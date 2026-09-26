@@ -413,6 +413,7 @@ no son requisitos. Lo que cada una es, y lo que la implementación midió, está
 | RNF-113 | Existe un volcado periódico de la base de datos en almacenamiento propio. El tramo gratuito de Supabase no incluye copias de seguridad, y sin ficha las imágenes dejan de ser un catálogo. | Pendiente. Hoy el volcado se lanza a mano (`make db-pull`); automatizarlo sigue en pie. |
 | ~~RNF-114~~ | Todo el código y toda la infraestructura viven bajo control de versiones con Git desde el primer día. | **Retirado** (9.2): no es un requisito, es cómo se trabaja. |
 | RNF-115 | La rama `main` está protegida: no se fusiona sin que la verificación automática pase. `terraform apply` no se ejecuta desde integración continua. | Vigente y verificado: la protección de rama está en `infra/github.tf` y exige el check «verificar». |
+| RNF-116 | El proyecto de Supabase no se pausa por inactividad. El plan gratuito lo pausa tras una semana sin uso y no se despierta solo, así que una vuelta de vacaciones no puede encontrarse el catálogo parado. | Vigente. Una tarea diaria de `pg_cron` llama por `pg_net` a la función Edge `keep-alive`, que lee por la API: el patrón de ensayadero, que no se ha pausado nunca. La función está en `supabase/functions/keep-alive/` y la tarea la crea Terraform (`infra/keepalive.tf`), porque lleva la dirección del proyecto. |
 
 ---
 
