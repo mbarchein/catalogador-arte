@@ -1,3 +1,13 @@
+## 26 de septiembre de 2026
+
+### Correcciones
+
+**El catálogo ya no se para solo tras una semana sin uso**
+
+- El servicio donde vive lo detenía tras siete días sin actividad, y hasta que alguien lo reactivaba
+  la aplicación no abría. Pasó en septiembre, tras un mes sin entrar.
+- Ahora recibe un aviso cada día que lo mantiene despierto, también en vacaciones.
+
 ## 15 de agosto de 2026
 
 ### Interfaz
@@ -1937,13 +1947,6 @@
 ---
 
 ## En marcha
-
-**Que el catálogo no se pare solo tras una semana sin uso**
-
-- El servicio donde vive el catálogo lo detiene tras siete días sin actividad, y hasta que alguien lo
-  reactiva la aplicación no abre. Pasó en septiembre, tras un mes sin entrar.
-- Ya está preparado un aviso diario que lo mantiene despierto. Falta encenderlo, que se hace una vez
-  desde el ordenador de quien administra la plataforma.
 
 **El dossier, a falta de verlo impreso**
 
